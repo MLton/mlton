@@ -369,16 +369,19 @@ struct
                 transfer = NONE}]
             end
 
-        fun binal64cc (oper, condition)
+        fun binal64cc (oper1, oper2, condition)
           = let
-              val ((src1,src1size), _,
-                   (src3,src3size), _) = getSrc4 ()
+              val ((src1,src1size),
+                   (src2,src2size),
+                   (src3,src3size),
+                   (src4,src4size)) = getSrc4 ()
               val (dst,dstsize) = getDst1 ()
               val tmp = overflowCheckTempContentsOperand src1size
               val _ 
                 = Assert.assert
-                  ("x86MLton.prim: binal64cc, src1size/src3size",
-                   fn () => src1size = src3size)
+                  ("x86MLton.prim: binal64cc, src1size/src2size/src3size/src4size",
+                   fn () => src1size = src3size andalso
+                            src2size = src4size)
             in
               AppendList.fromList
               [Block.mkBlock'
@@ -389,10 +392,19 @@ struct
                     src = src1,
                     size = src1size},
                    Assembly.instruction_binal
-                   {oper = oper,
+                   {oper = oper1,
                     dst = tmp,
                     src = src3,
                     size = src1size},
+                   Assembly.instruction_mov
+                   {dst = tmp,
+                    src = src2,
+                    size = src2size},
+                   Assembly.instruction_binal
+                   {oper = oper2,
+                    dst = tmp,
+                    src = src4,
+                    size = src2size},
                    Assembly.instruction_setcc
                    {condition = condition,
                     dst = dst,
@@ -611,29 +623,28 @@ struct
                 = Assert.assert
                   ("x86MLton.prim: neg64cc, src1size/src2size",
                    fn () => src1size = src2size)
-              val tdst1 = wordTemp1ContentsOperand src1size
-              val tdst2 = wordTemp1ContentsOperand src2size
+              val tmp = overflowCheckTempContentsOperand src1size
             in
               AppendList.fromList
               [Block.mkBlock'
                {entry = NONE,
                 statements
                 = [Assembly.instruction_mov
-                   {dst = tdst1,
+                   {dst = tmp,
                     src = Operand.immediate_zero,
                     size = src1size},
+                   Assembly.instruction_binal
+                   {oper = Instruction.SUB,
+                    dst = tmp,
+                    src = src1,
+                    size = src1size},
                    Assembly.instruction_mov
-                   {dst = tdst2,
+                   {dst = tmp,
                     src = Operand.immediate_zero,
                     size = src2size},
                    Assembly.instruction_binal
-                   {oper = Instruction.SUB,
-                    dst = tdst1,
-                    src = src1,
-                    size = src1size},
-                   Assembly.instruction_binal
                    {oper = Instruction.SBB,
-                    dst = tdst2,
+                    dst = tmp,
                     src = src2,
                     size = src2size},
                    Assembly.instruction_setcc
@@ -1602,7 +1613,7 @@ struct
                       W8 => binalcc (Instruction.ADD, cond)
                     | W16 => binalcc (Instruction.ADD, cond)
                     | W32 => binalcc (Instruction.ADD, cond)
-                    | W64 => binal64cc (Instruction.ADD, cond)
+                    | W64 => binal64cc (Instruction.ADD, Instruction.ADC, cond)
                  end
              | Word_andb s => bitop (s, Instruction.AND)
              | Word_equal _ => cmp Instruction.E
@@ -1676,7 +1687,7 @@ struct
                       W8 => binalcc (Instruction.SUB, cond)
                     | W16 => binalcc (Instruction.SUB, cond)
                     | W32 => binalcc (Instruction.SUB, cond)
-                    | W64 => binal64cc (Instruction.SUB, cond)
+                    | W64 => binal64cc (Instruction.SUB, Instruction.SBB, cond)
                  end
              | Word_rndToReal (s, s', _)
              => let
