@@ -8,7 +8,7 @@ struct
 
    open S
 
-   structure Value = struct
+   structure TypeInfo = struct
       datatype t = Unchanged of Type.t
       (* each other type has a constructor set with arguments to coerce *)
                  | Fresh of (Tycon.t option * con list ref) Equatable.t
@@ -79,10 +79,10 @@ struct
             | (Unchanged t1, Unchanged t2) =>
                  if Type.equals(t1, t2)
                  then ()
-                 else Error.bug "SplitTypes.Value.coerce: Bad merge of unchanged types"
+                 else Error.bug "SplitTypes.TypeInfo.coerce: Bad merge of unchanged types"
             | _ =>
                  Error.bug (Layout.toString (Layout.fill [
-                 Layout.str "SplitTypes.Value.coerce: Strange coercion: ",
+                 Layout.str "SplitTypes.TypeInfo.coerce: Strange coercion: ",
                  layout from, Layout.str " coerced to ", layout to ]))
 
                  (* TODO: Non-constructor types should always be equated *)
@@ -102,46 +102,46 @@ struct
       let
          val { value, func, label } =
             analyze
-            { coerce = fn {from, to} => Value.coerce (from, to),
-              conApp = Value.fromCon,
-              const = Value.const,
+            { coerce = fn {from, to} => TypeInfo.coerce (from, to),
+              conApp = TypeInfo.fromCon,
+              const = TypeInfo.const,
               filter = fn _ => (),
               filterWord = fn _ => (),
-              fromType = Value.fromType,
-              layout = Value.layout,
-              primApp = fn { resultType: Type.t, ...} => Value.fromType resultType,
+              fromType = TypeInfo.fromType,
+              layout = TypeInfo.layout,
+              primApp = fn { resultType: Type.t, ...} => TypeInfo.fromType resultType,
               program = program,
-              select = fn { resultType: Type.t, ...} => Value.fromType resultType,
-              tuple = Value.fromTuple,
+              select = fn { resultType: Type.t, ...} => TypeInfo.fromType resultType,
+              tuple = TypeInfo.fromTuple,
               useFromTypeOnBinds = false }
          fun makeTy ty value =
             (case value of
-                  Value.Unchanged ty => ty
-                | Value.Fresh eq =>
+                  TypeInfo.Unchanged ty => ty
+                | TypeInfo.Fresh eq =>
                      (case Equatable.value eq of
                            (SOME tycon, cons) => Type.datatypee (Tycon.new tycon)
                          | (NONE, _) =>
                               (case Type.dest ty of
                                     Type.Datatype tycon => Type.datatypee (Tycon.new tycon)
                                   | _ => ty))
-                                  | Value.Tuple ts => Type.tuple (Vector.map (ts, makeTy ty)))
+                                  | TypeInfo.Tuple ts => Type.tuple (Vector.map (ts, makeTy ty)))
          (* value, old type, new type *)
          (* old type mostly to verify consistency *)
-         val tyMap : (Value.t * Type.t * Type.t) HashSet.t =
-            HashSet.new {hash = fn (v, oldTy, newTy) => Value.hash v}
+         val tyMap : (TypeInfo.t * Type.t * Type.t) HashSet.t =
+            HashSet.new {hash = fn (v, oldTy, newTy) => TypeInfo.hash v}
 
-         fun getTy (oldTy, t) =
+         fun getTy (oldTy, typeInfo) =
             let
                val (_, oldTy', newTy) =
-                  HashSet.lookupOrInsert (tyMap, Value.hash t,
+                  HashSet.lookupOrInsert (tyMap, TypeInfo.hash typeInfo,
                      fn (t', oldTy, newTy) =>
-                        Value.equated (t, t'),
+                        TypeInfo.equated (typeInfo, t'),
                      fn () =>
-                        (t, oldTy, makeTy oldTy t))
+                        (typeInfo, oldTy, makeTy oldTy typeInfo))
                val _ =
                   if not (Type.equals (oldTy, oldTy'))
                   then Error.bug (Layout.toString (Layout.fill [
-                       Layout.str "SplitTypes.Value.coerce: Inconsistent types from analyse: ",
+                       Layout.str "SplitTypes.TypeInfo.coerce: Inconsistent types from analyse: ",
                        Type.layout oldTy, Layout.str " already used from ", Type.layout oldTy']))
                   else ()
             in
@@ -160,7 +160,7 @@ struct
                  (NONE, NONE) => NONE
                | (SOME oldTys, SOME ts) =>
                     SOME (Vector.map2 (oldTys, ts, getTy))
-               | _ => Error.bug ("SplitTypes.Value.coerce: Inconsistent " ^ name)
+               | _ => Error.bug ("SplitTypes.TypeInfo.coerce: Inconsistent " ^ name)
          fun loopBlock block = block
          val functions =
             List.map(functions, fn f =>
@@ -170,7 +170,7 @@ struct
                   val { args = argTys, raises = raiseTys, returns = returnTys } = func name
                in
                   Function.new
-                  { args = Vector.map2 (args, argTys, fn ((v, oldTy), t) => (v, getTy (oldTy, t))),
+                  { args = Vector.map2 (args, argTys, fn ((v, oldTy), typeInfo) => (v, getTy (oldTy, typeInfo))),
                     blocks = Vector.map (blocks, loopBlock),
                     mayInline = mayInline,
                     name = name,
