@@ -18,7 +18,9 @@ struct
       fun layoutCon (ConData (con, ts)) =
          Layout.fill [ Con.layout con, Vector.layout layout ts ]
       and layoutFresh (ty, cons) =
-         Layout.fill [ Option.layout Tycon.layout ty, Layout.str " # " ]
+         Layout.fill [ Option.layout Tycon.layout ty, Layout.str " # ",
+                        (* can't layout arguments due to recursion *)
+                       Ref.layout (List.layout (fn ConData (con, _) => Con.layout con)) cons]
       and layout (t: t) =
          case t of
               Unchanged t => Type.layout t
@@ -61,6 +63,17 @@ struct
 
       fun mergeFresh ((tycon1, cons1), (tycon2, cons2)) =
          let
+            val _ = Control.diagnostics
+               (fn display =>
+                     display ( Layout.fill [
+                     Layout.str "Merging ",
+                     Option.layout Tycon.layout tycon1,
+                     Layout.str " with ",
+                     Ref.layout (List.layout layoutCon) cons1,
+                     Layout.str " and ",
+                     Option.layout Tycon.layout tycon2,
+                     Layout.str " with ",
+                     Ref.layout (List.layout layoutCon) cons2]))
             val tycon = (optionJoin (tycon1, tycon2, Tycon.equals,
             fn (tycon1', tycon2') => Error.bug "Inconsistent tycons"))
             val _ = cons1 := List.append (!cons1, !cons2)
@@ -89,48 +102,79 @@ struct
                  (* delayed types will be dropped, reducing memory in some cases *)
       fun fromType (ty: Type.t) =
          case Type.dest ty of
-              Type.Datatype tycon => Fresh (Equatable.new (SOME tycon, ref []))
+              Type.Datatype tycon =>
+                  if Tycon.equals (tycon, Tycon.bool)
+                  then Unchanged ty
+                  else Fresh (Equatable.new (SOME tycon, ref []))
             | Type.Tuple ts => Tuple (Vector.map(ts, fromType))
             | _ => Unchanged ty
-      fun fromCon {con: Con.t, args: t vector} = Fresh (Equatable.delay (fn ()
-         => (NONE, ref [ConData (con, args)])))
+      fun fromCon {con: Con.t, args: t vector} =
+         if Con.equals (con, Con.truee) orelse Con.equals (con, Con.falsee)
+            then Unchanged Type.bool
+            else Fresh (Equatable.new (NONE, ref [ConData (con, args)]))
       fun fromTuple (vect: t vector) = Tuple vect
       fun const (c: Const.t): t = fromType (Type.ofConst c)
                  end
 
    fun transform (program as Program.T {datatypes, globals, functions, main}): Program.t =
       let
+         fun fromCon {con: Con.t, args: TypeInfo.t vector} =
+            let
+               val _ = Control.diagnostics
+                  (fn display =>
+                     display ( Layout.fill
+                        [ Layout.str "Analyzing conApp ",
+                          Con.layout con,
+                          Layout.str " on ",
+                          Vector.layout TypeInfo.layout args]))
+            in
+               TypeInfo.fromCon {con=con,args=args}
+            end
+         fun fromType (ty: Type.t) =
+            let
+               val _ = Control.diagnostics
+                  (fn display =>
+                     display ( Layout.fill
+                        [ Layout.str "Analyzing type ",
+                          Type.layout ty ]))
+            in
+               TypeInfo.fromType ty
+            end
          val { value, func, label } =
             analyze
             { coerce = fn {from, to} => TypeInfo.coerce (from, to),
-              conApp = TypeInfo.fromCon,
+              conApp = fromCon,
               const = TypeInfo.const,
               filter = fn _ => (),
               filterWord = fn _ => (),
-              fromType = TypeInfo.fromType,
+              fromType = fromType,
               layout = TypeInfo.layout,
               primApp = fn { resultType: Type.t, ...} => TypeInfo.fromType resultType,
               program = program,
               select = fn { resultType: Type.t, ...} => TypeInfo.fromType resultType,
               tuple = TypeInfo.fromTuple,
-              useFromTypeOnBinds = false }
+              useFromTypeOnBinds = true }
+
+         (* value, old type, new type *)
+         (* old type mostly to verify consistency *)
+         val tyMap : (TypeInfo.t * Type.t * Type.t) HashSet.t =
+            HashSet.new {hash = fn (v, oldTy, newTy) => TypeInfo.hash v}
+
          fun makeTy ty value =
             (case value of
                   TypeInfo.Unchanged ty => ty
                 | TypeInfo.Fresh eq =>
                      (case Equatable.value eq of
                            (SOME tycon, cons) => Type.datatypee (Tycon.new tycon)
-                         | (NONE, _) =>
-                              (case Type.dest ty of
-                                    Type.Datatype tycon => Type.datatypee (Tycon.new tycon)
-                                  | _ => ty))
-                                  | TypeInfo.Tuple ts => Type.tuple (Vector.map (ts, makeTy ty)))
-         (* value, old type, new type *)
-         (* old type mostly to verify consistency *)
-         val tyMap : (TypeInfo.t * Type.t * Type.t) HashSet.t =
-            HashSet.new {hash = fn (v, oldTy, newTy) => TypeInfo.hash v}
-
-         fun getTy (oldTy, typeInfo) =
+                         | (NONE, cons) =>
+                              Error.bug (Layout.toString (Layout.fill [
+                                 Layout.str "SplitTypes.transform.makeTy: ", TypeInfo.layout value,
+                                 Layout.str " for type ", Type.layout ty])))
+                | TypeInfo.Tuple typeInfos =>
+                     (case Type.dest ty of
+                           Type.Tuple tys => Type.tuple (Vector.map2 (tys, typeInfos, getTy))
+                         | _ => Error.bug "SplitTypes.transform.makeTy: TypeInfo was Tuple but type wasn't"))
+         and getTy (oldTy, typeInfo) =
             let
                val (_, oldTy', newTy) =
                   HashSet.lookupOrInsert (tyMap, TypeInfo.hash typeInfo,
@@ -141,19 +185,15 @@ struct
                val _ =
                   if not (Type.equals (oldTy, oldTy'))
                   then Error.bug (Layout.toString (Layout.fill [
-                       Layout.str "SplitTypes.TypeInfo.coerce: Inconsistent types from analyse: ",
-                       Type.layout oldTy, Layout.str " already used from ", Type.layout oldTy']))
+                       Layout.str "SplitTypes.TypeInfo.coerce: Inconsistent types from analysis: ",
+                       TypeInfo.layout typeInfo, Layout.str " unified with ",
+                       Type.layout oldTy, Layout.str " and ", Type.layout oldTy']))
                   else ()
             in
                newTy
             end
 
-         val globals =
-            Vector.map(globals,
-            fn st as Statement.T {exp, ty, var=varopt} =>
-               (case varopt of
-                     NONE => st
-                   | SOME var => Statement.T {exp=exp, ty=getTy (ty, (value var)), var=varopt}))
+
 
          fun mergeTyVectorOpt (oldTysOpt, tsOpt, name) =
             case (oldTysOpt, tsOpt) of
@@ -161,7 +201,36 @@ struct
                | (SOME oldTys, SOME ts) =>
                     SOME (Vector.map2 (oldTys, ts, getTy))
                | _ => Error.bug ("SplitTypes.TypeInfo.coerce: Inconsistent " ^ name)
-         fun loopBlock block = block
+
+
+         fun loopExp exp =
+            exp
+         fun loopStatement (st as Statement.T {exp, ty, var=varopt}) =
+            let
+               val _ = Control.diagnostics
+                  (fn display =>
+                        display ( Layout.fill [
+                        Layout.str "Looping over statement ",
+                        Statement.layout st]))
+               val newTy =
+                  case varopt of
+                        NONE => ty
+                      | SOME var => getTy (ty, (value var))
+               val newExp = loopExp exp
+            in
+               Statement.T {exp=newExp, ty=newTy, var=varopt}
+            end
+         fun loopTransfer transfer =
+            transfer
+         fun loopBlock (Block.T { args, label, statements, transfer }) =
+            let
+               val newArgs = Vector.map (args, fn (var, oldTy) => (var, getTy (oldTy, value var)))
+               val newStatements = Vector.map (statements, loopStatement)
+            in
+               Block.T {args=newArgs, label=label, statements=newStatements ,transfer=transfer}
+            end
+
+
          val functions =
             List.map(functions, fn f =>
                let
@@ -179,6 +248,47 @@ struct
                     start = start
                     }
                end)
+         val globals =
+            Vector.map(globals, loopStatement)
+
+
+
+         val datatypes =
+            let
+               fun hardLookup typeInfo =
+                  let
+                     val found =
+                        HashSet.peek (tyMap, TypeInfo.hash typeInfo,
+                           fn (t', oldTy, newTy) =>
+                              TypeInfo.equated (typeInfo, t'))
+                  in
+                     case found of
+                          SOME (_,_,ty) => ty
+                        | NONE => Error.bug "SplitTypes.datatypes.hardLookup: type info not found"
+                  end
+               fun reifyCon (TypeInfo.ConData (con, ts)) =
+                  {con=con, args=Vector.map (ts, hardLookup)}
+               fun reifyCons conList =
+                  Vector.fromList (List.map (conList, reifyCon))
+               val bool =
+                  case Vector.peek (datatypes, fn Datatype.T {tycon, ...} =>
+                     Tycon.equals (tycon, Tycon.bool))
+                  of
+                       SOME ty => ty
+                     | NONE => Error.bug "SplitTypes.datatypes.bool: Could not find boolean datatype"
+            in
+               (Vector.fromList (bool ::
+                  (List.keepAllMap (HashSet.toList tyMap,
+                     fn (typeInfo, _, newTy) =>
+                        case typeInfo of
+                             TypeInfo.Fresh eq =>
+                                 (case Equatable.value eq of
+                                       (_, consRef) =>
+                                          SOME (Datatype.T
+                                          {cons=reifyCons (!consRef), tycon=Type.deDatatype newTy }))
+                           | _ => NONE))))
+            end
+
          val program =
             Program.T
             { datatypes = datatypes,
