@@ -13,6 +13,7 @@ struct
       (* each other type has a constructor set with arguments to coerce *)
                  | Fresh of (Tycon.t option * con list ref) Equatable.t
                  | Tuple of t vector
+                 | Heap of t (* Ref Weak or Vector *)
       and con = ConData of Con.t * (t vector)
 
       fun layoutCon (ConData (con, ts)) =
@@ -25,7 +26,8 @@ struct
          case t of
               Unchanged t => Type.layout t
             | Fresh eq => Equatable.layout (eq, layoutFresh)
-            | Tuple vect => Vector.layout layout vect
+            | Tuple vect => Layout.tuple (Vector.toList (Vector.map(vect, layout)))
+            | Heap t => Layout.fill [ layout t, Layout.str " heap" ]
 
       (* lattice join of options, where NONE is taken as less than SOME a
        * calling inequal if inconsistent
@@ -52,6 +54,7 @@ struct
                     | SOME tycon => Tycon.hash tycon)
                     (* also fairly arbitrary, other than 17 being a good enough prime *)
             | Tuple vect => Vector.fold (vect, 0w1, fn (t, c) => c * 0wx11 + hash t)
+            | Heap t => 0wx11 * hash t
 
       (* Equality, accounting for equating, so it may become more coarse over time *)
       fun equated (t1, t2) =
@@ -59,6 +62,7 @@ struct
               (Unchanged ty1, Unchanged ty2) => Type.equals (ty1, ty2)
             | (Fresh eq1, Fresh eq2) => Equatable.equals (eq1, eq2)
             | (Tuple tup1, Tuple tup2) => Vector.equals (tup1, tup2, equated)
+            | (Heap t1, Heap t2) => equated (t1, t2)
             | _ => false
 
       fun mergeFresh ((tycon1, cons1), (tycon2, cons2)) =
@@ -91,23 +95,17 @@ struct
       and coerce (from, to) =
          case (from, to) of
               (Fresh a, Fresh b) => Equatable.equate (a, b, mergeFresh)
-            | (Tuple a, Tuple b) =>
-                 let
-                    val _ = Vector.map2 (a, b, coerce)
-                 in
-                    ()
-                 end
+            | (Tuple a, Tuple b) => Vector.foreach2 (a, b, coerce)
             | (Unchanged t1, Unchanged t2) =>
                  if Type.equals(t1, t2)
                  then ()
                  else Error.bug "SplitTypes.TypeInfo.coerce: Bad merge of unchanged types"
+            | (Heap t1, Heap t2) =>
+                 coerce (t1, t2)
             | _ =>
                  Error.bug (Layout.toString (Layout.fill [
                  Layout.str "SplitTypes.TypeInfo.coerce: Strange coercion: ",
                  layout from, Layout.str " coerced to ", layout to ]))
-
-                 (* TODO: Non-constructor types should always be equated *)
-                 (* delayed types will be dropped, reducing memory in some cases *)
       fun fromType (ty: Type.t) =
          case Type.dest ty of
               Type.Datatype tycon =>
@@ -115,6 +113,10 @@ struct
                   then Unchanged ty
                   else Fresh (Equatable.new (SOME tycon, ref []))
             | Type.Tuple ts => Tuple (Vector.map(ts, fromType))
+            | Type.Array t => Heap (fromType t)
+            | Type.Ref t => Heap (fromType t)
+            | Type.Vector t => Heap (fromType t)
+            | Type.Weak t => Heap (fromType t)
             | _ => Unchanged ty
       fun fromCon {con: Con.t, args: t vector} =
          if Con.equals (con, Con.truee) orelse Con.equals (con, Con.falsee)
@@ -153,6 +155,40 @@ struct
             case tuple of
                  TypeInfo.Tuple ts => Vector.sub (ts, offset)
                | _ => Error.bug "SplitTypes.transform.fromTuple: Tried to select from non-tuple info"
+         fun primApp {args, prim, resultType, resultVar = _, targs} =
+            let
+               fun derefPrim args =
+                  case Vector.sub (args, 0) of
+                       TypeInfo.Heap t => t
+                     | _ => Error.bug "SplitTypes.transform.primApp: Strange deref"
+               fun refPrim args = TypeInfo.Heap (Vector.sub (args, 0))
+               fun assignPrim args = let
+                  val _ = TypeInfo.coerce (Vector.sub (args, 0), TypeInfo.Heap (Vector.sub (args, 1)))
+               in
+                  TypeInfo.fromType Type.unit
+               end
+               fun updatePrim args = let
+                  val _ = TypeInfo.coerce (Vector.sub (args, 0), TypeInfo.Heap (Vector.sub (args, 2)))
+               in
+                  TypeInfo.fromType resultType
+               end
+               val result =
+                  case Prim.name prim of
+                       Prim.Name.Array_sub => derefPrim args
+                     | Prim.Name.Array_toArray => Vector.sub (args, 0)
+                     | Prim.Name.Array_toVector => Vector.sub (args, 0)
+                     | Prim.Name.Array_update => updatePrim args
+                     | Prim.Name.Ref_ref => refPrim args
+                     | Prim.Name.Ref_deref => derefPrim args
+                     | Prim.Name.Ref_assign => assignPrim args
+                     | Prim.Name.Vector_sub => derefPrim args
+                     | Prim.Name.Vector_vector => refPrim args
+                     | Prim.Name.Weak_get => refPrim args
+                     | Prim.Name.Weak_new => derefPrim args
+                     | _ => TypeInfo.fromType resultType
+            in
+               result
+            end
          val { value, func, label } =
             analyze
             { coerce = fn {from, to} => TypeInfo.coerce (from, to),
@@ -162,7 +198,7 @@ struct
               filterWord = fn _ => (),
               fromType = fromType,
               layout = TypeInfo.layout,
-              primApp = fn { resultType: Type.t, ...} => TypeInfo.fromType resultType,
+              primApp = primApp,
               program = program,
               select = fromTuple,
               tuple = TypeInfo.fromTuple,
@@ -174,7 +210,7 @@ struct
             HashSet.new {hash = fn (v, oldTy, newTy) => TypeInfo.hash v}
 
          fun makeTy ty value =
-            (case value of
+            case value of
                   TypeInfo.Unchanged ty => ty
                 | TypeInfo.Fresh eq =>
                      (case Equatable.value eq of
@@ -186,7 +222,14 @@ struct
                 | TypeInfo.Tuple typeInfos =>
                      (case Type.dest ty of
                            Type.Tuple tys => Type.tuple (Vector.map2 (tys, typeInfos, getTy))
-                         | _ => Error.bug "SplitTypes.transform.makeTy: TypeInfo was Tuple but type wasn't"))
+                         | _ => Error.bug "SplitTypes.transform.makeTy: TypeInfo was Tuple but type wasn't")
+                | TypeInfo.Heap typeInfo' =>
+                     (case Type.dest ty of
+                           Type.Array oldTy' => Type.array (getTy (oldTy', typeInfo'))
+                         | Type.Ref oldTy' => Type.reff (getTy (oldTy', typeInfo'))
+                         | Type.Weak oldTy' => Type.weak (getTy (oldTy', typeInfo'))
+                         | Type.Vector oldTy' => Type.vector (getTy (oldTy', typeInfo'))
+                         | _ => Error.bug "SplitTypes.transform.makeTy: TypeInfo was Heap but type wasn't Ref/Weak/Vector")
          and getTy (oldTy, typeInfo) =
             let
                val (_, oldTy', newTy) =
@@ -196,7 +239,7 @@ struct
                      fn () =>
                         (typeInfo, oldTy, makeTy oldTy typeInfo))
                val _ =
-                  if not (Type.equals (oldTy, oldTy'))
+                  if (not (Type.equals (oldTy, oldTy'))) andalso false
                   then Error.bug (Layout.toString (Layout.fill [
                        Layout.str "SplitTypes.TypeInfo.coerce: Inconsistent types from analysis: ",
                        TypeInfo.layout typeInfo, Layout.str " unified with ",
