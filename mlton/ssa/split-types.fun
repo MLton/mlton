@@ -75,8 +75,16 @@ struct
                      Layout.str " with ",
                      Ref.layout (List.layout layoutCon) cons2]))
             val tycon = (optionJoin (tycon1, tycon2, Tycon.equals,
-            fn (tycon1', tycon2') => Error.bug "Inconsistent tycons"))
-            val _ = cons1 := List.append (!cons1, !cons2)
+               fn (tycon1', tycon2') => Error.bug "Inconsistent tycons"))
+            val _ = List.foreach (!cons1, fn conData as ConData (con1, args1) =>
+               let
+                  val found = List.peek (!cons2, fn ConData (con2, _) =>
+                     Con.equals (con1, con2))
+               in
+                  case found of
+                       SOME (ConData (con2, args2)) => Vector.foreach2(args1, args2, coerce)
+                     | NONE => cons2 := conData :: !cons2
+               end)
          in
             (tycon, cons1)
          end
@@ -140,18 +148,23 @@ struct
             in
                TypeInfo.fromType ty
             end
+         (* TODO: Choose type from tuple instead *)
+         fun fromTuple { offset, tuple, resultType} =
+            case tuple of
+                 TypeInfo.Tuple ts => Vector.sub (ts, offset)
+               | _ => Error.bug "SplitTypes.transform.fromTuple: Tried to select from non-tuple info"
          val { value, func, label } =
             analyze
             { coerce = fn {from, to} => TypeInfo.coerce (from, to),
               conApp = fromCon,
               const = TypeInfo.const,
-              filter = fn _ => (),
+              filter = fn (ty, con, args) => TypeInfo.coerce (ty, TypeInfo.fromCon {con=con,args=args}),
               filterWord = fn _ => (),
               fromType = fromType,
               layout = TypeInfo.layout,
               primApp = fn { resultType: Type.t, ...} => TypeInfo.fromType resultType,
               program = program,
-              select = fn { resultType: Type.t, ...} => TypeInfo.fromType resultType,
+              select = fromTuple,
               tuple = TypeInfo.fromTuple,
               useFromTypeOnBinds = true }
 
@@ -266,6 +279,8 @@ struct
                           SOME (_,_,ty) => ty
                         | NONE => Error.bug "SplitTypes.datatypes.hardLookup: type info not found"
                   end
+               fun hash (ty, oldCon) = Type.hash ty + 0wx11 * Con.hash oldCon
+               val conMap = HashSet.new {hash = fn (ty, oldCon, newCon) => hash (ty, oldCon)}
                fun reifyCon (TypeInfo.ConData (con, ts)) =
                   {con=con, args=Vector.map (ts, hardLookup)}
                fun reifyCons conList =
