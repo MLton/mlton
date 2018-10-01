@@ -76,14 +76,14 @@ struct
                      Ref.layout (List.layout layoutCon) cons2]))
             val tycon = (optionJoin (tycon1, tycon2, Tycon.equals,
                fn (tycon1', tycon2') => Error.bug "Inconsistent tycons"))
-            val _ = List.foreach (!cons1, fn conData as ConData (con1, args1) =>
+            val _ = List.foreach (!cons2, fn conData as ConData (con1, args1) =>
                let
-                  val found = List.peek (!cons2, fn ConData (con2, _) =>
+                  val found = List.peek (!cons1, fn ConData (con2, _) =>
                      Con.equals (con1, con2))
                in
                   case found of
                        SOME (ConData (con2, args2)) => Vector.foreach2(args1, args2, coerce)
-                     | NONE => cons2 := conData :: !cons2
+                     | NONE => cons1 := conData :: !cons1
                end)
          in
             (tycon, cons1)
