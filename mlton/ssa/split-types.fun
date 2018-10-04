@@ -250,17 +250,27 @@ struct
             end
 
 
+         fun remappedConsHash (oldCon, ty) = Type.hash ty + 0wx11 * Con.hash oldCon
+         val remappedCons: (Con.t * Type.t * Con.t) HashSet.t =
+            HashSet.new {hash = fn (oldCon, ty, _) => remappedConsHash (oldCon, ty)}
+         fun remapCon (oldCon, newTy) =
+            if Con.equals (oldCon, Con.truee) orelse Con.equals (oldCon, Con.falsee)
+            then oldCon
+            else #3 (HashSet.lookupOrInsert (remappedCons, remappedConsHash (oldCon, newTy),
+               fn (con2, ty2, _) => Type.equals (newTy, ty2) andalso Con.equals (oldCon, con2),
+               fn () => (oldCon, newTy, Con.new oldCon)))
 
-         fun mergeTyVectorOpt (oldTysOpt, tsOpt, name) =
-            case (oldTysOpt, tsOpt) of
-                 (NONE, NONE) => NONE
-               | (SOME oldTys, SOME ts) =>
-                    SOME (Vector.map2 (oldTys, ts, getTy))
-               | _ => Error.bug ("SplitTypes.TypeInfo.coerce: Inconsistent " ^ name)
-
-
-         fun loopExp exp =
-            exp
+         fun loopExp (exp, newTy) =
+            case exp of
+                 Exp.ConApp {con, args} =>
+                     let
+                        val newCon = remapCon (con, newTy)
+                     in
+                        Exp.ConApp {con=newCon, args=args}
+                     end
+               (*| PrimApp {prim, targs, args} =>
+                  PrimApp {prim=loopPrim prim, targs=*)
+               | _ => exp
          fun loopStatement (st as Statement.T {exp, ty, var=varopt}) =
             let
                val _ = Control.diagnostics
@@ -271,8 +281,8 @@ struct
                val newTy =
                   case varopt of
                         NONE => ty
-                      | SOME var => getTy (ty, (value var))
-               val newExp = loopExp exp
+                      | SOME var => getTy (ty, value var)
+               val newExp = loopExp (exp, newTy)
             in
                Statement.T {exp=newExp, ty=newTy, var=varopt}
             end
@@ -287,6 +297,14 @@ struct
             end
 
 
+         fun mergeTyVectorOpt (oldTysOpt, tsOpt, name) =
+            case (oldTysOpt, tsOpt) of
+                 (NONE, NONE) => NONE
+               | (SOME oldTys, SOME ts) =>
+                    SOME (Vector.map2 (oldTys, ts, getTy))
+               | _ => Error.bug ("SplitTypes.TypeInfo.coerce: Inconsistent " ^ name)
+         val globals =
+            Vector.map(globals, loopStatement)
          val functions =
             List.map(functions, fn f =>
                let
@@ -304,12 +322,10 @@ struct
                     start = start
                     }
                end)
-         val globals =
-            Vector.map(globals, loopStatement)
 
-
-
-         val datatypes =
+         (* this must occur after the loops to ensure that we can find types correctly.
+          * The con remapping is shared though *)
+         fun reifyCon newTy (TypeInfo.ConData (con, ts)) =
             let
                fun hardLookup typeInfo =
                   let
@@ -322,12 +338,15 @@ struct
                           SOME (_,_,ty) => ty
                         | NONE => Error.bug "SplitTypes.datatypes.hardLookup: type info not found"
                   end
+               val newCon = remapCon (con, newTy)
+            in
+               {con=newCon, args=Vector.map (ts, hardLookup)}
+            end
+         fun reifyCons newTy conList =
+            Vector.fromList (List.map (conList, reifyCon newTy))
+         val datatypes =
+            let
                fun hash (ty, oldCon) = Type.hash ty + 0wx11 * Con.hash oldCon
-               val conMap = HashSet.new {hash = fn (ty, oldCon, newCon) => hash (ty, oldCon)}
-               fun reifyCon (TypeInfo.ConData (con, ts)) =
-                  {con=con, args=Vector.map (ts, hardLookup)}
-               fun reifyCons conList =
-                  Vector.fromList (List.map (conList, reifyCon))
                val bool =
                   case Vector.peek (datatypes, fn Datatype.T {tycon, ...} =>
                      Tycon.equals (tycon, Tycon.bool))
@@ -343,7 +362,7 @@ struct
                                  (case Equatable.value eq of
                                        (_, consRef) =>
                                           SOME (Datatype.T
-                                          {cons=reifyCons (!consRef), tycon=Type.deDatatype newTy }))
+                                          {cons=reifyCons newTy (!consRef), tycon=Type.deDatatype newTy }))
                            | _ => NONE))))
             end
 
