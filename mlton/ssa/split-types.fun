@@ -262,8 +262,20 @@ fun transform (program as Program.T {datatypes, globals, functions, main}): Prog
                   in
                      Exp.ConApp {con=newCon, args=args}
                   end
-            (*| PrimApp {prim, targs, args} =>
-               PrimApp {prim=loopPrim prim, targs=*)
+            | Exp.PrimApp {prim, targs, args} =>
+                  let
+                     val argTys = Vector.map (args, fn arg => getTy (value arg))
+                     val newTargs = Prim.extractTargs (prim,
+                        {args=argTys,
+                         result=newTy,
+                         typeOps = {deArray = Type.deArray,
+                                    deArrow = fn _ => Error.bug "splitTypes.transform.loopExp: deArrow primApp",
+                                    deRef = Type.deRef,
+                                    deVector = Type.deVector,
+                                    deWeak = Type.deWeak}})
+                  in
+                     Exp.PrimApp {prim=prim, targs=newTargs, args=args}
+                  end
             | _ => exp
       fun loopStatement (st as Statement.T {exp, ty, var=varopt}) =
          let
