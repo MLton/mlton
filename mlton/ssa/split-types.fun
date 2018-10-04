@@ -283,23 +283,26 @@ fun transform (program as Program.T {datatypes, globals, functions, main}): Prog
       fun loopCases (cases, test) =
          case cases of
               Cases.Con cases' =>
-                 let
-                 in
-                    cases
-                 end
+                  Cases.Con (Vector.map (cases',
+                     fn (con, label) =>
+                        (remapCon (con, getTy (value test)), label)))
             | Cases.Word _ => cases
       fun loopTransfer transfer =
          case transfer of
-              (*Transfer.Case {cases, test, ...} =>
-               loopCases (cases, test)*)
-              _ => transfer
+              Transfer.Case {cases, test, default} =>
+                  let
+                    val newCases = loopCases (cases, test)
+                  in
+                     Transfer.Case {cases=newCases, test=test, default=default}
+                  end
+            | _ => transfer
       fun loopBlock (Block.T { args, label, statements, transfer }) =
          let
             val newArgs = Vector.map (args, fn (var, oldTy) => (var, getTy (value var)))
             val newStatements = Vector.map (statements, loopStatement)
             val newTransfer = loopTransfer transfer
          in
-            Block.T {args=newArgs, label=label, statements=newStatements ,transfer=transfer}
+            Block.T {args=newArgs, label=label, statements=newStatements ,transfer=newTransfer}
          end
 
 
