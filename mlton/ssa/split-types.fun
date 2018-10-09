@@ -85,16 +85,26 @@ struct
                      Layout.str " with ",
                      Ref.layout (List.layout layoutCon) cons2]))
             val tycon = (optionJoin (tycon1, tycon2, Tycon.equals,
-               fn (tycon1', tycon2') => Error.bug "Inconsistent tycons"))
-            val _ = List.foreach (!cons2, fn conData as ConData (con1, args1) =>
+               fn (_, _) => Error.bug "splitTypes.TypeInfo.mergeFresh: Inconsistent tycons"))
+            val coerceList = ref []
+            val _ = List.foreach (!cons2, fn conData as ConData (con2, args2) =>
                let
-                  val found = List.peek (!cons1, fn ConData (con2, _) =>
+                  val found = List.peek (!cons1, fn ConData (con1, _) =>
                      Con.equals (con1, con2))
                in
                   case found of
-                       SOME (ConData (con2, args2)) => Vector.foreach2(args1, args2, coerce)
+                       SOME (ConData (_, args1)) => coerceList := (args1, args2) :: !coerceList
                      | NONE => cons1 := conData :: !cons1
                end)
+            val _ = List.foreach(!coerceList, fn (args1, args2) =>
+               Vector.foreach2(args1, args2, coerce))
+            val _ = Control.diagnostics
+               (fn display =>
+                     display ( Layout.fill [
+                     Layout.str "Merge result is ",
+                     Option.layout Tycon.layout tycon,
+                     Layout.str " # ",
+                     Ref.layout (List.layout layoutCon) cons1]))
          in
             (tycon, cons1)
          end
