@@ -199,7 +199,9 @@ fun transform (program as Program.T {datatypes, globals, functions, main}): Prog
                   | Prim.Name.Ref_deref => derefPrim args
                   | Prim.Name.Ref_assign => assignPrim TypeInfo.Ref args
                   | Prim.Name.Vector_sub => derefPrim args
-                  | Prim.Name.Vector_vector => refPrim TypeInfo.Vector args
+                  | Prim.Name.Vector_vector => TypeInfo.Heap
+                        (TypeInfo.fromType (Vector.sub (targs, 0)), TypeInfo.Vector)
+                     (* todo, should merge all types used together *)
                   | Prim.Name.Weak_get => refPrim TypeInfo.Weak args
                   | Prim.Name.Weak_new => derefPrim args
                   | _ => TypeInfo.fromType resultType
