@@ -167,7 +167,6 @@ fun transform (program as Program.T {datatypes, globals, functions, main}): Prog
          in
             TypeInfo.fromType ty
          end
-      (* TODO: Choose type from tuple instead *)
       fun fromTuple { offset, tuple, resultType} =
          case tuple of
               TypeInfo.Tuple ts => Vector.sub (ts, offset)
@@ -187,26 +186,24 @@ fun transform (program as Program.T {datatypes, globals, functions, main}): Prog
             fun updatePrim heapType args = let
                val _ = TypeInfo.coerce (Vector.sub (args, 0), TypeInfo.Heap (Vector.sub (args, 2), heapType))
             in
-               TypeInfo.fromType resultType
+               Vector.sub (args, 0)
             end
-            val result =
-               case Prim.name prim of
-                    Prim.Name.Array_sub => derefPrim args
-                  | Prim.Name.Array_toArray => Vector.sub (args, 0)
-                  | Prim.Name.Array_toVector => Vector.sub (args, 0)
-                  | Prim.Name.Array_update => updatePrim TypeInfo.Array args
-                  | Prim.Name.Ref_ref => refPrim TypeInfo.Ref args
-                  | Prim.Name.Ref_deref => derefPrim args
-                  | Prim.Name.Ref_assign => assignPrim TypeInfo.Ref args
-                  | Prim.Name.Vector_sub => derefPrim args
-                  | Prim.Name.Vector_vector => TypeInfo.Heap
-                        (TypeInfo.fromType (Vector.sub (targs, 0)), TypeInfo.Vector)
-                     (* todo, should merge all types used together *)
-                  | Prim.Name.Weak_get => refPrim TypeInfo.Weak args
-                  | Prim.Name.Weak_new => derefPrim args
-                  | _ => TypeInfo.fromType resultType
          in
-            result
+            case Prim.name prim of
+                 Prim.Name.Array_sub => derefPrim args
+               | Prim.Name.Array_toArray => Vector.sub (args, 0)
+               | Prim.Name.Array_toVector => Vector.sub (args, 0)
+               | Prim.Name.Array_update => updatePrim TypeInfo.Array args
+               | Prim.Name.Ref_ref => refPrim TypeInfo.Ref args
+               | Prim.Name.Ref_deref => derefPrim args
+               | Prim.Name.Ref_assign => assignPrim TypeInfo.Ref args
+               | Prim.Name.Vector_sub => derefPrim args
+               | Prim.Name.Vector_vector => TypeInfo.Heap
+                  (* todo, should merge all types used together *)
+                     (TypeInfo.fromType (Vector.sub (targs, 0)), TypeInfo.Vector)
+               | Prim.Name.Weak_get => refPrim TypeInfo.Weak args
+               | Prim.Name.Weak_new => derefPrim args
+               | _ => TypeInfo.fromType resultType
          end
       val { value, func, label } =
          analyze
@@ -226,33 +223,38 @@ fun transform (program as Program.T {datatypes, globals, functions, main}): Prog
       val tyMap : (TypeInfo.t * Type.t) HashSet.t =
          HashSet.new {hash = fn (v, newTy) => TypeInfo.hash v}
 
-      fun makeTy value =
-         case value of
-               TypeInfo.Unchanged ty => ty
-             | TypeInfo.Fresh eq =>
-                  (case Equatable.value eq of
-                        (SOME tycon, cons) => Type.datatypee (Tycon.new tycon)
-                      | (NONE, cons) =>
-                           Error.bug (Layout.toString (Layout.fill [
-                              Layout.str "SplitTypes.transform.makeTy: ", TypeInfo.layout value])))
-             | TypeInfo.Tuple typeInfos =>
-                  Type.tuple (Vector.map (typeInfos, getTy))
-             | TypeInfo.Heap (typeInfo', heapType) =>
-                  (case heapType of
-                        TypeInfo.Array => Type.array (getTy typeInfo')
-                      | TypeInfo.Ref => Type.reff (getTy typeInfo')
-                      | TypeInfo.Weak => Type.weak (getTy typeInfo')
-                      | TypeInfo.Vector => Type.vector (getTy typeInfo'))
-      and getTy typeInfo =
+
+      fun getTy typeInfo =
          let
-            val (_, newTy) =
-               HashSet.lookupOrInsert (tyMap, TypeInfo.hash typeInfo,
-                  fn (t', newTy) =>
-                     TypeInfo.equated (typeInfo, t'),
-                  fn () =>
-                     (typeInfo, makeTy typeInfo))
+            fun makeTy eq =
+               (case Equatable.value eq of
+                     (SOME tycon, cons) => Type.datatypee (Tycon.new tycon)
+                   | (NONE, cons) =>
+                        Error.bug (Layout.toString (Layout.fill [
+                           Layout.str "SplitTypes.transform.makeTy: ", TypeInfo.layout
+                              (TypeInfo.Fresh eq)])))
          in
-            newTy
+            case typeInfo of
+                  TypeInfo.Unchanged ty => ty
+                | TypeInfo.Fresh eq =>
+                  let
+                     val (_, newTy) =
+                        HashSet.lookupOrInsert (tyMap, TypeInfo.hash typeInfo,
+                           fn (t', newTy) =>
+                              TypeInfo.equated (typeInfo, t'),
+                           fn () =>
+                              (typeInfo, makeTy eq))
+                  in
+                     newTy
+                  end
+                | TypeInfo.Tuple typeInfos =>
+                     Type.tuple (Vector.map (typeInfos, getTy))
+                | TypeInfo.Heap (typeInfo', heapType) =>
+                     (case heapType of
+                           TypeInfo.Array => Type.array (getTy typeInfo')
+                         | TypeInfo.Ref => Type.reff (getTy typeInfo')
+                         | TypeInfo.Weak => Type.weak (getTy typeInfo')
+                         | TypeInfo.Vector => Type.vector (getTy typeInfo'))
          end
 
 
@@ -322,7 +324,7 @@ fun transform (program as Program.T {datatypes, globals, functions, main}): Prog
             | _ => transfer
       fun loopBlock (Block.T { args, label, statements, transfer }) =
          let
-            val newArgs = Vector.map (args, fn (var, oldTy) => (var, getTy (value var)))
+            val newArgs = Vector.map (args, fn (var, _) => (var, getTy (value var)))
             val newStatements = Vector.map (statements, loopStatement)
             val newTransfer = loopTransfer transfer
          in
@@ -360,20 +362,9 @@ fun transform (program as Program.T {datatypes, globals, functions, main}): Prog
        * The con remapping is shared though *)
       fun reifyCon newTy (TypeInfo.ConData (con, ts)) =
          let
-            fun hardLookup typeInfo =
-               let
-                  val found =
-                     HashSet.peek (tyMap, TypeInfo.hash typeInfo,
-                        fn (t', newTy) =>
-                           TypeInfo.equated (typeInfo, t'))
-               in
-                  case found of
-                       SOME (_,ty) => ty
-                     | NONE => Error.bug "SplitTypes.datatypes.hardLookup: type info not found"
-               end
             val newCon = remapCon (con, newTy)
          in
-            {con=newCon, args=Vector.map (ts, hardLookup)}
+            {con=newCon, args=Vector.map (ts, getTy)}
          end
       fun reifyCons newTy conList =
          Vector.fromList (List.map (conList, reifyCon newTy))
@@ -395,7 +386,7 @@ fun transform (program as Program.T {datatypes, globals, functions, main}): Prog
                               (case Equatable.value eq of
                                     (_, consRef) =>
                                        SOME (Datatype.T
-                                       {cons=reifyCons newTy (!consRef), tycon=Type.deDatatype newTy }))
+                                       {cons=reifyCons newTy (!consRef), tycon=Type.deDatatype newTy}))
                         | _ => NONE))))
          end
 
