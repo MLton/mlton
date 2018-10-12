@@ -562,6 +562,9 @@ struct
                                 {oper = Instruction.SBB, ...})
                              => (true, if b then b' else true)
                              | Assembly.Instruction
+                               (Instruction.MOV _)
+                             => (b, b')
+                             | Assembly.Instruction
                                (Instruction.SETcc
                                 {condition = Instruction.C, ...})
                              => (true, if b then b' else true)
@@ -2853,6 +2856,9 @@ struct
                              | Assembly.Instruction
                                (Instruction.BinAL {oper = Instruction.SBB, ...})
                              => (true, if b then b' else true)
+                             | Assembly.Instruction
+                               (Instruction.MOV _)
+                             => (b, b')
                              | Assembly.Instruction
                                (Instruction.SETcc _) 
                              => (true, if b then b' else true)
