@@ -2848,6 +2848,12 @@ struct
                           case asm
                             of Assembly.Comment _ => (b, b')
                              | Assembly.Instruction
+                               (Instruction.BinAL {oper = Instruction.ADC, ...})
+                             => (true, if b then b' else true)
+                             | Assembly.Instruction
+                               (Instruction.BinAL {oper = Instruction.SBB, ...})
+                             => (true, if b then b' else true)
+                             | Assembly.Instruction
                                (Instruction.SETcc _) 
                              => (true, if b then b' else true)
                              | _ => (true, b'))
