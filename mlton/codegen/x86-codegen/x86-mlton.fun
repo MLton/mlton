@@ -412,7 +412,6 @@ struct
                 transfer = NONE}]
             end
 
-
         fun pmd oper
           = let
               val ((src1,src1size),
@@ -462,7 +461,7 @@ struct
               val ((src1,src1size),
                    (src2,src2size)) = getSrc2 ()
               val (dst,dstsize) = getDst1 ()
-              val tmp= overflowCheckTempContentsOperand src1size
+              val tmp = overflowCheckTempContentsOperand src1size
               val _ 
                 = Assert.assert
                   ("x86MLton.prim: pmdcc, src1size/src2size",
@@ -550,7 +549,7 @@ struct
               val ((src1,src1size),
                    (src2,src2size)) = getSrc2 ()
               val (dst,dstsize) = getDst1 ()
-              val tmp= overflowCheckTempContentsOperand src1size
+              val tmp = overflowCheckTempContentsOperand src1size
               val _ 
                 = Assert.assert
                   ("x86MLton.prim: imul2, src1size/src2size",
