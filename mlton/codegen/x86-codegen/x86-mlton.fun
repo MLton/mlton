@@ -376,7 +376,8 @@ struct
                    (src3,src3size),
                    (src4,src4size)) = getSrc4 ()
               val (dst,dstsize) = getDst1 ()
-              val tmp = overflowCheckTempContentsOperand src1size
+              val tmp1 = overflowCheckTempContentsOperand src1size
+              val tmp2 = wordTemp1ContentsOperand src2size
               val _ 
                 = Assert.assert
                   ("x86MLton.prim: binal64cc, src1size/src2size/src3size/src4size",
@@ -388,21 +389,21 @@ struct
                {entry = NONE,
                 statements
                 = [Assembly.instruction_mov
-                   {dst = tmp,
+                   {dst = tmp1,
                     src = src1,
                     size = src1size},
-                   Assembly.instruction_binal
-                   {oper = oper1,
-                    dst = tmp,
-                    src = src3,
-                    size = src1size},
                    Assembly.instruction_mov
-                   {dst = tmp,
+                   {dst = tmp2,
                     src = src2,
                     size = src2size},
                    Assembly.instruction_binal
+                   {oper = oper1,
+                    dst = tmp1,
+                    src = src3,
+                    size = src1size},
+                   Assembly.instruction_binal
                    {oper = oper2,
-                    dst = tmp,
+                    dst = tmp2,
                     src = src4,
                     size = src2size},
                    Assembly.instruction_setcc
@@ -622,28 +623,29 @@ struct
                 = Assert.assert
                   ("x86MLton.prim: neg64cc, src1size/src2size",
                    fn () => src1size = src2size)
-              val tmp = overflowCheckTempContentsOperand src1size
+              val tmp1 = overflowCheckTempContentsOperand src1size
+              val tmp2 = wordTemp1ContentsOperand src2size
             in
               AppendList.fromList
               [Block.mkBlock'
                {entry = NONE,
                 statements
                 = [Assembly.instruction_mov
-                   {dst = tmp,
+                   {dst = tmp1,
                     src = Operand.immediate_zero,
                     size = src1size},
-                   Assembly.instruction_binal
-                   {oper = Instruction.SUB,
-                    dst = tmp,
-                    src = src1,
-                    size = src1size},
                    Assembly.instruction_mov
-                   {dst = tmp,
+                   {dst = tmp2,
                     src = Operand.immediate_zero,
                     size = src2size},
                    Assembly.instruction_binal
+                   {oper = Instruction.SUB,
+                    dst = tmp1,
+                    src = src1,
+                    size = src1size},
+                   Assembly.instruction_binal
                    {oper = Instruction.SBB,
-                    dst = tmp,
+                    dst = tmp2,
                     src = src2,
                     size = src2size},
                    Assembly.instruction_setcc
