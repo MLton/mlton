@@ -23,6 +23,7 @@ PRIVATE Word64 fpcvtTemp;
 PRIVATE Word32 fpeqTemp;
 PRIVATE Word64 divTemp;
 PRIVATE Word64 indexTemp;
+PRIVATE Word64 overflowCheckTemp;
 PRIVATE Word64 raTemp1;
 PRIVATE Word64 spill[32];
 PRIVATE Word64 stackTopTemp;

@@ -572,6 +572,11 @@ fun checkPrimApp {args, prim, result} =
          val wordUnary = make wordOrBitsOrSeq
       end
       local
+         fun make f s = let val t = f s in done ([t], SOME bool) end
+      in
+         val wordUnaryP = make wordOrBitsOrSeq
+      end
+      local
          fun make f s = let val t = f s in done ([t, t], SOME t) end
       in
          val realBinary = make real
@@ -581,6 +586,7 @@ fun checkPrimApp {args, prim, result} =
          fun make f s = let val t = f s in done ([t, t], SOME bool) end
       in
          val realCompare = make real
+         val wordBinaryP = make wordOrBitsOrSeq
          val wordCompare = make wordOrBitsOrSeq
          val objptrCompare = make (fn _ => objptr) ()
       end
@@ -631,6 +637,7 @@ fun checkPrimApp {args, prim, result} =
        | Thread_returnToC => done ([], NONE)
        | Word_add s => wordBinary s
        | Word_addCheck (s, _) => wordBinary s
+       | Word_addCheckP (s, _) => wordBinaryP s
        | Word_andb s => wordBinary s
        | Word_castToReal (s, s') => done ([word s], SOME (real s'))
        | Word_equal s => (wordCompare s) orelse objptrCompare
@@ -640,8 +647,10 @@ fun checkPrimApp {args, prim, result} =
        | Word_lt (s, _) => wordCompare s
        | Word_mul (s, _) => wordBinary s
        | Word_mulCheck (s, _) => wordBinary s
+       | Word_mulCheckP (s, _) => wordBinaryP s
        | Word_neg s => wordUnary s
        | Word_negCheck s => wordUnary s
+       | Word_negCheckP s => wordUnaryP s
        | Word_notb s => wordUnary s
        | Word_orb s => wordBinary s
        | Word_quot (s, _) => wordBinary s
@@ -652,6 +661,7 @@ fun checkPrimApp {args, prim, result} =
        | Word_rshift (s, _) => wordShift s
        | Word_sub s => wordBinary s
        | Word_subCheck (s, _) => wordBinary s
+       | Word_subCheckP (s, _) => wordBinaryP s
        | Word_xorb s => wordBinary s
        | _ => Error.bug (concat ["RepType.checkPrimApp got strange prim: ",
                                  Prim.toString prim])

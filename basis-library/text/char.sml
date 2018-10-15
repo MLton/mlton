@@ -103,7 +103,7 @@ functor CharFn(Arg : CHAR_ARG)
 
       local
          fun make (test, diff) c =
-             if test c then chrUnsafe (Int.+? (ord c, diff)) else c
+             if test c then chrUnsafe (Int.+! (ord c, diff)) else c
          val diff = Int.- (ord lA, ord la)
       in
          val toLower = make (isUpper, Int.~ diff)
@@ -115,7 +115,7 @@ functor CharFn(Arg : CHAR_ARG)
             NONE => NONE
           | SOME (c, state) =>
                if Char.<= (#"@", c) andalso Char.<= (c, #"_")
-                  then SOME (chr (Int.-? (Char.ord c, Char.ord #"@")), state)
+                  then SOME (chr (Int.-! (Char.ord c, Char.ord #"@")), state)
                else NONE
 
       fun formatChar reader state =
@@ -274,7 +274,7 @@ functor CharFn(Arg : CHAR_ARG)
       fun padLeft (s: String.string, n: int): String.string =
          let
             val m = String.size s
-            val diff = Int.-? (n, m)
+            val diff = Int.-! (n, m)
          in if Int.> (diff, 0)
                then String.concat [String.new (diff, #"0"), s]
             else if diff = 0
@@ -314,7 +314,7 @@ functor CharFn(Arg : CHAR_ARG)
                       then String.concat
                            ["\\^", String.new
                                    (1, Char.chrUnsafe
-                                       (Int.+? (ord, 64 (* #"@" *) )))]
+                                       (Int.+! (ord, 64 (* #"@" *) )))]
                    else if Int.< (ord, 256)
                       then String.concat
                            ["\\", padLeft (Int.fmt StringCvt.DEC ord, 3)]

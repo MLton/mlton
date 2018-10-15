@@ -190,6 +190,14 @@ struct
   val applyFFTempArgContentsOperand
     = Operand.memloc applyFFTempArgContents
 
+  val overflowCheckTemp = Label.fromString "overflowCheckTemp"
+  fun overflowCheckTempContents size
+    = makeContents {base = Immediate.label overflowCheckTemp,
+                    size = size,
+                    class = Classes.StaticTemp}
+  fun overflowCheckTempContentsOperand size
+    = Operand.memloc (overflowCheckTempContents size)
+
   val realTemp1D = Label.fromString "realTemp1D"
   val realTemp1ContentsD
     = makeContents {base = Immediate.label realTemp1D,

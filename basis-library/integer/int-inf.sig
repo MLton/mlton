@@ -34,10 +34,10 @@ signature INT_INF_EXTRA =
       val zero: int
       val one: int
 
-      val +? : int * int -> int
-      val *? : int * int -> int
-      val -? : int * int -> int
-      val ~? : int -> int
+      val +! : int * int -> int
+      val *! : int * int -> int
+      val -! : int * int -> int
+      val ~! : int -> int
 
       val ltu: int * int -> bool
       val leu: int * int -> bool

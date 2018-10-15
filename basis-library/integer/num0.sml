@@ -187,7 +187,7 @@ functor MkNum0 (S: MKNUM0_ARG): sig
                           else if y < zero
                                   then if x = zero
                                           then zero
-                                          else quotUnsafe (x -? one, y) -? one
+                                          else quotUnsafe (x -! one, y) -! one
                                   else raise Div
                   else if y < zero
                           then if (Primitive.Controls.detectOverflow
@@ -198,7 +198,7 @@ functor MkNum0 (S: MKNUM0_ARG): sig
                                           else minInt'
                                   else quotUnsafe (x, y)
                           else if y > zero
-                                  then quotUnsafe (x +? one, y) -? one
+                                  then quotUnsafe (x +! one, y) -! one
                                   else raise Div
 
             fun x mod y =
@@ -208,14 +208,14 @@ functor MkNum0 (S: MKNUM0_ARG): sig
                           else if y < zero
                                   then if x = zero
                                           then zero
-                                          else remUnsafe (x -? one, y) +? (y + one)
+                                          else remUnsafe (x -! one, y) +! (y + one)
                                   else raise Div
                   else if y < zero
                           then if x = minInt' andalso y = ~one
                                   then zero
                                   else remUnsafe (x, y)
                           else if y > zero
-                                  then remUnsafe (x +? one, y) +? (y -? one)
+                                  then remUnsafe (x +! one, y) +! (y -! one)
                                   else raise Div
 
             local

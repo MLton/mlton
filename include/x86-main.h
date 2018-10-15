@@ -21,6 +21,7 @@ PRIVATE Word32 divTemp;
 PRIVATE Word32 fildTemp;
 PRIVATE Word32 fpswTemp;
 PRIVATE Word32 indexTemp;
+PRIVATE Word32 overflowCheckTemp;
 PRIVATE Word32 raTemp1;
 PRIVATE Real64 raTemp2;
 PRIVATE Real64 realTemp1D;
