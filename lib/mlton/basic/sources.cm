@@ -67,6 +67,7 @@ structure FileDesc
 structure FixedPoint
 structure Function
 structure HashSet
+structure HashTable
 structure Html
 structure In
 structure InitScript
@@ -265,6 +266,8 @@ binary-search.sig
 binary-search.sml
 hash-set.sig
 hash-set.sml
+hash-table.sig
+hash-table.sml
 string.sml
 instream.sml
 file.sig

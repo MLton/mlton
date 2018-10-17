@@ -108,6 +108,8 @@ in
       binary-search.sml
       hash-set.sig
       hash-set.sml
+      hash-table.sig
+      hash-table.sml
       string.sml
       instream.sml
       file.sig
@@ -235,6 +237,7 @@ in
       structure FixedPoint
       structure Function
       structure HashSet
+      structure HashTable
       (* structure Http *)
       structure In
       structure Int
