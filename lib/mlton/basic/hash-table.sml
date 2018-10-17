@@ -28,6 +28,8 @@ in
    val stats = stats o projectSet
    val toList = toList o projectSet
    val layout = layout o projectSet
+   val removeAll = removeAll o projectSet
+   val toList = toList o projectSet
 end
 
 fun keyEquals (equals, a) (a', _) = equals
@@ -43,5 +45,7 @@ fun insertIfNew (T {set, hash, equals}, a, genB, whenFound) =
       (set, hash a, keyEquals (equals, a),
        fn () => (a, genB ()),
        fn (_, b) => whenFound b)
+
+fun remove (T {set, hash, equals}, a) = Set.remove (set, hash a, keyEquals (equals, a))
 
 end

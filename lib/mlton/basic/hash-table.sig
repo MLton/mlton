@@ -16,8 +16,14 @@ signature HASH_TABLE =
       val new: {equals: 'a * 'a -> bool,
                 hash: 'a -> word} -> ('a, 'b) t
       val peek: ('a, 'b) t * 'a -> 'b option
+
+      val remove: ('a, 'b) t * 'a -> unit
+      val removeAll : ('a, 'b) t * ('a * 'b -> bool) -> unit
+
       val size: ('a, 'b) t -> int
       val stats: unit -> Layout.t
+
+      val toList: ('a, 'b) t -> ('a * 'b) list
    end
 
 functor TestHashTable (S: HASH_TABLE): sig end =
