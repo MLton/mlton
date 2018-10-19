@@ -21,7 +21,7 @@ signature HASH_TABLE =
       val removeAll : ('a, 'b) t * ('a * 'b -> bool) -> unit
 
       val size: ('a, 'b) t -> int
-      val stats: unit -> Layout.t
+      val stats': ('a, 'b) t -> Layout.t
 
       val toList: ('a, 'b) t -> ('a * 'b) list
    end
