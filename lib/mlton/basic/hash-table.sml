@@ -52,7 +52,10 @@ fun insertIfNew (T {set, hash, equals, cache}, a, genB, whenFound) =
        fn {value=b, ...} => whenFound b))
    end
 
-fun remove (T {set, hash, equals, ...}, a) = Set.remove (set, hash a, keyEquals (equals, a))
+fun removeWhen (T {set, hash, equals, ...}, a, cond) =
+   Set.remove (set, hash a,
+      fn {key,value,...} => cond value andalso equals (key, a))
+fun remove (t, a) = removeWhen (t, a, fn _ => true)
 fun removeAll (T {set, ...}, f) = Set.removeAll (set, f o toPair)
 
 end

@@ -19,6 +19,7 @@ signature HASH_TABLE =
       val peek: ('a, 'b) t * 'a -> 'b option
 
       val remove: ('a, 'b) t * 'a -> unit
+      val removeWhen: ('a, 'b) t * 'a * ('b -> bool) -> unit
       val removeAll : ('a, 'b) t * ('a * 'b -> bool) -> unit
 
       val size: ('a, 'b) t -> int
