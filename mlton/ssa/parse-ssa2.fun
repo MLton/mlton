@@ -45,13 +45,11 @@
     (P.nextSat (fn b => isInfixChar b orelse b = #"_"))) <* P.spaces
 
  fun 'a makeNameResolver(f: string -> 'a): string -> 'a =
-      let
-          val hash = String.hash
-          val map = HashSet.new{hash= hash o #1}
-          fun eq x (a: string * 'a) = String.equals(x, #1 a)
-        in
-           fn x => (#2 o HashSet.lookupOrInsert)(map, hash x, eq x, fn () => (x, f x))
-        end
+    let
+       val table = HashTable.new {hash=String.hash, equals=String.equals, cache=true}
+    in
+       fn x => HashTable.lookupOrInsert (table, x, fn () => f x)
+    end
 
  val ident = (String.implode <$> (P.any[(op ::) <$$>
               (P.nextSat isIdentFirst,
