@@ -14,7 +14,8 @@ signature HASH_TABLE =
       val layout: ('a * 'b -> Layout.t) -> ('a, 'b) t -> Layout.t
       val lookupOrInsert: ('a, 'b) t * 'a * (unit -> 'b) -> 'b
       val new: {equals: 'a * 'a -> bool,
-                hash: 'a -> word} -> ('a, 'b) t
+                hash: 'a -> word,
+                cache: bool} -> ('a, 'b) t
       val peek: ('a, 'b) t * 'a -> 'b option
 
       val remove: ('a, 'b) t * 'a -> unit

@@ -67,6 +67,7 @@ ann "forceUsed" in
       structure FixedPoint
       structure Function
       structure HashSet
+      structure HashTable
       (* structure Http *)
       structure In
       structure Int

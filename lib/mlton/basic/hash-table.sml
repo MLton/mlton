@@ -10,37 +10,49 @@ struct
 
 structure Set = HashSet
 
-datatype ('a, 'b) t = T of {set: ('a * 'b) Set.t,
+datatype ('a, 'b) t = T of {set: {hash: word, key: 'a, value: 'b} Set.t,
                         hash: 'a -> word,
-                        equals: 'a * 'a -> bool}
+                        equals: 'a * 'a -> bool,
+                        cache: bool}
 
-fun ('a, 'b) new {equals, hash}: ('a, 'b) t =
-   T {set=Set.new { hash = hash o #1}, hash=hash, equals=equals}
+fun ('a, 'b) new {equals, hash, cache}: ('a, 'b) t =
+   let
+      val hash' = if cache then #hash else hash o #key
+   in
+      T {set=Set.new {hash = hash'}, hash=hash, equals=equals, cache=cache}
+   end
 
-
+fun toPair {key, value, hash} = (key, value)
 (* we'd like to factor these apart but it makes generalization difficult *)
 fun size (T {set, ...}) = Set.size set
-fun toList (T {set, ...}) = Set.toList set
-fun layout f (T {set, ...}) = Set.layout f set
+fun toList (T {set, ...}) = List.map (Set.toList set, toPair)
+fun layout f (T {set, ...}) = Set.layout (f o toPair) set
 fun stats' (T {set, ...}) = Set.stats' set
 
-fun keyEquals (equals, a) (a', _) = equals (a, a')
+fun keyEquals (equals, a) {key=a', ...} = equals (a, a')
 
-fun peek (T {set, hash, equals}, a) =
-   Option.map (Set.peek (set, hash a, keyEquals (equals, a)), #2)
+fun peek (T {set, hash, equals, ...}, a) =
+   Option.map (Set.peek (set, hash a, keyEquals (equals, a)), #value)
 
-fun lookupOrInsert (T {set, hash, equals}, a, genB) =
-   (#2) (Set.lookupOrInsert (set, hash a, keyEquals (equals, a), fn () => (a, genB ())))
+fun lookupOrInsert (T {set, hash, equals, cache}, a, genB) =
+   let
+      val hash = hash a
+   in
+   (#value) (Set.lookupOrInsert (set, hash, keyEquals (equals, a),
+         fn () => {hash=if cache then hash else 0w0, key=a, value=genB ()}))
+   end
 
-fun insertIfNew (T {set, hash, equals}, a, genB, whenFound) =
-   (#2) (Set.insertIfNew
-      (set, hash a, keyEquals (equals, a),
-       fn () => (a, genB ()),
-       fn (_, b) => whenFound b))
+fun insertIfNew (T {set, hash, equals, cache}, a, genB, whenFound) =
+   let
+      val hash = hash a
+   in
+   (#value) (Set.insertIfNew
+      (set, hash, keyEquals (equals, a),
+       fn () => {hash=if cache then hash else 0w0, key=a, value=genB ()},
+       fn {value=b, ...} => whenFound b))
+   end
 
-fun remove (T {set, hash, equals}, a) = Set.remove (set, hash a, keyEquals (equals, a))
-fun removeAll (T {set, ...}, f) = Set.removeAll (set, f)
-
-
+fun remove (T {set, hash, equals, ...}, a) = Set.remove (set, hash a, keyEquals (equals, a))
+fun removeAll (T {set, ...}, f) = Set.removeAll (set, f o toPair)
 
 end
