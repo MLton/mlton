@@ -137,7 +137,7 @@ structure Type =
          fun tuple ts =
             if 1 = Vector.length ts
                then Vector.first ts
-            else lookup (Hash.combine [w, Hash.combineVec (Vector.map (ts, hash))], Tuple ts)
+            else lookup (Hash.combine [w, Hash.vectorMap (ts, hash)], Tuple ts)
       end
 
       fun ofConst c =
@@ -425,7 +425,7 @@ structure Exp =
          val select = newHash ()
          val tuple = newHash ()
          fun hashVars (xs: Var.t vector, w: Word.t): Word.t =
-            Hash.combine [w, Hash.combineVec (Vector.map (xs, Var.hash))]
+            Hash.combine [w, Hash.vectorMap (xs, Var.hash)]
       in
          val hash: t -> Word.t =
             fn ConApp {con, args, ...} => hashVars (args, Con.hash con)
@@ -882,7 +882,7 @@ structure Transfer =
          val raisee = newHash ()
          val return = newHash ()
          fun hashVars (xs: Var.t vector, w: Word.t): Word.t =
-            Hash.combine [w, Hash.combineVec (Vector.map (xs, Var.hash))]
+            Hash.combine [w, Hash.vectorMap (xs, Var.hash)]
          fun hash2 (w1: Word.t, w2: Word.t) = Hash.combine [w1, w2]
       in
          val hash: t -> Word.t =

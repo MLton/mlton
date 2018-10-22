@@ -123,7 +123,7 @@ structure Type =
       fun var a = lookup (Tyvar.hash a, Var a)
 
       fun con (c, ts) =
-         lookup (Hash.combine [Tycon.hash c, Hash.combineVec (Vector.map (ts, hash))], Con (c, ts))
+         lookup (Hash.combine [Tycon.hash c, Hash.vectorMap (ts, hash)], Con (c, ts))
       val con = Trace.trace2 ("HashType.Type.con",
                               Tycon.layout,
                               Vector.layout layout,

@@ -16,6 +16,7 @@ struct
    fun multPrime n = prime * n
    fun combine2 (h, k) = multPrime (Word.xorb (h, k))
    fun combine hs = List.fold (hs, offset_basis, combine2)
-   fun combineVec vec = Vector.fold (vec, offset_basis, combine2)
+   fun vector vec = Vector.fold (vec, offset_basis, combine2)
+   fun vectorMap (vec, f) = Vector.fold (vec, offset_basis, fn (v, k) => combine2 (f v, k))
    fun permute h = offset_basis + multPrime h
 end
