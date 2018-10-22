@@ -234,7 +234,7 @@ structure Type =
          val tuple = newHash ()
          val sequence = newHash ()
          fun hashProd (p, base) =
-            Hash.combineVec (Vector.map (Prod.dest p, fn {elt, ...} => hash elt))
+            Hash.combine [base, Hash.combineVec (Vector.map (Prod.dest p, fn {elt, ...} => hash elt))]
       in
          fun object {args, con}: t =
             let
@@ -679,7 +679,7 @@ structure Exp =
          val select = newHash ()
          val tuple = newHash ()
          fun hashVars (xs: Var.t vector, w: Word.t): Word.t =
-            Hash.combineVec (Vector.map (xs, Var.hash))
+            Hash.combine [w, Hash.combineVec (Vector.map (xs, Var.hash))]
       in
          val hash: t -> Word.t =
             fn Const c => Const.hash c
@@ -1170,7 +1170,7 @@ structure Transfer =
          val raisee = newHash ()
          val return = newHash ()
          fun hashVars (xs: Var.t vector, w: Word.t): Word.t =
-            Hash.combineVec (Vector.map (xs, Var.hash))
+            Hash.combine [w, Hash.combineVec (Vector.map (xs, Var.hash))]
          fun hash2 (w1: Word.t, w2: Word.t) = Hash.combine [w1, w2]
       in
          val hash: t -> Word.t =

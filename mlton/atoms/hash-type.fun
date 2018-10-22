@@ -122,16 +122,12 @@ structure Type =
 
       fun var a = lookup (Tyvar.hash a, Var a)
 
-      local
-         val generator: Word.t = 0wx5555
-      in
-         fun con (c, ts) =
-            lookup (Hash.combine [Tycon.hash c, Hash.combineVec (Vector.map (ts, hash))], Con (c, ts))
-         val con = Trace.trace2 ("HashType.Type.con",
-                                 Tycon.layout,
-                                 Vector.layout layout,
-                                 layout) con
-      end
+      fun con (c, ts) =
+         lookup (Hash.combine [Tycon.hash c, Hash.combineVec (Vector.map (ts, hash))], Con (c, ts))
+      val con = Trace.trace2 ("HashType.Type.con",
+                              Tycon.layout,
+                              Vector.layout layout,
+                              layout) con
    end
 structure Ops = TypeOps (structure Tycon = Tycon
                          open Type)
