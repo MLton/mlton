@@ -540,9 +540,7 @@ fun restoreFunction {globals: Statement.t vector}
                   else let
                          val phiArgs = Vector.map
                                         (phiArgs, valOf o VarInfo.peekVar o varInfo)
-                         val hash = Vector.fold
-                                    (phiArgs, Label.hash dst, fn (x, h) =>
-                                     Word.xorb(Var.hash x, h))
+                         val hash = Hash.combine [Label.hash dst, Hash.vectorMap (phiArgs, Var.hash)]
                          val {route, ...} 
                            = HashSet.lookupOrInsert
                              (routeTable, hash, 
