@@ -70,7 +70,9 @@ structure File
 structure FileDesc
 structure FixedPoint
 structure Function
+structure Hash
 structure HashSet
+structure HashTable
 structure Html
 structure In
 structure InitScript

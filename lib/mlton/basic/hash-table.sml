@@ -29,7 +29,7 @@ fun toList (T {set, ...}) = List.map (Set.toList set, toPair)
 fun layout f (T {set, ...}) = Set.layout (f o toPair) set
 fun stats' (T {set, ...}) = Set.stats' set
 
-fun keyEquals (equals, a) {key=a', ...} = equals (a, a')
+fun keyEquals (equals, a) {key=a', hash, value} = equals (a, a')
 
 fun peek (T {set, hash, equals, ...}, a) =
    Option.map (Set.peek (set, hash a, keyEquals (equals, a)), #value)

@@ -7,9 +7,12 @@
 (* simple (non-cryptographic) hashing methods *)
 structure Hash: HASH =
 struct
-   (* Fowler–Noll–Vo hash *)
+   (* Fowler–Noll–Vo hash,
+    * but we use a different offset_basis that will fit
+    * into a 31-bit word. It seems to have relatively
+    * little impact. *)
    val prime = 0w16777619
-   val offset_basis = 0w2166136261
+   val offset_basis = 0wx55555 (* pretty much arbitrary, just shouldn't be zero *)
    fun multPrime n = prime * n
    fun combine2 (h, k) = multPrime (Word.xorb (h, k))
    fun combine hs = List.fold (hs, offset_basis, combine2)
