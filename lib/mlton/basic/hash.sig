@@ -10,6 +10,10 @@ signature HASH =
       (* combine a list of hash values so that each is independent from the last.
        * No guarantee is made as to whether or not combine [w] = w *)
       val combine: word List.t -> word
+      
+      (* combine a list of hash values so that each is independent from the last.
+       * No guarantee is made as to whether or not combine [w] = w *)
+      val combineVec: word Vector.t -> word
 
       (* 0x9e3779b97f4a7c15 *)
       val permute: word -> word

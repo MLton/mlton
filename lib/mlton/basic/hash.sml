@@ -10,11 +10,9 @@ struct
    (* Fowler–Noll–Vo hash *)
    val prime = 0w16777619
    val offset_basis = 0w2166136261
-   fun multPrime n = Word.<< (n, 0w24) + Word.<< (n, 0w8) + 0wx93 * n
-   fun combineHelp hs k =
-      case hs of
-           [] => offset_basis
-         | (h :: hs') => combineHelp hs' (multPrime (Word.xorb (h, k)))
-   fun combine hs = combineHelp hs offset_basis
+   fun multPrime n = prime * n
+   fun combine2 (h, k) = multPrime (Word.xorb (h, k))
+   fun combine hs = List.fold (hs, offset_basis, combine2)
+   fun combineVec vec = Vector.fold (vec, offset_basis, combine2)
    fun permute h = offset_basis + multPrime h
 end

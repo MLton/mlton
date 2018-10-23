@@ -199,7 +199,7 @@ structure Type =
             let
                val w = newHash ()
             in
-               fn t => lookup (Word.xorb (w, hash t), f t)
+               fn t => lookup (Hash.combine [w, hash t], f t)
             end
       in
          val weak = make Weak
@@ -231,12 +231,10 @@ structure Type =
          fn s => lookup (Tycon.hash (Tycon.word s), Word s)
 
       local
-         val generator: Word.t = 0wx5555
          val tuple = newHash ()
          val sequence = newHash ()
          fun hashProd (p, base) =
-            Vector.fold (Prod.dest p, base, fn ({elt, ...}, w) =>
-                         Word.xorb (w * generator, hash elt))
+            Hash.combineVec (Vector.map (Prod.dest p, fn {elt, ...} => hash elt))
       in
          fun object {args, con}: t =
             let
@@ -562,10 +560,9 @@ structure Base =
          val hash: 'a t * ('a -> word) -> word =
             fn (b, hashX) =>
             case b of
-               Object x => Word.xorb (object, hashX x)
+               Object x => Hash.combine [object, hashX x]
              | SequenceSub {index, sequence} =>
-                  Word.xorb (Word.xorb (hashX index, hashX sequence),
-                             sequenceSub)
+                  Hash.combine [hashX index, hashX sequence, sequenceSub]
       end
 
       fun foreach (b: 'a t, f: 'a -> unit): unit =
@@ -682,13 +679,12 @@ structure Exp =
          val select = newHash ()
          val tuple = newHash ()
          fun hashVars (xs: Var.t vector, w: Word.t): Word.t =
-            Vector.fold (xs, w, fn (x, w) => Word.xorb (w, Var.hash x))
+            Hash.combineVec (Vector.map (xs, Var.hash))
       in
          val hash: t -> Word.t =
             fn Const c => Const.hash c
              | Inject {sum, variant} =>
-                  Word.xorb (inject,
-                             Word.xorb (Tycon.hash sum, Var.hash variant))
+                  Hash.combine [inject, Tycon.hash sum, Var.hash variant]
              | Object {con, args, ...} =>
                   hashVars (args,
                             case con of
@@ -696,8 +692,7 @@ structure Exp =
                              | SOME c => Con.hash c)
              | PrimApp {args, ...} => hashVars (args, primApp)
              | Select {base, offset} =>
-                  Word.xorb (select,
-                             Base.hash (base, Var.hash) + Word.fromInt offset)
+                  Hash.combine [select, Base.hash (base, Var.hash) + Word.fromInt offset]
              | Var x => Var.hash x
       end
       (* quell unused warning *)
@@ -872,7 +867,7 @@ structure Handler =
             case h of
                Caller => caller
              | Dead => dead
-             | Handle l => Word.xorb (handlee, Label.hash l)
+             | Handle l => Hash.combine [handlee, Label.hash l]
       end
    end
 
@@ -961,8 +956,7 @@ structure Return =
             case r of
                Dead => dead
              | NonTail {cont, handler} =>
-                  Word.xorb (Word.xorb (nonTail, Label.hash cont),
-                             Handler.hash handler)
+                  Hash.combine [nonTail, Label.hash cont, Handler.hash handler]
              | Tail => tail
       end
    end
@@ -1176,8 +1170,8 @@ structure Transfer =
          val raisee = newHash ()
          val return = newHash ()
          fun hashVars (xs: Var.t vector, w: Word.t): Word.t =
-            Vector.fold (xs, w, fn (x, w) => Word.xorb (w, Var.hash x))
-         fun hash2 (w1: Word.t, w2: Word.t) = Word.xorb (w1, w2)
+            Hash.combineVec (Vector.map (xs, Var.hash))
+         fun hash2 (w1: Word.t, w2: Word.t) = Hash.combine [w1, w2]
       in
          val hash: t -> Word.t =
             fn Arith {args, overflow, success, ...} =>

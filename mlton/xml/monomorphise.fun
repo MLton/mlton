@@ -53,8 +53,7 @@ structure Cache:
          val base = Random.word ()
       in
          fun hash ts =
-            Vector.fold (ts, base, fn (t, w) =>
-                         Word.xorb (w * generator, Stype.hash t))
+            Hash.combineVec (Vector.map (ts, Stype.hash))
          fun equal (ts, ts') =
             Vector.equals (ts, ts', Stype.equals)
       end

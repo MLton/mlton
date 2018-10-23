@@ -66,6 +66,7 @@ structure File
 structure FileDesc
 structure FixedPoint
 structure Function
+structure Hash
 structure HashSet
 structure HashTable
 structure Html
@@ -264,6 +265,8 @@ array.fun
 array.sml
 binary-search.sig
 binary-search.sml
+hash.sig
+hash.sml
 hash-set.sig
 hash-set.sml
 hash-table.sig

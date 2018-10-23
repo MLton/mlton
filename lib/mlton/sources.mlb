@@ -66,6 +66,7 @@ ann "forceUsed" in
       structure FileDesc
       structure FixedPoint
       structure Function
+      structure Hash
       structure HashSet
       structure HashTable
       (* structure Http *)
