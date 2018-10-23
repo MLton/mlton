@@ -40,7 +40,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
       val newGlobals = ref []
       local
          val hs: (Type.t, Var.t) HashTable.t =
-            HashTable.new {hash=Type.hash, equals=Type.equals, cache=false}
+            HashTable.new {hash=Type.hash, equals=Type.equals}
       in
          fun getZeroArrVar (ty: Type.t): Var.t =
             HashTable.lookupOrInsert

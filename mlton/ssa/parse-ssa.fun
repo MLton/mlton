@@ -46,7 +46,7 @@ struct
 
    fun 'a makeNameResolver(f: string -> 'a): string -> 'a =
       let
-         val table = HashTable.new {hash=String.hash, equals=String.equals, cache=true}
+         val table = HashTable.new {hash=String.hash, equals=String.equals}
       in
          fn x => HashTable.lookupOrInsert (table, x, fn () => f x)
       end

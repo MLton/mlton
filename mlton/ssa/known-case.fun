@@ -431,7 +431,7 @@ fun transform (Program.T {globals, datatypes, functions, main})
                   addBlock block)
              local
                val table: (Transfer.t, Label.t) HashTable.t =
-                  HashTable.new {hash=Transfer.hash, equals=Transfer.equals, cache=true}
+                  HashTable.new {hash=Transfer.hash, equals=Transfer.equals}
              in
                 fun newBlock transfer =
                    let

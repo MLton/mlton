@@ -12,15 +12,10 @@ structure Set = HashSet
 
 datatype ('a, 'b) t = T of {set: {hash: word, key: 'a, value: 'b} Set.t,
                         hash: 'a -> word,
-                        equals: 'a * 'a -> bool,
-                        cache: bool}
+                        equals: 'a * 'a -> bool}
 
-fun ('a, 'b) new {equals, hash, cache}: ('a, 'b) t =
-   let
-      val hash' = if cache then #hash else hash o #key
-   in
-      T {set=Set.new {hash = hash'}, hash=hash, equals=equals, cache=cache}
-   end
+fun ('a, 'b) new {equals, hash}: ('a, 'b) t =
+   T {set=Set.new {hash = #hash}, hash=hash, equals=equals}
 
 fun toPair {key, value, hash} = (key, value)
 (* we'd like to factor these apart but it makes generalization difficult *)
@@ -34,21 +29,21 @@ fun keyEquals (equals, a) {key=a', hash, value} = equals (a, a')
 fun peek (T {set, hash, equals, ...}, a) =
    Option.map (Set.peek (set, hash a, keyEquals (equals, a)), #value)
 
-fun lookupOrInsert (T {set, hash, equals, cache}, a, genB) =
+fun lookupOrInsert (T {set, hash, equals}, a, genB) =
    let
       val hash = hash a
    in
    (#value) (Set.lookupOrInsert (set, hash, keyEquals (equals, a),
-         fn () => {hash=if cache then hash else 0w0, key=a, value=genB ()}))
+         fn () => {hash=hash, key=a, value=genB ()}))
    end
 
-fun insertIfNew (T {set, hash, equals, cache}, a, genB, whenFound) =
+fun insertIfNew (T {set, hash, equals}, a, genB, whenFound) =
    let
       val hash = hash a
    in
    (#value) (Set.insertIfNew
       (set, hash, keyEquals (equals, a),
-       fn () => {hash=if cache then hash else 0w0, key=a, value=genB ()},
+       fn () => {hash=hash, key=a, value=genB ()},
        fn {value=b, ...} => whenFound b))
    end
 

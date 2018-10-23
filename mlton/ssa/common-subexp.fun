@@ -105,7 +105,7 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
 
       (* Keep a hash table of canonicalized Exps that are in scope. *)
       val table: (Exp.t, Var.t) HashTable.t =
-         HashTable.new {hash=Exp.hash, equals=Exp.equals, cache=true}
+         HashTable.new {hash=Exp.hash, equals=Exp.equals}
       fun lookup (var, exp) =
          HashTable.lookupOrInsert
          (table, exp, fn () => var)
