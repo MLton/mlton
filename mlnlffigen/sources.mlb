@@ -52,8 +52,10 @@ local
    local open basis_lib ckit_lib in
       ast-to-spec.sml
       hash.sml
+      structure NLFFIHash = Hash
    end
    local open mlton_lib ckit_lib in
+      structure Hash = NLFFIHash
       gen.sml
    end
 
