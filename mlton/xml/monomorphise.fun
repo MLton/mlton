@@ -52,7 +52,7 @@ structure Cache:
          val base = Random.word ()
       in
          fun hash ts =
-            Hash.combine [base, Hash.vectorMap (ts, Stype.hash)]
+            Hash.combine (base, Hash.vectorMap (ts, Stype.hash))
          fun equal (ts, ts') =
             Vector.equals (ts, ts', Stype.equals)
       end

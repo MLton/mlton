@@ -102,7 +102,7 @@ structure Type =
             let
                val w = newHash ()
             in
-               fn t => lookup (Hash.combine [w, hash t], f t)
+               fn t => lookup (Hash.combine (w, hash t), f t)
             end
       in
          val array = make Array
@@ -137,7 +137,7 @@ structure Type =
          fun tuple ts =
             if 1 = Vector.length ts
                then Vector.first ts
-            else lookup (Hash.combine [w, Hash.vectorMap (ts, hash)], Tuple ts)
+            else lookup (Hash.combine (w, Hash.vectorMap (ts, hash)), Tuple ts)
       end
 
       fun ofConst c =
@@ -425,15 +425,15 @@ structure Exp =
          val select = newHash ()
          val tuple = newHash ()
          fun hashVars (xs: Var.t vector, w: Word.t): Word.t =
-            Hash.combine [w, Hash.vectorMap (xs, Var.hash)]
+            Hash.combine (w, Hash.vectorMap (xs, Var.hash))
       in
          val hash: t -> Word.t =
             fn ConApp {con, args, ...} => hashVars (args, Con.hash con)
              | Const c => Const.hash c
              | PrimApp {args, ...} => hashVars (args, primApp)
-             | Profile p => Hash.combine [profile, ProfileExp.hash p]
+             | Profile p => Hash.combine (profile, ProfileExp.hash p)
              | Select {tuple, offset} =>
-                  Hash.combine [select, Var.hash tuple + Word.fromInt offset]
+                  Hash.combine (select, Var.hash tuple + Word.fromInt offset)
              | Tuple xs => hashVars (xs, tuple)
              | Var x => Var.hash x
       end
@@ -575,7 +575,7 @@ structure Handler =
             case h of
                Caller => caller
              | Dead => dead
-             | Handle l => Hash.combine [handlee, Label.hash l]
+             | Handle l => Hash.combine (handlee, Label.hash l)
       end
    end
 
@@ -662,7 +662,7 @@ structure Return =
             case r of
                Dead => dead
              | NonTail {cont, handler} =>
-                  Hash.combine [nonTail, Label.hash cont, Handler.hash handler]
+                  Hash.combine3 (nonTail, Label.hash cont, Handler.hash handler)
              | Tail => tail
       end
    end
@@ -882,8 +882,8 @@ structure Transfer =
          val raisee = newHash ()
          val return = newHash ()
          fun hashVars (xs: Var.t vector, w: Word.t): Word.t =
-            Hash.combine [w, Hash.vectorMap (xs, Var.hash)]
-         fun hash2 (w1: Word.t, w2: Word.t) = Hash.combine [w1, w2]
+            Hash.combine (w, Hash.vectorMap (xs, Var.hash))
+         fun hash2 (w1: Word.t, w2: Word.t) = Hash.combine (w1, w2)
       in
          val hash: t -> Word.t =
             fn Arith {args, overflow, success, ...} =>

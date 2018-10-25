@@ -539,7 +539,7 @@ fun restoreFunction {globals: Statement.t vector}
                   else let
                          val phiArgs = Vector.map
                                         (phiArgs, valOf o VarInfo.peekVar o varInfo)
-                         val hash = Hash.combine [Label.hash dst, Hash.vectorMap (phiArgs, Var.hash)]
+                         val hash = Hash.combine (Label.hash dst, Hash.vectorMap (phiArgs, Var.hash))
                          val {route, ...} 
                            = HashSet.lookupOrInsert
                              (routeTable, hash, 
