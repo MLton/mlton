@@ -11,7 +11,6 @@ struct
    structure TypeInfo = struct
       datatype heapType = Array | Ref | Vector | Weak
       datatype t = Unchanged of Type.t
-      (* each other type has a constructor set with arguments to coerce *)
                  | Fresh of (Tycon.t option * con list ref) Equatable.t
                  | Tuple of t vector
                  | Heap of (t * heapType)
@@ -49,18 +48,15 @@ struct
       fun hash (t : t) : word =
          case t of
               Unchanged ty => Type.hash ty
-            | Fresh eq =>
-                 (case #1 (Equatable.value eq) of
-                      NONE => 0wx008534c (* absolutely arbitrary *)
-                    | SOME tycon => Tycon.hash tycon)
-                    (* also fairly arbitrary, other than 17 being a good enough prime *)
-            | Tuple vect => Vector.fold (vect, 0w1, fn (t, c) => c * 0wx11 + hash t)
-            | Heap (t,htype) => 0wx11 * hash t +
+            | Fresh eq => Option.fold (#1 (Equatable.value eq), 0w0,
+                  fn (tycon, h) => Hash.combine (h, Tycon.hash tycon))
+            | Tuple vect => Hash.vectorMap(vect, hash)
+            | Heap (t,htype) => Hash.combine (hash t,
                (case htype of
                     Array => 0w0
                   | Ref => 0w1
                   | Vector => 0w2
-                  | Weak => 0w3)
+                  | Weak => 0w3))
 
       (* Equality, accounting for equating, so it may become more coarse over time *)
       fun equated (t1, t2) =
@@ -220,8 +216,8 @@ fun transform (program as Program.T {datatypes, globals, functions, main}): Prog
            tuple = TypeInfo.fromTuple,
            useFromTypeOnBinds = true }
 
-      val tyMap : (TypeInfo.t * Type.t) HashSet.t =
-         HashSet.new {hash = fn (v, newTy) => TypeInfo.hash v}
+      val tyMap : (TypeInfo.t, Type.t) HashTable.t =
+         HashTable.new {hash=TypeInfo.hash, equals=TypeInfo.equated}
 
 
       fun getTy typeInfo =
@@ -237,16 +233,7 @@ fun transform (program as Program.T {datatypes, globals, functions, main}): Prog
             case typeInfo of
                   TypeInfo.Unchanged ty => ty
                 | TypeInfo.Fresh eq =>
-                  let
-                     val (_, newTy) =
-                        HashSet.lookupOrInsert (tyMap, TypeInfo.hash typeInfo,
-                           fn (t', newTy) =>
-                              TypeInfo.equated (typeInfo, t'),
-                           fn () =>
-                              (typeInfo, makeTy eq))
-                  in
-                     newTy
-                  end
+                     HashTable.lookupOrInsert (tyMap, typeInfo, fn () => makeTy eq)
                 | TypeInfo.Tuple typeInfos =>
                      Type.tuple (Vector.map (typeInfos, getTy))
                 | TypeInfo.Heap (typeInfo', heapType) =>
@@ -258,15 +245,14 @@ fun transform (program as Program.T {datatypes, globals, functions, main}): Prog
          end
 
 
-      fun remappedConsHash (oldCon, ty) = Type.hash ty + 0wx11 * Con.hash oldCon
-      val remappedCons: (Con.t * Type.t * Con.t) HashSet.t =
-         HashSet.new {hash = fn (oldCon, ty, _) => remappedConsHash (oldCon, ty)}
+      fun remappedConsHash (oldCon, ty) = Hash.combine(Type.hash ty, Con.hash oldCon)
+      val remappedCons: ((Con.t * Type.t), Con.t) HashTable.t =
+         HashTable.new {hash=remappedConsHash, equals=fn ((con1, ty1), (con2, ty2)) =>
+            Type.equals (ty1, ty2) andalso Con.equals (con1, con2)}
       fun remapCon (oldCon, newTy) =
          if Con.equals (oldCon, Con.truee) orelse Con.equals (oldCon, Con.falsee)
          then oldCon
-         else #3 (HashSet.lookupOrInsert (remappedCons, remappedConsHash (oldCon, newTy),
-            fn (con2, ty2, _) => Type.equals (newTy, ty2) andalso Con.equals (oldCon, con2),
-            fn () => (oldCon, newTy, Con.new oldCon)))
+         else HashTable.lookupOrInsert (remappedCons, (oldCon, newTy), fn () => Con.new oldCon)
 
       fun loopExp (exp, newTy) =
          case exp of
@@ -379,7 +365,7 @@ fun transform (program as Program.T {datatypes, globals, functions, main}): Prog
                   | NONE => Error.bug "SplitTypes.datatypes.bool: Could not find boolean datatype"
          in
             (Vector.fromList (bool ::
-               (List.keepAllMap (HashSet.toList tyMap,
+               (List.keepAllMap (HashTable.toList tyMap,
                   fn (typeInfo, newTy) =>
                      case typeInfo of
                           TypeInfo.Fresh eq =>
