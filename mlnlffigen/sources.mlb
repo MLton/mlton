@@ -7,7 +7,24 @@
 
 local
    basis basis_lib = bas $(SML_LIB)/basis/basis.mlb end
-   basis mlton_lib = bas ../lib/mlton/sources.mlb end
+   basis mlton_lib = bas local
+      ../lib/mlton/sources.mlb
+   in
+      structure File
+      structure List
+      structure HashSet
+      structure MLton
+      structure Out
+      structure Option
+      structure Process
+      structure Popt
+      structure Promise
+      structure Result
+      structure String
+      structure Vector
+
+      functor Control
+   end end
    basis smlnj_lib = bas $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb end
    basis pp_lib = bas $(SML_LIB)/smlnj-lib/PP/pp-lib.mlb end
    basis regexp_lib = bas $(SML_LIB)/smlnj-lib/RegExp/regexp-lib.mlb end
@@ -32,7 +49,7 @@ local
       cpif-dev.sml
       pp.sml
    end
-   local open mlton_lib ckit_lib in
+   local open basis_lib mlton_lib ckit_lib in
       control.sig
       control.sml
    end
@@ -53,11 +70,11 @@ local
       ast-to-spec.sml
       hash.sml
    end
-   local open mlton_lib ckit_lib in
+   local open basis_lib mlton_lib ckit_lib in
       gen.sml
    end
 
-   local open mlton_lib regexp_lib in
+   local open basis_lib mlton_lib regexp_lib in
       main.sml
    end
 in

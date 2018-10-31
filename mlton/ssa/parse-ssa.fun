@@ -46,11 +46,9 @@ struct
 
    fun 'a makeNameResolver(f: string -> 'a): string -> 'a =
       let
-         val hash = String.hash
-         val map = HashSet.new{hash= hash o #1}
-         fun eq x (a: string * 'a) = String.equals(x, #1 a)
+         val table = HashTable.new {hash=String.hash, equals=String.equals}
       in
-         fn x => (#2 o HashSet.lookupOrInsert)(map, hash x, eq x, fn () => (x, f x))
+         fn x => HashTable.lookupOrInsert (table, x, fn () => f x)
       end
 
 

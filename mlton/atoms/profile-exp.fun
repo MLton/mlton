@@ -31,8 +31,8 @@ local
    val leave = newHash ()
 in
    val hash =
-      fn Enter si => Word.xorb (enter, SourceInfo.hash si)
-       | Leave si => Word.xorb (leave, SourceInfo.hash si)
+      fn Enter si => Hash.combine (enter, SourceInfo.hash si)
+       | Leave si => Hash.combine (leave, SourceInfo.hash si)
 end
 
 end

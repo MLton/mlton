@@ -49,12 +49,10 @@ structure Cache:
       type 'a t = (Stype.t vector * Word.t * 'a) HashSet.t
 
       local
-         val generator: Word.t = 0wx5555
          val base = Random.word ()
       in
          fun hash ts =
-            Vector.fold (ts, base, fn (t, w) =>
-                         Word.xorb (w * generator, Stype.hash t))
+            Hash.combine (base, Hash.vectorMap (ts, Stype.hash))
          fun equal (ts, ts') =
             Vector.equals (ts, ts', Stype.equals)
       end
