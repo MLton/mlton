@@ -138,9 +138,98 @@ struct
       fun const (c: Const.t): t = fromType (Type.ofConst c)
   end
 
-
-fun transform (program as Program.T {datatypes, globals, functions, main}): Program.t =
+fun dupGlobals (program as Program.T {datatypes, globals, functions, main}): Program.t =
    let
+      val globalVars: (Var.t, Var.t list ref) HashTable.t
+         = HashTable.new {hash=Var.hash, equals=Var.equals}
+      fun freshenIfGlobal (var: Var.t) =
+         case HashTable.peek (globalVars, var) of
+              NONE => var
+            | SOME vs =>
+                 let
+                    val newVar = Var.new var
+                    val _ = vs := (newVar :: !vs)
+                 in
+                    newVar
+                 end
+      fun freshenVec (vars: Var.t vector) = Vector.map (vars, freshenIfGlobal)
+
+      (* so what's going on here is that each *usage* of a global will be duplicated *)
+      fun loopExp exp =
+         case exp of
+              Exp.ConApp {args, con} => Exp.ConApp {con=con, args= freshenVec args}
+            | Exp.PrimApp {args, prim, targs} =>
+                 Exp.PrimApp {args= freshenVec args, prim=prim, targs=targs}
+            | Exp.Select {offset, tuple} =>
+                 Exp.Select {offset=offset, tuple= freshenIfGlobal tuple}
+            | Exp.Tuple vs => Exp.Tuple (freshenVec vs)
+            | Exp.Var v => Exp.Var (freshenIfGlobal v)
+            | _ => exp
+      fun loopStatement (Statement.T {exp, ty, var}) =
+         (* in the main program tree, the variable won't be a global, but we'll loop over
+          * globals since some may depend on each other *)
+         Statement.T {exp=loopExp exp, ty=ty, var=Option.map (var, freshenIfGlobal)}
+
+      fun loopTransfer transfer =
+         case transfer of
+              Transfer.Arith {args, overflow, prim, success, ty} =>
+                 Transfer.Arith {args= freshenVec args, overflow=overflow, prim=prim, success=success, ty=ty}
+            | Transfer.Bug => Transfer.Bug
+            | Transfer.Call {args, func, return} =>
+                 Transfer.Call {args= freshenVec args, func=func, return=return}
+            | Transfer.Case {cases, default, test} =>
+                 Transfer.Case {cases=cases, default=default, test= freshenIfGlobal test}
+            | Transfer.Goto {args, dst} =>
+                 Transfer.Goto {args= freshenVec args, dst=dst}
+            | Transfer.Raise vs =>
+                 Transfer.Raise (freshenVec vs)
+            | Transfer.Return vs =>
+                 Transfer.Return (freshenVec vs)
+            | Transfer.Runtime {args, prim, return} =>
+                 Transfer.Runtime {args=freshenVec args, prim=prim, return=return}
+      fun loopBlock (Block.T {args, label, statements, transfer}) =
+         Block.T {args=args, label=label,
+            statements=Vector.map (statements, loopStatement),
+            transfer=loopTransfer transfer}
+      fun loopFunction func =
+         let
+            val {args, blocks, mayInline, name, raises, returns, start} = Function.dest func
+            val newBlocks = Vector.map(blocks, loopBlock)
+         in
+            Function.new {args=args, blocks=newBlocks, mayInline=mayInline, name=name,
+               raises=raises, returns=returns, start=start}
+         end
+
+      val newFunctions = List.map (functions, loopFunction)
+
+      (* we'll need to make the globals twice, first, we create them as they would be created from
+       * just the statements in the program body, then we loop over the new globals, then create again.
+       * If we don't do this, there may be spurious connections, for instance:
+       * If c = a :: b, but c is split into c1 and c2, then c1 and c2 might become re-connected if
+       * both are connected with b.
+       * *)
+       (*
+      fun makeGlobals globals =
+         let
+            fun globalToClones (Statement.T {exp, ty, var}) =
+               let
+                  val newVars = case HashTable.peek (globalVars, var) of
+                     SOME vs => !vs
+                   | NONE => Error.bug "SplitTypes.dupGlobals: No global information"
+               in
+                  Vector.map (newVars, fn var => Statement.T {exp=exp, var
+               end
+         in
+         end
+        *)
+   in
+      program
+   end
+
+fun transform program: Program.t =
+   let
+      val program  as Program.T {datatypes, globals, functions, main} = dupGlobals program
+
       fun fromCon {con: Con.t, args: TypeInfo.t vector} =
          let
             val _ = Control.diagnostics
