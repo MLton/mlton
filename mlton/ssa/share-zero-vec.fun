@@ -37,37 +37,30 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
 
       val shrink = shrinkFunction {globals = globals}
 
-      (* initialize a HashSet for new zero-length array globals *)
+      (* initialize a HashTable for new zero-length array globals *)
       val newGlobals = ref []
       local
-         val hs: {eltTy: Type.t, zeroArrVar: Var.t} HashSet.t =
-            HashSet.new {hash = fn {eltTy, ...} => Type.hash eltTy}
+         val hs: (Type.t, Var.t) HashTable.t =
+            HashTable.new {hash = Type.hash, equals = Type.equals}
       in
          fun getZeroArrVar (ty: Type.t): Var.t =
-            let
-               val {zeroArrVar, ...} =
-                  HashSet.lookupOrInsert
-                  (hs, Type.hash ty,
-                   fn {eltTy, ...} => Type.equals (eltTy, ty),
-                   fn () =>
-                   let
-                      val zeroArrVar = Var.newString "zeroArr"
-                      val statement =
-                         Statement.T
-                         {var = SOME zeroArrVar,
-                          ty = Type.array ty,
-                          exp = PrimApp
-                                {args = Vector.new1 zeroVar,
-                                 prim = Prim.arrayAlloc {raw = false},
-                                 targs = Vector.new1 ty}}
-                      val () = List.push (newGlobals, statement)
-                   in
-                      {eltTy = ty,
-                       zeroArrVar = zeroArrVar}
-                   end)
-            in
-               zeroArrVar
-            end
+            HashTable.lookupOrInsert
+            (hs, ty,
+             fn () =>
+             let
+                val zeroArrVar = Var.newString "zeroArr"
+                val statement =
+                   Statement.T
+                   {var = SOME zeroArrVar,
+                    ty = Type.array ty,
+                    exp = PrimApp
+                    {args = Vector.new1 zeroVar,
+                     prim = Prim.arrayAlloc {raw = false},
+                     targs = Vector.new1 ty}}
+                val () = List.push (newGlobals, statement)
+             in
+                zeroArrVar
+             end)
       end
 
       (* splitStmts (stmts, arrVars)
