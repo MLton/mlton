@@ -26,11 +26,3 @@ signature HASH_TABLE =
 
       val toList: ('a, 'b) t -> ('a * 'b) list
    end
-
-functor TestHashTable (S: HASH_TABLE): sig end =
-struct
-
-open S
-
-val _ = Assert.assert("TestHashTable", fn () => true)
-end
