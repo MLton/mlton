@@ -17,7 +17,7 @@ structure CUtil: C_UTIL =
             fun loop i =
                if term (sub (p, i))
                   then i
-                  else loop (i +? 1)
+                  else loop (i +! 1)
          in loop 0
          end
 
@@ -96,7 +96,7 @@ structure CUtil: C_UTIL =
                let
                   val (a, _) =
                      Array.unfoldi
-                     (1 +? List.length l, l, fn (_, l) =>
+                     (1 +! List.length l, l, fn (_, l) =>
                       case l of
                          [] => (NullString.empty, l)
                        | s::l => (NullString.nullTerm s, l))

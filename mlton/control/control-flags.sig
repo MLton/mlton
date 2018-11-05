@@ -270,6 +270,9 @@ signature CONTROL_FLAGS =
             (* whether or not to use comments in native codegen *)
             val commented: int ref
 
+            (* whether to eliminate redundant AL ops in native codegen *)
+            val elimALRedundant: bool ref
+
             (* whether or not to track liveness of stack slots *)
             val liveStack: bool ref 
 

@@ -105,7 +105,7 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
 
       (* Keep a hash table of canonicalized Exps that are in scope. *)
       val table: (Exp.t, Var.t) HashTable.t =
-         HashTable.new {hash=Exp.hash, equals=Exp.equals}
+         HashTable.new {hash = Exp.hash, equals = Exp.equals}
       fun lookup (var, exp) =
          HashTable.lookupOrInsert
          (table, exp, fn () => var)
@@ -305,14 +305,14 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                            let open Layout
                            in
                               display (seq [str "remove: ",
-                                            List.layout (fn (exp, var) => seq
-                                             [Var.layout var,
-                                              Layout.str ":",
-                                              Exp.layout exp]) (!remove)])
+                                            List.layout (fn (exp, var) =>
+                                                         seq [Var.layout var,
+                                                              str ": ",
+                                                              Exp.layout exp]) (!remove)])
                            end)
                   val _ = List.foreach
                           (!remove, fn (exp, var) =>
-                          HashTable.removeWhen
+                           HashTable.removeWhen
                            (table, exp, fn var' =>
                             Var.equals (var, var')))
                   val _ = diag "removed"

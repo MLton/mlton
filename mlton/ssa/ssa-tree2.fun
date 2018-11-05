@@ -692,7 +692,7 @@ structure Exp =
                              | SOME c => Con.hash c)
              | PrimApp {args, ...} => hashVars (args, primApp)
              | Select {base, offset} =>
-                  Hash.combine (select, Base.hash (base, Var.hash) + Word.fromInt offset)
+                  Hash.combine3 (select, Base.hash (base, Var.hash), Word.fromInt offset)
              | Var x => Var.hash x
       end
       (* quell unused warning *)

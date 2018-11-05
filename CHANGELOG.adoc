@@ -8,6 +8,10 @@ Here are the changes from versoin 20180206 to version YYYYMMDD.
 
 === Details
 
+* 2018-10-15
+  ** Introduce new `Overflow`-checking primitives.  Undertaken by Daman Morris
+     at RIT supported by NSF CISE Research Infrastructure (CRI) award.
+
 * 2018-08-17
   ** Add a parser for the SSA2 IR (`functor ParseSsa2`).  Undertaken by Manan
      Joshi at RIT supported by NSF CISE Research Infrastructure (CRI) award.

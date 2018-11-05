@@ -147,8 +147,8 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                              exp = ConApp {con = c, args = Vector.new0 ()}})
             end
       in
-         val (trueVar, t) = make Con.truee
-         val (falseVar, f) = make Con.falsee
+         val (trueVar, trueStmt) = make Con.truee
+         val (falseVar, falseStmt) = make Con.falsee
       end
       local
          val statements = ref []
@@ -169,7 +169,8 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
              end)
          val ones = Vector.fromList (!statements)
       end
-      val globals = Vector.concat [Vector.new2 (t, f), ones, globals]
+      val globals = Vector.concat [Vector.new2 (trueStmt, falseStmt), ones,
+                                   globals]
       val shrink = shrinkFunction {globals = globals}
       val numSimplified = ref 0
       fun simplifyFunction f =
@@ -324,9 +325,43 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                 Vector.map
                 (blocks, fn Block.T {label, args, statements, transfer} =>
                  let
+                    fun add1Eligible (x: Var.t, s: WordSize.t, sg) =
+                       isFact (label, fn Fact.T {lhs, rel, rhs} =>
+                               case (lhs, rel, rhs) of
+                                  (Oper.Var x', Rel.LT sg', _) =>
+                                     Var.equals (x, x')
+                                     andalso sg = sg'
+                                | (Oper.Var x', Rel.LE sg',
+                                   Oper.Const c) =>
+                                     Var.equals (x, x')
+                                     andalso sg = sg'
+                                     andalso
+                                     (case c of
+                                         Const.Word w =>
+                                           WordX.lt
+                                           (w, WordX.max (s, sg), sg)
+                                       | _ => Error.bug "RedundantTests.add1: strange fact")
+                                | _ => false)
+                    fun sub1Eligible (x: Var.t, s: WordSize.t, sg) =
+                       isFact (label, fn Fact.T {lhs, rel, rhs} =>
+                               case (lhs, rel, rhs) of
+                                  (_, Rel.LT sg', Oper.Var x') =>
+                                     Var.equals (x, x')
+                                     andalso sg = sg'
+                                | (Oper.Const c, Rel.LE sg',
+                                   Oper.Var x') =>
+                                     Var.equals (x, x')
+                                     andalso sg = sg'
+                                     andalso
+                                     (case c of
+                                         Const.Word w =>
+                                            WordX.gt
+                                            (w, WordX.min (s, sg), sg)
+                                       | _ => Error.bug "RedundantTests.sub1: strange fact")
+                                | _ => false)
                     val statements =
                        Vector.map
-                       (statements, fn statement as Statement.T {ty, var, ...} =>
+                       (statements, fn statement as Statement.T {ty, var, exp, ...} =>
                         let
                            fun doit x =
                               (Int.inc numSimplified
@@ -342,6 +377,62 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                                               exp = Var x})
                            fun falsee () = doit falseVar
                            fun truee () = doit trueVar
+
+                           fun checkPrimApp (args, prim) =
+                              let
+                                open Prim.Name
+
+                                fun add1 (x: Var.t, s: WordSize.t, sg) =
+                                   if add1Eligible (x, s, sg) then falsee ()
+                                   else statement
+                                fun sub1 (x: Var.t, s: WordSize.t, sg) =
+                                   if sub1Eligible (x, s, sg) then falsee ()
+                                   else statement
+
+                                fun add (c: Const.t, x: Var.t,
+                                   (s, sg as {signed})) =
+                                   case c of
+                                      Const.Word i =>
+                                         if WordX.isOne i
+                                         then add1 (x, s, sg)
+                                         else if signed andalso WordX.isNegOne i
+                                              then sub1 (x, s, sg)
+                                              else statement
+                                    | _ => Error.bug ("RedundantTests.add: strange const")
+                              in
+                                case Prim.name prim of
+                                    Word_addCheckP s =>
+                                       let
+                                          val x1 = Vector.sub (args, 0)
+                                          val x2 = Vector.sub (args, 1)
+                                       in
+                                          case varInfo x1 of
+                                             Const c => add (c, x2, s)
+                                           | _ => (case varInfo x2 of
+                                                      Const c => add (c, x1, s)
+                                                    | _ => statement)
+                                       end
+                                  | Word_subCheckP (s, sg as {signed}) =>
+                                       let
+                                          val x1 = Vector.sub (args, 0)
+                                          val x2 = Vector.sub (args, 1)
+                                       in
+                                          case varInfo x2 of
+                                             Const c =>
+                                                (case c of
+                                                   Const.Word i =>
+                                                      if WordX.isOne i
+                                                      then sub1 (x1, s, sg)
+                                                      else if signed andalso
+                                                              WordX.isNegOne i
+                                                           then
+                                                              add1 (x1, s, sg)
+                                                      else statement
+                                                 | _ => Error.bug ("RedundantTests.sub: strange const"))
+                                           | _ => statement
+                                       end
+                                  | _ => statement
+                              end
                         in
                            case var of
                               NONE => statement
@@ -361,7 +452,10 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                                             False => falsee ()
                                           | True => truee () 
                                           | Unknown => statement)
-                                   | _ => statement)
+                                   | _ => (case exp of
+                                              Exp.PrimApp {args, prim, ...} =>
+                                                checkPrimApp (args, prim)
+                                            | _ => statement))
                         end)
                     val noChange = (statements, transfer)
                     fun arith (args: Var.t vector,
@@ -388,42 +482,12 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                                        dst = success})
                              end
                           fun add1 (x: Var.t, s: WordSize.t, sg) =
-                             if isFact (label, fn Fact.T {lhs, rel, rhs} =>
-                                        case (lhs, rel, rhs) of
-                                           (Oper.Var x', Rel.LT sg', _) =>
-                                              Var.equals (x, x')
-                                              andalso sg = sg'
-                                         | (Oper.Var x', Rel.LE sg',
-                                            Oper.Const c) =>
-                                              Var.equals (x, x')
-                                              andalso sg = sg'
-                                              andalso
-                                              (case c of
-                                                  Const.Word w =>
-                                                     WordX.lt
-                                                     (w, WordX.max (s, sg), sg)
-                                                | _ => Error.bug "RedundantTests.add1: strange fact")
-                                         | _ => false)
-                                then simplify (Prim.wordAdd s, x, s)
+                             if add1Eligible (x, s, sg)
+                             then simplify (Prim.wordAdd s, x, s)
                              else noChange
                           fun sub1 (x: Var.t, s: WordSize.t, sg) =
-                             if isFact (label, fn Fact.T {lhs, rel, rhs} =>
-                                        case (lhs, rel, rhs) of
-                                           (_, Rel.LT sg', Oper.Var x') =>
-                                              Var.equals (x, x')
-                                              andalso sg = sg'
-                                         | (Oper.Const c, Rel.LE sg',
-                                            Oper.Var x') =>
-                                              Var.equals (x, x')
-                                              andalso sg = sg'
-                                              andalso
-                                              (case c of
-                                                  Const.Word w =>
-                                                     WordX.gt
-                                                     (w, WordX.min (s, sg), sg)
-                                                | _ => Error.bug "RedundantTests.sub1: strange fact")
-                                         | _ => false)
-                                then simplify (Prim.wordSub s, x, s)
+                             if sub1Eligible (x, s, sg)
+                             then simplify (Prim.wordSub s, x, s)
                              else noChange
                           fun add (c: Const.t, x: Var.t, (s, sg as {signed})) =
                              case c of

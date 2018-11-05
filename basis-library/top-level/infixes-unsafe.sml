@@ -6,5 +6,5 @@
  * See the file MLton-LICENSE for details.
  *)
 
-infix  7 *? 
-infix  6 +? -?
+infix  7 *!
+infix  6 +! -!

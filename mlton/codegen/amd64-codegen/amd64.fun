@@ -3448,6 +3448,8 @@ struct
                          NONE => ""
                        | SOME f => FrameInfo.toString f]
 
+      val layout = Layout.str o toString
+
       val uses_defs_kills
         = fn CReturn {dsts, func, ...} 
            => let
@@ -3673,6 +3675,8 @@ struct
                       Option.toString Label.toString return,
                       ">"]
 
+      val layout = Layout.str o toString
+
       val uses_defs_kills
         = fn Switch {test, ...}
            => {uses = [test], defs = [], kills = []}
@@ -3808,6 +3812,26 @@ struct
                     else "NONE");
            print "\n")
 
+      fun layout (T {entry, profileLabel, statements, transfer, ...})
+        = let
+            open Layout
+          in
+            align [seq [Entry.layout entry,
+                        str ": ",
+                        record [("profileLabel",
+                                 Option.layout ProfileLabel.layout
+                                               profileLabel)],
+                        str "\n"],
+                   indent (align
+                           [align (List.map (statements,
+                                             fn s => seq [Assembly.layout s,
+                                                          str "\n"])),
+                            Transfer.layout transfer],
+                           4)]
+          end
+
+      fun layouts (block, output' : Layout.t -> unit) = output' (layout block)
+
       val compress': t' list -> t' list =
          fn l =>
          List.fold
@@ -3865,5 +3889,8 @@ struct
     struct
       datatype t = T of {data: Assembly.t list,
                          blocks: Block.t list}
+
+      fun layouts (T {blocks, ...}, output: Layout.t -> unit)
+        = List.foreach (blocks, fn block => Block.layouts (block, output))
     end
 end

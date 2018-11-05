@@ -58,10 +58,10 @@ signature INTEGER_EXTRA =
       val maxInt' : int
       val minInt' : int
 
-      val +? : int * int -> int
-      val *? : int * int -> int
-      val -? : int * int -> int
-      val ~? : int -> int
+      val +! : int * int -> int
+      val *! : int * int -> int
+      val -! : int * int -> int
+      val ~! : int -> int
 
       val andb: int * int -> int
       val << : int * Word.word -> int

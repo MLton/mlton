@@ -32,23 +32,19 @@ signature PRIM_INT_INF =
 
       val abs: int -> int
       val +! : int * int -> int
-      val +? : int * int -> int
       val + : int * int -> int
       val divMod: int * int -> int * int
       val div: int * int -> int
       val gcd: int * int -> int
       val mod: int * int -> int
       val *! : int * int -> int
-      val *? : int * int -> int
       val * : int * int -> int
       val ~! : int -> int
-      val ~? : int -> int
       val ~ : int -> int
       val quotRem: int * int -> int * int
       val quot: int * int -> int
       val rem: int * int -> int
       val -! : int * int -> int
-      val -? : int * int -> int
       val - : int * int -> int
 
       val < : int * int -> bool
@@ -1015,9 +1011,9 @@ structure IntInf =
                 | SOME i => i
             end
       in
-         val bigAdd = make (I.+!, Prim.+, S.max, 1)
-         val bigSub = make (I.-!, Prim.-, S.max, 1)
-         val bigMul = make (I.*!, Prim.*, S.+, 0)
+         val bigAdd = make (I.+$, Prim.+, S.max, 1)
+         val bigSub = make (I.-$, Prim.-, S.max, 1)
+         val bigMul = make (I.*$, Prim.*, S.+, 0)
       end
 
       fun bigNeg (arg: bigInt): bigInt =
@@ -1325,23 +1321,19 @@ structure IntInf =
 
       val abs = bigAbs
       val op +! = bigAdd
-      val op +? = bigAdd
       val op + = bigAdd
       val divMod = bigDivMod
       val op div = bigDiv
       val gcd = bigGcd
       val op mod = bigMod
       val op *! = bigMul
-      val op *? = bigMul
       val op * = bigMul
       val op ~! = bigNeg
-      val op ~? = bigNeg
       val op ~ = bigNeg
       val quotRem = bigQuotRem
       val quot = bigQuot
       val rem = bigRem
       val op -! = bigSub
-      val op -? = bigSub
       val op - = bigSub
 
       val op < = bigLT

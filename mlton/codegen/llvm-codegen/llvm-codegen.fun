@@ -153,6 +153,7 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Thread_returnToC => false
        | Word_add _ => true
        | Word_addCheck _ => true
+       | Word_addCheckP _ => true
        | Word_andb _ => true
        | Word_castToReal _ => true
        | Word_equal _ => true
@@ -170,8 +171,19 @@ fun implementsPrim (p: 'a Prim.t): bool =
                     *)
                    not (WordSize.equals (ws, WordSize.word64))
               | _ => true)
+       | Word_mulCheckP (ws, _) =>
+            (case (!Control.Target.arch, ws) of
+                (Control.Target.X86, ws) =>
+                   (* @llvm.smul.with.overflow.i64 becomes a call to __mulodi4.
+                    * @llvm.umul.with.overflow.i64 becomes a call to __udivdi3.
+                    * These are provided by compiler-rt and not always by libgcc.
+                    * In any case, do not depend on non-standard libraries.
+                    *)
+                   not (WordSize.equals (ws, WordSize.word64))
+              | _ => true)
        | Word_neg _ => true
        | Word_negCheck _ => true
+       | Word_negCheckP _ => true
        | Word_notb _ => true
        | Word_orb _ => true
        | Word_quot _ => true
@@ -182,6 +194,7 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Word_rshift _ => true
        | Word_sub _ => true
        | Word_subCheck _ => true
+       | Word_subCheckP _ => true
        | Word_xorb _ => true
        | _ => false
    end
@@ -624,6 +637,21 @@ and getOperandValue (cxt, operand) =
 fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
     let
         datatype z = datatype Prim.Name.t
+
+        fun mkoverflowp (ws, intrinsic) =
+        let
+          val tmp1 = nextLLVMReg ()
+          val tmp2 = nextLLVMReg ()
+          val ty = llws ws
+          val oper = concat ["\t", tmp1, " = call {", ty, ", i1} @llvm.",
+                             intrinsic, ".with.overflow.", llwsInt ws, "(", ty,
+                             " ", arg0, ", ", ty, " ", arg1, ")\n"]
+          val extr = concat ["\t", tmp2, " = extractvalue {", ty, ", i1} ", tmp1,
+                             ", 1\n"]
+          val ext = mkconv (res, "zext", "i1", tmp2, "%Word32")
+        in
+          (concat [oper, extr, ext], "%Word32")
+        end
     in
         case Prim.name prim of
             CPointer_add =>
@@ -799,6 +827,8 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
             in
                 (inst, concat ["{", ty, ", i1}"])
             end
+          | Word_addCheckP (ws, {signed}) =>
+              mkoverflowp (ws, if signed then "sadd" else "uadd")
           | Word_andb ws => (mkinst (res, "and", llws ws, arg0, arg1), llws ws)
           | Word_castToReal (ws, rs) =>
             (case rs of
@@ -846,6 +876,8 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
             in
                 (inst, concat ["{", ty, ", i1}"])
             end
+          | Word_mulCheckP (ws, {signed}) =>
+              mkoverflowp (ws, if signed then "smul" else "umul")
           | Word_neg ws => (mkinst (res, "sub", llws ws, "0", arg0), llws ws)
           | Word_negCheck ws =>
             let
@@ -855,6 +887,20 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
                 val resTy = concat ["{", ty, ", i1}"]
             in
                 (inst, resTy)
+            end
+          | Word_negCheckP ws =>
+            let
+              val ty = llws ws
+              val tmp1 = nextLLVMReg ()
+              val tmp2 = nextLLVMReg ()
+              val oper = concat ["\t", tmp1, " = call {", ty,
+                                 ", i1} @llvm.ssub.with.overflow.", llwsInt ws,
+                                 "(", ty, " 0, ", ty, " ", arg0, ")\n"]
+              val extr = concat ["\t", tmp2 , " = extractvalue {", ty, ", i1}",
+                                 tmp1, ", 1\n"]
+              val ext = mkconv (res, "zext", "i1", tmp2, "%Word32")
+            in
+              (concat [oper, extr, ext], "%Word32")
             end
           | Word_notb ws => (mkinst (res, "xor", llws ws, arg0, "-1"), llws ws)
           | Word_orb ws => (mkinst (res, "or", llws ws, arg0, arg1), llws ws)
@@ -913,6 +959,8 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
             in
                 (inst, concat ["{", ty, ", i1}"])
             end
+          | Word_subCheckP (ws, {signed}) =>
+              mkoverflowp (ws, if signed then "ssub" else "usub")
           | Word_xorb ws => (mkinst (res, "xor", llws ws, arg0, arg1), llws ws)
           | _ => Error.bug "LLVM Codegen: Unsupported operation in outputPrim"
     end

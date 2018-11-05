@@ -562,6 +562,9 @@ struct
                                 {oper = Instruction.SBB, ...})
                              => (true, if b then b' else true)
                              | Assembly.Instruction
+                               (Instruction.MOV _)
+                             => (b, b')
+                             | Assembly.Instruction
                                (Instruction.SETcc
                                 {condition = Instruction.C, ...})
                              => (true, if b then b' else true)
@@ -1514,7 +1517,7 @@ struct
 (*          elimBinAL0L:: *)
 (*          elimBinAL0R:: *)
             elimAddSub1::
-            elimMDPow2::
+(*          elimMDPow2::  *)
             elimCMPTEST::
             nil
         val optimizations_pre_msg
@@ -1522,18 +1525,20 @@ struct
 (*          elimBinAL0L_msg:: *)
 (*          elimBinAL0R_msg:: *)
             elimAddSub1_msg::
-            elimMDPow2_msg::
+(*          elimMDPow2_msg::  *)
             nil
 
         val optimizations_post
-          = elimBinALMDDouble::
+          = elimMDPow2::
+            elimBinALMDDouble::
             elimSSEBinASDouble::
             elimCMPTEST::
             elimCMP0::
             elimALTEST::
             nil
         val optimizations_post_msg
-          = elimBinALMDDouble_msg::
+          = elimMDPow2_msg::
+            elimBinALMDDouble_msg::
             elimSSEBinASDouble_msg::
             elimCMPTEST_msg::
             elimCMP0_msg::
@@ -2846,6 +2851,15 @@ struct
                           case asm
                             of Assembly.Comment _ => (b, b')
                              | Assembly.Instruction
+                               (Instruction.BinAL {oper = Instruction.ADC, ...})
+                             => (true, if b then b' else true)
+                             | Assembly.Instruction
+                               (Instruction.BinAL {oper = Instruction.SBB, ...})
+                             => (true, if b then b' else true)
+                             | Assembly.Instruction
+                               (Instruction.MOV _)
+                             => (b, b')
+                             | Assembly.Instruction
                                (Instruction.SETcc _) 
                              => (true, if b then b' else true)
                              | _ => (true, b'))
@@ -3085,6 +3099,158 @@ struct
              rewriter = rewriter,
              callback = callback}
         val elimALCopy_msg = elimALCopy_msg
+      end
+
+      local
+        fun isInstructionMOV_aux (check) : statement_type -> bool
+          = fn (Assembly.Instruction (Instruction.MOV
+                                      {dst = Operand.MemLoc memloc,...}),
+                _)
+             => check memloc
+             | _ => false
+
+        val isInstructionMOV : statement_type -> bool
+          = isInstructionMOV_aux (fn _ => true)
+        val isInstructionMOV_dstTemp : statement_type -> bool
+          = isInstructionMOV_aux amd64Liveness.track
+
+        fun isInstructionAL_aux (check) : statement_type -> bool
+          = fn (Assembly.Instruction (Instruction.BinAL
+                                      {dst = Operand.MemLoc memloc,...}), _)
+             => check memloc
+             | (Assembly.Instruction (Instruction.pMD
+                                      {dst = Operand.MemLoc memloc,...}), _)
+             => check memloc
+             | (Assembly.Instruction (Instruction.IMUL2
+                                      {dst = Operand.MemLoc memloc,...}), _)
+             => check memloc
+             | (Assembly.Instruction (Instruction.UnAL
+                                      {dst = Operand.MemLoc memloc,...}), _)
+             => check memloc
+             | (Assembly.Instruction (Instruction.SRAL
+                                      {dst = Operand.MemLoc memloc,...}), _)
+             => check memloc
+             | _ => false
+
+        val isInstructionAL : statement_type -> bool
+          = isInstructionAL_aux (fn _ => true)
+
+        fun isDeadTemp dead memloc
+          = amd64Liveness.track memloc andalso LiveSet.contains (dead, memloc)
+        val isInstructionAL_dstDeadTemp : statement_type -> bool
+          = fn (instr, liveness as Liveness.T {dead, ...})
+            => isInstructionAL_aux (isDeadTemp dead) (instr, liveness)
+
+        val template : template
+          = {start = EmptyOrNonEmpty,
+             statements = [One isInstructionMOV,
+                           All isComment,
+                           One isInstructionAL,
+                           All isComment,
+                           One isInstructionMOV_dstTemp,
+                           All isComment,
+                           One isInstructionAL_dstDeadTemp],
+             finish = EmptyOrNonEmpty,
+             transfer = fn _ => true}
+
+        val rewriter : rewriter
+          = fn {entry,
+                profileLabel,
+                start,
+                statements =
+                [[(stmtMov as Assembly.Instruction (Instruction.MOV
+                                                    {src = src1x,
+                                                     dst = dst1z, ...}),
+                   _)],
+                 comments1,
+                 [(stmtAL as Assembly.Instruction instrAL1, _)],
+                 comments2,
+                 [(Assembly.Instruction (Instruction.MOV
+                                         {src = src2x,
+                                          dst = dst2z, ...}),
+                   _)],
+                 comments3,
+                 [(Assembly.Instruction instrAL2,
+                   Liveness.T {liveOut = liveOut2, ...})]],
+                finish,
+                transfer}
+                => if !Control.Native.elimALRedundant andalso
+                     Operand.eq (src1x, src2x) andalso
+                     (let
+                        fun checkUn (oper1, dst1, oper2, dst2)
+                          = oper1 = oper2 andalso
+                            Operand.eq(dst1z, dst1) andalso
+                            Operand.eq(dst2z, dst2)
+
+                        fun checkBin (oper1, src1, dst1, oper2, src2, dst2)
+                          = oper1 = oper2 andalso
+                            Operand.eq(src1, src2) andalso
+                            Operand.eq(dst1z, dst1) andalso
+                            Operand.eq(dst2z, dst2)
+                      in
+                        case (instrAL1, instrAL2) of
+                           (Instruction.BinAL
+                             {oper = oper1, src = src1, dst = dst1, ...},
+                            Instruction.BinAL
+                             {oper = oper2, src = src2, dst = dst2, ...})
+                           => checkBin (oper1, src1, dst1, oper2, src2, dst2)
+                         | (Instruction.pMD
+                             {oper = oper1, src = src1, dst = dst1, ...},
+                            Instruction.pMD
+                             {oper = oper2, src = src2, dst = dst2, ...})
+                           => checkBin (oper1, src1, dst1, oper2, src2, dst2)
+                         | (Instruction.IMUL2
+                             {src = src1, dst = dst1, ...},
+                            Instruction.IMUL2
+                             {src = src2, dst = dst2, ...})
+                           => checkBin (Instruction.IMUL, src1, dst1,
+                                        Instruction.IMUL, src2, dst2)
+                         | (Instruction.UnAL
+                             {oper = oper1, dst = dst1, ...},
+                            Instruction.UnAL
+                             {oper = oper2, dst = dst2, ...})
+                           => checkUn (oper1, dst1, oper2, dst2)
+                         | (Instruction.SRAL
+                             {oper = oper1, count = src1, dst = dst1, ...},
+                            Instruction.SRAL
+                             {oper = oper2, count = src2, dst = dst2, ...})
+                           => checkBin (oper1, src1, dst1, oper2, src2, dst2)
+                         | _ => false
+                      end)
+                     then
+                       let
+                         val excomm = fn comm => List.map (comm, fn (c, _) => c)
+                         val comments1 = excomm comments1
+                         val comments2 = excomm comments2
+                         val comments3 = excomm comments3
+
+                         val statements =
+                           stmtMov::(comments1 @ (stmtAL::(comments2 @ comments3)))
+                         val {statements, ...}
+                           = LivenessBlock.toLivenessStatements
+                             {statements = statements, live = liveOut2}
+                         val statements
+                           = List.fold (start,
+                                        List.concat [statements, finish],
+                                        op ::)
+                       in
+                         SOME (LivenessBlock.T
+                               {entry = entry,
+                                profileLabel = profileLabel,
+                                statements = statements,
+                                transfer = transfer})
+                       end
+                     else NONE
+            | _ => Error.bug "amd64Simplify.PeepholeBlock: elimALRedundant"
+
+        val (callback,elimALRedundant_msg)
+          = make_callback_msg "elimALRedundant"
+      in
+        val elimALRedundant : optimization
+          = {template = template,
+             rewriter = rewriter,
+             callback = callback}
+        val elimALRedundant_msg = elimALRedundant_msg
       end
 
       local
@@ -3936,6 +4102,13 @@ struct
       end
 
       local
+        val optimizations_pre
+          = elimALRedundant::
+            nil
+        val optimizations_pre_msg
+          = elimALRedundant_msg::
+            nil
+
         val optimizations 
           = elimALCopy::
             elimSSEASCopy::
@@ -3968,6 +4141,21 @@ struct
             elimSSESSelfMove_minor_msg::
             nil
       in
+        val peepholeLivenessBlock_pre
+          = fn block => (peepholeBlock {optimizations = optimizations_pre,
+                                        block = block})
+
+        val (peepholeLivenessBlock_pre, peepholeLivenessBlock_pre_msg)
+          = tracer
+            "peepholeLivenessBlock_pre"
+            peepholeLivenessBlock_pre
+
+        val peepholeLivenessBlock_pre_msg
+          = fn () => (peepholeLivenessBlock_pre_msg ();
+                      Control.indent ();
+                      List.foreach(optimizations_pre_msg, fn msg => msg ());
+                      Control.unindent ())
+
         val peepholeLivenessBlock
           = fn block => (peepholeBlock {optimizations = optimizations,
                                         block = block})
@@ -4191,6 +4379,7 @@ struct
                                   {block = block,
                                    changed = false,
                                    msg = "peepholeBlock/moveHoist/peepholeLivenessBlock/copyPropagate"}
+
                           (***************************************************)
                           (* peepholeBlock_pre                               *)
                           (***************************************************)
@@ -4220,8 +4409,29 @@ struct
                                    msg = "amd64Liveness.LivenessBlock.toLivenessBlock"}
 
                           (***************************************************)
+                          (* peepholeLivenessBlock_pre                       *)
+                          (***************************************************)
+                          val {block = block',
+                               changed = changed'}
+                            = PeepholeLivenessBlock.peepholeLivenessBlock_pre
+                              block
+
+                          val _ = checkLivenessBlock
+                                  {block = block,
+                                   block' = block',
+                                   msg = "PeepholeLivenessBlock.peepholeLivenessBlock_pre"}
+
+                          val _ = changedLivenessBlock_msg
+                                  {block = block',
+                                   changed = changed',
+                                   msg = "PeepholeLivenessBlock.peepholeLivenessBlock_pre"}
+                          val block = block'
+                          val changed = changed orelse changed'
+
+                          (***************************************************)
                           (* moveHoist                                       *)
                           (***************************************************)
+
                           val {block = block', 
                                changed = changed'}
                             = if !Control.Native.moveHoist
@@ -4412,6 +4622,7 @@ struct
        amd64EntryTransfer.verifyEntryTransfer_msg ();
        PeepholeBlock.peepholeBlock_pre_msg ();
        amd64Liveness.LivenessBlock.toLivenessBlock_msg ();
+       PeepholeLivenessBlock.peepholeLivenessBlock_pre_msg ();
        MoveHoistLivenessBlock.moveHoist_msg ();
        PeepholeLivenessBlock.peepholeLivenessBlock_msg ();
        CopyPropagateLivenessBlock.copyPropagate_msg ();

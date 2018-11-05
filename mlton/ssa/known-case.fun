@@ -431,7 +431,7 @@ fun transform (Program.T {globals, datatypes, functions, main})
                   addBlock block)
              local
                val table: (Transfer.t, Label.t) HashTable.t =
-                  HashTable.new {hash=Transfer.hash, equals=Transfer.equals}
+                  HashTable.new {hash = Transfer.hash, equals = Transfer.equals}
              in
                 fun newBlock transfer =
                    let
@@ -454,7 +454,7 @@ fun transform (Program.T {globals, datatypes, functions, main})
                  *)
                 fun newBlock' transfer =
                    HashTable.lookupOrInsert
-                         (table, transfer, fn () => newBlock transfer)
+                   (table, transfer, fn () => newBlock transfer)
                 val _ = newBlock' (* quell unused variable warning *)
                fun bugBlock () = newBlock Bug
              end

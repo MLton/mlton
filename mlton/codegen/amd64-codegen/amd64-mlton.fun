@@ -80,6 +80,7 @@ struct
          | Thread_returnToC => false
          | Word_add _ => true
          | Word_addCheck _ => true
+         | Word_addCheckP _ => true
          | Word_andb _ => true
          | Word_castToReal _ => true
          | Word_equal _ => true
@@ -88,8 +89,10 @@ struct
          | Word_lt _ => true
          | Word_mul _ => true
          | Word_mulCheck _ => true
+         | Word_mulCheckP _ => true
          | Word_neg _ => true
          | Word_negCheck _ => true
+         | Word_negCheckP _ => true
          | Word_notb _ => true
          | Word_orb _ => true
          | Word_quot _ => true
@@ -100,6 +103,7 @@ struct
          | Word_rshift _ => true
          | Word_sub _ => true
          | Word_subCheck _ => true
+         | Word_subCheckP _ => true
          | Word_xorb _ => true
          | _ => false
      end
@@ -240,6 +244,60 @@ struct
                 transfer = NONE}]
             end
 
+        fun binalcc (oper, condition)
+          = let
+              val ((src1,src1size),
+                   (src2,src2size)) = getSrc2 ()
+              val (dst,dstsize) = getDst1 ()
+              val tmp = overflowCheckTempContentsOperand src1size
+              val _ 
+                = Assert.assert
+                  ("amd64MLton.prim: binalcc, src1size/src2size",
+                   fn () => src1size = src2size)
+
+              (* Reverse src1/src2 when src1 and src2 are temporaries
+               * and the oper is commutative. 
+               *)
+              val (src1,src2)
+                = if (oper = Instruction.ADD)
+                     orelse
+                     (oper = Instruction.ADC)
+                     orelse
+                     (oper = Instruction.AND)
+                     orelse
+                     (oper = Instruction.OR)
+                     orelse
+                     (oper = Instruction.XOR)
+                    then case (Operand.deMemloc src1, Operand.deMemloc src2)
+                           of (SOME memloc_src1, SOME memloc_src2)
+                            => if amd64Liveness.track memloc_src1
+                                  andalso
+                                  amd64Liveness.track memloc_src2
+                                 then (src2,src1)
+                                 else (src1,src2)
+                            | _ => (src1,src2)
+                    else (src1,src2)
+            in
+              AppendList.fromList
+              [Block.mkBlock'
+               {entry = NONE,
+                statements
+                = [Assembly.instruction_mov
+                   {dst = tmp,
+                    src = src1,
+                    size = src1size},
+                   Assembly.instruction_binal
+                   {oper = oper,
+                    dst = tmp,
+                    src = src2,
+                    size = src1size},
+                   Assembly.instruction_setcc
+                   {condition = condition,
+                    dst = dst,
+                    size = dstsize}],
+                transfer = NONE}]
+            end
+
         fun pmd oper
           = let
               val ((src1,src1size),
@@ -284,6 +342,54 @@ struct
                 transfer = NONE}]
             end
 
+        fun pmdcc (oper, condition)
+          = let
+              val ((src1,src1size),
+                   (src2,src2size)) = getSrc2 ()
+              val (dst,dstsize) = getDst1 ()
+              val tmp = overflowCheckTempContentsOperand src1size
+              val _ 
+                = Assert.assert
+                  ("amd64MLton.prim: pmdcc, src1size/src2size",
+                   fn () => src1size = src2size)
+
+              (* Reverse src1/src2 when src1 and src2 are temporaries
+               * and the oper is commutative. 
+               *)
+              val (src1,src2)
+                = if (oper = Instruction.IMUL)
+                     orelse
+                     (oper = Instruction.MUL)
+                    then case (Operand.deMemloc src1, Operand.deMemloc src2)
+                           of (SOME memloc_src1, SOME memloc_src2)
+                            => if amd64Liveness.track memloc_src1
+                                  andalso
+                                  amd64Liveness.track memloc_src2
+                                 then (src2,src1)
+                                 else (src1,src2)
+                            | _ => (src1,src2)
+                    else (src1,src2)
+            in
+              AppendList.fromList
+              [Block.mkBlock'
+               {entry = NONE,
+                statements
+                = [Assembly.instruction_mov
+                   {dst = tmp,
+                    src = src1,
+                    size = src1size},
+                   Assembly.instruction_pmd
+                   {oper = oper,
+                    dst = tmp,
+                    src = src2,
+                    size = src1size},
+                   Assembly.instruction_setcc
+                   {condition = condition,
+                    dst = dst,
+                    size = dstsize}],
+                transfer = NONE}]
+            end
+
         fun imul2 ()
           = let
               val ((src1,src1size),
@@ -323,6 +429,49 @@ struct
                 transfer = NONE}]
             end
 
+        fun imul2cc condition
+          = let
+              val ((src1,src1size),
+                   (src2,src2size)) = getSrc2 ()
+              val (dst,dstsize) = getDst1 ()
+              val tmp = overflowCheckTempContentsOperand src1size
+              val _ 
+                = Assert.assert
+                  ("amd64MLton.prim: imul2cc, src1size/src2size",
+                   fn () => src1size = src2size)
+
+              (* Reverse src1/src2 when src1 and src2 are temporaries
+               * and the oper is commutative. 
+               *)
+              val (src1,src2)
+                = case (Operand.deMemloc src1, Operand.deMemloc src2)
+                    of (SOME memloc_src1, SOME memloc_src2)
+                     => if amd64Liveness.track memloc_src1
+                           andalso
+                           amd64Liveness.track memloc_src2
+                          then (src2,src1)
+                          else (src1,src2)
+                     | _ => (src1,src2)
+            in
+              AppendList.fromList
+              [Block.mkBlock'
+               {entry = NONE,
+                statements
+                = [Assembly.instruction_mov
+                   {dst = tmp,
+                    src = src1,
+                    size = src1size},
+                   Assembly.instruction_imul2
+                   {dst = tmp,
+                    src = src2,
+                    size = src1size},
+                   Assembly.instruction_setcc
+                   {dst = dst,
+                    condition = condition,
+                    size = dstsize}],
+                transfer = NONE}]
+            end
+
         fun unal oper
           = let
               val (src,srcsize) = getSrc1 ()
@@ -342,6 +491,31 @@ struct
                     size = srcsize},
                    Assembly.instruction_unal
                    {oper = oper,
+                    dst = dst,
+                    size = dstsize}],
+                transfer = NONE}]
+            end
+
+        fun unalcc (oper, condition)
+          = let
+              val (src,srcsize) = getSrc1 ()
+              val (dst,dstsize) = getDst1 ()
+              val tmp = overflowCheckTempContentsOperand srcsize
+            in
+              AppendList.fromList
+              [Block.mkBlock'
+               {entry = NONE,
+                statements
+                = [Assembly.instruction_mov
+                   {dst = tmp,
+                    src = src,
+                    size = srcsize},
+                   Assembly.instruction_unal
+                   {oper = oper,
+                    dst = tmp,
+                    size = srcsize},
+                   Assembly.instruction_setcc
+                   {condition = condition,
                     dst = dst,
                     size = dstsize}],
                 transfer = NONE}]
@@ -611,6 +785,9 @@ struct
                         transfer = NONE}))
                    end
               else (AppendList.empty,AppendList.empty)
+
+        fun flag {signed} =
+           if signed then amd64.Instruction.O else amd64.Instruction.C
       in
         AppendList.appends
         [comment_begin,
@@ -991,6 +1168,7 @@ struct
                   end
              | Real_sub _ => sse_binas Instruction.SSE_SUBS
              | Word_add _ => binal Instruction.ADD
+             | Word_addCheckP (_, sg) => binalcc (Instruction.ADD, flag sg)
              | Word_andb _ => binal Instruction.AND
              | Word_castToReal _ => sse_movd ()
              | Word_equal _ => cmp Instruction.E
@@ -1004,7 +1182,17 @@ struct
                   | W16 => imul2 ()
                   | W32 => imul2 ()
                   | W64 => imul2 ())
+             | Word_mulCheckP (s, {signed}) =>
+                 if signed then
+                   (case WordSize.prim s of
+                      W8 => pmdcc (Instruction.IMUL, amd64.Instruction.O)
+                    | W16 => imul2cc amd64.Instruction.O
+                    | W32 => imul2cc amd64.Instruction.O
+                    | W64 => imul2cc amd64.Instruction.O)
+                 else
+                   pmdcc (Instruction.MUL, amd64.Instruction.C)
              | Word_neg _ => unal Instruction.NEG
+             | Word_negCheckP _ => unalcc (Instruction.NEG, Instruction.O)
              | Word_notb _ => unal Instruction.NOT
              | Word_orb _ => binal Instruction.OR
              | Word_quot (_, {signed}) =>
@@ -1069,6 +1257,7 @@ struct
              | Word_rshift (_, {signed}) =>
                   sral (if signed then Instruction.SAR else Instruction.SHR)
              | Word_sub _ => binal Instruction.SUB
+             | Word_subCheckP (_, sg) => binalcc (Instruction.SUB, flag sg)
              | Word_extdToWord (s, s', {signed}) =>
                   let
                      val b = WordSize.bits s
