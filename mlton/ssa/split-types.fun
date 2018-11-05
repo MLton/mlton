@@ -67,7 +67,7 @@ struct
             | (Heap (t1, _), Heap (t2, _)) => equated (t1, t2)
             | _ => false
 
-      fun mergeFresh ((tycon1, cons1), (tycon2, cons2)) =
+      fun mergeFresh coerceList ((tycon1, cons1), (tycon2, cons2)) =
          let
             val _ = Control.diagnostics
                (fn display =>
@@ -82,7 +82,6 @@ struct
                      Ref.layout (List.layout layoutCon) cons2]))
             val tycon = (optionJoin (tycon1, tycon2, Tycon.equals,
                fn (_, _) => Error.bug "splitTypes.TypeInfo.mergeFresh: Inconsistent tycons"))
-            val coerceList = ref []
             val _ = List.foreach (!cons2, fn conData as ConData (con2, args2) =>
                let
                   val found = List.peek (!cons1, fn ConData (con1, _) =>
@@ -92,8 +91,6 @@ struct
                        SOME (ConData (_, args1)) => coerceList := (args1, args2) :: !coerceList
                      | NONE => cons1 := conData :: !cons1
                end)
-            val _ = List.foreach(!coerceList, fn (args1, args2) =>
-               Vector.foreach2(args1, args2, coerce))
             val _ = Control.diagnostics
                (fn display =>
                      display ( Layout.fill [
@@ -106,7 +103,17 @@ struct
          end
       and coerce (from, to) =
          case (from, to) of
-              (Fresh a, Fresh b) => Equatable.equate (a, b, mergeFresh)
+              (Fresh a, Fresh b) =>
+              let
+                 (* in recursive situations we could get lost updates, so we have to be very
+                  * careful here about the coercion order *)
+                 val coerceList = ref []
+                 val result = Equatable.equate (a, b, mergeFresh coerceList)
+                 val _ = List.foreach(!coerceList, fn (args1, args2) =>
+                    Vector.foreach2(args1, args2, coerce))
+              in
+                 result
+              end
             | (Tuple a, Tuple b) => Vector.foreach2 (a, b, coerce)
             | (Unchanged t1, Unchanged t2) =>
                  if Type.equals(t1, t2)
