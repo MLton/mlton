@@ -291,8 +291,12 @@ fun transform program: Program.t =
                | Prim.Name.Ref_assign => assignPrim TypeInfo.Ref args
                | Prim.Name.Vector_sub => derefPrim args
                | Prim.Name.Vector_vector => TypeInfo.Heap
-                  (* todo, should merge all types used together *)
-                     (TypeInfo.fromType (Vector.sub (targs, 0)), TypeInfo.Vector)
+                  let
+                     val ty = TypeInfo.fromType (Vector.sub (targs, 0))
+                     val _ = Vector.fold (args, ty, fn (a, b) => (TypeInfo.coerce (a, b); a) )
+                  in
+                     (ty, TypeInfo.Vector)
+                  end
                | Prim.Name.Weak_get => refPrim TypeInfo.Weak args
                | Prim.Name.Weak_new => derefPrim args
                | _ => TypeInfo.fromType resultType
