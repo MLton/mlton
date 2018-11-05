@@ -195,9 +195,9 @@ fun dupGlobals (program as Program.T {datatypes, globals, functions, main}): Pro
             | Transfer.Runtime {args, prim, return} =>
                  Transfer.Runtime {args=freshenVec args, prim=prim, return=return}
       fun loopBlock (Block.T {args, label, statements, transfer}) =
-         Block.T {args=args, label=label,
-            statements=Vector.map (statements, loopStatement),
-            transfer=loopTransfer transfer}
+         Block.T {args = args, label=label,
+            statements = Vector.map (statements, loopStatement),
+            transfer = loopTransfer transfer}
       fun loopFunction func =
          let
             val {args, blocks, mayInline, name, raises, returns, start} = Function.dest func
@@ -209,33 +209,37 @@ fun dupGlobals (program as Program.T {datatypes, globals, functions, main}): Pro
 
       val newFunctions = List.map (functions, loopFunction)
 
-      (* we'll need to make the globals twice, first, we create them as they would be created from
-       * just the statements in the program body, then we loop over the new globals, then create again.
-       * If we don't do this, there may be spurious connections, for instance:
-       * If c = a :: b, but c is split into c1 and c2, then c1 and c2 might become re-connected if
-       * both are connected with b.
-       * *)
-       (*
-      fun makeGlobals globals =
+      (* We do not recurse on global definintions, so if g1 = C1 (g0) and g2 = C2 (g0), we
+       * will not duplicate g0. We expect this shouldn't improve much over proper
+       * duplication of single-depth usages *)
+      val newGlobals =
          let
             fun globalToClones (Statement.T {exp, ty, var}) =
                let
-                  val newVars = case HashTable.peek (globalVars, var) of
+                  val realVar = case var of
+                     SOME v => v
+                   | NONE => Error.bug "SplitTypes.dupGlobals.newGlobals: Global variable was NONE"
+                  val newVars = case HashTable.peek (globalVars, realVar) of
                      SOME vs => !vs
-                   | NONE => Error.bug "SplitTypes.dupGlobals: No global information"
+                   (* it's possible a global is referenced only in globals, not in the program *)
+                   | NONE => []
                in
-                  Vector.map (newVars, fn var => Statement.T {exp=exp, var
+                  (Vector.fromList o List.map) (newVars, fn var =>
+                     Statement.T {
+                        exp = exp,
+                        var = SOME (Var.new var),
+                        ty = ty })
                end
          in
+            Vector.concat [globals, Vector.concatV (Vector.map (globals, globalToClones))]
          end
-        *)
    in
-      program
+      Program.T {datatypes=datatypes, globals=newGlobals, functions=newFunctions, main=main}
    end
 
 fun transform program: Program.t =
    let
-      val program  as Program.T {datatypes, globals, functions, main} = dupGlobals program
+      val program  as Program.T {datatypes, globals, functions, main} = program
 
       fun fromCon {con: Con.t, args: TypeInfo.t vector} =
          let
