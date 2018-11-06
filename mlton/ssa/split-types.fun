@@ -284,6 +284,12 @@ fun transform program: Program.t =
             in
                Vector.sub (args, 0)
             end
+            fun coerceTwo args =
+               let
+                  val _ = TypeInfo.coerce (Vector.sub (args, 0), Vector.sub (args, 1))
+               in
+                  TypeInfo.fromType resultType
+               end
          in
             case Prim.name prim of
                  Prim.Name.Array_sub => derefPrim args
@@ -303,6 +309,9 @@ fun transform program: Program.t =
                   end
                | Prim.Name.Weak_get => refPrim TypeInfo.Weak args
                | Prim.Name.Weak_new => derefPrim args
+               | Prim.Name.MLton_equal => coerceTwo args
+               (* this should occur before equals gets implemented, so we'll only need this if it comes after *)
+               | Prim.Name.MLton_eq => coerceTwo args
                | _ => TypeInfo.fromType resultType
          end
       val { value, func, label } =
