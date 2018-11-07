@@ -8,6 +8,12 @@ Here are the changes from versoin 20180206 to version YYYYMMDD.
 
 === Details
 
+* 2018-11-07
+  ** Add support for OpenBSD 6.4, which added stack-pointer register checking to
+  the kernel.  On OpenBSD, `%rsp`/`%esp` must be reserved by the native codegens
+  (so as to always point to the C stack) and the signal stack must be `mmap`-ed
+  with `MAP_STACK`. Thanks to Dan Cross for the pull request.
+
 * 2018-10-15
   ** Introduce new `Overflow`-checking primitives.  Undertaken by Daman Morris
      at RIT supported by NSF CISE Research Infrastructure (CRI) award.
