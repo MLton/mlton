@@ -18,6 +18,7 @@ structure CommonSubexp = CommonSubexp (S)
 structure CombineConversions = CombineConversions (S)
 structure ConstantPropagation = ConstantPropagation (S)
 structure Contify = Contify (S)
+structure DuplicateGlobals = DuplicateGlobals (S)
 structure Flatten = Flatten (S)
 structure Inline = Inline (S)
 structure IntroduceLoops = IntroduceLoops (S)
@@ -63,6 +64,7 @@ val ssaPassesDefault =
     *)
    {name = "loopUnroll1", doit = LoopUnroll.transform, execute = false} ::
    {name = "removeUnused2", doit = RemoveUnused.transform, execute = true} ::
+   {name = "duplicateGlobals", doit = DuplicateGlobals.transform, execute = true} ::
    {name = "splitTypes", doit = SplitTypes.transform, execute = true} ::
    {name = "simplifyTypes", doit = SimplifyTypes.transform, execute = true} ::
    (* polyEqual should run

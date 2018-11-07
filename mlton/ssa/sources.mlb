@@ -63,6 +63,7 @@ local
    constant-propagation.fun
    contify.fun
    deep-flatten.fun
+   duplicate-globals.fun
    flatten.fun
    inline.sig
    inline.fun
