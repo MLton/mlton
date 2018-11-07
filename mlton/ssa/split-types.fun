@@ -145,7 +145,7 @@ struct
       fun const (c: Const.t): t = fromType (Type.ofConst c)
   end
 
-fun dupGlobals (program as Program.T {datatypes, globals, functions, main}): Program.t =
+fun duplicateGlobals (Program.T {datatypes, globals, functions, main}): Program.t =
    let
       val globalVars: (Var.t, Var.t list ref) HashTable.t
          = HashTable.new {hash=Var.hash, equals=Var.equals}
@@ -218,7 +218,7 @@ fun dupGlobals (program as Program.T {datatypes, globals, functions, main}): Pro
                let
                   val realVar = case var of
                      SOME v => v
-                   | NONE => Error.bug "SplitTypes.dupGlobals.newGlobals: Global variable was NONE"
+                   | NONE => Error.bug "SplitTypes.duplicateGlobals.newGlobals: Global variable was NONE"
                   val newVars = case HashTable.peek (globalVars, realVar) of
                      SOME vs => !vs
                    (* it's possible a global is referenced only in globals, not in the program *)
@@ -263,7 +263,7 @@ fun transform program: Program.t =
          in
             TypeInfo.fromType ty
          end
-      fun fromTuple { offset, tuple, resultType} =
+      fun fromTuple { offset, tuple, resultType=_} =
          case tuple of
               TypeInfo.Tuple ts => Vector.sub (ts, offset)
             | _ => Error.bug "SplitTypes.transform.fromTuple: Tried to select from non-tuple info"
@@ -314,7 +314,7 @@ fun transform program: Program.t =
                | Prim.Name.MLton_eq => coerceTwo args
                | _ => TypeInfo.fromType resultType
          end
-      val { value, func, label } =
+      val { value, func, ... } =
          analyze
          { coerce = fn {from, to} => TypeInfo.coerce (from, to),
            conApp = fromCon,
@@ -337,8 +337,8 @@ fun transform program: Program.t =
          let
             fun makeTy eq =
                (case Equatable.value eq of
-                     (SOME tycon, cons) => Type.datatypee (Tycon.new tycon)
-                   | (NONE, cons) =>
+                     (SOME tycon, _) => Type.datatypee (Tycon.new tycon)
+                   | (NONE, _) =>
                         Error.bug (Layout.toString (Layout.fill [
                            Layout.str "SplitTypes.transform.makeTy: ", TypeInfo.layout
                               (TypeInfo.Fresh eq)])))
@@ -375,7 +375,7 @@ fun transform program: Program.t =
                   in
                      Exp.ConApp {con=newCon, args=args}
                   end
-            | Exp.PrimApp {prim, targs, args} =>
+            | Exp.PrimApp {prim, args, ...} =>
                   let
                      val argTys = Vector.map (args, fn arg => getTy (value arg))
                      val newTargs = Prim.extractTargs (prim,
@@ -431,12 +431,6 @@ fun transform program: Program.t =
          end
 
 
-      fun mergeTyVectorOpt (oldTysOpt, tsOpt, name) =
-         case (oldTysOpt, tsOpt) of
-              (NONE, NONE) => NONE
-            | (SOME oldTys, SOME ts) =>
-                 SOME (Vector.map (ts, getTy))
-            | _ => Error.bug ("SplitTypes.TypeInfo.coerce: Inconsistent " ^ name)
       val globals =
          Vector.map(globals, loopStatement)
       val functions =
@@ -445,6 +439,12 @@ fun transform program: Program.t =
                val { args, blocks, mayInline, name, raises, returns, start } =
                   Function.dest f
                val { args = argTys, raises = raiseTys, returns = returnTys } = func name
+               fun mergeTyVectorOpt (oldTysOpt, tsOpt, name) =
+                  case (oldTysOpt, tsOpt) of
+                       (NONE, NONE) => NONE
+                     | (SOME _, SOME ts) =>
+                          SOME (Vector.map (ts, getTy))
+                     | _ => Error.bug ("SplitTypes.TypeInfo.coerce: Inconsistent " ^ name)
             in
                Function.new
                { args = Vector.map2 (args, argTys, fn ((v, _), typeInfo) => (v, getTy typeInfo)),
@@ -469,7 +469,6 @@ fun transform program: Program.t =
          Vector.fromList (List.map (conList, reifyCon newTy))
       val datatypes =
          let
-            fun hash (ty, oldCon) = Type.hash ty + 0wx11 * Con.hash oldCon
             val bool =
                case Vector.peek (datatypes, fn Datatype.T {tycon, ...} =>
                   Tycon.equals (tycon, Tycon.bool))
