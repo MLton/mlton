@@ -16,9 +16,7 @@ struct
                  | Heap of (t * heapType)
       and con = ConData of Con.t * (t vector)
 
-      fun layoutCon (ConData (con, ts)) =
-         Layout.fill [ Con.layout con, Vector.layout layout ts ]
-      and layoutFresh (ty, cons) =
+      fun layoutFresh (ty, cons) =
          Layout.fill [ Option.layout Tycon.layout ty, Layout.str " # ",
                         (* can't layout arguments due to recursion *)
                        Ref.layout (List.layout (fn ConData (con, _) => Con.layout con)) cons]
@@ -69,17 +67,6 @@ struct
 
       fun mergeFresh coerceList ((tycon1, cons1), (tycon2, cons2)) =
          let
-            val _ = Control.diagnostics
-               (fn display =>
-                     display ( Layout.fill [
-                     Layout.str "Merging ",
-                     Option.layout Tycon.layout tycon1,
-                     Layout.str " with ",
-                     Ref.layout (List.layout layoutCon) cons1,
-                     Layout.str " and ",
-                     Option.layout Tycon.layout tycon2,
-                     Layout.str " with ",
-                     Ref.layout (List.layout layoutCon) cons2]))
             val tycon = (optionJoin (tycon1, tycon2, Tycon.equals,
                fn (_, _) => Error.bug "splitTypes.TypeInfo.mergeFresh: Inconsistent tycons"))
             val _ = List.foreach (!cons2, fn conData as ConData (con2, args2) =>
@@ -91,13 +78,6 @@ struct
                        SOME (ConData (_, args1)) => coerceList := (args1, args2) :: !coerceList
                      | NONE => cons1 := conData :: !cons1
                end)
-            val _ = Control.diagnostics
-               (fn display =>
-                     display ( Layout.fill [
-                     Layout.str "Merge result is ",
-                     Option.layout Tycon.layout tycon,
-                     Layout.str " # ",
-                     Ref.layout (List.layout layoutCon) cons1]))
          in
             (tycon, cons1)
          end
@@ -148,27 +128,9 @@ struct
 fun transform (program as Program.T {datatypes, globals, functions, main}) =
    let
       fun fromCon {con: Con.t, args: TypeInfo.t vector} =
-         let
-            val _ = Control.diagnostics
-               (fn display =>
-                  display ( Layout.fill
-                     [ Layout.str "Analyzing conApp ",
-                       Con.layout con,
-                       Layout.str " on ",
-                       Vector.layout TypeInfo.layout args]))
-         in
             TypeInfo.fromCon {con=con,args=args}
-         end
       fun fromType (ty: Type.t) =
-         let
-            val _ = Control.diagnostics
-               (fn display =>
-                  display ( Layout.fill
-                     [ Layout.str "Analyzing type ",
-                       Type.layout ty ]))
-         in
             TypeInfo.fromType ty
-         end
       fun fromTuple { offset, tuple, resultType=_} =
          case tuple of
               TypeInfo.Tuple ts => Vector.sub (ts, offset)
@@ -296,13 +258,8 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
                      Exp.PrimApp {prim=prim, targs=newTargs, args=args}
                   end
             | _ => exp
-      fun loopStatement (st as Statement.T {exp, ty, var=varopt}) =
+      fun loopStatement (Statement.T {exp, ty, var=varopt}) =
          let
-            val _ = Control.diagnostics
-               (fn display =>
-                     display ( Layout.fill [
-                     Layout.str "Looping over statement ",
-                     Statement.layout st]))
             val newTy =
                case varopt of
                      NONE => ty
@@ -311,21 +268,32 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
          in
             Statement.T {exp=newExp, ty=newTy, var=varopt}
          end
-      fun loopCases (cases, test) =
-         case cases of
-              Cases.Con cases' =>
-                  Cases.Con (Vector.map (cases',
-                     fn (con, label) =>
-                        (remapCon (con, getTy (value test)), label)))
-            | Cases.Word _ => cases
       fun loopTransfer transfer =
          case transfer of
               Transfer.Case {cases, test, default} =>
-                  let
-                    val newCases = loopCases (cases, test)
-                  in
-                     Transfer.Case {cases=newCases, test=test, default=default}
-                  end
+                  (case cases of
+                     Cases.Con cases' =>
+                        let
+                           val newTy = getTy (value test)
+                           val newCases = Cases.Con (Vector.map
+                              (cases',
+                               fn (con, label) => (remapCon (con, newTy), label)))
+                           (* if the cases are now exhaustive, default needs to be removed *)
+                           val newDefault =
+                              case (default, value test) of
+                                   (SOME _, TypeInfo.Fresh eq) =>
+                                       let
+                                          val cons = (! o #2 o Equatable.value) eq
+                                       in
+                                          if Vector.length cases' < List.length cons
+                                             then default
+                                             else NONE
+                                       end
+                                 | _ => default
+                        in
+                           Transfer.Case {cases=newCases, default=newDefault, test=test}
+                        end
+                   | Cases.Word _ => transfer)
             | _ => transfer
       fun loopBlock (Block.T { args, label, statements, transfer }) =
          let
@@ -373,6 +341,8 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
          end
       fun reifyCons newTy conList =
          Vector.fromList (List.map (conList, reifyCon newTy))
+
+      val numDatatypes = Vector.length (datatypes)
       val datatypes =
          let
             val bool =
@@ -394,6 +364,20 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
                         | _ => NONE))))
          end
 
+      val _ = Control.diagnostics
+         (fn display =>
+            let
+               open Layout
+            in
+               display ( mayAlign [
+                  str "Program before splitting had ",
+                  str (Int.toString numDatatypes),
+                  str " datatypes.",
+                  str "Program after splitting has ",
+                  str (Int.toString (Vector.length datatypes)),
+                  str " datatypes."
+               ])
+            end )
       val program =
          Program.T
          { datatypes = datatypes,
