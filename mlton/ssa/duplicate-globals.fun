@@ -100,7 +100,7 @@ struct
                      (Vector.fromList o List.map) (newVars, fn var =>
                         Statement.T {
                            exp = exp,
-                           var = SOME (Var.new var),
+                           var = SOME var,
                            ty = ty })
                   end
             in
