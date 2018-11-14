@@ -47,13 +47,16 @@ val ssaPassesDefault =
    {name = "removeUnused1", doit = RemoveUnused.transform, execute = true} ::
    {name = "introduceLoops1", doit = IntroduceLoops.transform, execute = true} ::
    {name = "loopInvariant1", doit = LoopInvariant.transform, execute = true} ::
-   {name = "inlineLeaf1", doit = fn p => 
+   {name = "inlineLeaf1", doit = fn p =>
     Inline.inlineLeaf (p, !Control.inlineLeafA), execute = true} ::
-   {name = "inlineLeaf2", doit = fn p => 
+   {name = "inlineLeaf2", doit = fn p =>
     Inline.inlineLeaf (p, !Control.inlineLeafB), execute = true} ::
    {name = "contify1", doit = Contify.transform, execute = true} ::
    {name = "localFlatten1", doit = LocalFlatten.transform, execute = true} ::
    {name = "constantPropagation", doit = ConstantPropagation.transform, execute = true} ::
+   {name = "duplicateGlobals1", doit = DuplicateGlobals.transform, execute = false} ::
+   {name = "splitTypes1", doit = SplitTypes.transform, execute = false} ::
+
    (* useless should run 
     *   - after constant propagation because constant propagation makes
     *     slots of tuples that are constant useless
@@ -64,8 +67,8 @@ val ssaPassesDefault =
     *)
    {name = "loopUnroll1", doit = LoopUnroll.transform, execute = false} ::
    {name = "removeUnused2", doit = RemoveUnused.transform, execute = true} ::
-   {name = "duplicateGlobals", doit = DuplicateGlobals.transform, execute = true} ::
-   {name = "splitTypes", doit = SplitTypes.transform, execute = true} ::
+   {name = "duplicateGlobals2", doit = DuplicateGlobals.transform, execute = false} ::
+   {name = "splitTypes2", doit = SplitTypes.transform, execute = false} ::
    {name = "simplifyTypes", doit = SimplifyTypes.transform, execute = true} ::
    (* polyEqual should run
     *   - after types are simplified so that many equals are turned into eqs
@@ -88,6 +91,8 @@ val ssaPassesDefault =
    {name = "contify2", doit = Contify.transform, execute = true} ::
    {name = "inlineNonRecursive", doit = fn p =>
     Inline.inlineNonRecursive (p, !Control.inlineNonRec), execute = true} ::
+   {name = "duplicateGlobals3", doit = DuplicateGlobals.transform, execute = false} ::
+   {name = "splitTypes3", doit = SplitTypes.transform, execute = false} ::
    {name = "localFlatten2", doit = LocalFlatten.transform, execute = true} ::
    {name = "removeUnused3", doit = RemoveUnused.transform, execute = true} ::
    {name = "contify3", doit = Contify.transform, execute = true} ::
