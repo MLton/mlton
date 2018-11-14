@@ -19,9 +19,14 @@ struct
       let
          val globalVars: (Var.t, Var.t list ref) HashTable.t
             = HashTable.new {hash=Var.hash, equals=Var.equals}
-         val _ = Vector.foreach (globals, fn st => case Statement.var st of
-               SOME var => ignore (HashTable.lookupOrInsert (globalVars, var, fn () => ref []))
-             | NONE => ())
+         val _ = Vector.foreach (globals, fn st =>
+            let
+               val exp = Statement.exp st
+               val var = Statement.var st
+            in case (var, exp) of
+               (SOME var, Exp.ConApp _) => ignore (HashTable.lookupOrInsert (globalVars, var, fn () => ref []))
+             | _ => ()
+            end)
          fun freshenIfGlobal (var: Var.t) =
             case HashTable.peek (globalVars, var) of
                  NONE => var
