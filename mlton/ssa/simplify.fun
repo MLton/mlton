@@ -91,8 +91,6 @@ val ssaPassesDefault =
    {name = "contify2", doit = Contify.transform, execute = true} ::
    {name = "inlineNonRecursive", doit = fn p =>
     Inline.inlineNonRecursive (p, !Control.inlineNonRec), execute = true} ::
-   {name = "duplicateGlobals3", doit = DuplicateGlobals.transform, execute = false} ::
-   {name = "splitTypes3", doit = SplitTypes.transform, execute = false} ::
    {name = "localFlatten2", doit = LocalFlatten.transform, execute = true} ::
    {name = "removeUnused3", doit = RemoveUnused.transform, execute = true} ::
    {name = "contify3", doit = Contify.transform, execute = true} ::
