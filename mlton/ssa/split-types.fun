@@ -18,7 +18,6 @@ struct
 
       fun layoutFresh (ty, cons) =
          Layout.fill [ Option.layout Tycon.layout ty, Layout.str " # ",
-                        (* can't layout arguments due to recursion *)
                        Ref.layout (List.layout (fn ConData (con, _) => Con.layout con)) cons]
       and layout (t: t) =
          case t of
@@ -27,10 +26,10 @@ struct
             | Tuple vect => Layout.tuple (Vector.toList (Vector.map(vect, layout)))
             | Heap (t,_) => Layout.fill [ layout t, Layout.str " heap" ]
 
-      (* lattice join of options, where NONE is taken as less than SOME a
-       * calling inequal if inconsistent
+      (* lattice join of options, where NONE is taken as less than SOME a,
+       * with a fallback method if the join would be inconsistent
        *
-       * if SOME x and SOME y and x = y then return SOME x = SOME y
+       * if SOME x and SOME y and equals (x, y) then return SOME x (which is SOME y)
        * else if one is SOME x and the other NONE then return SOME x
        * else if both NONE then return NONE
        * else call inequal *)
@@ -56,7 +55,8 @@ struct
                   | Vector => 0w2
                   | Weak => 0w3))
 
-      (* Equality, accounting for equating, so it may become more coarse over time *)
+      (* The equality of types becomes more coarse during analysis,
+       * so it may be unsafe to use as equality *)
       fun equated (t1, t2) =
          case (t1, t2) of
               (Unchanged ty1, Unchanged ty2) => Type.equals (ty1, ty2)
@@ -81,12 +81,12 @@ struct
          in
             (tycon, cons1)
          end
-      and coerce (from, to) =
+      fun coerce (from, to) =
          case (from, to) of
               (Fresh a, Fresh b) =>
               let
-                 (* in recursive situations we could get lost updates, so we have to be very
-                  * careful here about the coercion order *)
+                 (* in some situations, recursive data types may cause lost updates
+                  * so we need to completely finish the coercion before we recurse *)
                  val coerceList = ref []
                  val result = Equatable.equate (a, b, mergeFresh coerceList)
                  val _ = List.foreach(!coerceList, fn (args1, args2) =>
@@ -200,7 +200,6 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
       val tyMap : (TypeInfo.t, Type.t) HashTable.t =
          HashTable.new {hash=TypeInfo.hash, equals=TypeInfo.equated}
 
-
       fun getTy typeInfo =
          let
             fun makeTy eq =
@@ -235,6 +234,9 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
          then oldCon
          else HashTable.lookupOrInsert (remappedCons, (oldCon, newTy), fn () => Con.new oldCon)
 
+
+      (* Loop over the entire program, map each type to the new type,
+       * and each constructor to the new constructor *)
       fun loopExp (exp, newTy) =
          case exp of
               Exp.ConApp {con, args} =>
@@ -331,20 +333,21 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
                  }
             end)
 
-      (* this must occur after the loops to ensure that we can find types correctly.
-       * The con remapping is shared though *)
-      fun reifyCon newTy (TypeInfo.ConData (con, ts)) =
-         let
-            val newCon = remapCon (con, newTy)
-         in
-            {con=newCon, args=Vector.map (ts, getTy)}
-         end
-      fun reifyCons newTy conList =
-         Vector.fromList (List.map (conList, reifyCon newTy))
 
+      (* This needs to run after looping since the types/constructors were
+       * duplicated at usage in the loops above *)
       val numDatatypes = Vector.length (datatypes)
       val datatypes =
          let
+            fun reifyCon newTy (TypeInfo.ConData (con, ts)) =
+               let
+                  val newCon = remapCon (con, newTy)
+               in
+                  {con=newCon, args=Vector.map (ts, getTy)}
+               end
+            fun reifyCons newTy conList =
+               Vector.fromList (List.map (conList, reifyCon newTy))
+
             val bool =
                case Vector.peek (datatypes, fn Datatype.T {tycon, ...} =>
                   Tycon.equals (tycon, Tycon.bool))

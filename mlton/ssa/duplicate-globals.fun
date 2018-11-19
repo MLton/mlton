@@ -39,7 +39,7 @@ struct
                     end
          fun freshenVec (vars: Var.t vector) = Vector.map (vars, freshenIfGlobal)
 
-         (* so what's going on here is that each *usage* of a global will be duplicated *)
+         (* Rewrite all globals to a new version if they're in the table of valid globals *)
          fun loopExp exp =
             case exp of
                  Exp.ConApp {args, con} => Exp.ConApp {con=con, args= freshenVec args}
@@ -51,9 +51,8 @@ struct
                | Exp.Var v => Exp.Var (freshenIfGlobal v)
                | _ => exp
          fun loopStatement (Statement.T {exp, ty, var}) =
-            (* in the main program tree, the variable won't be a global, but we'll loop over
-             * globals since some may depend on each other *)
-            Statement.T {exp=loopExp exp, ty=ty, var=Option.map (var, freshenIfGlobal)}
+            (* This variable won't be global, since we're only looping over the program *)
+            Statement.T {exp=loopExp exp, ty=ty, var=var }
 
          fun loopTransfer transfer =
             case transfer of
@@ -89,7 +88,7 @@ struct
 
          (* We do not recurse on global definintions, so if g1 = C1 (g0) and g2 = C2 (g0), we
           * will not duplicate g0. We expect this shouldn't improve much over proper
-          * duplication of single-depth usages *)
+          * duplication of single-depth and nullary usages *)
          val newGlobals =
             let
                fun globalToClones (Statement.T {exp, ty, var}) =
