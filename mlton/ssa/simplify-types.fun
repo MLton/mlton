@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2018 Matthew Fluet.
  * Copyright (C) 1999-2005, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -200,6 +200,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
       (* Remove useless constructors from datatypes.
        * Remove datatypes which have no cons.
        *)
+      val origDatatypes = datatypes
       val datatypes =
          Vector.keepAllMap
          (datatypes, fn Datatype.T {tycon, cons} =>
@@ -281,7 +282,10 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                              end)
               ; One))
       end
-      fun conCardinality {args, con = _} = tupleCardinality args
+      fun conCardinality {args, con} =
+         case conRep con of
+            ConRep.Useless => Cardinality.Zero
+          | _ => tupleCardinality args
       (* Compute the tycon cardinalities with a fixed point,
        * initially assuming every datatype tycon cardinality is Zero.
        *)
@@ -338,11 +342,17 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
          (fn display =>
           let open Layout
           in Vector.foreach 
-             (datatypes, fn Datatype.T {tycon, ...} =>
-              display (seq [str "cardinality of ",
-                            Tycon.layout tycon,
-                            str " = ",
-                            Cardinality.layout (tyconCardinality tycon)]))
+             (origDatatypes, fn Datatype.T {tycon, cons} =>
+              (display (seq [str "cardinality of ",
+                             Tycon.layout tycon,
+                             str " = ",
+                             Cardinality.layout (tyconCardinality tycon)]);
+               Vector.foreach
+               (cons, fn {con, args} =>
+                (display (seq [str "cardinality of ",
+                               Con.layout con,
+                               str " = ",
+                               Cardinality.layout (conCardinality {con = con, args = args})])))))
           end)
       fun transparent (tycon, con, args) =
          (setTyconReplacement (tycon, Type.tuple args)
