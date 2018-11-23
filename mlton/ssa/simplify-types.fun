@@ -659,7 +659,8 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                                          return = return})
       val simplifyTransfer =
          Trace.trace
-         ("SimplifyTypes.simplifyTransfer", Transfer.layout,
+         ("SimplifyTypes.simplifyTransfer",
+          Transfer.layout,
           Layout.tuple2 (Vector.layout Statement.layout, Transfer.layout))
          simplifyTransfer
       fun simplifyStatement (Statement.T {var, ty, exp}) =
@@ -682,6 +683,12 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                          Keep (Statement.T {var = var, ty = ty, exp = exp}))
             else Delete
          end
+      val simplifyStatement =
+         Trace.trace
+         ("SimplifyTypes.simplifyStatement",
+          Statement.layout,
+          Result.layout Statement.layout)
+         simplifyStatement
       fun simplifyBlock (Block.T {label, args, statements, transfer}) =
          let
             val args = simplifyFormals args
