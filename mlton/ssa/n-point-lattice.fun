@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2018 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -37,11 +38,7 @@ fun whenN (s, n', h') =
                      then Error.bug "NPointLattice.whenN"
                   else if n >= n'
                      then h' ()
-                  else let
-                         val hs = List.nth (hss, n' - n - 1)
-                       in
-                         hs := AppendList.cons (h', !hs)
-                       end
+                  else AppendList.push (List.nth (hss, n' - n - 1), h')
 
 fun isN (s, n') =
    case value s of
@@ -70,12 +67,12 @@ fun from <= to =
    else
       case (value from, value to) of
          ((n,hss), (n',_)) => 
-            (makeN (to, n) ;
-             List.foreachi
+            (List.foreachi
              (hss, fn (i,hs) =>
               if n + i + 1 > n'
-                then hs := AppendList.cons (fn () => makeN (to, n + i + 1), !hs)
-                else ()))
+                then AppendList.push (hs, fn () => makeN (to, n + i + 1))
+                else ());
+             makeN (to, n))
 
 fun == (T s, T s') =
    if Set.equals (s, s')
@@ -91,26 +88,23 @@ fun == (T s, T s') =
                let
                  val n'' = Int.max (n, n')
 
-                 fun doit (n, hss) =
-                    let
-                      val rec drop
-                        = fn (hss, 0: Int.t) => hss
-                           | (hs::hss, n) =>
-                             (AppendList.foreach
-                              (!hs, fn h => h ()) ;
-                              drop (hss, n - 1))
-                           | ([], _) => Error.bug "NPointLattice.=="
-                    in
-                      drop (hss, n'' - n)
-                    end
-                 val hss = doit (n, hss)
-                 val hss' = doit (n', hss')
-                 val hss''
-                   = List.map2
-                     (hss, hss', fn (hs, hs') =>
-                      ref (AppendList.append (!hs, !hs')))
+                 val (gss, hss) =
+                    List.splitAt (hss, n'' - n)
+                 val (gss', hss') =
+                    List.splitAt (hss', n'' - n')
+                 val hss'' =
+                    List.map2
+                    (hss, hss', fn (hs, hs') =>
+                     ref (AppendList.append (!hs, !hs')))
+                 fun runHandlers fss =
+                    List.foreach
+                    (fss, fn fs =>
+                     AppendList.foreach
+                     (!fs, fn f => f ()))
                in
-                  Set.:= (s, (n'', hss''))
+                  Set.:= (s, (n'', hss''));
+                  runHandlers gss;
+                  runHandlers gss'
                end
       end
 

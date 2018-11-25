@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014,2017 Matthew Fluet.
+(* Copyright (C) 2009,2014,2017-2018 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -181,7 +181,7 @@ structure Type =
                        then str "unit"
                     else seq [str "(",
                               (mayAlign o separateRight)
-                              (Vector.toListMap (ts, layout), ", "),
+                              (Vector.toListMap (ts, layout), ","),
                               str ") tuple"]
                | Vector t => seq [str "(", layout t, str ") vector"]
                | Weak t => seq [str "(", layout t, str ") weak"]
