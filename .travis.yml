@@ -4,6 +4,9 @@ addons:
   apt:
     packages:
       - mlton
+  homebrew:
+    packages:
+      - mlton
 
 matrix:
   include:
@@ -23,10 +26,6 @@ matrix:
     env:  CC=clang    MLTON_COMPILE_ARGS="-codegen amd64"  REGRESSION=false
   - os: osx
     env:  CC=clang    MLTON_COMPILE_ARGS="-codegen c"      REGRESSION=false
-
-install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update;        fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install mlton; fi
 
 script:
   - ./bin/travis-ci
