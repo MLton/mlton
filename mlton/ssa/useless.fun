@@ -409,7 +409,6 @@ fun transform (program: Program.t): Program.t =
       val program as Program.T {datatypes, globals, functions, main} =
          eliminateDeadBlocks program
       val {get = conInfo: Con.t -> {args: Value.t vector,
-                                    argTypes: Type.t vector,
                                     value: unit -> Value.t},
            set = setConInfo, ...} =
          Property.getSetOnce 
@@ -432,7 +431,6 @@ fun transform (program: Program.t): Program.t =
              in Vector.foreach
                 (cons, fn {con, args} =>
                  setConInfo (con, {value = value,
-                                   argTypes = args,
                                    args = Vector.map (args, fromType)}))
              end)
          val conArgs = #args o conInfo
