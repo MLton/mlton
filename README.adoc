@@ -17,7 +17,6 @@ programming language.
    - Alpha: Linux (Debian).
    - AMD64: Darwin (Mac OS X), FreeBSD, Linux (Debian, Fedora, Ubuntu, ...),
      OpenBSD, Solaris (10 and above).
-
    - HPPA: HPUX (11.11 and above), Linux (Debian).
    - IA64: HPUX (11.11 and above), Linux (Debian).
    - PowerPC: AIX (5.2 and above), Darwin (Mac OS X), Linux (Debian, Fedora).
