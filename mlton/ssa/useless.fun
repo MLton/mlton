@@ -413,8 +413,8 @@ fun transform (program: Program.t): Program.t =
            set = setConInfo, ...} =
          Property.getSetOnce 
          (Con.plist, Property.initRaise ("Useless.conInfo", Con.layout))
-      val {get = tyconInfo: Tycon.t -> {useful: bool ref,
-                                        cons: Con.t vector},
+      val {get = tyconInfo: Tycon.t -> {cons: Con.t vector,
+                                        visitedDeepMakeUseful: bool ref},
            set = setTyconInfo, ...} =
          Property.getSetOnce 
          (Tycon.plist, Property.initRaise ("Useless.tyconInfo", Tycon.layout))
@@ -425,8 +425,8 @@ fun transform (program: Program.t): Program.t =
             (datatypes, fn Datatype.T {tycon, cons} =>
              let
                 val _ =
-                   setTyconInfo (tycon, {useful = ref false,
-                                         cons = Vector.map (cons, #con)})
+                   setTyconInfo (tycon, {cons = Vector.map (cons, #con),
+                                         visitedDeepMakeUseful = ref false})
                 fun value () = fromType (Type.datatypee tycon)
              in Vector.foreach
                 (cons, fn {con, args} =>
@@ -457,37 +457,41 @@ fun transform (program: Program.t): Program.t =
             case value v of
                Ground g => Useful.makeUseful g
              | _ => Error.bug "Useless.filterGround: non ground"
-         (* This is used for primitive args, since we have no idea what
-          * components of its args that a primitive will look at.
+
+         (* This is for primitive args, which may inspect any component.
           *)
          fun mkDeepMakeUseful deepMakeUseful v =
             let
                val slot = deepMakeUseful o #1
             in
                case value v of
-                  Array {useful, length, elt} =>
-                     (Useful.makeUseful useful
-                      ; deepMakeUseful length
-                      ; slot elt)
+                  Array {useful = u, length = n, elt = e} =>
+                     (Useful.makeUseful u
+                      ; deepMakeUseful n
+                      ; slot e)
                 | Ground u =>
                      (Useful.makeUseful u
                       (* Make all constructor args of this tycon useful *)
                       ; (case Type.dest (ty v) of
                             Type.Datatype tycon =>
-                               let val {useful, cons} = tyconInfo tycon
-                               in if !useful
+                               let
+                                  val {cons, visitedDeepMakeUseful = visited, ...} =
+                                     tyconInfo tycon
+                               in
+                                  if !visited
                                      then ()
-                                  else (useful := true
-                                        ; Vector.foreach (cons, fn con =>
-                                                          Vector.foreach
-                                                          (#args (conInfo con),
-                                                           deepMakeUseful)))
+                                     else (visited := true
+                                           ; Vector.foreach
+                                             (cons, fn con =>
+                                              Vector.foreach
+                                              (#args (conInfo con),
+                                               deepMakeUseful)))
                                end
                           | _ => ()))
-                | Ref {arg, useful} => (Useful.makeUseful useful; slot arg)
+                | Ref {useful = u, arg = a} => (Useful.makeUseful u; slot a)
                 | Tuple vs => Vector.foreach (vs, slot)
-                | Vector {length, elt} => (deepMakeUseful length; slot elt)
-                | Weak {arg, useful} => (Useful.makeUseful useful; slot arg)
+                | Vector {length = n, elt = e} => (deepMakeUseful n; slot e)
+                | Weak {useful = u, arg = a} => (Useful.makeUseful u; slot a)
             end
          val deepMakeUseful =
             Trace.traceRec
