@@ -456,7 +456,7 @@ fun transform (program: Program.t): Program.t =
          (* This is used for primitive args, since we have no idea what
           * components of its args that a primitive will look at.
           *)
-         fun deepMakeUseful v =
+         fun mkDeepMakeUseful deepMakeUseful v =
             let
                val slot = deepMakeUseful o #1
             in
@@ -485,6 +485,12 @@ fun transform (program: Program.t): Program.t =
                 | Vector {length, elt} => (deepMakeUseful length; slot elt)
                 | Weak {arg, useful} => (Useful.makeUseful useful; slot arg)
             end
+         val deepMakeUseful =
+            Trace.traceRec
+            ("Useless.deepMakeUseful",
+             Value.layout,
+             Unit.layout)
+            mkDeepMakeUseful
 
          fun primApp {args: t vector, prim, resultVar = _, resultType,
                       targs = _} =
