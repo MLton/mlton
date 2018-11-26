@@ -127,9 +127,9 @@ structure Value =
                val _ = Set.union (s, s')
             in
                case (v, v') of
-                  (Array {length = n, elt = e, ...},
-                   Array {length = n', elt = e', ...}) =>
-                     (unify (n, n'); unifySlot (e, e'))
+                  (Array {useful = u, length = n, elt = e},
+                   Array {useful = u', length = n', elt = e'}) =>
+                     (Useful.== (u, u'); unify (n, n'); unifySlot (e, e'))
                 | (Ground g, Ground g') => Useful.== (g, g')
                 | (Ref {useful = u, arg = a},
                    Ref {useful = u', arg = a'}) =>
