@@ -145,6 +145,12 @@ structure Value =
             end
       and unifySlot ((v, e), (v', e')) = (unify (v, v'); Exists.== (e, e'))
 
+      val unify =
+         Trace.trace ("Useless.Value.unify",
+                      Layout.tuple2 (layout, layout),
+                      Unit.layout)
+         unify
+
       fun coerce {from = from as T sfrom, to = to as T sto}: unit =
          if Set.equals (sfrom, sto)
             then ()
