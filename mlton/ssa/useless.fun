@@ -12,8 +12,6 @@ struct
 
 open S
 (* useless thing elimination
- *  remove components of tuples that are constants (use unification)
- *  remove function arguments that are constants
  *  build some kind of dependence graph where 
  *    - a value of ground type is useful if it is an arg to a primitive
  *    - a tuple is useful if it contains a useful component
