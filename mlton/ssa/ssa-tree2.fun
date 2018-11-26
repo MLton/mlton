@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014,2017 Matthew Fluet.
+(* Copyright (C) 2009,2014,2017-2018 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -2105,7 +2105,8 @@ structure Program =
             open Layout
          in
             align
-            [seq [str "num vars in main = ", Int.layout mainNumVars],
+            [seq [str "num globals = ", Int.layout (Vector.length globals)],
+             seq [str "num vars in main = ", Int.layout mainNumVars],
              seq [str "num blocks in main = ", Int.layout mainNumBlocks],
              seq [str "num functions in program = ", Int.layout numFunctions],
              seq [str "num blocks in program = ", Int.layout (!numBlocks)],
