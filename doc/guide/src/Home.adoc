@@ -23,6 +23,7 @@ MLton is an open-source, whole-program, optimizing
 
 == Next steps ==
 
+* Visit the https://github.com/MLton/mlton[MLton GitHub repository].
 * Read about MLton's <:Features:>.
 * Look at <:Documentation:>.
 * See some <:Users:> of MLton.
