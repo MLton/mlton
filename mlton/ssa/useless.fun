@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2017 Matthew Fluet.
+(* Copyright (C) 2009,2017,2018 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -688,6 +688,13 @@ fun transform (program: Program.t): Program.t =
                                  Vector.layout Value.layout (conArgs con)])
                            cons,
                            2)]))
+             fun diagVar x =
+                display (seq [Var.layout x,
+                              str " ", Value.layout (value x)])
+             val _ =
+                Vector.foreach
+                (globals, fn Statement.T {var, ...} =>
+                 Option.app (var, diagVar))
              val _ =
                 List.foreach
                 (functions, fn f =>
@@ -707,9 +714,7 @@ fun transform (program: Program.t): Program.t =
                                  raises)])
                     val _ =
                        Function.foreachVar
-                       (f, fn (x, _) => 
-                        display (seq [Var.layout x,
-                                      str " ", Value.layout (value x)]))
+                       (f, fn (x, _) => diagVar x)
                  in
                     ()
                  end)
