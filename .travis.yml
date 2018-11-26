@@ -5,40 +5,30 @@ sudo: required
 matrix:
   include:
   - os:   linux
-    dist: trusty
+    dist: xenial
     addons:
       apt:
-        update: true
-        sources:
-          - ubuntu-toolchain-r-test
         packages:
-          - gcc-5
           - mlton
-    env:  CC=gcc-5    MLTON_COMPILE_ARGS="-codegen amd64"  REGRESSION=true
+    env:  CC=gcc      MLTON_COMPILE_ARGS="-codegen amd64"  REGRESSION=true
   - os:   linux
-    dist: trusty
+    dist: xenial
     addons:
       apt:
-        update: true
-        sources:
-          - ubuntu-toolchain-r-test
         packages:
-          - gcc-5
           - mlton
-    env:  CC=gcc-5    MLTON_COMPILE_ARGS="-codegen c"      REGRESSION=false
+    env:  CC=gcc      MLTON_COMPILE_ARGS="-codegen c"      REGRESSION=false
   - os:   linux
-    dist: trusty
+    dist: xenial
     addons:
       apt:
-        update: true
         packages:
           - mlton
     env:  CC=clang    MLTON_COMPILE_ARGS="-codegen c"      REGRESSION=false
   - os:   linux
-    dist: trusty
+    dist: xenial
     addons:
       apt:
-        update: true
         packages:
           - mlton
     env:  CC=clang    MLTON_COMPILE_ARGS="-codegen llvm"   REGRESSION=false
