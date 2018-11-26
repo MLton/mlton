@@ -442,10 +442,6 @@ fun transform (program: Program.t): Program.t =
                   (Useful.makeUseful g
                    ; coerces {from = conArgs con, to = to})
              | _ => Error.bug "Useless.filter: non ground"
-         fun filterGround (v: Value.t): unit =
-            case value v of
-               Ground g => Useful.makeUseful g
-             | _ => Error.bug "Useless.filterGround: non ground"
          val filter =
             Trace.trace3 ("Useless.filter",
                           Value.layout,
@@ -453,6 +449,10 @@ fun transform (program: Program.t): Program.t =
                           Vector.layout Value.layout,
                           Unit.layout)
             filter
+         fun filterGround (v: Value.t): unit =
+            case value v of
+               Ground g => Useful.makeUseful g
+             | _ => Error.bug "Useless.filterGround: non ground"
          (* This is used for primitive args, since we have no idea what
           * components of its args that a primitive will look at.
           *)
