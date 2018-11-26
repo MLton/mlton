@@ -1,5 +1,7 @@
 language: generic
 
+dist: xenial
+
 addons:
   apt:
     packages:
@@ -11,16 +13,12 @@ addons:
 matrix:
   include:
   - os:   linux
-    dist: xenial
     env:  CC=gcc      MLTON_COMPILE_ARGS="-codegen amd64"  REGRESSION=true
   - os:   linux
-    dist: xenial
     env:  CC=gcc      MLTON_COMPILE_ARGS="-codegen c"      REGRESSION=false
   - os:   linux
-    dist: xenial
     env:  CC=clang    MLTON_COMPILE_ARGS="-codegen c"      REGRESSION=false
   - os:   linux
-    dist: xenial
     env:  CC=clang    MLTON_COMPILE_ARGS="-codegen llvm"   REGRESSION=false
   - os: osx
     env:  CC=clang    MLTON_COMPILE_ARGS="-codegen amd64"  REGRESSION=false
