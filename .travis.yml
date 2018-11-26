@@ -2,35 +2,24 @@ language: generic
 
 sudo: required
 
+addons:
+  apt:
+    packages:
+      - mlton
+
 matrix:
   include:
   - os:   linux
     dist: xenial
-    addons:
-      apt:
-        packages:
-          - mlton
     env:  CC=gcc      MLTON_COMPILE_ARGS="-codegen amd64"  REGRESSION=true
   - os:   linux
     dist: xenial
-    addons:
-      apt:
-        packages:
-          - mlton
     env:  CC=gcc      MLTON_COMPILE_ARGS="-codegen c"      REGRESSION=false
   - os:   linux
     dist: xenial
-    addons:
-      apt:
-        packages:
-          - mlton
     env:  CC=clang    MLTON_COMPILE_ARGS="-codegen c"      REGRESSION=false
   - os:   linux
     dist: xenial
-    addons:
-      apt:
-        packages:
-          - mlton
     env:  CC=clang    MLTON_COMPILE_ARGS="-codegen llvm"   REGRESSION=false
   - os: osx
     env:  CC=clang    MLTON_COMPILE_ARGS="-codegen amd64"  REGRESSION=false
