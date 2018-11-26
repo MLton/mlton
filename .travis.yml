@@ -1,7 +1,5 @@
 language: generic
 
-sudo: required
-
 addons:
   apt:
     packages:
