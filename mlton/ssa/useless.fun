@@ -412,12 +412,12 @@ fun transform (program: Program.t): Program.t =
                                     value: unit -> Value.t},
            set = setConInfo, ...} =
          Property.getSetOnce 
-         (Con.plist, Property.initRaise ("conInfo", Con.layout))
+         (Con.plist, Property.initRaise ("Useless.conInfo", Con.layout))
       val {get = tyconInfo: Tycon.t -> {useful: bool ref,
                                         cons: Con.t vector},
            set = setTyconInfo, ...} =
          Property.getSetOnce 
-         (Tycon.plist, Property.initRaise ("tyconInfo", Tycon.layout))
+         (Tycon.plist, Property.initRaise ("Useless.tyconInfo", Tycon.layout))
       local open Value
       in
          val _ =
