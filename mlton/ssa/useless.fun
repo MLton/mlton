@@ -63,6 +63,7 @@ structure Value =
             open L
             val makeUseful = makeTop
             val isUseful = isTop
+            val whenUseful = addHandler
          end
 
       datatype t =
@@ -414,7 +415,8 @@ fun transform (program: Program.t): Program.t =
          Property.getSetOnce 
          (Con.plist, Property.initRaise ("Useless.conInfo", Con.layout))
       val {get = tyconInfo: Tycon.t -> {cons: Con.t vector,
-                                        visitedDeepMakeUseful: bool ref},
+                                        visitedDeepMakeUseful: bool ref,
+                                        visitedShallowMakeUseful: bool ref},
            set = setTyconInfo, ...} =
          Property.getSetOnce 
          (Tycon.plist, Property.initRaise ("Useless.tyconInfo", Tycon.layout))
@@ -426,7 +428,8 @@ fun transform (program: Program.t): Program.t =
              let
                 val _ =
                    setTyconInfo (tycon, {cons = Vector.map (cons, #con),
-                                         visitedDeepMakeUseful = ref false})
+                                         visitedDeepMakeUseful = ref false,
+                                         visitedShallowMakeUseful = ref false})
                 fun value () = fromType (Type.datatypee tycon)
              in Vector.foreach
                 (cons, fn {con, args} =>
@@ -475,12 +478,13 @@ fun transform (program: Program.t): Program.t =
                       ; (case Type.dest (ty v) of
                             Type.Datatype tycon =>
                                let
-                                  val {cons, visitedDeepMakeUseful = visited, ...} =
+                                  val {cons, visitedDeepMakeUseful, visitedShallowMakeUseful} =
                                      tyconInfo tycon
                                in
-                                  if !visited
+                                  if !visitedDeepMakeUseful
                                      then ()
-                                     else (visited := true
+                                     else (visitedDeepMakeUseful := true
+                                           ; visitedShallowMakeUseful := true
                                            ; Vector.foreach
                                              (cons, fn con =>
                                               Vector.foreach
@@ -499,6 +503,46 @@ fun transform (program: Program.t): Program.t =
              Value.layout,
              Unit.layout)
             mkDeepMakeUseful
+
+         (* This is used for MLton_equal and MLton_hash, which will not inspect
+          * contents of Array, Ref, or Weak.
+          *)
+         fun mkShallowMakeUseful shallowMakeUseful v =
+            let
+               val slot = shallowMakeUseful o #1
+            in
+               case value v of
+                  Array {useful = u, ...} => Useful.makeUseful u
+                | Ground u =>
+                     (Useful.makeUseful u
+                      (* Make all constructor args of this tycon useful *)
+                      ; (case Type.dest (ty v) of
+                            Type.Datatype tycon =>
+                               let
+                                  val {cons, visitedShallowMakeUseful, ...} =
+                                     tyconInfo tycon
+                               in
+                                  if !visitedShallowMakeUseful
+                                     then ()
+                                     else (visitedShallowMakeUseful := true
+                                           ; Vector.foreach
+                                             (cons, fn con =>
+                                              Vector.foreach
+                                              (#args (conInfo con),
+                                               shallowMakeUseful)))
+                               end
+                          | _ => ()))
+                | Ref {useful = u, ...} => Useful.makeUseful u
+                | Tuple vs => Vector.foreach (vs, slot)
+                | Vector {length = n, elt = e} => (shallowMakeUseful n; slot e)
+                | Weak {useful = u, ...} => Useful.makeUseful u
+            end
+         val shallowMakeUseful =
+            Trace.traceRec
+            ("Useless.shallowMakeUseful",
+             Value.layout,
+             Unit.layout)
+            mkShallowMakeUseful
 
          fun primApp {args: t vector, prim, resultVar = _, resultType,
                       targs = _} =
@@ -578,8 +622,15 @@ fun transform (program: Program.t): Program.t =
                    | FFI _ =>
                         (Vector.foreach (args, deepMakeUseful);
                          deepMakeUseful result)
-                   | MLton_equal => Vector.foreach (args, deepMakeUseful)
-                   | MLton_hash => Vector.foreach (args, deepMakeUseful)
+                   | MLton_equal =>
+                        Useful.whenUseful
+                        (deground result, fn () =>
+                         (shallowMakeUseful (arg 0)
+                          ; shallowMakeUseful (arg 1)))
+                   | MLton_hash =>
+                        Useful.whenUseful
+                        (deground result, fn () =>
+                         shallowMakeUseful (arg 0))
                    | Ref_assign => coerce {from = arg 1, to = deref (arg 0)}
                    | Ref_deref => return (deref (arg 0))
                    | Ref_ref => coerce {from = arg 0, to = deref result}
@@ -819,6 +870,7 @@ fun transform (program: Program.t): Program.t =
           | Const _ => e
           | PrimApp {prim, args, ...} => 
                let
+                  fun arg i = Vector.sub (args, i)
                   fun doit () =
                      let
                         val (args, argTypes) =
@@ -859,6 +911,24 @@ fun transform (program: Program.t): Program.t =
                            then doit ()
                            else ConApp {args = Vector.new0 (),
                                         con = Con.truee}
+                   | MLton_equal =>
+                        let
+                           val (t0, _) = Value.getNew (value (arg 0))
+                           val (t1, _) = Value.getNew (value (arg 1))
+                        in
+                           if Type.equals (t0, t1)
+                              then PrimApp {prim = prim,
+                                            targs = Vector.new1 t0,
+                                            args = args}
+                              else (* The arguments differ in the usefulness of
+                                    * contents of an Array, Ref, or Weak and
+                                    * the corresponding Array, Ref, or Weak
+                                    * objects must be distinct and, therefore,
+                                    * not equal.
+                                    *)
+                                   ConApp {args = Vector.new0 (),
+                                           con = Con.falsee}
+                        end
                    | Ref_ref => makePtr Type.deRef
                    | Weak_new => makePtr Type.deWeak
                    | _ => doit ()
