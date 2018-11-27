@@ -74,14 +74,14 @@ structure Value =
          Array of {elt: slot,
                    length: t,
                    useful: Useful.t}
-        | Ground of Useful.t
-        | Ref of {arg: slot,
+       | Ground of Useful.t
+       | Ref of {arg: slot,
+                 useful: Useful.t}
+       | Tuple of slot vector
+       | Vector of {elt: slot,
+                    length: t}
+       | Weak of {arg: slot,
                   useful: Useful.t}
-        | Tuple of slot vector
-        | Vector of {elt: slot,
-                     length: t}
-        | Weak of {arg: slot,
-                   useful: Useful.t}
       withtype slot = t * Exists.t
 
       local
@@ -654,17 +654,17 @@ fun transform (program: Program.t): Program.t =
                    | WordArray_subWord _ => sub ()
                    | WordArray_updateWord _ => update ()
                    | _ =>
-                        let (* allOrNothing so the type doesn't change *)
+                        let
+                           (* allOrNothing so the type doesn't change *)
                            val res = allOrNothing result
-                        in if Prim.maySideEffect prim
+                        in
+                           if Prim.maySideEffect prim
                               then Vector.foreach (args, deepMakeUseful)
-                           else
-                              Vector.foreach (args, fn a =>
-                                              case (allOrNothing a, res) of
-                                                 (NONE, _) => ()
-                                               | (SOME u, SOME u') =>
-                                                    Useful.<= (u', u)
-                                               | _ => ())
+                              else Vector.foreach (args, fn a =>
+                                                   case (allOrNothing a, res) of
+                                                      (SOME u, SOME u') =>
+                                                         Useful.<= (u', u)
+                                                    | _ => ())
                         end
             in
                result
