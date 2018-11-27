@@ -845,6 +845,12 @@ fun transform (program: Program.t): Program.t =
                                                deVector = Type.deVector,
                                                deWeak = Type.deWeak}}))}
                      end
+                  fun makePtr dePtr =
+                     if Type.isUnit (dePtr resultType)
+                        then PrimApp {prim = prim,
+                                      targs = Vector.new1 Type.unit,
+                                      args = Vector.new1 unitVar}
+                        else doit ()
                   datatype z = datatype Prim.Name.t
                in
                   case Prim.name prim of
@@ -853,6 +859,8 @@ fun transform (program: Program.t): Program.t =
                            then doit ()
                            else ConApp {args = Vector.new0 (),
                                         con = Con.falsee}
+                   | Ref_ref => makePtr Type.deRef
+                   | Weak_new => makePtr Type.deWeak
                    | _ => doit ()
                end
           | Select {tuple, offset} =>
