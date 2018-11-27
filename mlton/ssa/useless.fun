@@ -858,7 +858,7 @@ fun transform (program: Program.t): Program.t =
                         if varExists (Vector.sub (args, 0))
                            then doit ()
                            else ConApp {args = Vector.new0 (),
-                                        con = Con.falsee}
+                                        con = Con.truee}
                    | Ref_ref => makePtr Type.deRef
                    | Weak_new => makePtr Type.deWeak
                    | _ => doit ()
