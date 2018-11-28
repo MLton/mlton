@@ -29,6 +29,3 @@ components -- but this seems hard.
 Suppose that you have a `ref`/`array`/`vector` that is useful, but the
 components aren't -- then the components are converted to type `unit`,
 and any primitive args must be as well.
-
-Unify all handler arguments so that `raise`/`handle` has a consistent
-calling convention.

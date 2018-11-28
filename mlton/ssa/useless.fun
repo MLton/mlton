@@ -31,18 +31,6 @@ open S
  * any primapp args must be as well.
  *)
 
-(* Weirdness with raise/handle.
- * There must be a uniform "calling convention" for raise and handle.
- * Hence, just because some of a handlers args are useless, that doesn't mean
- * that it can drop them, since they may be useful to another handler, and
- * hence every raise will pass them along.  The problem is that it is not
- * possible to tell solely from looking at a function declaration whether it is
- * a handler or not, and in fact, there is nothing preventing a jump being used
- * in both ways.  So, maybe the right thing is for the handler wrapper to
- * do
- * Another solution would be to unify all handler args.
- *)
-
 structure Value =
    struct
       structure Set = DisjointSet
@@ -694,46 +682,6 @@ fun transform (program: Program.t): Program.t =
                   useFromTypeOnBinds = true
                   }
       open Exp Transfer
-      (* Unify all handler args so that raise/handle has a consistent calling
-       * convention.
-       *)
-      val _ =
-         List.foreach
-         (functions, fn f =>
-          let
-             val {raises = fraisevs, ...} = func (Function.name f)
-             fun coerce (x, y) = Value.coerce {from = x, to = y}
-          in
-             Vector.foreach
-             (Function.blocks f, fn Block.T {transfer, ...} =>
-              case transfer of
-                 Call {func = g, return, ...} =>
-                    let
-                       val {raises = graisevs, ...} = func g
-                       fun coerceRaise () =
-                          case (graisevs, fraisevs) of
-                             (NONE, NONE) => ()
-                           | (NONE, SOME _) => ()
-                           | (SOME _, NONE) =>
-                                Error.bug "Useless.useless: raise mismatch at Caller"
-                           | (SOME vs, SOME vs') =>
-                                Vector.foreach2 (vs', vs, coerce)
-                    in
-                      case return of
-                         Return.Dead => ()
-                       | Return.NonTail {handler, ...} =>
-                            (case handler of
-                                Handler.Caller => coerceRaise ()
-                              | Handler.Dead => ()
-                              | Handler.Handle h =>
-                                   Option.app
-                                   (graisevs, fn graisevs =>
-                                    Vector.foreach2 
-                                    (label h, graisevs, coerce)))
-                       | Return.Tail => coerceRaise ()
-                    end
-               | _ => ())
-          end)
       val _ =
          Control.diagnostics
          (fn display =>
@@ -1051,45 +999,91 @@ fun transform (program: Program.t): Program.t =
           | Bug => ([], Bug)
           | Call {func = f, args, return} =>
                let
-                  val {args = fargs, returns = freturns, ...} = func f
+                  val {args = fargs, returns = freturns, raises = fraises} = func f
+                  fun bug () =
+                     let
+                        val l = Label.newNoname ()
+                     in
+                        (l,
+                         Block.T {label = l,
+                                  args = Vector.new0 (),
+                                  statements = Vector.new0 (),
+                                  transfer = Bug})
+                     end
+                  fun wrap (froms, tos, mkTrans) =
+                     case (froms, tos) of
+                        (NONE, NONE) => (true, bug)
+                      | (NONE, SOME _) => (true, bug)
+                      | (SOME _, NONE) => Error.bug "Useless.doitTransfer: Call mismatch"
+                      | (SOME froms, SOME tos) =>
+                           (agrees (froms, tos), fn () =>
+                            dropUseless (froms, tos, mkTrans))
                   val (blocks, return) =
                      case return of
                         Return.Dead => ([], return)
                       | Return.Tail =>
-                           (case (returns, freturns) of
-                               (NONE, NONE) => ([], Return.Tail)
-                             | (NONE, SOME _) => Error.bug "Useless.doitTransfer: return mismatch"
-                             | (SOME _, NONE) => ([], Return.Tail)
-                             | (SOME returns, SOME freturns) =>
-                                  if agrees (freturns, returns)
-                                     then ([], Return.Tail)
-                                  else
-                                     let
-                                        val (l, b) =
-                                           dropUseless
-                                           (freturns, returns, Return)
-                                     in ([b],
-                                         Return.NonTail
-                                         {cont = l,
-                                          handler = Handler.Caller})
-                                     end)
-                      | Return.NonTail {cont, handler} =>
-                           (case freturns of
-                               NONE => ([], return)
-                             | SOME freturns => 
-                                  let val returns = label cont
-                                  in if agrees (freturns, returns)
-                                        then ([], return)
-                                     else let
-                                             val (l, b) =
-                                                dropUseless
-                                                (freturns, returns, fn args =>
-                                                 Goto {dst = cont, args = args})
-                                          in ([b],
-                                              Return.NonTail
-                                              {cont = l, handler = handler})
-                                          end
+                           (case (wrap (freturns, returns, Return), wrap (fraises, raises, Raise)) of
+                               ((true, _), (true, _)) =>
+                                  ([], Return.Tail)
+                             | ((false, mkc), (true, _)) =>
+                                  let
+                                     val (lc, bc) = mkc ()
+                                  in
+                                     ([bc],
+                                      Return.NonTail {cont = lc, handler = Handler.Caller})
+                                  end
+                             | ((_, mkc), (false, mkh)) =>
+                                  let
+                                     val (lc, bc) = mkc ()
+                                     val (lh, bh) = mkh ()
+                                  in
+                                     ([bc, bh],
+                                      Return.NonTail {cont = lc,
+                                                      handler = Handler.Handle lh})
                                   end)
+                      | Return.NonTail {cont, handler} =>
+                           let
+                              val returns = SOME (label cont)
+                              val mkct = fn args => Goto {dst = cont, args = args}
+                              val (raises, mkht) =
+                                 case handler of
+                                    Handler.Dead => (NONE, fn _ => Bug)
+                                  | Handler.Caller => (raises, Raise)
+                                  | Handler.Handle hand =>
+                                       (SOME (label hand),
+                                        fn args => Goto {dst = hand, args = args})
+                           in
+                              case (wrap (freturns, returns, mkct), wrap (fraises, raises, mkht)) of
+                                 ((true, _), (true, _)) =>
+                                    ([],
+                                     Return.NonTail {cont = cont,
+                                                     handler = handler})
+                               | ((false, mkc), (true, _)) =>
+                                    let
+                                       val (lc, bc) = mkc ()
+                                    in
+                                       ([bc],
+                                        Return.NonTail {cont = lc,
+                                                        handler = handler})
+                                    end
+                               | ((true, _), (false, mkh)) =>
+                                    let
+                                       val (lh, bh) = mkh ()
+                                    in
+                                       ([bh],
+                                        Return.NonTail {cont = cont,
+                                                        handler = Handler.Handle lh})
+                                    end
+                               | ((false, mkc), (false, mkh)) =>
+                                    let
+                                       val (lc, bc) = mkc ()
+                                       val (lh, bh) = mkh ()
+                                    in
+                                       ([bc, bh],
+                                        Return.NonTail {cont = lc,
+                                                        handler = Handler.Handle lh})
+                                    end
+                           end
                in (blocks,
                    Call {func = f, 
                          args = keepUseful (args, fargs), 
