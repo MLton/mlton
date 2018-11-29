@@ -35,16 +35,37 @@ structure Value =
    struct
       structure Set = DisjointSet
 
-      structure Exists =
+      structure Exists :
+         sig
+            type t
+            val <= : t * t -> unit
+            val == : t * t -> unit
+            val doesExist: t -> bool
+            val layout: t -> Layout.t
+            val mustExist: t -> unit
+            val new: unit -> t
+            val whenExists: t * (unit -> unit) -> unit
+         end =
          struct
             structure L = TwoPointLattice (val bottom = "not exists"
                                            val top = "exists")
             open L
             val mustExist = makeTop
             val doesExist = isTop
+            val whenExists = addHandler
          end
 
-      structure Useful =
+      structure Useful :
+         sig
+            type t
+            val <= : t * t -> unit
+            val == : t * t -> unit
+            val isUseful: t -> bool
+            val layout: t -> Layout.t
+            val makeUseful: t -> unit
+            val new: unit -> t
+            val whenUseful: t * (unit -> unit) -> unit
+         end =
          struct
             structure L = TwoPointLattice (val bottom = "useless"
                                            val top = "useful")
@@ -226,7 +247,7 @@ structure Value =
                let
                   fun useful () =
                      let val u = Useful.new ()
-                     in Useful.addHandler
+                     in Useful.whenUseful
                         (u, fn () => List.foreach (es, Exists.mustExist))
                         ; u
                      end
@@ -240,7 +261,7 @@ structure Value =
                         Type.Array t =>
                            let val elt as (_, e) = slot t
                                val length = loop (Type.word (WordSize.seqIndex ()))
-                           in Exists.addHandler
+                           in Exists.whenExists
                               (e, fn () => Useful.makeUseful (deground length))
                               ; Array {useful = useful (),
                                        length = length,
