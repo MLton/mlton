@@ -55,7 +55,7 @@ val ssaPassesDefault =
    {name = "localFlatten1", doit = LocalFlatten.transform, execute = true} ::
    {name = "constantPropagation", doit = ConstantPropagation.transform, execute = true} ::
    {name = "duplicateGlobals1", doit = DuplicateGlobals.transform, execute = false} ::
-   {name = "splitTypes1", doit = SplitTypes.transform, execute = false} ::
+   {name = "splitTypes1", doit = SplitTypes.transform, execute = true} ::
 
    (* useless should run 
     *   - after constant propagation because constant propagation makes
@@ -67,8 +67,8 @@ val ssaPassesDefault =
     *)
    {name = "loopUnroll1", doit = LoopUnroll.transform, execute = false} ::
    {name = "removeUnused2", doit = RemoveUnused.transform, execute = true} ::
-   {name = "duplicateGlobals2", doit = DuplicateGlobals.transform, execute = false} ::
-   {name = "splitTypes2", doit = SplitTypes.transform, execute = false} ::
+   {name = "duplicateGlobals2", doit = DuplicateGlobals.transform, execute = true} ::
+   {name = "splitTypes2", doit = SplitTypes.transform, execute = true} ::
    {name = "simplifyTypes", doit = SimplifyTypes.transform, execute = true} ::
    (* polyEqual should run
     *   - after types are simplified so that many equals are turned into eqs
