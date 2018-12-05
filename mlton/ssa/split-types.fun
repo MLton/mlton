@@ -175,8 +175,8 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
                   in
                      (ty, TypeInfo.Vector)
                   end
-               | Prim.Name.Weak_get => refPrim TypeInfo.Weak args
-               | Prim.Name.Weak_new => derefPrim args
+               | Prim.Name.Weak_get => derefPrim args
+               | Prim.Name.Weak_new => refPrim TypeInfo.Weak args
                | Prim.Name.MLton_equal => coerceTwo args
                (* this should occur before equals gets implemented, so we'll only need this if it comes after *)
                | Prim.Name.MLton_eq => coerceTwo args
