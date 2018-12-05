@@ -76,7 +76,7 @@ struct
              * hold the C stack pointer.  We only need to do this in programs
              * that handle signals.
              *)
-            handlesSignals andalso let open Control.Target in !os = Cygwin end
+            let open Control.Target in !os = OpenBSD orelse (handlesSignals andalso !os = Cygwin) end
         
         val (picMungeLabel, picBase) = x86AllocateRegisters.picRelative ()
 

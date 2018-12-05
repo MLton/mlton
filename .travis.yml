@@ -1,55 +1,27 @@
 language: generic
 
-sudo: required
+dist: xenial
+
+addons:
+  apt:
+    packages: mlton
+  homebrew:
+    packages: mlton
 
 matrix:
   include:
   - os:   linux
-    dist: trusty
-    addons:
-      apt:
-        update: true
-        sources:
-          - ubuntu-toolchain-r-test
-        packages:
-          - gcc-5
-          - mlton
-    env:  CC=gcc-5    MLTON_COMPILE_ARGS="-codegen amd64"  REGRESSION=true
+    env:  CC=gcc    MLTON_COMPILE_ARGS="-codegen amd64"  REGRESSION=true
   - os:   linux
-    dist: trusty
-    addons:
-      apt:
-        update: true
-        sources:
-          - ubuntu-toolchain-r-test
-        packages:
-          - gcc-5
-          - mlton
-    env:  CC=gcc-5    MLTON_COMPILE_ARGS="-codegen c"      REGRESSION=false
+    env:  CC=gcc    MLTON_COMPILE_ARGS="-codegen c"      REGRESSION=false
   - os:   linux
-    dist: trusty
-    addons:
-      apt:
-        update: true
-        packages:
-          - mlton
-    env:  CC=clang    MLTON_COMPILE_ARGS="-codegen c"      REGRESSION=false
+    env:  CC=clang  MLTON_COMPILE_ARGS="-codegen c"      REGRESSION=false
   - os:   linux
-    dist: trusty
-    addons:
-      apt:
-        update: true
-        packages:
-          - mlton
-    env:  CC=clang    MLTON_COMPILE_ARGS="-codegen llvm"   REGRESSION=false
+    env:  CC=clang  MLTON_COMPILE_ARGS="-codegen llvm"   REGRESSION=false
   - os: osx
-    env:  CC=clang    MLTON_COMPILE_ARGS="-codegen amd64"  REGRESSION=false
+    env:  CC=clang  MLTON_COMPILE_ARGS="-codegen amd64"  REGRESSION=false
   - os: osx
-    env:  CC=clang    MLTON_COMPILE_ARGS="-codegen c"      REGRESSION=false
-
-install:
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew update;        fi
-  - if [[ "$TRAVIS_OS_NAME" == "osx" ]]; then brew install mlton; fi
+    env:  CC=clang  MLTON_COMPILE_ARGS="-codegen c"      REGRESSION=false
 
 script:
   - ./bin/travis-ci

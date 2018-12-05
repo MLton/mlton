@@ -8,33 +8,39 @@ Here are the changes from versoin 20180206 to version YYYYMMDD.
 
 === Details
 
+* 2018-11-07
+  ** Add support for OpenBSD 6.4, which added stack-pointer register checking to
+  the kernel.  On OpenBSD, `%rsp`/`%esp` must be reserved by the native codegens
+  (so as to always point to the C stack) and the signal stack must be `mmap`-ed
+  with `MAP_STACK`. Thanks to Dan Cross for the pull request.
+
 * 2018-10-15
   ** Introduce new `Overflow`-checking primitives.  Undertaken by Daman Morris
-     at RIT supported by NSF CISE Research Infrastructure (CRI) award.
+  at RIT supported by NSF CISE Research Infrastructure (CRI) award.
 
 * 2018-08-17
   ** Add a parser for the SSA2 IR (`functor ParseSsa2`).  Undertaken by Manan
-     Joshi at RIT supported by NSF CISE Research Infrastructure (CRI) award.
+  Joshi at RIT supported by NSF CISE Research Infrastructure (CRI) award.
 
 * 2018-05-18
   ** Add a parser for the SSA IR (`functor ParseSsa`).  Undertaken by James
-     Reilly at RIT supported by NSF CISE Research Infrastructure (CRI) award.
+  Reilly at RIT supported by NSF CISE Research Infrastructure (CRI) award.
 
 * 2018-04-28
   ** Characterize MLton-LICENSE as an instance of the Historical Permission
-     Notice and Disclaimer (HPND) license, rather than BSD-style.
+  Notice and Disclaimer (HPND) license, rather than BSD-style.
 
 * 2018-04-04
   ** Added support for RISC-V architecture.  Thanks to Adam Goode for the pull
-     request.
+  request.
 
 * 2018-03-31
   ** Add `./bin/save-bootstrap-source` script to aid bootstrapping on a new
-     platform.  Thanks to Adam Goode for the pull request.
+  platform.  Thanks to Adam Goode for the pull request.
 
 * 2018-03-28
   ** Recognize `ppc64le` in `./bin/platform` as an instance of `powerpc64`
-     architecture.  Thanks to Adam Goode for the pull request.
+  architecture.  Thanks to Adam Goode for the pull request.
 
 * 2018-02-15
   ** Set `LIB_REL_BIN` in `mlton` script when installing.  Some systems (e.g.,

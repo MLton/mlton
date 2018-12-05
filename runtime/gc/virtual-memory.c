@@ -7,16 +7,20 @@
  * See the file MLton-LICENSE for details.
  */
 
-void *GC_mmapAnon_safe (void *p, size_t length) {
+void *GC_mmapAnonFlags_safe (void *p, size_t length, int flags) {
   void *result;
 
-  result = GC_mmapAnon (p, length);
+  result = GC_mmapAnonFlags (p, length, flags);
   if ((void*)-1 == result) {
     GC_displayMem ();
     die ("Out of memory.  Unable to allocate %s bytes.\n",
          uintmaxToCommaString(length));
   }
   return result;
+}
+
+void *GC_mmapAnon_safe (void *p, size_t length) {
+  return GC_mmapAnonFlags_safe (p, length, 0);
 }
 
 static inline void GC_memcpy (pointer src, pointer dst, size_t size) {

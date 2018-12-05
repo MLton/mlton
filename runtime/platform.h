@@ -130,9 +130,17 @@ PRIVATE __attribute__ ((noreturn)) void MLton_heapCheckTooLarge (void);
 PRIVATE void GC_displayMem (void);
 
 PRIVATE void *GC_mmapAnon (void *start, size_t length);
+PRIVATE void *GC_mmapAnonFlags (void *start, size_t length, int flags);
 PRIVATE void *GC_mmapAnon_safe (void *start, size_t length);
+PRIVATE void *GC_mmapAnonFlags_safe (void *start, size_t length, int flags);
 PRIVATE void *GC_mmapAnon_safe_protect (void *start, size_t length, int prot,
-                                         size_t dead_low, size_t dead_high);
+                                        size_t dead_low, size_t dead_high);
+PRIVATE void *GC_mmapAnonStack (void *start, size_t length, int prot,
+                                size_t dead_low, size_t dead_high);
+PRIVATE void *GC_mmapAnonFlags_safe_protect (void *start, size_t length,
+                                             int prot, int flags,
+                                             size_t dead_low,
+                                             size_t dead_high);
 PRIVATE void *GC_mremap (void *start, size_t oldLength, size_t newLength);
 PRIVATE void GC_release (void *base, size_t length);
 
