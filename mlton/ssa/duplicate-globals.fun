@@ -107,8 +107,33 @@ struct
                            var = SOME var,
                            ty = ty })
                   end
+               (* globals that are used in other globals,
+                * we want to avoid duplicating to help reduce churn/improve diagonstic data *)
+               val usedGlobals: Var.t HashSet.t =
+                  HashSet.new {hash=Var.hash}
+               val _ = Vector.map (globals, fn Statement.T {exp, ...} =>
+                  Exp.foreachVar (exp, fn var =>
+                        ignore (HashSet.lookupOrInsert (usedGlobals, Var.hash var,
+                           fn var' => Var.equals (var, var'),
+                           fn () => var))))
+               fun isUsedInGlobals global =
+                  case global of
+                       NONE => false
+                     | SOME var =>
+                          (case HashSet.peek (usedGlobals, Var.hash var, fn var' => Var.equals (var, var')) of
+                               NONE => false
+                             | SOME _ => true)
+               fun shouldKeepOriginal (Statement.T {var=varOpt, ...}) =
+                  case varOpt of
+                       SOME var =>
+                           (case HashTable.peek (globalVars, var) of
+                                SOME _ => isUsedInGlobals (SOME var)
+                              | NONE => true (* variable wasn't duplicated *))
+                     | NONE => true (* doesn't have a var *)
             in
-               Vector.concat [globals, Vector.concatV (Vector.map (globals, globalToClones))]
+               Vector.concat [
+                  Vector.keepAll (globals, shouldKeepOriginal),
+                  Vector.concatV (Vector.map (globals, globalToClones))]
             end
       in
          Program.T {datatypes=datatypes, globals=newGlobals, functions=newFunctions, main=main}
