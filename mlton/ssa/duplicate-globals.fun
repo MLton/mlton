@@ -23,9 +23,19 @@ struct
             let
                val exp = Statement.exp st
                val var = Statement.var st
-            in case (var, exp) of
-               (SOME var, Exp.ConApp _) => ignore (HashTable.lookupOrInsert (globalVars, var, fn () => ref []))
-             | _ => ()
+               fun duplicatable var =
+                  ignore (HashTable.lookupOrInsert (globalVars, var, fn () => ref []))
+               val _ =
+                  case (var, exp) of
+                     (SOME var, Exp.ConApp _) => duplicatable var
+                   | (SOME var, Exp.PrimApp {prim, ...}) =>
+                        (case Prim.name prim of
+                              (* we might want to duplicate this due to the targ *)
+                             Prim.Name.MLton_bogus => duplicatable var
+                           | _ => ())
+                   | _ => ()
+            in
+               ()
             end)
          fun freshenIfGlobal (var: Var.t) =
             case HashTable.peek (globalVars, var) of
