@@ -107,10 +107,7 @@ struct
                  layout from, Layout.str " coerced to ", layout to ]))
       fun fromType (ty: Type.t) =
          case Type.dest ty of
-              Type.Datatype tycon =>
-                  if Tycon.equals (tycon, Tycon.bool)
-                  then Unchanged ty
-                  else Fresh (Equatable.new (SOME tycon, ref []))
+              Type.Datatype tycon => Fresh (Equatable.new (SOME tycon, ref []))
             | Type.Tuple ts => Tuple (Vector.map(ts, fromType))
             | Type.Array t => Heap (fromType t, Array)
             | Type.Ref t => Heap (fromType t, Ref)
@@ -118,9 +115,7 @@ struct
             | Type.Weak t => Heap (fromType t, Weak)
             | _ => Unchanged ty
       fun fromCon {con: Con.t, args: t vector} =
-         if Con.equals (con, Con.truee) orelse Con.equals (con, Con.falsee)
-            then Unchanged Type.bool
-            else Fresh (Equatable.new (NONE, ref [ConData (con, args)]))
+         Fresh (Equatable.new (NONE, ref [ConData (con, args)]))
       fun fromTuple (vect: t vector) = Tuple vect
       fun const (c: Const.t): t = fromType (Type.ofConst c)
   end
@@ -135,6 +130,13 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
          case tuple of
               TypeInfo.Tuple ts => Vector.sub (ts, offset)
             | _ => Error.bug "SplitTypes.transform.fromTuple: Tried to select from non-tuple info"
+
+      (* primitives may return this boolean *)
+      val primBoolTy = Type.datatypee Tycon.bool
+      val primBoolInfo = TypeInfo.fromType (Type.datatypee Tycon.bool)
+      val _ = List.map ([Con.truee, Con.falsee], fn con =>
+         TypeInfo.coerce (TypeInfo.fromCon {con=con, args=Vector.new0 ()}, primBoolInfo))
+
       fun primApp {args, prim, resultType, resultVar = _, targs} =
          let
             fun derefPrim args =
@@ -152,12 +154,19 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
             in
                Vector.sub (args, 0)
             end
-            fun coerceTwo args =
+            fun equalPrim args =
                let
                   val _ = TypeInfo.coerce (Vector.sub (args, 0), Vector.sub (args, 1))
                in
-                  TypeInfo.fromType resultType
+                  primBoolInfo
                end
+            fun default () =
+              if case Type.dest resultType of
+                      Type.Datatype tycon => Tycon.equals (tycon, Tycon.bool)
+                    | _ => false
+                 then primBoolInfo
+                 else TypeInfo.fromType resultType
+
          in
             case Prim.name prim of
                  Prim.Name.Array_sub => derefPrim args
@@ -177,10 +186,19 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
                   end
                | Prim.Name.Weak_get => derefPrim args
                | Prim.Name.Weak_new => refPrim TypeInfo.Weak args
-               | Prim.Name.MLton_equal => coerceTwo args
-               (* this should occur before equals gets implemented, so we'll only need this if it comes after *)
-               | Prim.Name.MLton_eq => coerceTwo args
-               | _ => TypeInfo.fromType resultType
+               | Prim.Name.MLton_equal => equalPrim args
+               | Prim.Name.MLton_eq => equalPrim args
+               | Prim.Name.FFI (CFunction.T {args=cargs, ...}) =>
+                  let
+                     (* for the C methods, we need false -> 0 and true -> 1 so they have to remain bools *)
+                     val _ = Vector.map2 (args, cargs, fn (arg, carg) =>
+                       if Type.equals (carg, primBoolTy)
+                         then TypeInfo.coerce (arg, primBoolInfo)
+                         else ())
+                  in
+                    default ()
+                  end
+               | _ => default ()
          end
       val { value, func, ... } =
          analyze
@@ -199,6 +217,9 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
 
       val tyMap : (TypeInfo.t, Type.t) HashTable.t =
          HashTable.new {hash=TypeInfo.hash, equals=TypeInfo.equated}
+
+      (* Always map the prim boolean to bool *)
+      val _ = HashTable.lookupOrInsert (tyMap, primBoolInfo, fn () => primBoolTy)
 
       fun getTy typeInfo =
          let
@@ -230,7 +251,7 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
          HashTable.new {hash=remappedConsHash, equals=fn ((con1, ty1), (con2, ty2)) =>
             Type.equals (ty1, ty2) andalso Con.equals (con1, con2)}
       fun remapCon (oldCon, newTy) =
-         if Con.equals (oldCon, Con.truee) orelse Con.equals (oldCon, Con.falsee)
+         if Type.equals (newTy, primBoolTy)
          then oldCon
          else HashTable.lookupOrInsert (remappedCons, (oldCon, newTy), fn () => Con.new oldCon)
 
@@ -256,16 +277,30 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
                                     deRef = Type.deRef,
                                     deVector = Type.deVector,
                                     deWeak = Type.deWeak}})
+                     val newPrim =
+                        case Prim.name prim of
+                           Prim.Name.FFI (CFunction.T {args=_, return=_,
+                                 convention, kind, prototype, symbolScope, target}) =>
+                              let
+                                 val newArgs = argTys
+                                 val newReturn = newTy
+                                 val newCFunc = CFunction.T {args=newArgs, return=newReturn,
+                                    convention=convention, kind=kind, prototype=prototype,
+                                    symbolScope=symbolScope, target=target}
+                              in
+                                 Prim.ffi newCFunc
+                              end
+                         | _ => prim
                   in
-                     Exp.PrimApp {prim=prim, targs=newTargs, args=args}
+                     Exp.PrimApp {prim=newPrim, targs=newTargs, args=args}
                   end
             | _ => exp
       fun loopStatement (Statement.T {exp, ty, var=varopt}) =
          let
             val newTy =
                case varopt of
-                     NONE => ty
-                   | SOME var => getTy (value var)
+                    NONE => ty
+                  | SOME var => getTy (value var)
             val newExp = loopExp (exp, newTy)
          in
             Statement.T {exp=newExp, ty=newTy, var=varopt}
@@ -341,22 +376,18 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
          let
             fun reifyCon newTy (TypeInfo.ConData (con, ts)) =
                let
-                  val newCon = remapCon (con, newTy)
+                  val newCon =
+                     if Type.equals (newTy, primBoolTy)
+                     then con
+                     else remapCon (con, newTy)
                in
                   {con=newCon, args=Vector.map (ts, getTy)}
                end
             fun reifyCons newTy conList =
                Vector.fromList (List.map (conList, reifyCon newTy))
 
-            val bool =
-               case Vector.peek (datatypes, fn Datatype.T {tycon, ...} =>
-                  Tycon.equals (tycon, Tycon.bool))
-               of
-                    SOME ty => ty
-                  | NONE => Error.bug "SplitTypes.datatypes.bool: Could not find boolean datatype"
          in
-            (Vector.fromList (bool ::
-               (List.keepAllMap (HashTable.toList tyMap,
+            (Vector.fromList ((List.keepAllMap (HashTable.toList tyMap,
                   fn (typeInfo, newTy) =>
                      case typeInfo of
                           TypeInfo.Fresh eq =>
@@ -387,5 +418,5 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
            globals = globals,
            functions = functions,
            main = main }
-         in program end
+   in program end
 end
