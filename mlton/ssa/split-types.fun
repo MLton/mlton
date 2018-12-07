@@ -279,14 +279,18 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
                                     deWeak = Type.deWeak}})
                      val newPrim =
                         case Prim.name prim of
-                           Prim.Name.FFI (CFunction.T {args=_, return=_,
+                           Prim.Name.FFI (cfunc as CFunction.T {args=_, return=_,
                                  convention, kind, prototype, symbolScope, target}) =>
                               let
                                  val newArgs = argTys
                                  val newReturn = newTy
-                                 val newCFunc = CFunction.T {args=newArgs, return=newReturn,
-                                    convention=convention, kind=kind, prototype=prototype,
-                                    symbolScope=symbolScope, target=target}
+                                 val newCFunc =
+                                   case kind of
+                                        CFunction.Kind.Runtime _ =>
+                                           CFunction.T {args=newArgs, return=newReturn,
+                                            convention=convention, kind=kind, prototype=prototype,
+                                            symbolScope=symbolScope, target=target}
+                                      | _ => cfunc
                               in
                                  Prim.ffi newCFunc
                               end
