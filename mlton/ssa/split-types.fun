@@ -223,13 +223,18 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
 
       fun getTy typeInfo =
          let
+            fun pickTycon (tycon, cons) =
+               case (Tycon.equals (tycon, Tycon.bool), !Control.splitBools) of
+                    (true, Control.Never) => tycon
+                  | (true, Control.Smart) => if List.length (!cons) < 2 then Tycon.new tycon else tycon
+                  | _             => Tycon.new tycon
             fun makeTy eq =
-               (case Equatable.value eq of
-                     (SOME tycon, _) => Type.datatypee (Tycon.new tycon)
+               case Equatable.value eq of
+                     (SOME tycon, cons) => Type.datatypee (pickTycon (tycon, cons))
                    | (NONE, _) =>
                         Error.bug (Layout.toString (Layout.fill [
                            Layout.str "SplitTypes.transform.makeTy: ", TypeInfo.layout
-                              (TypeInfo.Fresh eq)])))
+                              (TypeInfo.Fresh eq)]))
          in
             case typeInfo of
                   TypeInfo.Unchanged ty => ty
@@ -390,15 +395,22 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
             fun reifyCons newTy conList =
                Vector.fromList (List.map (conList, reifyCon newTy))
 
+            (* bool may appear multiple times depending on settings *)
+            val primBoolDt = Datatype.T
+              {cons=Vector.fromList
+                [{con=Con.truee, args=Vector.new0 ()},
+                 {con=Con.falsee, args=Vector.new0 ()}], tycon=Tycon.bool}
          in
-            (Vector.fromList ((List.keepAllMap (HashTable.toList tyMap,
+            (Vector.fromList (primBoolDt :: (List.keepAllMap (HashTable.toList tyMap,
                   fn (typeInfo, newTy) =>
                      case typeInfo of
                           TypeInfo.Fresh eq =>
-                              (case Equatable.value eq of
-                                    (_, consRef) =>
+                              (* Only one copy of the true prim bool type should exist *)
+                              (case (Type.equals (newTy, primBoolTy), Equatable.value eq) of
+                                    (false, (_, consRef)) =>
                                        SOME (Datatype.T
-                                       {cons=reifyCons newTy (!consRef), tycon=Type.deDatatype newTy}))
+                                       {cons=reifyCons newTy (!consRef), tycon=Type.deDatatype newTy})
+                                  | _ => NONE)
                         | _ => NONE))))
          end
 

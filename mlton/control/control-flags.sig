@@ -204,6 +204,12 @@ signature CONTROL_FLAGS =
 
       val inlineNonRec: {small: int, product: int} ref
 
+      datatype shouldSplit =
+         Never
+       | Smart (* split only when smaller than two, default *)
+       | Always
+      val splitBools: shouldSplit ref
+
       (* The input file on the command line, minus path and extension. *)
       val inputFile: File.t ref
 

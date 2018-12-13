@@ -844,6 +844,18 @@ val inlineNonRec =
             (Layout.record [("small", Int.layout small),
                             ("product", Int.layout product)])}
 
+datatype shouldSplit =
+   Never
+ | Smart (* split only when smaller than two, default *)
+ | Always
+val splitBools = control {name = "split booleans",
+                          default = Smart,
+                          toString = fn x => case x of
+                              Never => "never"
+                            | Smart => "smart"
+                            | Always => "always"}
+
+
 val inputFile = control {name = "input file",
                          default = "<bogus>",
                          toString = File.toString}
