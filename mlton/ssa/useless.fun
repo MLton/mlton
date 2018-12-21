@@ -63,16 +63,37 @@ structure Value =
             val isUseful: t -> bool
             val layout: t -> Layout.t
             val makeUseful: t -> unit
+            val makeWanted: t -> unit
             val new: unit -> t
             val whenUseful: t * (unit -> unit) -> unit
          end =
          struct
-            structure L = TwoPointLattice (val bottom = "useless"
+            structure U = TwoPointLattice (val bottom = "useless"
                                            val top = "useful")
-            open L
-            val makeUseful = makeTop
-            val isUseful = isTop
-            val whenUseful = addHandler
+            structure W = TwoPointLattice (val bottom = "unwanted"
+                                           val top = "wanted")
+
+            datatype t = T of U.t * W.t
+
+            fun layout (T (u, w)) =
+               let open Layout
+               in seq [U.layout u, str "/", W.layout w]
+               end
+
+            fun new () =
+               T (U.new (), W.new ())
+            fun == (T (u, w), T (u', w')) =
+               (U.== (u, u'); W.== (w, w'))
+            fun (T (uf, wf)) <= (T (ut, wt)) =
+               (U.<= (uf, ut);
+                W.<= (wf, wt);
+                W.addHandler (wf, fn () => U.== (uf, ut)))
+
+            fun makeUseful (T (u, _)) = U.makeTop u
+            fun isUseful (T (u, _)) = U.isTop u
+            fun whenUseful (T (u, _), h) = U.addHandler (u, h)
+
+            fun makeWanted (T (_, w)) = W.makeTop w
          end
 
       datatype t =
@@ -553,6 +574,29 @@ fun transform (program: Program.t): Program.t =
              Unit.layout)
             mkShallowMakeUseful
 
+         (* This is used for MLton_eq, MLton_share, and MLton_size,
+          * which should only make use of the components that
+          * are used elsewhere in the computation.
+          *)
+         fun mkMakeWanted makeWanted v =
+            let
+               val slot = makeWanted o #1
+            in
+               case value v of
+                  Array {useful = u, ...} => Useful.makeWanted u
+                | Ground u => Useful.makeWanted u
+                | Ref {useful = u, ...} => Useful.makeWanted u
+                | Tuple vs => Vector.foreach (vs, slot)
+                | Vector {length = n, elt = e} => (makeWanted n; slot e)
+                | Weak {useful = u, ...} => Useful.makeWanted u
+            end
+         val makeWanted =
+            Trace.traceRec
+            ("Useless.makeWanted",
+             Value.layout,
+             Unit.layout)
+            mkMakeWanted
+
          fun primApp {args: t vector, prim, resultVar = _, resultType,
                       targs = _} =
             let
@@ -631,6 +675,11 @@ fun transform (program: Program.t): Program.t =
                    | FFI _ =>
                         (Vector.foreach (args, deepMakeUseful);
                          deepMakeUseful result)
+                   | MLton_eq =>
+                        Useful.whenUseful
+                        (deground result, fn () =>
+                         (unify (arg 0, arg 1)
+                          ; makeWanted (arg 1)))
                    | MLton_equal =>
                         Useful.whenUseful
                         (deground result, fn () =>
@@ -640,6 +689,11 @@ fun transform (program: Program.t): Program.t =
                         Useful.whenUseful
                         (deground result, fn () =>
                          shallowMakeUseful (arg 0))
+                   | MLton_share => makeWanted (arg 0)
+                   | MLton_size =>
+                        Useful.whenUseful
+                        (deground result, fn () =>
+                         makeWanted (arg 0))
                    | Ref_assign => coerce {from = arg 1, to = deref (arg 0)}
                    | Ref_deref => return (deref (arg 0))
                    | Ref_ref => coerce {from = arg 0, to = deref result}
