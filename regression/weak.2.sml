@@ -2,7 +2,15 @@ structure Weak = MLton.Weak
 
 val x = (13, ref 5)
 val wx = Weak.new x
-fun isAlive () = isSome (Weak.get wx)
+
+fun use (v, r) = v + !r before r := !r + 1
+fun isAlive () =
+   case Weak.get wx of
+      NONE => false
+    | SOME p => (print (Int.toString (use p) ^ "\n"); true)
+
+val _ = print (Bool.toString (isAlive ()) ^ "\n")
+val _ = print (Int.toString (use x) ^ "\n")
 val _ = MLton.GC.collect ()
 val _ = print (Bool.toString (isAlive ()) ^ "\n")
 
