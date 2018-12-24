@@ -357,17 +357,25 @@ structure Value =
       in
          val dearray: t -> t = make ("Useless.dearray", #1 o #elt)
          val arrayLength = make ("Useless.arrayLength", #length)
+         val arrayUseful = make ("Useless.arrayUseful", #useful)
       end
-
-      fun deref (r: t): t =
-         case value r of
-            Ref {arg, ...} => #1 arg
-          | _ => Error.bug "Useless.deref"
-
-      fun deweak (v: t): t =
-         case value v of
-            Weak {arg, ...} => #1 arg
-          | _ => Error.bug "Useless.deweak"
+      local
+         fun make (err, sel) v =
+            case value v of
+               Ref fs => sel fs
+             | _ => Error.bug err
+      in
+         val deref: t -> t = make ("Useless.deref", #1 o #arg)
+      end
+      local
+         fun make (err, sel) v =
+            case value v of
+               Weak fs => sel fs
+             | _ => Error.bug err
+      in
+         val deweak: t -> t = make ("Useless.deweak", #1 o #arg)
+         val weakUseful = make ("Useless.weakUseful", #useful)
+      end
 
       fun newType (v: t): Type.t = #1 (getNew v)
       and isUseful (v: t): bool = #2 (getNew v)
