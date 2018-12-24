@@ -672,13 +672,9 @@ fun transform (program: Program.t): Program.t =
                            arg 1 dependsOn a
                         end
                    | Array_uninitIsNop =>
-                        (* Array_uninitIsNop is Functional, but
-                         * performing Useless.<= (allOrNothing result,
-                         * allOrNothing (arg 0)) would effectively
-                         * make the whole array useful, inhibiting the
-                         * Useless optimization.
-                         *)
-                        ()
+                        Useful.whenUseful
+                        (deground result, fn () =>
+                         Useful.makeUseful (arrayUseful (arg 0)))
                    | Array_update => update ()
                    | FFI _ =>
                         (Vector.foreach (args, deepMakeUseful);
