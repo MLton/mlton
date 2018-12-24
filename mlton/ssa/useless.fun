@@ -716,6 +716,10 @@ fun transform (program: Program.t): Program.t =
                               (args, fn arg =>
                                coerce {from = arg, to = devector result}))
                         end
+                   | Weak_canGet =>
+                        Useful.whenUseful
+                        (deground result, fn () =>
+                         Useful.makeUseful (weakUseful (arg 0)))
                    | Weak_get => return (deweak (arg 0))
                    | Weak_new => coerce {from = arg 0, to = deweak result}
                    | WordArray_subWord _ => sub ()
