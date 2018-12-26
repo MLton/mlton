@@ -698,6 +698,7 @@ fun transform (program: Program.t): Program.t =
                         Useful.whenUseful
                         (deground result, fn () =>
                          makeWanted (arg 0))
+                   | MLton_touch => shallowMakeUseful (arg 0)
                    | Ref_assign => coerce {from = arg 1, to = deref (arg 0)}
                    | Ref_deref => return (deref (arg 0))
                    | Ref_ref => coerce {from = arg 0, to = deref result}
