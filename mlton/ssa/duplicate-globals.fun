@@ -106,13 +106,13 @@ struct
             let
                fun globalToClones (Statement.T {exp, ty, var}) =
                   let
-                     val realVar = case var of
-                        SOME v => v
-                      | NONE => Error.bug "DuplicateGlobals.newGlobals: global variable was NONE"
-                     val newVars = case HashTable.peek (globalVars, realVar) of
-                        SOME vs => !vs
-                      (* it's possible a global is referenced only in globals, not in the program *)
-                      | NONE => []
+                     val newVars =
+                        case var of
+                             SOME var =>
+                                (case HashTable.peek (globalVars, var) of
+                                     SOME vs => !vs
+                                   | NONE => [])
+                           | NONE => []
                   in
                      (Vector.fromList o List.map) (newVars, fn var =>
                         Statement.T {
