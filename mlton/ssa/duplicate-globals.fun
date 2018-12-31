@@ -130,17 +130,14 @@ struct
                            fn var' => Var.equals (var, var'),
                            fn () => var))))
                fun isUsedInGlobals global =
-                  case global of
+                  case HashSet.peek (usedGlobals, Var.hash global, fn var' => Var.equals (global, var')) of
                        NONE => false
-                     | SOME var =>
-                          (case HashSet.peek (usedGlobals, Var.hash var, fn var' => Var.equals (var, var')) of
-                               NONE => false
-                             | SOME _ => true)
+                     | SOME _ => true
                fun shouldKeepOriginal (Statement.T {var=varOpt, ...}) =
                   case varOpt of
                        SOME var =>
                            (case HashTable.peek (globalVars, var) of
-                                SOME _ => isUsedInGlobals (SOME var)
+                                SOME _ => isUsedInGlobals var
                               | NONE => true (* variable wasn't duplicated *))
                      | NONE => true (* doesn't have a var *)
             in
