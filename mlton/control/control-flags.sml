@@ -844,18 +844,6 @@ val inlineNonRec =
             (Layout.record [("small", Int.layout small),
                             ("product", Int.layout product)])}
 
-datatype shouldSplit =
-   Never
- | Smart (* split only when smaller than two, default *)
- | Always
-val splitBools = control {name = "split booleans",
-                          default = Smart,
-                          toString = fn x => case x of
-                              Never => "never"
-                            | Smart => "smart"
-                            | Always => "always"}
-
-
 val inputFile = control {name = "input file",
                          default = "<bogus>",
                          toString = File.toString}
@@ -1154,6 +1142,24 @@ val showDefUse = control {name = "show def-use",
 val showTypes = control {name = "show types",
                          default = true,
                          toString = Bool.toString}
+
+structure SplitTypesBool =
+   struct
+      datatype t =
+         Always
+       | Never
+       | Smart (* split only when smaller than two, default *)
+      val toString =
+         fn Always => "always"
+          | Never => "never"
+          | Smart => "smart"
+   end
+
+datatype splitTypesBool = datatype SplitTypesBool.t
+
+val splitTypesBool = control {name = "bool type splitting method",
+                              default = Smart,
+                              toString = SplitTypesBool.toString}
 
 structure Target =
    struct

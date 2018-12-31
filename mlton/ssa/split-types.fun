@@ -224,7 +224,7 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
       fun getTy typeInfo =
          let
             fun pickTycon (tycon, cons) =
-               case (Tycon.equals (tycon, Tycon.bool), !Control.splitBools) of
+               case (Tycon.equals (tycon, Tycon.bool), !Control.splitTypesBool) of
                     (true, Control.Never) => tycon
                   | (true, Control.Smart) => if List.length (!cons) < 2 then Tycon.new tycon else tycon
                   | _             => Tycon.new tycon
