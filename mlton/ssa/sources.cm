@@ -102,8 +102,8 @@ remove-unused.fun
 remove-unused2.fun
 share-zero-vec.fun
 simplify-types.fun
-useless.fun
 split-types.fun
+useless.fun
 zone.fun
 simplify.sig
 simplify2.sig
