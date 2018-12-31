@@ -56,7 +56,6 @@ val ssaPassesDefault =
    {name = "constantPropagation", doit = ConstantPropagation.transform, execute = true} ::
    {name = "duplicateGlobals1", doit = DuplicateGlobals.transform, execute = false} ::
    {name = "splitTypes1", doit = SplitTypes.transform, execute = true} ::
-
    (* useless should run 
     *   - after constant propagation because constant propagation makes
     *     slots of tuples that are constant useless
