@@ -267,14 +267,14 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
          end
 
 
-      fun remappedConsHash (oldCon, ty) = Hash.combine(Type.hash ty, Con.hash oldCon)
-      val remappedCons: ((Con.t * Type.t), Con.t) HashTable.t =
-         HashTable.new {hash=remappedConsHash, equals=fn ((con1, ty1), (con2, ty2)) =>
-            Type.equals (ty1, ty2) andalso Con.equals (con1, con2)}
-      fun remapCon (oldCon, newTy) =
-         if Type.equals (newTy, primBoolTy)
+      fun remappedConsHash (oldCon, tycon) = Hash.combine (Tycon.hash tycon, Con.hash oldCon)
+      val remappedCons: ((Con.t * Tycon.t), Con.t) HashTable.t =
+         HashTable.new {hash=remappedConsHash, equals=fn ((con1, tycon1), (con2, tycon2)) =>
+            Tycon.equals (tycon1, tycon2) andalso Con.equals (con1, con2)}
+      fun remapCon (oldCon, newTycon) =
+         if Tycon.equals (newTycon, primBoolTycon)
          then oldCon
-         else HashTable.lookupOrInsert (remappedCons, (oldCon, newTy), fn () => Con.new oldCon)
+         else HashTable.lookupOrInsert (remappedCons, (oldCon, newTycon), fn () => Con.new oldCon)
 
 
       (* Loop over the entire program, map each type to the new type,
@@ -283,7 +283,7 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
          case exp of
               Exp.ConApp {con, args} =>
                   let
-                     val newCon = remapCon (con, newTy)
+                     val newCon = remapCon (con, Type.deDatatype newTy)
                   in
                      Exp.ConApp {con=newCon, args=args}
                   end
@@ -336,10 +336,10 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
                   (case cases of
                      Cases.Con cases' =>
                         let
-                           val newTy = getTy (value test)
+                           val newTycon = Type.deDatatype (getTy (value test))
                            val newCases = Cases.Con (Vector.map
                               (cases',
-                               fn (con, label) => (remapCon (con, newTy), label)))
+                               fn (con, label) => (remapCon (con, newTycon), label)))
                            (* if the cases are now exhaustive, default needs to be removed *)
                            val newDefault =
                               case (default, value test) of
@@ -392,14 +392,14 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
       val numOldDatatypes = Vector.length datatypes
       val datatypes =
          let
-            fun reifyCon newTy (TypeInfo.ConData (con, ts)) =
+            fun reifyCon newTycon (TypeInfo.ConData (con, ts)) =
                let
-                  val newCon = remapCon (con, newTy)
+                  val newCon = remapCon (con, newTycon)
                in
                   {con=newCon, args=Vector.map (ts, getTy)}
                end
-            fun reifyCons newTy conList =
-               Vector.fromList (List.map (conList, reifyCon newTy))
+            fun reifyCons (conList, newTycon) =
+               Vector.fromList (List.map (conList, reifyCon newTycon))
 
             (* bool may appear multiple times depending on settings *)
             val primBoolDt = Datatype.T
@@ -416,7 +416,7 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
                              val (_, consRef) = Equatable.value eq
                           in
                              SOME (Datatype.T
-                             {cons=reifyCons (Type.datatypee tycon) (!consRef), tycon=tycon})
+                             {cons=reifyCons (!consRef, tycon), tycon=tycon})
                           end))))
          end
 
