@@ -24,7 +24,7 @@ struct
          case t of
               Unchanged t => Type.layout t
             | Fresh eq => Equatable.layout (eq, layoutFresh)
-            | Tuple vect => Layout.tuple (Vector.toList (Vector.map(vect, layout)))
+            | Tuple vect => Layout.tuple (Vector.toListMap (vect, layout))
             | Heap (t, ht) => Layout.fill [layout t,
                                            case ht of
                                                 Array => Layout.str " array"
