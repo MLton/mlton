@@ -368,23 +368,17 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
       val functions =
          List.map (functions, fn f =>
             let
-               val { args, blocks, mayInline, name, raises, returns, start } =
+               val { args, blocks, mayInline, name, start, ... } =
                   Function.dest f
                val { args = argTys, raises = raiseTys, returns = returnTys } = func name
-               fun mergeTyVectorOpt (oldTysOpt, tsOpt, name) =
-                  case (oldTysOpt, tsOpt) of
-                       (NONE, NONE) => NONE
-                     | (SOME _, SOME ts) =>
-                          SOME (Vector.map (ts, getTy))
-                     | _ => Error.bug ("SplitTypes.TypeInfo.coerce: Inconsistent " ^ name)
             in
                Function.new
                { args = Vector.map2 (args, argTys, fn ((v, _), typeInfo) => (v, getTy typeInfo)),
                  blocks = Vector.map (blocks, loopBlock),
                  mayInline = mayInline,
                  name = name,
-                 raises = mergeTyVectorOpt (raises, raiseTys, "raises"),
-                 returns = mergeTyVectorOpt (returns, returnTys, "returns"),
+                 raises = Option.map (raiseTys, fn tys => Vector.map (tys, getTy)),
+                 returns = Option.map (returnTys, fn tys => Vector.map (tys, getTy)),
                  start = start }
             end)
 
