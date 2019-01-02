@@ -66,6 +66,7 @@ struct
                if Tycon.equals (tycon1, tycon2)
                then tycon1
                else Error.bug "SplitTypes.TypeInfo.mergeFresh: Inconsistent tycons"
+            val cons = ref (!cons1)
             val _ = List.foreach (!cons2, fn conData as ConData (con2, args2) =>
                let
                   val found = List.peek (!cons1, fn ConData (con1, _) =>
@@ -73,10 +74,10 @@ struct
                in
                   case found of
                        SOME (ConData (_, args1)) => List.push (coerceList, (args1, args2))
-                     | NONE => List.push (cons1, conData)
+                     | NONE => List.push (cons, conData)
                end)
          in
-            (tycon, cons1)
+            (tycon, cons)
          end
       fun coerce (from, to) =
          case (from, to) of
