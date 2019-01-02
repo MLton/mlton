@@ -3,6 +3,7 @@
  * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
+
 functor SplitTypes(S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM =
 struct
 
@@ -17,8 +18,8 @@ struct
       and con = ConData of Con.t * (t vector)
 
       fun layoutFresh (ty, cons) =
-         Layout.fill [ Option.layout Tycon.layout ty, Layout.str " # ",
-                       Ref.layout (List.layout (fn ConData (con, _) => Con.layout con)) cons]
+         Layout.fill [Option.layout Tycon.layout ty, Layout.str " # ",
+                      Ref.layout (List.layout (fn ConData (con, _) => Con.layout con)) cons]
       and layout (t: t) =
          case t of
               Unchanged t => Type.layout t
@@ -68,15 +69,15 @@ struct
       fun mergeFresh coerceList ((tycon1, cons1), (tycon2, cons2)) =
          let
             val tycon = (optionJoin (tycon1, tycon2, Tycon.equals,
-               fn (_, _) => Error.bug "splitTypes.TypeInfo.mergeFresh: Inconsistent tycons"))
+               fn (_, _) => Error.bug "SplitTypes.TypeInfo.mergeFresh: Inconsistent tycons"))
             val _ = List.foreach (!cons2, fn conData as ConData (con2, args2) =>
                let
                   val found = List.peek (!cons1, fn ConData (con1, _) =>
                      Con.equals (con1, con2))
                in
                   case found of
-                       SOME (ConData (_, args1)) => coerceList := (args1, args2) :: !coerceList
-                     | NONE => cons1 := conData :: !cons1
+                       SOME (ConData (_, args1)) => List.push (coerceList, (args1, args2))
+                     | NONE => List.push (cons1, conData)
                end)
          in
             (tycon, cons1)
@@ -89,14 +90,14 @@ struct
                   * so we need to completely finish the coercion before we recurse *)
                  val coerceList = ref []
                  val result = Equatable.equate (a, b, mergeFresh coerceList)
-                 val _ = List.foreach(!coerceList, fn (args1, args2) =>
-                    Vector.foreach2(args1, args2, coerce))
+                 val _ = List.foreach (!coerceList, fn (args1, args2) =>
+                    Vector.foreach2 (args1, args2, coerce))
               in
                  result
               end
             | (Tuple a, Tuple b) => Vector.foreach2 (a, b, coerce)
             | (Unchanged t1, Unchanged t2) =>
-                 if Type.equals(t1, t2)
+                 if Type.equals (t1, t2)
                  then ()
                  else Error.bug "SplitTypes.TypeInfo.coerce: Bad merge of unchanged types"
             | (Heap (t1, _), Heap (t2, _)) =>
@@ -108,7 +109,7 @@ struct
       fun fromType (ty: Type.t) =
          case Type.dest ty of
               Type.Datatype tycon => Fresh (Equatable.new (SOME tycon, ref []))
-            | Type.Tuple ts => Tuple (Vector.map(ts, fromType))
+            | Type.Tuple ts => Tuple (Vector.map (ts, fromType))
             | Type.Array t => Heap (fromType t, Array)
             | Type.Ref t => Heap (fromType t, Ref)
             | Type.Vector t => Heap (fromType t, Vector)
@@ -123,10 +124,10 @@ struct
 fun transform (program as Program.T {datatypes, globals, functions, main}) =
    let
       fun fromCon {con: Con.t, args: TypeInfo.t vector} =
-            TypeInfo.fromCon {con=con,args=args}
+            TypeInfo.fromCon {con=con, args=args}
       fun fromType (ty: Type.t) =
             TypeInfo.fromType ty
-      fun fromTuple { offset, tuple, resultType=_} =
+      fun fromTuple {offset, tuple, resultType=_} =
          case tuple of
               TypeInfo.Tuple ts => Vector.sub (ts, offset)
             | _ => Error.bug "SplitTypes.transform.fromTuple: Tried to select from non-tuple info"
@@ -137,7 +138,7 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
       val _ = List.map ([Con.truee, Con.falsee], fn con =>
          TypeInfo.coerce (TypeInfo.fromCon {con=con, args=Vector.new0 ()}, primBoolInfo))
 
-      fun primApp {args, prim, resultType, resultVar = _, targs} =
+      fun primApp {args, prim, resultType, resultVar=_, targs} =
          let
             fun derefPrim args =
                case Vector.sub (args, 0) of
@@ -180,7 +181,7 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
                | Prim.Name.Vector_vector => TypeInfo.Heap
                   let
                      val ty = TypeInfo.fromType (Vector.sub (targs, 0))
-                     val _ = Vector.fold (args, ty, fn (a, b) => (TypeInfo.coerce (a, b); a) )
+                     val _ = Vector.foreach (args, fn a => TypeInfo.coerce (a, ty))
                   in
                      (ty, TypeInfo.Vector)
                   end
@@ -191,7 +192,7 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
                | Prim.Name.FFI (CFunction.T {args=cargs, ...}) =>
                   let
                      (* for the C methods, we need false -> 0 and true -> 1 so they have to remain bools *)
-                     val _ = Vector.map2 (args, cargs, fn (arg, carg) =>
+                     val _ = Vector.foreach2 (args, cargs, fn (arg, carg) =>
                        if Type.equals (carg, primBoolTy)
                          then TypeInfo.coerce (arg, primBoolInfo)
                          else ())
@@ -225,9 +226,10 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
          let
             fun pickTycon (tycon, cons) =
                case (Tycon.equals (tycon, Tycon.bool), !Control.splitTypesBool) of
-                    (true, Control.Never) => tycon
+                    (true, Control.Always) => Tycon.new tycon
+                  | (true, Control.Never) => tycon
                   | (true, Control.Smart) => if List.length (!cons) < 2 then Tycon.new tycon else tycon
-                  | _             => Tycon.new tycon
+                  | (false, _) => Tycon.new tycon
             fun makeTy eq =
                case Equatable.value eq of
                      (SOME tycon, cons) => Type.datatypee (pickTycon (tycon, cons))
@@ -278,7 +280,7 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
                         {args=argTys,
                          result=newTy,
                          typeOps = {deArray = Type.deArray,
-                                    deArrow = fn _ => Error.bug "splitTypes.transform.loopExp: deArrow primApp",
+                                    deArrow = fn _ => Error.bug "SplitTypes.transform.loopExp: deArrow primApp",
                                     deRef = Type.deRef,
                                     deVector = Type.deVector,
                                     deWeak = Type.deWeak}})
@@ -352,9 +354,9 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
 
 
       val globals =
-         Vector.map(globals, loopStatement)
+         Vector.map (globals, loopStatement)
       val functions =
-         List.map(functions, fn f =>
+         List.map (functions, fn f =>
             let
                val { args, blocks, mayInline, name, raises, returns, start } =
                   Function.dest f
@@ -373,14 +375,13 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
                  name = name,
                  raises = mergeTyVectorOpt (raises, raiseTys, "raises"),
                  returns = mergeTyVectorOpt (returns, returnTys, "returns"),
-                 start = start
-                 }
+                 start = start }
             end)
 
 
       (* This needs to run after looping since the types/constructors were
        * duplicated at usage in the loops above *)
-      val numDatatypes = Vector.length (datatypes)
+      val numOldDatatypes = Vector.length datatypes
       val datatypes =
          let
             fun reifyCon newTy (TypeInfo.ConData (con, ts)) =
@@ -397,9 +398,9 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
 
             (* bool may appear multiple times depending on settings *)
             val primBoolDt = Datatype.T
-              {cons=Vector.fromList
-                [{con=Con.truee, args=Vector.new0 ()},
-                 {con=Con.falsee, args=Vector.new0 ()}], tycon=Tycon.bool}
+              {cons=Vector.new2
+                ({con=Con.truee, args=Vector.new0 ()},
+                 {con=Con.falsee, args=Vector.new0 ()}), tycon=Tycon.bool}
          in
             (Vector.fromList (primBoolDt :: (List.keepAllMap (HashTable.toList tyMap,
                   fn (typeInfo, newTy) =>
@@ -421,7 +422,7 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
             in
                display ( mayAlign [
                   str "Program before splitting had ",
-                  str (Int.toString numDatatypes),
+                  str (Int.toString numOldDatatypes),
                   str " datatypes.",
                   str "Program after splitting has ",
                   str (Int.toString (Vector.length datatypes)),
