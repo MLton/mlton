@@ -48,11 +48,14 @@ struct
                  if equals (x1, x2)
                  then SOME x1
                  else inequal (x1, x2)
-      fun hash (t : t) : word =
+
+      fun hashFresh eq : word =
+         Option.fold (#1 (Equatable.value eq), 0w0,
+            fn (tycon, h) => Hash.combine (h, Tycon.hash tycon))
+      and hash (t : t) : word =
          case t of
               Unchanged ty => Type.hash ty
-            | Fresh eq => Option.fold (#1 (Equatable.value eq), 0w0,
-                  fn (tycon, h) => Hash.combine (h, Tycon.hash tycon))
+            | Fresh eq => hashFresh eq
             | Tuple vect => Hash.vectorMap(vect, hash)
             | Heap (t,htype) => Hash.combine (hash t,
                (case htype of
