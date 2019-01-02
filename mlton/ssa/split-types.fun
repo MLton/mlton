@@ -66,6 +66,11 @@ struct
             | (Heap (t1, _), Heap (t2, _)) => equated (t1, t2)
             | _ => false
 
+      fun deFresh t =
+         case t of
+              Fresh eq => eq
+            | _ => Error.bug "SplitTypes.TypeInfo.deFresh"
+
       fun mergeFresh coerceList ((tycon1, cons1), (tycon2, cons2)) =
          let
             val tycon = (optionJoin (tycon1, tycon2, Tycon.equals,
