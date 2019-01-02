@@ -132,19 +132,15 @@ struct
          Fresh (Equatable.new (NONE, ref [ConData (con, args)]))
       fun fromTuple (vect: t vector) = Tuple vect
       fun const (c: Const.t): t = fromType (Type.ofConst c)
+
+      fun select {tuple, offset, resultType=_} =
+         case tuple of
+              Tuple ts => Vector.sub (ts, offset)
+            | _ => Error.bug "SplitTypes.TypeInfo.select: Tried to select from non-tuple info"
   end
 
 fun transform (program as Program.T {datatypes, globals, functions, main}) =
    let
-      fun fromCon {con: Con.t, args: TypeInfo.t vector} =
-            TypeInfo.fromCon {con=con, args=args}
-      fun fromType (ty: Type.t) =
-            TypeInfo.fromType ty
-      fun fromTuple {offset, tuple, resultType=_} =
-         case tuple of
-              TypeInfo.Tuple ts => Vector.sub (ts, offset)
-            | _ => Error.bug "SplitTypes.transform.fromTuple: Tried to select from non-tuple info"
-
       (* primitives may return this boolean *)
       val primBoolTy = Type.bool
       val primBoolTycon = Type.deDatatype primBoolTy
@@ -218,15 +214,15 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
       val { value, func, ... } =
          analyze
          { coerce = fn {from, to} => TypeInfo.coerce (from, to),
-           conApp = fromCon,
+           conApp = TypeInfo.fromCon,
            const = TypeInfo.const,
            filter = fn (ty, con, args) => TypeInfo.coerce (ty, TypeInfo.fromCon {con=con,args=args}),
            filterWord = fn _ => (),
-           fromType = fromType,
+           fromType = TypeInfo.fromType,
            layout = TypeInfo.layout,
            primApp = primApp,
            program = program,
-           select = fromTuple,
+           select = TypeInfo.select,
            tuple = TypeInfo.fromTuple,
            useFromTypeOnBinds = true }
 
