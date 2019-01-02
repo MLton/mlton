@@ -143,8 +143,8 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
             | _ => Error.bug "SplitTypes.transform.fromTuple: Tried to select from non-tuple info"
 
       (* primitives may return this boolean *)
-      val primBoolTy = Type.datatypee Tycon.bool
-      val primBoolInfo = TypeInfo.fromType (Type.datatypee Tycon.bool)
+      val primBoolTy = Type.bool
+      val primBoolInfo = TypeInfo.fromType primBoolTy
       val _ = List.map ([Con.truee, Con.falsee], fn con =>
          TypeInfo.coerce (TypeInfo.fromCon {con=con, args=Vector.new0 ()}, primBoolInfo))
 
