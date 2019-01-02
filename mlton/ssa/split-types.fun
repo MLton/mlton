@@ -12,13 +12,13 @@ struct
    structure TypeInfo = struct
       datatype heapType = Array | Ref | Vector | Weak
       datatype t = Unchanged of Type.t
-                 | Fresh of (Tycon.t option * con list ref) Equatable.t
+                 | Fresh of (Tycon.t * con list ref) Equatable.t
                  | Tuple of t vector
                  | Heap of (t * heapType)
       and con = ConData of Con.t * (t vector)
 
       fun layoutFresh (ty, cons) =
-         Layout.fill [Option.layout Tycon.layout ty, Layout.str " # ",
+         Layout.fill [Tycon.layout ty, Layout.str " # ",
                       Ref.layout (List.layout (fn ConData (con, _) => Con.layout con)) cons]
       and layout (t: t) =
          case t of
@@ -32,26 +32,7 @@ struct
                                               | Vector => Layout.str " vector"
                                               | Weak => Layout.str " weak"]
 
-      (* lattice join of options, where NONE is taken as less than SOME a,
-       * with a fallback method if the join would be inconsistent
-       *
-       * if SOME x and SOME y and equals (x, y) then return SOME x (which is SOME y)
-       * else if one is SOME x and the other NONE then return SOME x
-       * else if both NONE then return NONE
-       * else call inequal *)
-      fun optionJoin (opt1, opt2, equals, inequal) =
-         case (opt1, opt2) of
-              (NONE, NONE) => NONE
-            | (SOME x1, NONE) => SOME x1
-            | (NONE, SOME x2) => SOME x2
-            | (SOME x1, SOME x2) =>
-                 if equals (x1, x2)
-                 then SOME x1
-                 else inequal (x1, x2)
-
-      fun hashFresh eq : word =
-         Option.fold (#1 (Equatable.value eq), 0w0,
-            fn (tycon, h) => Hash.combine (h, Tycon.hash tycon))
+      fun hashFresh eq : word = Tycon.hash (#1 (Equatable.value eq))
       and hash (t : t) : word =
          case t of
               Unchanged ty => Type.hash ty
@@ -81,8 +62,10 @@ struct
 
       fun mergeFresh coerceList ((tycon1, cons1), (tycon2, cons2)) =
          let
-            val tycon = (optionJoin (tycon1, tycon2, Tycon.equals,
-               fn (_, _) => Error.bug "SplitTypes.TypeInfo.mergeFresh: Inconsistent tycons"))
+            val tycon =
+               if Tycon.equals (tycon1, tycon2)
+               then tycon1
+               else Error.bug "SplitTypes.TypeInfo.mergeFresh: Inconsistent tycons"
             val _ = List.foreach (!cons2, fn conData as ConData (con2, args2) =>
                let
                   val found = List.peek (!cons1, fn ConData (con1, _) =>
@@ -121,15 +104,15 @@ struct
                  layout from, Layout.str " coerced to ", layout to ]))
       fun fromType (ty: Type.t) =
          case Type.dest ty of
-              Type.Datatype tycon => Fresh (Equatable.new (SOME tycon, ref []))
+              Type.Datatype tycon => Fresh (Equatable.new (tycon, ref []))
             | Type.Tuple ts => Tuple (Vector.map (ts, fromType))
             | Type.Array t => Heap (fromType t, Array)
             | Type.Ref t => Heap (fromType t, Ref)
             | Type.Vector t => Heap (fromType t, Vector)
             | Type.Weak t => Heap (fromType t, Weak)
             | _ => Unchanged ty
-      fun fromCon {con: Con.t, args: t vector} =
-         Fresh (Equatable.new (NONE, ref [ConData (con, args)]))
+      fun fromCon {con: Con.t, args: t vector, tycon: Tycon.t} =
+         Fresh (Equatable.new (tycon, ref [ConData (con, args)]))
       fun fromTuple (vect: t vector) = Tuple vect
       fun const (c: Const.t): t = fromType (Type.ofConst c)
 
@@ -141,12 +124,22 @@ struct
 
 fun transform (program as Program.T {datatypes, globals, functions, main}) =
    let
+      val conTyconMap =
+         HashTable.new {hash=Con.hash, equals=Con.equals}
+      fun conTycon con =
+         HashTable.lookupOrInsert (conTyconMap, con, fn () =>
+            Error.bug ("SplitTypes.transform.conTycon: " ^ (Con.toString con)))
+      val _ =
+         Vector.foreach (datatypes, fn Datatype.T {cons, tycon} =>
+            Vector.foreach (cons, fn {con, ...} =>
+               ignore (HashTable.lookupOrInsert (conTyconMap, con, fn () => tycon))))
+
       (* primitives may return this boolean *)
       val primBoolTy = Type.bool
       val primBoolTycon = Type.deDatatype primBoolTy
       val primBoolInfo = TypeInfo.fromType primBoolTy
       val _ = List.map ([Con.truee, Con.falsee], fn con =>
-         TypeInfo.coerce (TypeInfo.fromCon {con=con, args=Vector.new0 ()}, primBoolInfo))
+         TypeInfo.coerce (TypeInfo.fromCon {con=con, args=Vector.new0 (), tycon = primBoolTycon}, primBoolInfo))
 
       fun primApp {args, prim, resultType, resultVar=_, targs} =
          let
@@ -214,9 +207,9 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
       val { value, func, ... } =
          analyze
          { coerce = fn {from, to} => TypeInfo.coerce (from, to),
-           conApp = TypeInfo.fromCon,
+           conApp = fn {con, args} => TypeInfo.fromCon {con = con, args = args, tycon = conTycon con},
            const = TypeInfo.const,
-           filter = fn (ty, con, args) => TypeInfo.coerce (ty, TypeInfo.fromCon {con=con,args=args}),
+           filter = fn (ty, con, args) => TypeInfo.coerce (ty, TypeInfo.fromCon {con=con, args=args, tycon = conTycon con}),
            filterWord = fn _ => (),
            fromType = TypeInfo.fromType,
            layout = TypeInfo.layout,
@@ -240,13 +233,7 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
                   | (true, Control.Never) => tycon
                   | (true, Control.Smart) => if List.length (!cons) < 2 then Tycon.new tycon else tycon
                   | (false, _) => Tycon.new tycon
-            fun makeTy eq =
-               case Equatable.value eq of
-                     (SOME tycon, cons) => pickTycon (tycon, cons)
-                   | (NONE, _) =>
-                        Error.bug (Layout.toString (Layout.fill [
-                           Layout.str "SplitTypes.transform.makeTy: ", TypeInfo.layout
-                              (TypeInfo.Fresh eq)]))
+            fun makeTy eq = pickTycon (Equatable.value eq)
          in
             case typeInfo of
                   TypeInfo.Unchanged ty => ty
