@@ -25,7 +25,12 @@ struct
               Unchanged t => Type.layout t
             | Fresh eq => Equatable.layout (eq, layoutFresh)
             | Tuple vect => Layout.tuple (Vector.toList (Vector.map(vect, layout)))
-            | Heap (t,_) => Layout.fill [ layout t, Layout.str " heap" ]
+            | Heap (t, ht) => Layout.fill [layout t,
+                                           case ht of
+                                                Array => Layout.str " array"
+                                              | Ref => Layout.str " ref"
+                                              | Vector => Layout.str " vector"
+                                              | Weak => Layout.str " weak"]
 
       (* lattice join of options, where NONE is taken as less than SOME a,
        * with a fallback method if the join would be inconsistent
