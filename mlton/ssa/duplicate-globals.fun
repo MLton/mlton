@@ -35,6 +35,7 @@ struct
                         (case Prim.name prim of
                              (* we might want to duplicate this due to the targ *)
                              Prim.Name.MLton_bogus => duplicatable var
+                           | Prim.Name.Vector_vector => duplicatable var
                            | _ => ())
                    | _ => ()
             in
