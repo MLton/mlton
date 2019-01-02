@@ -386,10 +386,7 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
          let
             fun reifyCon newTy (TypeInfo.ConData (con, ts)) =
                let
-                  val newCon =
-                     if Type.equals (newTy, primBoolTy)
-                     then con
-                     else remapCon (con, newTy)
+                  val newCon = remapCon (con, newTy)
                in
                   {con=newCon, args=Vector.map (ts, getTy)}
                end
@@ -407,11 +404,14 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
                      case typeInfo of
                           TypeInfo.Fresh eq =>
                               (* Only one copy of the true prim bool type should exist *)
-                              (case (Type.equals (newTy, primBoolTy), Equatable.value eq) of
-                                    (false, (_, consRef)) =>
-                                       SOME (Datatype.T
-                                       {cons=reifyCons newTy (!consRef), tycon=Type.deDatatype newTy})
-                                  | _ => NONE)
+                              if Type.equals (newTy, primBoolTy)
+                              then NONE
+                              else let
+                                      val (_, consRef) = Equatable.value eq
+                                   in
+                                      SOME (Datatype.T
+                                      {cons=reifyCons newTy (!consRef), tycon=Type.deDatatype newTy})
+                                   end
                         | _ => NONE))))
          end
 
