@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014,2017-2018 Matthew Fluet.
+(* Copyright (C) 2009,2014,2017-2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -408,9 +408,11 @@ structure Exp =
             (ConApp {con, args}, ConApp {con = con', args = args'}) =>
                Con.equals (con, con') andalso varsEquals (args, args')
           | (Const c, Const c') => Const.equals (c, c')
-          | (PrimApp {prim, args, ...},
-             PrimApp {prim = prim', args = args', ...}) =>
-               Prim.equals (prim, prim') andalso varsEquals (args, args')
+          | (PrimApp {prim, targs, args},
+             PrimApp {prim = prim', targs = targs', args = args'}) =>
+               Prim.equals (prim, prim')
+               andalso Vector.equals (targs, targs', Type.equals)
+               andalso varsEquals (args, args')
           | (Profile p, Profile p') => ProfileExp.equals (p, p')
           | (Select {tuple = t, offset = i}, Select {tuple = t', offset = i'}) =>
                Var.equals (t, t') andalso i = i'
@@ -426,11 +428,13 @@ structure Exp =
          val tuple = newHash ()
          fun hashVars (xs: Var.t vector, w: Word.t): Word.t =
             Hash.combine (w, Hash.vectorMap (xs, Var.hash))
+         fun hashTypes (ts: Type.t vector, w: Word.t): Word.t =
+            Hash.combine (w, Hash.vectorMap (ts, Type.hash))
       in
          val hash: t -> Word.t =
             fn ConApp {con, args, ...} => hashVars (args, Con.hash con)
              | Const c => Const.hash c
-             | PrimApp {args, ...} => hashVars (args, primApp)
+             | PrimApp {targs, args, ...} => hashVars (args, hashTypes (targs, primApp))
              | Profile p => Hash.combine (profile, ProfileExp.hash p)
              | Select {tuple, offset} =>
                   Hash.combine (select, Var.hash tuple + Word.fromInt offset)
