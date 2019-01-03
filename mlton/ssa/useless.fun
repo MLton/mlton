@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2017 Matthew Fluet.
+(* Copyright (C) 2009,2017,2018 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -12,8 +12,6 @@ struct
 
 open S
 (* useless thing elimination
- *  remove components of tuples that are constants (use unification)
- *  remove function arguments that are constants
  *  build some kind of dependence graph where 
  *    - a value of ground type is useful if it is an arg to a primitive
  *    - a tuple is useful if it contains a useful component
@@ -33,38 +31,69 @@ open S
  * any primapp args must be as well.
  *)
 
-(* Weirdness with raise/handle.
- * There must be a uniform "calling convention" for raise and handle.
- * Hence, just because some of a handlers args are useless, that doesn't mean
- * that it can drop them, since they may be useful to another handler, and
- * hence every raise will pass them along.  The problem is that it is not
- * possible to tell solely from looking at a function declaration whether it is
- * a handler or not, and in fact, there is nothing preventing a jump being used
- * in both ways.  So, maybe the right thing is for the handler wrapper to
- * do
- * Another solution would be to unify all handler args.
- *)
-
 structure Value =
    struct
       structure Set = DisjointSet
 
-      structure Exists =
+      structure Exists :
+         sig
+            type t
+            val <= : t * t -> unit
+            val == : t * t -> unit
+            val doesExist: t -> bool
+            val layout: t -> Layout.t
+            val mustExist: t -> unit
+            val new: unit -> t
+            val whenExists: t * (unit -> unit) -> unit
+         end =
          struct
             structure L = TwoPointLattice (val bottom = "not exists"
                                            val top = "exists")
             open L
             val mustExist = makeTop
             val doesExist = isTop
+            val whenExists = addHandler
          end
 
-      structure Useful =
+      structure Useful :
+         sig
+            type t
+            val <= : t * t -> unit
+            val == : t * t -> unit
+            val isUseful: t -> bool
+            val layout: t -> Layout.t
+            val makeUseful: t -> unit
+            val makeWanted: t -> unit
+            val new: unit -> t
+            val whenUseful: t * (unit -> unit) -> unit
+         end =
          struct
-            structure L = TwoPointLattice (val bottom = "useless"
+            structure U = TwoPointLattice (val bottom = "useless"
                                            val top = "useful")
-            open L
-            val makeUseful = makeTop
-            val isUseful = isTop
+            structure W = TwoPointLattice (val bottom = "unwanted"
+                                           val top = "wanted")
+
+            datatype t = T of U.t * W.t
+
+            fun layout (T (u, w)) =
+               let open Layout
+               in seq [U.layout u, str "/", W.layout w]
+               end
+
+            fun new () =
+               T (U.new (), W.new ())
+            fun == (T (u, w), T (u', w')) =
+               (U.== (u, u'); W.== (w, w'))
+            fun (T (uf, wf)) <= (T (ut, wt)) =
+               (U.<= (uf, ut);
+                W.<= (wf, wt);
+                W.addHandler (wf, fn () => U.== (uf, ut)))
+
+            fun makeUseful (T (u, _)) = U.makeTop u
+            fun isUseful (T (u, _)) = U.isTop u
+            fun whenUseful (T (u, _), h) = U.addHandler (u, h)
+
+            fun makeWanted (T (_, w)) = W.makeTop w
          end
 
       datatype t =
@@ -75,14 +104,14 @@ structure Value =
          Array of {elt: slot,
                    length: t,
                    useful: Useful.t}
-        | Ground of Useful.t
-        | Ref of {arg: slot,
+       | Ground of Useful.t
+       | Ref of {arg: slot,
+                 useful: Useful.t}
+       | Tuple of slot vector
+       | Vector of {elt: slot,
+                    length: t}
+       | Weak of {arg: slot,
                   useful: Useful.t}
-        | Tuple of slot vector
-        | Vector of {elt: slot,
-                     length: t}
-        | Weak of {arg: slot,
-                   useful: Useful.t}
       withtype slot = t * Exists.t
 
       local
@@ -129,9 +158,9 @@ structure Value =
                val _ = Set.union (s, s')
             in
                case (v, v') of
-                  (Array {length = n, elt = e, ...},
-                   Array {length = n', elt = e', ...}) =>
-                     (unify (n, n'); unifySlot (e, e'))
+                  (Array {useful = u, length = n, elt = e},
+                   Array {useful = u', length = n', elt = e'}) =>
+                     (Useful.== (u, u'); unify (n, n'); unifySlot (e, e'))
                 | (Ground g, Ground g') => Useful.== (g, g')
                 | (Ref {useful = u, arg = a},
                    Ref {useful = u', arg = a'}) =>
@@ -146,6 +175,12 @@ structure Value =
                 | _ => Error.bug "Useless.Value.unify: strange"
             end
       and unifySlot ((v, e), (v', e')) = (unify (v, v'); Exists.== (e, e'))
+
+      val unify =
+         Trace.trace ("Useless.Value.unify",
+                      Layout.tuple2 (layout, layout),
+                      Unit.layout)
+         unify
 
       fun coerce {from = from as T sfrom, to = to as T sto}: unit =
          if Set.equals (sfrom, sto)
@@ -233,7 +268,7 @@ structure Value =
                let
                   fun useful () =
                      let val u = Useful.new ()
-                     in Useful.addHandler
+                     in Useful.whenUseful
                         (u, fn () => List.foreach (es, Exists.mustExist))
                         ; u
                      end
@@ -247,7 +282,7 @@ structure Value =
                         Type.Array t =>
                            let val elt as (_, e) = slot t
                                val length = loop (Type.word (WordSize.seqIndex ()))
-                           in Exists.addHandler
+                           in Exists.whenExists
                               (e, fn () => Useful.makeUseful (deground length))
                               ; Array {useful = useful (),
                                        length = length,
@@ -322,17 +357,25 @@ structure Value =
       in
          val dearray: t -> t = make ("Useless.dearray", #1 o #elt)
          val arrayLength = make ("Useless.arrayLength", #length)
+         val arrayUseful = make ("Useless.arrayUseful", #useful)
       end
-
-      fun deref (r: t): t =
-         case value r of
-            Ref {arg, ...} => #1 arg
-          | _ => Error.bug "Useless.deref"
-
-      fun deweak (v: t): t =
-         case value v of
-            Weak {arg, ...} => #1 arg
-          | _ => Error.bug "Useless.deweak"
+      local
+         fun make (err, sel) v =
+            case value v of
+               Ref fs => sel fs
+             | _ => Error.bug err
+      in
+         val deref: t -> t = make ("Useless.deref", #1 o #arg)
+      end
+      local
+         fun make (err, sel) v =
+            case value v of
+               Weak fs => sel fs
+             | _ => Error.bug err
+      in
+         val deweak: t -> t = make ("Useless.deweak", #1 o #arg)
+         val weakUseful = make ("Useless.weakUseful", #useful)
+      end
 
       fun newType (v: t): Type.t = #1 (getNew v)
       and isUseful (v: t): bool = #2 (getNew v)
@@ -405,16 +448,16 @@ fun transform (program: Program.t): Program.t =
       val program as Program.T {datatypes, globals, functions, main} =
          eliminateDeadBlocks program
       val {get = conInfo: Con.t -> {args: Value.t vector,
-                                    argTypes: Type.t vector,
                                     value: unit -> Value.t},
            set = setConInfo, ...} =
          Property.getSetOnce 
-         (Con.plist, Property.initRaise ("conInfo", Con.layout))
-      val {get = tyconInfo: Tycon.t -> {useful: bool ref,
-                                        cons: Con.t vector},
+         (Con.plist, Property.initRaise ("Useless.conInfo", Con.layout))
+      val {get = tyconInfo: Tycon.t -> {cons: Con.t vector,
+                                        visitedDeepMakeUseful: bool ref,
+                                        visitedShallowMakeUseful: bool ref},
            set = setTyconInfo, ...} =
          Property.getSetOnce 
-         (Tycon.plist, Property.initRaise ("tyconInfo", Tycon.layout))
+         (Tycon.plist, Property.initRaise ("Useless.tyconInfo", Tycon.layout))
       local open Value
       in
          val _ =
@@ -422,13 +465,13 @@ fun transform (program: Program.t): Program.t =
             (datatypes, fn Datatype.T {tycon, cons} =>
              let
                 val _ =
-                   setTyconInfo (tycon, {useful = ref false,
-                                         cons = Vector.map (cons, #con)})
+                   setTyconInfo (tycon, {cons = Vector.map (cons, #con),
+                                         visitedDeepMakeUseful = ref false,
+                                         visitedShallowMakeUseful = ref false})
                 fun value () = fromType (Type.datatypee tycon)
              in Vector.foreach
                 (cons, fn {con, args} =>
                  setConInfo (con, {value = value,
-                                   argTypes = args,
                                    args = Vector.map (args, fromType)}))
              end)
          val conArgs = #args o conInfo
@@ -444,10 +487,6 @@ fun transform (program: Program.t): Program.t =
                   (Useful.makeUseful g
                    ; coerces {from = conArgs con, to = to})
              | _ => Error.bug "Useless.filter: non ground"
-         fun filterGround (v: Value.t): unit =
-            case value v of
-               Ground g => Useful.makeUseful g
-             | _ => Error.bug "Useless.filterGround: non ground"
          val filter =
             Trace.trace3 ("Useless.filter",
                           Value.layout,
@@ -455,38 +494,116 @@ fun transform (program: Program.t): Program.t =
                           Vector.layout Value.layout,
                           Unit.layout)
             filter
-         (* This is used for primitive args, since we have no idea what
-          * components of its args that a primitive will look at.
+         fun filterGround (v: Value.t): unit =
+            case value v of
+               Ground g => Useful.makeUseful g
+             | _ => Error.bug "Useless.filterGround: non ground"
+
+         (* This is for primitive args, which may inspect any component.
           *)
-         fun deepMakeUseful v =
+         fun mkDeepMakeUseful deepMakeUseful v =
             let
                val slot = deepMakeUseful o #1
             in
                case value v of
-                  Array {useful, length, elt} =>
-                     (Useful.makeUseful useful
-                      ; deepMakeUseful length
-                      ; slot elt)
+                  Array {useful = u, length = n, elt = e} =>
+                     (Useful.makeUseful u
+                      ; deepMakeUseful n
+                      ; slot e)
                 | Ground u =>
                      (Useful.makeUseful u
                       (* Make all constructor args of this tycon useful *)
                       ; (case Type.dest (ty v) of
                             Type.Datatype tycon =>
-                               let val {useful, cons} = tyconInfo tycon
-                               in if !useful
+                               let
+                                  val {cons, visitedDeepMakeUseful, visitedShallowMakeUseful} =
+                                     tyconInfo tycon
+                               in
+                                  if !visitedDeepMakeUseful
                                      then ()
-                                  else (useful := true
-                                        ; Vector.foreach (cons, fn con =>
-                                                          Vector.foreach
-                                                          (#args (conInfo con),
-                                                           deepMakeUseful)))
+                                     else (visitedDeepMakeUseful := true
+                                           ; visitedShallowMakeUseful := true
+                                           ; Vector.foreach
+                                             (cons, fn con =>
+                                              Vector.foreach
+                                              (#args (conInfo con),
+                                               deepMakeUseful)))
                                end
                           | _ => ()))
-                | Ref {arg, useful} => (Useful.makeUseful useful; slot arg)
+                | Ref {useful = u, arg = a} => (Useful.makeUseful u; slot a)
                 | Tuple vs => Vector.foreach (vs, slot)
-                | Vector {length, elt} => (deepMakeUseful length; slot elt)
-                | Weak {arg, useful} => (Useful.makeUseful useful; slot arg)
+                | Vector {length = n, elt = e} => (deepMakeUseful n; slot e)
+                | Weak {useful = u, arg = a} => (Useful.makeUseful u; slot a)
             end
+         val deepMakeUseful =
+            Trace.traceRec
+            ("Useless.deepMakeUseful",
+             Value.layout,
+             Unit.layout)
+            mkDeepMakeUseful
+
+         (* This is used for MLton_equal and MLton_hash, which will not inspect
+          * contents of Array, Ref, or Weak.
+          *)
+         fun mkShallowMakeUseful shallowMakeUseful v =
+            let
+               val slot = shallowMakeUseful o #1
+            in
+               case value v of
+                  Array {useful = u, ...} => Useful.makeUseful u
+                | Ground u =>
+                     (Useful.makeUseful u
+                      (* Make all constructor args of this tycon useful *)
+                      ; (case Type.dest (ty v) of
+                            Type.Datatype tycon =>
+                               let
+                                  val {cons, visitedShallowMakeUseful, ...} =
+                                     tyconInfo tycon
+                               in
+                                  if !visitedShallowMakeUseful
+                                     then ()
+                                     else (visitedShallowMakeUseful := true
+                                           ; Vector.foreach
+                                             (cons, fn con =>
+                                              Vector.foreach
+                                              (#args (conInfo con),
+                                               shallowMakeUseful)))
+                               end
+                          | _ => ()))
+                | Ref {useful = u, ...} => Useful.makeUseful u
+                | Tuple vs => Vector.foreach (vs, slot)
+                | Vector {length = n, elt = e} => (shallowMakeUseful n; slot e)
+                | Weak {useful = u, ...} => Useful.makeUseful u
+            end
+         val shallowMakeUseful =
+            Trace.traceRec
+            ("Useless.shallowMakeUseful",
+             Value.layout,
+             Unit.layout)
+            mkShallowMakeUseful
+
+         (* This is used for MLton_eq, MLton_share, and MLton_size,
+          * which should only make use of the components that
+          * are used elsewhere in the computation.
+          *)
+         fun mkMakeWanted makeWanted v =
+            let
+               val slot = makeWanted o #1
+            in
+               case value v of
+                  Array {useful = u, ...} => Useful.makeWanted u
+                | Ground u => Useful.makeWanted u
+                | Ref {useful = u, ...} => Useful.makeWanted u
+                | Tuple vs => Vector.foreach (vs, slot)
+                | Vector {length = n, elt = e} => (makeWanted n; slot e)
+                | Weak {useful = u, ...} => Useful.makeWanted u
+            end
+         val makeWanted =
+            Trace.traceRec
+            ("Useless.makeWanted",
+             Value.layout,
+             Unit.layout)
+            mkMakeWanted
 
          fun primApp {args: t vector, prim, resultVar = _, resultType,
                       targs = _} =
@@ -555,19 +672,33 @@ fun transform (program: Program.t): Program.t =
                            arg 1 dependsOn a
                         end
                    | Array_uninitIsNop =>
-                        (* Array_uninitIsNop is Functional, but
-                         * performing Useless.<= (allOrNothing result,
-                         * allOrNothing (arg 0)) would effectively
-                         * make the whole array useful, inhibiting the
-                         * Useless optimization.
-                         *)
-                        ()
+                        Useful.whenUseful
+                        (deground result, fn () =>
+                         Useful.makeUseful (arrayUseful (arg 0)))
                    | Array_update => update ()
                    | FFI _ =>
                         (Vector.foreach (args, deepMakeUseful);
                          deepMakeUseful result)
-                   | MLton_equal => Vector.foreach (args, deepMakeUseful)
-                   | MLton_hash => Vector.foreach (args, deepMakeUseful)
+                   | MLton_eq =>
+                        Useful.whenUseful
+                        (deground result, fn () =>
+                         (unify (arg 0, arg 1)
+                          ; makeWanted (arg 1)))
+                   | MLton_equal =>
+                        Useful.whenUseful
+                        (deground result, fn () =>
+                         (shallowMakeUseful (arg 0)
+                          ; shallowMakeUseful (arg 1)))
+                   | MLton_hash =>
+                        Useful.whenUseful
+                        (deground result, fn () =>
+                         shallowMakeUseful (arg 0))
+                   | MLton_share => makeWanted (arg 0)
+                   | MLton_size =>
+                        Useful.whenUseful
+                        (deground result, fn () =>
+                         makeWanted (arg 0))
+                   | MLton_touch => shallowMakeUseful (arg 0)
                    | Ref_assign => coerce {from = arg 1, to = deref (arg 0)}
                    | Ref_deref => return (deref (arg 0))
                    | Ref_ref => coerce {from = arg 0, to = deref result}
@@ -586,22 +717,26 @@ fun transform (program: Program.t): Program.t =
                               (args, fn arg =>
                                coerce {from = arg, to = devector result}))
                         end
+                   | Weak_canGet =>
+                        Useful.whenUseful
+                        (deground result, fn () =>
+                         Useful.makeUseful (weakUseful (arg 0)))
                    | Weak_get => return (deweak (arg 0))
                    | Weak_new => coerce {from = arg 0, to = deweak result}
                    | WordArray_subWord _ => sub ()
                    | WordArray_updateWord _ => update ()
                    | _ =>
-                        let (* allOrNothing so the type doesn't change *)
+                        let
+                           (* allOrNothing so the type doesn't change *)
                            val res = allOrNothing result
-                        in if Prim.maySideEffect prim
+                        in
+                           if Prim.maySideEffect prim
                               then Vector.foreach (args, deepMakeUseful)
-                           else
-                              Vector.foreach (args, fn a =>
-                                              case (allOrNothing a, res) of
-                                                 (NONE, _) => ()
-                                               | (SOME u, SOME u') =>
-                                                    Useful.<= (u', u)
-                                               | _ => ())
+                              else Vector.foreach (args, fn a =>
+                                                   case (allOrNothing a, res) of
+                                                      (SOME u, SOME u') =>
+                                                         Useful.<= (u', u)
+                                                    | _ => ())
                         end
             in
                result
@@ -631,46 +766,6 @@ fun transform (program: Program.t): Program.t =
                   useFromTypeOnBinds = true
                   }
       open Exp Transfer
-      (* Unify all handler args so that raise/handle has a consistent calling
-       * convention.
-       *)
-      val _ =
-         List.foreach
-         (functions, fn f =>
-          let
-             val {raises = fraisevs, ...} = func (Function.name f)
-             fun coerce (x, y) = Value.coerce {from = x, to = y}
-          in
-             Vector.foreach
-             (Function.blocks f, fn Block.T {transfer, ...} =>
-              case transfer of
-                 Call {func = g, return, ...} =>
-                    let
-                       val {raises = graisevs, ...} = func g
-                       fun coerceRaise () =
-                          case (graisevs, fraisevs) of
-                             (NONE, NONE) => ()
-                           | (NONE, SOME _) => ()
-                           | (SOME _, NONE) =>
-                                Error.bug "Useless.useless: raise mismatch at Caller"
-                           | (SOME vs, SOME vs') =>
-                                Vector.foreach2 (vs', vs, coerce)
-                    in
-                      case return of
-                         Return.Dead => ()
-                       | Return.NonTail {handler, ...} =>
-                            (case handler of
-                                Handler.Caller => coerceRaise ()
-                              | Handler.Dead => ()
-                              | Handler.Handle h =>
-                                   Option.app
-                                   (graisevs, fn graisevs =>
-                                    Vector.foreach2 
-                                    (label h, graisevs, coerce)))
-                       | Return.Tail => coerceRaise ()
-                    end
-               | _ => ())
-          end)
       val _ =
          Control.diagnostics
          (fn display =>
@@ -688,6 +783,13 @@ fun transform (program: Program.t): Program.t =
                                  Vector.layout Value.layout (conArgs con)])
                            cons,
                            2)]))
+             fun diagVar x =
+                display (seq [Var.layout x,
+                              str " ", Value.layout (value x)])
+             val _ =
+                Vector.foreach
+                (globals, fn Statement.T {var, ...} =>
+                 Option.app (var, diagVar))
              val _ =
                 List.foreach
                 (functions, fn f =>
@@ -707,9 +809,7 @@ fun transform (program: Program.t): Program.t =
                                  raises)])
                     val _ =
                        Function.foreachVar
-                       (f, fn (x, _) => 
-                        display (seq [Var.layout x,
-                                      str " ", Value.layout (value x)]))
+                       (f, fn (x, _) => diagVar x)
                  in
                     ()
                  end)
@@ -802,6 +902,7 @@ fun transform (program: Program.t): Program.t =
           | Const _ => e
           | PrimApp {prim, args, ...} => 
                let
+                  fun arg i = Vector.sub (args, i)
                   fun doit () =
                      let
                         val (args, argTypes) =
@@ -828,6 +929,12 @@ fun transform (program: Program.t): Program.t =
                                                deVector = Type.deVector,
                                                deWeak = Type.deWeak}}))}
                      end
+                  fun makePtr dePtr =
+                     if Type.isUnit (dePtr resultType)
+                        then PrimApp {prim = prim,
+                                      targs = Vector.new1 Type.unit,
+                                      args = Vector.new1 unitVar}
+                        else doit ()
                   datatype z = datatype Prim.Name.t
                in
                   case Prim.name prim of
@@ -835,7 +942,27 @@ fun transform (program: Program.t): Program.t =
                         if varExists (Vector.sub (args, 0))
                            then doit ()
                            else ConApp {args = Vector.new0 (),
-                                        con = Con.falsee}
+                                        con = Con.truee}
+                   | MLton_equal =>
+                        let
+                           val (t0, _) = Value.getNew (value (arg 0))
+                           val (t1, _) = Value.getNew (value (arg 1))
+                        in
+                           if Type.equals (t0, t1)
+                              then PrimApp {prim = prim,
+                                            targs = Vector.new1 t0,
+                                            args = args}
+                              else (* The arguments differ in the usefulness of
+                                    * contents of an Array, Ref, or Weak and
+                                    * the corresponding Array, Ref, or Weak
+                                    * objects must be distinct and, therefore,
+                                    * not equal.
+                                    *)
+                                   ConApp {args = Vector.new0 (),
+                                           con = Con.falsee}
+                        end
+                   | Ref_ref => makePtr Type.deRef
+                   | Weak_new => makePtr Type.deWeak
                    | _ => doit ()
                end
           | Select {tuple, offset} =>
@@ -956,45 +1083,91 @@ fun transform (program: Program.t): Program.t =
           | Bug => ([], Bug)
           | Call {func = f, args, return} =>
                let
-                  val {args = fargs, returns = freturns, ...} = func f
+                  val {args = fargs, returns = freturns, raises = fraises} = func f
+                  fun bug () =
+                     let
+                        val l = Label.newNoname ()
+                     in
+                        (l,
+                         Block.T {label = l,
+                                  args = Vector.new0 (),
+                                  statements = Vector.new0 (),
+                                  transfer = Bug})
+                     end
+                  fun wrap (froms, tos, mkTrans) =
+                     case (froms, tos) of
+                        (NONE, NONE) => (true, bug)
+                      | (NONE, SOME _) => (true, bug)
+                      | (SOME _, NONE) => Error.bug "Useless.doitTransfer: Call mismatch"
+                      | (SOME froms, SOME tos) =>
+                           (agrees (froms, tos), fn () =>
+                            dropUseless (froms, tos, mkTrans))
                   val (blocks, return) =
                      case return of
                         Return.Dead => ([], return)
                       | Return.Tail =>
-                           (case (returns, freturns) of
-                               (NONE, NONE) => ([], Return.Tail)
-                             | (NONE, SOME _) => Error.bug "Useless.doitTransfer: return mismatch"
-                             | (SOME _, NONE) => ([], Return.Tail)
-                             | (SOME returns, SOME freturns) =>
-                                  if agrees (freturns, returns)
-                                     then ([], Return.Tail)
-                                  else
-                                     let
-                                        val (l, b) =
-                                           dropUseless
-                                           (freturns, returns, Return)
-                                     in ([b],
-                                         Return.NonTail
-                                         {cont = l,
-                                          handler = Handler.Caller})
-                                     end)
-                      | Return.NonTail {cont, handler} =>
-                           (case freturns of
-                               NONE => ([], return)
-                             | SOME freturns => 
-                                  let val returns = label cont
-                                  in if agrees (freturns, returns)
-                                        then ([], return)
-                                     else let
-                                             val (l, b) =
-                                                dropUseless
-                                                (freturns, returns, fn args =>
-                                                 Goto {dst = cont, args = args})
-                                          in ([b],
-                                              Return.NonTail
-                                              {cont = l, handler = handler})
-                                          end
+                           (case (wrap (freturns, returns, Return), wrap (fraises, raises, Raise)) of
+                               ((true, _), (true, _)) =>
+                                  ([], Return.Tail)
+                             | ((false, mkc), (true, _)) =>
+                                  let
+                                     val (lc, bc) = mkc ()
+                                  in
+                                     ([bc],
+                                      Return.NonTail {cont = lc, handler = Handler.Caller})
+                                  end
+                             | ((_, mkc), (false, mkh)) =>
+                                  let
+                                     val (lc, bc) = mkc ()
+                                     val (lh, bh) = mkh ()
+                                  in
+                                     ([bc, bh],
+                                      Return.NonTail {cont = lc,
+                                                      handler = Handler.Handle lh})
                                   end)
+                      | Return.NonTail {cont, handler} =>
+                           let
+                              val returns = SOME (label cont)
+                              val mkct = fn args => Goto {dst = cont, args = args}
+                              val (raises, mkht) =
+                                 case handler of
+                                    Handler.Dead => (NONE, fn _ => Bug)
+                                  | Handler.Caller => (raises, Raise)
+                                  | Handler.Handle hand =>
+                                       (SOME (label hand),
+                                        fn args => Goto {dst = hand, args = args})
+                           in
+                              case (wrap (freturns, returns, mkct), wrap (fraises, raises, mkht)) of
+                                 ((true, _), (true, _)) =>
+                                    ([],
+                                     Return.NonTail {cont = cont,
+                                                     handler = handler})
+                               | ((false, mkc), (true, _)) =>
+                                    let
+                                       val (lc, bc) = mkc ()
+                                    in
+                                       ([bc],
+                                        Return.NonTail {cont = lc,
+                                                        handler = handler})
+                                    end
+                               | ((true, _), (false, mkh)) =>
+                                    let
+                                       val (lh, bh) = mkh ()
+                                    in
+                                       ([bh],
+                                        Return.NonTail {cont = cont,
+                                                        handler = Handler.Handle lh})
+                                    end
+                               | ((false, mkc), (false, mkh)) =>
+                                    let
+                                       val (lc, bc) = mkc ()
+                                       val (lh, bh) = mkh ()
+                                    in
+                                       ([bc, bh],
+                                        Return.NonTail {cont = lc,
+                                                        handler = Handler.Handle lh})
+                                    end
+                           end
                in (blocks,
                    Call {func = f, 
                          args = keepUseful (args, fargs), 

@@ -9,9 +9,12 @@ Here are the changes from versoin 20180206 to version YYYYMMDD.
 === Details
 
 * 2019-01-03
+  ** Strengthen `Useless` optimization with respect to a number of primitives
+  (`MLton_equal`, `MLton_hash`, `MLton_eq`, `MLton_share`, `MLton_size`,
+  `Weak_canGet`, and `MLton_touch`).
   ** Add new `DuplicateGlobals` and `SplitTypes` SSA optimization passes.
   `DuplicateGlobals` introduces a distinct instance of a `ConApp` global for
-  each dinstict use within the program.  `SplitTypes` performs a
+  each distict use within the program.  `SplitTypes` performs a
   unification-based analysis to split a datatype into distinct instances for
   constructed values that are not unified.  Because datatypes are recursive,
   other analyses often conflate all defs and uses of `ConApp`-s; `SplitTypes`
