@@ -8,6 +8,17 @@ Here are the changes from versoin 20180206 to version YYYYMMDD.
 
 === Details
 
+* 2019-01-03
+  ** Add new `DuplicateGlobals` and `SplitTypes` SSA optimization passes.
+  `DuplicateGlobals` introduces a distinct instance of a `ConApp` global for
+  each dinstict use within the program.  `SplitTypes` performs a
+  unification-based analysis to split a datatype into distinct instances for
+  constructed values that are not unified.  Because datatypes are recursive,
+  other analyses often conflate all defs and uses of `ConApp`-s; `SplitTypes`
+  allows non-unified instances of a datatype to be analyzed separately.
+  Undertaken by Jason Carr at RIT supported by NSF CISE Research Infrastructure
+  (CRI) award.
+
 * 2018-11-07
   ** Add support for OpenBSD 6.4, which added stack-pointer register checking to
   the kernel.  On OpenBSD, `%rsp`/`%esp` must be reserved by the native codegens
