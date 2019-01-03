@@ -157,7 +157,7 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
             fun updatePrim heapType args = let
                val _ = TypeInfo.coerce (Vector.sub (args, 0), TypeInfo.Heap (Vector.sub (args, 2), heapType))
             in
-               Vector.sub (args, 0)
+               TypeInfo.fromType Type.unit
             end
             fun equalPrim args =
                let
