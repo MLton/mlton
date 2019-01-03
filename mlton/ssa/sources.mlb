@@ -63,6 +63,7 @@ local
    constant-propagation.fun
    contify.fun
    deep-flatten.fun
+   duplicate-globals.fun
    flatten.fun
    inline.sig
    inline.fun
@@ -86,6 +87,7 @@ local
    remove-unused2.fun
    share-zero-vec.fun
    simplify-types.fun
+   split-types.fun
    useless.fun
    zone.fun
    simplify.sig

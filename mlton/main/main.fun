@@ -791,6 +791,15 @@ fun makeOptions {usage} =
         SpaceString (fn s => showDefUse := SOME s)),
        (Expert, "show-types", " {true|false}", "show types in ILs",
         boolRef showTypes),
+       (Expert, "split-types-bool", " {smart|always|never}",
+        "bool type splitting method",
+        SpaceString (fn s =>
+                     splitTypesBool :=
+                     (case s of
+                         "always" => Always
+                       | "never" => Never
+                       | "smart" => Smart
+                       | _ => usage (concat ["invalid -split-types-bool flag: ", s])))),
        (Expert, "ssa-passes", " <passes>", "ssa optimization passes",
         SpaceString
         (fn s =>

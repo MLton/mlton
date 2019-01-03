@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2011,2017 Matthew Fluet.
+(* Copyright (C) 2009,2011,2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -110,21 +110,69 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
          HashTable.lookupOrInsert
          (table, exp, fn () => var)
 
-      (* All of the globals are in scope, and never go out of scope. *)
-      (* The hash-cons'ing of globals in ConstantPropagation ensures
-       *  that each global is unique.
-       *)
-      val _ =
-         Vector.foreach
-         (globals, fn Statement.T {var, exp, ...} =>
+      fun doitStatements (statements, remove) =
+         Vector.keepAllMap
+         (statements,
+          fn Statement.T {var, ty, exp} =>
           let
-             val var = valOf var
-             val () = setVarIndex var
              val exp = canon exp
-             val _ = lookup (var, exp)
+             fun keep () = SOME (Statement.T {var = var,
+                                              ty = ty,
+                                              exp = exp})
           in
-             ()
+             case var of
+                NONE => keep ()
+              | SOME var =>
+                   let
+                      val _ = setVarIndex var
+                      fun replace var' =
+                         (setReplace (var, SOME var'); NONE)
+                      fun doit () =
+                         let
+                            val var' = lookup (var, exp)
+                         in
+                            if Var.equals(var, var')
+                              then (List.push (remove, (exp, var'))
+                                    ; keep ())
+                              else replace var'
+                         end
+                   in
+                      case exp of
+                         PrimApp ({args, prim, ...}) =>
+                            let
+                               fun arg () = Vector.first args
+                               fun knownLength var' =
+                                  let
+                                     val _ = setLength (var, SOME var')
+                                  in
+                                     keep ()
+                                  end
+                               fun conv () =
+                                  case getLength (arg ()) of
+                                     NONE => keep ()
+                                   | SOME var' => knownLength var'
+                               fun length () =
+                                  case getLength (arg ()) of
+                                     NONE => doit ()
+                                   | SOME var' => replace var'
+                               datatype z = datatype Prim.Name.t
+                            in
+                               case Prim.name prim of
+                                  Array_alloc _ => knownLength (arg ())
+                                | Array_length => length ()
+                                | Array_toArray => conv ()
+                                | Array_toVector => conv ()
+                                | Vector_length => length ()
+                                | _ => if Prim.isFunctional prim
+                                          then doit ()
+                                       else keep ()
+                            end
+                       | _ => doit ()
+                   end
           end)
+
+      (* All of the globals are in scope, and never go out of scope. *)
+      val globals = doitStatements (globals, ref [])
 
       fun doitTree tree =
          let
@@ -164,70 +212,11 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                              ()
                            end)
                   val _ = diag "added"
-
                   val _ =
                      Vector.foreach
                      (args, fn (var, _) => setVarIndex var)
                   val statements =
-                     Vector.keepAllMap
-                     (statements,
-                      fn Statement.T {var, ty, exp} =>
-                      let
-                         val exp = canon exp
-                         fun keep () = SOME (Statement.T {var = var,
-                                                          ty = ty,
-                                                          exp = exp})
-                      in
-                         case var of
-                            NONE => keep ()
-                          | SOME var =>
-                               let
-                                  val _ = setVarIndex var
-                                  fun replace var' =
-                                     (setReplace (var, SOME var'); NONE)
-                                  fun doit () =
-                                     let
-                                        val var' = lookup (var, exp)
-                                     in
-                                        if Var.equals(var, var')
-                                          then (List.push (remove, (exp, var'))
-                                                ; keep ())
-                                          else replace var'
-                                     end
-                               in
-                                  case exp of
-                                     PrimApp ({args, prim, ...}) =>
-                                        let
-                                           fun arg () = Vector.first args
-                                           fun knownLength var' =
-                                              let
-                                                 val _ = setLength (var, SOME var')
-                                              in
-                                                 keep ()
-                                              end
-                                           fun conv () =
-                                              case getLength (arg ()) of
-                                                 NONE => keep ()
-                                               | SOME var' => knownLength var'
-                                           fun length () =
-                                              case getLength (arg ()) of
-                                                 NONE => doit ()
-                                               | SOME var' => replace var'
-                                           datatype z = datatype Prim.Name.t
-                                        in
-                                           case Prim.name prim of
-                                              Array_alloc _ => knownLength (arg ())
-                                            | Array_length => length ()
-                                            | Array_toArray => conv ()
-                                            | Array_toVector => conv ()
-                                            | Vector_length => length ()
-                                            | _ => if Prim.isFunctional prim
-                                                      then doit ()
-                                                   else keep ()
-                                        end
-                                   | _ => doit ()
-                               end
-                      end)
+                     doitStatements (statements, remove)
                   val _ = diag "statements"
                   val transfer = Transfer.replaceVar (transfer, canonVar)
                   val transfer =

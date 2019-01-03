@@ -18,6 +18,7 @@ structure CommonSubexp = CommonSubexp (S)
 structure CombineConversions = CombineConversions (S)
 structure ConstantPropagation = ConstantPropagation (S)
 structure Contify = Contify (S)
+structure DuplicateGlobals = DuplicateGlobals (S)
 structure Flatten = Flatten (S)
 structure Inline = Inline (S)
 structure IntroduceLoops = IntroduceLoops (S)
@@ -35,6 +36,7 @@ structure RedundantTests = RedundantTests (S)
 structure RemoveUnused = RemoveUnused (S)
 structure ShareZeroVec = ShareZeroVec (S)
 structure SimplifyTypes = SimplifyTypes (S)
+structure SplitTypes = SplitTypes (S)
 structure Useless = Useless (S)
 
 type pass = {name: string,
@@ -45,13 +47,15 @@ val ssaPassesDefault =
    {name = "removeUnused1", doit = RemoveUnused.transform, execute = true} ::
    {name = "introduceLoops1", doit = IntroduceLoops.transform, execute = true} ::
    {name = "loopInvariant1", doit = LoopInvariant.transform, execute = true} ::
-   {name = "inlineLeaf1", doit = fn p => 
+   {name = "inlineLeaf1", doit = fn p =>
     Inline.inlineLeaf (p, !Control.inlineLeafA), execute = true} ::
-   {name = "inlineLeaf2", doit = fn p => 
+   {name = "inlineLeaf2", doit = fn p =>
     Inline.inlineLeaf (p, !Control.inlineLeafB), execute = true} ::
    {name = "contify1", doit = Contify.transform, execute = true} ::
    {name = "localFlatten1", doit = LocalFlatten.transform, execute = true} ::
    {name = "constantPropagation", doit = ConstantPropagation.transform, execute = true} ::
+   {name = "duplicateGlobals1", doit = DuplicateGlobals.transform, execute = false} ::
+   {name = "splitTypes1", doit = SplitTypes.transform, execute = true} ::
    (* useless should run 
     *   - after constant propagation because constant propagation makes
     *     slots of tuples that are constant useless
@@ -62,6 +66,8 @@ val ssaPassesDefault =
     *)
    {name = "loopUnroll1", doit = LoopUnroll.transform, execute = false} ::
    {name = "removeUnused2", doit = RemoveUnused.transform, execute = true} ::
+   {name = "duplicateGlobals2", doit = DuplicateGlobals.transform, execute = true} ::
+   {name = "splitTypes2", doit = SplitTypes.transform, execute = true} ::
    {name = "simplifyTypes", doit = SimplifyTypes.transform, execute = true} ::
    (* polyEqual should run
     *   - after types are simplified so that many equals are turned into eqs
@@ -220,6 +226,7 @@ local
                  ("commonSubexp", CommonSubexp.transform),
                  ("constantPropagation", ConstantPropagation.transform),
                  ("contify", Contify.transform),
+                 ("duplicateGlobals", DuplicateGlobals.transform),
                  ("flatten", Flatten.transform),
                  ("introduceLoops", IntroduceLoops.transform),
                  ("knownCase", KnownCase.transform),
@@ -235,6 +242,7 @@ local
                  ("removeUnused", RemoveUnused.transform),
                  ("shareZeroVec", ShareZeroVec.transform),
                  ("simplifyTypes", SimplifyTypes.transform),
+                 ("splitTypes", SplitTypes.transform),
                  ("useless", Useless.transform),
                  ("ssaAddProfile", Profile.addProfile),
                  ("ssaDropProfile", Profile.dropProfile),

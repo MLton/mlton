@@ -369,6 +369,12 @@ signature CONTROL_FLAGS =
       (* Should types be printed in ILs. *)
       val showTypes: bool ref
 
+      datatype splitTypesBool =
+         Never
+       | Smart (* split only when smaller than two, default *)
+       | Always
+      val splitTypesBool: splitTypesBool ref
+
       datatype target =
          Cross of string
        | Self
