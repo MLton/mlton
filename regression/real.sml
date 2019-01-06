@@ -68,47 +68,59 @@ val _ =
 
 val _ =
    let
-      fun doit (s,r, s0, s1, s2, s6) =
+      fun doit (r, s0, s1, s2, s6) =
          if (fmt (StringCvt.FIX (SOME 0)) r = s0
              andalso fmt (StringCvt.FIX (SOME 1)) r = s1
              andalso fmt (StringCvt.FIX (SOME 2)) r = s2
              andalso fmt (StringCvt.FIX (SOME 6)) r = s6
              andalso fmt (StringCvt.FIX NONE) r = s6)
             then ()
-         else raise Fail (concat ["fmt bug: ", s, " ", exact r])
+         else print (concat ["fmt FIX bug: ", exact r, "\n",
+                             "\t", fmt (StringCvt.FIX (SOME 0)) r, "  ", s0, "\n",
+                             "\t", fmt (StringCvt.FIX (SOME 1)) r, "  ", s1, "\n",
+                             "\t", fmt (StringCvt.FIX (SOME 2)) r, "  ", s2, "\n",
+                             "\t", fmt (StringCvt.FIX (SOME 6)) r, "  ", s6, "\n",
+                             "\t", fmt (StringCvt.FIX NONE) r, "  ", s6, "\n"])
    in
       List.app
-      (fn (s,r, s0, s1, s2, s6) =>
-       (doit (s,r, s0, s1, s2, s6)
+      (fn (r, s0, s1, s2, s6) =>
+       (doit (r, s0, s1, s2, s6)
         ; if r == zero
              then ()
-          else doit (s^"~",~r, "~"^s0, "~"^s1, "~"^s2, "~"^s6)))
-      [("a", s2r "0.0", "0", "0.0", "0.00", "0.000000"),
-       ("b", s2r "1.0", "1", "1.0", "1.00", "1.000000"),
-       ("c", s2r "1.4", "1", "1.4", "1.40", "1.400000"),
-       ("d", s2r "1.5", "2", "1.5", "1.50", "1.500000"),
-       ("e", s2r "2.5", "2", "2.5", "2.50", "2.500000"),
-       ("f", s2r "1.6", "2", "1.6", "1.60", "1.600000"),
-       ("h", s2r "3.141592653589", "3", "3.1", "3.14", "3.141593"),
-       ("j", s2r "91827365478400.0", "91827365478400", "91827365478400.0", 
+          else doit (~r, "~"^s0, "~"^s1, "~"^s2, "~"^s6)))
+      [(s2r "0.0", "0", "0.0", "0.00", "0.000000"),
+       (s2r "1.0", "1", "1.0", "1.00", "1.000000"),
+       (s2r "1.4", "1", "1.4", "1.40", "1.400000"),
+       (s2r "1.5", "2", "1.5", "1.50", "1.500000"),
+       (s2r "2.5", "2", "2.5", "2.50", "2.500000"),
+       (s2r "1.6", "2", "1.6", "1.60", "1.600000"),
+       (s2r "3.141592653589", "3", "3.1", "3.14", "3.141593"),
+       (s2r "91827365478400.0", "91827365478400", "91827365478400.0",
         "91827365478400.00", "91827365478400.000000")]
    end
 
 val _ =
    let
-      fun chkSCI (r, s0, s1, s2, s6) = 
-         fmt (StringCvt.SCI (SOME 0)) r = s0
-         andalso fmt (StringCvt.SCI (SOME 1)) r = s1
-         andalso fmt (StringCvt.SCI (SOME 2)) r = s2
-         andalso fmt (StringCvt.SCI (SOME 6)) r = s6
-         andalso fmt (StringCvt.SCI NONE) r = s6
+      fun doit (r, s0, s1, s2, s6) =
+         if (fmt (StringCvt.SCI (SOME 0)) r = s0
+             andalso fmt (StringCvt.SCI (SOME 1)) r = s1
+             andalso fmt (StringCvt.SCI (SOME 2)) r = s2
+             andalso fmt (StringCvt.SCI (SOME 6)) r = s6
+             andalso fmt (StringCvt.SCI NONE) r = s6)
+            then ()
+         else print (concat ["fmt SCI bug: ", exact r, "\n",
+                             "\t", fmt (StringCvt.SCI (SOME 0)) r, "  ", s0, "\n",
+                             "\t", fmt (StringCvt.SCI (SOME 1)) r, "  ", s1, "\n",
+                             "\t", fmt (StringCvt.SCI (SOME 2)) r, "  ", s2, "\n",
+                             "\t", fmt (StringCvt.SCI (SOME 6)) r, "  ", s6, "\n",
+                             "\t", fmt (StringCvt.SCI NONE) r, "  ", s6, "\n"])
    in
       List.app
       (fn (r, s0, s1, s2, s6) =>
-       if chkSCI(r, s0, s1, s2, s6) 
-          andalso (r == zero orelse chkSCI(~r, "~"^s0, "~"^s1, "~"^s2, "~"^s6))
-          then ()
-       else raise Fail (concat ["fmt SCI bug: ", exact r]))
+       (doit (r, s0, s1, s2, s6)
+        ; if r == zero
+             then ()
+          else doit (~r, "~"^s0, "~"^s1, "~"^s2, "~"^s6)))
       [(s2r "0.0", "0E0", "0.0E0", "0.00E0", "0.000000E0"),
        (s2r "0.0012345678", "1E~3", "1.2E~3", "1.23E~3", "1.234568E~3"),
        (s2r "1.0", "1E0", "1.0E0", "1.00E0", "1.000000E0"),
@@ -121,21 +133,26 @@ val _ =
 
 val _ =
    let
-      fun chkGEN (r, s1, s2, s6, s12) = 
-         fmt (StringCvt.GEN (SOME 1)) r = s1
-         andalso fmt (StringCvt.GEN (SOME 2)) r = s2
-         andalso fmt (StringCvt.GEN (SOME 6)) r = s6
-         andalso fmt (StringCvt.GEN (SOME 12)) r = s12
-         andalso fmt (StringCvt.GEN NONE) r = s12
-         andalso toString r = s12;
+      fun doit (r, s1, s2, s6, s12) =
+         if (fmt (StringCvt.GEN (SOME 1)) r = s1
+             andalso fmt (StringCvt.GEN (SOME 2)) r = s2
+             andalso fmt (StringCvt.GEN (SOME 6)) r = s6
+             andalso fmt (StringCvt.GEN (SOME 12)) r = s12
+             andalso fmt (StringCvt.GEN NONE) r = s12)
+            then ()
+         else print (concat ["fmt GEN bug: ", exact r, "\n",
+                             "\t", fmt (StringCvt.GEN (SOME 1)) r, "  ", s1, "\n",
+                             "\t", fmt (StringCvt.GEN (SOME 2)) r, "  ", s2, "\n",
+                             "\t", fmt (StringCvt.GEN (SOME 6)) r, "  ", s6, "\n",
+                             "\t", fmt (StringCvt.GEN (SOME 12)) r, "  ", s12, "\n",
+                             "\t", fmt (StringCvt.GEN NONE) r, "  ", s12, "\n"])
    in
       List.app
       (fn (r, s1, s2, s6, s12) =>
-       if chkGEN(r, s1, s2, s6, s12) 
-          andalso (r == zero orelse 
-                   chkGEN(~r, "~"^s1, "~"^s2, "~"^s6, "~"^s12))
-          then ()
-       else raise Fail (concat ["fmt GEN bug: ", exact r]))
+       (doit (r, s1, s2, s6, s12)
+        ; if r == zero
+             then ()
+          else doit (~r, "~"^s1, "~"^s2, "~"^s6, "~"^s12)))
       [(s2r "0.0",               "0", "0",     "0", "0"),
        (s2r "1.0",              "1", "1",  "1", "1"),
        (s2r "1.5",              "2", "1.5",  "1.5", "1.5"),
@@ -152,7 +169,7 @@ val _ = for' (fn r =>
               in
                  if r == r' orelse unordered (r, r')
                     then ()
-                 else raise Fail "scan bug"
+                 else print (concat ["scan bug ", exact r, "\n"])
               end)
 
 val _ = print "\nTesting checkFloat\n"
@@ -164,7 +181,7 @@ val _ =
          | NAN => ((checkFloat r; false) handle Div => true | _ => false)
          | _ => (checkFloat r; true) handle _ => false)
        then ()
-    else raise Fail "checkFloat bug")
+    else print (concat ["checkFloat bug: ", exact r, "\n"]))
    
 val _ = print "\nTesting class, isFinite, isNan, isNormal\n"
 val _ =
@@ -257,7 +274,9 @@ val _ =
    (fn (s1, s2) =>
     if valOf (fromString s1) == valOf (fromString s2)
        then ()
-    else raise Fail "fromString bug")
+    else print (concat ["fromString bug: ",
+                        s1, " ", exact (valOf (fromString s1)), " ",
+                        s2, " ", exact (valOf (fromString s2)), "\n"]))
    [("12.", "12.0"),
     ("12.E", "12.0"),
     ("12.E+", "12.0"),
@@ -423,7 +442,7 @@ val _ =
     in
        if r' == realFloor r
           then ()
-       else raise Fail "bug"
+       else print (concat ["{from,to}LargeInt bug: ", exact r, "\n"])
     end)
 
 val roundingModes =
@@ -470,7 +489,7 @@ val _ =
           in
              if r == fromInt (round r)
                 then ()
-             else raise Fail "fromInt bug"
+             else print (concat ["fromInt bug: ", exact r, "\n"])
           end)
 
 val _ = print "\nTesting toInt\n"
@@ -484,7 +503,7 @@ val _ =
         NONE => ()
       | SOME i => if i = LargeInt.toInt (toLargeInt mode r)
                      then ()
-                  else raise Fail "bug")
+                  else print (concat ["toInt ", name, " bug: ", exact r, "\n"]))
     roundingModes)
 
 val _ = print "\nTesting ceil,floor,round,trunc\n"
@@ -493,16 +512,16 @@ val _ =
    for
    (fn r =>
     List.app
-    (fn (mode, f) =>
+    (fn (mode, f, name) =>
      case SOME (toInt mode r) handle Overflow => NONE of
         NONE => ()
       | SOME i => if i = f r
                      then ()
-                  else raise Fail "bug")
-    [(TO_NEAREST, round),
-     (TO_NEGINF, floor),
-     (TO_POSINF, ceil),
-     (TO_ZERO, trunc)])
+                  else print (concat [name, " bug: ", exact r, "\n"]))
+    [(TO_NEAREST, round, "round"),
+     (TO_NEGINF, floor, "floor"),
+     (TO_POSINF, ceil, "ceil"),
+     (TO_ZERO, trunc, "trunc")])
 
 val _ = print "\nTesting copySign, sameSign, sign, signBit\n"
 val _ =
@@ -523,7 +542,7 @@ val _ =
                      andalso (sameSign (r1, r2)) = (signBit r1 = signBit r2)
                      andalso sameSign (r2, copySign (r1, r2)))
           then ()
-       else raise Fail "bug")))
+       else print (concat ["copySign,sameSign,sign,signBit bug: ", exact r1, " ", exact r2, "\n"]))))
 
 val _ = print "\nTesting max, min\n"
 
@@ -543,43 +562,24 @@ val _ =
            andalso (r1 == min orelse r2 == min
                     orelse (isNan r1 andalso isNan r2))
            then ()
-        else raise Fail "bug"
+        else print (concat ["max,min bug: ", exact r1, " ", exact r2, "\n"])
      end))
 
-val _ = print "\nTesting Real.Math.{acos,asin,atan,cos,cosh,exp,ln,log10,sin,sinh,sqrt,tan,tanh}\n"
-   
-val _ =
-   for' (fn r =>
-         List.app
-         (fn (name, f, except) =>
-          if List.exists (fn r' => r == r') except
-             then ()
-          else
-             print (concat [(*name, " ", exact r, " = ", *)
-                            fmt (StringCvt.GEN (SOME 10)) (f r), "\n"]))
-         let
-            open Real.Math
-         in
-            [("acos", acos, []),
-             ("asin", asin, []),
-             ("atan", atan, []),
-             ("cos", cos, [maxFinite, halfMaxFinite,
-                           ~maxFinite, ~halfMaxFinite]),
-             ("cosh", cosh, [s2r "12.3", s2r "~12.3", e, ~e]),
-             ("exp", exp, [s2r "12.3", pi, s2r "1.23",
-                           s2r "~12.3", ~pi, s2r "~1.23"]),
-             ("ln", ln, []),
-             ("log10", log10, [s2r "1.23", pi]),
-             ("sin", sin, [maxFinite, halfMaxFinite,
-                           ~maxFinite, ~halfMaxFinite, pi, ~pi]),
-             ("sinh", sinh, [pi, ~pi, s2r "0.123", s2r "~0.123"]),
-             ("sqrt", sqrt, [maxFinite]),
-             ("tan", tan, [maxFinite, halfMaxFinite,
-                           ~maxFinite, ~halfMaxFinite, pi, ~pi]),
-             ("tanh", tanh, [s2r "0.123", s2r "~0.123"])]
-         end)
+val _ = print "\nTesting Real.{~,*,+,-,/,nextAfter,rem}\n"
 
-val _ = print "\nTesting Real.{*,+,-,/,nextAfter,rem} Real.Math.{atan2,pow}\n"
+val _ =
+   for'
+   (fn r =>
+    List.app
+    (fn (name, f, except) =>
+     if List.exists (fn r' => r == r') except
+         then ()
+      else
+         print (concat [name, " (", exact r, ") = ",
+                        exact (f r), "\n"]))
+     [("~", ~, [])
+      ])
+
 val _ =
    for'
    (fn r1 =>
@@ -590,32 +590,82 @@ val _ =
       if List.exists (fn (r1', r2') => r1 == r1' andalso r2 == r2') except
          then ()
       else
-         print (concat [(*name, " (", exact r1, ", ", exact r2, ") = ", *)
+         print (concat [name, " (", exact r1, ", ", exact r2, ") = ",
                         exact (f (r1, r2)), "\n"]))
      [("*", op *, []),
       ("+", op +, []),
       ("-", op -, []),
-      ("/", op /, [(s2r "1.23", halfMaxFinite),
-                   (s2r "1.23", ~halfMaxFinite),
-                   (s2r "~1.23", halfMaxFinite),
-                   (s2r "~1.23", ~halfMaxFinite)
-                   ]),
-      ("nextAfter", nextAfter, [])
-(*      ("rem", rem, []), *)
-(*      ("atan2", Math.atan2, []), *)
-(*      ("pow", Math.pow, [(halfMaxFinite, s2r "0.123"), (pi, e)]) *)
+      ("/", op /, []),
+      ("nextAfter", nextAfter, []),
+      ("rem", rem, [])
       ]))
 
 val _ =
-   if List.all (op ==) [(posInf + posInf, posInf),
-                        (negInf + negInf, negInf),
-                        (posInf - negInf, posInf),
-                        (negInf - posInf, negInf)]
-      andalso List.all isNan [nan, nan + one, nan - one, nan * one, nan / one]
-      andalso List.all isNan [posInf + negInf, negInf + posInf, posInf - posInf,
-                              negInf - negInf]
-      then ()
-   else raise Fail "bug"
+   List.app
+   (fn (r1, r2, name, f, chk) =>
+    if chk (f (r1, r2))
+       then ()
+       else print (concat [name, "(", exact r1, ",", exact r2, ") bug: ", exact (f (r1, r2)), "\n"]))
+   [(posInf, posInf, "+", op +, fn x => x == posInf),
+    (negInf, negInf, "+", op +, fn x => x == negInf),
+    (posInf, negInf, "-", op -, fn x => x == posInf),
+    (negInf, posInf, "-", op -, fn x => x == negInf),
+    (nan, one, "+", op +, isNan),
+    (nan, one, "-", op -, isNan),
+    (nan, one, "*", op *, isNan),
+    (nan, one, "/", op /, isNan),
+    (posInf, negInf, "+", op +, isNan),
+    (negInf, posInf, "+", op +, isNan),
+    (posInf, posInf, "-", op -, isNan),
+    (negInf, negInf, "-", op -, isNan)]
+
+val _ = print "\nTesting Real.Math.{acos,asin,atan,cos,cosh,exp,ln,log10,sin,sinh,sqrt,tan,tanh,atan2,pow}\n"
+
+val _ =
+   for' (fn r =>
+         List.app
+         (fn (name, f, except) =>
+          if List.exists (fn r' => r == r') except
+             then ()
+          else
+             print (concat [name, " (", exact r, ") = ",
+                            fmt (StringCvt.GEN (SOME 10)) (f r), "\n"]))
+         let
+            open Real.Math
+         in
+            [("acos", acos, []),
+             ("asin", asin, []),
+             ("atan", atan, []),
+             ("cos", cos, []),
+             ("cosh", cosh, []),
+             ("exp", exp, []),
+             ("ln", ln, []),
+             ("log10", log10, []),
+             ("sin", sin, []),
+             ("sinh", sinh, []),
+             ("sqrt", sqrt, []),
+             ("tan", tan, []),
+             ("tanh", tanh, [])]
+         end)
+
+val _ =
+   for'
+   (fn r1 =>
+    for'
+    (fn r2 =>
+     List.app
+     (fn (name, f, except) =>
+      if List.exists (fn (r1', r2') => r1 == r1' andalso r2 == r2') except
+         then ()
+      else
+         print (concat [name, " (", exact r1, ", ", exact r2, ") = ",
+                        fmt (StringCvt.GEN (SOME 10)) (f (r1, r2)), "\n"]))
+     let
+        open Real.Math
+     in
+        [("atan2", atan2, []),
+         ("pow", pow, [])]
+     end))
 
 val _ = print "\nTesting *+, *-\n"
 val fmaDiffs = ref false
@@ -673,7 +723,7 @@ val _ =
           andalso r <= ceil
           andalso abs trunc <= abs r
           then ()
-       else raise Fail "bug"
+       else print (concat ["Real.{realCeil,realFloor,realTrunc} bug ", exact r, "\n"])
     end)
 
 val _ = print "\nTesting Real.{<,<=,>,>=,==,!=,?=,unordered}\n"
@@ -687,7 +737,7 @@ val _ =
         val _ = 
            List.app
            (fn (f, name) =>
-            print (concat [(* name, " (", exact r1, ", ", exact r2, ") = ", *)
+            print (concat [name, " (", exact r1, ", ", exact r2, ") = ",
                            b2s (f (r1, r2)), "\n"]))
            [(Real.<, "<"),
             (Real.>, ">"),
@@ -708,7 +758,7 @@ val _ =
                    else ((r1 < r2) = not (r1 >= r2)
                          andalso (r1 > r2) = not (r1 <= r2))
            then ()
-        else raise Fail "bug"
+        else print (concat ["Real.{<,<=,>,>=,==,!=,?=,unordered} bug: ", exact r1, " ", exact r2, "\n"])
      end))
 
 val _ = print "\nTesting compare, compareReal\n"
@@ -734,9 +784,8 @@ val _ =
             | GREATER => "GREATER"
             | LESS => "LESS"
             | UNORDERED => "UNORDERED"
-        val _ =
-           print (concat [(* exact r, " ", exact r', "\t", *)
-                          c, "\t", cr, "\n"])
+        val _ = print (concat ["compare (", exact r, ", ", exact r', ") = ", c, "\n"])
+        val _ = print (concat ["compareReal (", exact r, ", ", exact r', ") = ", cr, "\n"])
      in
         if compareReal (r, r') = (case compareReal (r', r) of
                                      EQUAL => EQUAL
@@ -744,7 +793,7 @@ val _ =
                                    | LESS => GREATER
                                    | UNORDERED => UNORDERED)
            then ()
-        else raise Fail "compareReal bug"
+        else print (concat ["compareReal bug: ", exact r, " ", exact r', "\n"])
      end))
 
 val _ = print "\nTesting abs\n"
@@ -752,7 +801,7 @@ val _ = print "\nTesting abs\n"
 val _ = for (fn r =>
              if abs r == abs (~ r)
                 then ()
-             else raise Fail "abs bug")
+             else print (concat ["abs bug: ", exact r, "\n"]))
 
 val _ = print "\nTesting {from,to}ManExp\n"
          
@@ -780,7 +829,7 @@ val _ =
        in
           if x == x'
              then ()
-          else raise Fail "bug"
+          else print (concat ["{from,to}ManExp bug: ", exact x, "\n"])
        end)
 
 val _ = print "\nTesting split\n"
@@ -810,7 +859,7 @@ val _ =
                         | NAN => isNan whole andalso isNan frac
                         | _ => r == whole + frac)
               then ()
-           else raise Fail "bug"
+           else print (concat ["split bug: ", exact r, "\n"])
         end)
 
 val _ = print "\nTesting {from,to}Large\n"
@@ -820,7 +869,7 @@ val _ =
    (fn r =>
     if r == fromLarge TO_NEAREST (toLarge r)
        then ()
-    else raise Fail "{from,to}Large bug")
+    else print (concat ["{from,to}Large bug: ", exact r, "\n"]))
 
 end
 

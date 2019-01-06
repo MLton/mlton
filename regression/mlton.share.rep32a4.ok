@@ -1,4 +1,4 @@
-size of a is 2000
+size of a is 1600
 0 => NONE
 1 => (1, 1)
 2 => (0, 2)
@@ -99,7 +99,7 @@ size of a is 2000
 97 => (1, 1)
 98 => (0, 2)
 99 => (1, 0)
-size of a is 512
+size of a is 484
 0 => NONE
 1 => (1, 1)
 2 => (0, 2)
@@ -200,7 +200,7 @@ size of a is 512
 97 => (1, 1)
 98 => (0, 2)
 99 => (1, 0)
-size of a is 1232
+size of a is 1024
 0 => NONE
 1 => (1, 1)
 2 => (1, 1)
@@ -301,7 +301,7 @@ size of a is 1232
 97 => (1, 1)
 98 => (1, 1)
 99 => (0, 0)
-size of a is 464
+size of a is 448
 0 => NONE
 1 => (1, 1)
 2 => (1, 1)
@@ -402,7 +402,7 @@ size of a is 464
 97 => (1, 1)
 98 => (1, 1)
 99 => (0, 0)
-size of a is 2800
+size of a is 2400
 0 => NONE
 1 => (1, 1)
 2 => (0, 2)
@@ -503,7 +503,7 @@ size of a is 2800
 97 => (1, 1)
 98 => (0, 2)
 99 => (1, 0)
-size of a is 1312
+size of a is 1284
 0 => NONE
 1 => (1, 1)
 2 => (0, 2)
@@ -604,7 +604,7 @@ size of a is 1312
 97 => (1, 1)
 98 => (0, 2)
 99 => (1, 0)
-size of a is 2800
+size of a is 2400
 0 => NONE
 1 => (1, 1)
 2 => (0, 2)
@@ -705,14 +705,14 @@ size of a is 2800
 97 => (1, 1)
 98 => (0, 2)
 99 => (1, 0)
-size of a is 2000000
+size of a is 1600000
 (1, 1)
-size of a is 400112
+size of a is 400084
 (1, 1)
-size is 200
-size is 80
+size is 172
+size is 72
 abcdef abcdef
-size is 64
-size is 40
+size is 52
+size is 32
 abcdef abcdef
 1 2

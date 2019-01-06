@@ -80,14 +80,20 @@ isWhitelisted () {
   fi
 }
 
-eval `"$src/bin/platform"`
-
 compFail () {
         echo "compilation of $f failed with ${flags[*]}"
 }
 
 "$mlton" -verbose 1 || (echo 'no mlton present' && exitFail=true)
 echo "flags = ${flags[*]}"
+
+TARGET_ARCH=`"$mlton" -show path-map | sed -n 's/TARGET_ARCH \(.*\)/\1/p'`
+TARGET_OS=`"$mlton" -show path-map | sed -n 's/TARGET_OS \(.*\)/\1/p'`
+OBJPTR_REP=`"$mlton" -show path-map | sed -n 's/OBJPTR_REP \(.*\)/\1/p'`
+ALIGN=`echo "${flags[@]}" | sed -n 's/.*-align \(.\).*/\1/p'`
+if [ -z "$ALIGN" ]; then
+    ALIGN=`"$mlton" -z 2>&1 | sed -n 's/.*-align {\(.\).*/\1/p'`
+fi
 
 cd "$src/regression"
 
@@ -107,7 +113,7 @@ if $fail; then
 fi
 
 forMinGW='false'
-if [ $HOST_OS = mingw ]; then
+if [ $TARGET_OS = mingw ]; then
 	forMinGW='true'
 fi
 
@@ -124,7 +130,7 @@ for f in *.sml; do
                         continue
                 fi
         fi
-        case $HOST_OS in
+        case $TARGET_OS in
         cygwin)
                 case "$f" in
                 textio.2)
@@ -190,10 +196,12 @@ for f in *.sml; do
                 fi
                 ( "./$f" || echo -e "$nonZeroMsg" ) >$tmp 2>&1 
                 if [ -r "$f.ok" ]; then
-                        compare="$f.$HOST_ARCH-$HOST_OS.ok"
-                        if [ ! -r $compare ]; then
-                                compare="$f.ok"
-                        fi
+                        compare="$f.ok"
+                        for x in "$OBJPTR_REP" "${OBJPTR_REP}a$ALIGN" "$TARGET_OS" "$TARGET_ARCH" "$TARGET_ARCH-$TARGET_OS"; do
+                                if [ -r "$f.$x.ok" ]; then
+                                        compare="$f.$x.ok"
+                                fi
+                        done
                         if $forMinGW; then
                                 newcompare="$f.sed.ok"
                                 sed $'s/$/\r/' <"$compare" > "$newcompare"
