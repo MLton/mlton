@@ -565,40 +565,21 @@ val _ =
         else print (concat ["max,min bug: ", exact r1, " ", exact r2, "\n"])
      end))
 
-val _ = print "\nTesting Real.Math.{acos,asin,atan,cos,cosh,exp,ln,log10,sin,sinh,sqrt,tan,tanh}\n"
-   
-val _ =
-   for' (fn r =>
-         List.app
-         (fn (name, f, except) =>
-          if List.exists (fn r' => r == r') except
-             then ()
-          else
-             print (concat [(*name, " ", exact r, " = ", *)
-                            fmt (StringCvt.GEN (SOME 10)) (f r), "\n"]))
-         let
-            open Real.Math
-         in
-            [("acos", acos, []),
-             ("asin", asin, []),
-             ("atan", atan, []),
-             ("cos", cos, [maxFinite, halfMaxFinite,
-                           ~maxFinite, ~halfMaxFinite]),
-             ("cosh", cosh, [s2r "12.3", s2r "~12.3", e, ~e]),
-             ("exp", exp, [s2r "12.3", pi, s2r "1.23",
-                           s2r "~12.3", ~pi, s2r "~1.23"]),
-             ("ln", ln, []),
-             ("log10", log10, [s2r "1.23", pi]),
-             ("sin", sin, [maxFinite, halfMaxFinite,
-                           ~maxFinite, ~halfMaxFinite, pi, ~pi]),
-             ("sinh", sinh, [pi, ~pi, s2r "0.123", s2r "~0.123"]),
-             ("sqrt", sqrt, [maxFinite]),
-             ("tan", tan, [maxFinite, halfMaxFinite,
-                           ~maxFinite, ~halfMaxFinite, pi, ~pi]),
-             ("tanh", tanh, [s2r "0.123", s2r "~0.123"])]
-         end)
+val _ = print "\nTesting Real.{~,*,+,-,/,nextAfter,rem}\n"
 
-val _ = print "\nTesting Real.{*,+,-,/,nextAfter,rem} Real.Math.{atan2,pow}\n"
+val _ =
+   for'
+   (fn r =>
+    List.app
+    (fn (name, f, except) =>
+     if List.exists (fn r' => r == r') except
+         then ()
+      else
+         print (concat [name, " (", exact r, ") = ",
+                        exact (f r), "\n"]))
+     [("~", ~, [])
+      ])
+
 val _ =
    for'
    (fn r1 =>
@@ -609,20 +590,14 @@ val _ =
       if List.exists (fn (r1', r2') => r1 == r1' andalso r2 == r2') except
          then ()
       else
-         print (concat [(*name, " (", exact r1, ", ", exact r2, ") = ", *)
+         print (concat [name, " (", exact r1, ", ", exact r2, ") = ",
                         exact (f (r1, r2)), "\n"]))
      [("*", op *, []),
       ("+", op +, []),
       ("-", op -, []),
-      ("/", op /, [(s2r "1.23", halfMaxFinite),
-                   (s2r "1.23", ~halfMaxFinite),
-                   (s2r "~1.23", halfMaxFinite),
-                   (s2r "~1.23", ~halfMaxFinite)
-                   ]),
-      ("nextAfter", nextAfter, [])
-(*      ("rem", rem, []), *)
-(*      ("atan2", Math.atan2, []), *)
-(*      ("pow", Math.pow, [(halfMaxFinite, s2r "0.123"), (pi, e)]) *)
+      ("/", op /, []),
+      ("nextAfter", nextAfter, []),
+      ("rem", rem, [])
       ]))
 
 val _ =
@@ -643,6 +618,54 @@ val _ =
     (negInf, posInf, "+", op +, isNan),
     (posInf, posInf, "-", op -, isNan),
     (negInf, negInf, "-", op -, isNan)]
+
+val _ = print "\nTesting Real.Math.{acos,asin,atan,cos,cosh,exp,ln,log10,sin,sinh,sqrt,tan,tanh,atan2,pow}\n"
+
+val _ =
+   for' (fn r =>
+         List.app
+         (fn (name, f, except) =>
+          if List.exists (fn r' => r == r') except
+             then ()
+          else
+             print (concat [name, " (", exact r, ") = ",
+                            fmt (StringCvt.GEN (SOME 10)) (f r), "\n"]))
+         let
+            open Real.Math
+         in
+            [("acos", acos, []),
+             ("asin", asin, []),
+             ("atan", atan, []),
+             ("cos", cos, []),
+             ("cosh", cosh, []),
+             ("exp", exp, []),
+             ("ln", ln, []),
+             ("log10", log10, []),
+             ("sin", sin, []),
+             ("sinh", sinh, []),
+             ("sqrt", sqrt, []),
+             ("tan", tan, []),
+             ("tanh", tanh, [])]
+         end)
+
+val _ =
+   for'
+   (fn r1 =>
+    for'
+    (fn r2 =>
+     List.app
+     (fn (name, f, except) =>
+      if List.exists (fn (r1', r2') => r1 == r1' andalso r2 == r2') except
+         then ()
+      else
+         print (concat [name, " (", exact r1, ", ", exact r2, ") = ",
+                        fmt (StringCvt.GEN (SOME 10)) (f (r1, r2)), "\n"]))
+     let
+        open Real.Math
+     in
+        [("atan2", atan2, []),
+         ("pow", pow, [])]
+     end))
 
 val _ = print "\nTesting *+, *-\n"
 val fmaDiffs = ref false
@@ -714,7 +737,7 @@ val _ =
         val _ = 
            List.app
            (fn (f, name) =>
-            print (concat [(* name, " (", exact r1, ", ", exact r2, ") = ", *)
+            print (concat [name, " (", exact r1, ", ", exact r2, ") = ",
                            b2s (f (r1, r2)), "\n"]))
            [(Real.<, "<"),
             (Real.>, ">"),
@@ -761,9 +784,8 @@ val _ =
             | GREATER => "GREATER"
             | LESS => "LESS"
             | UNORDERED => "UNORDERED"
-        val _ =
-           print (concat [(* exact r, " ", exact r', "\t", *)
-                          c, "\t", cr, "\n"])
+        val _ = print (concat ["compare (", exact r, ", ", exact r', ") = ", c, "\n"])
+        val _ = print (concat ["compareReal (", exact r, ", ", exact r', ") = ", cr, "\n"])
      in
         if compareReal (r, r') = (case compareReal (r', r) of
                                      EQUAL => EQUAL
