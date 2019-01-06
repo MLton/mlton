@@ -80,14 +80,15 @@ isWhitelisted () {
   fi
 }
 
-eval `"$src/bin/platform"`
-
 compFail () {
         echo "compilation of $f failed with ${flags[*]}"
 }
 
 "$mlton" -verbose 1 || (echo 'no mlton present' && exitFail=true)
 echo "flags = ${flags[*]}"
+
+TARGET_ARCH=`"$mlton" -show path-map | sed -n 's/TARGET_ARCH \(.*\)/\1/p'`
+TARGET_OS=`"$mlton" -show path-map | sed -n 's/TARGET_OS \(.*\)/\1/p'`
 
 cd "$src/regression"
 
@@ -107,7 +108,7 @@ if $fail; then
 fi
 
 forMinGW='false'
-if [ $HOST_OS = mingw ]; then
+if [ $TARGET_OS = mingw ]; then
 	forMinGW='true'
 fi
 
@@ -124,7 +125,7 @@ for f in *.sml; do
                         continue
                 fi
         fi
-        case $HOST_OS in
+        case $TARGET_OS in
         cygwin)
                 case "$f" in
                 textio.2)
@@ -191,7 +192,7 @@ for f in *.sml; do
                 ( "./$f" || echo -e "$nonZeroMsg" ) >$tmp 2>&1 
                 if [ -r "$f.ok" ]; then
                         compare="$f.ok"
-                        for x in "$HOST_OS" "$HOST_ARCH" "$HOST_ARCH-$HOST_OS"; do
+                        for x in "$TARGET_OS" "$TARGET_ARCH" "$TARGET_ARCH-$TARGET_OS"; do
                                 if [ -r "$f.$x.ok" ]; then
                                         compare="$f.$x.ok"
                                 fi
