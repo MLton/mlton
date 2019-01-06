@@ -90,6 +90,10 @@ echo "flags = ${flags[*]}"
 TARGET_ARCH=`"$mlton" -show path-map | sed -n 's/TARGET_ARCH \(.*\)/\1/p'`
 TARGET_OS=`"$mlton" -show path-map | sed -n 's/TARGET_OS \(.*\)/\1/p'`
 OBJPTR_REP=`"$mlton" -show path-map | sed -n 's/OBJPTR_REP \(.*\)/\1/p'`
+ALIGN=`echo "${flags[@]}" | sed -n 's/.*-align \(.\).*/\1/p'`
+if [ -z "$ALIGN" ]; then
+    ALIGN=`"$mlton" -z 2>&1 | sed -n 's/.*-align {\(.\).*/\1/p'`
+fi
 
 cd "$src/regression"
 
@@ -193,7 +197,7 @@ for f in *.sml; do
                 ( "./$f" || echo -e "$nonZeroMsg" ) >$tmp 2>&1 
                 if [ -r "$f.ok" ]; then
                         compare="$f.ok"
-                        for x in "$OBJPTR_REP" "$TARGET_OS" "$TARGET_ARCH" "$TARGET_ARCH-$TARGET_OS"; do
+                        for x in "$OBJPTR_REP" "${OBJPTR_REP}a$ALIGN" "$TARGET_OS" "$TARGET_ARCH" "$TARGET_ARCH-$TARGET_OS"; do
                                 if [ -r "$f.$x.ok" ]; then
                                         compare="$f.$x.ok"
                                 fi
