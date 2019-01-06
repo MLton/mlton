@@ -190,10 +190,12 @@ for f in *.sml; do
                 fi
                 ( "./$f" || echo -e "$nonZeroMsg" ) >$tmp 2>&1 
                 if [ -r "$f.ok" ]; then
-                        compare="$f.$HOST_ARCH-$HOST_OS.ok"
-                        if [ ! -r $compare ]; then
-                                compare="$f.ok"
-                        fi
+                        compare="$f.ok"
+                        for x in "$HOST_OS" "$HOST_ARCH" "$HOST_ARCH-$HOST_OS"; do
+                                if [ -r "$f.$x.ok" ]; then
+                                        compare="$f.$x.ok"
+                                fi
+                        done
                         if $forMinGW; then
                                 newcompare="$f.sed.ok"
                                 sed $'s/$/\r/' <"$compare" > "$newcompare"
