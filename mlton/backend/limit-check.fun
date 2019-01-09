@@ -685,7 +685,7 @@ fun insertCoalesce (f: Function.t, handlesSignals) =
             val classes = Array.array (n, ~1)
             fun indexClass i = Array.sub (classes, i)
             val c = Counter.new 0
-            fun setClass (f: unit Forest.t) =
+            fun setClass (f: unit Node.t Forest.t) =
                let
                   val {loops, notInLoop} = Forest.dest f
                   val class = Counter.next c
@@ -705,7 +705,8 @@ fun insertCoalesce (f: Function.t, handlesSignals) =
                in
                   ()
                end
-            val _ = setClass (Graph.loopForestSteensgaard (g, {root = root}))
+            val _ = setClass (Graph.loopForestSteensgaard (g,
+               {root = root, nodeValue = fn x => x}))
             val numClasses = Counter.value c
             datatype z = datatype Control.limitCheck
             val _ =

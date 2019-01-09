@@ -1355,10 +1355,11 @@ structure Function =
                      val loopForestLayout =
                         Graph.LoopForest.layoutDot
                         (Graph.loopForestSteensgaard (graph,
-                                                      {root = startNode}),
+                                                      {root = startNode,
+                                                       nodeValue = fn x => x}),
                          {title = concat [Func.toString name, " loop forest"],
                           options = [],
-                          nodeName = nodeName})
+                          name = nodeName})
                   in
                      loopForestLayout
                   end

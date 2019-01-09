@@ -130,7 +130,7 @@ fun insertInFunction (f: Function.t): Function.t =
       (* Create extra blocks with signal checks for all blocks that are
        * loop headers.
        *)
-      fun loop (f: unit Forest.t) =
+      fun loop (f: int Forest.t) =
          let
             val {loops, ...} = Forest.dest f
          in
@@ -139,9 +139,8 @@ fun insertInFunction (f: Function.t): Function.t =
              let
                 val _ =
                    Vector.foreach
-                   (headers, fn n =>
+                   (headers, fn i =>
                     let
-                       val i = nodeIndex n
                        val _ = Array.update (isHeader, i, true)
                     in
                        addSignalCheck (Vector.sub (blocks, i))
@@ -161,7 +160,8 @@ fun insertInFunction (f: Function.t): Function.t =
                    statements = Vector.new0 (),
                    transfer = Transfer.Goto {args = Vector.new0 (),
                                              dst = start}})
-      val () = loop (Graph.loopForestSteensgaard (g, {root = labelNode start}))
+      val () = loop (Graph.loopForestSteensgaard (g,
+         {root = labelNode start, nodeValue = nodeIndex}))
       val blocks =
          Vector.keepAllMap
          (blocks, fn b as Block.T {label, ...} =>

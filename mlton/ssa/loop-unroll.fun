@@ -1420,7 +1420,8 @@ fun optimizeFunction loadGlobal function =
       val () = logs (concat["Optimizing function: ", Func.toString name,
                             " of size ", Int.toString fsize])
       val root = labelNode start
-      val forest = Graph.loopForestSteensgaard(graph, {root = root})
+      val forest = Graph.loopForestSteensgaard(graph,
+        {root = root, nodeValue = fn x => x})
       val dtree = Function.dominatorTree function
       val (domInfo, destroy) = setDoms dtree
       val newBlocks = traverseForest((Forest.dest forest),

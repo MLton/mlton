@@ -107,16 +107,20 @@ signature DIRECTED_GRAPH =
          sig 
             type 'a t
 
-            val dest: 'a t -> {loops: {headers: 'a Node.t vector,
+            val dest: 'a t -> {loops: {headers: 'a vector,
                                        child: 'a t} vector,
-                               notInLoop: 'a Node.t vector}
+                               notInLoop: 'a vector}
             val layoutDot:
-               'a t * {nodeName: 'a Node.t -> string,
+               'a t * {name: 'a -> string,
                        options: Dot.GraphOption.t list,
                        title: string}
                -> Layout.t
+
+            val map: 'a t * ('a -> 'b) -> 'b t
          end
-      val loopForestSteensgaard: 'a t * {root: 'a Node.t} -> 'a LoopForest.t
+      val loopForestSteensgaard: 'a t * {root: 'a Node.t,
+                                         nodeValue: 'a Node.t -> 'b}
+                                 -> 'b LoopForest.t
       val new: unit -> 'a t
       val newNode: 'a t -> 'a Node.t
       val nodes: 'a t -> 'a Node.t list

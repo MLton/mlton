@@ -550,15 +550,31 @@ structure LoopForest =
        * Every node that is a loop header will appear in exactly one headers
        * vector.
        *)
-      datatype t = T of {loops: {headers: Node.t vector,
-                                 child: t} vector,
-                         notInLoop: Node.t vector}
+      datatype 'a t = T of {loops: {headers: 'a vector,
+                                 child: 'a t} vector,
+                         notInLoop: 'a vector}
+
+      fun dest (T r) = r
 
       fun single n = T {loops = Vector.new0 (),
                         notInLoop = Vector.new1 n}
 
-      fun layoutDot (forest: t,
-                     {nodeName: Node.t -> string,
+      fun map (T {loops, notInLoop}, f) =
+         let
+            val newNotInLoop = Vector.map(notInLoop, f)
+            val newLoops = Vector.map (loops, fn {headers, child} =>
+               let
+                  val newHeaders=Vector.map(headers, f)
+                  val newChild = map (child, f)
+               in
+                  {headers=newHeaders, child=newChild}
+               end)
+         in
+            T {loops=newLoops, notInLoop=newNotInLoop}
+         end
+
+      fun layoutDot (forest: 'a t,
+                     {name: 'a -> string,
                       options: Dot.GraphOption.t list,
                       title: string}) =
          let
@@ -572,7 +588,7 @@ structure LoopForest =
                   fun loop ns =
                      let
                         val {no = ms, yes = ns} = Vector.partitioni (ns, pred)
-                        val ns = String.concatWith (Vector.toListMap (ns, nodeName), ", ")
+                        val ns = String.concatWith (Vector.toListMap (ns, name), ", ")
                      in
                         if Vector.isEmpty ms
                            then [(ns, Center)]
@@ -631,6 +647,7 @@ structure LoopForest =
                         title = title}
          end
       val _ = layoutDot
+
    end
 
 (* Strongly connected components from Aho, Hopcroft, Ullman section 5.5. *)
@@ -754,7 +771,8 @@ val stronglyConnectedComponents =
 (* This code assumes everything is reachable from the root.
  * Otherwise it may loop forever.
  *)
-fun loopForestSteensgaard (g: t, {root: Node.t}): LoopForest.t =
+fun 'a loopForestSteensgaard (g: t,
+         {root: Node.t, nodeValue: Node.t -> 'a}): 'a LoopForest.t =
    let
       val {get =
            nodeInfo:
@@ -777,7 +795,7 @@ fun loopForestSteensgaard (g: t, {root: Node.t}): LoopForest.t =
       (* Treat the root as though there is an external edge into it. *)
       val _ = #isHeader (nodeInfo root) := true
       (* Before calling treeFor, nodeInfo must be defined for all nodes in g. *)
-      fun treeFor (g: t): LoopForest.t  =
+      fun treeFor (g: t): 'a LoopForest.t  =
          let
             val sccs = stronglyConnectedComponents g
             (* Put nodes in the same scc into the same class. *)
@@ -820,14 +838,15 @@ fun loopForestSteensgaard (g: t, {root: Node.t}): LoopForest.t =
                    [n] =>
                       let
                          val {original, ...} = nodeInfo n
+                         val value = nodeValue original
                       in
                          if List.exists (Node.successors n, fn e =>
                                          Node.equals (n, Edge.to e))
                             then
                                List.push (loops,
-                                          {headers = Vector.new1 original,
-                                           child = LoopForest.single original})
-                         else List.push (notInLoop, original)
+                                          {headers = Vector.new1 value,
+                                           child = LoopForest.single value})
+                         else List.push (notInLoop, value)
                       end
                  | _ =>
                       let
@@ -858,7 +877,7 @@ fun loopForestSteensgaard (g: t, {root: Node.t}): LoopForest.t =
                                 val from' = valOf (!next)
                                 val _ =
                                    if !isHeader
-                                      then List.push (headers, original)
+                                      then List.push (headers, nodeValue original)
                                    else ()
                              in
                                 List.foreach
@@ -1092,13 +1111,5 @@ structure Edge =
 
 type 'a t = t
 type 'a u = unit
-
-structure LoopForest =
-   struct
-      open LoopForest
-      type 'a t = t
-
-      fun dest (T r) = r
-   end
 
 end
