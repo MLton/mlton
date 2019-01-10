@@ -734,40 +734,40 @@ structure Function =
             val {get = labelNode, ...} =
                Property.get
                (Label.plist, Property.initFun (fn _ => newNode ()))
-            val {get = nodeLabel: unit Node.t -> {block: Block.t},
-                 set = setNodeLabel, ...} =
+            val {get = nodeInfo: unit Node.t -> Block.t,
+                 set = setNodeInfo, ...} =
                Property.getSetOnce
                (Node.plist, Property.initRaise ("info", Node.layout))
             val () =
                Vector.foreach
                (blocks, fn b as Block.T {label, ...}=>
-                setNodeLabel (labelNode label, {block = b}))
+                setNodeInfo (labelNode label, b))
          in
-            (g, labelNode, nodeLabel)
+            (g, labelNode, nodeInfo)
          end
 
       fun dominatorTree (t as T {blocks, start, ...}): Block.t Tree.t =
          let
-            val (g, labelNode, nodeLabel) = overlayGraph t
+            val (g, labelNode, nodeInfo) = overlayGraph t
             val _ = Vector.foreach (blocks, fn Block.T {transfer, label=from, ...} =>
                Transfer.foreachLabel (transfer, fn to =>
                   ignore (Graph.addEdge (g, {from=labelNode from, to=labelNode to}))))
          in
             Graph.dominatorTree (g,
-               {root=labelNode start, nodeValue=(#block o nodeLabel)})
+               {root=labelNode start, nodeValue=nodeInfo})
          end
 
       fun loopForest (t as T {blocks, start, ...}, predicate) =
          let
-            val (g, labelNode, nodeLabel) = overlayGraph t
-            val _ =Vector.foreach (blocks, fn b as Block.T {transfer, kind, label=from, ...} =>
+            val (g, labelNode, nodeInfo) = overlayGraph t
+            val _ = Vector.foreach (blocks, fn from as Block.T {transfer, label, ...} =>
                Transfer.foreachLabel (transfer, fn to =>
-                  if predicate (b, to)
-                     then ignore (Graph.addEdge (g, {from=labelNode from, to=labelNode to}))
+                  if predicate (from, (nodeInfo o labelNode) to)
+                     then ignore (Graph.addEdge (g, {from=labelNode label, to=labelNode to}))
                      else ()))
          in
             Graph.loopForestSteensgaard (g,
-               {root=labelNode start, nodeValue=(#block o nodeLabel)})
+               {root=labelNode start, nodeValue=nodeInfo})
          end
 
       fun dropProfile (f: t): t =
