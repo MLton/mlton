@@ -757,14 +757,14 @@ structure Function =
                {root=labelNode start, nodeValue=(#block o nodeLabel)})
          end
 
-      fun loopForest (t as T {blocks, start, ...}) =
+      fun loopForest (t as T {blocks, start, ...}, predicate) =
          let
             val (g, labelNode, nodeLabel) = overlayGraph t
-            val _ =Vector.foreach (blocks, fn Block.T {transfer, kind, label=from, ...} =>
-            case Kind.frameStyle kind of
-               Kind.OffsetsAndSize => ()
-            | _ => Transfer.foreachLabel (transfer, fn to =>
-                  ignore (Graph.addEdge (g, {from=labelNode from, to=labelNode to}))))
+            val _ =Vector.foreach (blocks, fn b as Block.T {transfer, kind, label=from, ...} =>
+               Transfer.foreachLabel (transfer, fn to =>
+                  if predicate (b, to)
+                     then ignore (Graph.addEdge (g, {from=labelNode from, to=labelNode to}))
+                     else ()))
          in
             Graph.loopForestSteensgaard (g,
                {root=labelNode start, nodeValue=(#block o nodeLabel)})

@@ -203,9 +203,10 @@ signature RSSA =
              * then applying v' ().
              *)
             val dfs: t * (Block.t -> unit -> unit) -> unit
+            val dominatorTree: t -> Block.t Tree.t
             val foreachDef: t * (Var.t * Type.t -> unit) -> unit
             val foreachUse: t * (Var.t -> unit) -> unit
-            val loopForest: t -> Block.t DirectedGraph.LoopForest.t
+            val loopForest: t * (Block.t * Label.t -> bool) -> Block.t DirectedGraph.LoopForest.t
             val name: t -> Func.t
             val new: {args: (Var.t * Type.t) vector,
                       blocks: Block.t vector,
