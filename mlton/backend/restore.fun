@@ -101,7 +101,6 @@ structure Cardinality =
     val makeOne = makeMid
     val isMany = isTop
     val makeMany = makeTop
-    val whenMany = whenTop
 
     val inc: t -> unit
       = fn c => if isZero c
@@ -143,7 +142,6 @@ structure VarInfo =
     fun addDefSite (T {defSites, ...}, l) = List.push(defSites, l)
     fun addUseSite (T {useSites, ...}, l) = List.push(useSites, l)
     val violates = Cardinality.isMany o defs
-    fun whenViolates (T {defs, ...}, th) = Cardinality.whenMany (defs, th)
 
     fun new (): t = T {defs = Cardinality.new (),
                        index = ref ~1,
@@ -668,7 +666,7 @@ val traceRestoreFunction
                  Func.layout o Function.name,
                  Func.layout o Function.name)
 
-fun restoreFunction f = traceRestoreFunction restoreFunction f
+  val restoreFunction = fn f => traceRestoreFunction restoreFunction f
 
 fun transform (Program.T {functions, handlesSignals, main, objectTypes})
   = let

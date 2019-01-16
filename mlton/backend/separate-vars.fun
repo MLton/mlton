@@ -54,6 +54,44 @@ fun transformFunc f =
             in
                goLoop t
             end)
+<<<<<<< HEAD
+=======
+      val isLoop = isSome o loopInfo o Block.label
+      val usedVar = fn {var, block} => if isLoop block then Liveness.Warm else Liveness.Cold
+
+      (* calculate variable liveness within a loop, if it's active in a loop,
+       * then the variable will be Warm, else it will be Cold (even if it's live
+       * during a loop, so long as it's not used in it) *)
+      val {labelLive, remLabelLive} = Live.live (f,
+         { shouldConsider=fn _ => true,
+           flowBack=fn {earlier, flowed, ...} =>
+               if flowed = Liveness.Warm andalso isLoop earlier
+                  then Liveness.Warm
+                  else Liveness.Cold,
+           usedVar=usedVar})
+
+      (* by definition, the loop is strongly connected, so if a variable is
+       * live in one header but not defined there, it's live in all of them *)
+      val _ = let
+            fun doFilter vars = Vector.keepAllMap (vars,
+               fn p => case p of
+                        (x, Liveness.Warm) => SOME x
+                      | (_, Liveness.Cold) => NONE)
+         in
+            Vector.map (loops, fn {headers, ...} =>
+               let
+                  val headerVars = (Vector.concatV o Vector.map)
+                     (headers, fn header =>
+                        let
+                           val {beginNoFormals, ...} = labelLive (Block.label header)
+                        in
+                           doFilter beginNoFormals
+                        end)
+               in
+                  ()
+               end)
+              end
+>>>>>>> 55449d4d9... Cleanup unused variables and disable separate-vars
    in
       f
    end
@@ -61,7 +99,12 @@ fun transformFunc f =
 fun transform p =
    let
       val Program.T {functions, handlesSignals, main, objectTypes} = p
+<<<<<<< HEAD
       val newFunctions = Vector.map(functions, transformFunc)
+=======
+      (*val newFunctions = List.map(functions, transformFunc)*)
+      val newFunctions = functions
+>>>>>>> 55449d4d9... Cleanup unused variables and disable separate-vars
    in
       Program.T {functions=newFunctions, handlesSignals=handlesSignals,
                  main=main, objectTypes=objectTypes}
