@@ -107,6 +107,7 @@ in
    signature SSA2
 
    functor FlatLattice
+   functor ThreePointLattice
    functor ParseSsa
    functor ParseSsa2
    functor Ssa

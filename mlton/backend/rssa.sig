@@ -157,6 +157,7 @@ signature RSSA =
             val ifZero: Operand.t * {falsee: Label.t, truee: Label.t} -> t
             val layout: t -> Layout.t
             val replaceUses: t * (Var.t -> Operand.t) -> t
+            val replaceLabels: t * (Label.t -> Label.t) -> t
          end
 
       structure Kind:
