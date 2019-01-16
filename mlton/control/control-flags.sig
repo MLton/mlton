@@ -194,6 +194,14 @@ signature CONTROL_FLAGS =
        | Every
       val gcCheck: gcCheck ref
 
+      val globalizeArrays: bool ref
+
+      val globalizeRefs: bool ref
+
+      val globalizeSmallIntInf: bool ref
+
+      val globalizeSmallType: int ref
+
       (* Indentation used in laying out ILs. *)
       val indentation: int ref
 

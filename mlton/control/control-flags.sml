@@ -803,6 +803,22 @@ val gcCheck = control {name = "gc check",
                        default = Limit,
                        toString = GcCheck.toString}
 
+val globalizeArrays = control {name = "globalize arrays",
+                               default = false,
+                               toString = Bool.toString}
+
+val globalizeRefs = control {name = "globalize refs",
+                             default = true,
+                             toString = Bool.toString}
+
+val globalizeSmallIntInf = control {name = "globalize int-inf as small type)",
+                                    default = true,
+                                    toString = Bool.toString}
+
+val globalizeSmallType = control {name = "globalize small type",
+                                  default = 1,
+                                  toString = Int.toString}
+
 val indentation = control {name = "indentation",
                            default = 3,
                            toString = Int.toString}

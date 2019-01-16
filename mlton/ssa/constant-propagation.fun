@@ -28,19 +28,10 @@ open S
 structure Multi = Multi (S)
 structure Global = Global (S)
 
-structure Type =
-   struct
-      open Type
-
-      fun isSmall t =
-         case dest t of
-            Array _ => false
-          | Datatype _ => false
-          | Ref t => isSmall t
-          | Tuple ts => Vector.forall (ts, isSmall)
-          | Vector _ => false
-          | _ => true
-   end
+structure Graph = DirectedGraph
+structure Node = Graph.Node
+structure Size = TwoPointLattice (val bottom = "small"
+                                  val top = "large")
 
 structure Sconst = Const
 open Exp Transfer
@@ -58,8 +49,8 @@ structure Value =
                                coercedTo: t list ref}
             and const =
                Const of Const.t
-              | Undefined (* no possible value *)
-              | Unknown (* many possible values *)
+             | Undefined (* no possible value *)
+             | Unknown (* many possible values *)
 
             fun layout (T {const, ...}) = layoutConst (!const)
             and layoutConst c =
@@ -278,6 +269,109 @@ structure Value =
                  ; coerce {from = c', to = c})) arg
          end
 
+      structure Raw =
+         struct
+            datatype t = T of {coercedTo: t list ref,
+                               raw: raw ref}
+            and raw =
+               Raw of bool
+             | Undefined (* no possible value *)
+             | Unknown (* many possible values *)
+
+            fun layout (T {raw, ...}) = layoutRaw (!raw)
+            and layoutRaw r =
+               let
+                  open Layout
+               in
+                  case r of
+                     Raw b => Bool.layout b
+                   | Undefined => str "undefined raw"
+                   | Unknown => str "unknown raw"
+               end
+
+            fun new r = T {coercedTo = ref [],
+                           raw = ref r}
+
+            fun equals (T {raw = r1, ...}, T {raw = r2, ...}) = r1 = r2
+
+            val equals =
+               Trace.trace2
+               ("ConstantPropagation.Value.Raw.equals",
+                layout, layout, Bool.layout)
+               equals
+
+            val raw = new o Raw
+
+            fun undefined () = new Undefined
+            fun unknown () = new Unknown
+
+            fun makeUnknown (T {coercedTo, raw}): unit =
+               case !raw of
+                  Unknown => ()
+                | _ => (raw := Unknown
+                        ; List.foreach (!coercedTo, makeUnknown)
+                        ; coercedTo := [])
+
+            val makeUnknown =
+               Trace.trace
+               ("ConstantPropagation.Value.Raw.makeUnknown",
+                layout, Unit.layout)
+               makeUnknown
+
+            fun send (r: t, r': raw): unit =
+               let
+                  fun loop (r as T {coercedTo, raw}) =
+                     case (r', !raw) of
+                        (_, Unknown) => ()
+                      | (_, Undefined) => (raw := r'
+                                           ; List.foreach (!coercedTo, loop))
+                      | (Raw b', Raw b'') =>
+                           if b' = b''
+                              then ()
+                              else makeUnknown r
+                      | _ => makeUnknown r
+               in
+                  loop r
+               end
+
+            val send =
+               Trace.trace2
+               ("ConstantPropagation.Value.Raw.send",
+                layout, layoutRaw, Unit.layout)
+               send
+
+            fun coerce {from = from as T {coercedTo, raw}, to: t}: unit =
+               if equals (from, to)
+                  then ()
+               else
+                  let
+                     fun push () = List.push (coercedTo, to)
+                  in
+                     case !raw of
+                        r as Raw _ => (push (); send (to, r))
+                      | Undefined => push ()
+                      | Unknown => makeUnknown to
+                  end
+
+            val coerce =
+               Trace.trace
+               ("ConstantPropagation.Value.Raw.coerce",
+                fn {from, to} => Layout.record [("from", layout from),
+                                                ("to", layout to)],
+                Unit.layout)
+               coerce
+
+            fun unify (r, r') =
+               (coerce {from = r, to = r'}
+                ; coerce {from = r', to = r})
+
+            val unify =
+               Trace.trace2
+               ("ConstantPropagation.Value.Raw.unify",
+                layout, layout, Unit.layout)
+               unify
+         end
+
       structure Set = DisjointSet
       structure Unique = UniqueId ()
 
@@ -289,7 +383,7 @@ structure Value =
          Array of {birth: unit Birth.t,
                    elt: t,
                    length: t,
-                   raw: bool option ref}
+                   raw: Raw.t}
        | Const of Const.t
        | Datatype of data
        | Ref of {arg: t,
@@ -330,18 +424,18 @@ structure Value =
          fun layout v =
             case value v of
                Array {birth, elt, length, raw, ...} =>
-                  seq [str "array", tuple [Birth.layout birth,
-                                           layout length,
-                                           layout elt,
-                                           Option.layout Bool.layout (!raw)]]
+                  seq [str "array ", tuple [Birth.layout birth,
+                                            layout length,
+                                            layout elt,
+                                            Raw.layout raw]]
              | Const c => Const.layout c
              | Datatype d => layoutData d
              | Ref {arg, birth, ...} =>
                   seq [str "ref ", tuple [layout arg, Birth.layout birth]]
              | Tuple vs => Vector.layout layout vs
-             | Vector {elt, length, ...} => seq [str "vector ",
-                                                 tuple [layout elt,
-                                                        layout length]]
+             | Vector {elt, length, ...} =>
+                  seq [str "vector ", tuple [layout elt,
+                                             layout length]]
              | Weak v => seq [str "weak ", layout v]
          and layoutData (Data {value, ...}) =
             case !value of
@@ -361,36 +455,35 @@ structure Value =
           layout, layout, Bool.layout) 
          equals
 
-      val globalsInfo = Trace.info "ConstantPropagation.Value.globals"
-      val globalInfo = Trace.info "ConstantPropagation.Value.global"
-
       fun globals arg: (Var.t * Type.t) vector option =
-         Trace.traceInfo
-         (globalsInfo,
+         Trace.trace
+         ("ConstantPropagation.Value.globals",
           (Vector.layout layout) o #1,
-          Option.layout (Vector.layout
-                         (Layout.tuple2 (Var.layout, Type.layout))),
-          Trace.assertTrue)
-         (fn (vs: t vector, newGlobal) =>
+          Option.layout (Vector.layout (Var.layout o #1)))
+         (fn (vs: t vector, isSmallType, newGlobal) =>
           Exn.withEscape
           (fn escape =>
            SOME (Vector.map
                  (vs, fn v =>
-                  case global (v, newGlobal) of
+                  case global (v, isSmallType, newGlobal) of
                      NONE => escape NONE
                    | SOME g => g)))) arg
       and global arg: (Var.t * Type.t) option =
-         Trace.traceInfo (globalInfo,
-                          layout o #1,
-                          Option.layout (Var.layout o #1),
-                          Trace.assertTrue)
-         (fn (v as T s, newGlobal) =>
+         Trace.trace
+         ("ConstantPropagation.Value.global",
+          layout o #1,
+          Option.layout (Var.layout o #1))
+         (fn (v as T s, isSmallType, newGlobal) =>
           let val {global = r, ty, value} = Set.! s
           in case !r of
                 No => NONE
               | Yes g => SOME (g, ty)
               | NotComputed =>
                    let
+                      val global = fn v =>
+                         global (v, isSmallType, newGlobal)
+                      val globals = fn vs =>
+                         globals (vs, isSmallType, newGlobal)
                       (* avoid globalizing circular abstract values *)
                       val _ = r := No
                       fun yes e = Yes (newGlobal (ty, e))
@@ -399,12 +492,12 @@ structure Value =
                                  primApp: {targs: Type.t vector,
                                            args: Var.t vector} -> Exp.t,
                                  targ: Type.t) =
-                         case !place of
-                            Place.One (One.T {global = glob, extra, ...}) =>
+                         case (!place, isSmallType targ) of
+                            (Place.One (One.T {global = glob, extra, ...}), true) =>
                                let
                                   val init = makeInit extra
                                in
-                                  case global (init, newGlobal) of
+                                  case global init of
                                      SOME (x, _) =>
                                         Yes
                                         (case !glob of
@@ -418,20 +511,24 @@ structure Value =
                                                in
                                                   glob := SOME g; g
                                                end
-                                              | SOME g => g)
+                                          | SOME g => g)
                                    | _ => No
                                end
                           | _ => No
                       val g =
                          case value of
-                            Array {birth, length, raw, ...} =>
+                            Array {birth, length, raw = Raw.T {raw, ...}, ...} =>
+                               if !Control.globalizeArrays then
                                unary (birth, fn _ => length,
                                       fn {args, targs} =>
-                                      Exp.PrimApp {args = args,
-                                                   prim = Prim.arrayAlloc
-                                                          {raw = valOf (!raw)},
-                                                   targs = targs},
+                                      case !raw of
+                                         Raw.Raw raw =>
+                                            Exp.PrimApp {args = args,
+                                                         prim = Prim.arrayAlloc {raw = raw},
+                                                         targs = targs}
+                                       | _ => Error.bug "ConstantPropagation.Value.global: Array, raw",
                                       Type.deArray ty)
+                               else No
                           | Const (Const.T {const, ...}) =>
                                (case !const of
                                    Const.Const c => yes (Exp.Const c)
@@ -439,7 +536,7 @@ structure Value =
                           | Datatype (Data {value, ...}) =>
                                (case !value of
                                    ConApp {args, con, ...} =>
-                                      (case globals (args, newGlobal) of
+                                      (case globals args of
                                           NONE => No
                                         | SOME args =>
                                              yes (Exp.ConApp
@@ -447,14 +544,16 @@ structure Value =
                                                    args = Vector.map (args, #1)}))
                                  | _ => No)
                           | Ref {birth, ...} =>
+                               if !Control.globalizeRefs then
                                unary (birth, fn {init} => init,
                                       fn {args, targs} =>
                                       Exp.PrimApp {args = args,
                                                    prim = Prim.reff,
                                                    targs = targs},
                                       Type.deRef ty)
+                               else No
                           | Tuple vs =>
-                               (case globals (vs, newGlobal) of
+                               (case globals vs of
                                    NONE => No
                                  | SOME xts =>
                                       yes (Exp.Tuple (Vector.map (xts, #1))))
@@ -477,7 +576,7 @@ structure Value =
                                                    ({elementSize = ws}, elts))))
                                       in
                                          case (Option.map (deConst elt, S.Const.deWordOpt),
-                                               global (elt, newGlobal)) of
+                                               global elt) of
                                             (SOME (SOME w), _) =>
                                                mkConst (Type.deWord eltTy,
                                                         List.new (length, w))
@@ -493,7 +592,7 @@ structure Value =
                           | Weak _ => No
                       val _ = r := g
                    in
-                      global (v, newGlobal)
+                      global v
                    end
           end) arg
 
@@ -565,7 +664,7 @@ structure Value =
             val {value, ty, ...} = Set.! s
          in case value of
             Array {elt, length, ...} =>
-               new (Array {birth = Birth.unknown (), elt = elt, length = length, raw = ref (SOME false)}, ty)
+               new (Array {birth = Birth.unknown (), elt = elt, length = length, raw = Raw.raw false}, ty)
           | _ => Error.bug "ConstantPropagation.Value.arrayFromArray"
          end
 
@@ -613,7 +712,7 @@ structure Value =
          (* The extra birth is because of let-style polymorphism.
           * arrayBirth is really the same as refBirth.
           *)
-         fun make (const, data, refBirth, arrayBirth) =
+         fun make (const, data, refBirth, arrayBirth, raw) =
             let
                fun loop (t: Type.t): t =
                   new
@@ -622,14 +721,14 @@ structure Value =
                          Array {birth = arrayBirth (),
                                 elt = loop t,
                                 length = loop (Type.word (WordSize.seqIndex ())),
-                                raw = ref NONE}
+                                raw = raw ()}
                     | Type.Datatype _ => Datatype (data ())
                     | Type.Ref t => Ref {arg = loop t,
                                          birth = refBirth ()}
                     | Type.Tuple ts => Tuple (Vector.map (ts, loop))
-                    | Type.Vector t => Vector 
-                         {elt = loop t,
-                          length = loop (Type.word (WordSize.seqIndex ()))}
+                    | Type.Vector t =>
+                         Vector {elt = loop t,
+                                 length = loop (Type.word (WordSize.seqIndex ()))}
                     | Type.Weak t => Weak (loop t)
                     | _ => Const (const ()), 
                    t)
@@ -640,12 +739,14 @@ structure Value =
             make (Const.undefined,
                   Data.undefined,
                   Birth.undefined,
-                  Birth.undefined)
+                  Birth.undefined,
+                  Raw.undefined)
          val unknown =
             make (Const.unknown,
                   Data.unknown,
                   Birth.unknown,
-                  Birth.unknown)
+                  Birth.unknown,
+                  Raw.unknown)
       end
 
       fun select {tuple, offset, resultType = _} =
@@ -759,7 +860,7 @@ fun transform (program: Program.t): Program.t =
              end) arg
          and coerces {froms: Value.t vector, tos: Value.t vector} =
             Vector.foreach2 (froms, tos, fn (from, to) =>
-                            coerce {from = from, to = to})
+                             coerce {from = from, to = to})
          and coerce arg =
             traceCoerce
             (fn {from, to} =>
@@ -786,13 +887,7 @@ fun transform (program: Program.t): Program.t =
                         (Birth.coerce {from = b, to = b'}
                          ; coerce {from = n, to = n'}
                          ; unify (x, x')
-                         ; (case (!r, !r') of
-                               (NONE, r') => r := r'
-                             | (r, NONE) => r' := r
-                             | (SOME b, SOME b') =>
-                                  (if b = b'
-                                      then ()
-                                      else error ())))
+                         ; Raw.coerce {from = r, to = r'})
                    | (Vector {length = n, elt = x},
                       Vector {length = n', elt = x'}) =>
                         (coerce {from = n, to = n'}
@@ -834,13 +929,7 @@ fun transform (program: Program.t): Program.t =
                           (Birth.unify (b, b')
                            ; unify (n, n')
                            ; unify (x, x')
-                           ; (case (!r, !r') of
-                                 (NONE, r') => r := r'
-                               | (r, NONE) => r' := r
-                               | (SOME b, SOME b') =>
-                                    (if b = b'
-                                        then ()
-                                        else error ())))
+                           ; Raw.unify (r, r'))
                      | (Vector {length = n, elt = x},
                         Vector {length = n', elt = x'}) =>
                           (unify (n, n')
@@ -899,8 +988,6 @@ fun transform (program: Program.t): Program.t =
                fun bear z =
                   case resultVar of
                      SOME resultVar => if once resultVar 
-                                          andalso 
-                                          Type.isSmall resultType
                                           then Birth.here z
                                        else Birth.unknown ()
                    | _ => Error.bug "ConstantPropagation.Value.primApp.bear"
@@ -914,7 +1001,7 @@ fun transform (program: Program.t): Program.t =
                      val a = fromType resultType
                      val _ = coerce {from = length, to = arrayLength a}
                      val _ = Birth.coerce {from = birth, to = arrayBirth a}
-                     val _ = arrayRaw a := SOME raw
+                     val _ = Raw.coerce {from = Raw.raw raw, to = arrayRaw a}
                   in
                      a
                   end
@@ -972,7 +1059,7 @@ fun transform (program: Program.t): Program.t =
                 | _ => (if Prim.maySideEffect prim
                            then Vector.foreach (args, sideEffect)
                         else ()
-                           ; unknown resultType)
+                        ; unknown resultType)
             end
          fun filter (variant, con, args) =
             case value variant of
@@ -1031,14 +1118,251 @@ fun transform (program: Program.t): Program.t =
                                                      str " ",
                                                      Value.layout (value x)])))
           end)
+
+      fun mkIsSmallType n =
+         let
+            datatype t = datatype Type.dest
+         in
+            case n of
+               0 => {isSmallType = fn _ => false,
+                     destroyIsSmallType = fn () => ()}
+             | 1 => let
+                       val {get: Type.t -> bool,
+                            destroy} =
+                          Property.destGet
+                          (Type.plist,
+                           Property.initRec
+                           (fn (t, get) =>
+                            case Type.dest t of
+                               Array _ => false
+                             | CPointer => true
+                             | Datatype _ => false
+                             | IntInf => !Control.globalizeSmallIntInf
+                             | Real _ => true
+                             | Ref t => get t
+                             | Thread => false
+                             | Tuple ts => Vector.forall (ts, get)
+                             | Vector _ => false
+                             | Weak _ => true
+                             | Word _ => true))
+                    in
+                       {isSmallType = get,
+                        destroyIsSmallType = destroy}
+                    end
+             | 2 => let
+                       val {get = getTycon: Tycon.t -> bool,
+                            set = setTycon, ...} =
+                          Property.getSetOnce
+                          (Tycon.plist,
+                           Property.initRaise
+                           ("ConstantPropagation.mkIsSmallType(2).getTycon",
+                            Tycon.layout))
+                       val () =
+                          Vector.foreach
+                          (datatypes, fn Datatype.T {tycon, cons} =>
+                           setTycon
+                           (tycon,
+                            Vector.forall
+                            (cons, fn {args, ...} =>
+                             Vector.isEmpty args)))
+                       val {get: Type.t -> bool,
+                            destroy} =
+                          Property.destGet
+                          (Type.plist,
+                           Property.initRec
+                           (fn (t, get) =>
+                            case Type.dest t of
+                               Array _ => false
+                             | CPointer => true
+                             | Datatype tc => getTycon tc
+                             | IntInf => !Control.globalizeSmallIntInf
+                             | Real _ => true
+                             | Ref t => get t
+                             | Thread => false
+                             | Tuple ts => Vector.forall (ts, get)
+                             | Vector _ => false
+                             | Weak _ => true
+                             | Word _ => true))
+                    in
+                       {isSmallType = get,
+                        destroyIsSmallType = destroy}
+                    end
+             | 3 => let
+                       val {isSmallType, destroyIsSmallType} =
+                          mkIsSmallType 1
+                       val {get = getTycon: Tycon.t -> bool,
+                            set = setTycon, ...} =
+                          Property.getSetOnce
+                          (Tycon.plist,
+                           Property.initRaise
+                           ("ConstantPropagation.mkIsSmallType(3).getTycon",
+                            Tycon.layout))
+                       val () =
+                          Vector.foreach
+                          (datatypes, fn Datatype.T {tycon, cons} =>
+                           setTycon
+                           (tycon,
+                            Vector.forall
+                            (cons, fn {args, ...} =>
+                             Vector.forall
+                             (args, isSmallType))))
+                       val () = destroyIsSmallType ()
+                       val {get: Type.t -> bool,
+                            destroy} =
+                          Property.destGet
+                          (Type.plist,
+                           Property.initRec
+                           (fn (t, get) =>
+                            case Type.dest t of
+                               Array _ => false
+                             | CPointer => true
+                             | Datatype tc => getTycon tc
+                             | IntInf => !Control.globalizeSmallIntInf
+                             | Real _ => true
+                             | Ref t => get t
+                             | Thread => false
+                             | Tuple ts => Vector.forall (ts, get)
+                             | Vector _ => false
+                             | Weak _ => true
+                             | Word _ => true))
+                    in
+                       {isSmallType = get,
+                        destroyIsSmallType = destroy}
+                    end
+             | 4 => let
+                       val {get = tyconSize: Tycon.t -> Size.t, ...} =
+                          Property.get (Tycon.plist, Property.initFun (fn _ => Size.new ()))
+                       (* Force (mutually) recursive datatypes to top. *)
+                       val {get = nodeTycon: unit Node.t -> Tycon.t,
+                            set = setNodeTycon, ...} =
+                          Property.getSetOnce
+                          (Node.plist, Property.initRaise ("nodeTycon", Node.layout))
+                       val {get = tyconNode: Tycon.t -> unit Node.t,
+                            set = setTyconNode, ...} =
+                          Property.getSetOnce
+                          (Tycon.plist, Property.initRaise ("tyconNode", Tycon.layout))
+                       val graph = Graph.new ()
+                       val () =
+                          Vector.foreach
+                          (datatypes, fn Datatype.T {tycon, ...} =>
+                           let
+                              val node = Graph.newNode graph
+                              val () = setTyconNode (tycon, node)
+                              val () = setNodeTycon (node, tycon)
+                           in
+                              ()
+                           end)
+                       val () =
+                          Vector.foreach
+                          (datatypes, fn Datatype.T {cons, tycon} =>
+                           let
+                              val n = tyconNode tycon
+                              val {get = dependsOn, destroy = destroyDependsOn} =
+                                 Property.destGet
+                                 (Type.plist,
+                                  Property.initRec
+                                  (fn (t, dependsOn) =>
+                                   case Type.dest t of
+                                      Array t => dependsOn t
+                                    | Datatype tc =>
+                                         (ignore o Graph.addEdge)
+                                         (graph, {from = n, to = tyconNode tc})
+                                    | Ref t => dependsOn t
+                                    | Tuple ts => Vector.foreach (ts, dependsOn)
+                                    | Vector t => dependsOn t
+                                    | _ => ()))
+                              val () =
+                                 Vector.foreach
+                                 (cons, fn {args, ...} =>
+                                  Vector.foreach (args, dependsOn))
+                              val () = destroyDependsOn ()
+                           in
+                              ()
+                           end)
+                       val () =
+                          List.foreach
+                          (Graph.stronglyConnectedComponents graph, fn ns =>
+                           let
+                              fun doit () =
+                                 List.foreach
+                                 (ns, fn n =>
+                                  Size.makeTop (tyconSize (nodeTycon n)))
+                           in
+                              case ns of
+                                 [n] => if Node.hasEdge {from = n, to = n}
+                                           then doit ()
+                                           else ()
+                               | _ => doit ()
+                           end)
+                       val {get = typeSize: Type.t -> Size.t,
+                            destroy = destroyTypeSize, ...} =
+                          Property.destGet
+                          (Type.plist,
+                           Property.initRec
+                           (fn (t, typeSize) =>
+                            let
+                               val s = Size.new ()
+                               fun dependsOn (t: Type.t): unit =
+                                  Size.<= (typeSize t, s)
+                               val () =
+                                  case Type.dest t of
+                                     Array _ => Size.makeTop s
+                                   | CPointer => ()
+                                   | Datatype tc => Size.<= (tyconSize tc, s)
+                                   | IntInf => if !Control.globalizeSmallIntInf
+                                                  then ()
+                                                  else Size.makeTop s
+                                   | Real _ => ()
+                                   | Ref t => dependsOn t
+                                   | Thread => Size.makeTop s
+                                   | Tuple ts => Vector.foreach (ts, dependsOn)
+                                   | Vector _ => Size.makeTop s
+                                   | Weak _ => ()
+                                   | Word _ => ()
+                            in
+                               s
+                            end))
+                       val () =
+                          Vector.foreach
+                          (datatypes, fn Datatype.T {cons, tycon} =>
+                           let
+                              val s = tyconSize tycon
+                              fun dependsOn (t: Type.t): unit = Size.<= (typeSize t, s)
+                              val () =
+                                 Vector.foreach
+                                 (cons, fn {args, ...} =>
+                                  Vector.foreach (args, dependsOn))
+                           in
+                              ()
+                           end)
+                    in
+                       {isSmallType = not o Size.isTop o typeSize,
+                        destroyIsSmallType = destroyTypeSize}
+                    end
+             | 9 => {isSmallType = fn _ => true,
+                     destroyIsSmallType = fn () => ()}
+             | _ => Error.bug "ConstantPropagation.mkIsSmallType"
+         end
+
+      val {isSmallType: Type.t -> bool,
+           destroyIsSmallType: unit -> unit} =
+         mkIsSmallType (!Control.globalizeSmallType)
+
       (* Walk through the program
        *  - removing declarations whose rhs is constant
        *  - replacing variables whose value is constant with globals
        *  - building up the global decs
        *)
       val {new = newGlobal, all = allGlobals} = Global.make ()
+      fun maybeGlobal x = Value.global (value x, isSmallType, newGlobal)
+      val maybeGlobal =
+         Trace.trace
+         ("ConstantPropagation.maybeGlobal",
+          Var.layout,
+          Option.layout (Var.layout o #1))
+         maybeGlobal
       fun replaceVar x =
-         case Value.global (value x, newGlobal) of
+         case maybeGlobal x of
             NONE => x
           | SOME (g, _) => g
       fun doitStatement (Statement.T {var, ty, exp}) =
@@ -1051,7 +1375,7 @@ fun transform (program: Program.t): Program.t =
             case var of
                NONE => keep ()
              | SOME var => 
-                  (case (Value.global (value var, newGlobal), exp) of
+                  (case (maybeGlobal var, exp) of
                       (NONE, _) => keep ()
                     | (SOME _, PrimApp {prim, ...}) =>
                          if Prim.maySideEffect prim
@@ -1081,12 +1405,26 @@ fun transform (program: Program.t): Program.t =
          end
       val functions = List.revMap (functions, doitFunction)
       val globals = Vector.keepAllMap (globals, doitStatement)
-      val globals = Vector.concat [allGlobals (), globals]
+      val newGlobals = allGlobals ()
+      val _ =
+         Control.diagnostics
+         (fn display =>
+          let open Layout
+          in
+             display (seq [str "\n\nNew Globals (",
+                           Int.layout (Vector.length newGlobals),
+                           str "):"])
+             ; (Vector.foreach
+                (newGlobals, display o Statement.layout))
+          end)
+
+      val globals = Vector.concat [newGlobals, globals]
       val shrink = shrinkFunction {globals = globals}
       val program = Program.T {datatypes = datatypes,
                                globals = globals,
                                functions = List.revMap (functions, shrink),
                                main = main}
+      val _ = destroyIsSmallType ()
       val _ = Program.clearTop program
    in
       program
