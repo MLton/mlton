@@ -666,14 +666,14 @@ val traceRestoreFunction
                  Func.layout o Function.name,
                  Func.layout o Function.name)
 
-  val restoreFunction = fn f => traceRestoreFunction restoreFunction f
+val restoreFunction = fn f => traceRestoreFunction restoreFunction f
 
 fun transform (Program.T {functions, handlesSignals, main, objectTypes})
   = let
       val r = restoreFunction
     in
       Program.T {handlesSignals = handlesSignals,
-                 functions = List.revMap (functions, r),
+                 functions = List.map (functions, r),
                  main = main,
                  objectTypes = objectTypes}
     end
