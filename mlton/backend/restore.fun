@@ -157,7 +157,7 @@ structure VarInfo =
                                      | h::_ => SOME h
   end
 
-val restoreFunction
+fun restoreFunction ()
   = let
       exception NoViolations
 
@@ -313,11 +313,11 @@ val restoreFunction
                            end
                       else ()
                   end
+              val _ = Transfer.foreachDefLabelUse (transfer,
+                      {def=addDef o #1, label=fn _ => (), use=addUse})
               val _ = Vector.foreachr
                       (statements, fn s => Statement.foreachDefUse
                         (s, {def=addDef o #1, use=addUse}))
-              val _ = Transfer.foreachDefLabelUse (transfer,
-                      {def=addDef o #1, label=fn _ => (), use=addUse})
               val _ = Vector.foreach (args, addDef o #1)
               val _ = LabelInfo.defs li := Array.toVector defs
               val _ = LabelInfo.uses li := Array.toVector uses
@@ -666,11 +666,17 @@ val traceRestoreFunction
                  Func.layout o Function.name,
                  Func.layout o Function.name)
 
-val restoreFunction = fn f => traceRestoreFunction restoreFunction f
+val restoreFunction
+  = fn () =>
+    let
+      val r = restoreFunction ()
+    in
+      fn f => traceRestoreFunction r f
+   end
 
 fun transform (Program.T {functions, handlesSignals, main, objectTypes})
   = let
-      val r = restoreFunction
+      val r = restoreFunction ()
     in
       Program.T {handlesSignals = handlesSignals,
                  functions = List.map (functions, r),

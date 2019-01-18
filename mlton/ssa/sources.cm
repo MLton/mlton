@@ -13,6 +13,7 @@ signature RETURN
 signature SSA
 signature SSA2
 
+functor ThreePointLattice
 functor FlatLattice
 functor ParseSsa
 functor ParseSsa2
