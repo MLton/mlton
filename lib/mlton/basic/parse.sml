@@ -250,6 +250,8 @@ fun fromReader (r : State.t -> ('a * State.t) option) (s : State.t) =
          Success (b, s')
     | NONE => fail "fromReader" s
 
+fun fromScan scan = fromReader (scan (toReader next))
+
 fun compose (p1 : char list t, p2 : 'a t) (s : State.t) =
    let
       (* easiest way to escape here *)

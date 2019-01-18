@@ -76,7 +76,9 @@ signature PARSE =
       (* succeeds if and only if its argument fails to parse *)
       val failing: 'a t -> unit t
       (* return the parser representation of a given reader *)
-      val fromReader: (State.t -> ('a * State.t) option)-> 'a t
+      val fromReader: (State.t -> ('a * State.t) option) -> 'a t
+      (* return the parser corresponding to a scanner *)
+      val fromScan: ((char, State.t) StringCvt.reader -> ('a, State.t) StringCvt.reader) -> 'a t
       (* returns the current source location of the parser *)
       val location: Location.t t
       (* succeeds for each time the parser succeeds in succession *)
