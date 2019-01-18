@@ -1,4 +1,5 @@
-(* Copyright (C) 2013-2014 Matthew Fluet, Brian Leibig.
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 2013-2014 Matthew Fluet, Brian Leibig.
  *
  * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
@@ -625,7 +626,7 @@ and getOperandValue (cxt, operand) =
             end
           | Operand.Null => ("", "i8*", "null")
           | Operand.Offset _ => loadOperand ()
-          | Operand.Real real => ("", (llrs o RealX.size) real, RealX.toString real)
+          | Operand.Real real => ("", (llrs o RealX.size) real, RealX.toString (real, {suffix = false}))
           | Operand.Register  _ => loadOperand ()
           | Operand.SequenceOffset _ => loadOperand ()
           | Operand.StackOffset _ => loadOperand ()

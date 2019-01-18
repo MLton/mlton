@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014,2016-2017 Matthew Fluet.
+(* Copyright (C) 2009,2014,2016-2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -258,7 +258,7 @@ structure Operand =
                   seq [str (concat ["O", Type.name ty, " "]),
                        tuple [layout base, Bytes.layout offset],
                        constrain ty]
-             | Real r => RealX.layout r
+             | Real r => RealX.layout (r, {suffix = true})
              | Register r => Register.layout r
              | SequenceOffset {base, index, offset, scale, ty} =>
                   seq [str (concat ["X", Type.name ty, " "]),
@@ -267,7 +267,7 @@ structure Operand =
                        constrain ty]
              | StackOffset so => StackOffset.layout so
              | StackTop => str "<StackTop>"
-             | Word w => WordX.layout w
+             | Word w => WordX.layout (w, {suffix = true})
          end
 
     val toString = Layout.toString o layout
@@ -977,7 +977,7 @@ structure Program =
             val _ =
                globals ("real", reals,
                         fn (t, r) => Type.equals (t, Type.real (RealX.size r)),
-                        RealX.layout)
+                        fn r => RealX.layout (r, {suffix = true}))
             val _ =
                globals ("vector", vectors,
                         fn (t, v) =>

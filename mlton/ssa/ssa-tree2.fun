@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014,2017-2018 Matthew Fluet.
+(* Copyright (C) 2009,2014,2017-2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1073,7 +1073,7 @@ structure Transfer =
                val cases =
                   case cases of
                      Con l => doit (l, Con.layout)
-                   | Word (_, l) => doit (l, WordX.layout)
+                   | Word (_, l) => doit (l, fn w => WordX.layout (w, {suffix = true}))
                val cases =
                   case default of
                      NONE => cases
@@ -1496,7 +1496,7 @@ structure Function =
                                         Cases.Con v =>
                                            doit (v, Con.toString)
                                       | Cases.Word (_, v) =>
-                                           doit (v, WordX.toString)
+                                           doit (v, fn w => WordX.toString (w, {suffix = true}))
                                   val _ = 
                                      case default of
                                         NONE => ()

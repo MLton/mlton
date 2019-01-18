@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2013-2014,2017 Matthew Fluet.
+(* Copyright (C) 2009,2013-2014,2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -428,7 +428,7 @@ let
       in
          val (allReals, globalReal) =
             make (RealX.equals,
-                  fn r => (RealX.toString r,
+                  fn r => (RealX.toString (r, {suffix = true}),
                            Type.real (RealX.size r),
                            r))
          val (allVectors, globalVector) =

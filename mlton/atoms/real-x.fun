@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2011-2012,2018 Matthew Fluet.
+(* Copyright (C) 2009,2011-2012,2018-2019 Matthew Fluet.
  * Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -85,14 +85,21 @@ fun equals (r, r') =
          end
     | _ => false
 
-fun toString r =
-   case r of
-      Real32 r => Real32.format (r, Real32.Format.exact)
-    | Real64 r => Real64.format (r, Real64.Format.exact)
+fun toString (r, {suffix}) =
+   let
+      val doit =
+         if suffix
+            then fn (r, s) => r ^ s
+            else fn (r, _) => r
+   in
+      case r of
+         Real32 r => doit (Real32.format (r, Real32.Format.exact), ":r32")
+       | Real64 r => doit (Real64.format (r, Real64.Format.exact), ":r64")
+   end
 
 val layout = Layout.str o toString
 
-val hash = String.hash o toString
+fun hash r = String.hash (toString (r, {suffix = true}))
 
 (* Disable constant folding when it might change the results. *)
 fun disableCF () =

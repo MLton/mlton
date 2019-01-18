@@ -790,7 +790,7 @@ structure Transfer =
                val cases =
                   case cases of
                      Con l => doit (l, Con.layout)
-                   | Word (_, l) => doit (l, WordX.layout)
+                   | Word (_, l) => doit (l, fn w => WordX.layout (w, {suffix = true}))
                val cases =
                   case default of
                      NONE => cases
@@ -1258,7 +1258,7 @@ structure Function =
                                         Cases.Con v =>
                                            doit (v, Con.toString)
                                       | Cases.Word (_, v) =>
-                                           doit (v, WordX.toString)
+                                           doit (v, fn w => WordX.toString (w, {suffix = true}))
                                   val _ = 
                                      case default of
                                         NONE => ()

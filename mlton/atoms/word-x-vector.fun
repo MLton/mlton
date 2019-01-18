@@ -1,4 +1,4 @@
-(* Copyright (C) 2014,2017 Matthew Fluet.
+(* Copyright (C) 2014,2017,2019 Matthew Fluet.
  * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -28,9 +28,11 @@ fun layout (T {elements, elementSize}) =
          [Layout.str "#[",
           Layout.fill (Layout.separateRight
                        (Vector.toListMap
-                        (elements, WordX.layout),
+                        (elements, fn w =>
+                         WordX.layout (w, {suffix = true})),
                         ",")),
-          Layout.str "]"]
+          Layout.str "]",
+          Layout.str (":w" ^ WordSize.toString elementSize ^ "v")]
       fun string cs =
          Layout.seq
          [Layout.str "\"",

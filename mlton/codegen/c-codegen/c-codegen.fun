@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014-2017 Matthew Fluet.
+(* Copyright (C) 2009,2014-2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -90,7 +90,7 @@ structure RealX =
              * SML uses "~" while C uses "-".
              *)
             val s =
-               String.translate (toString r,
+               String.translate (toString (r, {suffix = false}),
                                  fn #"~" => "-" | c => String.fromChar c)
             (* Also, inf is spelled INFINITY and nan is NAN in C. *)
             val s =
@@ -113,7 +113,7 @@ structure WordX =
       fun toC (w: t): string =
          let
             fun doit s =
-               concat ["(Word", s, ")(", toString w, "ull)"]
+               concat ["(Word", s, ")(", toString (w, {suffix = false}), "ull)"]
          in
             case WordSize.prim (size w) of
                W8 => doit "8"

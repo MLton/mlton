@@ -1,4 +1,4 @@
-(* Copyright (C) 2017 Matthew Fluet.
+(* Copyright (C) 2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -90,7 +90,7 @@ structure Cases =
          in
             case cs of
                Con v => doit (v, Pat.layout)
-             | Word (_, v) => doit (v, WordX.layout)
+             | Word (_, v) => doit (v, fn w => WordX.layout (w, {suffix = true}))
          end
 
       fun fold (c: 'a t, b: 'b, f: 'a * 'b -> 'b): 'b =

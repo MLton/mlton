@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014 Matthew Fluet.
+(* Copyright (C) 2009,2014,2019 Matthew Fluet.
  * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -46,7 +46,16 @@ fun toIntInfX w =
 
 val toInt = IntInf.toInt o toIntInf
 
-fun toString w = concat ["0x", IntInf.format (toIntInf w, StringCvt.HEX)]
+fun toString (w, {suffix}) =
+   let
+      val doit =
+         if suffix
+            then fn (w, s) => w ^ s ()
+            else fn (w, _) => w
+   in
+      doit ("0x" ^ IntInf.format (toIntInf w, StringCvt.HEX),
+            fn () => ":w" ^ WordSize.toString (size w))
+   end
 
 val layout = Layout.str o toString
 
@@ -196,9 +205,5 @@ in
    val gt = make (IntInf.>, "gt")
    val ge = make (IntInf.>=, "ge")
 end
-
-fun layoutSg {signed} = Layout.record [("signed", Bool.layout signed)]
-
-val lt = Trace.trace3 ("WordX.lt", layout, layout, layoutSg, Bool.layout) lt
 
 end
