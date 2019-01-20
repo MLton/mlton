@@ -1,4 +1,5 @@
-(* Copyright (C) 2017 James Reilly.
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 2017 James Reilly.
  *
  * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
@@ -134,32 +135,8 @@ struct
       token "Datatypes:" *> Vector.fromList <$> P.many (datatyp resolveCon resolveTycon)
 
 
-   val digits = P.many (P.nextSat (fn c => Char.isDigit c orelse c = #"~"))
-   val parseIntInf = ((IntInf.fromString o String.implode) <$?> digits) <|> P.failCut "integer"
-   val parseString = ((String.fromString o String.implode o List.concat) <$?>
-         (P.char #"\"" *> (P.manyFailing(stringToken, P.char #"\"")) <* P.char #"\""))
-   fun makeReal s = (case (RealX.make s) of NONE => NONE | x => x) handle Fail _ => NONE
-   fun parseReal sz = (makeReal <$?> (fn p => p) <$$> (String.implode <$>
-         List.concat <$> P.each
-         [P.many (P.nextSat (fn c => Char.isDigit c orelse c = #"~")),
-          P.char #"." *> P.pure [#"."] <|> P.pure [],
-          P.many (P.nextSat (fn c => Char.isDigit c orelse c = #"E" orelse c = #"~"))],
-         P.pure sz))
-   val parseReal = fn sz =>
-      P.any
-      [P.str "inf" *> P.pure (RealX.posInf sz),
-       P.str "~inf" *> P.pure (RealX.negInf sz),
-       parseReal sz]
    val parseHex = P.fromReader (IntInf.scan(StringCvt.HEX, P.toReader P.next))
    val parseBool = true <$ token "true" <|> false <$ token "false"
-
-   fun makeWord typ int =
-      if Tycon.isWordX typ
-         then P.pure (WordX.fromIntInf(int, (Tycon.deWordX typ)))
-         else P.fail "Invalid word"
-   val parseWord8Vector = WordXVector.fromVector <$$>
-        (P.pure {elementSize=WordSize.word8},
-         P.char #"#" *> P.vector (parseHex >>= makeWord (Tycon.word WordSize.word8)))
 
 
    (* Prim EXP *)
@@ -265,21 +242,8 @@ struct
                   (resolveCon <$> ident <* P.spaces,
                    v)
          val conAppExp = token "new" *> P.cut (conApp ((P.tuple varExp) <|> P.pure (Vector.new0 ())))
-         fun constExp typ =
-            case Type.dest typ of
-                 Type.Word ws => Const.Word <$> (P.str "0x" *> parseHex >>=
-                 makeWord (Tycon.word ws)) <|> P.failCut "word"
-               | Type.Real rs => Const.Real <$> parseReal rs <|> P.failCut "real"
-               | Type.IntInf => Const.IntInf <$> parseIntInf <|> P.failCut "integer"
-               | Type.CPointer => Const.null <$ token "NULL" <|> P.failCut "null"
-               | Type.Vector _  => 
-                  (* assume it's a word8 vector *)
-                  P.any
-                  [Const.string <$> parseString,
-                   Const.wordVector <$> parseWord8Vector,
-                   P.failCut "string constant"]
-               | _ => P.fail "constant"
-         
+         val constExp = Const.parse
+
          fun makeSelect(offset, var) = {offset=offset, tuple=var}
          val selectExp = symbol "#" *> P.cut(makeSelect <$$>
             (P.uint <* P.spaces,
@@ -288,9 +252,9 @@ struct
                            ProfileExp.Leave <$ token "Leave") <*>
                            P.cut ((SourceInfo.fromC o String.implode) <$>
                               P.manyCharsFailing(P.char #"\n") <* P.char #"\n" <* P.spaces)
-         fun exp typ = P.any
+         val exp = P.any
             [Exp.ConApp <$> conAppExp,
-             Exp.Const <$> constExp typ,
+             Exp.Const <$> constExp,
              Exp.PrimApp <$> (primAppExp resolveTycon resolveVar),
              Exp.Profile <$> profileExp,
              Exp.Select <$> selectExp,
@@ -300,7 +264,7 @@ struct
             makeStatement
             <$>
             (typedvar >>= (fn (var, ty) =>
-             (symbol "=" *> exp ty <* P.spaces) >>= (fn exp => 
+             (symbol "=" *> exp <* P.spaces) >>= (fn exp =>
                P.pure (var, ty, exp))))
       in
          statement'
