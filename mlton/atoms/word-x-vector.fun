@@ -58,6 +58,27 @@ fun layout (T {elements, elementSize}) =
 
 val toString = Layout.toString o layout
 
+val parse =
+   let
+      open Parse
+      infix  1 <|> >>=
+      infix  3 *>
+   in
+      (spaces *> char Char.dquote *>
+       many (fromScan Char.scan) >>= (fn cs =>
+       char Char.dquote *>
+       pure (T {elements = Vector.fromListMap (cs, WordX.fromChar),
+                elementSize = WordSize.byte})))
+      <|>
+      (spaces *> str "#[" *>
+       sepBy (WordX.parse, spaces *> str ",") >>= (fn ws =>
+       spaces *> str "]" *>
+       str ":w" *> WordSize.parse >>= (fn s =>
+       str "v" *>
+       pure (T {elements = Vector.fromList ws,
+                elementSize = s}))))
+   end
+
 val hash = String.hash o toString
 
 fun equals (v, v') =

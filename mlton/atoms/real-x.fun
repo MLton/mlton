@@ -99,6 +99,18 @@ fun toString (r, {suffix}) =
 
 val layout = Layout.str o toString
 
+val parse =
+   let
+      open Parse
+      infix  1 <|>
+      infix  3 <*
+      infixr 4 <$>
+   in
+      (Real64 <$> (fromScan Real64.scan <* str ":r64"))
+      <|>
+      (Real32 <$> (fromScan Real32.scan <* str ":r32"))
+   end
+
 fun hash r = String.hash (toString (r, {suffix = true}))
 
 (* Disable constant folding when it might change the results. *)

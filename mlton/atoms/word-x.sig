@@ -47,6 +47,7 @@ signature WORD_X =
       val notb: t -> t
       val one: WordSize.t -> t
       val orb: t * t -> t
+      val parse: t Parse.t
       val quot: t * t * {signed: bool} -> t
       val rem: t * t * {signed: bool} -> t
       val resize: t * WordSize.t -> t

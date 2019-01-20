@@ -59,6 +59,22 @@ fun toString (w, {suffix}) =
 
 val layout = Layout.str o toString
 
+val parse =
+   let
+      open Parse
+      infix  1 <|> >>=
+      infix  3 <*> <* *>
+      infixr 4 <$> <$$> <$$$> <$$$$> <$ <$?>
+   in
+      spaces *>
+      str "0x" *>
+      (peek (nextSat Char.isHexDigit) *>
+       (fromScan (fn getc => IntInf.scan (StringCvt.HEX, getc)))) >>= (fn i =>
+      str ":w" *>
+      WordSize.parse >>= (fn s =>
+      pure (make (i, s))))
+   end
+
 fun zero s = make (0, s)
 
 val hash = IntInf.hash o toIntInf

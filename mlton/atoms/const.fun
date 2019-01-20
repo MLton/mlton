@@ -122,6 +122,20 @@ fun layout c =
 
 val toString = Layout.toString o layout
 
+val parse =
+   let
+      open Parse
+      infix  3 <* *>
+      infixr 4 <$> <$
+   in
+      any
+      [IntInf <$> (fromScan (fn getc => IntInf.scan (StringCvt.DEC, getc)) <* str ":ii"),
+       Null <$ (spaces *> str "NULL"),
+       Real <$> RealX.parse,
+       Word <$> WordX.parse,
+       WordVector <$> WordXVector.parse]
+   end
+
 fun hash (c: t): word =
    case c of
       IntInf i => IntInf.hash i

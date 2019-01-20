@@ -54,6 +54,7 @@ signature REAL_X =
       val mulsub: t * t * t -> t option
       val neg: t -> t option
       val negInf: RealSize.t -> t
+      val parse: t Parse.t
       val posInf: RealSize.t -> t
       val qequal: t * t -> bool option
       val sin: t -> t option
