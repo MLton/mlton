@@ -1,4 +1,5 @@
-(* Copyright (C) 2017 Jason Carr.
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 2017 Jason Carr.
  *
  * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
@@ -120,27 +121,8 @@ struct
           (NONE <$ P.str "None" <* P.spaces))
 
 
-   val digits = P.many (P.nextSat (fn c => Char.isDigit c orelse c = #"~"))
-   val parseIntInf = ((IntInf.fromString o String.implode) <$?> digits) <|> P.failCut "integer"
-   val parseString = ((String.fromString o String.implode o List.concat) <$?>
-         (P.char #"\"" *> (P.manyFailing(stringToken, P.char #"\"")) <* P.char #"\""))
-   fun makeReal s = (case (RealX.make s) of NONE => NONE | x => x) handle Fail _ => NONE
-   fun parseReal sz = (makeReal <$?> (fn p => p) <$$> (String.implode <$>
-         List.concat <$> P.each
-         [P.many (P.nextSat (fn c => Char.isDigit c orelse c = #"~")),
-          P.char #"." *> P.pure [#"."] <|> P.pure [],
-          P.many (P.nextSat (fn c => Char.isDigit c orelse c = #"E" orelse c = #"~"))],
-         P.pure sz))
    val parseHex = P.fromReader (IntInf.scan(StringCvt.HEX, P.toReader P.next))
    val parseBool = true <$ token "true" <|> false <$ token "false"
-
-   fun makeWord typ int =
-      if Tycon.isWordX typ
-         then P.pure (WordX.fromIntInf(int, (Tycon.deWordX typ)))
-         else P.fail "Invalid word"
-   val parseWord8Vector = WordXVector.fromVector <$$>
-        (P.pure {elementSize=WordSize.word8},
-         P.char #"#" *> P.vector (parseHex >>= makeWord (Tycon.word WordSize.word8)))
 
    fun exp resolveCon resolveTycon resolveVar =
       let
@@ -164,22 +146,7 @@ struct
              P.pure (Vector.new0 ()),
              P.optional v)
          val conAppExp = token "new" *> P.cut (conApp varExp)
-         fun constExp typ =
-            if Tycon.isWordX typ then
-               Const.Word <$> (P.str "0x" *> parseHex >>= makeWord typ) <|> P.failCut "word"
-            else if Tycon.isRealX typ then
-               Const.Real <$> parseReal (Tycon.deRealX typ) <|> P.failCut "real"
-            else if Tycon.isIntX typ then
-               Const.IntInf <$> parseIntInf <|> P.failCut "integer"
-            else if Tycon.equals(typ, Tycon.vector) then
-               (* assume it's a word8 vector *)
-               P.any
-               [Const.string <$> parseString,
-                Const.wordVector <$> parseWord8Vector,
-                P.failCut "string constant"]
-
-            else
-               P.fail "constant"
+         val constExp = Const.parse
          fun makeRaise(NONE, exn) = {exn=exn, extend=false}
            | makeRaise(SOME _, exn) = {exn=exn, extend=true}
          val raiseExp = token "raise" *> P.cut (makeRaise <$$> (P.optional (token "extend"), varExp <* P.spaces))
@@ -294,14 +261,14 @@ struct
              token "val" *>
              P.cut (makeValDec <$>
                     (typedvar >>= (fn (var, ty) =>
-                     (symbol "=" *> primexp ty <* P.spaces) >>= (fn primexp =>
+                     (symbol "=" *> primexp () <* P.spaces) >>= (fn primexp =>
                       P.pure (var, ty, primexp)))))]
-         and primexp typ = P.any
+         and primexp () = P.any
             [PrimExp.Case <$> casesExp (),
              PrimExp.ConApp <$> conAppExp,
              PrimExp.Lambda <$> lambdaExp (),
              (* const must come before select due to vector constants *)
-             PrimExp.Const <$> constExp (Type.tycon typ),
+             PrimExp.Const <$> constExp,
              PrimExp.Handle <$> handleExp (),
              PrimExp.PrimApp <$> primAppExp,
              PrimExp.Profile <$> profileExp,
