@@ -22,7 +22,7 @@
  * Also, we use a Promise.t to suspend part of the dominance frontier computation.
  *)
 
-functor RestoreR (S: RSSA_TRANSFORM_STRUCTS): RESTORE_R =
+functor RestoreR (S: RESTORE_R_STRUCTS): RESTORE_R =
 struct
 
 structure Control =
@@ -32,7 +32,6 @@ structure Control =
    end
 
 open S
-open Rssa
 open Transfer
 
 structure LabelInfo =

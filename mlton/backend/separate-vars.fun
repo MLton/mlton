@@ -23,45 +23,68 @@ struct
 
 open S
 open Rssa
+structure Live = Live (Rssa)
+structure Restore = RestoreR (Rssa)
 
-fun transformFunc f =
+fun processLoop ({labelLive, remLabelLive}, setLabelBlock) tree =
    let
-      val {args, blocks, name, ...} = Function.dest f
-      val forest = Function.loopForest (f,
-         fn (_, Block.T {kind, ...}) => not (Kind.frameStyle kind = Kind.OffsetsAndSize))
-      val {get = loopInfo: Label.t -> {headers: R.Block.t vector} option,
-           set = setLoopInfo,
-           rem = removeLoopInfo} =
-         Property.getSetOnce (Label.plist, Property.initRaise ("loopInfo", Label.layout))
-      val {loops, notInLoop} = DirectedGraph.LoopForest.dest
-         (Function.loopForest (f, fn (R.Block.T {kind, ...}, _) =>
-            not (R.Kind.frameStyle kind = R.Kind.OffsetsAndSize)))
-      val _ = Vector.foreach (notInLoop, fn b => setLoopInfo (R.Block.label b, NONE))
-      val _ = Vector.foreach (loops,
-         fn t as {headers, ...} =>
-            let
-               fun setHeaders b =
-                  setLoopInfo (R.Block.label b, SOME {headers=headers})
-               fun goLoop {headers, child} =
-                  case DirectedGraph.LoopForest.dest child of
-                     {loops, notInLoop} =>
-                        let
-                           val _ = Vector.foreach (headers, setHeaders)
-                           val _ = Vector.foreach (notInLoop, setHeaders)
-                        in
-                           Vector.foreach (loops, goLoop)
-                        end
-            in
-               goLoop t
-            end)
+      (* in each processLoop call we need to loop twice
+       * first we find register-blocking points, and record live vars
+       * then for each var live over a blocking point, check if active
+       * in loop. If it's active we rewrite the appropriate blocks with a new assignment *)
+      val {get=varInfo, destroy=destroyVarInfo} =
+         Property.destGet (Label.plist, Property.initFun
+            (fn _ => {loops: Buffer.new {dummy=w~1}, global=ref false}))
+
+      val dummyBlock = Vector.first (#headers tree)
+      val breakList: Buffer.t = Buffer.new {dummy=dummyBlock}
+
+      fun goLoop {headers, child} =
+         case DirectedGraph.LoopForest.dest child of
+              {loops, notInLoop} =>
+              let
+                 val _ = Vector.foreach (headers, setLoop)
+                 val _ = Vector.foreach (notInLoop, setLoop)
+              in
+                 Vector.foreach (loops, goLoop)
+              end,
+      val _ = goLoop tree
+
+      val _ = destroyVarInfo ()
    in
-      f
+      ()
    end
+
+fun transformFunc func =
+   let
+      val {args, blocks, name, raises, resturns, start} = Function.dest func
+      val liveness = Live.live (func, {shouldConsider = fn _ => true})
+      val {loops, ...} = DirectedGraph.LoopForest.dest
+         (Function.loopForest (func, fn (R.Block.T {kind, ...}, _) => true))
+
+      val remapTable = HashTable.new {hash=Label.hash, equals=Label.equals}
+      fun remap (label, newBlock) = (ignore o HashTable.insertIfNew)
+         (remapTable, fn () => newBlock, fn _ => ())
+
+      val _ = Vector.foreach (loops, processLoop (liveness, remap)
+
+      val newBlocks = Vector.map (blocks, fn block =>
+         case HashTable.peek (remapTable, #label block) of
+              SOME newBlock => newBlock
+            | NONE => block)
+   in
+      Function.new
+         {args=args, blocks=newBlocks,
+          name=name, raises=raises,
+          returns=returns, start=start}
+   end
+
 
 fun transform p =
    let
       val Program.T {functions, handlesSignals, main, objectTypes} = p
-      val newFunctions = Vector.map(functions, transformFunc)
+      val restore = RestoreR.restoreFunction ()
+      val newFunctions = Vector.map(functions, restore o transformFunc)
    in
       Program.T {functions=newFunctions, handlesSignals=handlesSignals,
                  main=main, objectTypes=objectTypes}

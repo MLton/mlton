@@ -56,10 +56,10 @@ structure ImplementProfiling = ImplementProfiling (structure Machine = Machine
                                                    structure Rssa = Rssa)
 structure LimitCheck = LimitCheck (structure Rssa = Rssa)
 structure ParallelMove = ParallelMove ()
+structure SeparateVars = SeparateVars (structure Rssa = Rssa)
 structure SignalCheck = SignalCheck(structure Rssa = Rssa)
 structure SsaToRssa = SsaToRssa (structure Rssa = Rssa
                                  structure Ssa = Ssa)
-structure RestoreR = RestoreR (structure Rssa = Rssa)
 
 structure VarOperand =
    struct
