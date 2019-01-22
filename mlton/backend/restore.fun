@@ -1,4 +1,5 @@
-(* Copyright (C) 2009,2017 Matthew Fluet.
+(* Copyright (C) 2019 Jason Carr.
+ * Copyright (C) 2009,2017 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -7,7 +8,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-(* Restore RSSA
+(* Restore RSSA (based on ssa/restore2.fun)
  *
  * Based primarily on Section 19.1 of Appel's "Modern Compiler Implementation in ML",
  * (but see the caveats in the comments below).
@@ -21,7 +22,7 @@
  * Also, we use a Promise.t to suspend part of the dominance frontier computation.
  *)
 
-functor RestoreR (S: RSSA_TRANSFORM_STRUCTS): RSSA_TRANSFORM =
+functor RestoreR (S: RSSA_TRANSFORM_STRUCTS): RESTORE_R =
 struct
 
 structure Control =
@@ -674,7 +675,7 @@ val restoreFunction
       fn f => traceRestoreFunction r f
    end
 
-fun transform (Program.T {functions, handlesSignals, main, objectTypes})
+fun restore (Program.T {functions, handlesSignals, main, objectTypes})
   = let
       val r = restoreFunction ()
     in

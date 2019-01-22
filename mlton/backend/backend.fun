@@ -200,6 +200,7 @@ fun toMachine (program: Ssa.Program.t, codegen) =
                                 doit = Program.shrink,
                                 execute = true}, p)
             val () = Program.checkHandlers p
+
             val (p, makeProfileInfo) =
                pass' ({name = "implementProfiling",
                        doit = ImplementProfiling.doit},

@@ -48,6 +48,7 @@ local
    chunkify.fun
    parallel-move.sig
    parallel-move.fun
+   restore.sig
    restore.fun
    backend.sig
    backend.fun
