@@ -1,4 +1,4 @@
-(* Copyright (C) 2014 Matthew Fluet.
+(* Copyright (C) 2014,2019 Matthew Fluet.
  * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -81,6 +81,17 @@ val toString =
     | Word64 => "Word64"
 
 val layout = Layout.str o toString
+
+val parse =
+   let
+      open Parse
+      infix  3 *>
+      fun kw s =
+         spaces *> str s *>
+         failing (nextSat (fn c => Char.isAlphaNum c orelse c = #"_"))
+   in
+      any (List.map (all, fn t => kw (toString t) *> pure t))
+   end
 
 fun size (t: t): Bytes.t =
    case t of
