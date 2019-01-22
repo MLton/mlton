@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2015 Matthew Fluet.
+(* Copyright (C) 2009,2015,2019 Matthew Fluet.
  * Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -66,6 +66,7 @@ signature C_FUNCTION =
 
             val layout: t -> Layout.t
             val toString: t -> string
+            val parse: t Parse.t
          end
 
       structure Target:
@@ -101,6 +102,7 @@ signature C_FUNCTION =
       val mayGC: 'a t -> bool
       val maySwitchThreads: 'a t -> bool
       val modifiesFrontier: 'a t -> bool
+      val parse: 'a Parse.t -> 'a t Parse.t
       val prototype: 'a t -> CType.t vector * CType.t option
       val readsStackTop: 'a t -> bool
       val return: 'a t -> 'a
