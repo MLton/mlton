@@ -67,17 +67,11 @@ struct
               )])) <|> P.failCut "identifier"
 
    fun doneRecord' () = P.char #"{" <* P.many(P.delay doneRecord' <|> P.failing(P.char #"}") *> P.next) <* P.char #"}"
-   val doneRecord = doneRecord' ()
-   fun fromRecord name p = P.peek
-      (P.char #"{" *> P.many (() <$ P.delay doneRecord' <|> () <$ P.failing (token name <* symbol "=") <* P.next)
-       *> token name *> symbol "=" *> p)
 
    fun casesOf(con, left, right) = Vector.fromList <$> P.sepBy1
       (left <* P.spaces <* token "=>" >>= (fn l =>
          right >>= (fn r => con (l, r))),
        P.spaces)
-
-   fun optionOf p = SOME <$> (token "Some" *> P.cut(p)) <|> NONE <$ token "None"
 
 
    (* too many arguments for the maps, curried to use <*> instead *)
@@ -85,15 +79,11 @@ struct
 
    local
       fun typ' resolveTycon () = (makeTyp resolveTycon) <$$>
-         (((P.tuple (P.delay (typ' resolveTycon))) <|> P.pure (Vector.new0 ())),
+         (((P.spaces *> P.tuple (P.delay (typ' resolveTycon))) <|> P.pure (Vector.new0 ())),
          (P.spaces *> ident <* P.spaces))
    in
       fun typ resolveTycon = typ' resolveTycon ()
    end
-
-   val ctype = (P.any o List.map)
-               (CType.all, fn ct =>
-                ct <$ token (CType.toString ct))
 
    fun makeCon resolveCon (name, arg) = {con = resolveCon name, arg = arg}
 
@@ -120,8 +110,6 @@ struct
           (P.str "Some" *> P.spaces *> SOME <$> resolveVar <$> ident <* P.spaces) <|>
           (NONE <$ P.str "None" <* P.spaces))
 
-
-   val parseBool = true <$ token "true" <|> false <$ token "false"
 
    fun exp resolveCon resolveTycon resolveVar =
       let
@@ -151,69 +139,9 @@ struct
          val raiseExp = token "raise" *> P.cut (makeRaise <$$> (P.optional (token "extend"), varExp <* P.spaces))
          fun makeHandle(try, catch, handler) = {catch=catch, handler=handler, try=try}
          fun makeLambda(mayInline, (var, typ), exp) = Lambda.make {arg=var, argType=typ, body=exp, mayInline=mayInline}
-
-         val parseConvention = CFunction.Convention.Cdecl <$ token "cdecl" <|>
-                                    CFunction.Convention.Stdcall <$ token "stdcall"
-         fun makeRuntimeTarget bytes ens mayGC maySwitch modifies readsSt writesSt =
-            CFunction.Kind.Runtime ({bytesNeeded=bytes, ensuresBytesFree=ens,
-            mayGC=mayGC, maySwitchThreads=maySwitch, modifiesFrontier=modifies,
-            readsStackTop=readsSt, writesStackTop=writesSt})
-         val parseRuntimeTarget = makeRuntimeTarget
-            <$> fromRecord "bytesNeeded" (optionOf P.uint)
-            <*> fromRecord "ensuresBytesFree" parseBool
-            <*> fromRecord "mayGC" parseBool
-            <*> fromRecord "maySwitchThreads" parseBool
-            <*> fromRecord "modifiesFrontier" parseBool
-            <*> fromRecord "readsStackTop" parseBool
-            <*> fromRecord "writesStackTop" parseBool
-            <* doneRecord
-         val parseKind = CFunction.Kind.Impure <$ token "Impure" <|>
-                         CFunction.Kind.Pure <$ token "Pure" <|>
-                         token "Runtime" *> P.cut parseRuntimeTarget
-
-         val parsePrototype = (fn x => x) <$$>
-            (fromRecord "args" (P.tuple ctype),
-             fromRecord "res" (optionOf ctype)) <* doneRecord
-         val parseSymbolScope = P.any
-            [CFunction.SymbolScope.External <$ token "external",
-             CFunction.SymbolScope.Private <$ token "private",
-             CFunction.SymbolScope.Public <$ token "public"]
-
-
-         val parseTarget = CFunction.Target.Indirect <$ symbol "<*>" <|>
-                           CFunction.Target.Direct <$> ident
-         fun makeFFI args conv kind prototype return symbolScope target =
-            Prim.ffi (CFunction.T
-               {args=args, convention=conv, kind=kind,
-                prototype=prototype, return=return, symbolScope=symbolScope,
-                target = target})
-         val resolveFFI = token "FFI" *> P.cut(
-            makeFFI
-            <$> fromRecord "args" (P.tuple (typ resolveTycon))
-            <*> fromRecord "convention" parseConvention
-            <*> fromRecord "kind" parseKind
-            <*> fromRecord "prototype" parsePrototype
-            <*> fromRecord "return" (typ resolveTycon)
-            <*> fromRecord "symbolScope" parseSymbolScope
-            <*> fromRecord "target" parseTarget
-            <* doneRecord)
-         fun makeFFISym name cty symbolScope = Prim.ffiSymbol {name=name, cty=cty, symbolScope=symbolScope}
-         val resolveFFISym = token "FFI_Symbol" *> P.cut(
-            makeFFISym
-            <$> fromRecord "name" ident
-            <*> fromRecord "cty" (optionOf ctype)
-            <*> fromRecord "symbolScope" parseSymbolScope
-            <* doneRecord)
-
-         fun resolvePrim p = case Prim.fromString p
-            of SOME p' => P.pure p'
-             | NONE => P.fail ("valid primitive, got " ^ p)
          fun makePrimApp(prim, targs, args) = {args=args, prim=prim, targs=targs}
          val primAppExp = token "prim" *> P.cut (makePrimApp <$$$>
-            (P.any [
-               resolveFFI,
-               resolveFFISym,
-               (ident <* P.spaces >>= resolvePrim)],
+            (Prim.parseFull (typ resolveTycon),
              (P.vector (typ resolveTycon) <|> P.pure (Vector.new0 ())) <* P.spaces,
              P.tuple varExp <* P.spaces))
          fun makeSelect(offset, var) = {offset=offset, tuple=var}
