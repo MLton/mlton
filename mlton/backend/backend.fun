@@ -201,6 +201,11 @@ fun toMachine (program: Ssa.Program.t, codegen) =
                                 execute = true}, p)
             val () = Program.checkHandlers p
 
+            (* this should be after shrinking so that
+             * since it creates some apparently meaningless moves *)
+            val p = maybePass ({name = "separateVars",
+                                doit = SeparateVars.transform,
+                                execute = true}, p)
             val (p, makeProfileInfo) =
                pass' ({name = "implementProfiling",
                        doit = ImplementProfiling.doit},

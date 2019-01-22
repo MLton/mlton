@@ -32,44 +32,37 @@ fun processLoop ({labelLive, remLabelLive}, setLabelBlock) tree =
        * first we find register-blocking points, and record live vars
        * then for each var live over a blocking point, check if active
        * in loop. If it's active we rewrite the appropriate blocks with a new assignment *)
-      val {get=varInfo, destroy=destroyVarInfo} =
-         Property.destGet (Label.plist, Property.initFun
-            (fn _ => {loops: Buffer.new {dummy=w~1}, global=ref false}))
 
       val dummyBlock = Vector.first (#headers tree)
-      val breakList: Buffer.t = Buffer.new {dummy=dummyBlock}
+      val blocking = Buffer.new {dummy=dummyBlock}
 
       fun goLoop {headers, child} =
          case DirectedGraph.LoopForest.dest child of
               {loops, notInLoop} =>
               let
-                 val _ = Vector.foreach (headers, setLoop)
-                 val _ = Vector.foreach (notInLoop, setLoop)
               in
                  Vector.foreach (loops, goLoop)
-              end,
+              end
       val _ = goLoop tree
-
-      val _ = destroyVarInfo ()
    in
       ()
    end
 
 fun transformFunc func =
    let
-      val {args, blocks, name, raises, resturns, start} = Function.dest func
+      val {args, blocks, name, raises, returns, start} = Function.dest func
       val liveness = Live.live (func, {shouldConsider = fn _ => true})
       val {loops, ...} = DirectedGraph.LoopForest.dest
-         (Function.loopForest (func, fn (R.Block.T {kind, ...}, _) => true))
+         (Function.loopForest (func, fn (Block.T {kind, ...}, _) => true))
 
       val remapTable = HashTable.new {hash=Label.hash, equals=Label.equals}
       fun remap (label, newBlock) = (ignore o HashTable.insertIfNew)
-         (remapTable, fn () => newBlock, fn _ => ())
+         (remapTable, label, fn () => newBlock, fn _ => ())
 
-      val _ = Vector.foreach (loops, processLoop (liveness, remap)
+      val _ = Vector.foreach (loops, processLoop (liveness, remap))
 
-      val newBlocks = Vector.map (blocks, fn block =>
-         case HashTable.peek (remapTable, #label block) of
+      val newBlocks = Vector.map (blocks, fn block as Block.T {label, ...} =>
+         case HashTable.peek (remapTable, label) of
               SOME newBlock => newBlock
             | NONE => block)
    in
@@ -83,8 +76,8 @@ fun transformFunc func =
 fun transform p =
    let
       val Program.T {functions, handlesSignals, main, objectTypes} = p
-      val restore = RestoreR.restoreFunction ()
-      val newFunctions = Vector.map(functions, restore o transformFunc)
+      val restore = Restore.restoreFunction ()
+      val newFunctions = List.map(functions, restore o transformFunc)
    in
       Program.T {functions=newFunctions, handlesSignals=handlesSignals,
                  main=main, objectTypes=objectTypes}
