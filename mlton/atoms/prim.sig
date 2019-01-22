@@ -1,4 +1,4 @@
-(* Copyright (C) 2014,2017 Matthew Fluet.
+(* Copyright (C) 2014,2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -293,6 +293,8 @@ signature PRIM =
        *)
       val maySideEffect: 'a t -> bool
       val name: 'a t -> 'a Name.t
+      val parse: unit -> 'a t Parse.t
+      val parseFull: 'a Parse.t -> 'a t Parse.t
       val realCastToWord: RealSize.t * WordSize.t -> 'a t
       val reff: 'a t
       val toString: 'a t -> string
