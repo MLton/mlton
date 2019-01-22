@@ -69,9 +69,9 @@
                         (P.char #"{" *> P.many (() <$ P.delay doneRecord' <|> () <$ P.failing (token name <* symbol "=") <* P.next)
                         *> token name *> symbol "=" *> p)
 
- fun casesOf(con, left, right) = Vector.fromList <$> P.sepBy1
+ fun casesOf (left, right) = Vector.fromList <$> P.sepBy1
                                 (left <* P.spaces <* token "=>" >>= (fn l =>
-                                 right >>= (fn r => con (l, r))),
+                                 right >>= (fn r => P.pure (l, r))),
                                  P.spaces *> P.char #"|" *> P.spaces)
 
  fun optionOf p = SOME <$> (token "Some" *> P.cut(p)) <|> NONE <$ token "None"
@@ -122,8 +122,6 @@
  val ctype = (P.any o List.map)
                 (CType.all, fn ct =>
                  ct <$ token (CType.toString ct))
-
- val parseHex = P.fromReader (IntInf.scan(StringCvt.HEX, P.toReader P.next))
 
  val parseBool = true <$ token "true" <|> false <$ token "false"
 
@@ -370,30 +368,15 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
 
         val vars = P.spaces *> (P.tuple var <|> P.pure (Vector.new0 ())) <* P.spaces
 
-        fun makeConCases var (cons, def) =
+        fun makeConCases var (cases, def) =
            {test = var,
-            cases = Cases.Con cons,
+            cases = Cases.Con cases,
             default = def}
 
-        fun makeWordCases var s (wds, def) =
-            {test=var,
-              cases=Cases.Word (case s of
-                8  => WordSize.word8
-              | 16 => WordSize.word16
-              | 32 => WordSize.word32
-              | 64 => WordSize.word64
-              | _  => raise Fail "makeWordCases" (* can't happen *)
-                 , wds),
-              default=def}
-
-        fun makePat(con, exp) = P.pure (con, exp)
-
-        fun makeCaseWord size (int, exp) = case size of
-               8  => P.pure ((WordX.fromIntInf(int, WordSize.word8)), exp)
-             | 16 => P.pure ((WordX.fromIntInf(int, WordSize.word16)), exp)
-             | 32 => P.pure ((WordX.fromIntInf(int, WordSize.word32)), exp)
-             | 64 => P.pure ((WordX.fromIntInf(int, WordSize.word64)), exp)
-             | _  => P.fail "valid word size for cases (8, 16, 32 or 64)"
+        fun makeWordCases var s (cases, def) =
+            {test = var,
+             cases = Cases.Word (WordSize.fromBits (Bits.fromInt s), cases),
+             default = def}
 
         val defaultCase = P.spaces *> P.optional(P.char #"|" *> P.spaces *> token "_" *> P.spaces *> token
                                    "=>" *> P.spaces *> label')
@@ -402,11 +385,10 @@ fun parsePrimAppExp resolveTycon resolveCon resolveVar =
                                var <* token "of" <* P.spaces >>= (fn test =>
                                case size of
                                          NONE => makeConCases test <$$>
-                                                (casesOf(makePat, con', label'),
+                                                (casesOf(con', label'),
                                                  defaultCase)
                                        | SOME s => makeWordCases test s <$$>
-                                                  (casesOf(makeCaseWord s, P.str "0x" *> parseHex,
-                                                   label'),
+                                                  (casesOf(WordX.parse, label'),
                                                    defaultCase))))
 
         val parseTransferCase = Transfer.Case <$> makeTransferCase
