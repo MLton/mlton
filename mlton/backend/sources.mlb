@@ -38,8 +38,11 @@ local
    implement-profiling.fun
    limit-check.fun
    signal-check.fun
+   restore.sig
+   restore.fun
    live.sig
    live.fun
+   separate-vars.fun
    allocate-registers.sig
    allocate-registers.fun
    equivalence-graph.sig
@@ -48,8 +51,6 @@ local
    chunkify.fun
    parallel-move.sig
    parallel-move.fun
-   restore.sig
-   restore.fun
    backend.sig
    backend.fun
 in
