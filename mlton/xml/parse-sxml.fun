@@ -121,7 +121,6 @@ struct
           (NONE <$ P.str "None" <* P.spaces))
 
 
-   val parseHex = P.fromReader (IntInf.scan(StringCvt.HEX, P.toReader P.next))
    val parseBool = true <$ token "true" <|> false <$ token "false"
 
    fun exp resolveCon resolveTycon resolveVar =
@@ -231,23 +230,10 @@ struct
              default=Option.map(def, fn x => (x, Region.bogus))}
          fun makeWordCases var s (wds, def) =
             {test=var,
-             cases=Cases.Word (case s of
-                 8 => Type.WordSize.word8
-               | 16 => Type.WordSize.word16
-               | 32 => Type.WordSize.word32
-               | 64 => Type.WordSize.word64
-               | _ => raise Fail "makeWordCases" (* can't happen *)
-               , wds),
+             cases=Cases.Word (WordSize.fromBits (Bits.fromInt s), wds),
              default=Option.map(def, fn x => (x, Region.bogus))}
          fun makePat(con, exp) = P.pure (Pat.T con, exp)
-         fun makeCaseWord size (int, exp) = case size of
-             (* this is repetetive, but it's a bit awkward to rework around the fail *)
-            8 => P.pure ((WordX.fromIntInf(int, Type.WordSize.word8)), exp)
-          | 16 => P.pure ((WordX.fromIntInf(int, Type.WordSize.word16)), exp)
-          | 32 => P.pure ((WordX.fromIntInf(int, Type.WordSize.word32)), exp)
-          | 64 => P.pure ((WordX.fromIntInf(int, Type.WordSize.word64)), exp)
-          | _ => P.fail "valid word size for cases (8, 16, 32 or 64)"
-
+         fun makeCaseWord(w, exp) = P.pure (w, exp)
 
          fun exp' () = makeLet <$$>
             (token "let" *>
@@ -296,7 +282,7 @@ struct
                         (casesOf(makePat, conApp typedvar, P.delay exp'),
                          P.spaces *> P.optional(token "_" *> token "=>" *> P.delay exp'))
                     | SOME s => makeWordCases var s <$$>
-                        (casesOf(makeCaseWord s, P.str "0x" *> parseHex, P.delay exp'),
+                        (casesOf(makeCaseWord, WordX.parse, P.delay exp'),
                          P.spaces *> P.optional(token "_" *> token "=>" *> P.delay exp'))
                       )))
       in
