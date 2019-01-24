@@ -504,7 +504,7 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
             open Control
          in
             if !keepCoreML
-               then saveToFile ({suffix = "core-ml"}, No, coreML,
+               then saveToFile ({suffix = "core-ml"}, Control.ML, coreML,
                                 Layouts CoreML.Program.layouts)
             else ()
          end
