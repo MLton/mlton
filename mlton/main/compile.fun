@@ -536,7 +536,7 @@ fun simplifyXml xml =
       open Control
       val _ =
          if !keepXML
-            then saveToFile ({suffix = "xml"}, No, xml,
+            then saveToFile ({suffix = "xml"}, Control.ML, xml,
                Layouts Xml.Program.layouts)
             else ()
    in
@@ -567,7 +567,7 @@ fun simplifySxml sxml =
       open Control
       val _ =
          if !keepSXML
-            then saveToFile ({suffix = "sxml"}, No, sxml,
+            then saveToFile ({suffix = "sxml"}, Control.ML, sxml,
                Layouts Sxml.Program.layouts)
             else ()
    in

@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -445,7 +446,7 @@ val transform =
                           {display = Control.Layouts Program.layouts,
                            name = "duplicate" ^ (Int.toString (n + 1)),
                            stats = Program.layoutStats,
-                           style = Control.No,
+                           style = Control.ML,
                            suffix = "post.xml",
                            thunk = fn () => shrink (transform (p, hofo, small, product))}
                     in
