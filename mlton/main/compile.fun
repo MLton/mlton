@@ -598,7 +598,7 @@ fun simplifySsa ssa =
       open Control
       val _ =
          if !keepSSA
-            then saveToFile ({suffix = "ssa"}, No, ssa,
+            then saveToFile ({suffix = "ssa"}, ML, ssa,
                Layouts Ssa.Program.layouts)
          else ()
    in
