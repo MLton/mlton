@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -29,8 +30,6 @@ local
    type-check2.fun
    parse-ssa.sig
    parse-ssa.fun
-   parse-ssa2.sig
-   parse-ssa2.fun
    prepasses.sig
    prepasses2.sig
    prepasses.fun
@@ -108,7 +107,6 @@ in
 
    functor FlatLattice
    functor ParseSsa
-   functor ParseSsa2
    functor Ssa
    functor Ssa2
    functor SsaToSsa2
