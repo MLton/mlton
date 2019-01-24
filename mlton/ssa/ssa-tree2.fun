@@ -47,7 +47,7 @@ structure Prod =
                             {elt = e2, isMutable = m2}) =>
                         m1 = m2 andalso equals (e1, e2))
 
-      fun layout (p, layout) =
+      fun layout (p, layoutElt) =
          let
             open Layout
          in
@@ -55,8 +55,8 @@ structure Prod =
                  (mayAlign o separateRight)
                  (Vector.toListMap (dest p, fn {elt, isMutable} =>
                                     if isMutable
-                                       then seq [layout elt, str " ref"]
-                                       else layout elt),
+                                       then seq [layoutElt elt, str " ref"]
+                                       else layoutElt elt),
                   ","),
                  str ")"]
          end
@@ -302,15 +302,9 @@ structure Type =
                | Object {args, con} =>
                     if isUnit t
                        then str "unit"
-                    else
-                       let
-                          val args = Prod.layout (args, layout)
-                       in
-                          case con of
-                             Con c => seq [args, str " ", Con.layout c]
-                           | Sequence => seq [args, str " sequence"]
-                           | Tuple => seq [args, str " tuple"]
-                       end
+                    else seq [Prod.layout (args, layout),
+                              str " ",
+                              ObjectCon.layout con]
                | Real s => str (concat ["real", RealSize.toString s])
                | Thread => str "thread"
                | Weak t => seq [str "(", layout t, str ") weak"]
@@ -528,14 +522,22 @@ structure Base =
        | SequenceSub of {index: 'a,
                          sequence: 'a}
 
-      fun layout (b: 'a t, layoutX: 'a -> Layout.t): Layout.t =
+      fun layout (base: 'a t, layoutX: 'a -> Layout.t): Layout.t =
          let
             open Layout
          in
-            case b of
+            case base of
                Object x => layoutX x
              | SequenceSub {index, sequence} =>
-                  seq [str "$", Vector.layout layoutX (Vector.new2 (sequence, index))]
+                  seq [str "$", tuple [layoutX sequence, layoutX index]]
+         end
+
+      fun layoutWithOffset (base: 'a t, offset, layoutX: 'a -> Layout.t): Layout.t =
+         let
+            open Layout
+         in
+            seq [Int.layout offset, str " ",
+                 paren (layout (base, layoutX))]
          end
 
       val equals: 'a t * 'a t * ('a * 'a -> bool) -> bool =
@@ -638,8 +640,7 @@ structure Exp =
              | PrimApp {args, prim} =>
                   seq [str "prim ", Prim.layoutFull (prim, Type.layout), str " ", layoutArgs args]
              | Select {base, offset} =>
-                  seq [str "sel ", Int.layout offset, str " ",
-                       paren (Base.layout (base, layoutVar))]
+                  seq [str "sel ", Base.layoutWithOffset (base, offset, layoutVar)]
              | Var x => layoutVar x
          end
 
@@ -733,10 +734,8 @@ structure Statement =
                   end
              | Profile p => seq [str "prof ", ProfileExp.layout p]
              | Update {base, offset, value} =>
-                  mayAlign [seq [str "upd ",
-                                 Exp.layout' (Exp.Select {base = base,
-                                                          offset = offset},
-                                              layoutVar),
+                  mayAlign [seq [str "upd sel ",
+                                 Base.layoutWithOffset (base, offset, layoutVar),
                                  str " :="],
                             layoutVar value]
          end
@@ -1057,75 +1056,68 @@ structure Transfer =
       val _ = replaceLabel
       fun replaceVar (t, f) = replaceLabelVar (t, fn l => l, f)
 
-      local
-         fun layoutCase ({test, cases, default}, layoutVar) =
-            let
-               open Layout
-               fun doit (l, layout) =
-                  Vector.toListMap
-                  (l, fn (i, l) =>
-                   seq [layout i, str " => ", Label.layout l])
-               datatype z = datatype Cases.t
-               val suffix =
-                  case cases of
-                     Con _ => empty
-                   | Word (size, _) => str (WordSize.toString size)
-               val cases =
-                  case cases of
-                     Con l => doit (l, Con.layout)
-                   | Word (_, l) => doit (l, fn w => WordX.layout (w, {suffix = true}))
-               val cases =
-                  case default of
-                     NONE => cases
-                   | SOME j =>
-                        cases @ [seq [str "_ => ", Label.layout j]]
-            in
-               align [seq [str "case", suffix, str " ", layoutVar test, str " of"],
-                      indent (alignPrefix (cases, "| "), 2)]
-            end
-      in
-         fun layout' (t, layoutVar) =
-            let
-               open Layout
-               fun layoutArgs xs = Vector.layout layoutVar xs
-               fun layoutPrim {prim, args} =
-                  Exp.layout'
-                  (Exp.PrimApp {prim = prim,
-                                args = args},
-                   layoutVar)
-            in
-               case t of
-                  Arith {prim, args, overflow, success, ty} =>
-                     seq [str "arith ", Type.layout ty, str " ", Label.layout success, str " ",
-                          tuple [layoutPrim {prim = prim, args = args}],
-                          str " handle Overflow => ", Label.layout overflow]
-                | Bug => str "bug"
-                | Call {func, args, return} =>
-                     let
-                        val call = seq [Func.layout func, str " ", layoutArgs args]
-                     in
-                        case return of
-                           Return.Dead => seq [str "call dead ", paren call]
-                         | Return.NonTail {cont, handler} =>
-                              seq [str "call ", Label.layout cont, str " ",
-                                   paren call,
-                                   str " handle _ => ",
-                                   case handler of
-                                      Handler.Caller => str "raise"
-                                    | Handler.Dead => str "dead"
-                                    | Handler.Handle l => Label.layout l]
-                         | Return.Tail => seq [str "call return ", paren call]
-                     end
-                | Case arg => layoutCase (arg, layoutVar)
-                | Goto {dst, args} =>
-                     seq [str "goto ", Label.layout dst, str " ", layoutArgs args]
-                | Raise xs => seq [str "raise ", layoutArgs xs]
-                | Return xs => seq [str "return ", layoutArgs xs]
-                | Runtime {prim, args, return} =>
-                     seq [str "runtime ", Label.layout return, str " ",
-                          tuple [layoutPrim {prim = prim, args = args}]]
-            end
-      end
+      fun layout' (t, layoutVar) =
+         let
+            open Layout
+            fun layoutArgs xs = Vector.layout layoutVar xs
+            fun layoutCase {test, cases, default} =
+               let
+                  fun doit (l, layout) =
+                     Vector.toListMap
+                     (l, fn (i, l) =>
+                      seq [layout i, str " => ", Label.layout l])
+                  datatype z = datatype Cases.t
+                  val (suffix, cases) =
+                     case cases of
+                        Con l => (empty, doit (l, Con.layout))
+                      | Word (size, l) => (str (WordSize.toString size),
+                                           doit (l, fn w => (WordX.layout (w, {suffix = true}))))
+                  val cases =
+                     case default of
+                        NONE => cases
+                      | SOME j =>
+                           cases @ [seq [str "_ => ", Label.layout j]]
+               in
+                  align [seq [str "case", suffix, str " ", layoutVar test, str " of"],
+                         indent (alignPrefix (cases, "| "), 2)]
+               end
+            fun layoutPrim {prim, args} =
+               Exp.layout'
+               (Exp.PrimApp {prim = prim,
+                             args = args},
+                layoutVar)
+         in
+            case t of
+               Arith {prim, args, overflow, success, ty} =>
+                  seq [str "arith ", Type.layout ty, str " ", Label.layout success, str " ",
+                       paren (layoutPrim {prim = prim, args = args}),
+                       str " handle Overflow => ", Label.layout overflow]
+             | Bug => str "bug"
+             | Call {func, args, return} =>
+                  let
+                     val call = seq [Func.layout func, str " ", layoutArgs args]
+                  in
+                     case return of
+                        Return.Dead => seq [str "call dead ", paren call]
+                      | Return.NonTail {cont, handler} =>
+                           seq [str "call ", Label.layout cont, str " ",
+                                paren call,
+                                str " handle _ => ",
+                                case handler of
+                                   Handler.Caller => str "raise"
+                                 | Handler.Dead => str "dead"
+                                 | Handler.Handle l => Label.layout l]
+                      | Return.Tail => seq [str "call return ", paren call]
+                  end
+             | Case arg => layoutCase arg
+             | Goto {dst, args} =>
+                  seq [str "goto ", Label.layout dst, str " ", layoutArgs args]
+             | Raise xs => seq [str "raise ", layoutArgs xs]
+             | Return xs => seq [str "return ", layoutArgs xs]
+             | Runtime {prim, args, return} =>
+                  seq [str "runtime ", Label.layout return, str " ",
+                       paren (layoutPrim {prim = prim, args = args})]
+         end
       fun layout t = layout' (t, Var.layout)
 
       fun varsEquals (xs, xs') = Vector.equals (xs, xs', Var.equals)
