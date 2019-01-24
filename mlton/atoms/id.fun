@@ -1,4 +1,4 @@
-(* Copyright (C) 2017 Matthew Fluet.
+(* Copyright (C) 2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -115,6 +115,56 @@ local
 in
    fun fromString s = make (s, SOME s)
    fun newString s = make (s, NONE)
+end
+
+local
+   open Parse
+   infix  1 <|> >>=
+   infix  3 *>
+   infixr 4 <$> <$$> <$$$>
+
+   val cache =
+      HashTable.new {hash = String.hash,
+                     equals = String.equals}
+   fun insert id =
+      (ignore o HashTable.lookupOrInsert)
+      (cache, toString id, fn () => id)
+
+   val alphanum =
+      nextSat (fn c => Char.isAlphaNum c orelse c = #"_" orelse c = #"'")
+   val sym =
+      nextSat (fn c => String.contains ("!%&$#+-/:<=>?@\\!`^|*", c))
+in
+   fun parseAs (alts, fromId) =
+      spaces *>
+      (String.implode <$>
+       ((op ::) <$$> (nextSat Char.isAlpha, many alphanum)
+        <|>
+        (fn (c,cs,suf) => (c::(cs@suf))) <$$$>
+        (sym, many sym,
+         (op ::) <$$> (char #"_", many (nextSat Char.isDigit))
+         <|> pure []))) >>= (fn printName =>
+      let
+         fun make () =
+           let
+              fun loop (i, b) =
+                if Char.isDigit (String.sub (printName, i))
+                   then loop (i - 1, true)
+                else if b andalso String.sub (printName, i) = #"_"
+                        then newString (String.substring (printName, 0, i))
+                        else fromString printName
+           in
+              loop (String.size printName - 1, false)
+           end
+      in
+         pure (case Vector.peek (alts, fn (s, _) => String.equals (printName, s)) of
+                  SOME (_, res) => res
+                | NONE => fromId (HashTable.lookupOrInsert (cache, printName, make)))
+      end)
+   val parse = parseAs (Vector.new0 (), fn id => id)
+   fun parseReset {prims} =
+      (HashTable.removeAll (cache, fn _ => true);
+       Vector.foreach (prims, insert))
 end
 
 val new = newString o originalName
