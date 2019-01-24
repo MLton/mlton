@@ -1,4 +1,4 @@
-(* Copyright (C) 2011,2014-2015,2017 Matthew Fluet.
+(* Copyright (C) 2011,2014-2015,2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -52,7 +52,6 @@ structure ParseSxml = ParseSxml(structure XmlTree = Xml)
 structure Ssa = Ssa (open Atoms)
 structure ParseSsa = ParseSsa(structure SsaTree = Ssa)
 structure Ssa2 = Ssa2 (open Atoms)
-structure ParseSsa2 = ParseSsa2(structure SsaTree2 = Ssa2)
 structure Machine = Machine (open Atoms
                              structure Label = Ssa.Label)
 local
@@ -912,7 +911,7 @@ fun genFromSsa2 (input: File.t): Machine.Program.t =
                       style = Control.ML,
                       suffix = "ssa2",
                       thunk = (fn () => case
-                                 Parse.parseFile(ParseSsa2.program, input)
+                                 Parse.parseFile(Ssa2.Program.parse (), input)
                                     of Result.Yes x => x
                                      | Result.No msg => (Control.error
                                        (Region.bogus, Layout.str "Ssa2 Parse failed", Layout.str msg);
