@@ -146,7 +146,7 @@ fun toMachine (program: Ssa.Program.t, codegen) =
          Control.passTypeCheck {display = Control.Layouts Rssa.Program.layouts,
                                 name = name,
                                 stats = R.Program.layoutStats,
-                                style = Control.No,
+                                style = Control.ML,
                                 suffix = "rssa",
                                 thunk = fn () => doit program,
                                 typeCheck = R.Program.typeCheck}
@@ -161,7 +161,7 @@ fun toMachine (program: Ssa.Program.t, codegen) =
                      in maybeSaveToFile
                         ({name = name, 
                           suffix = "pre.rssa"},
-                         Control.No, p, Control.Layouts Program.layouts)
+                         Control.ML, p, Control.Layouts Program.layouts)
                      end
                   val p =
                      Control.passTypeCheck
@@ -170,7 +170,7 @@ fun toMachine (program: Ssa.Program.t, codegen) =
                                  Program.layouts (sel r, output)),
                       name = name,
                       stats = Program.layoutStats o sel,
-                      style = Control.No,
+                      style = Control.ML,
                       suffix = "post.rssa",
                       thunk = fn () => doit p,
                       typeCheck = Program.typeCheck o sel}
@@ -215,7 +215,7 @@ fun toMachine (program: Ssa.Program.t, codegen) =
                                      Rssa.Program.layouts (program, output)),
           name = "rssaSimplify",
           stats = fn (program,_) => Rssa.Program.layoutStats program,
-          style = Control.No,
+          style = Control.ML,
           suffix = "rssa",
           thunk = fn () => rssaSimplify program,
           typeCheck = R.Program.typeCheck o #1}
@@ -225,7 +225,7 @@ fun toMachine (program: Ssa.Program.t, codegen) =
          in
             if !keepRSSA
                then saveToFile ({suffix = "rssa"},
-                                No,
+                                Control.ML,
                                 program,
                                 Layouts Rssa.Program.layouts)
             else ()
