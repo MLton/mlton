@@ -11,12 +11,12 @@ struct
 
 open S
 
+infix  1 <|> >>=
+infix  3 <*> <* *>
+infixr 4 <$> <$$> <$$$> <$$$$> <$ <$?>
 structure Parse =
    struct
       open Parse
-      infix  1 <|> >>=
-      infix  3 <*> <* *>
-      infixr 4 <$> <$$> <$$$> <$$$$> <$ <$?>
       fun kw s =
          spaces *> str s *>
          failing (nextSat (fn c => Char.isAlphaNum c orelse c = #"_"))
@@ -67,7 +67,6 @@ structure Convention =
       val parse =
          let
             open Parse
-            infix 3 *>
          in
             any (List.map (all, fn t => kw (toString t) *> pure t))
          end
@@ -119,8 +118,6 @@ structure Kind =
       val parse =
          let
             open Parse
-            infix  1 >>=
-            infix  3 *>
          in
             any
             [kw "Impure" *> pure Impure,
@@ -180,7 +177,6 @@ structure SymbolScope =
       val parse =
          let
             open Parse
-            infix 3 *>
          in
             any (List.map (all, fn ss => kw (toString ss) *> pure ss))
          end
@@ -201,9 +197,6 @@ structure Target =
       val parse =
          let
             open Parse
-            infix  1 <|>
-            infix  3 *>
-            infixr 4 <$> <$$>
          in
             (Direct <$> (spaces *>
                          ((String.implode o op ::) <$$>
@@ -245,9 +238,6 @@ fun layout (T {args, convention, kind, prototype, return, symbolScope, target, .
 fun parse parseType =
    let
       open Parse
-      infix  1 >>=
-      infix  3 *>
-      infixr 4 <$>
    in
       T <$>
       brack (ffield "args" *> vector parseType >>= (fn args =>
