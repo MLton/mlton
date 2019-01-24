@@ -1308,10 +1308,6 @@ structure Transfer =
                            overflow = overflow,
                            success = success, ty = ty})))))),
              kw "bug" *> pure Bug,
-             kw "goto" *>
-             (Label.parse >>= (fn dst =>
-              parseArgs >>= (fn args =>
-              pure (Goto {dst = dst, args = args})))),
              kw "call" *>
              (any [kw "dead" *> parseCall >>= (fn mkCall => mkCall Return.Dead),
                    kw "tail" *> parseCall >>= (fn mkCall => mkCall Return.Tail),
@@ -1325,6 +1321,10 @@ structure Transfer =
                   (List.map (WordSize.all, fn ws =>
                              kw ("case" ^ WordSize.toString ws) *>
                              parseCase (WordX.parse, fn cases => Cases.Word (ws, cases))))),
+             kw "goto" *>
+             (Label.parse >>= (fn dst =>
+              parseArgs >>= (fn args =>
+              pure (Goto {dst = dst, args = args})))),
              kw "raise" *> (Raise <$> parseArgs),
              kw "return" *> (Return <$> parseArgs),
              kw "runtime" *>
