@@ -50,7 +50,6 @@ structure Xml = Xml (open Atoms)
 structure Sxml = Sxml (open Xml)
 structure ParseSxml = ParseSxml(structure XmlTree = Xml)
 structure Ssa = Ssa (open Atoms)
-structure ParseSsa = ParseSsa(structure SsaTree = Ssa)
 structure Ssa2 = Ssa2 (open Atoms)
 structure Machine = Machine (open Atoms
                              structure Label = Ssa.Label)
@@ -878,7 +877,7 @@ fun genFromSsa (input: File.t): Machine.Program.t =
           style = Control.ML,
           suffix = "ssa",
           thunk = (fn () => case
-                     Parse.parseFile(ParseSsa.program, input)
+                     Parse.parseFile(Ssa.Program.parse (), input)
                         of Result.Yes x => x
                          | Result.No msg => (Control.error 
                            (Region.bogus, Layout.str "Ssa Parse failed", Layout.str msg);
