@@ -1312,7 +1312,7 @@ structure Transfer =
              (any [kw "dead" *> parseCall >>= (fn mkCall => mkCall Return.Dead),
                    kw "tail" *> parseCall >>= (fn mkCall => mkCall Return.Tail),
                    Label.parse >>= (fn cont =>
-                   paren (parseCall) >>= (fn mkCall =>
+                   paren parseCall >>= (fn mkCall =>
                    kw "handle" *> kw "_" *> sym "=>" *>
                    any [kw "raise" *> mkCall (Return.NonTail {cont = cont, handler = Handler.Caller}),
                         kw "dead" *> mkCall (Return.NonTail {cont = cont, handler = Handler.Dead}),
