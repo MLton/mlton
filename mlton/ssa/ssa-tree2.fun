@@ -638,16 +638,18 @@ structure Base =
          let
             open Layout
          in
-            seq [Int.layout offset, str " ",
-                 paren (layout (base, layoutX))]
+            seq [str "#", Int.layout offset, str " ",
+                 layout (base, layoutX)]
          end
 
       fun parseWithOffset (parseX : 'a Parse.t) : ('a t * int) Parse.t =
          let
             open Parse
          in
-            spaces *> uint >>= (fn offset =>
-            paren (parse parseX) >>= (fn base =>
+            spaces *> char #"#" *>
+            (peek (nextSat Char.isDigit) *>
+             fromScan (fn getc => Int.scan (StringCvt.DEC, getc))) >>= (fn offset =>
+            parse parseX >>= (fn base =>
             pure (base, offset)))
          end
 
@@ -871,7 +873,7 @@ structure Statement =
                   end
              | Profile p => seq [str "prof ", ProfileExp.layout p]
              | Update {base, offset, value} =>
-                  mayAlign [seq [str "upd sel ",
+                  mayAlign [seq [str "upd ",
                                  Base.layoutWithOffset (base, offset, layoutVar),
                                  str " :="],
                             layoutVar value]
@@ -888,7 +890,7 @@ structure Statement =
               sym ":" *> Type.parse >>= (fn ty =>
               sym "=" *> Exp.parse >>= (fn exp =>
               pure (Bind {var = var, ty = ty, exp = exp}))))),
-             kw "upd" *> kw "sel" *>
+             kw "upd" *>
              (Base.parseWithOffset Var.parse >>= (fn (base, offset) =>
               sym ":=" *> Var.parse >>= (fn value =>
               pure (Update {base = base, offset = offset, value = value}))))]
@@ -1235,10 +1237,7 @@ structure Transfer =
                          indent (alignPrefix (cases, "| "), 2)]
                end
             fun layoutPrim {prim, args} =
-               Exp.layout'
-               (Exp.PrimApp {prim = prim,
-                             args = args},
-                layoutVar)
+               seq [Prim.layoutFull (prim, Type.layout), str " ", layoutArgs args]
          in
             case t of
                Arith {prim, args, overflow, success, ty} =>
@@ -1251,7 +1250,7 @@ structure Transfer =
                      val call = seq [Func.layout func, str " ", layoutArgs args]
                   in
                      case return of
-                        Return.Dead => seq [str "call dead ", paren call]
+                        Return.Dead => seq [str "call dead ", call]
                       | Return.NonTail {cont, handler} =>
                            seq [str "call ", Label.layout cont, str " ",
                                 paren call,
@@ -1260,7 +1259,7 @@ structure Transfer =
                                    Handler.Caller => str "raise"
                                  | Handler.Dead => str "dead"
                                  | Handler.Handle l => Label.layout l]
-                      | Return.Tail => seq [str "call return ", paren call]
+                      | Return.Tail => seq [str "call tail ", call]
                   end
              | Case arg => layoutCase arg
              | Goto {dst, args} =>
@@ -1292,16 +1291,15 @@ structure Transfer =
                            cases = mk cases,
                            default = default}))))
             val parseCall =
-               paren (Func.parse >>= (fn func =>
-                      parseArgs >>= (fn args =>
-                      pure (fn return => pure (Call {func = func, args = args, return = return})))))
+               Func.parse >>= (fn func =>
+               parseArgs >>= (fn args =>
+               pure (fn return => pure (Call {func = func, args = args, return = return}))))
          in
             any
             [kw "arith" *>
              (Type.parse >>= (fn ty =>
               Label.parse >>= (fn success =>
-              paren (kw "prim" *>
-                     Prim.parseFull Type.parse >>= (fn prim =>
+              paren (Prim.parseFull Type.parse >>= (fn prim =>
                      parseArgs >>= (fn args =>
                      pure (prim, args)))) >>= (fn (prim, args) =>
               kw "handle" *> kw "Overflow" *> sym "=>" *>
@@ -1316,9 +1314,9 @@ structure Transfer =
               pure (Goto {dst = dst, args = args})))),
              kw "call" *>
              (any [kw "dead" *> parseCall >>= (fn mkCall => mkCall Return.Dead),
-                   kw "return" *> parseCall >>= (fn mkCall => mkCall Return.Tail),
+                   kw "tail" *> parseCall >>= (fn mkCall => mkCall Return.Tail),
                    Label.parse >>= (fn cont =>
-                   parseCall >>= (fn mkCall =>
+                   paren (parseCall) >>= (fn mkCall =>
                    kw "handle" *> kw "_" *> sym "=>" *>
                    any [kw "raise" *> mkCall (Return.NonTail {cont = cont, handler = Handler.Caller}),
                         kw "dead" *> mkCall (Return.NonTail {cont = cont, handler = Handler.Dead}),
@@ -1331,8 +1329,7 @@ structure Transfer =
              kw "return" *> (Return <$> parseArgs),
              kw "runtime" *>
              (Label.parse >>= (fn return =>
-              paren (kw "prim" *>
-                     Prim.parseFull Type.parse >>= (fn prim =>
+              paren (Prim.parseFull Type.parse >>= (fn prim =>
                      parseArgs >>= (fn args =>
                      pure (prim, args)))) >>= (fn (prim, args) =>
               pure (Runtime {prim = prim, args = args, return = return}))))]
@@ -1454,7 +1451,7 @@ structure Block =
             fun layoutStatement s = Statement.layout' (s, layoutVar)
             fun layoutTransfer t = Transfer.layout' (t, layoutVar)
          in
-            align [seq [str "block: ", Label.layout label, str " ",
+            align [seq [str "block ", Label.layout label, str " ",
                         layoutFormals args],
                    indent (align
                            [align
@@ -1468,7 +1465,7 @@ structure Block =
          let
             open Parse
          in
-            kw "block" *> sym ":" *>
+            kw "block" *>
             Label.parse >>= (fn label =>
             parseFormals >>= (fn args =>
             many Statement.parse >>= (fn statements =>
@@ -1496,7 +1493,7 @@ structure Datatype =
          let
             open Layout
          in
-            seq [Tycon.layout tycon,
+            seq [str "datatype ", Tycon.layout tycon,
                  str " = ",
                  alignPrefix
                  (Vector.toListMap
@@ -1510,7 +1507,7 @@ structure Datatype =
          let
             open Parse
          in
-            Tycon.parse >>= (fn tycon =>
+            kw "datatype" *> Tycon.parse >>= (fn tycon =>
             sym "=" *>
             sepBy (Prod.parse Type.parse >>= (fn args =>
                    Con.parse >>= (fn con =>
@@ -1898,7 +1895,7 @@ structure Function =
                                      layoutFormals args,
                                      sep],
                                 rty],
-                      Transfer.layout (Transfer.Goto {dst = start, args = Vector.new0 ()})]
+                      seq [Label.layout start, str " ()"]]
          end
 
       val parseHeader =
@@ -1913,7 +1910,6 @@ structure Function =
                    nfield "raises" *> option (vector Type.parse) >>= (fn raises =>
                    pure (returns, raises)))) >>= (fn (returns, raises) =>
             sym "=" *>
-            kw "goto" *>
             Label.parse >>= (fn start =>
             paren (pure ()) *>
             pure (name, args, returns, raises, start)))))
