@@ -358,7 +358,7 @@ structure Type =
                               ObjectCon.layout con]
                | Real s => str (concat ["real", RealSize.toString s])
                | Thread => str "thread"
-               | Weak t => seq [str "(", layout t, str ") weak"]
+               | Weak t => seq [paren (layout t), str " ", str "weak"]
                | Word s => str (concat ["word", WordSize.toString s])))
       end
 
@@ -741,13 +741,13 @@ structure Exp =
             fun layoutArgs xs = Vector.layout layoutVar xs
          in
             case e of
-               Const c => seq [str "const ", Const.layout c]
+               Const c => Const.layout c
              | Inject {sum, variant} =>
                   seq [str "inj ", paren (layoutVar variant), str ": ", Tycon.layout sum]
              | Object {con, args} =>
-                  seq [str "new ",
+                  seq [str "obj ",
                        (case con of
-                           NONE => str "tuple "
+                           NONE => empty
                          | SOME c => seq [Con.layout c, str " "]),
                        layoutArgs args]
              | PrimApp {args, prim} =>
@@ -765,14 +765,14 @@ structure Exp =
             val parseArgs = vector Var.parse
          in
             any
-            [kw "const" *> (Const <$> Const.parse),
+            [Const <$> Const.parse,
              kw "inj" *>
              (paren Var.parse >>= (fn variant =>
               sym ":" *>
               Tycon.parse >>= (fn sum =>
               pure (Inject {variant = variant, sum = sum})))),
-             kw "new" *>
-             (Con.parseAs (Vector.new1 ("tuple", NONE), SOME) >>= (fn con =>
+             kw "obj" *>
+             (((SOME <$> Con.parse) <|> pure NONE) >>= (fn con =>
               parseArgs >>= (fn args =>
               pure (Object {con = con, args = args})))),
              kw "prim" *>
