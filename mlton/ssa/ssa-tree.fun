@@ -1216,7 +1216,7 @@ structure Datatype =
             kw "datatype" *>
             Tycon.parse >>= (fn tycon =>
             sym "=" *>
-            sepBy (Con.parse >>= (fn con =>
+            sepBy ((failing (kw "datatype" <|> kw "val") *> Con.parse) >>= (fn con =>
                    ((kw "of" *> vector Type.parse) <|> pure (Vector.new0 ())) >>= (fn args =>
                    pure {con = con, args = args})),
                    sym "|") >>= (fn cons =>
