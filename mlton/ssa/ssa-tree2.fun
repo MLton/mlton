@@ -2286,14 +2286,14 @@ structure Program =
              *)
             val output = output' 
          in
-            output (str "\n\nDatatypes:")
+            output (str "\n\n(* Datatypes: *)")
             ; Vector.foreach (datatypes, output o Datatype.layout)
-            ; output (str "\n\nGlobals:")
+            ; output (str "\n\n(* Globals: *)")
             ; Vector.foreach (globals, output o (fn s => Statement.layout' (s, layoutVar)))
-            ; output (seq [str "\n\nMain: ", Func.layout main])
-            ; output (str "\n\nFunctions:")
+            ; output (str "\n\n(* Functions: *)")
             ; List.foreach (functions, fn f =>
                             Function.layouts (f, layoutVar, output))
+            ; output (seq [str "\n\n(* Main: *) ", Func.layout main])
             ; if not (!Control.keepDot)
                  then ()
               else
@@ -2318,14 +2318,10 @@ structure Program =
             val () = Func.parseReset {prims = Vector.new0 ()}
 
             val parseProgram =
-               kw "Datatypes" *> sym ":" *>
                many Datatype.parse >>= (fn datatypes =>
-               kw "Globals" *> sym ":" *>
                many Statement.parse >>= (fn globals =>
-               kw "Main" *> sym ":" *>
-               Func.parse >>= (fn main =>
-               kw "Functions" *> sym ":" *>
                many Function.parse >>= (fn functions =>
+               Func.parse >>= (fn main =>
                pure (T {datatypes = Vector.fromList datatypes,
                         globals = Vector.fromList globals,
                         functions = functions,
