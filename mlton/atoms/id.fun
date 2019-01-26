@@ -133,7 +133,7 @@ local
    val alphanum =
       nextSat (fn c => Char.isAlphaNum c orelse c = #"_" orelse c = #"'")
    val sym =
-      nextSat (fn c => String.contains ("!%&$#+-/:<=>?@\\!`^|*", c))
+      nextSat (fn c => String.contains ("!%&$#+-/:<=>?@\\~`^|*", c))
 in
    fun parseAs (alts, fromId) =
       spaces *>
