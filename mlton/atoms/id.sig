@@ -31,6 +31,7 @@ signature ID =
       val originalName: t -> string (* raw destructor *)
       val parse: t Parse.t
       val parseAs: (string * 'a) vector * (t -> 'a) -> 'a Parse.t
+      val parseExcept: string vector -> t Parse.t
       val parseReset: {prims: t vector} -> unit
       val plist: t -> PropertyList.t
       val printNameAlphaNumeric: bool ref

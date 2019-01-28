@@ -42,6 +42,7 @@ datatype t = T of {hash: word,
                    originalName: string,
                    printName: string option ref,
                    plist: Plist.t}
+type id = t
 
 local
    fun make f (T r) = f r
@@ -134,8 +135,8 @@ local
       nextSat (fn c => Char.isAlphaNum c orelse c = #"_" orelse c = #"'")
    val sym =
       nextSat (fn c => String.contains ("!%&$#+-/:<=>?@\\~`^|*", c))
-in
-   fun parseAs (alts, fromId) =
+
+   fun parseGen (alts: (string * 'a Parse.t) vector, fromId: id -> 'a Parse.t) : 'a Parse.t =
       spaces *>
       (String.implode <$>
        ((op ::) <$$> (nextSat Char.isAlpha, many alphanum)
@@ -157,11 +158,14 @@ in
               loop (String.size printName - 1, false)
            end
       in
-         pure (case Vector.peek (alts, fn (s, _) => String.equals (printName, s)) of
-                  SOME (_, res) => res
-                | NONE => fromId (HashTable.lookupOrInsert (cache, printName, make)))
+         case Vector.peek (alts, fn (s, _) => String.equals (printName, s)) of
+            SOME (_, res) => res
+          | NONE => fromId (HashTable.lookupOrInsert (cache, printName, make))
       end)
-   val parse = parseAs (Vector.new0 (), fn id => id)
+in
+   fun parseAs (alts, fromId) = parseGen (Vector.map (alts, fn (s, r) => (s, pure r)), pure o fromId)
+   fun parseExcept ss = parseGen (Vector.map (ss, fn s => (s, fail "fail")), pure)
+   val parse = parseExcept (Vector.new0 ())
    fun parseReset {prims} =
       (HashTable.removeAll (cache, fn _ => true);
        Vector.foreach (prims, insert))
