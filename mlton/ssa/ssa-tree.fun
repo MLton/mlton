@@ -239,6 +239,12 @@ structure Type =
               ("thread", thread)] @
              List.map (WordSize.all, fn ws => ("word" ^ WordSize.toString ws, word ws)) @
              List.map (RealSize.all, fn rs => ("real" ^ RealSize.toString rs, real rs)))
+         val unary =
+            [array <$ P.kw "array",
+             reff <$ P.kw "ref",
+             (tuple o Vector.new1) <$ P.kw "tuple",
+             vector <$ P.kw "vector",
+             weak <$ P.kw "weak"]
       in
          fun parse () =
             let
@@ -247,12 +253,8 @@ structure Type =
                Tycon.parseAs (tyconAlts, datatypee)
                <|>
                (P.paren parse >>= (fn ty =>
-                P.any
-                [P.kw "array" *> P.pure (array ty),
-                 P.kw "ref" *> P.pure (reff ty),
-                 P.kw "tuple" *> P.pure (tuple (Vector.new1 ty)),
-                 P.kw "vector" *> P.pure (vector ty),
-                 P.kw "weak" *> P.pure (weak ty)]))
+                P.any unary >>= (fn unary =>
+                P.pure (unary ty))))
                <|>
                (P.vector parse >>= (fn tys =>
                 P.kw "tuple" *>

@@ -376,6 +376,12 @@ structure Type =
               ("thread", thread)] @
              List.map (WordSize.all, fn ws => ("word" ^ WordSize.toString ws, word ws)) @
              List.map (RealSize.all, fn rs => ("real" ^ RealSize.toString rs, real rs)))
+         val unary =
+            Con.parseAs (Vector.new3 (("sequence", sequence o Prod.new1Immutable),
+                                      ("tuple", tuple o Prod.new1Immutable),
+                                      ("weak", weak)),
+                         fn con => fn ty =>
+                         conApp (con, Prod.new1Immutable ty))
       in
          fun parse () =
             let
@@ -384,15 +390,8 @@ structure Type =
                Tycon.parseAs (tyconAlts, datatypee)
                <|>
                (P.paren parse >>= (fn ty =>
-                let
-                   val args = Prod.make (Vector.new1 {elt = ty, isMutable = false})
-                   val conAlts =
-                     Vector.new3 (("sequence", sequence args),
-                                  ("tuple", tuple args),
-                                  ("weak", weak ty))
-                in
-                   Con.parseAs (conAlts, fn con => conApp (con, args))
-                end))
+                unary >>= (fn unary =>
+                P.pure (unary ty))))
                <|>
                (Prod.parse parse >>= (fn args =>
                 ObjectCon.parse >>= (fn con =>
