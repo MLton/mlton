@@ -56,6 +56,13 @@ structure Prod =
 
       fun empty () = T (Vector.new0 ())
 
+      local
+         fun new1 {elt, isMutable} = T (Vector.new1 {elt = elt, isMutable = isMutable})
+      in
+         fun new1Immutable elt = new1 {elt = elt, isMutable = false}
+         fun new1Mutable elt = new1 {elt = elt, isMutable = true}
+      end
+
       fun fold (p, b, f) =
          Vector.fold (dest p, b, fn ({elt, ...}, b) => f (elt, b))
 
@@ -302,13 +309,8 @@ structure Type =
 
       fun sequence p = object {args = p, con = Sequence}
 
-      local
-         fun make isMutable t =
-            sequence (Prod.make (Vector.new1 {elt = t, isMutable = isMutable}))
-      in
-         val array1 = make true
-         val vector1 = make false
-      end
+      fun array1 ty = sequence (Prod.new1Mutable ty)
+      fun vector1 ty = sequence (Prod.new1Immutable ty)
 
       fun ofConst c =
          let
