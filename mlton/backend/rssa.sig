@@ -182,6 +182,8 @@ signature RSSA =
                      transfer: Transfer.t}
 
             val clear: t -> unit
+            val foreachDef: t * (Var.t * Type.t -> unit) -> unit
+            val foreachUse: t * (Var.t -> unit) -> unit
             val kind: t -> Kind.t
             val label: t -> Label.t
             val layout: t -> Layout.t
