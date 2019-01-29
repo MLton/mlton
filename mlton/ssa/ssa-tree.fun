@@ -1214,11 +1214,12 @@ structure Datatype =
       val parse =
          let
             open Parse
+            val conExcepts = Vector.new2 ("datatype", "val")
          in
             kw "datatype" *>
             Tycon.parse >>= (fn tycon =>
             sym "=" *>
-            sepBy ((failing (kw "datatype" <|> kw "val") *> Con.parse) >>= (fn con =>
+            sepBy (Con.parseExcept conExcepts >>= (fn con =>
                    ((kw "of" *> vector Type.parse) <|> pure (Vector.new0 ())) >>= (fn args =>
                    pure {con = con, args = args})),
                    sym "|") >>= (fn cons =>
