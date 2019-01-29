@@ -100,7 +100,7 @@ structure Prod =
                  str ")"]
          end
 
-      fun parse (parseElt : 'a Parse.t) : 'a t Parse.t =
+      fun parse (parseElt: 'a Parse.t): 'a t Parse.t =
          let
             open Parse
          in
@@ -619,7 +619,7 @@ structure Base =
                   seq [str "$", tuple [layoutX sequence, layoutX index]]
          end
 
-      fun parse (parseX : 'a Parse.t) : 'a t Parse.t =
+      fun parse (parseX: 'a Parse.t): 'a t Parse.t =
          let
             open Parse
          in
@@ -641,7 +641,7 @@ structure Base =
                  layout (base, layoutX)]
          end
 
-      fun parseWithOffset (parseX : 'a Parse.t) : ('a t * int) Parse.t =
+      fun parseWithOffset (parseX: 'a Parse.t): ('a t * int) Parse.t =
          let
             open Parse
          in
