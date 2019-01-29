@@ -24,20 +24,18 @@ structure Parse =
       fun sym s =
          spaces *> str s *>
          failing (nextSat (fn c => String.contains ("!%&$#+-/:<=>?@\\!`^|*", c)))
-      fun option (p: 'a t) : 'a option t =
+      fun option (p: 'a t): 'a option t =
          (kw "Some" *> (SOME <$> p)) <|>
          (kw "None" *> pure NONE)
-      fun paren (p : 'a t) : 'a t =
-         spaces *> char #"(" *>
-         p
-         <* spaces <* char #")"
-      fun vector (p : 'a t) : 'a vector t =
-         Vector.fromList <$>
-         paren (sepBy (p, spaces *> char #","))
-      fun brack (p : 'a t) : 'a t =
-         spaces *> char #"{" *>
-         p
-         <* spaces <* char #"}"
+      local
+         fun between (l, p: 'a t, r): 'a t =
+            spaces *> char l *> p <* spaces <* char r
+      in
+         fun paren p = between (#"(", p, #")")
+         fun cbrack p = between (#"{", p, #"}")
+      end
+      fun vector (p: 'a t): 'a vector t =
+         Vector.fromList <$> paren (sepBy (p, spaces *> char #","))
       local
          fun field s = kw s *> sym "="
       in
@@ -1632,9 +1630,9 @@ structure Function =
             Func.parse >>= (fn name =>
             parseFormals >>= (fn args =>
             sym ":" *>
-            brack (ffield "returns" *> option (vector Type.parse) >>= (fn returns =>
-                   nfield "raises" *> option (vector Type.parse) >>= (fn raises =>
-                   pure (returns, raises)))) >>= (fn (returns, raises) =>
+            cbrack (ffield "returns" *> option (vector Type.parse) >>= (fn returns =>
+                    nfield "raises" *> option (vector Type.parse) >>= (fn raises =>
+                    pure (returns, raises)))) >>= (fn (returns, raises) =>
             sym "=" *>
             Label.parse >>= (fn start =>
             paren (pure ()) *>

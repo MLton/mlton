@@ -1217,14 +1217,16 @@ local
    fun sym s =
       spaces *> str s *>
       failing (nextSat (fn c => String.contains ("!%&$#+-/:<=>?@\\!`^|*", c)))
-   fun option (p: 'a t) : 'a option t =
+   fun option (p: 'a t): 'a option t =
       (kw "Some" *> (SOME <$> p))
       <|>
       (kw "None" *> pure NONE)
-   fun brack (p : 'a t) : 'a t =
-      spaces *> char #"{" *>
-      p
-      <* spaces <* char #"}"
+   local
+      fun between (l, p: 'a t, r): 'a t =
+         spaces *> char l *> p <* spaces <* char r
+   in
+      fun cbrack p = between (#"{", p, #"}")
+   end
    local
       fun field s = kw s *> sym "="
    in
@@ -1242,10 +1244,10 @@ fun parseFull parseX =
    name >>= (fn pname =>
    case pname of
       "FFI_Symbol" => FFI_Symbol <$>
-                      brack (ffield "name" *> name >>= (fn name =>
-                             nfield "cty" *> option CType.parse >>= (fn cty =>
-                             nfield "symbolScope" *> CFunction.SymbolScope.parse >>= (fn symbolScope =>
-                             pure {name = name, cty = cty, symbolScope = symbolScope}))))
+                      cbrack (ffield "name" *> name >>= (fn name =>
+                              nfield "cty" *> option CType.parse >>= (fn cty =>
+                              nfield "symbolScope" *> CFunction.SymbolScope.parse >>= (fn symbolScope =>
+                              pure {name = name, cty = cty, symbolScope = symbolScope}))))
     | "FFI" => FFI <$> CFunction.parse parseX
     | _ => (case fromString pname of
                NONE => fail "prim"
