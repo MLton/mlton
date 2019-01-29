@@ -1871,7 +1871,7 @@ structure Function =
 
       fun layoutHeader (f: t): Layout.t =
          let
-            val {args, name, raises, returns, start, ...} = dest f
+            val {args, name, mayInline, raises, returns, start, ...} = dest f
             open Layout
             val (sep, rty) =
                if !Control.showTypes
@@ -1889,6 +1889,7 @@ structure Function =
                   else (str " =", empty)
          in
             mayAlign [mayAlign [seq [str "fun ",
+                                     if mayInline then empty else str "noinline ",
                                      Func.layout name,
                                      str " ",
                                      layoutFormals args,
@@ -1902,6 +1903,7 @@ structure Function =
             open Parse
          in
             kw "fun" *>
+            (false <$ kw "noinline" <|> pure true) >>= (fn mayInline =>
             Func.parse >>= (fn name =>
             parseFormals >>= (fn args =>
             sym ":" *>
@@ -1911,7 +1913,7 @@ structure Function =
             sym "=" *>
             Label.parse >>= (fn start =>
             paren (pure ()) *>
-            pure (name, args, returns, raises, start)))))
+            pure (mayInline, name, args, returns, raises, start))))))
          end
 
       fun layout' (f: t, layoutVar) =
@@ -1929,15 +1931,15 @@ structure Function =
          let
             open Parse
          in
-            parseHeader >>= (fn (name, args, returns, raises, start) =>
+            parseHeader >>= (fn (mayInline, name, args, returns, raises, start) =>
             many Block.parse >>= (fn blocks =>
-            pure (new {name = name,
+            pure (new {mayInline = mayInline,
+                       name = name,
                        args = args,
                        returns = returns,
                        raises = raises,
                        start = start,
-                       blocks = Vector.fromList blocks,
-                       mayInline = false})))
+                       blocks = Vector.fromList blocks})))
          end
 
       fun layouts (f: t, layoutVar, output: Layout.t -> unit): unit =
