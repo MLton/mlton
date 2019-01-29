@@ -33,9 +33,12 @@ structure Parse =
       in
          fun paren p = between (#"(", p, #")")
          fun cbrack p = between (#"{", p, #"}")
+         fun sbrack p = between (#"[", p, #"]")
       end
       fun vector (p: 'a t): 'a vector t =
          Vector.fromList <$> paren (sepBy (p, spaces *> char #","))
+      fun list (p: 'a t): 'a list t =
+         sbrack (sepBy (p, spaces *> char #","))
       local
          fun field s = kw s *> sym "="
       in
@@ -449,9 +452,8 @@ structure Exp =
                   seq [str "prim ",
                        Prim.layoutFull (prim, Type.layout),
                        if !Control.showTypes
-                          then if Vector.isEmpty targs
-                                  then empty
-                               else Vector.layout Type.layout targs
+                          andalso not (Vector.isEmpty targs)
+                          then Layout.list (Vector.toListMap (targs, Type.layout))
                           else empty,
                        str " ",
                        layoutArgs args]
@@ -477,12 +479,9 @@ structure Exp =
              Const <$> Const.parse,
              kw "prim" *>
              (Prim.parseFull Type.parse >>= (fn prim =>
-              (((fn (targs, args) => (targs, args)) <$$>
-                (vector Type.parse, parseArgs))
-               <|>
-               ((fn args => (Vector.new0 (), args)) <$>
-                parseArgs)) >>= (fn (targs, args) =>
-              pure (PrimApp {prim = prim, targs = targs, args = args})))),
+              Vector.fromList <$> (list Type.parse <|> pure []) >>= (fn targs =>
+              parseArgs >>= (fn args =>
+              pure (PrimApp {prim = prim, targs = targs, args = args}))))),
              kw "sel" *>
              (spaces *> char #"#" *>
               (peek (nextSat Char.isDigit) *>
