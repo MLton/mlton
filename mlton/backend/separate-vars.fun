@@ -90,7 +90,8 @@ fun processLoop ({labelLive: (* smlnj can't figure it out *)
       fun rewriteDestBlock (Block.T {args, kind, label, statements, transfer}, rewrites) =
          let
             val newStatements = Vector.map(rewrites,
-               fn {src, dst} => Statement.Move {dst=src, src=dst})
+               fn (old, new, ty) => Statement.Bind
+                     {dst=(old, ty), isMutable=false, src=Operand.Var {ty=ty, var=new}})
             val newBlock =
                Block.T {args=args, kind=kind, label=label,
                   statements=Vector.concat [statements, newStatements],
@@ -110,12 +111,13 @@ fun processLoop ({labelLive: (* smlnj can't figure it out *)
                val newVars = Vector.keepAllMap (varsToConsider,
                   fn v => Option.map (remappedVar {var=v, dest=destLabel}, fn v' => (v,v')))
                val rewrites = Vector.map (newVars,
-                  fn (old, new) =>
-                     let val ty = varTy old in
-                        {src=Operand.Var {ty=ty, var=old}, dst=Operand.Var {ty=ty, var=new}}
-                     end)
-               val newStatements = Vector.map (rewrites, Statement.Move)
+                  fn (old, new) => (old, new, varTy old))
+
                val _ = rewriteDestBlock (valOf (blockingLabel destLabel), rewrites)
+
+               val newStatements = Vector.map(rewrites,
+                  fn (old, new, ty) => Statement.Bind
+                        {dst=(new, ty), isMutable=false, src=Operand.Var {ty=ty, var=old}})
                val newBlock =
                   Block.T {args=args, kind=kind, label=label,
                      statements=Vector.concat [statements, newStatements],
