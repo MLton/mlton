@@ -26,91 +26,129 @@ open Rssa
 structure Live = Live (Rssa)
 structure Restore = RestoreR (Rssa)
 
-fun foreachBlock f {headers, child} =
+fun foreachBlock ({headers, child}, f) =
    case DirectedGraph.LoopForest.dest child of
         {loops, notInLoop} =>
         let
            val _ = Vector.foreach (headers, f)
            val _ = Vector.foreach (notInLoop, f)
         in
-           Vector.foreach (loops, foreachBlock f)
+           Vector.foreach (loops, fn loop => foreachBlock (loop, f))
         end
 
-fun processLoop ({labelLive, remLabelLive}, varTy, setLabelBlock) tree =
+fun processLoop ({labelLive: (* smlnj can't figure it out *)
+             Label.t -> { begin: Var.t vector, beginNoFormals: Var.t vector,
+                        handler: Label.t option, link: bool}, remLabelLive},
+      varTy, setLabelBlock, labelBlock) tree =
    let
       (* in each processLoop call we need to loop twice
        * first we find register-blocking points, and record live vars
        * then for each var live over a blocking point, check if active
        * in loop. If it's active we rewrite the appropriate blocks with a new assignment *)
 
-      val blockingLabels = Buffer.new {dummy=Label.new ()}
-
       datatype VarInfo =
          Skip
        | Consider
        | Rewrite
-      val {get=blockedVars, set=setBlockedVar, destroy=destroyBlockedVars} =
+      val {get=blockedVar, set=setBlockedVar, destroy=destroyBlockedVars} =
          Property.destGetSet (Var.plist, Property.initConst Skip)
+      val {get=blockingLabel, set=setBlockingLabel, destroy=destroyBlockingLabels} =
+         Property.destGetSet (Label.plist, Property.initConst NONE)
 
       (* Check which blocks block local vars and mark all live vars for consideration *)
-      fun markBlock (Block.T {kind, label, ...}) =
+      fun markBlock (b as Block.T {kind, label, ...}) =
          (* note this means that the block is *within* the loop.
           * We don't expect it, but this means that no destination can be referenced in two separate loops *)
-         case Kind.frameStyle kind of
-            Kind.OffsetsAndSize =>
-               ( Buffer.add (blocking, label)
-               ; Vector.foreach (#begin o labelLive label, fn v => setBlockedVar (v, Consider)))
+         case kind of
+            Kind.CReturn {func} =>
+               if CFunction.mayGC func then
+                  ( setBlockingLabel (label, SOME b)
+                  ; Vector.foreach (#beginNoFormals (labelLive label), fn v => setBlockedVar (v, Consider)))
+               else ()
           | _ => ()
-      val _ = foreachBlock markBlock tree
+      val _ = foreachBlock (tree, markBlock)
 
       (* now for each var in consideration, check if active in loop *)
       fun checkActiveVars block =
          Block.foreachUse (block,
             fn v =>
-               case blockedVars v of
+               case blockedVar v of
                     Consider => setBlockedVar (v, Rewrite)
-                  | NONE => ())
-      val _ = foreachBlock checkActiveVars tree
+                  | _ => ())
+      val _ = foreachBlock (tree, checkActiveVars)
 
       val remappedVars: (Var.t * Label.t, Var.t) HashTable.t = HashTable.new {
          equals=fn ((v, l), (v', l')) => Var.equals (v, v') andalso Label.equals (l, l'),
          hash=fn (v, l) => Hash.combine (Var.hash v, Label.hash l)}
       (* map based on the destination block, on the extremely unlikely chance that
        * the return block is a join point from two GCs *)
-      fun getVar {var: Var.t, dest: Label.t} =
-         case blockedVars var of
-              Rewrite => HashTable.lookupOrInsert (remappedVars, (var, dest), fn () => Var.new var)
-            | _ => var
+      fun remappedVar {var: Var.t, dest: Label.t} =
+         case blockedVar var of
+              Rewrite => SOME (HashTable.lookupOrInsert (remappedVars, (var, dest), fn () => Var.new var))
+            | _ => NONE
 
-      fun rewriteDestBlock (Block.T {args, kind, label, statements, transfer}) =
+      fun rewriteDestBlock (Block.T {args, kind, label, statements, transfer}, rewrites) =
          let
-         in
-            ()
-         end
-
-      fun rewriteSourceBlock (Block.T {args, kind, label, statements, transfer}) dest =
-         let
-            val varsToConsider = #begin o labelLive dest
-            fun toOp v = Operand.Var {ty=varTy v, var=v}
-            val newStatements = Vector.keepAllMap (varsToConsider,
-               fn v =>
-                  let
-                     val newVar = getVar {var=v, dest=dest}
-                  in
-                     if Var.equals (v, newVar)
-                     then NONE
-                     else SOME (Statement.Move {src=toOp v, dest=toOp newVar})
-                  end)
-            val _ = rewriteDestBlock block
+            val newStatements = Vector.map(rewrites,
+               fn {src, dst} => Statement.Move {dst=src, src=dst})
             val newBlock =
                Block.T {args=args, kind=kind, label=label,
-                  statements=Vector.concat(statements, newStatements),
+                  statements=Vector.concat [statements, newStatements],
                   transfer=transfer}
-            val _ = remap (label, newBlock)
+            val _ = setLabelBlock (label, newBlock)
          in
             ()
          end
 
+      fun rewriteSourceBlock (Block.T {args, kind, label, statements, transfer}, destLabel) =
+         if isSome (labelBlock destLabel)
+         then ()
+         else
+            let
+               val varsToConsider = #beginNoFormals (labelLive destLabel)
+               fun toOp v = Operand.Var {ty=varTy v, var=v}
+               val newVars = Vector.keepAllMap (varsToConsider,
+                  fn v => Option.map (remappedVar {var=v, dest=destLabel}, fn v' => (v,v')))
+               val rewrites = Vector.map (newVars,
+                  fn (old, new) =>
+                     let val ty = varTy old in
+                        {src=Operand.Var {ty=ty, var=old}, dst=Operand.Var {ty=ty, var=new}}
+                     end)
+               val newStatements = Vector.map (rewrites, Statement.Move)
+               val _ = rewriteDestBlock (valOf (blockingLabel destLabel), rewrites)
+               val newBlock =
+                  Block.T {args=args, kind=kind, label=label,
+                     statements=Vector.concat [statements, newStatements],
+                     transfer=transfer}
+               val _ = setLabelBlock (label, newBlock)
+            in
+               ()
+            end
+
+      fun anyLabel (transfer, p) =
+         let
+            val r = ref false
+            val _ = Transfer.foreachLabel (transfer, fn l => if p l then r := true else ())
+         in
+            !r
+         end
+      val _ = foreachBlock (tree,
+         fn (b as Block.T {transfer, ...}) =>
+            if (anyLabel (transfer, isSome o blockingLabel))
+            (* assumes only one blocking dest *)
+            then Transfer.foreachLabel (transfer,
+               let
+                  val r = ref true
+               in
+                  fn l =>
+                     if !r andalso isSome (blockingLabel l)
+                     then (r := false; rewriteSourceBlock (b, l))
+                     else ()
+               end)
+            else ()
+      )
+
+      val _ = destroyBlockingLabels ()
       val _ = destroyBlockedVars ()
    in
       ()
@@ -121,7 +159,7 @@ fun transformFunc func =
       val {args, blocks, name, raises, returns, start} = Function.dest func
       val liveness = Live.live (func, {shouldConsider = fn _ => true})
       val {loops, ...} = DirectedGraph.LoopForest.dest
-         (Function.loopForest (func, fn (Block.T {kind, ...}, _) => true))
+         (Function.loopForest (func, fn (_, _) => true))
       val {get=varTy, set=setVarTy, ...} = Property.getSetOnce
          (Var.plist, Property.initRaise ("SeparateVars.transformFunc.varTy", Var.layout))
       val _ = Function.foreachDef (func, setVarTy)
@@ -130,7 +168,7 @@ fun transformFunc func =
       val {set=remap, get=getRemapped, ...} = Property.getSetOnce
          (Label.plist, Property.initConst NONE)
 
-      val _ = Vector.foreach (loops, processLoop (liveness, varTy, fn (l, b) => remap (l, SOME b)))
+      val _ = Vector.foreach (loops, processLoop (liveness, varTy, fn (l, b) => remap (l, SOME b), getRemapped))
 
       val newBlocks = Vector.map (blocks, fn block as Block.T {label, ...} =>
          case getRemapped label of
