@@ -187,7 +187,7 @@ fun transformFunc func =
 fun transform p =
    let
       val Program.T {functions, handlesSignals, main, objectTypes} = p
-      val restore = Restore.restoreFunction ()
+      val restore = Restore.restoreFunction {main=main}
       val newFunctions = List.map(functions, restore o transformFunc)
    in
       Program.T {functions=newFunctions, handlesSignals=handlesSignals,

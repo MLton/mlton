@@ -157,13 +157,16 @@ structure VarInfo =
                                      | h::_ => SOME h
   end
 
-fun restoreFunction ()
+fun restoreFunction {main: Function.t}
   = let
       exception NoViolations
 
       val {get = varInfo: Var.t -> VarInfo.t, ...}
         = Property.get
           (Var.plist, Property.initFun (fn _ => VarInfo.new ()))
+
+      val _ = Function.foreachDef (main,
+        fn (var, ty) => VarInfo.ty (varInfo var) := ty)
 
       val {get = labelInfo: Label.t -> LabelInfo.t, ...}
         = Property.get
@@ -667,16 +670,16 @@ val traceRestoreFunction
                  Func.layout o Function.name)
 
 val restoreFunction
-  = fn () =>
+  = fn main =>
     let
-      val r = restoreFunction ()
+      val r = restoreFunction main
     in
       fn f => traceRestoreFunction r f
    end
 
 fun restore (Program.T {functions, handlesSignals, main, objectTypes})
   = let
-      val r = restoreFunction ()
+      val r = restoreFunction {main=main}
     in
       Program.T {handlesSignals = handlesSignals,
                  functions = List.map (functions, r),
