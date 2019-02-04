@@ -592,6 +592,16 @@ fun restoreFunction {main: Function.t}
         end
         fun rewriteTransfer addPost (t: Transfer.t) =
            let
+              val t =
+                 case t of
+                   Arith {args, dst, overflow, prim, success, ty} =>
+                     let
+                        val {var=dst, ty, ...} = rewriteVarDef addPost dst
+                     in
+                        Arith {args=args, dst=dst, overflow=overflow,
+                               prim=prim, success=success, ty=ty}
+                     end
+                 | _ => t
            in
               Transfer.replaceLabels (Transfer.replaceUses (t, rewriteVar), route)
            end
