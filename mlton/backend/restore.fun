@@ -525,19 +525,6 @@ fun restoreFunction {main: Function.t}
                    Statement.PrimApp {args=args, dst=SOME tupleDst, prim=prim}
               | _ => st
           end
-        fun rewriteStatement addPost st
-          = let
-               val st = Statement.replaceUses (st, rewriteVar)
-            in
-               Statement.foldDef (st, st, fn (var, ty, st) =>
-                  let
-                     val {ty, var, new} = rewriteVarDef addPost var
-                  in
-                     if new
-                        then replaceDstOperand (st, {ty=ty, var=var})
-                        else st
-                  end)
-            end
         local
           val routeTable : (Label.t * Var.t vector, Label.t) HashTable.t =
             HashTable.new {
@@ -560,22 +547,33 @@ fun restoreFunction {main: Function.t}
                             fn v =>
                               let
                                 val vi = varInfo v
+                                val newOpt = VarInfo.peekVar vi
+                                val newVar =
+                                  case newOpt of
+                                       SOME v' => v'
+                                     | NONE => Var.fromString
+                                      (let open Layout in toString (seq [
+                                        str "errnopeek_", Var.layout v]) end)
                               in
-                                (valOf (VarInfo.peekVar vi), VarInfo.ty' vi)
+                                (newVar, VarInfo.ty' vi)
                               end)
                          val route =
                             HashTable.lookupOrInsert
                              (routeTable, (dst, Vector.map (phiArgs, #1)),
                               fn () =>
                               let
-                                val route = Label.new dst
+                                val label = Label.new dst
                                 val args = Vector.map (LabelInfo.args' li,
                                   fn (x,ty) => (Var.new x, ty))
                                 val args' = Vector.map
                                   (Vector.concat [args, phiArgs],
                                    fn (x, ty) => Operand.Var {ty=ty, var=x})
+                                val kind =
+                                  case kind of
+                                       Kind.Cont {handler} => Kind.Cont {handler=Handler.map (handler, route)}
+                                     | _ => kind
                                 val block = Block.T
-                                            {label = route,
+                                            {label = label,
                                              args = args,
                                              statements = Vector.new0 (),
                                              transfer = Goto {dst = dst,
@@ -583,13 +581,30 @@ fun restoreFunction {main: Function.t}
                                              kind = kind}
                                 val _ = List.push (blocks, block)
                               in
-                                 route
+                                 label
                               end)
                        in
                          route
                        end
               end
         end
+        fun rewriteStatement addPost st
+          = let
+               val st = Statement.replaceUses (st, rewriteVar)
+               val st =
+                 case st of
+                      Statement.SetHandler l => Statement.SetHandler (route l)
+                    | _ => st
+            in
+               Statement.foldDef (st, st, fn (var, ty, st) =>
+                  let
+                     val {ty, var, new} = rewriteVarDef addPost var
+                  in
+                     if new
+                        then replaceDstOperand (st, {ty=ty, var=var})
+                        else st
+                  end)
+            end
         fun rewriteTransfer addPost (t: Transfer.t) =
            let
               val t =
@@ -616,13 +631,12 @@ fun restoreFunction {main: Function.t}
               val phiArgs = Vector.map
                             (LabelInfo.phiArgs' li, fn x => doit x)
               val args = Vector.concat [args, phiArgs]
-              val statements 
-                = if Vector.exists(LabelInfo.defs' li, fn b => b)
-                     orelse
-                     Vector.exists(LabelInfo.uses' li, fn b => b)
-                    then Vector.map (statements, rewriteStatement addPost)
-                    else statements
+              val statements = Vector.map (statements, rewriteStatement addPost)
               val transfer = rewriteTransfer addPost transfer
+              val kind =
+                 case kind of
+                      Kind.Cont {handler} => Kind.Cont {handler=Handler.map (handler, route)}
+                    | _ => kind
               val kind = if Vector.isEmpty phiArgs then kind else Kind.Jump
               val block = Block.T {label = label,
                                    args = args,
