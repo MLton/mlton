@@ -90,4 +90,8 @@ fun foreachLabel (s, f) =
    foldLabelUse (s, (), {label = f o #1,
                          use = fn _ => ()})
 
+fun replaceLabels (T {cases, default, size, test}, f) =
+   T {cases = Vector.map (cases, (fn (w, l) => (w, f l))),
+      default = Option.map (default, f),
+      size = size, test = test}
 end

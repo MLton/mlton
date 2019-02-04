@@ -550,7 +550,7 @@ structure Transfer =
                         dst = f dst}
              | Raise zs => Raise zs
              | Return zs => Return zs
-             | Switch s => Switch s
+             | Switch s => Switch (Switch.replaceLabels (s, f))
 
    end
 
