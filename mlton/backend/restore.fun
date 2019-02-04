@@ -529,11 +529,13 @@ fun restoreFunction {main: Function.t}
                   end)
             end
         local
-          type t = {dst: Label.t,
-                    phiArgs: Var.t vector,
-                    route: Label.t,
-                    hash: Word.t}
-          val routeTable : t HashSet.t = HashSet.new {hash = #hash}
+          val routeTable : (Label.t * Var.t vector, Label.t) HashTable.t =
+            HashTable.new {
+              equals=fn ((l1, vs1), (l2, vs2)) =>
+                Label.equals (l1, l2) andalso
+                Vector.equals (vs1, vs2, Var.equals),
+              hash=fn (l, vs) => Hash.combine
+                (Label.hash l, Hash.vectorMap (vs, Var.hash))}
         in
           fun route dst
             = let
@@ -551,15 +553,9 @@ fun restoreFunction {main: Function.t}
                               in
                                 (valOf (VarInfo.peekVar vi), VarInfo.ty' vi)
                               end)
-                         val hash = Hash.combine (Label.hash dst, Hash.vectorMap (phiArgs, Var.hash o #1))
-                         val {route, ...} 
-                           = HashSet.lookupOrInsert
-                             (routeTable, hash, 
-                              fn {dst = dst', phiArgs = phiArgs', ... } =>
-                              Label.equals (dst, dst') 
-                              andalso
-                              Vector.equals (Vector.map(phiArgs, #1),
-                                             phiArgs', Var.equals),
+                         val route =
+                            HashTable.lookupOrInsert
+                             (routeTable, (dst, Vector.map (phiArgs, #1)),
                               fn () =>
                               let
                                 val route = Label.new dst
@@ -577,10 +573,7 @@ fun restoreFunction {main: Function.t}
                                              kind = kind}
                                 val _ = List.push (blocks, block)
                               in
-                                {dst = dst,
-                                 phiArgs = Vector.map (phiArgs, #1),
-                                 route = route,
-                                 hash = hash}
+                                 route
                               end)
                        in
                          route
