@@ -484,15 +484,32 @@ fun restoreFunction {main: Function.t}
 
         (* rewrite *)
         val blocks = ref []
-        fun rewriteVar (x: Var.t) =
+        fun rewriteVar (var: Var.t) =
           let
-            val vi as VarInfo.T {ty, ...} = varInfo x
-            val newVar = case VarInfo.peekVar vi
-              of NONE => x
-               | SOME x' => x'
+            val vi as VarInfo.T {ty, ...} = varInfo var
+            val var = case VarInfo.peekVar vi
+              of NONE => var
+               | SOME var' => var'
           in
-            Operand.Var {ty=(!ty), var=newVar}
+            Operand.Var {ty=(!ty), var=var}
           end
+        fun rewriteVarDef addPost var =
+           let
+              val vi = varInfo var
+              val ty = VarInfo.ty' vi
+           in
+              if VarInfo.violates vi
+              then
+                 let
+                    val var' = Var.new var
+                    val _ = addPost (fn _ => VarInfo.popVar vi) ;
+                    val _ = VarInfo.pushVar (vi, var');
+                 in
+                    {ty=ty, var=var', new=true}
+                 end
+              else {ty=ty, var=var, new=false}
+           end
+
         fun replaceDstOperand (st, dst as {ty=dstTy, var=dstVar})=
           let
              val tupleDst = (dstVar, dstTy)
@@ -514,18 +531,11 @@ fun restoreFunction {main: Function.t}
             in
                Statement.foldDef (st, st, fn (var, ty, st) =>
                   let
-                     val vi = varInfo var
+                     val {ty, var, new} = rewriteVarDef addPost var
                   in
-                     if VarInfo.violates vi
-                     then
-                        let
-                           val var' = Var.new var
-                           val _ = addPost (fn _ => VarInfo.popVar vi) ;
-                           val _ = VarInfo.pushVar (vi, var');
-                        in
-                           replaceDstOperand (st, {ty=ty, var=var'})
-                        end
-                     else st
+                     if new
+                        then replaceDstOperand (st, {ty=ty, var=var})
+                        else st
                   end)
             end
         local
@@ -580,26 +590,17 @@ fun restoreFunction {main: Function.t}
                        end
               end
         end
-        fun rewriteTransfer (t: Transfer.t) 
-          = Transfer.replaceLabels (Transfer.replaceUses (t, rewriteVar), route)
+        fun rewriteTransfer addPost (t: Transfer.t) =
+           let
+           in
+              Transfer.replaceLabels (Transfer.replaceUses (t, rewriteVar), route)
+           end
         fun visitBlock' (Block.T {label, args, statements, transfer, kind})
           = let
               val {addPost, post} = mkPost ()
               val li = labelInfo label
-              fun doit x = let
-                             val vi = varInfo x
-                             val ty = VarInfo.ty' vi
-                           in
-                             if VarInfo.violates vi
-                               then let
-                                      val x' = Var.new x
-                                    in
-                                      addPost (fn _ => VarInfo.popVar vi) ;
-                                      VarInfo.pushVar (vi, x') ;
-                                      (x', ty)
-                                    end
-                               else (x, ty)
-                           end
+              fun doit var = case rewriteVarDef addPost var of
+                                  {var, ty, ...} => (var, ty)
               val args = Vector.map
                          (args, fn (x, _) => doit x)
               val phiArgs = Vector.map
@@ -611,7 +612,7 @@ fun restoreFunction {main: Function.t}
                      Vector.exists(LabelInfo.uses' li, fn b => b)
                     then Vector.map (statements, rewriteStatement addPost)
                     else statements
-              val transfer = rewriteTransfer transfer
+              val transfer = rewriteTransfer addPost transfer
               val kind = if Vector.isEmpty phiArgs then kind else Kind.Jump
               val block = Block.T {label = label,
                                    args = args,
