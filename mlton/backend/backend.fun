@@ -194,18 +194,15 @@ fun toMachine (program: Ssa.Program.t, codegen) =
                            doit = LimitCheck.transform}, p)
             val p = pass ({name = "insertSignalChecks", 
                            doit = SignalCheck.transform}, p)
+           val p = maybePass ({name = "separateVars",
+                                doit = SeparateVars.transform,
+                                execute = true}, p)
             val p = pass ({name = "implementHandlers", 
                            doit = ImplementHandlers.transform}, p)
             val p = maybePass ({name = "rssaShrink2", 
                                 doit = Program.shrink,
                                 execute = true}, p)
             val () = Program.checkHandlers p
-
-            (* this should be after shrinking so that
-             * since it creates some apparently meaningless moves *)
-            val p = maybePass ({name = "separateVars",
-                                doit = SeparateVars.transform,
-                                execute = true}, p)
             val (p, makeProfileInfo) =
                pass' ({name = "implementProfiling",
                        doit = ImplementProfiling.doit},
