@@ -102,30 +102,29 @@ fun processLoop ({labelLive: (* smlnj can't figure it out *)
          end
 
       fun rewriteSourceBlock (Block.T {args, kind, label, statements, transfer}, destLabel) =
-         if isSome (labelBlock destLabel)
-         then ()
-         else
-            let
-               val varsToConsider = #beginNoFormals (labelLive destLabel)
-               fun toOp v = Operand.Var {ty=varTy v, var=v}
-               val newVars = Vector.keepAllMap (varsToConsider,
-                  fn v => Option.map (remappedVar {var=v, dest=destLabel}, fn v' => (v,v')))
-               val rewrites = Vector.map (newVars,
-                  fn (old, new) => (old, new, varTy old))
+         let
+            val varsToConsider = #beginNoFormals (labelLive destLabel)
+            fun toOp v = Operand.Var {ty=varTy v, var=v}
+            val newVars = Vector.keepAllMap (varsToConsider,
+               fn v => Option.map (remappedVar {var=v, dest=destLabel}, fn v' => (v,v')))
+            val rewrites = Vector.map (newVars,
+               fn (old, new) => (old, new, varTy old))
 
-               val _ = rewriteDestBlock (valOf (blockingLabel destLabel), rewrites)
+            val _ = if isSome (labelBlock destLabel)
+               then ()
+               else rewriteDestBlock (valOf (blockingLabel destLabel), rewrites)
 
-               val newStatements = Vector.map(rewrites,
-                  fn (old, new, ty) => Statement.Bind
-                        {dst=(new, ty), isMutable=false, src=Operand.Var {ty=ty, var=old}})
-               val newBlock =
-                  Block.T {args=args, kind=kind, label=label,
-                     statements=Vector.concat [statements, newStatements],
-                     transfer=transfer}
-               val _ = setLabelBlock (label, newBlock)
-            in
-               ()
-            end
+            val newStatements = Vector.map(rewrites,
+               fn (old, new, ty) => Statement.Bind
+                     {dst=(new, ty), isMutable=false, src=Operand.Var {ty=ty, var=old}})
+            val newBlock =
+               Block.T {args=args, kind=kind, label=label,
+                  statements=Vector.concat [statements, newStatements],
+                  transfer=transfer}
+            val _ = setLabelBlock (label, newBlock)
+         in
+            ()
+         end
 
       fun anyLabel (transfer, p) =
          let
