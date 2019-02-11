@@ -20,6 +20,11 @@
  * This is "optimized" for restoration of functions with small numbers of violating
  * variables -- use bool vectors to represent sets of violating variables.
  * Also, we use a Promise.t to suspend part of the dominance frontier computation.
+ *
+ * For RSSA, this pass must be run before implement-handlers, as we don't currently deal with
+ * handler labels correctly.
+ * The issue may be that the handler needs to be mapped to two different labels in
+ * different places, but SetHandler statements may be missing if they were deemed unnecessary.
  *)
 
 functor RestoreR (S: RESTORE_R_STRUCTS): RESTORE_R =
@@ -505,9 +510,9 @@ fun restoreFunction {main: Function.t}
                     val _ = addPost (fn _ => VarInfo.popVar vi) ;
                     val _ = VarInfo.pushVar (vi, var');
                  in
-                    {ty=ty, var=var', new=true}
+                    {ty=ty, var=var', isNew=true}
                  end
-              else {ty=ty, var=var, new=false}
+              else {ty=ty, var=var, isNew=false}
            end
 
         fun replaceDstOperand (st, dst as {ty=dstTy, var=dstVar})=
@@ -596,11 +601,11 @@ fun restoreFunction {main: Function.t}
                       Statement.SetHandler l => Statement.SetHandler (route l)
                     | _ => st
             in
-               Statement.foldDef (st, st, fn (var, ty, st) =>
+               Statement.foldDef (st, st, fn (var, _, st) =>
                   let
-                     val {ty, var, new} = rewriteVarDef addPost var
+                     val {isNew, ty, var} = rewriteVarDef addPost var
                   in
-                     if new
+                     if isNew
                         then replaceDstOperand (st, {ty=ty, var=var})
                         else st
                   end)
@@ -609,7 +614,7 @@ fun restoreFunction {main: Function.t}
            let
               val t =
                  case t of
-                   Arith {args, dst, overflow, prim, success, ty} =>
+                   Arith {args, dst, overflow, prim, success, ...} =>
                      let
                         val {var=dst, ty, ...} = rewriteVarDef addPost dst
                      in

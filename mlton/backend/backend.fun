@@ -194,7 +194,8 @@ fun toMachine (program: Ssa.Program.t, codegen) =
                            doit = LimitCheck.transform}, p)
             val p = pass ({name = "insertSignalChecks", 
                            doit = SignalCheck.transform}, p)
-           val p = maybePass ({name = "separateVars",
+            (* must be before implementHandlers *)
+            val p = maybePass ({name = "separateVars",
                                 doit = SeparateVars.transform,
                                 execute = true}, p)
             val p = pass ({name = "implementHandlers", 

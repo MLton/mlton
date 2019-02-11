@@ -16,6 +16,8 @@
  * stack appears in any loop. So while we might end up with some extra copies,
  * by construction we don't really do so in any loop where we wouldn't have to
  * already do something similar in practice.
+ *
+ * This must be run before implement-handlers, as it uses restore
  *)
 
 functor SeparateVars(S: RSSA_TRANSFORM_STRUCTS): RSSA_TRANSFORM = 
@@ -36,10 +38,12 @@ fun foreachBlock ({headers, child}, f) =
            Vector.foreach (loops, fn loop => foreachBlock (loop, f))
         end
 
-fun processLoop ({labelLive: (* smlnj can't figure it out *)
-             Label.t -> { begin: Var.t vector, beginNoFormals: Var.t vector,
-                        handler: Label.t option, link: bool}, remLabelLive},
-      varTy, setLabelBlock, labelBlock) tree =
+fun processLoop
+   { labelLive: (Label.t -> { begin: Var.t vector, beginNoFormals: Var.t vector }),
+     remLabelLive,
+     labelBlock,
+     setLabelBlock,
+     varTy} tree =
    let
       (* in each processLoop call we need to loop twice
        * first we find register-blocking points, and record live vars
@@ -104,7 +108,6 @@ fun processLoop ({labelLive: (* smlnj can't figure it out *)
       fun rewriteSourceBlock (Block.T {args, kind, label, statements, transfer}, destLabel) =
          let
             val varsToConsider = #beginNoFormals (labelLive destLabel)
-            fun toOp v = Operand.Var {ty=varTy v, var=v}
             val newVars = Vector.keepAllMap (varsToConsider,
                fn v => Option.map (remappedVar {var=v, dest=destLabel}, fn v' => (v,v')))
             val rewrites = Vector.map (newVars,
@@ -151,6 +154,7 @@ fun processLoop ({labelLive: (* smlnj can't figure it out *)
 
       val _ = destroyBlockingLabels ()
       val _ = destroyBlockedVars ()
+      val _ = foreachBlock (tree, fn Block.T {label, ...} => remLabelLive label)
    in
       ()
    end
@@ -169,7 +173,15 @@ fun transformFunc func =
       val {set=remap, get=getRemapped, ...} = Property.getSetOnce
          (Label.plist, Property.initConst NONE)
 
-      val _ = Vector.foreach (loops, processLoop (liveness, varTy, fn (l, b) => remap (l, SOME b), getRemapped))
+      val _ = Vector.foreach (loops, processLoop
+         {labelLive=(fn l =>
+            case #labelLive liveness l of
+                 {begin, beginNoFormals, ...} =>
+                     {begin=begin, beginNoFormals=beginNoFormals}),
+          remLabelLive=(#remLabelLive liveness),
+          labelBlock=getRemapped,
+          setLabelBlock=fn (l, b) => remap (l, SOME b),
+          varTy=varTy})
 
       val newBlocks = Vector.map (blocks, fn block as Block.T {label, ...} =>
          case getRemapped label of
