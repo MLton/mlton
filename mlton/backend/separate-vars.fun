@@ -61,15 +61,21 @@ fun processLoop
 
       (* Check which blocks block local vars and mark all live vars for consideration *)
       fun markBlock (b as Block.T {kind, label, ...}) =
-         (* note this means that the block is *within* the loop.
-          * We don't expect it, but this means that no destination can be referenced in two separate loops *)
-         case kind of
-            Kind.CReturn {func} =>
-               if CFunction.mayGC func then
-                  ( setBlockingLabel (label, SOME b)
-                  ; Vector.foreach (#beginNoFormals (labelLive label), fn v => setBlockedVar (v, Consider)))
-               else ()
-          | _ => ()
+         let
+            val shouldMark =
+               case kind of
+                  Kind.CReturn {func} =>
+                     (case !Control.bounceRssaLocations of
+                          Control.AnyGC => CFunction.mayGC func
+                        | Control.GCCollect => CFunction.target func = CFunction.Target.Direct "GC_collect")
+                | _ => false
+         in
+            if shouldMark
+            then
+               ( setBlockingLabel (label, SOME b)
+               ; Vector.foreach (#beginNoFormals (labelLive label), fn v => setBlockedVar (v, Consider)))
+            else ()
+         end
       val _ = foreachBlock (tree, markBlock)
 
       (* now for each var in consideration, check if active in loop *)
@@ -164,7 +170,14 @@ fun transformFunc func =
       val {args, blocks, name, raises, returns, start} = Function.dest func
       val liveness = Live.live (func, {shouldConsider = fn _ => true})
       val {loops, ...} = DirectedGraph.LoopForest.dest
-         (Function.loopForest (func, fn (_, _) => true))
+         (Function.loopForest (func, fn (Block.T {transfer, ...}, _) =>
+            case !Control.bounceRssaLoops of
+               Control.AnyLoop => true
+             | Control.NoCalls =>
+                  case transfer of
+                       Transfer.CCall _ => false
+                     | Transfer.Call _ => false
+                     | _ => true))
       val {get=varTy, set=setVarTy, ...} = Property.getSetOnce
          (Var.plist, Property.initRaise ("SeparateVars.transformFunc.varTy", Var.layout))
       val _ = Function.foreachDef (func, setVarTy)

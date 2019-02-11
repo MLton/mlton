@@ -24,6 +24,18 @@ signature CONTROL_FLAGS =
 
       val atMLtons: string vector ref
 
+      datatype bounceRssaLocations =
+         AnyGC
+       | GCCollect
+
+      val bounceRssaLocations: bounceRssaLocations ref
+
+      datatype bounceRssaLoops =
+         AnyLoop
+       | NoCalls
+
+      val bounceRssaLoops: bounceRssaLoops ref
+
       datatype chunk =
          OneChunk
        | ChunkPerFunc

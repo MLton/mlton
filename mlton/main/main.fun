@@ -249,6 +249,22 @@ fun makeOptions {usage} =
        (Expert, "as-opt-quote", " <opt>", "pass (quoted) option to assembler",
         SpaceString
         (fn s => List.push (asOpts, {opt = s, pred = OptPred.Yes}))),
+       (Expert, "bounce-rssa-locations", " {anyGC|gcCollect}",
+        "which calls to bounce rssa variables around",
+        SpaceString (fn s =>
+                     bounceRssaLocations :=
+                     (case s of
+                         "anyGC" => AnyGC
+                       | "gcCollect" => GCCollect
+                       | _ => usage (concat ["invalid -bounce-rssa-locations flag: ", s])))),
+       (Expert, "bounce-rssa-loops", " {anyLoop|noCalls}",
+        "what types of loops to bounce rssa vars inside",
+        SpaceString (fn s =>
+                     bounceRssaLoops :=
+                     (case s of
+                         "anyLoop" => AnyLoop
+                       | "noCalls" => NoCalls
+                       | _ => usage (concat ["invalid -bounce-rssa-loops flag: ", s])))),
        (Expert, "build-constants", " {false|true}",
         "output C file that prints basis constants",
         boolRef buildConstants),
