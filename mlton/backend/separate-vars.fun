@@ -175,8 +175,9 @@ fun transformFunc func =
                Control.AnyLoop => true
              | Control.NoCalls =>
                   case transfer of
-                       Transfer.CCall _ => false
-                     | Transfer.Call _ => false
+                       Transfer.Call _ => false
+                       (* allow other C calls, otherwise we won't
+                        * catch any lops at all *)
                      | _ => true))
       val {get=varTy, set=setVarTy, ...} = Property.getSetOnce
          (Var.plist, Property.initRaise ("SeparateVars.transformFunc.varTy", Var.layout))
