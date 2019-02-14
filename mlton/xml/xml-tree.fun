@@ -12,6 +12,38 @@ struct
 
 open S
 
+infix  1 <|> >>=
+infix  3 <*> <* *>
+infixr 4 <$> <$$> <$$$> <$$$$> <$ <$?>
+structure Parse =
+   struct
+      open Parse
+      fun kw s =
+         spaces *> str s *>
+         failing (nextSat (fn c => Char.isAlphaNum c orelse c = #"_" orelse c = #"'"))
+      fun sym s =
+         spaces *> str s *>
+         failing (nextSat (fn c => String.contains ("!%&$#+-/:<=>?@\\!`^|*", c)))
+      fun option (p: 'a t): 'a option t =
+         (kw "Some" *> (SOME <$> p)) <|>
+         (kw "None" *> pure NONE)
+      local
+         fun between (l, p: 'a t, r): 'a t =
+            spaces *> char l *> p <* spaces <* char r
+      in
+         fun paren p = between (#"(", p, #")")
+         fun sbrack p = between (#"[", p, #"]")
+      end
+      fun vector (p: 'a t): 'a vector t =
+         Vector.fromList <$> paren (sepBy (p, spaces *> char #","))
+      fun vectorOpt (p: 'a t): 'a vector t =
+         vector p <|> pure (Vector.new0 ())
+      fun list (p: 'a t): 'a list t =
+         sbrack (sepBy (p, spaces *> char #","))
+      fun listOpt (p: 'a t): 'a list t =
+         list p <|> pure []
+   end
+
 local
    open Layout
 in
@@ -19,6 +51,12 @@ in
       case Vector.length ts of
          0 => empty
        | _ => seq [tuple (Vector.toListMap (ts, Tyvar.layout)), str " "]
+end
+local
+   open Parse
+in
+   val parseTyvars =
+      vectorOpt Tyvar.parse
 end
 
 structure Type =
@@ -34,6 +72,21 @@ structure Type =
          case Dest.dest t of
             Dest.Var a => Var a
           | Dest.Con x => Con x
+
+      fun parse () =
+         let
+            open Parse
+            val parse = delay parse
+         in
+            (kw "unit" *> pure unit)
+            <|>
+            (Tyvar.parse >>= (pure o T.var))
+            <|>
+            (vectorOpt parse >>= (fn args =>
+             Tycon.parse >>= (fn con =>
+             pure (T.con (con, args)))))
+         end
+      val parse = parse ()
    end
 
 fun maybeConstrain (x, t) =
@@ -54,6 +107,12 @@ in
          then list (Vector.toListMap (ts, Type.layout))
       else empty
 end
+local
+   open Parse
+in
+   val parseTargs =
+      Vector.fromList <$> listOpt Type.parse
+end
 
 structure Pat =
    struct
@@ -73,6 +132,19 @@ structure Pat =
                        maybeConstrain (seq [str " ", Var.layout x], t)]
       end
 
+      local
+         open Parse
+      in
+         val parse =
+            Con.parse >>= (fn con =>
+            parseTargs >>= (fn targs =>
+            optional (Var.parse >>= (fn x =>
+                      sym ":" *>
+                      Type.parse >>= (fn t =>
+                      pure (x, t)))) >>= (fn arg =>
+            pure (T {con = con, targs = targs, arg = arg}))))
+      end
+
       fun con (T {con, ...}) = con
 
       local
@@ -89,17 +161,32 @@ structure Cases =
          Con of (Pat.t * 'a) vector
        | Word of WordSize.t * (WordX.t * 'a) vector
 
-      fun layout (cs, layout) =
+      fun layout (cs, layoutE) =
          let
             open Layout
-            fun doit (v, f) =
-               align (Vector.toListMap (v, fn (x, e) =>
-                                        align [seq [f x, str " => "],
-                                               indent (layout e, 3)]))
+            fun doit (v, layoutP) =
+               align (Vector.toListMap (v, fn (p, e) =>
+                                        align [seq [layoutP p, str " => "],
+                                               indent (layoutE e, 3)]))
          in
             case cs of
                Con v => doit (v, Pat.layout)
              | Word (_, v) => doit (v, fn w => WordX.layout (w, {suffix = true}))
+         end
+
+      fun parse (k, parseE) =
+         let
+            open Parse
+            fun doit (parseP, mk) =
+               many (parseP >>= (fn p =>
+                     sym "=>" *>
+                     parseE >>= (fn e =>
+                     pure (p, e)))) >>= (fn cases =>
+               pure (mk (Vector.fromList cases)))
+         in
+            case k of
+               Con _ => doit (Pat.parse, Con)
+             | Word (ws, _) => doit (WordX.parse, fn v => Word (ws, v))
          end
 
       fun fold (c: 'a t, b: 'b, f: 'a * 'b -> 'b): 'b =
@@ -160,6 +247,16 @@ structure VarExp =
                               Vector.layout Type.layout targs]
                  end
          else Var.layout var
+
+      val parse =
+         let
+            open Parse
+            val varExcepts = Vector.new3 ("exception", "val", "in")
+         in
+            Var.parseExcept varExcepts >>= (fn var =>
+            vectorOpt Type.parse >>= (fn targs =>
+            pure (T {var = var, targs = targs})))
+         end
    end
 
 (*---------------------------------------------------*)
@@ -308,7 +405,111 @@ in
                   str " => "],
              layoutExp body]
 
-end   
+end
+local
+   open Parse
+in
+   val parseConArg =
+      Con.parse >>= (fn con =>
+      optional (kw "of" *> Type.parse) >>= (fn arg =>
+      pure {con = con, arg = arg}))
+   val parseArgs = vector VarExp.parse
+   fun parseDec () =
+      any
+      [kw "exception" *> (Exception <$> parseConArg),
+       kw "val" *> kw "rec" *>
+       parseTyvars >>= (fn tyvars =>
+       many (Var.parse >>= (fn var =>
+             sym ":" *>
+             Type.parse >>= (fn ty =>
+             sym "=" *>
+             delay parseLambda >>= (fn lambda =>
+             pure {var = var, ty = ty, lambda = lambda})))) >>= (fn decs =>
+       pure (Fun {tyvars = tyvars, decs = Vector.fromList decs}))),
+       kw "val" *>
+       Var.parse >>= (fn var =>
+       sym ":" *>
+       Type.parse >>= (fn ty =>
+       sym "=" *>
+       delay parsePrimExp >>= (fn exp =>
+       pure (MonoVal {var = var, ty = ty, exp = exp})))),
+       kw "val" *>
+       parseTyvars >>= (fn tyvars =>
+       Var.parse >>= (fn var =>
+       sym ":" *>
+       Type.parse >>= (fn ty =>
+       sym "=" *>
+       delay parseExp >>= (fn exp =>
+       pure (PolyVal {tyvars = tyvars, var = var, ty = ty, exp = exp})))))]
+   and parseExp () =
+      kw "let" *>
+      many (delay parseDec) >>= (fn decs =>
+      kw "in" *>
+      VarExp.parse >>= (fn result =>
+      kw "end" *>
+      pure (Exp {decs = decs, result = result})))
+   and parsePrimExp () =
+      any
+      [let
+          fun parseCase k =
+             VarExp.parse >>= (fn test =>
+             kw "of" *>
+             Cases.parse (k, delay parseExp) >>= (fn cases =>
+             optional (kw "_" *> sym "=>" *> delay parseExp) >>= (fn default =>
+             pure (Case {test = test, cases = cases, default = Option.map (default, fn e => (e, Region.bogus))}))))
+       in
+          any ((kw "case" *> parseCase (Cases.Con (Vector.new0 ()))) ::
+               (List.map (WordSize.all, fn ws =>
+                          (kw ("case" ^ WordSize.toString ws) *>
+                           parseCase (Cases.Word (ws, (Vector.new0 ())))))))
+       end,
+       kw "new" *>
+       Con.parse >>= (fn con =>
+       parseTargs >>= (fn targs =>
+       optional VarExp.parse >>= (fn arg =>
+       pure (ConApp {con = con, targs = targs, arg = arg})))),
+       Const <$> Const.parse,
+       delay parseExp >>= (fn try =>
+       kw "handle" *>
+       Var.parse >>= (fn var =>
+       sym ":" *>
+       Type.parse >>= (fn ty =>
+       sym "=>" *>
+       delay parseExp >>= (fn handler =>
+       pure (Handle {try = try, catch = (var, ty), handler = handler}))))),
+       Lambda <$> delay parseLambda,
+       kw "prim" *>
+       Prim.parseFull Type.parse >>= (fn prim =>
+       parseTargs >>= (fn targs =>
+       parseArgs >>= (fn args =>
+       pure (PrimApp {prim = prim, targs = targs, args = args})))),
+       kw "raise" *>
+       optional (kw "extend") >>= (fn extend =>
+       VarExp.parse >>= (fn exn =>
+       pure (Raise {extend = Option.isSome extend, exn = exn}))),
+       spaces *> char #"#" *>
+       (peek (nextSat Char.isDigit) *>
+        fromScan (fn getc => Int.scan (StringCvt.DEC, getc))) >>= (fn offset =>
+       VarExp.parse >>= (fn tuple =>
+       pure (Select {offset = offset, tuple = tuple}))),
+       Tuple <$> parseArgs,
+       VarExp.parse >>= (fn func =>
+       VarExp.parse >>= (fn arg =>
+       pure (App {func = func, arg = arg}))),
+       Var <$> VarExp.parse]
+   and parseLambda () =
+      kw "fn" *>
+      optional (kw "noinline") >>= (fn noInline =>
+      Var.parse >>= (fn arg =>
+      sym ":" *>
+      Type.parse >>= (fn argType =>
+      sym "=>" *>
+      delay parseExp >>= (fn body =>
+      pure (Lam {mayInline = Option.isNone noInline,
+                 arg = arg, argType = argType,
+                 body = body,
+                 plist = PropertyList.new ()})))))
+end
 
 structure Dec =
    struct
@@ -331,6 +532,8 @@ structure Exp =
       datatype t = datatype exp
 
       val layout = layoutExp
+      val parse = parseExp ()
+
       val make = Exp
       fun dest (Exp r) = r
       val decs = #decs o dest
@@ -898,6 +1101,17 @@ structure Datatype =
                  (separateLeft (Vector.toListMap (cons, layoutConArg),
                                 "| "))]
          end
+
+      val parse =
+         let
+            open Parse
+         in
+            parseTyvars >>= (fn tyvars =>
+            Tycon.parse >>= (fn tycon =>
+            sym "=" *>
+            sepBy (parseConArg, sym "|") >>= (fn cons =>
+            pure {tyvars = tyvars, tycon = tycon, cons = Vector.fromList cons})))
+         end
    end
 
 (*---------------------------------------------------*)
@@ -934,6 +1148,40 @@ structure Program =
             ; output (seq [str "\n\nOverflow: ", Option.layout Var.layout overflow])
             ; output (str "\n\nBody:")
             ; output (Exp.layout body)
+         end
+
+      fun parse () =
+         let
+            open Parse
+
+            val () = Tyvar.parseReset {prims = Vector.new0 ()}
+            val () = Tycon.parseReset {prims = Vector.fromListMap (Tycon.prims, #tycon)}
+            val () = Con.parseReset {prims = Vector.new4 (Con.truee, Con.falsee, Con.overflow, Con.reff)}
+            val () = Var.parseReset {prims = Vector.new0 ()}
+
+            val parseProgram =
+               kw "Datatypes" *> sym ":" *>
+               many Datatype.parse >>= (fn datatypes =>
+               kw "Overflow" *> sym ":" *>
+               option Var.parse >>= (fn overflow =>
+               kw "Body" *> sym ":" *>
+               Exp.parse >>= (fn body =>
+               pure (T {datatypes = Vector.fromList datatypes,
+                        overflow = overflow,
+                        body = body}))))
+
+            fun finiComment n () =
+               any
+               [str "(*" *> delay (finiComment (n + 1)),
+                str "*)" *> (if n = 1 then pure [Char.space] else delay (finiComment (n - 1))),
+                next *> delay (finiComment n)]
+
+            val skipComments =
+               any
+               [str "(*" *> finiComment 1 (),
+                each [next]]
+         in
+            compose (skipComments, parseProgram <* (spaces *> (failing next <|> failCut "end of file")))
          end
 
       fun clear (T {datatypes, body, ...}) =
