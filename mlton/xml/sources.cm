@@ -13,7 +13,6 @@ signature XML
 signature XML_TYPE
 
 functor Monomorphise
-functor ParseSxml
 functor Sxml
 functor Xml
 
@@ -51,5 +50,3 @@ sxml-simplify.sig
 sxml-simplify.fun
 sxml.sig
 sxml.fun
-parse-sxml.sig
-parse-sxml.fun
