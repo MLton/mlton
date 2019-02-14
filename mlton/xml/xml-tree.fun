@@ -161,34 +161,6 @@ structure Cases =
          Con of (Pat.t * 'a) vector
        | Word of WordSize.t * (WordX.t * 'a) vector
 
-      fun layout (cs, layoutE) =
-         let
-            open Layout
-            fun doit (v, layoutP) =
-               align (Vector.toListMap (v, fn (p, e) =>
-                                        align [seq [layoutP p, str " => "],
-                                               indent (layoutE e, 3)]))
-         in
-            case cs of
-               Con v => doit (v, Pat.layout)
-             | Word (_, v) => doit (v, fn w => WordX.layout (w, {suffix = true}))
-         end
-
-      fun parse (k, parseE) =
-         let
-            open Parse
-            fun doit (parseP, mk) =
-               many (parseP >>= (fn p =>
-                     sym "=>" *>
-                     parseE >>= (fn e =>
-                     pure (p, e)))) >>= (fn cases =>
-               pure (mk (Vector.fromList cases)))
-         in
-            case k of
-               Con _ => doit (Pat.parse, Con)
-             | Word (ws, _) => doit (WordX.parse, fn v => Word (ws, v))
-         end
-
       fun fold (c: 'a t, b: 'b, f: 'a * 'b -> 'b): 'b =
          let
             fun doit l = Vector.fold (l, b, fn ((_, a), b) => f (a, b))
@@ -351,17 +323,26 @@ in
       case e of
          App {arg, func} => seq [VarExp.layout func, str " ", VarExp.layout arg]
        | Case {test, cases, default} =>
-            align [seq [str "case",
-                        case cases of Cases.Con  _ => empty
-                                    | Cases.Word (size, _) => str (WordSize.toString size),
-                        str " ", VarExp.layout test, str " of"],
-                   Cases.layout (cases, layoutExp),
-                   indent
-                   (align
-                    [case default of
-                        NONE => empty
-                      | SOME e => seq [str "_ => ", layoutExp e]],
-                    2)]
+            let
+               fun doit (v, layoutP) =
+                  Vector.toListMap
+                  (v, fn (p, e) =>
+                   mayAlign [seq [layoutP p, str " =>"],
+                             indent (layoutExp e, 3)])
+               datatype z = datatype Cases.t
+               val (suffix, cases) =
+                  case cases of
+                     Con v => (empty, doit (v, Pat.layout))
+                   | Word (ws, v) => (str (WordSize.toString ws),
+                                      doit (v, fn w => WordX.layout (w, {suffix = true})))
+               val cases =
+                  case default of
+                     NONE => cases
+                   | SOME e => cases @ [mayAlign [str "_ =>", indent (layoutExp e, 3)]]
+            in
+               align [seq [str "case", suffix, str " ", VarExp.layout test, str " of"],
+                      indent (alignPrefix (cases, "| "), 2)]
+            end
        | ConApp {arg, con, targs, ...} =>
             seq [str "new ",
                  Con.layout con,
@@ -451,17 +432,25 @@ in
    and parsePrimExp () =
       any
       [let
-          fun parseCase k =
+          fun parseCase (parseP, mk) =
              VarExp.parse >>= (fn test =>
              kw "of" *>
-             Cases.parse (k, delay parseExp) >>= (fn cases =>
-             optional (kw "_" *> sym "=>" *> delay parseExp) >>= (fn default =>
-             pure (Case {test = test, cases = cases, default = default}))))
+             (Vector.fromList <$>
+              sepBy (parseP >>= (fn p =>
+                     sym "=>" *>
+                     delay parseExp >>= (fn e =>
+                     pure (p, e))),
+                     sym "|")) >>= (fn cases =>
+              optional ((if Vector.isEmpty cases then pure () else sym "|") *>
+                        kw "_" *> sym "=>" *> delay parseExp) >>= (fn default =>
+              pure (Case {test = test,
+                          cases = mk cases,
+                          default = default}))))
        in
-          any ((kw "case" *> parseCase (Cases.Con (Vector.new0 ()))) ::
+          any ((kw "case" *> parseCase (Pat.parse, Cases.Con)) ::
                (List.map (WordSize.all, fn ws =>
                           (kw ("case" ^ WordSize.toString ws) *>
-                           parseCase (Cases.Word (ws, (Vector.new0 ())))))))
+                           parseCase (WordX.parse, fn cases => (Cases.Word (ws, cases)))))))
        end,
        kw "new" *>
        Con.parse >>= (fn con =>
