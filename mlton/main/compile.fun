@@ -48,7 +48,6 @@ structure CoreML = CoreML (open Atoms
                               end)
 structure Xml = Xml (open Atoms)
 structure Sxml = Sxml (open Xml)
-structure ParseSxml = ParseSxml(structure XmlTree = Xml)
 structure Ssa = Ssa (open Atoms)
 structure Ssa2 = Ssa2 (open Atoms)
 structure Machine = Machine (open Atoms
@@ -842,7 +841,7 @@ fun genFromSXML (input: File.t): Machine.Program.t =
           style = Control.ML,
           suffix = "sxml",
           thunk = (fn () => case
-                     Parse.parseFile(ParseSxml.program, input)
+                     Parse.parseFile(Sxml.Program.parse (), input)
                         of Result.Yes x => x
                          | Result.No msg => (Control.error 
                            (Region.bogus, Layout.str "Sxml Parse failed", Layout.str msg);
