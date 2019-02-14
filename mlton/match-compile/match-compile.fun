@@ -1,4 +1,4 @@
-(* Copyright (C) 2015,2017 Matthew Fluet.
+(* Copyright (C) 2015,2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -724,7 +724,6 @@ val traceVector =
 fun matchCompile {caseType: Type.t,
                   cases: (NestedPat.t * ((Var.t -> Var.t) -> Exp.t)) vector,
                   conTycon: Con.t -> Tycon.t,
-                  region: Region.t,
                   test: Var.t,
                   testType: Type.t,
                   tyconCons: Tycon.t -> {con: Con.t,
@@ -856,10 +855,6 @@ fun matchCompile {caseType: Type.t,
                   end
              | SOME {size, ...} =>
                   let
-                     val default =
-                        Option.map
-                        (default, fn default =>
-                         (default, region))
                      val cases =
                         Vector.map
                         (cases, fn {const, rules} =>
@@ -996,7 +991,7 @@ fun matchCompile {caseType: Type.t,
                   end
             fun normal () =
                Exp.casee {cases = Cases.con cases,
-                          default = Option.map (default, fn e => (e, region)),
+                          default = default,
                           test = test,
                           ty = caseType}
          in
@@ -1169,7 +1164,7 @@ fun matchCompile {caseType: Type.t,
          in
             Exp.casee
             {cases = Cases.word (WordSize.seqIndex (), cases),
-             default = SOME (default, region),
+             default = SOME default,
              test = Exp.vectorLength test,
              ty = caseType}
          end) arg
@@ -1205,7 +1200,6 @@ val matchCompile =
    fn {caseType: Type.t,
        cases: (NestedPat.t * (int -> (Var.t -> Var.t) -> Exp.t)) vector,
        conTycon: Con.t -> Tycon.t,
-       region: Region.t,
        test: Var.t,
        testType: Type.t,
        tyconCons: Tycon.t -> {con: Con.t,
@@ -1225,7 +1219,6 @@ val matchCompile =
       matchCompile {caseType = caseType,
                     cases = cases,
                     conTycon = conTycon,
-                    region = region,
                     test = test,
                     testType = testType,
                     tyconCons = tyconCons}

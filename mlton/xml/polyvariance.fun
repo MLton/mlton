@@ -67,8 +67,8 @@ fun lambdaSize (Program.T {body, ...}): Lambda.t -> int =
                   (cases,
                    (case default of
                        NONE => n
-                     | SOME (e, _) => loopExp (e, n)),
-                       fn (e, n) => loopExp (e, n))
+                     | SOME e => loopExp (e, n)),
+                   loopExp)
                end
           | Handle {try, handler, ...} =>
                loopExp (try, loopExp (handler, n + 1))
@@ -142,8 +142,7 @@ fun shouldDuplicate (program as Program.T {body, ...}, hofo, small, product)
                                          | Case {test, cases, default} =>
                                               (loopVar test
                                                ; Cases.foreach (cases, loopExp)
-                                               ; (Option.app
-                                                  (default, loopExp o #1)))
+                                               ; Option.app (default, loopExp))
                                          | ConApp {arg, ...} =>
                                               Option.app (arg, loopVar)
                                          | Const _ => ()
@@ -337,9 +336,7 @@ fun transform (program as Program.T {datatypes, body, overflow},
                                            Case {test = loopVar test,
                                                  cases = cases,
                                                  default =
-                                                 Option.map
-                                                 (default, fn (e, r) =>
-                                                  (loopExp e, r))}
+                                                 Option.map (default, loopExp)}
                                         end
                                    | ConApp {con, targs, arg} =>
                                         ConApp {con = con,

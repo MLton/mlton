@@ -271,7 +271,7 @@ and primExp =
             arg: VarExp.t}
   | Case of {test: VarExp.t,
              cases: exp Cases.t,
-             default: (exp * Region.t) option}
+             default: exp option}
   | ConApp of {con: Con.t,
                targs: Type.t vector,
                arg: VarExp.t option}
@@ -360,7 +360,7 @@ in
                    (align
                     [case default of
                         NONE => empty
-                      | SOME (e, _) => seq [str "_ => ", layoutExp e]],
+                      | SOME e => seq [str "_ => ", layoutExp e]],
                     2)]
        | ConApp {arg, con, targs, ...} =>
             seq [str "new ",
@@ -456,7 +456,7 @@ in
              kw "of" *>
              Cases.parse (k, delay parseExp) >>= (fn cases =>
              optional (kw "_" *> sym "=>" *> delay parseExp) >>= (fn default =>
-             pure (Case {test = test, cases = cases, default = Option.map (default, fn e => (e, Region.bogus))}))))
+             pure (Case {test = test, cases = cases, default = default}))))
        in
           any ((kw "case" *> parseCase (Cases.Con (Vector.new0 ()))) ::
                (List.map (WordSize.all, fn ws =>
@@ -645,7 +645,7 @@ structure Exp =
                                             case arg of
                                                NONE => ()
                                              | SOME x => monoVar x)
-                          ; Option.app (default, loopExp o #1))))
+                          ; Option.app (default, loopExp))))
             and loopDec d =
                case d of
                   MonoVal {var, ty, exp} =>
@@ -743,7 +743,7 @@ structure Exp =
                   Lambda l => clearLambda l
                 | Case {cases, default, ...} =>
                      (Cases.foreach' (cases, clearExp, clearPat)
-                      ; Option.app (default, clearExp o #1))
+                      ; Option.app (default, clearExp))
                 | Handle {try, catch, handler, ...} => 
                      (clearExp try
                       ; Var.clear (#1 catch)
@@ -908,8 +908,7 @@ structure DirectExp =
                   (Case
                    {test = test,
                     cases = Cases.map (cases, toExp),
-                    default = (Option.map
-                               (default, fn (e, r) => (toExp e, r)))},
+                    default = Option.map (default, toExp)},
                    ty))
 
       fun raisee {exn: t, extend: bool, ty: Type.t}: t =

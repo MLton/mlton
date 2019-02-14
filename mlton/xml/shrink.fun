@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -397,12 +397,12 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
                                     (Vector.foreachR (cases, i + 1,
                                                       Vector.length cases,
                                                       deleteExp o #2)
-                                     ; Option.app (default, deleteExp o #1)
+                                     ; Option.app (default, deleteExp)
                                      ; Vector.Done (expression e))
                               else (deleteExp e; Vector.Continue ())
                            fun done () =
                               case default of
-                                 SOME (e, _) => expression e
+                                 SOME e => expression e
                                | NONE => Error.bug "Xml.Shrink.shrinkMonoVal: Case, match"
                         in Vector.fold' (cases, 0, (), step, done)
                         end
@@ -411,10 +411,9 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
                            (* Eliminate redundant default case. *)
                            val default =
                               if isExhaustive cases
-                                 then (Option.app (default, deleteExp o #1)
+                                 then (Option.app (default, deleteExp)
                                        ; NONE)
-                              else Option.map (default, fn (e, r) =>
-                                               (shrinkExp e, r))
+                              else Option.map (default, shrinkExp)
                         in
                            expansive
                            (Case {test = test,

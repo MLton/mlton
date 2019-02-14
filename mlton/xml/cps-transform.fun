@@ -1,4 +1,5 @@
-(* Copyright (C) 2007-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 2007-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a HPND-style license.
@@ -303,8 +304,8 @@ fun transform (prog: Program.t): Program.t =
                               end
                      val default =
                         Option.map
-                        (default, fn (e, r) =>
-                         (transExp (e, kVar, kTy, hVar, hTy), r))
+                        (default, fn e =>
+                         transExp (e, kVar, kTy, hVar, hTy))
                   in
                      DirectExp.casee
                      {cases = cases,

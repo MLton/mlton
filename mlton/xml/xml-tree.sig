@@ -92,7 +92,7 @@ signature XML_TREE =
                App of {arg: VarExp.t,
                        func: VarExp.t}
              | Case of {cases: exp Cases.t,
-                        default: (exp * Region.t) option,
+                        default: exp option,
                         test: VarExp.t}
              | ConApp of {arg: VarExp.t option,
                           con: Con.t,
@@ -183,7 +183,7 @@ signature XML_TREE =
             val bug: string -> t
             val casee:
                {cases: t Cases.t,
-                default: (t * Region.t) option,
+                default: t option,
                 test: t,
                 ty: Type.t} (* type of entire case expression *)
                -> t

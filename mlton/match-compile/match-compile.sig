@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2015,2017 Matthew Fluet.
+(* Copyright (C) 2009,2015,2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -37,7 +37,7 @@ signature MATCH_COMPILE_STRUCTS =
 
             val casee:
                {cases: Cases.t,
-                default: (t * Region.t) option,
+                default: t option,
                 test: t,
                 ty: Type.t}  (* type of entire case expression *)
                -> t
@@ -67,7 +67,6 @@ signature MATCH_COMPILE =
          {caseType: Type.t, (* type of entire expression *)
           cases: (NestedPat.t * (int -> (Var.t -> Var.t) -> Exp.t)) vector,
           conTycon: Con.t -> Tycon.t,
-          region: Region.t,
           test: Var.t,
           testType: Type.t,
           tyconCons: Tycon.t -> {con: Con.t, hasArg: bool} vector}

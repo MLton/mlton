@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -305,8 +306,7 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
                   SprimExp.Case
                   {test = monoVarExp test,
                    cases = cases,
-                   default = Option.map (default, fn (e, r) =>
-                                         (monoExp e, r))}
+                   default = Option.map (default, monoExp)}
                end
           | XprimExp.ConApp {con, targs, arg} =>
                let val con = monoCon (con, targs)
