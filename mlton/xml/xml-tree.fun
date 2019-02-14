@@ -1094,17 +1094,20 @@ structure Datatype =
          let
             open Layout
          in
-            seq [layoutTyvars tyvars,
-                 Tycon.layout tycon, str " = ",
-                 align
-                 (separateLeft (Vector.toListMap (cons, layoutConArg),
-                                "| "))]
+            seq [str "datatype ",
+                 layoutTyvars tyvars,
+                 Tycon.layout tycon,
+                 str " = ",
+                 alignPrefix
+                 (Vector.toListMap (cons, layoutConArg),
+                  "| ")]
          end
 
       val parse =
          let
             open Parse
          in
+            kw "datatype" *>
             parseTyvars >>= (fn tyvars =>
             Tycon.parse >>= (fn tycon =>
             sym "=" *>
