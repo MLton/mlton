@@ -830,6 +830,43 @@ in
       handle Done => ()
 end
 
+fun genFromXML (input: File.t): Machine.Program.t =
+   let
+      val _ = setupConstants()
+      val xml =
+         Control.passTypeCheck
+         {display = Control.Layouts Xml.Program.layouts,
+          name = "xmlParse",
+          stats = Xml.Program.layoutStats,
+          style = Control.ML,
+          suffix = "xml",
+          thunk = (fn () => case
+                     Parse.parseFile(Xml.Program.parse (), input)
+                        of Result.Yes x => x
+                         | Result.No msg => (Control.error
+                           (Region.bogus, Layout.str "Xml Parse failed", Layout.str msg);
+                            Control.checkForErrors("parse");
+                            (* can't be reached *)
+                            raise Fail "parse")
+                   ),
+          typeCheck = Xml.typeCheck}
+      val xml = simplifyXml xml
+      val sxml = makeSxml xml
+      val sxml = simplifySxml sxml
+      val ssa = makeSsa sxml
+      val ssa = simplifySsa ssa
+      val ssa2 = makeSsa2 ssa
+      val ssa2 = simplifySsa2 ssa2
+   in
+      makeMachine ssa2
+   end
+fun compileXML {input: File.t, outputC, outputLL, outputS}: unit =
+   compile {input = input,
+            resolve = genFromXML,
+            outputC = outputC,
+            outputLL = outputLL,
+            outputS = outputS}
+
 fun genFromSXML (input: File.t): Machine.Program.t =
    let
       val _ = setupConstants()

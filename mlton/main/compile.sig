@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -34,6 +35,16 @@ signature COMPILE =
                        outputS: unit -> {file: File.t,
                                          print: string -> unit,
                                          done: unit -> unit}} -> unit
+      val compileXML: {input: File.t,
+                       outputC: unit -> {file: File.t,
+                                         print: string -> unit,
+                                         done: unit -> unit},
+                       outputLL: unit -> {file: File.t,
+                                          print: string -> unit,
+                                          done: unit -> unit},
+                       outputS: unit -> {file: File.t,
+                                         print: string -> unit,
+                                         done: unit -> unit}} -> unit
       val compileSXML: {input: File.t,
                         outputC: unit -> {file: File.t,
                                           print: string -> unit,
@@ -45,15 +56,15 @@ signature COMPILE =
                                           print: string -> unit,
                                           done: unit -> unit}} -> unit
       val compileSSA: {input: File.t,
-                        outputC: unit -> {file: File.t,
+                       outputC: unit -> {file: File.t,
+                                         print: string -> unit,
+                                         done: unit -> unit},
+                       outputLL: unit -> {file: File.t,
                                           print: string -> unit,
                                           done: unit -> unit},
-                        outputLL: unit -> {file: File.t,
-                                           print: string -> unit,
-                                           done: unit -> unit},
-                        outputS: unit -> {file: File.t,
-                                          print: string -> unit,
-                                          done: unit -> unit}} -> unit
+                       outputS: unit -> {file: File.t,
+                                         print: string -> unit,
+                                         done: unit -> unit}} -> unit
       val compileSSA2: {input: File.t,
                         outputC: unit -> {file: File.t,
                                           print: string -> unit,
