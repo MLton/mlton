@@ -101,6 +101,8 @@ fun processLoop
          let
             val newStatements = Vector.map(rewrites,
                fn (old, new, ty) => Statement.Bind
+                     (* Unlike below, we're fine letting this get copy-propagated,
+                      * since it usually won't make it any farther than a phi argument *)
                      {dst=(old, ty), isMutable=false, src=Operand.Var {ty=ty, var=new}})
             val newBlock =
                Block.T {args=args, kind=kind, label=label,
@@ -125,7 +127,12 @@ fun processLoop
 
             val newStatements = Vector.map(rewrites,
                fn (old, new, ty) => Statement.Bind
-                     {dst=(new, ty), isMutable=false, src=Operand.Var {ty=ty, var=old}})
+                     (* we set isMutable = true primarily so that the simplifier
+                      * won't copy-propagate; it's easier for us with advance knowleddge
+                      * than to add any lifetime analysis to the copy propagator. 
+                      * And in some sense, the variables are mutable, just
+                      * mutated by the RTS *)
+                     {dst=(new, ty), isMutable=true, src=Operand.Var {ty=ty, var=old}})
             val newBlock =
                Block.T {args=args, kind=kind, label=label,
                   statements=Vector.concat [statements, newStatements],
