@@ -12,6 +12,15 @@ struct
 
 open S
 
+local
+   open Layout
+in
+   fun layoutTyvars ts =
+      case Vector.length ts of
+         0 => empty
+       | _ => seq [tuple (Vector.toListMap (ts, Tyvar.layout)), str " "]
+end
+
 structure Type =
    struct
       structure T = HashType (S)
@@ -211,10 +220,6 @@ in
            case arg of
               NONE => empty
             | SOME t => seq [str " of ", Type.layout t]]
-   fun layoutTyvars ts =
-      case Vector.length ts of
-         0 => empty
-       | _ => seq [tuple (Vector.toListMap (ts, Tyvar.layout)), str " "]
    fun layoutDec d =
       case d of
          Exception ca =>
