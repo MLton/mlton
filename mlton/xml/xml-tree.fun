@@ -1142,10 +1142,10 @@ structure Program =
              *)
             val output = output'
          in
-            output (str "\n\nDatatypes:")
+            output (str "\n\n(* Datatypes: *)")
             ; Vector.foreach (datatypes, output o Datatype.layout)
-            ; output (seq [str "\n\nOverflow: ", Option.layout Var.layout overflow])
-            ; output (str "\n\nBody:")
+            ; output (seq [str "\n\n(* Overflow: *) ", Option.layout Var.layout overflow])
+            ; output (str "\n\n(* Body: *)")
             ; output (Exp.layout body)
          end
 
@@ -1159,11 +1159,8 @@ structure Program =
             val () = Var.parseReset {prims = Vector.new0 ()}
 
             val parseProgram =
-               kw "Datatypes" *> sym ":" *>
                many Datatype.parse >>= (fn datatypes =>
-               kw "Overflow" *> sym ":" *>
                option Var.parse >>= (fn overflow =>
-               kw "Body" *> sym ":" *>
                Exp.parse >>= (fn body =>
                pure (T {datatypes = Vector.fromList datatypes,
                         overflow = overflow,
