@@ -136,15 +136,22 @@ local
    val sym =
       nextSat (fn c => String.contains ("!%&$#+-/:<=>?@\\~`^|*", c))
 
+   val alphanumId =
+      (op ::) <$$> (nextSat Char.isAlpha, many alphanum)
+   val symId =
+      (fn (c,cs,suf) => (c::(cs@suf))) <$$$>
+      (sym, many sym,
+       (op ::) <$$> (char #"_", many (nextSat Char.isDigit))
+       <|> pure [])
+   val tyvarId =
+      (op ::) <$$> (nextSat (fn c => c = #"'"), many alphanum)
+
    fun parseGen (alts: (string * 'a Parse.t) vector, fromId: id -> 'a Parse.t) : 'a Parse.t =
       spaces *>
       (String.implode <$>
-       ((op ::) <$$> (nextSat Char.isAlpha, many alphanum)
-        <|>
-        (fn (c,cs,suf) => (c::(cs@suf))) <$$$>
-        (sym, many sym,
-         (op ::) <$$> (char #"_", many (nextSat Char.isDigit))
-         <|> pure []))) >>= (fn printName =>
+       (if String.sub (noname, 0) = #"'"
+           then tyvarId
+           else alphanumId <|> symId)) >>= (fn printName =>
       let
          fun make () =
            let
