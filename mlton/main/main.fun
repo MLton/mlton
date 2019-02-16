@@ -1248,9 +1248,10 @@ fun commandLine (args: string list): unit =
                      Compile.elaborateSML {input = []})
             else if !buildConstants
                then Compile.outputBasisConstants Out.standard
-            else if !verbosity = Silent orelse !verbosity = Top
-               then printVersion Out.standard
-            else outputHeader' (No, Out.standard))
+            else (printVersion Out.standard
+                  ; if Verbosity.< (!verbosity, Detail)
+                       then ()
+                       else Layout.outputl (Control.layout (), Out.standard)))
     | Result.Yes (input :: rest) =>
          let
             val _ = inputFile := File.base (File.fileOf input)
@@ -1568,17 +1569,7 @@ fun commandLine (args: string list): unit =
                                print = print,
                                done = done}
                            end
-                        val _ =
-                           case !verbosity of
-                              Silent => ()
-                            | Top => ()
-                            | _ =>
-                                 outputHeader
-                                 (Control.No, fn l =>
-                                  let val out = Out.error
-                                  in Layout.output (l, out)
-                                     ; Out.newline out
-                                  end)
+                        val _ = Control.message (Verbosity.Detail, Control.layout)
                         val _ =
                            case stop of
                               Place.Files =>
