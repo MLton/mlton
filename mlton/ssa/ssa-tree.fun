@@ -12,44 +12,10 @@ struct
 
 open S
 
+(* infix declarations for Parse.Ops *)
 infix  1 <|> >>=
 infix  3 <*> <* *>
 infixr 4 <$> <$$> <$$$> <$$$$> <$ <$?>
-structure Parse =
-   struct
-      open Parse
-      fun kw s =
-         spaces *> str s *>
-         failing (nextSat (fn c => Char.isAlphaNum c orelse c = #"_" orelse c = #"'"))
-      fun sym s =
-         spaces *> str s *>
-         failing (nextSat (fn c => String.contains ("!%&$#+-/:<=>?@\\!`^|*", c)))
-      fun option (p: 'a t): 'a option t =
-         (kw "Some" *> (SOME <$> p)) <|>
-         (kw "None" *> pure NONE)
-      local
-         fun between (l, p: 'a t, r): 'a t =
-            spaces *> char l *> p <* spaces <* char r
-      in
-         fun paren p = between (#"(", p, #")")
-         fun cbrack p = between (#"{", p, #"}")
-         fun sbrack p = between (#"[", p, #"]")
-      end
-      fun vector (p: 'a t): 'a vector t =
-         Vector.fromList <$> paren (sepBy (p, spaces *> char #","))
-      fun vectorOpt (p: 'a t): 'a vector t =
-         vector p <|> pure (Vector.new0 ())
-      fun list (p: 'a t): 'a list t =
-         sbrack (sepBy (p, spaces *> char #","))
-      fun listOpt (p: 'a t): 'a list t =
-         list p <|> pure []
-      local
-         fun field s = kw s *> sym "="
-      in
-         val ffield = field
-         fun nfield s = spaces *> char #"," *> field s
-      end
-   end
 
 structure Type =
    struct
@@ -492,7 +458,7 @@ structure Exp =
              Select <$>
              (spaces *> char #"#" *>
               (peek (nextSat Char.isDigit) *>
-               fromScan (fn getc => Int.scan (StringCvt.DEC, getc))) >>= (fn offset =>
+               fromScan (Function.curry Int.scan StringCvt.DEC)) >>= (fn offset =>
               paren Var.parse >>= (fn tuple =>
               pure {tuple = tuple, offset = offset}))),
              Tuple <$> parseArgs,
@@ -1646,8 +1612,8 @@ structure Function =
             Func.parse >>= (fn name =>
             parseFormals >>= (fn args =>
             sym ":" *>
-            cbrack (ffield "returns" *> option (vector Type.parse) >>= (fn returns =>
-                    nfield "raises" *> option (vector Type.parse) >>= (fn raises =>
+            cbrack (ffield ("returns", option (vector Type.parse)) >>= (fn returns =>
+                    nfield ("raises", option (vector Type.parse)) >>= (fn raises =>
                     pure (returns, raises)))) >>= (fn (returns, raises) =>
             sym "=" *>
             Label.parse >>= (fn start =>
@@ -2076,19 +2042,8 @@ structure Program =
                       globals = Vector.fromList globals,
                       functions = functions,
                       main = main})))))
-
-            fun finiComment n () =
-               any
-               [str "(*" *> delay (finiComment (n + 1)),
-                str "*)" *> (if n = 1 then pure [Char.space] else delay (finiComment (n - 1))),
-                next *> delay (finiComment n)]
-
-            val skipComments =
-               any
-               [str "(*" *> finiComment 1 (),
-                each [next]]
          in
-            compose (skipComments, parseProgram <* (spaces *> (failing next <|> failCut "end of file")))
+            compose (skipCommentsML, parseProgram <* (spaces *> (failing next <|> failCut "end of file")))
          end
 
       fun layoutStats (T {datatypes, globals, functions, main, ...}) =

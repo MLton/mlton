@@ -69,7 +69,7 @@ val parse =
       spaces *>
       str "0x" *>
       (peek (nextSat Char.isHexDigit) *>
-       (fromScan (fn getc => IntInf.scan (StringCvt.HEX, getc)))) >>= (fn i =>
+       fromScan (Function.curry IntInf.scan StringCvt.HEX)) >>= (fn i =>
       str ":w" *>
       WordSize.parse >>= (fn s =>
       pure (make (i, s))))

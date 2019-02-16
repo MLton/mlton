@@ -11,42 +11,10 @@ struct
 
 open S
 
+(* infix declarations for Parse.Ops *)
 infix  1 <|> >>=
 infix  3 <*> <* *>
 infixr 4 <$> <$$> <$$$> <$$$$> <$ <$?>
-structure Parse =
-   struct
-      open Parse
-      fun kw s =
-         spaces *> str s *>
-         failing (nextSat (fn c => Char.isAlphaNum c orelse c = #"_"))
-      fun sym s =
-         spaces *> str s *>
-         failing (nextSat (fn c => String.contains ("!%&$#+-/:<=>?@\\!`^|*", c)))
-      val bool: bool t =
-         (kw "true" *> pure true)
-         <|>
-         (kw "false" *> pure false)
-      fun option (p: 'a t): 'a option t =
-         (kw "Some" *> (SOME <$> p))
-         <|>
-         (kw "None" *> pure NONE)
-      local
-         fun between (l, p: 'a t, r): 'a t =
-            spaces *> char l *> p <* spaces <* char r
-      in
-         fun paren p = between (#"(", p, #")")
-         fun cbrack p = between (#"{", p, #"}")
-      end
-      fun vector (p: 'a t): 'a vector t =
-         Vector.fromList <$> paren (sepBy (p, spaces *> char #","))
-      local
-         fun field s = kw s *> sym "="
-      in
-         val ffield = field
-         fun nfield s = spaces *> char #"," *> field s
-      end
-   end
 
 structure Convention =
    struct
@@ -121,13 +89,13 @@ structure Kind =
             [kw "Impure" *> pure Impure,
              kw "Pure" *> pure Pure,
              kw "Runtime" *>
-             cbrack (ffield "bytesNeeded" *> option int >>= (fn bytesNeeded =>
-                     nfield "ensuresBytesFree" *> bool >>= (fn ensuresBytesFree =>
-                     nfield "mayGC" *> bool >>= (fn mayGC =>
-                     nfield "maySwitchThreads" *> bool >>= (fn maySwitchThreads =>
-                     nfield "modifiesFrontier" *> bool >>= (fn modifiesFrontier =>
-                     nfield "readsStackTop" *> bool >>= (fn readsStackTop =>
-                     nfield "writesStackTop" *> bool >>= (fn writesStackTop =>
+             cbrack (ffield ("bytesNeeded", option int) >>= (fn bytesNeeded =>
+                     nfield ("ensuresBytesFree", bool) >>= (fn ensuresBytesFree =>
+                     nfield ("mayGC", bool) >>= (fn mayGC =>
+                     nfield ("maySwitchThreads", bool) >>= (fn maySwitchThreads =>
+                     nfield ("modifiesFrontier", bool) >>= (fn modifiesFrontier =>
+                     nfield ("readsStackTop", bool) >>= (fn readsStackTop =>
+                     nfield ("writesStackTop", bool) >>= (fn writesStackTop =>
                      pure {bytesNeeded = bytesNeeded,
                            ensuresBytesFree = ensuresBytesFree,
                            mayGC = mayGC, maySwitchThreads = maySwitchThreads,
@@ -238,15 +206,15 @@ fun parse parseType =
       open Parse
    in
       T <$>
-      cbrack (ffield "args" *> vector parseType >>= (fn args =>
-              nfield "convention" *> Convention.parse >>= (fn convention =>
-              nfield "kind" *> Kind.parse >>= (fn kind =>
-              nfield "prototype" *> cbrack (ffield "args" *> vector CType.parse >>= (fn args =>
-                                            nfield "res" *> option CType.parse >>= (fn res =>
-                                           pure (args, res)))) >>= (fn prototype =>
-              nfield "return" *> parseType >>= (fn return =>
-              nfield "symbolScope" *> SymbolScope.parse >>= (fn symbolScope =>
-              nfield "target" *> Target.parse >>= (fn target =>
+      cbrack (ffield ("args", vector parseType) >>= (fn args =>
+              nfield ("convention", Convention.parse) >>= (fn convention =>
+              nfield ("kind", Kind.parse) >>= (fn kind =>
+              nfield ("prototype", cbrack (ffield ("args", vector CType.parse) >>= (fn args =>
+                                           nfield ("res", option CType.parse) >>= (fn res =>
+                                           pure (args, res))))) >>= (fn prototype =>
+              nfield ("return", parseType) >>= (fn return =>
+              nfield ("symbolScope", SymbolScope.parse) >>= (fn symbolScope =>
+              nfield ("target", Target.parse) >>= (fn target =>
               pure {args = args, convention = convention,
                     kind = kind, prototype = prototype, return = return,
                     symbolScope = symbolScope, target = target}))))))))

@@ -24,7 +24,7 @@ val parse =
       infix 3 *>
    in
       (peek (nextSat Char.isDigit) *>
-       (fromScan (fn getc => IntInf.scan (StringCvt.DEC, getc)))) >>= (fn ii =>
+       fromScan (Function.curry IntInf.scan StringCvt.DEC)) >>= (fn ii =>
       pure (T (Bits.fromIntInf ii)))
    end
 
