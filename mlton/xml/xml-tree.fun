@@ -50,7 +50,7 @@ in
    fun layoutTyvars ts =
       case Vector.length ts of
          0 => empty
-       | _ => seq [tuple (Vector.toListMap (ts, Tyvar.layout)), str " "]
+       | _ => seq [Vector.layout Tyvar.layout ts, str " "]
 end
 local
    open Parse
@@ -89,13 +89,14 @@ structure Type =
       val parse = parse ()
    end
 
-fun maybeConstrain (x, t) =
+fun maybeConstrain (pre, var, ty, post) =
    let
       open Layout
    in
       if !Control.showTypes
-         then seq [x, str " : ", Type.layout t]
-      else x
+         then mayAlign [seq [pre, Var.layout var, str ":"],
+                        indent (seq [Type.layout ty, post], 2)]
+      else seq [pre, Var.layout var, post]
    end
 
 local
@@ -128,8 +129,9 @@ structure Pat =
                  layoutTargs targs,
                  case arg of
                     NONE => empty
-                  | SOME (x, t) =>
-                       maybeConstrain (seq [str " ", Var.layout x], t)]
+                  | SOME (var, ty) =>
+                       seq [str " ",
+                            paren (maybeConstrain (empty, var, ty, empty))]]
       end
 
       local
@@ -138,10 +140,11 @@ structure Pat =
          val parse =
             Con.parse >>= (fn con =>
             parseTargs >>= (fn targs =>
-            optional (Var.parse >>= (fn x =>
-                      sym ":" *>
-                      Type.parse >>= (fn t =>
-                      pure (x, t)))) >>= (fn arg =>
+            optional (paren
+                      (Var.parse >>= (fn var =>
+                       sym ":" *>
+                       Type.parse >>= (fn ty =>
+                       pure (var, ty))))) >>= (fn arg =>
             pure (T {con = con, targs = targs, arg = arg}))))
       end
 
@@ -210,15 +213,11 @@ structure VarExp =
       end
 
       fun layout (T {var, targs, ...}) =
-         if !Control.showTypes
-            then let open Layout
-                 in
-                    if Vector.isEmpty targs
-                       then Var.layout var
-                    else seq [Var.layout var, str " ",
-                              Vector.layout Type.layout targs]
-                 end
-         else Var.layout var
+         let
+            open Layout
+         in
+            seq [Var.layout var, layoutTargs targs]
+         end
 
       val parse =
          let
@@ -226,7 +225,7 @@ structure VarExp =
             val varExcepts = Vector.new3 ("exception", "val", "in")
          in
             Var.parseExcept varExcepts >>= (fn var =>
-            vectorOpt Type.parse >>= (fn targs =>
+            parseTargs >>= (fn targs =>
             pure (T {var = var, targs = targs})))
          end
    end
@@ -294,31 +293,35 @@ in
          Exception ca =>
             seq [str "exception ", layoutConArg ca]
        | Fun {decs, tyvars} =>
-            align [seq [str "val rec ", layoutTyvars tyvars],
-                   indent (align (Vector.toListMap
-                                  (decs, fn {lambda, ty, var} =>
-                                   align [seq [maybeConstrain (Var.layout var, ty),
-                                               str " = "],
-                                          indent (layoutLambda lambda, 3)])),
-                           3)]
+            align (Vector.toListMapi
+                   (decs, fn (i, {lambda, ty, var}) =>
+                    let
+                       val pre =
+                          if i = 0
+                             then seq [str "val rec ", layoutTyvars tyvars]
+                             else str "and "
+                    in
+                       mayAlign [maybeConstrain (pre, var, ty, str " ="),
+                                 indent (layoutLambda lambda, 2)]
+                    end))
        | MonoVal {exp, ty, var} =>
-            align [seq [str "val ",
-                        maybeConstrain (Var.layout var, ty), str " = "],
-                   indent (layoutPrimExp exp, 3)]
+            mayAlign [maybeConstrain (str "val ", var, ty, str " ="),
+                      indent (layoutPrimExp exp, 2)]
        | PolyVal {exp, ty, tyvars, var} =>
-            align [seq [str "val ",
-                        if !Control.showTypes
-                           then layoutTyvars tyvars
-                        else empty,
-                        maybeConstrain (Var.layout var, ty),
-                        str " = "],
-                   indent (layoutExp exp, 3)]
+            mayAlign [maybeConstrain (seq [str "val ",
+                                           if !Control.showTypes
+                                              then layoutTyvars tyvars
+                                              else empty],
+                                      var, ty, str " ="),
+                      indent (layoutExp exp, 2)]
    and layoutExp (Exp {decs, result}) =
-      align [str "let",
-             indent (align (List.map (decs, layoutDec)), 3),
-             str "in",
-             indent (VarExp.layout result, 3),
-             str "end"]
+      if List.isEmpty decs
+         then VarExp.layout result
+         else align [str "let",
+                     indent (align (List.map (decs, layoutDec)), 2),
+                     str "in",
+                     indent (VarExp.layout result, 2),
+                     str "end"]
    and layoutPrimExp e =
       case e of
          App {arg, func} => seq [VarExp.layout func, str " ", VarExp.layout arg]
@@ -352,16 +355,17 @@ in
                   | SOME x => seq [str " ", VarExp.layout x]]
        | Const c => Const.layout c
        | Handle {catch, handler, try} =>
-            align [layoutExp try,
-                   seq [str "handle ",
-                        maybeConstrain (Var.layout (#1 catch), #2 catch),
-                        str " => ", layoutExp handler]]
+            mayAlign [layoutExp try,
+                      mayAlign [maybeConstrain
+                                (str "handle ", #1 catch, #2 catch, str " =>"),
+                                indent (layoutExp handler, 2)]]
        | Lambda l => layoutLambda l
        | PrimApp {args, prim, targs} =>
             seq [str "prim ",
                  Prim.layoutFull(prim, Type.layout),
                  layoutTargs targs,
-                 str " ", tuple (Vector.toListMap (args, VarExp.layout))]
+                 str " ",
+                 Vector.layout VarExp.layout args]
        | Profile e => ProfileExp.layout e
        | Raise {exn, extend} =>
             seq [str "raise ",
@@ -369,24 +373,26 @@ in
                  VarExp.layout exn]
        | Select {offset, tuple} =>
             seq [str "#", Int.layout offset, str " ", VarExp.layout tuple]
-       | Tuple xs => tuple (Vector.toList
-            (Vector.mapi(xs, fn (i, x) => seq
+       | Tuple xs =>
+            Vector.layouti
+            (fn (i, x) => seq
             (* very specific case to prevent open comments *)
                 [str (if i = 0 andalso
                         (case x of (VarExp.T {var, ...}) =>
                            String.sub(Var.toString var, 0) = #"*")
                       then " "
                       else ""),
-                 VarExp.layout x])))
+                 VarExp.layout x])
+            xs
        | Var x => VarExp.layout x
    and layoutLambda (Lam {arg, argType, body, mayInline, ...}) =
-      align [seq [str "fn ",
-                  str (if not mayInline then "noinline " else ""),
-                  maybeConstrain (Var.layout arg, argType),
-                  str " => "],
-             layoutExp body]
+      mayAlign [maybeConstrain (seq [str "fn ",
+                                     str (if not mayInline then "noinline " else "")],
+                                arg, argType, str " =>"),
+                indent (layoutExp body, 2)]
 
 end
+
 local
    open Parse
 in
@@ -400,12 +406,13 @@ in
       [kw "exception" *> (Exception <$> parseConArg),
        kw "val" *> kw "rec" *>
        parseTyvars >>= (fn tyvars =>
-       many (Var.parse >>= (fn var =>
-             sym ":" *>
-             Type.parse >>= (fn ty =>
-             sym "=" *>
-             delay parseLambda >>= (fn lambda =>
-             pure {var = var, ty = ty, lambda = lambda})))) >>= (fn decs =>
+       sepBy (Var.parse >>= (fn var =>
+              sym ":" *>
+              Type.parse >>= (fn ty =>
+              sym "=" *>
+              delay parseLambda >>= (fn lambda =>
+              pure {var = var, ty = ty, lambda = lambda}))),
+              kw "and") >>= (fn decs =>
        pure (Fun {tyvars = tyvars, decs = Vector.fromList decs}))),
        kw "val" *>
        Var.parse >>= (fn var =>
@@ -423,12 +430,15 @@ in
        delay parseExp >>= (fn exp =>
        pure (PolyVal {tyvars = tyvars, var = var, ty = ty, exp = exp})))))]
    and parseExp () =
-      kw "let" *>
-      many (delay parseDec) >>= (fn decs =>
-      kw "in" *>
-      VarExp.parse >>= (fn result =>
-      kw "end" *>
-      pure (Exp {decs = decs, result = result})))
+      any
+      [kw "let" *>
+       many (delay parseDec) >>= (fn decs =>
+       kw "in" *>
+       VarExp.parse >>= (fn result =>
+       kw "end" *>
+       pure (Exp {decs = decs, result = result}))),
+       VarExp.parse >>= (fn result =>
+       pure (Exp {decs = [], result = result}))]
    and parsePrimExp () =
       any
       [let
