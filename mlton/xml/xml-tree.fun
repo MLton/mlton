@@ -78,13 +78,13 @@ structure Type =
             open Parse
             val parse = delay parse
          in
-            (kw "unit" *> pure unit)
+            (unit <$ kw "unit")
             <|>
-            (Tyvar.parse >>= (pure o T.var))
+            (var <$> Tyvar.parse)
             <|>
-            (vectorOpt parse >>= (fn args =>
-             Tycon.parse >>= (fn con =>
-             pure (T.con (con, args)))))
+            (con <$> (vectorOpt parse >>= (fn args =>
+                      Tycon.parse >>= (fn con =>
+                      pure (con, args)))))
          end
       val parse = parse ()
    end
@@ -138,14 +138,15 @@ structure Pat =
          open Parse
       in
          val parse =
-            Con.parse >>= (fn con =>
-            parseTargs >>= (fn targs =>
-            optional (paren
-                      (Var.parse >>= (fn var =>
-                       sym ":" *>
-                       Type.parse >>= (fn ty =>
-                       pure (var, ty))))) >>= (fn arg =>
-            pure (T {con = con, targs = targs, arg = arg}))))
+            T <$>
+            (Con.parse >>= (fn con =>
+             parseTargs >>= (fn targs =>
+             optional (paren
+                       (Var.parse >>= (fn var =>
+                        sym ":" *>
+                        Type.parse >>= (fn ty =>
+                        pure (var, ty))))) >>= (fn arg =>
+             pure {con = con, targs = targs, arg = arg}))))
       end
 
       fun con (T {con, ...}) = con
@@ -224,9 +225,10 @@ structure VarExp =
             open Parse
             val varExcepts = Vector.new3 ("exception", "val", "in")
          in
-            Var.parseExcept varExcepts >>= (fn var =>
-            parseTargs >>= (fn targs =>
-            pure (T {var = var, targs = targs})))
+            T <$>
+            (Var.parseExcept varExcepts >>= (fn var =>
+             parseTargs >>= (fn targs =>
+             pure {var = var, targs = targs})))
          end
    end
 
@@ -403,45 +405,51 @@ in
    val parseArgs = vector VarExp.parse
    fun parseDec () =
       any
-      [kw "exception" *> (Exception <$> parseConArg),
-       kw "val" *> kw "rec" *>
-       parseTyvars >>= (fn tyvars =>
-       sepBy (Var.parse >>= (fn var =>
-              sym ":" *>
-              Type.parse >>= (fn ty =>
-              sym "=" *>
-              delay parseLambda >>= (fn lambda =>
-              pure {var = var, ty = ty, lambda = lambda}))),
-              kw "and") >>= (fn decs =>
-       pure (Fun {tyvars = tyvars, decs = Vector.fromList decs}))),
-       kw "val" *>
-       Var.parse >>= (fn var =>
-       sym ":" *>
-       Type.parse >>= (fn ty =>
-       sym "=" *>
-       delay parsePrimExp >>= (fn exp =>
-       pure (MonoVal {var = var, ty = ty, exp = exp})))),
-       kw "val" *>
-       parseTyvars >>= (fn tyvars =>
-       Var.parse >>= (fn var =>
-       sym ":" *>
-       Type.parse >>= (fn ty =>
-       sym "=" *>
-       delay parseExp >>= (fn exp =>
-       pure (PolyVal {tyvars = tyvars, var = var, ty = ty, exp = exp})))))]
+      [Exception <$>
+       (kw "exception" *> parseConArg),
+       Fun <$>
+       (kw "val" *> kw "rec" *>
+        parseTyvars >>= (fn tyvars =>
+        sepBy (Var.parse >>= (fn var =>
+               sym ":" *>
+               Type.parse >>= (fn ty =>
+               sym "=" *>
+               delay parseLambda >>= (fn lambda =>
+               pure {var = var, ty = ty, lambda = lambda}))),
+               kw "and") >>= (fn decs =>
+        pure {tyvars = tyvars, decs = Vector.fromList decs}))),
+       MonoVal <$>
+       (kw "val" *>
+        Var.parse >>= (fn var =>
+        sym ":" *>
+        Type.parse >>= (fn ty =>
+        sym "=" *>
+        delay parsePrimExp >>= (fn exp =>
+        pure {var = var, ty = ty, exp = exp})))),
+       PolyVal <$>
+       (kw "val" *>
+        parseTyvars >>= (fn tyvars =>
+        Var.parse >>= (fn var =>
+        sym ":" *>
+        Type.parse >>= (fn ty =>
+        sym "=" *>
+        delay parseExp >>= (fn exp =>
+        pure {tyvars = tyvars, var = var, ty = ty, exp = exp})))))]
    and parseExp () =
-      any
-      [kw "let" *>
-       many (delay parseDec) >>= (fn decs =>
-       kw "in" *>
-       VarExp.parse >>= (fn result =>
-       kw "end" *>
-       pure (Exp {decs = decs, result = result}))),
-       VarExp.parse >>= (fn result =>
-       pure (Exp {decs = [], result = result}))]
+      Exp <$>
+      ((kw "let" *>
+        many (delay parseDec) >>= (fn decs =>
+        kw "in" *>
+        VarExp.parse >>= (fn result =>
+        kw "end" *>
+        pure {decs = decs, result = result})))
+       <|>
+       (VarExp.parse >>= (fn result =>
+        pure {decs = [], result = result})))
    and parsePrimExp () =
       any
-      [let
+      [Case <$>
+       let
           fun parseCase (parseP, mk) =
              VarExp.parse >>= (fn test =>
              kw "of" *>
@@ -453,61 +461,68 @@ in
                      sym "|")) >>= (fn cases =>
               optional ((if Vector.isEmpty cases then pure () else sym "|") *>
                         kw "_" *> sym "=>" *> delay parseExp) >>= (fn default =>
-              pure (Case {test = test,
-                          cases = mk cases,
-                          default = default}))))
+              pure {test = test,
+                    cases = mk cases,
+                    default = default})))
        in
           any ((kw "case" *> parseCase (Pat.parse, Cases.Con)) ::
                (List.map (WordSize.all, fn ws =>
                           (kw ("case" ^ WordSize.toString ws) *>
                            parseCase (WordX.parse, fn cases => (Cases.Word (ws, cases)))))))
        end,
-       kw "new" *>
-       Con.parse >>= (fn con =>
-       parseTargs >>= (fn targs =>
-       optional VarExp.parse >>= (fn arg =>
-       pure (ConApp {con = con, targs = targs, arg = arg})))),
+       ConApp <$>
+       (kw "new" *>
+        Con.parse >>= (fn con =>
+        parseTargs >>= (fn targs =>
+        optional VarExp.parse >>= (fn arg =>
+        pure {con = con, targs = targs, arg = arg})))),
        Const <$> Const.parse,
-       delay parseExp >>= (fn try =>
-       kw "handle" *>
-       Var.parse >>= (fn var =>
-       sym ":" *>
-       Type.parse >>= (fn ty =>
-       sym "=>" *>
-       delay parseExp >>= (fn handler =>
-       pure (Handle {try = try, catch = (var, ty), handler = handler}))))),
+       Handle <$>
+       (delay parseExp >>= (fn try =>
+        kw "handle" *>
+        Var.parse >>= (fn var =>
+        sym ":" *>
+        Type.parse >>= (fn ty =>
+        sym "=>" *>
+        delay parseExp >>= (fn handler =>
+        pure {try = try, catch = (var, ty), handler = handler}))))),
        Lambda <$> delay parseLambda,
-       kw "prim" *>
-       Prim.parseFull Type.parse >>= (fn prim =>
-       parseTargs >>= (fn targs =>
-       parseArgs >>= (fn args =>
-       pure (PrimApp {prim = prim, targs = targs, args = args})))),
-       kw "raise" *>
-       optional (kw "extend") >>= (fn extend =>
-       VarExp.parse >>= (fn exn =>
-       pure (Raise {extend = Option.isSome extend, exn = exn}))),
-       spaces *> char #"#" *>
-       (peek (nextSat Char.isDigit) *>
-        fromScan (fn getc => Int.scan (StringCvt.DEC, getc))) >>= (fn offset =>
-       VarExp.parse >>= (fn tuple =>
-       pure (Select {offset = offset, tuple = tuple}))),
+       PrimApp <$>
+       (kw "prim" *>
+        Prim.parseFull Type.parse >>= (fn prim =>
+        parseTargs >>= (fn targs =>
+        parseArgs >>= (fn args =>
+        pure {prim = prim, targs = targs, args = args})))),
+       Raise <$>
+       (kw "raise" *>
+        optional (kw "extend") >>= (fn extend =>
+        VarExp.parse >>= (fn exn =>
+        pure {extend = Option.isSome extend, exn = exn}))),
+       Select <$>
+       (spaces *> char #"#" *>
+        (peek (nextSat Char.isDigit) *>
+         fromScan (fn getc => Int.scan (StringCvt.DEC, getc))) >>= (fn offset =>
+        VarExp.parse >>= (fn tuple =>
+        pure {offset = offset, tuple = tuple}))),
        Tuple <$> parseArgs,
-       VarExp.parse >>= (fn func =>
-       VarExp.parse >>= (fn arg =>
-       pure (App {func = func, arg = arg}))),
+       App <$>
+       (VarExp.parse >>= (fn func =>
+        VarExp.parse >>= (fn arg =>
+        pure {func = func, arg = arg}))),
        Var <$> VarExp.parse]
    and parseLambda () =
-      kw "fn" *>
-      optional (kw "noinline") >>= (fn noInline =>
-      Var.parse >>= (fn arg =>
-      sym ":" *>
-      Type.parse >>= (fn argType =>
-      sym "=>" *>
-      delay parseExp >>= (fn body =>
-      pure (Lam {mayInline = Option.isNone noInline,
-                 arg = arg, argType = argType,
-                 body = body,
-                 plist = PropertyList.new ()})))))
+      Lam <$>
+      (kw "fn" *>
+       optional (kw "noinline") >>= (fn noInline =>
+       Var.parse >>= (fn arg =>
+       sym ":" *>
+       Type.parse >>= (fn argType =>
+       sym "=>" *>
+       delay parseExp >>= (fn body =>
+       pure {mayInline = Option.isNone noInline,
+             arg = arg, argType = argType,
+             body = body,
+             plist = PropertyList.new ()})))))
 end
 
 structure Dec =
@@ -1161,12 +1176,13 @@ structure Program =
             val () = Var.parseReset {prims = Vector.new0 ()}
 
             val parseProgram =
-               many Datatype.parse >>= (fn datatypes =>
-               option Var.parse >>= (fn overflow =>
-               Exp.parse >>= (fn body =>
-               pure (T {datatypes = Vector.fromList datatypes,
-                        overflow = overflow,
-                        body = body}))))
+               T <$>
+               (many Datatype.parse >>= (fn datatypes =>
+                option Var.parse >>= (fn overflow =>
+                Exp.parse >>= (fn body =>
+                pure {datatypes = Vector.fromList datatypes,
+                      overflow = overflow,
+                      body = body}))))
 
             fun finiComment n () =
                any
