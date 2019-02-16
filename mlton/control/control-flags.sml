@@ -1338,7 +1338,7 @@ structure Verbosity =
           | (_, Pass) => GREATER
           | (Detail, Detail) => EQUAL
 
-      val {<=, ...} =
+      val {<, <=, ...} =
          Relation.compare compare
    end
 

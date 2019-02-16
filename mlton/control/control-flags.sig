@@ -437,6 +437,7 @@ signature CONTROL_FLAGS =
              | Top
              | Pass
              | Detail
+            val < : t * t -> bool
             val <= : t * t -> bool
          end
       datatype verbosity = datatype Verbosity.t
