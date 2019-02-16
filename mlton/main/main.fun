@@ -1217,8 +1217,6 @@ fun commandLine (args: string list): unit =
                   then usage (concat ["can't use -profile time on ",
                                       MLton.Platform.OS.toString targetOS])
                else ()
-      fun printVersion (out: Out.t): unit =
-         Out.output (out, concat [Version.banner, "\n"])
       val () =
          case !show of
             NONE => ()
@@ -1248,7 +1246,7 @@ fun commandLine (args: string list): unit =
                      Compile.elaborateSML {input = []})
             else if !buildConstants
                then Compile.outputBasisConstants Out.standard
-            else (printVersion Out.standard
+            else (Out.outputl (Out.standard, Version.banner)
                   ; if Verbosity.< (!verbosity, Detail)
                        then ()
                        else Layout.outputl (Control.layout (), Out.standard)))
@@ -1296,10 +1294,6 @@ fun commandLine (args: string list): unit =
              | EQUAL => usage "nothing to do"
              | LESS =>
                   let
-                     val _ =
-                        if !verbosity = Top
-                           then printVersion Out.error
-                        else ()
                      val tempFiles: File.t list ref = ref []
                      val tmpDir =
                         let
@@ -1636,7 +1630,7 @@ fun commandLine (args: string list): unit =
                       | Place.SSA2 => compileSSA2 input
                       | _ => Error.bug "invalid start"
                   val doit
-                    = trace (Top, "MLton")
+                    = trace (Top, Version.banner)
                       (fn () =>
                        Exn.finally
                        (compile, fn () =>
