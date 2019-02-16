@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2012,2014-2017 Matthew Fluet.
+(* Copyright (C) 2009-2012,2014-2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -427,11 +427,16 @@ signature CONTROL_FLAGS =
       (* Type check ILs. *)
       val typeCheck: bool ref
 
-      datatype verbosity = 
-         Silent
-       | Top
-       | Pass
-       | Detail
+      structure Verbosity:
+         sig
+            datatype t =
+               Silent
+             | Top
+             | Pass
+             | Detail
+            val <= : t * t -> bool
+         end
+      datatype verbosity = datatype Verbosity.t
       val verbosity: verbosity ref
 
       val warnAnn: bool ref

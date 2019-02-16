@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2012,2014-2017 Matthew Fluet.
+(* Copyright (C) 2009-2012,2014-2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1312,6 +1312,22 @@ structure Verbosity =
           | Top => "Top"
           | Pass => "Pass"
           | Detail => "Detail"
+
+      fun compare (v1, v2) =
+         case (v1, v2) of
+            (Silent, Silent) => EQUAL
+          | (Silent, _) => LESS
+          | (_, Silent) => GREATER
+          | (Top, Top) => EQUAL
+          | (Top, _) => LESS
+          | (_, Top) => GREATER
+          | (Pass, Pass) => EQUAL
+          | (Pass, _) => LESS
+          | (_, Pass) => GREATER
+          | (Detail, Detail) => EQUAL
+
+      val {<=, ...} =
+         Relation.compare compare
    end
 
 datatype verbosity = datatype Verbosity.t

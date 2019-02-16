@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2017 Matthew Fluet.
+(* Copyright (C) 2009,2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -11,19 +11,6 @@ structure Control: CONTROL =
 struct
 
 open ControlFlags
-
-structure Verbosity =
-   struct
-      datatype t = datatype verbosity
-
-      val op <= =
-         fn (Silent, _) => true
-          | (Top, Silent) => false
-          | (Top, _) => true
-          | (Pass, Pass) => true
-          | (_, Detail) => true
-          | _ => false
-   end
 
 datatype style = No | Assembly | C | Dot | LLVM | ML
 
