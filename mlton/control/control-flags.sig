@@ -15,6 +15,9 @@ signature CONTROL_FLAGS =
       val all : unit -> {name: string, 
                          value: string} list
 
+      val layout': {pre: string, suf: string} -> Layout.t
+      val layout: unit -> Layout.t
+
       (*------------------------------------*)
       (*            Begin Flags             *)
       (*------------------------------------*)

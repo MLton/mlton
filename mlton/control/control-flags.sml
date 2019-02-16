@@ -12,6 +12,18 @@ struct
 
 structure C = Control ()
 open C
+fun layout' {pre, suf} =
+   let
+      open Layout
+      val (pre, suf) = (str pre, str suf)
+   in
+      align
+      ((seq [pre, str "control flags:", suf]) ::
+       (List.map
+        (all (), fn {name, value} =>
+         seq [pre, str "   ", str name, str ": ", str value, suf])))
+   end
+fun layout () = layout' {pre = "", suf = ""}
 
 structure Align =
    struct
