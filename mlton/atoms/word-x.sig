@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -35,7 +35,7 @@ signature WORD_X =
       val isMin: t * {signed: bool} -> bool
       val isNegOne: t -> bool
       val isZero: t -> bool
-      val layout: t -> Layout.t
+      val layout: t * {suffix: bool} -> Layout.t
       val le: t * t * {signed: bool} -> bool
       val lshift: t * t -> t
       val lt: t * t * {signed: bool} -> bool
@@ -47,6 +47,7 @@ signature WORD_X =
       val notb: t -> t
       val one: WordSize.t -> t
       val orb: t * t -> t
+      val parse: t Parse.t
       val quot: t * t * {signed: bool} -> t
       val rem: t * t * {signed: bool} -> t
       val resize: t * WordSize.t -> t
@@ -60,7 +61,7 @@ signature WORD_X =
       val toInt: t -> int
       val toIntInf: t -> IntInf.t
       val toIntInfX: t -> IntInf.t
-      val toString: t -> string
+      val toString: t * {suffix: bool} -> string
       val xorb: t * t -> t
       val zero: WordSize.t -> t
    end

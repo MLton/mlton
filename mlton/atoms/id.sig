@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2017 Matthew Fluet.
+(* Copyright (C) 2009,2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -29,6 +29,10 @@ signature ID =
       val newNoname: unit -> t (* prefix is noname *)
       val newString: string -> t (* new id with printName not set *)
       val originalName: t -> string (* raw destructor *)
+      val parse: t Parse.t
+      val parseAs: (string * 'a) vector * (t -> 'a) -> 'a Parse.t
+      val parseExcept: string vector -> t Parse.t
+      val parseReset: {prims: t vector} -> unit
       val plist: t -> PropertyList.t
       val printNameAlphaNumeric: bool ref
       val toString: t -> string

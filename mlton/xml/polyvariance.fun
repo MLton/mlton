@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -66,8 +67,8 @@ fun lambdaSize (Program.T {body, ...}): Lambda.t -> int =
                   (cases,
                    (case default of
                        NONE => n
-                     | SOME (e, _) => loopExp (e, n)),
-                       fn (e, n) => loopExp (e, n))
+                     | SOME e => loopExp (e, n)),
+                   loopExp)
                end
           | Handle {try, handler, ...} =>
                loopExp (try, loopExp (handler, n + 1))
@@ -141,8 +142,7 @@ fun shouldDuplicate (program as Program.T {body, ...}, hofo, small, product)
                                          | Case {test, cases, default} =>
                                               (loopVar test
                                                ; Cases.foreach (cases, loopExp)
-                                               ; (Option.app
-                                                  (default, loopExp o #1)))
+                                               ; Option.app (default, loopExp))
                                          | ConApp {arg, ...} =>
                                               Option.app (arg, loopVar)
                                          | Const _ => ()
@@ -336,9 +336,7 @@ fun transform (program as Program.T {datatypes, body, overflow},
                                            Case {test = loopVar test,
                                                  cases = cases,
                                                  default =
-                                                 Option.map
-                                                 (default, fn (e, r) =>
-                                                  (loopExp e, r))}
+                                                 Option.map (default, loopExp)}
                                         end
                                    | ConApp {con, targs, arg} =>
                                         ConApp {con = con,
@@ -445,7 +443,7 @@ val transform =
                           {display = Control.Layouts Program.layouts,
                            name = "duplicate" ^ (Int.toString (n + 1)),
                            stats = Program.layoutStats,
-                           style = Control.No,
+                           style = Control.ML,
                            suffix = "post.xml",
                            thunk = fn () => shrink (transform (p, hofo, small, product))}
                     in

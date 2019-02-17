@@ -39,14 +39,11 @@ local
    sxml-simplify.fun
    sxml.sig
    sxml.fun
-   parse-sxml.sig
-   parse-sxml.fun
 in
    signature SXML
    signature XML
 
    functor Monomorphise
-   functor ParseSxml
    functor Sxml
    functor Xml
 end

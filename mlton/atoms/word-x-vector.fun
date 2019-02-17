@@ -1,4 +1,4 @@
-(* Copyright (C) 2014,2017 Matthew Fluet.
+(* Copyright (C) 2014,2017,2019 Matthew Fluet.
  * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -28,9 +28,11 @@ fun layout (T {elements, elementSize}) =
          [Layout.str "#[",
           Layout.fill (Layout.separateRight
                        (Vector.toListMap
-                        (elements, WordX.layout),
+                        (elements, fn w =>
+                         WordX.layout (w, {suffix = true})),
                         ",")),
-          Layout.str "]"]
+          Layout.str "]",
+          Layout.str (":w" ^ WordSize.toString elementSize ^ "v")]
       fun string cs =
          Layout.seq
          [Layout.str "\"",
@@ -55,6 +57,27 @@ fun layout (T {elements, elementSize}) =
    end
 
 val toString = Layout.toString o layout
+
+val parse =
+   let
+      open Parse
+      infix  1 <|> >>=
+      infix  3 *>
+   in
+      (spaces *> char Char.dquote *>
+       many (fromScan Char.scan) >>= (fn cs =>
+       char Char.dquote *>
+       pure (T {elements = Vector.fromListMap (cs, WordX.fromChar),
+                elementSize = WordSize.byte})))
+      <|>
+      (spaces *> str "#[" *>
+       sepBy (WordX.parse, spaces *> str ",") >>= (fn ws =>
+       spaces *> str "]" *>
+       str ":w" *> WordSize.parse >>= (fn s =>
+       str "v" *>
+       pure (T {elements = Vector.fromList ws,
+                elementSize = s}))))
+   end
 
 val hash = String.hash o toString
 

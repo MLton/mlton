@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2011 Matthew Fluet.
+(* Copyright (C) 2009,2011,2019 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -81,6 +81,7 @@ signature REAL =
       val realTrunc: t -> t
       val rem: t * t -> t
       val round: t -> int
+      val scan: (char, 'a) StringCvt.reader -> (t, 'a) StringCvt.reader
       val signBit: t -> bool
       val sin: t -> t
       val split: t -> {frac: t, whole: t}

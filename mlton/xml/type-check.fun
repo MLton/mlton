@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -176,7 +177,7 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
                App {arg, func} => checkApp (checkVarExp func, arg)
              | Case {cases, default, test} =>
                   let
-                     val default = Option.map (default, checkExp o #1)
+                     val default = Option.map (default, checkExp)
                      fun equalss v =
                         if Vector.isEmpty v
                            then Error.bug "Xml.TypeCheck.equalss"

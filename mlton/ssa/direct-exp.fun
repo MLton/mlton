@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -155,7 +156,7 @@ in
                                     (seq [Con.layout con,
                                           Vector.layout (Var.layout o #1) args],
                                      body))
-                         | Word (_, v) => simple (v, WordX.layout)
+                         | Word (_, v) => simple (v, fn w => WordX.layout (w, {suffix = true}))
                      end,
                         case default of
                            NONE => empty

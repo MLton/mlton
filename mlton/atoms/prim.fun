@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2010,2014,2016-2017 Matthew Fluet.
+(* Copyright (C) 2009-2010,2014,2016-2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -378,6 +378,7 @@ fun toString (n: 'a t): string =
    end
 
 fun layout p = Layout.str (toString p)
+
 fun layoutFull (p, layoutX) =
    case p of
       FFI f => Layout.seq [Layout.str "FFI ", CFunction.layout (f, layoutX)]
@@ -1203,6 +1204,32 @@ in
       (HashSet.peek
        (table, String.hash name, fn {string, ...} => name = string),
        fn {prim, ...} => cast prim)
+end
+
+local
+   open Parse
+   infix  1 <|> >>=
+   infix  3 <*> <* *>
+   infixr 4 <$> <$$> <$$$> <$$$$> <$ <$?>
+   val name =
+      spaces *>
+      (fn (c, cs) => String.implode (c::cs)) <$$>
+      (nextSat (fn c => Char.isAlpha c orelse c = #"_"),
+       many (nextSat (fn c => Char.isAlphaNum c orelse c = #"_")))
+in
+fun parse () = fromString <$?> (spaces *> name)
+fun parseFull parseX =
+   name >>= (fn pname =>
+   case pname of
+      "FFI_Symbol" => FFI_Symbol <$>
+                      cbrack (ffield ("name", name) >>= (fn name =>
+                              nfield ("cty", option CType.parse) >>= (fn cty =>
+                              nfield ("symbolScope", CFunction.SymbolScope.parse) >>= (fn symbolScope =>
+                              pure {name = name, cty = cty, symbolScope = symbolScope}))))
+    | "FFI" => FFI <$> CFunction.parse parseX
+    | _ => (case fromString pname of
+               NONE => fail "prim"
+             | SOME p => pure p))
 end
 
 fun 'a checkApp (prim: 'a t,

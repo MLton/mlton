@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -356,10 +357,10 @@ struct
         open Layout
       in
         val rec layoutU
-          = fn Word w => WordX.layout w
+          = fn Word w => WordX.layout (w, {suffix = false})
              | Label l => Label.layout l
              | LabelPlusWord (l, w) 
-             => paren (seq [Label.layout l, str "+", WordX.layout w])
+             => paren (seq [Label.layout l, str "+", WordX.layout (w, {suffix = false})])
         and layout
           = fn T {immediate, ...} => layoutU immediate
       end
@@ -3822,7 +3823,7 @@ struct
               (concat o Cases.mapToList)
               (cases,
                fn (w, target) => concat[" (",
-                                        WordX.toString w,
+                                        WordX.toString (w, {suffix = true}),
                                         " -> GOTO ",
                                         Label.toString target,
                                         ")"]) ^

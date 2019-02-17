@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -280,9 +281,7 @@ fun transform (Program.T {datatypes, body, ...}): Program.t =
                   let
                      fun normal () =
                         primExp (Case {cases = Cases.map (cases, loop),
-                                       default = (Option.map
-                                                  (default, fn (e, r) =>
-                                                   (loop e, r))),
+                                       default = Option.map (default, loop),
                                        test = test})
                   in
                      case cases of
@@ -308,12 +307,12 @@ fun transform (Program.T {datatypes, body, ...}): Program.t =
                                                arg = unit (),
                                                ty = ty}
                                        val unit = Var.newString "unit"
-                                       val (body, region) =
+                                       val body =
                                           case default of
                                              NONE =>
                                                 Error.bug "ImplementExceptions: no default for exception case"
-                                           | SOME (e, r) =>
-                                                (fromExp (loop e, ty), r)
+                                           | SOME e =>
+                                                fromExp (loop e, ty)
                                        val decs =
                                           vall
                                           {var = defaultVar,
@@ -330,8 +329,7 @@ fun transform (Program.T {datatypes, body, ...}): Program.t =
                                          casee
                                          {test = projectSum (VarExp.var test),
                                           ty = ty,
-                                          default = SOME (callDefault (),
-                                                          region),
+                                          default = SOME (callDefault ()),
                                           cases =
                                           Cases.Con
                                           (Vector.map

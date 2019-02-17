@@ -1,4 +1,4 @@
-(* Copyright (C) 2011,2014-2015,2017 Matthew Fluet.
+(* Copyright (C) 2011,2014-2015,2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -48,11 +48,8 @@ structure CoreML = CoreML (open Atoms
                               end)
 structure Xml = Xml (open Atoms)
 structure Sxml = Sxml (open Xml)
-structure ParseSxml = ParseSxml(structure XmlTree = Xml)
 structure Ssa = Ssa (open Atoms)
-structure ParseSsa = ParseSsa(structure SsaTree = Ssa)
 structure Ssa2 = Ssa2 (open Atoms)
-structure ParseSsa2 = ParseSsa2(structure SsaTree2 = Ssa2)
 structure Machine = Machine (open Atoms
                              structure Label = Ssa.Label)
 local
@@ -505,7 +502,7 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
             open Control
          in
             if !keepCoreML
-               then saveToFile ({suffix = "core-ml"}, No, coreML,
+               then saveToFile ({suffix = "core-ml"}, Control.ML, coreML,
                                 Layouts CoreML.Program.layouts)
             else ()
          end
@@ -537,7 +534,7 @@ fun simplifyXml xml =
       open Control
       val _ =
          if !keepXML
-            then saveToFile ({suffix = "xml"}, No, xml,
+            then saveToFile ({suffix = "xml"}, Control.ML, xml,
                Layouts Xml.Program.layouts)
             else ()
    in
@@ -568,7 +565,7 @@ fun simplifySxml sxml =
       open Control
       val _ =
          if !keepSXML
-            then saveToFile ({suffix = "sxml"}, No, sxml,
+            then saveToFile ({suffix = "sxml"}, Control.ML, sxml,
                Layouts Sxml.Program.layouts)
             else ()
    in
@@ -599,7 +596,7 @@ fun simplifySsa ssa =
       open Control
       val _ =
          if !keepSSA
-            then saveToFile ({suffix = "ssa"}, No, ssa,
+            then saveToFile ({suffix = "ssa"}, ML, ssa,
                Layouts Ssa.Program.layouts)
          else ()
    in
@@ -833,6 +830,43 @@ in
       handle Done => ()
 end
 
+fun genFromXML (input: File.t): Machine.Program.t =
+   let
+      val _ = setupConstants()
+      val xml =
+         Control.passTypeCheck
+         {display = Control.Layouts Xml.Program.layouts,
+          name = "xmlParse",
+          stats = Xml.Program.layoutStats,
+          style = Control.ML,
+          suffix = "xml",
+          thunk = (fn () => case
+                     Parse.parseFile(Xml.Program.parse (), input)
+                        of Result.Yes x => x
+                         | Result.No msg => (Control.error
+                           (Region.bogus, Layout.str "Xml Parse failed", Layout.str msg);
+                            Control.checkForErrors("parse");
+                            (* can't be reached *)
+                            raise Fail "parse")
+                   ),
+          typeCheck = Xml.typeCheck}
+      val xml = simplifyXml xml
+      val sxml = makeSxml xml
+      val sxml = simplifySxml sxml
+      val ssa = makeSsa sxml
+      val ssa = simplifySsa ssa
+      val ssa2 = makeSsa2 ssa
+      val ssa2 = simplifySsa2 ssa2
+   in
+      makeMachine ssa2
+   end
+fun compileXML {input: File.t, outputC, outputLL, outputS}: unit =
+   compile {input = input,
+            resolve = genFromXML,
+            outputC = outputC,
+            outputLL = outputLL,
+            outputS = outputS}
+
 fun genFromSXML (input: File.t): Machine.Program.t =
    let
       val _ = setupConstants()
@@ -844,7 +878,7 @@ fun genFromSXML (input: File.t): Machine.Program.t =
           style = Control.ML,
           suffix = "sxml",
           thunk = (fn () => case
-                     Parse.parseFile(ParseSxml.program, input)
+                     Parse.parseFile(Sxml.Program.parse (), input)
                         of Result.Yes x => x
                          | Result.No msg => (Control.error 
                            (Region.bogus, Layout.str "Sxml Parse failed", Layout.str msg);
@@ -879,7 +913,7 @@ fun genFromSsa (input: File.t): Machine.Program.t =
           style = Control.ML,
           suffix = "ssa",
           thunk = (fn () => case
-                     Parse.parseFile(ParseSsa.program, input)
+                     Parse.parseFile(Ssa.Program.parse (), input)
                         of Result.Yes x => x
                          | Result.No msg => (Control.error 
                            (Region.bogus, Layout.str "Ssa Parse failed", Layout.str msg);
@@ -912,7 +946,7 @@ fun genFromSsa2 (input: File.t): Machine.Program.t =
                       style = Control.ML,
                       suffix = "ssa2",
                       thunk = (fn () => case
-                                 Parse.parseFile(ParseSsa2.program, input)
+                                 Parse.parseFile(Ssa2.Program.parse (), input)
                                     of Result.Yes x => x
                                      | Result.No msg => (Control.error
                                        (Region.bogus, Layout.str "Ssa2 Parse failed", Layout.str msg);

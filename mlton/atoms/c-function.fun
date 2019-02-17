@@ -1,4 +1,4 @@
-(* Copyright (C) 2015 Matthew Fluet.
+(* Copyright (C) 2015,2019 Matthew Fluet.
  * Copyright (C) 2003-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -11,17 +11,31 @@ struct
 
 open S
 
+(* infix declarations for Parse.Ops *)
+infix  1 <|> >>=
+infix  3 <*> <* *>
+infixr 4 <$> <$$> <$$$> <$$$$> <$ <$?>
+
 structure Convention =
    struct
       datatype t =
          Cdecl
        | Stdcall
 
+      val all = [Cdecl, Stdcall]
+
       val toString =
          fn Cdecl => "cdecl"
           | Stdcall => "stdcall"
 
       val layout = Layout.str o toString
+
+      val parse =
+         let
+            open Parse
+         in
+            any (List.map (all, fn t => kw (toString t) *> pure t))
+         end
    end
 
 structure Kind =
@@ -67,6 +81,30 @@ structure Kind =
 
       val toString = Layout.toString o layout
 
+      val parse =
+         let
+            open Parse
+         in
+            any
+            [kw "Impure" *> pure Impure,
+             kw "Pure" *> pure Pure,
+             kw "Runtime" *>
+             cbrack (ffield ("bytesNeeded", option int) >>= (fn bytesNeeded =>
+                     nfield ("ensuresBytesFree", bool) >>= (fn ensuresBytesFree =>
+                     nfield ("mayGC", bool) >>= (fn mayGC =>
+                     nfield ("maySwitchThreads", bool) >>= (fn maySwitchThreads =>
+                     nfield ("modifiesFrontier", bool) >>= (fn modifiesFrontier =>
+                     nfield ("readsStackTop", bool) >>= (fn readsStackTop =>
+                     nfield ("writesStackTop", bool) >>= (fn writesStackTop =>
+                     pure {bytesNeeded = bytesNeeded,
+                           ensuresBytesFree = ensuresBytesFree,
+                           mayGC = mayGC, maySwitchThreads = maySwitchThreads,
+                           modifiesFrontier = modifiesFrontier,
+                           readsStackTop = readsStackTop,
+                           writesStackTop = writesStackTop})))))))) >>= (fn args =>
+             pure (Runtime args))]
+         end
+
       local
          fun make (sel, default) k =
             case k of
@@ -93,12 +131,21 @@ structure SymbolScope =
        | Private
        | Public
 
+      val all = [External, Private, Public]
+
       val toString =
          fn External => "external"
           | Private => "private"
           | Public => "public"
 
       val layout = Layout.str o toString
+
+      val parse =
+         let
+            open Parse
+         in
+            any (List.map (all, fn ss => kw (toString ss) *> pure ss))
+         end
    end
 
 structure Target =
@@ -112,6 +159,18 @@ structure Target =
           | Indirect => "<*>"
 
       val layout = Layout.str o toString
+
+      val parse =
+         let
+            open Parse
+         in
+            (Direct <$> (spaces *>
+                         ((String.implode o op ::) <$$>
+                          (nextSat (fn c => Char.isAlpha c orelse c = #"_"),
+                           many (nextSat (fn c => Char.isAlphaNum c orelse c = #"_"))))))
+            <|>
+            (sym "<*>" *> pure Indirect)
+         end
 
       val equals =
          fn (Direct name, Direct name') => name = name'
@@ -141,6 +200,25 @@ fun layout (T {args, convention, kind, prototype, return, symbolScope, target, .
     ("return", layoutType return),
     ("symbolScope", SymbolScope.layout symbolScope),
     ("target", Target.layout target)]
+
+fun parse parseType =
+   let
+      open Parse
+   in
+      T <$>
+      cbrack (ffield ("args", vector parseType) >>= (fn args =>
+              nfield ("convention", Convention.parse) >>= (fn convention =>
+              nfield ("kind", Kind.parse) >>= (fn kind =>
+              nfield ("prototype", cbrack (ffield ("args", vector CType.parse) >>= (fn args =>
+                                           nfield ("res", option CType.parse) >>= (fn res =>
+                                           pure (args, res))))) >>= (fn prototype =>
+              nfield ("return", parseType) >>= (fn return =>
+              nfield ("symbolScope", SymbolScope.parse) >>= (fn symbolScope =>
+              nfield ("target", Target.parse) >>= (fn target =>
+              pure {args = args, convention = convention,
+                    kind = kind, prototype = prototype, return = return,
+                    symbolScope = symbolScope, target = target}))))))))
+   end
 
 local
    fun make f (T r) = f r

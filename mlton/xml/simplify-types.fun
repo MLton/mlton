@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -262,8 +263,7 @@ fun simplifyTypes (I.Program.T {body, datatypes, overflow}) =
                            (s, Vector.map (v, fn (c, e) => (c, fixExp e)))
                in
                   O.PrimExp.Case {cases = cases,
-                                  default = Option.map (default, fn (e, r) =>
-                                                        (fixExp e, r)),
+                                  default = Option.map (default, fixExp),
                                   test = fixVarExp test}
                end
           | I.PrimExp.ConApp {arg, con, targs} =>

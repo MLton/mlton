@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -83,14 +84,14 @@ fun pass ({name, doit}, p) =
          in maybeSaveToFile
             ({name = name,
               suffix = "pre.xml"},
-             Control.No, p, Control.Layouts Program.layouts)
+             Control.ML, p, Control.Layouts Program.layouts)
          end
       val p =
          Control.passTypeCheck
          {display = Control.Layouts Program.layouts,
           name = name,
           stats = Program.layoutStats,
-          style = Control.No,
+          style = Control.ML,
           suffix = "post.xml",
           thunk = fn () => doit p,
           typeCheck = typeCheck}

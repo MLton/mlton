@@ -1,4 +1,4 @@
-(* Copyright (C) 2016-2017 Matthew Fluet.
+(* Copyright (C) 2016-2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1377,9 +1377,9 @@ structure ConRep =
                   seq [str "ShiftAndTag ",
                        record [("component", Component.layout component),
                                ("selects", Selects.layout selects),
-                               ("tag", WordX.layout tag),
+                               ("tag", WordX.layout (tag, {suffix = true})),
                                ("ty", Type.layout ty)]]
-             | Tag {tag, ...} => seq [str "Tag ", WordX.layout tag]
+             | Tag {tag, ...} => seq [str "Tag ", WordX.layout (tag, {suffix = true})]
              | Tuple tr => TupleRep.layout tr
          end
 

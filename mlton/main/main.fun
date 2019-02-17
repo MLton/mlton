@@ -1,4 +1,4 @@
-(* Copyright (C) 2010-2011,2013-2018 Matthew Fluet.
+(* Copyright (C) 2010-2011,2013-2019 Matthew Fluet.
  * Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -16,12 +16,13 @@ structure Compile = Compile ()
 
 structure Place =
    struct
-      datatype t = Files | Generated | MLB | O | OUT | SML | SXML | SSA | SSA2 | TypeCheck
+      datatype t = Files | Generated | MLB | O | OUT | SML | SSA | SSA2 | SXML | TypeCheck | XML
       val toInt: t -> int =
          fn MLB => 1
           | SML => 1
           | Files => 2
           | TypeCheck => 4
+          | XML => 6
           | SXML => 7
           | SSA => 10
           | SSA2 => 11
@@ -36,10 +37,11 @@ structure Place =
           | O => "o"
           | OUT => "out"
           | SML => "sml"
-          | SXML => "sxml"
           | SSA => "ssa"
           | SSA2 => "ssa2"
+          | SXML => "sxml"
           | TypeCheck => "tc"
+          | XML => "xml"
 
       fun compare (p, p') = Int.compare (toInt p, toInt p')
    end
@@ -1215,8 +1217,6 @@ fun commandLine (args: string list): unit =
                   then usage (concat ["can't use -profile time on ",
                                       MLton.Platform.OS.toString targetOS])
                else ()
-      fun printVersion (out: Out.t): unit =
-         Out.output (out, concat [Version.banner, "\n"])
       val () =
          case !show of
             NONE => ()
@@ -1246,9 +1246,10 @@ fun commandLine (args: string list): unit =
                      Compile.elaborateSML {input = []})
             else if !buildConstants
                then Compile.outputBasisConstants Out.standard
-            else if !verbosity = Silent orelse !verbosity = Top
-               then printVersion Out.standard
-            else outputHeader' (No, Out.standard))
+            else (Out.outputl (Out.standard, Version.banner)
+                  ; if Verbosity.< (!verbosity, Detail)
+                       then ()
+                       else Layout.outputl (Control.layout (), Out.standard)))
     | Result.Yes (input :: rest) =>
          let
             val _ = inputFile := File.base (File.fileOf input)
@@ -1271,6 +1272,7 @@ fun commandLine (args: string list): unit =
                in
                   loop [(".mlb", MLB, false),
                         (".sml", SML, false),
+                        (".xml", XML, false),
                         (".sxml", SXML, false),
                         (".ssa", SSA, false),
                         (".ssa2", SSA2, false),
@@ -1292,10 +1294,6 @@ fun commandLine (args: string list): unit =
              | EQUAL => usage "nothing to do"
              | LESS =>
                   let
-                     val _ =
-                        if !verbosity = Top
-                           then printVersion Out.error
-                        else ()
                      val tempFiles: File.t list ref = ref []
                      val tmpDir =
                         let
@@ -1565,17 +1563,7 @@ fun commandLine (args: string list): unit =
                                print = print,
                                done = done}
                            end
-                        val _ =
-                           case !verbosity of
-                              Silent => ()
-                            | Top => ()
-                            | _ =>
-                                 outputHeader
-                                 (Control.No, fn l =>
-                                  let val out = Out.error
-                                  in Layout.output (l, out)
-                                     ; Out.newline out
-                                  end)
+                        val _ = Control.message (Verbosity.Detail, Control.layout)
                         val _ =
                            case stop of
                               Place.Files =>
@@ -1613,6 +1601,10 @@ fun commandLine (args: string list): unit =
                      mkCompileSrc {listFiles = Compile.sourceFilesMLB,
                                    elaborate = Compile.elaborateMLB,
                                    compile = Compile.compileMLB}
+                  val compileXML =
+                     mkCompileSrc {listFiles = fn {input} => Vector.new1 input,
+                                   elaborate = fn _ => raise Fail "Unimplemented",
+                                   compile = Compile.compileXML}
                   val compileSXML =
                      mkCompileSrc {listFiles = fn {input} => Vector.new1 input,
                                    elaborate = fn _ => raise Fail "Unimplemented",
@@ -1632,12 +1624,13 @@ fun commandLine (args: string list): unit =
                       | Place.MLB => compileMLB input
                       | Place.Generated => compileCSO (input :: csoFiles)
                       | Place.O => compileCSO (input :: csoFiles)
+                      | Place.XML => compileXML input
                       | Place.SXML => compileSXML input
                       | Place.SSA => compileSSA input
                       | Place.SSA2 => compileSSA2 input
                       | _ => Error.bug "invalid start"
                   val doit
-                    = trace (Top, "MLton")
+                    = trace (Top, Version.banner)
                       (fn () =>
                        Exn.finally
                        (compile, fn () =>

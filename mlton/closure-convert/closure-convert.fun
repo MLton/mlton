@@ -1,4 +1,4 @@
-(* Copyright (C) 2017 Matthew Fluet.
+(* Copyright (C) 2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2005, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -329,7 +329,7 @@ fun closureConvert
                                | (SOME (x, _), SOME v)     => newVar (x, v)
                                | _ => Error.bug "ClosureConvert.loopBind: Case"
                            val _ = Cases.foreach' (cases, branch, handlePat)
-                           val _ = Option.app (default, branch o #1)
+                           val _ = Option.app (default, branch)
                         in ()
                         end
                    | ConApp {con, arg, ...} =>
@@ -849,11 +849,11 @@ fun closureConvert
                      val (default, ac) =
                         case default of
                            NONE => (NONE, ac)
-                         | SOME (e, _) => let
-                                             val (e, ac) =  convertJoin (e, ac)
-                                          in
-                                             (SOME e, ac)
-                                          end
+                         | SOME e => let
+                                        val (e, ac) =  convertJoin (e, ac)
+                                     in
+                                        (SOME e, ac)
+                                     end
                      fun doCases (cases, finish, make) =
                         let
                            val (cases, ac) =
