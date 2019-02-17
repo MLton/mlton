@@ -336,6 +336,14 @@ local
    val skipComments =
       any
       [str "(*" *> finiComment 1 (),
+       (fn cs =>
+        Char.dquote ::
+        (List.foldr
+         (cs, [Char.dquote], fn (c, cs) =>
+          String.explode (Char.escapeSML c) @ cs))) <$>
+       (char Char.dquote *>
+        many (fromScan Char.scan) <*
+        char Char.dquote),
        each [next]]
 in
    val skipCommentsML = skipComments
