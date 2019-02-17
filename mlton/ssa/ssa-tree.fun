@@ -602,8 +602,11 @@ structure Statement =
                                              String.suffix (s, backSize)]
                              else s
                        in
-                          setGlobal (var, Layout.seq [Var.layout var,
-                                                      Layout.str (" (*" ^ s ^ "*)")])
+                          if String.hasSubstring (s, {substring = "(*"})
+                             orelse String.hasSubstring (s, {substring = "*)"})
+                             then ()
+                             else setGlobal (var, Layout.seq [Var.layout var,
+                                                              Layout.str (" (*" ^ s ^ "*)")])
                        end
                  in
                     case exp of
