@@ -249,6 +249,9 @@ fun makeOptions {usage} =
        (Expert, "as-opt-quote", " <opt>", "pass (quoted) option to assembler",
         SpaceString
         (fn s => List.push (asOpts, {opt = s, pred = OptPred.Yes}))),
+       (Expert, "bounce-rssa-limit", "<n>",
+        "Maximum number of rssa variables to bounce around gc",
+        Int (fn i => bounceRssaLimit := (if i < 0 then NONE else SOME i))),
        (Expert, "bounce-rssa-locations", " {anyGC|gcCollect}",
         "which calls to bounce rssa variables around",
         SpaceString (fn s =>

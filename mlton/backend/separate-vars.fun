@@ -73,7 +73,18 @@ fun processLoop
             if shouldMark
             then
                ( setBlockingLabel (label, SOME b)
-               ; Vector.foreach (#beginNoFormals (labelLive label), fn v => setBlockedVar (v, Consider)))
+               ; Vector.foreachi (#beginNoFormals (labelLive label),
+                    fn (i, v) =>
+                       let
+                          val shouldBounce =
+                             case !Control.bounceRssaLimit of
+                                  NONE => true
+                                | SOME k => i <= k
+                        in
+                           if shouldBounce
+                              then setBlockedVar (v, Consider)
+                              else ()
+                       end))
             else ()
          end
       val _ = foreachBlock (tree, markBlock)

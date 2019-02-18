@@ -62,6 +62,10 @@ val bounceRssaLoops = control {name = "bounceRssaLoops",
                                default = NoCalls,
                                toString = BounceRssa.loopToString}
 
+val bounceRssaLimit = control {name = "bounceRssaLimit",
+                               default = SOME 8,
+                               toString = Option.toString Int.toString}
+
 
 
 structure Chunk =

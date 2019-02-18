@@ -36,6 +36,8 @@ signature CONTROL_FLAGS =
 
       val bounceRssaLoops: bounceRssaLoops ref
 
+      val bounceRssaLimit: int option ref
+
       datatype chunk =
          OneChunk
        | ChunkPerFunc
