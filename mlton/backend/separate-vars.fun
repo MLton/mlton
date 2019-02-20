@@ -28,75 +28,52 @@ open Rssa
 structure Live = Live (Rssa)
 structure Restore = RestoreR (Rssa)
 
-fun foreachBlock ({headers, child}, f) =
-   case DirectedGraph.LoopForest.dest child of
-        {loops, notInLoop} =>
-        let
-           val _ = Vector.foreach (headers, f)
-           val _ = Vector.foreach (notInLoop, f)
-        in
-           Vector.foreach (loops, fn loop => foreachBlock (loop, f))
-        end
+fun isStackBlock (Block.T {kind, ...}) =
+   case kind of
+        Kind.CReturn {func} =>
+        (case !Control.bounceRssaLocations of
+              Control.AnyGC => CFunction.mayGC func
+            | Control.GCCollect => CFunction.target func = CFunction.Target.Direct "GC_collect")
+            | _ => false
 
-fun processLoop
-   { labelLive: (Label.t -> { begin: Var.t vector, beginNoFormals: Var.t vector }),
-     remLabelLive,
-     labelBlock,
-     setLabelBlock,
-     varTy} tree =
+datatype VarInfo
+   = Ignore
+   | Rewrite
+
+fun transformFunc func =
    let
-      (* in each processLoop call we need to loop twice
-       * first we find register-blocking points, and record live vars
-       * then for each var live over a blocking point, check if active
-       * in loop. If it's active we rewrite the appropriate blocks with a new assignment *)
+      val {args, blocks, name, raises, returns, start} = Function.dest func
+      val liveInfo = Live.live (func, {shouldConsider = fn _ => true})
+      fun beginNoFormals label = #beginNoFormals ((#labelLive liveInfo) label)
 
-      datatype VarInfo =
-         Skip
-       | Consider
-       | Rewrite
-      val {get=blockedVar, set=setBlockedVar, destroy=destroyBlockedVars} =
-         Property.destGetSet (Var.plist, Property.initConst Skip)
-      val {get=blockingLabel, set=setBlockingLabel, destroy=destroyBlockingLabels} =
-         Property.destGetSet (Label.plist, Property.initConst NONE)
+      val {loops, ...} = DirectedGraph.LoopForest.dest
+         (Function.loopForest (func, fn (b, _) =>
+            not (isStackBlock b)))
 
-      (* Check which blocks block local vars and mark all live vars for consideration *)
-      fun markBlock (b as Block.T {kind, label, ...}) =
-         let
-            val shouldMark =
-               case kind of
-                  Kind.CReturn {func} =>
-                     (case !Control.bounceRssaLocations of
-                          Control.AnyGC => CFunction.mayGC func
-                        | Control.GCCollect => CFunction.target func = CFunction.Target.Direct "GC_collect")
-                | _ => false
-         in
-            if shouldMark
-            then
-               ( setBlockingLabel (label, SOME b)
-               ; Vector.foreachi (#beginNoFormals (labelLive label),
-                    fn (i, v) =>
-                       let
-                          val shouldBounce =
-                             case !Control.bounceRssaLimit of
-                                  NONE => true
-                                | SOME k => i <= k
-                        in
-                           if shouldBounce
-                              then setBlockedVar (v, Consider)
-                              else ()
-                       end))
-            else ()
-         end
-      val _ = foreachBlock (tree, markBlock)
+      val {get=varTy, set=setVarTy, ...} = Property.getSetOnce
+         (Var.plist, Property.initRaise ("SeparateVars.transformFunc.varTy", Var.layout))
+      val _ = Function.foreachDef (func, setVarTy)
 
-      (* now for each var in consideration, check if active in loop *)
-      fun checkActiveVars block =
-         Block.foreachUse (block,
-            fn v =>
-               case blockedVar v of
-                    Consider => setBlockedVar (v, Rewrite)
-                  | _ => ())
-      val _ = foreachBlock (tree, checkActiveVars)
+      val {get=varInfo, set=setVarInfo, ...} = Property.getSet
+         (Var.plist, Property.initConst Ignore)
+
+      val _ = let
+         fun foreachBlock ({headers, child}, f) =
+            case DirectedGraph.LoopForest.dest child of
+                 {loops, notInLoop} =>
+                 let
+                    val _ = Vector.foreach (headers, f)
+                    val _ = Vector.foreach (notInLoop, f)
+                 in
+                    Vector.foreach (loops, fn loop => foreachBlock (loop, f))
+                 end
+         (* now for each var in consideration, check if active in loop *)
+         fun checkActiveVars block = Block.foreachUse (block, fn v => setVarInfo (v, Rewrite))
+         fun processLoop loop = foreachBlock (loop, checkActiveVars)
+      in
+         Vector.foreach (loops, processLoop)
+      end
+
 
       val remappedVars: (Var.t * Label.t, Var.t) HashTable.t = HashTable.new {
          equals=fn ((v, l), (v', l')) => Var.equals (v, v') andalso Label.equals (l, l'),
@@ -104,9 +81,18 @@ fun processLoop
       (* map based on the destination block, on the extremely unlikely chance that
        * the return block is a join point from two GCs *)
       fun remappedVar {var: Var.t, dest: Label.t} =
-         case blockedVar var of
+         case varInfo var of
               Rewrite => SOME (HashTable.lookupOrInsert (remappedVars, (var, dest), fn () => Var.new var))
             | _ => NONE
+      val {set=remapBlock, get=getRemappedBlock, ...} = Property.getSetOnce
+         (Label.plist, Property.initConst NONE)
+      val {set=setBlockingLabel, get=blockingLabel, ...} = Property.getSetOnce
+         (Label.plist, Property.initConst NONE)
+      val _ = Vector.foreach (Function.blocks func,
+         fn b as Block.T {label, ...} =>
+            if isStackBlock b
+               then setBlockingLabel (label, SOME b)
+               else ())
 
       fun rewriteDestBlock (Block.T {args, kind, label, statements, transfer}, rewrites) =
          let
@@ -114,25 +100,25 @@ fun processLoop
                fn (old, new, ty) => Statement.Bind
                      (* Unlike below, we're fine letting this get copy-propagated,
                       * since it usually won't make it any farther than a phi argument *)
-                     {dst=(old, ty), isMutable=false, src=Operand.Var {ty=ty, var=new}})
+
             val newBlock =
                Block.T {args=args, kind=kind, label=label,
                   statements=Vector.concat [statements, newStatements],
                   transfer=transfer}
-            val _ = setLabelBlock (label, newBlock)
+            val _ = remapBlock (label, SOME newBlock)
          in
             ()
          end
 
       fun rewriteSourceBlock (Block.T {args, kind, label, statements, transfer}, destLabel) =
          let
-            val varsToConsider = #beginNoFormals (labelLive destLabel)
+            val varsToConsider = beginNoFormals destLabel
             val newVars = Vector.keepAllMap (varsToConsider,
                fn v => Option.map (remappedVar {var=v, dest=destLabel}, fn v' => (v,v')))
             val rewrites = Vector.map (newVars,
                fn (old, new) => (old, new, varTy old))
 
-            val _ = if isSome (labelBlock destLabel)
+            val _ = if isSome (getRemappedBlock destLabel)
                then ()
                else rewriteDestBlock (valOf (blockingLabel destLabel), rewrites)
 
@@ -148,7 +134,7 @@ fun processLoop
                Block.T {args=args, kind=kind, label=label,
                   statements=Vector.concat [statements, newStatements],
                   transfer=transfer}
-            val _ = setLabelBlock (label, newBlock)
+            val _ = remapBlock (label, SOME newBlock)
          in
             ()
          end
@@ -160,7 +146,7 @@ fun processLoop
          in
             !r
          end
-      val _ = foreachBlock (tree,
+      val _ = Vector.foreach (Function.blocks func,
          fn (b as Block.T {transfer, ...}) =>
             if (anyLabel (transfer, isSome o blockingLabel))
             (* assumes only one blocking dest *)
@@ -176,47 +162,8 @@ fun processLoop
             else ()
       )
 
-      val _ = destroyBlockingLabels ()
-      val _ = destroyBlockedVars ()
-      val _ = foreachBlock (tree, fn Block.T {label, ...} => remLabelLive label)
-   in
-      ()
-   end
-
-fun transformFunc func =
-   let
-      val {args, blocks, name, raises, returns, start} = Function.dest func
-      val liveness = Live.live (func, {shouldConsider = fn _ => true})
-      val {loops, ...} = DirectedGraph.LoopForest.dest
-         (Function.loopForest (func, fn (Block.T {transfer, ...}, _) =>
-            case !Control.bounceRssaLoops of
-               Control.AnyLoop => true
-             | Control.NoCalls =>
-                  case transfer of
-                       Transfer.Call _ => false
-                       (* allow other C calls, otherwise we won't
-                        * catch any lops at all *)
-                     | _ => true))
-      val {get=varTy, set=setVarTy, ...} = Property.getSetOnce
-         (Var.plist, Property.initRaise ("SeparateVars.transformFunc.varTy", Var.layout))
-      val _ = Function.foreachDef (func, setVarTy)
-
-
-      val {set=remap, get=getRemapped, ...} = Property.getSetOnce
-         (Label.plist, Property.initConst NONE)
-
-      val _ = Vector.foreach (loops, processLoop
-         {labelLive=(fn l =>
-            case #labelLive liveness l of
-                 {begin, beginNoFormals, ...} =>
-                     {begin=begin, beginNoFormals=beginNoFormals}),
-          remLabelLive=(#remLabelLive liveness),
-          labelBlock=getRemapped,
-          setLabelBlock=fn (l, b) => remap (l, SOME b),
-          varTy=varTy})
-
       val newBlocks = Vector.map (blocks, fn block as Block.T {label, ...} =>
-         case getRemapped label of
+         case getRemappedBlock label of
               SOME newBlock => newBlock
             | NONE => block)
    in
