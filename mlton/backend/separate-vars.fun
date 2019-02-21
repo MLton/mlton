@@ -28,13 +28,14 @@ open Rssa
 structure Live = Live (Rssa)
 structure Restore = RestoreR (Rssa)
 
-fun isStackBlock (Block.T {kind, ...}) =
+fun shouldBounceAt (Block.T {kind, ...}) =
    case kind of
         Kind.CReturn {func} =>
         (case !Control.bounceRssaLocations of
               Control.AnyGC => CFunction.mayGC func
             | Control.GCCollect => CFunction.target func = CFunction.Target.Direct "GC_collect")
             | _ => false
+      | Kind.Cont _ => true
 
 datatype VarInfo
    = Ignore
@@ -48,7 +49,7 @@ fun transformFunc func =
 
       val {loops, ...} = DirectedGraph.LoopForest.dest
          (Function.loopForest (func, fn (b, _) =>
-            not (isStackBlock b)))
+            not (shouldBounceAt b)))
 
       val {get=varTy, set=setVarTy, ...} = Property.getSetOnce
          (Var.plist, Property.initRaise ("SeparateVars.transformFunc.varTy", Var.layout))
@@ -84,20 +85,25 @@ fun transformFunc func =
          case varInfo var of
               Rewrite => SOME (HashTable.lookupOrInsert (remappedVars, (var, dest), fn () => Var.new var))
             | _ => NONE
-      val {set=remapBlock, get=getRemappedBlock, ...} = Property.getSetOnce
-         (Label.plist, Property.initConst NONE)
       val {set=setBlockingLabel, get=blockingLabel, ...} = Property.getSetOnce
-         (Label.plist, Property.initConst NONE)
+         (Label.plist, Property.initConst false)
       val _ = Vector.foreach (Function.blocks func,
          fn b as Block.T {label, ...} =>
-            if isStackBlock b
-               then setBlockingLabel (label, SOME b)
+            if shouldBounceAt b
+               then setBlockingLabel (label, true)
                else ())
 
-      fun rewriteDestBlock (Block.T {args, kind, label, statements, transfer}, rewrites) =
+      fun rewriteDestBlock (Block.T {args, kind, label, statements, transfer}) =
          let
+            val varsToConsider = beginNoFormals label
+            val newVars = Vector.keepAllMap (varsToConsider,
+               fn v => Option.map (remappedVar {var=v, dest=label}, fn v' => (v,v')))
+            val rewrites = Vector.map (newVars,
+               fn (old, new) => (old, new, varTy old))
+
             val newStatements = Vector.map(rewrites,
                fn (old, new, ty) => Statement.Bind
+                     {dst=(old, ty), isMutable=true, src=Operand.Var {ty=ty, var=new}})
                      (* Unlike below, we're fine letting this get copy-propagated,
                       * since it usually won't make it any farther than a phi argument *)
 
@@ -105,9 +111,8 @@ fun transformFunc func =
                Block.T {args=args, kind=kind, label=label,
                   statements=Vector.concat [statements, newStatements],
                   transfer=transfer}
-            val _ = remapBlock (label, SOME newBlock)
          in
-            ()
+            newBlock
          end
 
       fun rewriteSourceBlock (Block.T {args, kind, label, statements, transfer}, destLabel) =
@@ -117,10 +122,6 @@ fun transformFunc func =
                fn v => Option.map (remappedVar {var=v, dest=destLabel}, fn v' => (v,v')))
             val rewrites = Vector.map (newVars,
                fn (old, new) => (old, new, varTy old))
-
-            val _ = if isSome (getRemappedBlock destLabel)
-               then ()
-               else rewriteDestBlock (valOf (blockingLabel destLabel), rewrites)
 
             val newStatements = Vector.map(rewrites,
                fn (old, new, ty) => Statement.Bind
@@ -134,9 +135,8 @@ fun transformFunc func =
                Block.T {args=args, kind=kind, label=label,
                   statements=Vector.concat [statements, newStatements],
                   transfer=transfer}
-            val _ = remapBlock (label, SOME newBlock)
          in
-            ()
+            newBlock
          end
 
       fun anyLabel (transfer, p) =
@@ -146,26 +146,17 @@ fun transformFunc func =
          in
             !r
          end
-      val _ = Vector.foreach (Function.blocks func,
-         fn (b as Block.T {transfer, ...}) =>
-            if (anyLabel (transfer, isSome o blockingLabel))
-            (* assumes only one blocking dest *)
-            then Transfer.foreachLabel (transfer,
-               let
-                  val r = ref true
-               in
-                  fn l =>
-                     if !r andalso isSome (blockingLabel l)
-                     then (r := false; rewriteSourceBlock (b, l))
-                     else ()
-               end)
-            else ()
-      )
-
-      val newBlocks = Vector.map (blocks, fn block as Block.T {label, ...} =>
-         case getRemappedBlock label of
-              SOME newBlock => newBlock
-            | NONE => block)
+      val newBlocks = Vector.map (Function.blocks func,
+         fn (b as Block.T {label, transfer, ...}) =>
+            case transfer of
+                 Transfer.CCall {return, ...} =>
+                  if Option.exists (return, blockingLabel)
+                  then rewriteSourceBlock (b, valOf return)
+                  else b
+               | _ =>
+                  if blockingLabel label
+                     then rewriteDestBlock b
+                  else b)
    in
       Function.new
          {args=args, blocks=newBlocks,
