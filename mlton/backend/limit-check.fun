@@ -459,7 +459,10 @@ fun insertFunction (f: Function.t,
                            | _ => Error.bug "LimitCheck.bigAllocation: strange constant bytesNeeded")
                     | _ =>
                          let
-                            val bytes = Var.newNoname ()
+                            val test = Var.newNoname ()
+                            val testOper = Operand.Var
+                                           {var = test,
+                                            ty = Type.csize ()}
                             val extraBytes =
                                let
                                   val extraBytes =
@@ -475,20 +478,19 @@ fun insertFunction (f: Function.t,
                              | SOME extraBytes =>
                                   (ignore o newBlock)
                                   (true,
-                                   Vector.new0 (),
-                                   Transfer.Arith
-                                   {args = Vector.new2 (Operand.word extraBytes,
-                                                        bytesNeeded),
-                                    dst = bytes,
-                                    overflow = heapCheckTooLarge (),
-                                    prim = Prim.wordAddCheck (WordSize.csize (),
-                                                              {signed = false}),
-                                    success = (heapCheck
-                                               (false,
-                                                Operand.Var
-                                                {var = bytes,
-                                                 ty = Type.csize ()})),
-                                    ty = Type.csize ()})
+                                   Vector.new1
+                                   (Statement.PrimApp
+                                    {args = Vector.new2
+                                            (Operand.word extraBytes,
+                                             bytesNeeded),
+                                     dst = SOME (test, Type.csize ()),
+                                     prim =
+                                       Prim.wordAddCheckP (WordSize.csize (),
+                                                           {signed = false})}),
+                                   Transfer.ifBool
+                                   (testOper,
+                                    {falsee = heapCheck (false, testOper),
+                                     truee = heapCheckTooLarge ()}))
                          end
                 end
           in
