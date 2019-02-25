@@ -304,6 +304,7 @@ signature PRIM =
       val vectorSub: 'a t
       val wordAdd: WordSize.t -> 'a t
       (* DEPRECATED val wordAddCheck: WordSize.t * {signed: bool} -> 'a t *)
+      val wordAddCheckP: WordSize.t * {signed: bool} -> 'a t
       val wordAndb: WordSize.t -> 'a t
       val wordCastToReal : WordSize.t * RealSize.t -> 'a t
       val wordEqual: WordSize.t -> 'a t
@@ -311,10 +312,13 @@ signature PRIM =
       val wordLshift: WordSize.t -> 'a t
       val wordLt: WordSize.t * {signed: bool} -> 'a t
       val wordMul: WordSize.t * {signed: bool} -> 'a t
+      val wordMulCheckP: WordSize.t * {signed: bool} -> 'a t
       val wordNeg: WordSize.t -> 'a t
+      val wordNegCheckP: WordSize.t -> 'a t
       val wordOrb: WordSize.t -> 'a t
       val wordQuot: WordSize.t * {signed: bool} -> 'a t
       val wordRshift: WordSize.t * {signed: bool} -> 'a t
       val wordSub: WordSize.t -> 'a t
+      val wordSubCheckP: WordSize.t * {signed: bool} -> 'a t
       val wordXorb: WordSize.t -> 'a t
    end
