@@ -158,7 +158,7 @@ signature PRIM =
              | Weak_get (* to rssa (as runtime C fn) *)
              | Weak_new (* to rssa (as runtime C fn) *)
              | Word_add of WordSize.t (* codegen *)
-             | Word_addCheck of WordSize.t * {signed: bool} (* codegen *)
+             (* DEPRECATED | Word_addCheck of WordSize.t * {signed: bool} (* codegen *) *)
              | Word_addCheckP of WordSize.t * {signed: bool} (* codegen *)
              | Word_andb of WordSize.t (* codegen *)
              | Word_castToReal of WordSize.t * RealSize.t (* codegen *)
@@ -167,10 +167,10 @@ signature PRIM =
              | Word_lshift of WordSize.t (* codegen *)
              | Word_lt of WordSize.t * {signed: bool} (* codegen *)
              | Word_mul of WordSize.t * {signed: bool} (* codegen *)
-             | Word_mulCheck of WordSize.t * {signed: bool} (* codegen *)
+             (* DEPRECATED | Word_mulCheck of WordSize.t * {signed: bool} (* codegen *) *)
              | Word_mulCheckP of WordSize.t * {signed: bool} (* codegen *)
              | Word_neg of WordSize.t (* codegen *)
-             | Word_negCheck of WordSize.t (* codegen *)
+             (* DEPRECATED | Word_negCheck of WordSize.t (* codegen *) *)
              | Word_negCheckP of WordSize.t (* codegen *)
              | Word_notb of WordSize.t (* codegen *)
              | Word_orb of WordSize.t (* codegen *)
@@ -181,7 +181,7 @@ signature PRIM =
              | Word_ror of WordSize.t (* codegen *)
              | Word_rshift of WordSize.t * {signed: bool} (* codegen *)
              | Word_sub of WordSize.t (* codegen *)
-             | Word_subCheck of WordSize.t * {signed: bool} (* codegen *)
+             (* DEPRECATED | Word_subCheck of WordSize.t * {signed: bool} (* codegen *) *)
              | Word_subCheckP of WordSize.t * {signed: bool} (* codegen *)
              | Word_toIntInf (* to rssa *)
              | Word_xorb of WordSize.t (* codegen *)
@@ -303,7 +303,7 @@ signature PRIM =
       val vectorLength: 'a t
       val vectorSub: 'a t
       val wordAdd: WordSize.t -> 'a t
-      val wordAddCheck: WordSize.t * {signed: bool} -> 'a t
+      (* DEPRECATED val wordAddCheck: WordSize.t * {signed: bool} -> 'a t *)
       val wordAndb: WordSize.t -> 'a t
       val wordCastToReal : WordSize.t * RealSize.t -> 'a t
       val wordEqual: WordSize.t -> 'a t
