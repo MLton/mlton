@@ -789,7 +789,8 @@ structure Function =
                Transfer.foreachLabel (transfer, fn to =>
                   if predicate (from, (nodeInfo o labelNode) to)
                      then ignore (Graph.addEdge (g, {from=labelNode label, to=labelNode to}))
-                     else ()))
+                     else ignore (Graph.addEdge (g, {from=labelNode start,
+                        to=labelNode to}))))
          in
             Graph.loopForestSteensgaard (g,
                {root=labelNode start, nodeValue=nodeInfo})
