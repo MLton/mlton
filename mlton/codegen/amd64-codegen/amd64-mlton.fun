@@ -79,7 +79,7 @@ struct
          | Real_sub _ => true
          | Thread_returnToC => false
          | Word_add _ => true
-         | Word_addCheck _ => true
+         (* DEPRECATED | Word_addCheck _ => true *)
          | Word_addCheckP _ => true
          | Word_andb _ => true
          | Word_castToReal _ => true
@@ -88,10 +88,10 @@ struct
          | Word_lshift _ => true
          | Word_lt _ => true
          | Word_mul _ => true
-         | Word_mulCheck _ => true
+         (* DEPRECATED | Word_mulCheck _ => true *)
          | Word_mulCheckP _ => true
          | Word_neg _ => true
-         | Word_negCheck _ => true
+         (* DEPRECATED | Word_negCheck _ => true *)
          | Word_negCheckP _ => true
          | Word_notb _ => true
          | Word_orb _ => true
@@ -102,7 +102,7 @@ struct
          | Word_ror _ => true
          | Word_rshift _ => true
          | Word_sub _ => true
-         | Word_subCheck _ => true
+         (* DEPRECATED | Word_subCheck _ => true *)
          | Word_subCheckP _ => true
          | Word_xorb _ => true
          | _ => false
@@ -1525,7 +1525,7 @@ struct
         AppendList.appends
         [comment_begin,
          (case Prim.name prim of
-             Word_addCheck (_, sg) =>
+             (* DEPRECATED Word_addCheck (_, sg) =>
                 binal (amd64.Instruction.ADD, flag sg)
            | Word_mulCheck (s, {signed}) =>
                 let
@@ -1543,8 +1543,8 @@ struct
            | Word_negCheck _ => 
                unal (amd64.Instruction.NEG, amd64.Instruction.O)
            | Word_subCheck (_, sg) =>
-               binal (amd64.Instruction.SUB, flag sg)
-           | _ => Error.bug ("amd64MLton.arith: strange Prim.Name.t: " ^ primName))]
+               binal (amd64.Instruction.SUB, flag sg) *)
+             _ => Error.bug ("amd64MLton.arith: strange Prim.Name.t: " ^ primName))]
       end
 
 end

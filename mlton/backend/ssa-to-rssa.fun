@@ -562,7 +562,7 @@ structure Name =
              | Real_sub s => realBinary s
              | Thread_returnToC => CFunction.returnToC ()
              | Word_add s => wordBinary (s, {signed = false})
-             | Word_addCheck (s, sg) => wordBinaryCheck (s, sg)
+             (* DEPRECATED | Word_addCheck (s, sg) => wordBinaryCheck (s, sg) *)
              | Word_addCheckP (s, sg) => wordBinaryCheckP (s, sg)
              | Word_andb s => wordBinary (s, {signed = false})
              | Word_castToReal (s1, s2) =>
@@ -575,10 +575,10 @@ structure Name =
              | Word_lshift s => wordShift (s, {signed = false})
              | Word_lt z => wordCompare z
              | Word_mul z => wordBinary z
-             | Word_mulCheck (s, sg) => wordBinaryCheck (s, sg)
+             (* DEPRECATED | Word_mulCheck (s, sg) => wordBinaryCheck (s, sg) *)
              | Word_mulCheckP (s, sg) => wordBinaryCheckP (s, sg)
              | Word_neg s => wordUnary (s, {signed = true})
-             | Word_negCheck s => wordUnaryCheck (s, {signed = true})
+             (* DEPRECATED | Word_negCheck s => wordUnaryCheck (s, {signed = true}) *)
              | Word_negCheckP s => wordUnaryCheckP (s, {signed = true})
              | Word_notb s => wordUnary (s, {signed = false})
              | Word_orb s => wordBinary (s, {signed = false})
@@ -592,7 +592,7 @@ structure Name =
              | Word_ror s => wordShift (s, {signed = false})
              | Word_rshift z => wordShift z
              | Word_sub s => wordBinary (s, {signed = false})
-             | Word_subCheck (s, sg) => wordBinaryCheck (s, sg)
+             (* DEPRECATED | Word_subCheck (s, sg) => wordBinaryCheck (s, sg) *)
              | Word_subCheckP (s, sg) => wordBinaryCheckP (s, sg)
              | _ => Error.bug "SsaToRssa.Name.cFunctionRaise"
          end
@@ -937,7 +937,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                               else ([], doOperCF (Prim.name prim, operCheck))
                         in
                            case Prim.name prim of
-                              Word_addCheck (s, sg) =>
+                              (* DEPRECATED Word_addCheck (s, sg) =>
                                  doit (Prim.wordAdd s,
                                        Word_addCheck (s, sg))
                             | Word_mulCheck (s, sg) =>
@@ -948,8 +948,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                        Word_negCheck s)
                             | Word_subCheck (s, sg) =>
                                  doit (Prim.wordSub s,
-                                       Word_subCheck (s, sg))
-                            | _ => Error.bug (concat ["SsaToRssa.translateTransfer: ",
+                                       Word_subCheck (s, sg)) *)
+                              _ => Error.bug (concat ["SsaToRssa.translateTransfer: ",
                                                       "strange arith:",
                                                       Name.toString (Prim.name prim)])
                         end

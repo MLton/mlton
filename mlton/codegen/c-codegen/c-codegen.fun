@@ -206,7 +206,7 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Real_round _ => true
        | Real_sub _ => true
        | Word_add _ => true
-       | Word_addCheck _ => true
+       (* DEPRECATED | Word_addCheck _ => true *)
        | Word_addCheckP _ => true
        | Word_andb _ => true
        | Word_castToReal _ => true
@@ -215,10 +215,10 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Word_lshift _ => true
        | Word_lt _ => true
        | Word_mul _ => true
-       | Word_mulCheck _ => true
+       (* DEPRECATED | Word_mulCheck _ => true *)
        | Word_mulCheckP _ => true
        | Word_neg _ => true
-       | Word_negCheck _ => true
+       (* DEPRECATED | Word_negCheck _ => true *)
        | Word_negCheckP _ => true
        | Word_notb _ => true
        | Word_orb _ => true
@@ -229,7 +229,7 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Word_ror _ => true
        | Word_rshift _ => true
        | Word_sub _ => true
-       | Word_subCheck _ => true
+       (* DEPRECATED | Word_subCheck _ => true *)
        | Word_subCheckP _ => true
        | Word_xorb _ => true
        | _ => false
@@ -1009,7 +1009,7 @@ fun output {program as Machine.Program.T {chunks,
                                  fun const1 () = const 1
                               in
                                  case Prim.name prim of
-                                    Word_addCheck _ =>
+                                    (* DEPRECATED Word_addCheck _ =>
                                        concat [Prim.toString prim,
                                                if const0 ()
                                                   then "CX"
@@ -1024,8 +1024,8 @@ fun output {program as Machine.Program.T {chunks,
                                                   then "CX"
                                                else if const1 ()
                                                        then "XC"
-                                                    else ""]
-                                  | _ => Error.bug "CCodegen.outputTransfer: Arith"
+                                                    else ""] *)
+                                    _ => Error.bug "CCodegen.outputTransfer: Arith"
                               end
                            val _ = force overflow
                         in

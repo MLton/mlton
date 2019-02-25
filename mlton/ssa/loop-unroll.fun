@@ -373,18 +373,18 @@ fun checkPrim (args, prim, loadVar) =
       (case varConst(args, loadVar, false) of
         SOME(nextVar, x, _) => SOME (nextVar, x)
       | NONE => NONE)
-  | Name.Word_addCheck (_, {signed}) =>
+  (* DEPRECATED | Name.Word_addCheck (_, {signed}) =>
       (case varConst(args, loadVar, signed) of
         SOME(nextVar, x, _) => SOME(nextVar, x)
-      | NONE => NONE)
+      | NONE => NONE) *)
   | Name.Word_sub _ =>
       (case varConst(args, loadVar, false) of
         SOME(nextVar, x, _) => SOME (nextVar, ~x)
       | NONE => NONE)
-  | Name.Word_subCheck (_, {signed}) =>
+  (* DEPRECATED | Name.Word_subCheck (_, {signed}) =>
       (case varConst(args, loadVar, signed) of
         SOME(nextVar, x, _) => SOME (nextVar, ~x)
-      | NONE => NONE)
+      | NONE => NONE) *)
   | _ => NONE
 
 (* Given:

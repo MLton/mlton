@@ -500,7 +500,8 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                               | _ => Error.bug "RedundantTests.add: strange const"
                           datatype z = datatype Prim.Name.t
                        in
-                          case Prim.name prim of
+                          noChange
+                          (* DEPRECATED case Prim.name prim of
                              Word_addCheck s =>
                                 let
                                    val x1 = Vector.sub (args, 0)
@@ -532,7 +533,7 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                                                 Error.bug "RedundantTests.sub: strage const")
                                     | _ => noChange
                                 end
-                           | _ => noChange
+                           | _ => noChange *)
                        end
                     val (statements, transfer) =
                        case transfer of
