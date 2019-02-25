@@ -539,13 +539,13 @@ fun restoreFunction {main: Function.t}
               hash=fn (l, vs) => Hash.combine
                 (Label.hash l, Hash.vectorMap (vs, Var.hash))}
         in
-          fun route dst
+          fun route force dst
             = let
                 val li = labelInfo dst
                 val phiArgs = LabelInfo.phiArgs' li
                 val kind = LabelInfo.kind' li
               in
-                if Vector.isEmpty phiArgs
+                if Vector.isEmpty phiArgs andalso not force
                   then dst
                   else let
                          val phiArgs = Vector.map (phiArgs,
@@ -575,7 +575,8 @@ fun restoreFunction {main: Function.t}
                                    fn (x, ty) => Operand.Var {ty=ty, var=x})
                                 val kind =
                                   case kind of
-                                       Kind.Cont {handler} => Kind.Cont {handler=Handler.map (handler, route)}
+                                       Kind.Cont {handler} =>
+                                          Kind.Cont {handler=Handler.map (handler, route false)}
                                      | _ => kind
                                 val block = Block.T
                                             {label = label,
@@ -598,7 +599,7 @@ fun restoreFunction {main: Function.t}
                val st = Statement.replaceUses (st, rewriteVar)
                val st =
                  case st of
-                      Statement.SetHandler l => Statement.SetHandler (route l)
+                      Statement.SetHandler l => Statement.SetHandler (route false l)
                     | _ => st
             in
                Statement.foldDef (st, st, fn (var, _, st) =>
@@ -617,13 +618,28 @@ fun restoreFunction {main: Function.t}
                    Arith {args, dst, overflow, prim, success, ...} =>
                      let
                         val {var=dst, ty, ...} = rewriteVarDef addPost dst
+                        val success = route false success
+                        val overflow = route false overflow
                      in
                         Arith {args=args, dst=dst, overflow=overflow,
                                prim=prim, success=success, ty=ty}
                      end
-                 | _ => t
+                 | Call {args, func,
+                        return=Return.NonTail
+                        {cont, handler=Handler.Handle h}} =>
+                     let
+                       val h' = route false h
+                       val cont = route true cont
+                     in
+                       Call {args=args,
+                             func=func,
+                             return=Return.NonTail
+                              {cont=cont, handler=Handler.Handle h'}}
+                     end
+                 | _ => Transfer.replaceLabels (t, route false)
+              val t = Transfer.replaceUses (t, rewriteVar)
            in
-              Transfer.replaceLabels (Transfer.replaceUses (t, rewriteVar), route)
+              t
            end
         fun visitBlock' (Block.T {label, args, statements, transfer, kind})
           = let
@@ -640,7 +656,7 @@ fun restoreFunction {main: Function.t}
               val transfer = rewriteTransfer addPost transfer
               val kind =
                  case kind of
-                      Kind.Cont {handler} => Kind.Cont {handler=Handler.map (handler, route)}
+                      Kind.Cont {handler=Handler.Handle _} => Kind.Jump
                     | _ => kind
               val kind = if Vector.isEmpty phiArgs then kind else Kind.Jump
               val block = Block.T {label = label,
