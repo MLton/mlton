@@ -459,10 +459,8 @@ fun insertFunction (f: Function.t,
                            | _ => Error.bug "LimitCheck.bigAllocation: strange constant bytesNeeded")
                     | _ =>
                          let
+                            val bytes = Var.newNoname ()
                             val test = Var.newNoname ()
-                            val testOper = Operand.Var
-                                           {var = test,
-                                            ty = Type.csize ()}
                             val extraBytes =
                                let
                                   val extraBytes =
@@ -478,18 +476,27 @@ fun insertFunction (f: Function.t,
                              | SOME extraBytes =>
                                   (ignore o newBlock)
                                   (true,
-                                   Vector.new1
+                                   Vector.new2
                                    (Statement.PrimApp
                                     {args = Vector.new2
                                             (Operand.word extraBytes,
                                              bytesNeeded),
-                                     dst = SOME (test, Type.csize ()),
-                                     prim =
-                                       Prim.wordAddCheckP (WordSize.csize (),
-                                                           {signed = false})}),
+                                     dst = SOME (bytes, Type.csize ()),
+                                     prim = Prim.wordAdd (WordSize.csize ())},
+                                    Statement.PrimApp
+                                    {args = Vector.new2
+                                            (Operand.word extraBytes,
+                                             bytesNeeded),
+                                     dst = SOME (test, Type.bool),
+                                     prim = Prim.wordAddCheckP
+                                            (WordSize.bool,
+                                             {signed = false})}),
                                    Transfer.ifBool
-                                   (testOper,
-                                    {falsee = heapCheck (false, testOper),
+                                   (Operand.Var {var = test, ty = Type.bool},
+                                    {falsee = heapCheck (false,
+                                                         Operand.Var
+                                                         {var = bytes,
+                                                          ty = Type.csize ()}),
                                      truee = heapCheckTooLarge ()}))
                          end
                 end
