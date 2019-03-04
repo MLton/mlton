@@ -118,9 +118,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
              Vector.foreach
              (blocks, fn Block.T {transfer, ...} =>
               case transfer of
-                 Arith {overflow, success, ...} =>
-                    (visitLabelArgs overflow; visitLabelArgs success)
-               | Bug => ()
+                 Bug => ()
                | Call {return, ...} =>
                     (case return of
                         Return.NonTail {cont, handler} =>

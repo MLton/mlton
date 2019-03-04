@@ -221,55 +221,7 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                   val transfer = Transfer.replaceVar (transfer, canonVar)
                   val transfer =
                      case transfer of
-                        Arith {prim, args, overflow, success, ...} =>
-                           let
-                              val {args = succArgs,
-                                   inDeg = succInDeg,
-                                   add = succAdd, ...} =
-                                 labelInfo success
-                              val {inDeg = overInDeg,
-                                   add = overAdd, ...} =
-                                 labelInfo overflow
-                              val exp = canon (PrimApp {prim = prim,
-                                                        targs = Vector.new0 (),
-                                                        args = args})
-                           in
-                              case HashTable.peek (table, exp) of
-                                 SOME var =>
-                                    if overflowVar var
-                                       then Goto {dst = overflow,
-                                                  args = Vector.new0 ()}
-                                    else (if !succInDeg = 1
-                                             then let
-                                                     val (var', _) =
-                                                        Vector.first succArgs
-                                                  in
-                                                     setReplace (var', SOME var)
-                                                  end
-                                          else ()
-                                          ; Goto {dst = success,
-                                                  args = Vector.new1 var})
-                               | NONE => (if !succInDeg = 1
-                                             then let
-                                                     val (var, _) =
-                                                        Vector.first succArgs
-                                                  in
-                                                     List.push
-                                                     (succAdd, (var, exp))
-                                                  end
-                                          else () ;
-                                          if !overInDeg = 1
-                                             then let
-                                                     val var = Var.newNoname ()
-                                                     val _ = setOverflowVar (var, true)
-                                                  in
-                                                     List.push
-                                                     (overAdd, (var, exp))
-                                                  end
-                                          else () ;
-                                          transfer)
-                           end
-                      | Goto {dst, args} =>
+                        Goto {dst, args} =>
                            let
                               val {args = args', inDeg, ...} = labelInfo dst
                            in

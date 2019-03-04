@@ -387,6 +387,7 @@ fun checkPrim (args, prim, loadVar) =
       | NONE => NONE) *)
   | _ => NONE
 
+(* TODO possible simplify arith stuff *)
 (* Given:
     - a variable in the loop
     - another variable in the loop
@@ -427,11 +428,7 @@ fun varChain (origVar, endVar, blocks, loadVar, total) =
                   val (blockArg, _) = Vector.sub (blockArgs, 0)
                   val blockEntrys = Vector.keepAllMap (blocks, fn b' =>
                     case Block.transfer b' of
-                      Transfer.Arith {args, prim, success, ...} =>
-                        if Label.equals (label, success) then
-                           SOME(checkPrim(args, prim, loadVar))
-                        else NONE
-                    | Transfer.Call {return, ...} =>
+                      Transfer.Call {return, ...} =>
                         (case return of
                            Return.NonTail {cont, ...} =>
                               if Label.equals (label, cont) then
@@ -577,9 +574,7 @@ fun isLoopBranch (loopLabels, cases, default) =
 
 fun transfersToHeader (headerLabel, block) =
   case Block.transfer block of
-    Transfer.Arith {success, ...} =>
-      Label.equals (headerLabel, success)
-  | Transfer.Call {return, ...} =>
+    Transfer.Call {return, ...} =>
       (case return of
         Return.NonTail {handler, ...} =>
           (case handler of
@@ -623,13 +618,7 @@ fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody,
             get the variable at argIndex *)
          val loopVars = Vector.keepAllMap (loopBody, fn block => 
             case Block.transfer block of
-               Transfer.Arith {args, prim, success, ...} =>
-                  if Label.equals (headerLabel, success) then
-                     case checkPrim (args, prim, loadVar) of
-                       NONE => (unsupportedTransfer := true ; NONE)
-                     | SOME (arg, x) => SOME (arg, x)
-                  else NONE
-             | Transfer.Call {return, ...} =>
+               Transfer.Call {return, ...} =>
                   (case return of
                      Return.NonTail {cont, ...} =>
                         if Label.equals (headerLabel, cont) then
@@ -817,11 +806,7 @@ fun findOpportunity(functionBody: Block.t vector,
                           if Vector.contains (loopBody, block, blockEquals) then
                             NONE
                           else case Block.transfer block of
-                             Transfer.Arith {success, ...} =>
-                              if Label.equals (headerLabel, success) then
-                                 emptyArgs
-                              else NONE
-                           | Transfer.Call {return, ...} =>
+                             Transfer.Call {return, ...} =>
                               (case return of
                                  Return.NonTail {cont, ...} =>
                                     if Label.equals (headerLabel, cont) then
@@ -950,20 +935,7 @@ fun copyLoop(blocks: Block.t vector,
             end
           else
             case transfer of
-              Transfer.Arith {args, overflow, prim, success, ty} =>
-                if Label.equals (success, headerLabel) then
-                  Transfer.Arith {args = args,
-                                  overflow = f(overflow),
-                                  prim = prim,
-                                  success = nextLabel,
-                                  ty = ty}
-                else
-                  Transfer.Arith {args = args,
-                                  overflow = f(overflow),
-                                  prim = prim,
-                                  success = f(success),
-                                  ty = ty}
-            | Transfer.Call {args, func, return} =>
+              Transfer.Call {args, func, return} =>
                 let
                   val newReturn =
                     case return of
