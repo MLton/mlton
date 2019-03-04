@@ -35,9 +35,6 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
          in
             fn x => setVarIndex (x, Counter.next c)
          end
-      (* Keep track of variables used as overflow variables. *)
-      val {get = overflowVar: Var.t -> bool, set = setOverflowVar, ...} =
-         Property.getSetOnce (Var.plist, Property.initConst false)
       (* Keep track of the replacements of variables. *)
       val {get = replace: Var.t -> Var.t option, set = setReplace, ...} =
          Property.getSetOnce (Var.plist, Property.initConst NONE)

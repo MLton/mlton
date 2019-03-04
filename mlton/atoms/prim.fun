@@ -1717,10 +1717,6 @@ fun ('a, 'b) apply (p: 'a t,
                    w: WordX.t,
                    w': WordX.t) =
          bool (f (w, w', sg))
-      fun wordOrOverflow (s, sg, w) =
-         if WordSize.isInRange (s, w, sg)
-            then word (WordX.fromIntInf (w, s))
-         else ApplyResult.Overflow
       fun wordOrTrue (s, sg, w) = bool (not (WordSize.isInRange (s, w, sg)))
       local
          fun mkCheck toAppRes =
@@ -1734,7 +1730,6 @@ fun ('a, 'b) apply (p: 'a t,
                toAppRes (s, sg, f (conv w, conv w'))
             end
       in
-         val wcheck = mkCheck wordOrOverflow
          val wcheckp = mkCheck wordOrTrue
       end
       val eq =

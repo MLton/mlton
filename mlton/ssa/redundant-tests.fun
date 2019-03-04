@@ -150,27 +150,7 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
          val (trueVar, trueStmt) = make Con.truee
          val (falseVar, falseStmt) = make Con.falsee
       end
-      local
-         val statements = ref []
-      in
-         val one =
-            WordSize.memoize
-            (fn s =>
-             let
-                val one = Var.newNoname ()
-                val () =
-                   List.push
-                   (statements,
-                    Statement.T {exp = Exp.Const (Const.word (WordX.one s)),
-                                 ty = Type.word s,
-                                 var = SOME one})
-             in
-                one
-             end)
-         val ones = Vector.fromList (!statements)
-      end
-      val globals = Vector.concat [Vector.new2 (trueStmt, falseStmt), ones,
-                                   globals]
+      val globals = Vector.concat [Vector.new2 (trueStmt, falseStmt), globals]
       val shrink = shrinkFunction {globals = globals}
       val numSimplified = ref 0
       fun simplifyFunction f =
