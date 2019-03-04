@@ -489,7 +489,7 @@ fun insertFunction (f: Function.t,
                                              bytesNeeded),
                                      dst = SOME (test, Type.bool),
                                      prim = Prim.wordAddCheckP
-                                            (WordSize.bool,
+                                            (WordSize.csize (),
                                              {signed = false})}),
                                    Transfer.ifBool
                                    (Operand.Var {var = test, ty = Type.bool},
