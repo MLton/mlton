@@ -466,16 +466,6 @@ structure Name =
                               prototype = (Vector.new (n, ct), SOME ct),
                               return = t}
                   end
-               fun makeCheck n (s, sg) =
-                  let
-                     val t = word s
-                     val ct = CType.word (s, sg)
-                  in
-                     vanilla {args = Vector.new (n, t),
-                              name = name ^ "P",
-                              prototype = (Vector.new (n, ct), SOME CType.bool),
-                              return = Type.bool}
-                  end
                fun makeCheckP n (s, sg) =
                   let
                      val t = word s
@@ -488,10 +478,8 @@ structure Name =
                   end
             in
                val wordBinary = make 2
-               val wordBinaryCheck = makeCheck 2
                val wordBinaryCheckP = makeCheckP 2
                val wordUnary = make 1
-               val wordUnaryCheck = makeCheck 1
                val wordUnaryCheckP = makeCheckP 1
             end
             fun wordCompare (s, sg) =

@@ -483,12 +483,12 @@ structure Live =
 structure Transfer =
    struct
       datatype t =
-         Arith of {args: Operand.t vector,
+         (* DEPRECATED Arith of {args: Operand.t vector,
                    dst: Operand.t,
                    overflow: Label.t,
                    prim: Type.t Prim.t,
-                   success: Label.t}
-       | CCall of {args: Operand.t vector,
+                   success: Label.t} *)
+         CCall of {args: Operand.t vector,
                    frameInfo: FrameInfo.t option,
                    func: Type.t CFunction.t,
                    return: Label.t option}
@@ -507,14 +507,7 @@ structure Transfer =
             open Layout
          in
             case t of
-               Arith {prim, args, dst, overflow, success, ...} =>
-                  seq [str "Arith ",
-                       record [("prim", Prim.layout prim),
-                               ("args", Vector.layout Operand.layout args),
-                               ("dst", Operand.layout dst),
-                               ("overflow", Label.layout overflow),
-                               ("success", Label.layout success)]]
-             | CCall {args, frameInfo, func, return} =>
+               CCall {args, frameInfo, func, return} =>
                   seq [str "CCall ",
                        record
                        [("args", Vector.layout Operand.layout args),
@@ -540,18 +533,12 @@ structure Transfer =
 
        fun foldOperands (t, ac, f) =
          case t of
-            Arith {args, dst, ...} => Vector.fold (args, f (dst, ac), f)
-          | CCall {args, ...} => Vector.fold (args, ac, f)
+            CCall {args, ...} => Vector.fold (args, ac, f)
           | Switch s =>
                Switch.foldLabelUse
                (s, ac, {label = fn (_, a) => a,
                         use = f})
           | _ => ac
-
-       fun foldDefs (t, a, f) =
-         case t of
-            Arith {dst, ...} => f (dst, a)
-          | _ => a
    end
 
 structure Kind =
@@ -640,7 +627,7 @@ structure Block =
 
       fun layouts (block, output' : Layout.t -> unit) = output' (layout block)
 
-      fun foldDefs (T {kind, statements, transfer, ...}, a, f) =
+      fun foldDefs (T {kind, statements, ...}, a, f) =
          let
             val a =
                case kind of
@@ -652,7 +639,6 @@ structure Block =
             val a =
                Vector.fold (statements, a, fn (s, a) =>
                             Statement.foldDefs (s, a, f))
-            val a = Transfer.foldDefs (transfer, a, f)
          in
             a
          end
@@ -1376,22 +1362,7 @@ structure Program =
                   datatype z = datatype Transfer.t
                in
                   case t of
-                     Arith {args, dst, overflow, prim, success, ...} =>
-                        let
-                           val _ = checkOperands (args, alloc)
-                           val alloc = Alloc.define (alloc, dst)
-                           val _ = checkOperand (dst, alloc)
-                        in
-                           Prim.mayOverflow prim
-                           andalso jump (overflow, alloc)
-                           andalso jump (success, alloc)
-                           andalso
-                           Type.checkPrimApp
-                           {args = Vector.map (args, Operand.ty),
-                            prim = prim,
-                            result = SOME (Operand.ty dst)}
-                        end
-                   | CCall {args, frameInfo = fi, func, return} =>
+                     CCall {args, frameInfo = fi, func, return} =>
                         let
                            val _ = checkOperands (args, alloc)
                         in

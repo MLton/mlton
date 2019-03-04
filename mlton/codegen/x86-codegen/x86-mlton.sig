@@ -29,12 +29,12 @@ signature X86_MLTON =
                       liveInfo: x86Liveness.LiveInfo.t}
 
     (* arith, c call, and primitive assembly sequences. *)
-    val arith: {prim: RepType.t Machine.Prim.t,
+    (*val arith: {prim: RepType.t Machine.Prim.t,
                 args: (x86.Operand.t * x86.Size.t) vector,
                 dsts: (x86.Operand.t * x86.Size.t) vector,
                 overflow: x86.Label.t,
                 success: x86.Label.t,
-                transInfo : transInfo} -> x86.Block.t' AppendList.t
+                transInfo : transInfo} -> x86.Block.t' AppendList.t*)
     val ccall: {args: (x86.Operand.t * x86.Size.t) vector,
                 frameInfo: x86.FrameInfo.t option,
                 func: RepType.t Machine.CFunction.t,

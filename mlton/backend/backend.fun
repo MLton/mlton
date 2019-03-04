@@ -847,15 +847,7 @@ let
                   fun simple t = (Vector.new0 (), t)
                in
                   case t of
-                     R.Transfer.Arith {args, dst, overflow, prim, success,
-                                       ...} =>
-                        simple
-                        (M.Transfer.Arith {args = translateOperands args,
-                                           dst = varOperand dst,
-                                           overflow = overflow,
-                                           prim = prim,
-                                           success = success})
-                   | R.Transfer.CCall {args, func, return} =>
+                     R.Transfer.CCall {args, func, return} =>
                         simple (M.Transfer.CCall
                                 {args = translateOperands args,
                                  frameInfo = (case return of

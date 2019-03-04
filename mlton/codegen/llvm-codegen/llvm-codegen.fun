@@ -1065,29 +1065,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
             end
     in
         case transfer of
-            Transfer.Arith {args, dst, overflow, prim, success} =>
-            let
-                val overflowstr = Label.toString overflow
-                val successstr = Label.toString success
-                val operands = Vector.map (args, fn opr => getOperandValue (cxt, opr))
-                val (arg0pre, arg0ty, arg0reg) = getArg (operands, 0)
-                val (arg1pre, _, arg1reg) = getArg (operands, 1)
-                val (arg2pre, _, arg2reg) = getArg (operands, 2)
-                val reg = nextLLVMReg ()
-                val (inst, ty) = outputPrim (prim, reg, arg0ty, arg0reg, arg1reg, arg2reg)
-                val res = nextLLVMReg ()
-                val extractRes = concat ["\t", res, " = extractvalue ", ty, " ", reg, ", 0\n"]
-                val obit = nextLLVMReg ()
-                val extractObit = concat ["\t", obit, " = extractvalue ", ty, " ", reg, ", 1\n"]
-                val (destPre, destTy, destReg) = getOperandAddr (cxt, dst)
-                val store = mkstore (destTy, res, destReg)
-                val br = concat ["\tbr i1 ", obit, ", label %",
-                                 overflowstr, ", label %", successstr, "\n"]
-            in
-                concat [comment, arg0pre, arg1pre, arg2pre, inst,
-                        extractRes, extractObit, destPre, store, br]
-            end
-          | Transfer.CCall {args, frameInfo, func, return} =>
+            Transfer.CCall {args, frameInfo, func, return} =>
             let
                 val CFunction.T {return = returnTy,
                                  target, ...} = func

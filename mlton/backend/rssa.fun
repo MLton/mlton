@@ -362,13 +362,13 @@ datatype z = datatype Statement.t
 structure Transfer =
    struct
       datatype t =
-         Arith of {args: Operand.t vector,
+         (* DEPRECATED Arith of {args: Operand.t vector,
                    dst: Var.t,
                    overflow: Label.t,
                    prim: Type.t Prim.t,
                    success: Label.t,
-                   ty: Type.t}
-       | CCall of {args: Operand.t vector,
+                   ty: Type.t} *)
+         CCall of {args: Operand.t vector,
                    func: Type.t CFunction.t,
                    return: Label.t option}
        | Call of {args: Operand.t vector,
@@ -385,15 +385,7 @@ structure Transfer =
             open Layout
          in
             case t of
-               Arith {args, dst, overflow, prim, success, ty} =>
-                  seq [str "Arith ",
-                       record [("args", Vector.layout Operand.layout args),
-                               ("dst", Var.layout dst),
-                               ("overflow", Label.layout overflow),
-                               ("prim", Prim.layout prim),
-                               ("success", Label.layout success),
-                               ("ty", Type.layout ty)]]
-             | CCall {args, func, return} =>
+               CCall {args, func, return} =>
                   seq [str "CCall ",
                        record [("args", Vector.layout Operand.layout args),
                                ("func", CFunction.layout (func, Type.layout)),
@@ -427,21 +419,13 @@ structure Transfer =
                                label: Label.t * 'a -> 'a,
                                use: Var.t * 'a -> 'a}): 'a =
          let
+            val _ = def (* FIXME suppress unused warning *)
             fun useOperand (z, a) = Operand.foldVars (z, a, use)
             fun useOperands (zs: Operand.t vector, a) =
                Vector.fold (zs, a, useOperand)
          in
             case t of
-               Arith {args, dst, overflow, success, ty, ...} =>
-                  let
-                     val a = label (overflow, a)
-                     val a = label (success, a)
-                     val a = def (dst, ty, a)
-                     val a = useOperands (args, a)
-                  in
-                     a
-                  end
-             | CCall {args, return, ...} =>
+               CCall {args, return, ...} =>
                   useOperands (args,
                                case return of
                                   NONE => a
@@ -505,14 +489,7 @@ structure Transfer =
             fun opers zs = Vector.map (zs, oper)
          in
             case t of
-               Arith {args, dst, overflow, prim, success, ty} =>
-                  Arith {args = opers args,
-                         dst = dst,
-                         overflow = overflow,
-                         prim = prim,
-                         success = success,
-                         ty = ty}
-             | CCall {args, func, return} =>
+               CCall {args, func, return} =>
                   CCall {args = opers args,
                          func = func,
                          return = return}
@@ -1323,9 +1300,7 @@ structure Program =
                            datatype z = datatype Transfer.t
                         in
                            case transfer of
-                              Arith {overflow, success, ...} =>
-                                 (goto overflow; goto success)
-                            | CCall {return, ...} => Option.app (return, goto)
+                              CCall {return, ...} => Option.app (return, goto)
                             | Call {return, ...} =>
                                  assert
                                  ("return",
@@ -1709,20 +1684,7 @@ structure Program =
                         datatype z = datatype Transfer.t
                      in
                         case t of
-                           Arith {args, overflow, prim, success, ty, ...} =>
-                              let
-                                 val _ = checkOperands args
-                              in
-                                 Prim.mayOverflow prim
-                                 andalso labelIsNullaryJump overflow
-                                 andalso labelIsNullaryJump success
-                                 andalso
-                                 Type.checkPrimApp
-                                 {args = Vector.map (args, Operand.ty),
-                                  prim = prim,
-                                  result = SOME ty}
-                              end
-                         | CCall {args, func, return} =>
+                           CCall {args, func, return} =>
                               let
                                  val _ = checkOperands args
                               in
