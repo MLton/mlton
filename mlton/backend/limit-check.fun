@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -177,7 +177,7 @@ fun insertFunction (f: Function.t,
                         CFunction.T {args = Vector.new0 (),
                                      convention = CFunction.Convention.Cdecl,
                                      kind = CFunction.Kind.Runtime {bytesNeeded = NONE,
-                                                                    ensuresBytesFree = false,
+                                                                    ensuresBytesFree = NONE,
                                                                     mayGC = false,
                                                                     maySwitchThreads = false,
                                                                     modifiesFrontier = false,
@@ -209,22 +209,21 @@ fun insertFunction (f: Function.t,
              val transfer = 
                 case transfer of
                    Transfer.CCall {args, func, return} =>
-                      (if CFunction.ensuresBytesFree func
-                          then 
+                      (case CFunction.ensuresBytesFree func of
+                          NONE => transfer
+                        | SOME i =>
                              Transfer.CCall
-                             {args = (Vector.map
-                                      (args, fn z =>
-                                       case z of
-                                          Operand.EnsuresBytesFree =>
-                                             Operand.word
-                                             (WordX.fromIntInf
-                                              (Bytes.toIntInf
-                                               (ensureFree (valOf return)),
-                                               WordSize.csize ()))
-                                        | _ => z)),
+                             {args = Vector.mapi
+                                     (args, fn (j, arg) =>
+                                      if i = j
+                                         then Operand.word
+                                              (WordX.fromIntInf
+                                               (Bytes.toIntInf
+                                                (ensureFree (valOf return)),
+                                                WordSize.csize ()))
+                                         else arg),
                               func = func,
-                              return = return}
-                       else transfer)
+                              return = return})
                  | _ => transfer
              val stack = Label.equals (start, label)
              fun insert (amount: Operand.t (* of type word *)) =
@@ -611,7 +610,7 @@ fun insertCoalesce (f: Function.t, handlesSignals) =
                    Cont _ => true
                  | CReturn {func, ...} =>
                       CFunction.mayGC func
-                      andalso not (CFunction.ensuresBytesFree func)
+                      andalso not (Option.isSome (CFunction.ensuresBytesFree func))
                  | Handler => true
                  | Jump =>
                       (case transfer of
