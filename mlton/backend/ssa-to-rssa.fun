@@ -1198,7 +1198,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                     val result = valOf (toRtype ty)
                                     val args =
                                        Vector.new4 (GCState,
-                                                    EnsuresBytesFree,
+                                                    Operand.zero (WordSize.csize ()),
                                                     numElts,
                                                     ObjptrTycon opt)
                                     val func =
@@ -1373,7 +1373,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                     ccall
                                     {args = (Vector.new3
                                              (GCState,
-                                              EnsuresBytesFree,
+                                              Operand.zero (WordSize.csize ()),
                                               Operand.bool true)),
                                      func = (CFunction.gc
                                              {maySwitchThreads = handlesSignals})}
@@ -1581,7 +1581,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                     ccall {args = (Vector.new3
                                                    (GCState,
                                                     a 0,
-                                                    EnsuresBytesFree)),
+                                                    Operand.zero (WordSize.csize ()))),
                                            func = CFunction.threadSwitchTo ()}
                                | Vector_length => arrayOrVectorLength ()
                                | Weak_canGet =>
