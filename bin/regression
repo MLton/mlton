@@ -166,6 +166,10 @@ for f in *.sml; do
                 extraFlags[${#extraFlags[@]}]="-const"
                 extraFlags[${#extraFlags[@]}]="Exn.keepHistory true"
         ;;
+        gc-collect2)
+                extraFlags[${#extraFlags[@]}]="-runtime"
+                extraFlags[${#extraFlags[@]}]="mark-compact-ratio 1.001 copy-ratio 1.001 live-ratio 1.001"
+        ;;
         esac
 
         mlb="$f.mlb"
