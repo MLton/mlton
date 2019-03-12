@@ -41,18 +41,38 @@ fun shouldBounceAt (Block.T {kind, ...}) =
       | Kind.Cont _ => true
       | _ => false*)
 
-datatype VarInfo
+structure Weight = struct
+   type t = {depth: int, count: int}
+   fun inc ({depth, count}, depth') =
+      if depth' > depth
+         then {depth=depth', count=1}
+      else if depth' = depth
+         then {depth=depth', count=count + 1}
+      else {depth=depth, count=count}
+   fun new depth =
+      {depth=depth, count=0}
+   fun op < ({depth=depth1, count=count1},
+             {depth=depth2, count=count2}) =
+      if Int.< (depth1, depth2)
+         then true
+      else if Int.< (count1, count2)
+         then true
+      else false
+end
+
+datatype varinfo
    = Ignore
+   | Consider of Weight.t
    | Rewrite
 
-fun loopForeach ({headers, child}, f) =
+fun loopForeach (depth, {headers, child}, f) =
    case DirectedGraph.LoopForest.dest child of
         {loops, notInLoop} =>
         let
-           val _ = Vector.foreach (headers, f)
-           val _ = Vector.foreach (notInLoop, f)
+           val _ = Vector.foreach (headers, f depth)
+           val _ = Vector.foreach (notInLoop, f depth)
         in
-           Vector.foreach (loops, fn loop => loopForeach (loop, f))
+           Vector.foreach (loops, fn loop => loopForeach (depth, loop, f))
         end
 
 fun transformFunc func =
@@ -77,19 +97,84 @@ fun transformFunc func =
          (Label.plist, Property.initFun
             (fn _ => {inLoop=ref false, block=ref NONE}))
 
+      val n = !Control.bounceRssaLimit
+      val _ = Control.diagnostic (fn () =>
+         let
+            open Layout
+         in
+            seq [str "Bounce rssa limit: ", Option.layout Int.layout n]
+         end)
       val _ = let
-         (* now for each var in consideration, check if active in loop *)
-         fun checkActiveVars (block as Block.T {label, ...}) =
+         (* now for each var in consideration, check if active in loop,
+          * increment its usage for each depth *)
+         fun checkActiveVars depth (block as Block.T {label, ...}) =
            let
-             val _ = Block.foreachUse (block, fn v => setVarInfo (v, Rewrite))
-             val _ = (#inLoop o labelInfo) label := true
+              fun incVarInfo v =
+                 let
+                    val newInfo =
+                       case varInfo v of
+                            Ignore => Consider (Weight.new depth)
+                          | Consider d => Consider (Weight.inc (d, depth))
+                          | Rewrite => Error.bug "Unexpected Rewrite"
+                    val _ = setVarInfo (v, newInfo)
+                 in
+                    ()
+                 end
+              val _ = Block.foreachUse (block,
+                  fn v =>
+                     case n of
+                          NONE => setVarInfo (v, Rewrite)
+                        | SOME _ => incVarInfo v)
+              val _ = (#inLoop o labelInfo) label := true
            in
              ()
            end
-         fun processLoop loop = loopForeach (loop, checkActiveVars)
+         fun processLoop loop = loopForeach (1, loop, checkActiveVars)
       in
          Vector.foreach (loops, processLoop)
       end
+      (* Process variables in two passes so that
+       * the choices are consistent amongst different loops;
+       * combined weights are taken into account and every variable
+       * is either rewritten or ignored *)
+      fun mkLoopPicker n loop =
+         let
+            (* assume n is small, else we should use a proper heap *)
+            val heap = Array.new (n, (NONE, Weight.new 0))
+            fun insert (i, x, xw) =
+               if i >= n
+                  then ()
+               else
+                  let
+                     val (y, yw) = Array.sub (heap, i)
+                     val (x, xw) =
+                        (* maximize weight *)
+                        if (Weight.< (yw, xw))
+                        then ( Array.update (heap, i, (x, xw)) ; (y, yw))
+                        else (x, xw)
+                  in
+                     insert (i + 1, x, xw)
+                  end
+            fun insertVar x =
+               case
+                  varInfo x of
+                    Consider w => insert (0, SOME x, w)
+                  | _ => ()
+            fun insertVars _ block =
+               Block.foreachUse (block, insertVar)
+            val _ = loopForeach (0, loop, insertVars)
+            val _ = Array.foreach (heap,
+               fn (x, _) =>
+                  case x of
+                       SOME x => setVarInfo (x, Rewrite)
+                     | NONE => ())
+         in
+            ()
+         end
+      val _ = case n of
+           SOME n => Vector.foreach (loops, mkLoopPicker n)
+         | NONE => ()
+
       val _ = Vector.foreach (blocks,
          fn (b as Block.T {label, ...}) =>
             (#block o labelInfo) label := SOME b)
