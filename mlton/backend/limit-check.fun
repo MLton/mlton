@@ -347,8 +347,7 @@ fun insertFunction (f: Function.t,
                 if stack
                    then ignore (stackCheck
                                 (true,
-                                 insert (Operand.word
-                                         (WordX.zero (WordSize.csize ())))))
+                                 insert (Operand.zero (WordSize.csize ()))))
                 else
                    (* No limit check, just keep the block around. *)
                    List.push (newBlocks,
@@ -417,8 +416,7 @@ fun insertFunction (f: Function.t,
                                         Prim.cpointerLt,
                                         Operand.Runtime Limit,
                                         Operand.Runtime Frontier,
-                                        insert (Operand.word
-                                                (WordX.zero (WordSize.csize ()))))
+                                        insert (Operand.zero (WordSize.csize ())))
                  else
                     let
                        val bytes =
