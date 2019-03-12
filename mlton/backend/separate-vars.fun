@@ -30,16 +30,31 @@ structure Restore = RestoreR (Rssa)
 
 fun shouldBounceAt (Block.T {kind, ...}) =
    case kind of
-        Kind.CReturn {func} =>
+        Kind.Jump => false
+      | _ => true
+        (*
+        Kind.CReturn {func} => true
         (case !Control.bounceRssaLocations of
               Control.AnyGC => CFunction.mayGC func
-            | Control.GCCollect => CFunction.target func = CFunction.Target.Direct "GC_collect")
-            | _ => false
+            | Control.GCCollect => CFunction.target func = CFunction.Target.Direct "GC_collect"
+            | _ => false)
       | Kind.Cont _ => true
+      | _ => false*)
 
 datatype VarInfo
    = Ignore
+   | Consider
    | Rewrite
+
+fun loopForeach ({headers, child}, f) =
+   case DirectedGraph.LoopForest.dest child of
+        {loops, notInLoop} =>
+        let
+           val _ = Vector.foreach (headers, f)
+           val _ = Vector.foreach (notInLoop, f)
+        in
+           Vector.foreach (loops, fn loop => loopForeach (loop, f))
+        end
 
 fun transformFunc func =
    let
@@ -53,110 +68,131 @@ fun transformFunc func =
 
       val {get=varTy, set=setVarTy, ...} = Property.getSetOnce
          (Var.plist, Property.initRaise ("SeparateVars.transformFunc.varTy", Var.layout))
+
       val _ = Function.foreachDef (func, setVarTy)
 
       val {get=varInfo, set=setVarInfo, ...} = Property.getSet
          (Var.plist, Property.initConst Ignore)
 
+      val {get=labelInfo, ...} = Property.get
+         (Label.plist, Property.initFun
+            (fn _ => {inLoop=ref false, block=ref NONE}))
+
       val _ = let
-         fun foreachBlock ({headers, child}, f) =
-            case DirectedGraph.LoopForest.dest child of
-                 {loops, notInLoop} =>
-                 let
-                    val _ = Vector.foreach (headers, f)
-                    val _ = Vector.foreach (notInLoop, f)
-                 in
-                    Vector.foreach (loops, fn loop => foreachBlock (loop, f))
-                 end
          (* now for each var in consideration, check if active in loop *)
-         fun checkActiveVars block = Block.foreachUse (block, fn v => setVarInfo (v, Rewrite))
-         fun processLoop loop = foreachBlock (loop, checkActiveVars)
+         fun checkActiveVars (block as Block.T {label, ...}) =
+           let
+             val _ = Block.foreachUse (block, fn v => setVarInfo (v, Rewrite))
+             val _ = (#inLoop o labelInfo) label := true
+           in
+             ()
+           end
+         fun processLoop loop = loopForeach (loop, checkActiveVars)
       in
          Vector.foreach (loops, processLoop)
       end
+      val _ = Vector.foreach (blocks,
+         fn (b as Block.T {label, ...}) =>
+            (#block o labelInfo) label := SOME b)
 
-
-      val remappedVars: (Var.t * Label.t, Var.t) HashTable.t = HashTable.new {
-         equals=fn ((v, l), (v', l')) => Var.equals (v, v') andalso Label.equals (l, l'),
-         hash=fn (v, l) => Hash.combine (Var.hash v, Label.hash l)}
+      val {get=remapVar, ...} = Property.get
+         (Var.plist, Property.initFun Var.new)
       (* map based on the destination block, on the extremely unlikely chance that
        * the return block is a join point from two GCs *)
-      fun remappedVar {var: Var.t, dest: Label.t} =
+      fun remappedVar var =
          case varInfo var of
-              Rewrite => SOME (HashTable.lookupOrInsert (remappedVars, (var, dest), fn () => Var.new var))
+              Rewrite => SOME (remapVar var)
             | _ => NONE
-      val {set=setBlockingLabel, get=blockingLabel, ...} = Property.getSetOnce
-         (Label.plist, Property.initConst false)
-      val _ = Vector.foreach (Function.blocks func,
-         fn b as Block.T {label, ...} =>
-            if shouldBounceAt b
-               then setBlockingLabel (label, true)
-               else ())
 
-      fun rewriteDestBlock (Block.T {args, kind, label, statements, transfer}) =
+      datatype direction
+         = EnterLoop
+         | LeaveLoop
+
+      val newBlocks = ref []
+
+
+      fun insertRewriteBlock (destLabel, direction) =
          let
-            val varsToConsider = beginNoFormals label
-            val newVars = Vector.keepAllMap (varsToConsider,
-               fn v => Option.map (remappedVar {var=v, dest=label}, fn v' => (v,v')))
-            val rewrites = Vector.map (newVars,
-               fn (old, new) => (old, new, varTy old))
+            val {block, ...} = labelInfo destLabel
+            val Block.T {label=destLabel, args=destArgs, ...} = (valOf o !) block
 
-            val newStatements = Vector.map(rewrites,
-               fn (old, new, ty) => Statement.Bind
-                     {dst=(old, ty), isMutable=true, src=Operand.Var {ty=ty, var=new}})
-                     (* Unlike below, we're fine letting this get copy-propagated,
-                      * since it usually won't make it any farther than a phi argument *)
+            val args = Vector.map (destArgs, fn (v, ty) => (Var.new v, ty))
+            val live = beginNoFormals destLabel
 
-            val newBlock =
-               Block.T {args=args, kind=kind, label=label,
-                  statements=Vector.concat [statements, newStatements],
-                  transfer=transfer}
+            val rewrites = Vector.keepAllMap (live,
+               fn v => Option.map (remappedVar v, fn v' => (v, v')))
+            val statements = Vector.map (rewrites,
+               fn (v, v') =>
+                  let
+                     val ty = varTy v
+                     val (src, dst) =
+                        case direction of
+                             EnterLoop => (v', v)
+                           | LeaveLoop => (v, v')
+                     val src = Operand.Var {var=src, ty=ty}
+                     val dst = (dst, ty)
+                  in
+                     Statement.Bind {dst=dst, src=src,
+                     (* temporary hack *)
+                     isMutable=true}
+                  end)
+            (* we use our condition here, the kind of a block on the edge
+             * of a loop is never anything interesting, since calls are
+             * unconditional, there is always an intervening block
+             * that would not be in the loop *)
+            val kind = Kind.Jump
+            val label = Label.new destLabel
+            val jumpArgs = Vector.map (args, fn (v, ty) => Operand.Var {var=v, ty=ty})
+            val transfer = Transfer.Goto {dst=destLabel, args=jumpArgs}
+            val block = Block.T {args=args, kind=kind, label=label, statements=statements, transfer=transfer}
+            val _ = List.push (newBlocks, block)
          in
-            newBlock
+            label
          end
 
-      fun rewriteSourceBlock (Block.T {args, kind, label, statements, transfer}, destLabel) =
+      fun rewriteBlock (b as Block.T {args, kind, label, statements, transfer}) =
          let
-            val varsToConsider = beginNoFormals destLabel
-            val newVars = Vector.keepAllMap (varsToConsider,
-               fn v => Option.map (remappedVar {var=v, dest=destLabel}, fn v' => (v,v')))
-            val rewrites = Vector.map (newVars,
-               fn (old, new) => (old, new, varTy old))
-
-            val newStatements = Vector.map(rewrites,
-               fn (old, new, ty) => Statement.Bind
-                     (* we set isMutable = true primarily so that the simplifier
-                      * won't copy-propagate; it's easier for us with advance knowleddge
-                      * than to add any lifetime analysis to the copy propagator. 
-                      * And in some sense, the variables are mutable, just
-                      * mutated by the RTS *)
-                     {dst=(new, ty), isMutable=true, src=Operand.Var {ty=ty, var=old}})
-            val newBlock =
-               Block.T {args=args, kind=kind, label=label,
-                  statements=Vector.concat [statements, newStatements],
-                  transfer=transfer}
-         in
-            newBlock
-         end
-
-      fun anyLabel (transfer, p) =
-         let
+            val {inLoop, ...} = labelInfo label
+            val inLoop = !inLoop
+            val direction = if inLoop then LeaveLoop else EnterLoop
+            fun test l =
+               let
+                  val {inLoop=inLoop', ...} = labelInfo l
+                  val inLoop' = !inLoop'
+               in
+                  not (inLoop = inLoop')
+               end
             val r = ref false
-            val _ = Transfer.foreachLabel (transfer, fn l => if p l then r := true else ())
+            val statements =
+               if inLoop
+               then Vector.map(statements,
+                  fn st =>
+                     case st of
+                          Statement.Bind {dst=(dstVar,dstTy), isMutable, src} =>
+                          (case varInfo dstVar of
+                                Rewrite => (r := true ;
+                                   Statement.Bind
+                                       {dst=(remapVar dstVar, dstTy),
+                                        isMutable=isMutable,
+                                        src=src})
+                              | _ => st)
+                        | _ => st)
+               else statements
+            fun rewrite destLabel =
+               if test destLabel
+               then ( r := true ; insertRewriteBlock (destLabel, direction))
+               else destLabel
+            val newTransfer = Transfer.replaceLabels(transfer, rewrite)
+            val newBlock = Block.T {args=args, kind=kind, label=label, statements=statements, transfer=newTransfer}
          in
-            !r
+            (* save some garbage if we don't need to change *)
+            if !r
+               then newBlock
+               else b
          end
-      val newBlocks = Vector.map (Function.blocks func,
-         fn (b as Block.T {label, transfer, ...}) =>
-            case transfer of
-                 Transfer.CCall {return, ...} =>
-                  if Option.exists (return, blockingLabel)
-                  then rewriteSourceBlock (b, valOf return)
-                  else b
-               | _ =>
-                  if blockingLabel label
-                     then rewriteDestBlock b
-                  else b)
+
+      val _ = Vector.foreach (blocks, fn b => List.push (newBlocks, rewriteBlock b))
+      val newBlocks = Vector.fromListRev (!newBlocks)
    in
       Function.new
          {args=args, blocks=newBlocks,
