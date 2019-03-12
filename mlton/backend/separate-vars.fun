@@ -43,7 +43,6 @@ fun shouldBounceAt (Block.T {kind, ...}) =
 
 datatype VarInfo
    = Ignore
-   | Consider
    | Rewrite
 
 fun loopForeach ({headers, child}, f) =
@@ -95,15 +94,6 @@ fun transformFunc func =
          fn (b as Block.T {label, ...}) =>
             (#block o labelInfo) label := SOME b)
 
-      val {get=remapVar, ...} = Property.get
-         (Var.plist, Property.initFun Var.new)
-      (* map based on the destination block, on the extremely unlikely chance that
-       * the return block is a join point from two GCs *)
-      fun remappedVar var =
-         case varInfo var of
-              Rewrite => SOME (remapVar var)
-            | _ => NONE
-
       datatype direction
          = EnterLoop
          | LeaveLoop
@@ -119,16 +109,15 @@ fun transformFunc func =
             val args = Vector.map (destArgs, fn (v, ty) => (Var.new v, ty))
             val live = beginNoFormals destLabel
 
-            val rewrites = Vector.keepAllMap (live,
-               fn v => Option.map (remappedVar v, fn v' => (v, v')))
+            val rewrites = Vector.keepAll (live, fn v => varInfo v = Rewrite)
             val statements = Vector.map (rewrites,
-               fn (v, v') =>
+               fn v =>
                   let
                      val ty = varTy v
                      val (src, dst) =
                         case direction of
-                             EnterLoop => (v', v)
-                           | LeaveLoop => (v, v')
+                             EnterLoop => (v, v)
+                           | LeaveLoop => (v, v)
                      val src = Operand.Var {var=src, ty=ty}
                      val dst = (dst, ty)
                   in
@@ -163,21 +152,6 @@ fun transformFunc func =
                   not (inLoop = inLoop')
                end
             val r = ref false
-            val statements =
-               if inLoop
-               then Vector.map(statements,
-                  fn st =>
-                     case st of
-                          Statement.Bind {dst=(dstVar,dstTy), isMutable, src} =>
-                          (case varInfo dstVar of
-                                Rewrite => (r := true ;
-                                   Statement.Bind
-                                       {dst=(remapVar dstVar, dstTy),
-                                        isMutable=isMutable,
-                                        src=src})
-                              | _ => st)
-                        | _ => st)
-               else statements
             fun rewrite destLabel =
                if test destLabel
                then ( r := true ; insertRewriteBlock (destLabel, direction))

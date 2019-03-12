@@ -562,10 +562,7 @@ fun restoreFunction {main: Function.t}
                               in
                                 (newVar, VarInfo.ty' vi)
                               end)
-                         val route =
-                            HashTable.lookupOrInsert
-                             (routeTable, (dst, Vector.map (phiArgs, #1)),
-                              fn () =>
+                         fun mkRoute () =
                               let
                                 val label = Label.new dst
                                 val args = Vector.map (LabelInfo.args' li,
@@ -588,7 +585,12 @@ fun restoreFunction {main: Function.t}
                                 val _ = List.push (blocks, block)
                               in
                                  label
-                              end)
+                              end
+                         val route =
+                           if force
+                           then mkRoute ()
+                           else HashTable.lookupOrInsert
+                             (routeTable, (dst, Vector.map (phiArgs, #1)), mkRoute)
                        in
                          route
                        end
