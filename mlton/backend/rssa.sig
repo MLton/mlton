@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2017 Matthew Fluet.
+(* Copyright (C) 2009,2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -40,13 +40,6 @@ signature RSSA =
             datatype t =
                Cast of t * Type.t
              | Const of Const.t
-               (* EnsuresBytesFree is a pseudo-op used by C functions (like
-                * GC_allocateArray) that take a number of bytes as an argument
-                * and ensure that that number of bytes is free upon return.
-                * EnsuresBytesFree is replaced by the limit check pass with
-                * a real operand.
-                *)
-             | EnsuresBytesFree
              | GCState
              | Offset of {base: t,
                           offset: Bytes.t,

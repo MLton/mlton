@@ -44,7 +44,7 @@ structure Kind =
          Impure
        | Pure
        | Runtime of {bytesNeeded: int option,
-                     ensuresBytesFree: bool,
+                     ensuresBytesFree:int option,
                      mayGC: bool,
                      maySwitchThreads: bool,
                      modifiesFrontier: bool,
@@ -52,7 +52,7 @@ structure Kind =
                      writesStackTop: bool}
 
       val runtimeDefault = Runtime {bytesNeeded = NONE,
-                                    ensuresBytesFree = false,
+                                    ensuresBytesFree = NONE,
                                     mayGC = true,
                                     maySwitchThreads = false,
                                     modifiesFrontier = true,
@@ -72,7 +72,7 @@ structure Kind =
                Layout.namedRecord
                ("Runtime",
                 [("bytesNeeded", Option.layout Int.layout bytesNeeded),
-                 ("ensuresBytesFree", Bool.layout ensuresBytesFree),
+                 ("ensuresBytesFree", Option.layout Int.layout ensuresBytesFree),
                  ("mayGC", Bool.layout mayGC),
                  ("maySwitchThreads", Bool.layout maySwitchThreads),
                  ("modifiesFrontier", Bool.layout modifiesFrontier),
@@ -90,7 +90,7 @@ structure Kind =
              kw "Pure" *> pure Pure,
              kw "Runtime" *>
              cbrack (ffield ("bytesNeeded", option int) >>= (fn bytesNeeded =>
-                     nfield ("ensuresBytesFree", bool) >>= (fn ensuresBytesFree =>
+                     nfield ("ensuresBytesFree", option int) >>= (fn ensuresBytesFree =>
                      nfield ("mayGC", bool) >>= (fn mayGC =>
                      nfield ("maySwitchThreads", bool) >>= (fn maySwitchThreads =>
                      nfield ("modifiesFrontier", bool) >>= (fn modifiesFrontier =>
@@ -115,7 +115,7 @@ structure Kind =
          fun makeOpt sel = make (sel, NONE)
       in
          val bytesNeeded = makeOpt #bytesNeeded
-         val ensuresBytesFree = makeBool #ensuresBytesFree
+         val ensuresBytesFree = makeOpt #ensuresBytesFree
          val mayGC = makeBool #mayGC
          val maySwitchThreads = makeBool #maySwitchThreads
          val modifiesFrontier = makeBool #modifiesFrontier
@@ -258,14 +258,17 @@ fun isOk (T {kind, return, ...},
    (if Kind.maySwitchThreads kind
        then Kind.mayGC kind andalso isUnit return
     else true)
-   andalso (if Kind.ensuresBytesFree kind orelse Kind.maySwitchThreads kind
+   andalso (if Option.isSome (Kind.ensuresBytesFree kind)
                then Kind.mayGC kind
             else true)
    andalso (if Kind.mayGC kind
                then (Kind.modifiesFrontier kind
-                     andalso Kind.readsStackTop kind andalso Kind.writesStackTop kind)
+                     andalso Kind.readsStackTop kind
+                     andalso Kind.writesStackTop kind)
             else true)
-   andalso (not (Kind.writesStackTop kind) orelse Kind.readsStackTop kind)
+   andalso (if Kind.writesStackTop kind
+               then Kind.readsStackTop kind
+            else true)
 
 fun vanilla {args, name, prototype, return} =
    T {args = args,

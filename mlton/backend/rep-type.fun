@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2010,2014,2016-2017 Matthew Fluet.
+(* Copyright (C) 2009-2010,2014,2016-2017,2019 Matthew Fluet.
  * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -856,7 +856,7 @@ structure BuiltInCFunction =
             T {args = Vector.new3 (Type.gcState (), Type.csize (), Type.bool),
                    convention = Cdecl,
                    kind = Kind.Runtime {bytesNeeded = NONE,
-                                        ensuresBytesFree = true,
+                                        ensuresBytesFree = SOME 1,
                                         mayGC = true,
                                         maySwitchThreads = b,
                                         modifiesFrontier = true,

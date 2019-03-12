@@ -499,8 +499,6 @@ let
             case oper of
                Cast (z, t) => M.Operand.Cast (translateOperand z, t)
              | Const c => constOperand c
-             | EnsuresBytesFree =>
-                  Error.bug "Backend.translateOperand: EnsuresBytesFree"
              | GCState => M.Operand.GCState
              | Offset {base, offset, ty} =>
                   let

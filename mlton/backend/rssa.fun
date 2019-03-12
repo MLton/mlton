@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2016-2017 Matthew Fluet.
+(* Copyright (C) 2009,2016-2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -39,7 +39,6 @@ structure Operand =
       datatype t =
          Cast of t * Type.t
        | Const of Const.t
-       | EnsuresBytesFree
        | GCState
        | Offset of {base: t,
                     offset: Bytes.t,
@@ -76,7 +75,6 @@ structure Operand =
                    | Word w => Type.ofWordX w
                    | WordVector v => Type.ofWordXVector v
                end
-          | EnsuresBytesFree => Type.csize ()
           | GCState => Type.gcState ()
           | Offset {ty, ...} => ty
           | ObjptrTycon _ => Type.objptrHeader ()
@@ -92,7 +90,6 @@ structure Operand =
                Cast (z, ty) =>
                   seq [str "Cast ", tuple [layout z, Type.layout ty]]
              | Const c => seq [Const.layout c, constrain (ty z)]
-             | EnsuresBytesFree => str "<EnsuresBytesFree>"
              | GCState => str "<GCState>"
              | Offset {base, offset, ty} =>
                   seq [str (concat ["O", Type.name ty, " "]),
@@ -1528,7 +1525,6 @@ structure Program =
                                              to = ty,
                                              tyconTy = tyconTy})
                        | Const _ => true
-                       | EnsuresBytesFree => true
                        | GCState => true
                        | Offset {base, offset, ty} =>
                             Type.offsetIsOk {base = Operand.ty base,
