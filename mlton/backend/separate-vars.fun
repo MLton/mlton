@@ -99,10 +99,22 @@ fun transformFunc func =
             then Vector.foreach (beginNoFormals label,
                fn v => setVarInfo (v, Consider (Weight.new 0)))
             else ())
+      (* foreach arg, set Consider? need to tell it how to
+       * avoid setting the original again *)
 
       val {get=labelInfo, ...} = Property.get
          (Label.plist, Property.initFun
             (fn _ => {inLoop=ref false, block=ref NONE}))
+
+      val numRewritten = ref 0
+
+      fun setRewrite v =
+         case varInfo v of
+              Consider _ =>
+                  if Control.optFuelAvailAndUse ()
+                  then ( Int.inc numRewritten ; setVarInfo (v, Rewrite))
+                  else ()
+            | _ => ()
 
       val n = !Control.bounceRssaLimit
       val _ = Control.diagnostic (fn () =>
@@ -130,7 +142,7 @@ fun transformFunc func =
               val _ = Block.foreachUse (block,
                   fn v =>
                      case n of
-                          NONE => setVarInfo (v, Rewrite)
+                          NONE => setRewrite v
                         | SOME _ => incVarInfo v)
               val _ = (#inLoop o labelInfo) label := true
            in
@@ -173,7 +185,7 @@ fun transformFunc func =
             val _ = Array.foreach (heap,
                fn (x, _) =>
                   case x of
-                       SOME x => setVarInfo (x, Rewrite)
+                       SOME x => setRewrite x
                      | NONE => ())
          in
             ()
@@ -185,6 +197,13 @@ fun transformFunc func =
       val _ = Vector.foreach (blocks,
          fn (b as Block.T {label, ...}) =>
             (#block o labelInfo) label := SOME b)
+
+      val _ = Control.diagnostics (fn show =>
+         let
+            open Layout
+         in
+            show (seq [str "Number of variables rewritten: ", (str o Int.toString o !) numRewritten  ])
+         end)
 
       datatype direction
          = EnterLoop
