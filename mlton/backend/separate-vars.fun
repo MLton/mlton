@@ -93,6 +93,13 @@ fun transformFunc func =
       val {get=varInfo, set=setVarInfo, ...} = Property.getSet
          (Var.plist, Property.initConst Ignore)
 
+      val _ = Vector.foreach (blocks,
+         fn b as Block.T {label, ...} =>
+            if shouldBounceAt b
+            then Vector.foreach (beginNoFormals label,
+               fn v => setVarInfo (v, Consider (Weight.new 0)))
+            else ())
+
       val {get=labelInfo, ...} = Property.get
          (Label.plist, Property.initFun
             (fn _ => {inLoop=ref false, block=ref NONE}))
@@ -113,7 +120,7 @@ fun transformFunc func =
                  let
                     val newInfo =
                        case varInfo v of
-                            Ignore => Consider (Weight.new depth)
+                            Ignore => Ignore
                           | Consider d => Consider (Weight.inc (d, depth))
                           | Rewrite => Error.bug "Unexpected Rewrite"
                     val _ = setVarInfo (v, newInfo)
