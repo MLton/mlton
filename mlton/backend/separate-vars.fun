@@ -29,17 +29,17 @@ structure Live = Live (Rssa)
 structure Restore = RestoreR (Rssa)
 
 fun shouldBounceAt (Block.T {kind, ...}) =
+   (* this definition is important;
+    * we assume that no edge has even
+    * one side inside a loop;
+    * this is true because calls etc
+    * must be unconditional;
+    * i.e. not be able to get back
+    * into the loop without necessarily
+    * going over a bad edge *)
    case kind of
         Kind.Jump => false
       | _ => true
-        (*
-        Kind.CReturn {func} => true
-        (case !Control.bounceRssaLocations of
-              Control.AnyGC => CFunction.mayGC func
-            | Control.GCCollect => CFunction.target func = CFunction.Target.Direct "GC_collect"
-            | _ => false)
-      | Kind.Cont _ => true
-      | _ => false*)
 
 structure Weight = struct
    type t = {depth: int, count: int}
@@ -63,7 +63,7 @@ end
 datatype varinfo
    = Ignore
    | Consider of Weight.t
-   | Rewrite
+   | Rewrite of Weight.t
 
 fun loopForeach (depth, {headers, child}, f) =
    case DirectedGraph.LoopForest.dest child of
@@ -108,11 +108,11 @@ fun transformFunc func =
 
       val numRewritten = ref 0
 
-      fun setRewrite v =
+      fun setRewrite (v, weight) =
          case varInfo v of
               Consider _ =>
                   if Control.optFuelAvailAndUse ()
-                  then ( Int.inc numRewritten ; setVarInfo (v, Rewrite))
+                  then ( Int.inc numRewritten ; setVarInfo (v, Rewrite weight))
                   else ()
             | _ => ()
 
@@ -134,7 +134,7 @@ fun transformFunc func =
                        case varInfo v of
                             Ignore => Ignore
                           | Consider d => Consider (Weight.inc (d, depth))
-                          | Rewrite => Error.bug "Unexpected Rewrite"
+                          | Rewrite _ => Error.bug "Unexpected Rewrite"
                     val _ = setVarInfo (v, newInfo)
                  in
                     ()
@@ -142,7 +142,7 @@ fun transformFunc func =
               val _ = Block.foreachUse (block,
                   fn v =>
                      case n of
-                          NONE => setRewrite v
+                          NONE => setRewrite (v, Weight.new 0)
                         | SOME _ => incVarInfo v)
               val _ = (#inLoop o labelInfo) label := true
            in
@@ -178,14 +178,17 @@ fun transformFunc func =
                case
                   varInfo x of
                     Consider w => insert (0, SOME x, w)
+                    (* Even if overlapped, we need to consider
+                     * the weights more consistently *)
+                  | Rewrite w => insert (0, SOME x, w)
                   | _ => ()
             fun insertVars _ block =
                Block.foreachUse (block, insertVar)
             val _ = loopForeach (0, loop, insertVars)
             val _ = Array.foreach (heap,
-               fn (x, _) =>
+               fn (x, xw) =>
                   case x of
-                       SOME x => setRewrite x
+                       SOME x => setRewrite (x, xw)
                      | NONE => ())
          in
             ()
@@ -202,15 +205,17 @@ fun transformFunc func =
          let
             open Layout
          in
-            show (seq [str "Number of variables rewritten: ", (str o Int.toString o !) numRewritten  ])
+            show (seq [str "Function ", Func.layout name]) ;
+            show (seq [str "Number of loops: ", (str o Int.toString o Vector.length) loops  ]) ;
+            show (seq [str "Number of variables rewritten:: ", (str o Int.toString o !) numRewritten  ])
          end)
+
 
       datatype direction
          = EnterLoop
          | LeaveLoop
 
       val newBlocks = ref []
-
 
       fun insertRewriteBlock (destLabel, direction) =
          let
@@ -220,7 +225,20 @@ fun transformFunc func =
             val args = Vector.map (destArgs, fn (v, ty) => (Var.new v, ty))
             val live = beginNoFormals destLabel
 
-            val rewrites = Vector.keepAll (live, fn v => varInfo v = Rewrite)
+            val rewrites = Vector.keepAll (live, fn v =>
+               case varInfo v of
+                    Rewrite _ => true
+                  | _ => false)
+            val _ = Control.diagnostics (fn show =>
+               let
+                  open Layout
+                  val _ =
+                     show (seq [str "Dest Label ", Label.layout destLabel, str " (",
+                                str (case direction of EnterLoop => "entrance" | LeaveLoop => "exit"),
+                                str ")"])
+               in
+                  Vector.foreach (rewrites, fn v => show (seq [str "Rewriting ", Var.layout v]))
+               end)
             val statements = Vector.map (rewrites,
                fn v =>
                   let
@@ -234,7 +252,7 @@ fun transformFunc func =
                   in
                      Statement.Bind {dst=dst, src=src,
                      (* temporary hack *)
-                     isMutable=true}
+                     isMutable= direction = LeaveLoop}
                   end)
             (* we use our condition here, the kind of a block on the edge
              * of a loop is never anything interesting, since calls are
