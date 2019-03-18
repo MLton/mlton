@@ -764,11 +764,6 @@ structure Return =
 structure Transfer =
    struct
       datatype t =
-         (* DEPRECATED Arith of {prim: Type.t Prim.t,
-                   args: Var.t vector,
-                   overflow: Label.t, (* Must be nullary. *)
-                   success: Label.t, (* Must be unary. *)
-                   ty: Type.t} *)
          Bug (* MLton thought control couldn't reach here. *)
        | Call of {args: Var.t vector,
                   func: Func.t,

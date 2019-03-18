@@ -63,30 +63,6 @@ fun transform (prog: Program.t): Program.t =
          Property.getSetOnce 
          (Var.plist, Property.initRaise ("getVarOrigType", Var.layout))
       val getVarExpOrigType = getVarOrigType o VarExp.var
-
-      (* DEPRECATED
-      val wrapDatatypes = ref []
-      val {get = getWrap, destroy = destroyWrap, ...} =
-         Property.destGet
-         (Type.plist, Property.initFun (fn ty =>
-          let
-             val successCon = Con.newString "Success"
-             val failureCon = Con.newString "Failure"
-             val wrapTycon = Tycon.newString "Wrap"
-             val wrapTy = Type.con (wrapTycon, Vector.new0 ())
-             val wrapDatatype = 
-                {cons = Vector.new2
-                        ({arg = SOME ty, con = successCon},
-                         {arg = SOME exnTy, con = failureCon}),
-                 tycon = wrapTycon,
-                 tyvars = Vector.new0 ()}
-             val () = List.push (wrapDatatypes, wrapDatatype)
-          in
-             {successCon = successCon, 
-              failureCon = failureCon, 
-              wrapTy = wrapTy}
-          end)) *)
-
       fun transVarExpWithType (x: VarExp.t) : DirectExp.t * Type.t =
          let
             val xTy = transType (getVarExpOrigType x)
@@ -477,18 +453,12 @@ fun transform (prog: Program.t): Program.t =
                   ty = ansTy}
       val body = DirectExp.toExp body
 
-      (* Fetch accumulated wrap datatypes. *)
-      (* DEPRECATED
-      val wrapDatatypes = Vector.fromList (!wrapDatatypes)
-      val datatypes = Vector.concat [datatypes, wrapDatatypes] *)
-
       val prog = Program.T {datatypes = datatypes,
                             body = body}
 
       (* Clear and destroy properties. *)
       val () = Exp.clear body
       val () = destroyTransType ()
-      (* DEPRECATED val () = destroyWrap () *)
    in
       prog
    end

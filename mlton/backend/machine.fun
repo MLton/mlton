@@ -483,11 +483,6 @@ structure Live =
 structure Transfer =
    struct
       datatype t =
-         (* DEPRECATED Arith of {args: Operand.t vector,
-                   dst: Operand.t,
-                   overflow: Label.t,
-                   prim: Type.t Prim.t,
-                   success: Label.t} *)
          CCall of {args: Operand.t vector,
                    frameInfo: FrameInfo.t option,
                    func: Type.t CFunction.t,

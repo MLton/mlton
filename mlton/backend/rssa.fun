@@ -362,12 +362,6 @@ datatype z = datatype Statement.t
 structure Transfer =
    struct
       datatype t =
-         (* DEPRECATED Arith of {args: Operand.t vector,
-                   dst: Var.t,
-                   overflow: Label.t,
-                   prim: Type.t Prim.t,
-                   success: Label.t,
-                   ty: Type.t} *)
          CCall of {args: Operand.t vector,
                    func: Type.t CFunction.t,
                    return: Label.t option}

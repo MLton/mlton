@@ -78,7 +78,6 @@ struct
          | Real_sub _ => true
          | Thread_returnToC => false
          | Word_add _ => true
-         (* DEPRECATED | Word_addCheck _ => true *)
          | Word_addCheckP _ => true
          | Word_andb _ => true
          | Word_castToReal _ => false (* !! *)
@@ -87,10 +86,8 @@ struct
          | Word_lshift s => w32168 s
          | Word_lt (s, _) => w32168 s
          | Word_mul (s, _) => w32168 s
-         (* DEPRECATED | Word_mulCheck (s, _) => w32168 s *)
          | Word_mulCheckP (s, _) => w32168 s
          | Word_neg _ => true
-         (* DEPRECATED | Word_negCheck _ => true *)
          | Word_negCheckP _ => true
          | Word_notb _ => true
          | Word_orb _ => true
@@ -101,7 +98,6 @@ struct
          | Word_ror s => w32168 s
          | Word_rshift (s, _) => w32168 s
          | Word_sub _ => true
-         (* DEPRECATED | Word_subCheck _ => true *)
          | Word_subCheckP _ => true
          | Word_xorb _ => true
          | _ => false

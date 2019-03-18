@@ -153,7 +153,6 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Real_sub _ => true
        | Thread_returnToC => false
        | Word_add _ => true
-       (* DEPRECATED | Word_addCheck _ => true *)
        | Word_addCheckP _ => true
        | Word_andb _ => true
        | Word_castToReal _ => true
@@ -162,16 +161,6 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Word_lshift _ => true
        | Word_lt _ => true
        | Word_mul _ => true
-       (* DEPRECATED | Word_mulCheck (ws, _) =>
-            (case (!Control.Target.arch, ws) of
-                (Control.Target.X86, ws) =>
-                   (* @llvm.smul.with.overflow.i64 becomes a call to __mulodi4.
-                    * @llvm.umul.with.overflow.i64 becomes a call to __udivdi3.
-                    * These are provided by compiler-rt and not always by libgcc.
-                    * In any case, do not depend on non-standard libraries.
-                    *)
-                   not (WordSize.equals (ws, WordSize.word64))
-              | _ => true) *)
        | Word_mulCheckP (ws, _) =>
             (case (!Control.Target.arch, ws) of
                 (Control.Target.X86, ws) =>
@@ -183,7 +172,6 @@ fun implementsPrim (p: 'a Prim.t): bool =
                    not (WordSize.equals (ws, WordSize.word64))
               | _ => true)
        | Word_neg _ => true
-       (* DEPRECATED | Word_negCheck _ => true *)
        | Word_negCheckP _ => true
        | Word_notb _ => true
        | Word_orb _ => true
@@ -194,7 +182,6 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Word_ror _ => true
        | Word_rshift _ => true
        | Word_sub _ => true
-       (* DEPRECATED | Word_subCheck _ => true *)
        | Word_subCheckP _ => true
        | Word_xorb _ => true
        | _ => false
@@ -818,16 +805,6 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
                 (concat [store, ret], "")
             end
           | Word_add ws => (mkinst (res, "add", llws ws, arg0, arg1), llws ws)
-          (* DEPRECATED | Word_addCheck (ws, {signed}) =>
-            let
-                val opr = if signed then "sadd" else "uadd"
-                val ty = llws ws
-                val inst = concat ["\t", res, " = call {", ty, ", i1} @llvm.", opr,
-                                   ".with.overflow.", llwsInt ws, "(", ty, " ", arg0,
-                                   ", ", ty, " ", arg1, ")\n"]
-            in
-                (inst, concat ["{", ty, ", i1}"])
-            end *)
           | Word_addCheckP (ws, {signed}) =>
               mkoverflowp (ws, if signed then "sadd" else "uadd")
           | Word_andb ws => (mkinst (res, "and", llws ws, arg0, arg1), llws ws)
@@ -867,28 +844,9 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
                 (concat [cmp, ext], "%Word32")
             end
           | Word_mul (ws, _) => (mkinst (res, "mul", llws ws, arg0, arg1), llws ws)
-          (* DEPRECATED | Word_mulCheck (ws, {signed}) =>
-            let
-                val opr = if signed then "smul" else "umul"
-                val ty = llws ws
-                val inst = concat ["\t", res, " = call {", ty, ", i1} @llvm.", opr,
-                                   ".with.overflow.", llwsInt ws, "(", ty, " ", arg0,
-                                   ", ", ty, " ", arg1, ")\n"]
-            in
-                (inst, concat ["{", ty, ", i1}"])
-            end *)
           | Word_mulCheckP (ws, {signed}) =>
               mkoverflowp (ws, if signed then "smul" else "umul")
           | Word_neg ws => (mkinst (res, "sub", llws ws, "0", arg0), llws ws)
-          (* DEPRECATED | Word_negCheck ws =>
-            let
-                val ty = llws ws
-                val inst = concat ["\t", res, " = call {", ty, ", i1} @llvm.ssub.with.overflow.",
-                                   llwsInt ws, "(", ty, " 0, ", ty, " ", arg0, ")\n"]
-                val resTy = concat ["{", ty, ", i1}"]
-            in
-                (inst, resTy)
-            end *)
           | Word_negCheckP ws =>
             let
               val ty = llws ws
@@ -950,16 +908,6 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
                 (mkinst (res, opr, llws ws, arg0, arg1), llws ws)
             end
           | Word_sub ws => (mkinst (res, "sub", llws ws, arg0, arg1), llws ws)
-          (* DEPRECATED | Word_subCheck (ws, {signed}) =>
-            let
-                val opr = if signed then "ssub" else "usub"
-                val ty = llws ws
-                val inst = concat ["\t", res, " = call {", ty, ", i1} @llvm.", opr,
-                                   ".with.overflow.", llwsInt ws, "(", ty, " ", arg0,
-                                   ", ", ty, " ", arg1, ")\n"]
-            in
-                (inst, concat ["{", ty, ", i1}"])
-            end *)
           | Word_subCheckP (ws, {signed}) =>
               mkoverflowp (ws, if signed then "ssub" else "usub")
           | Word_xorb ws => (mkinst (res, "xor", llws ws, arg0, arg1), llws ws)

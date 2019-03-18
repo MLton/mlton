@@ -550,7 +550,6 @@ structure Name =
              | Real_sub s => realBinary s
              | Thread_returnToC => CFunction.returnToC ()
              | Word_add s => wordBinary (s, {signed = false})
-             (* DEPRECATED | Word_addCheck (s, sg) => wordBinaryCheck (s, sg) *)
              | Word_addCheckP (s, sg) => wordBinaryCheckP (s, sg)
              | Word_andb s => wordBinary (s, {signed = false})
              | Word_castToReal (s1, s2) =>
@@ -563,10 +562,8 @@ structure Name =
              | Word_lshift s => wordShift (s, {signed = false})
              | Word_lt z => wordCompare z
              | Word_mul z => wordBinary z
-             (* DEPRECATED | Word_mulCheck (s, sg) => wordBinaryCheck (s, sg) *)
              | Word_mulCheckP (s, sg) => wordBinaryCheckP (s, sg)
              | Word_neg s => wordUnary (s, {signed = true})
-             (* DEPRECATED | Word_negCheck s => wordUnaryCheck (s, {signed = true}) *)
              | Word_negCheckP s => wordUnaryCheckP (s, {signed = true})
              | Word_notb s => wordUnary (s, {signed = false})
              | Word_orb s => wordBinary (s, {signed = false})
@@ -580,7 +577,6 @@ structure Name =
              | Word_ror s => wordShift (s, {signed = false})
              | Word_rshift z => wordShift z
              | Word_sub s => wordBinary (s, {signed = false})
-             (* DEPRECATED | Word_subCheck (s, sg) => wordBinaryCheck (s, sg) *)
              | Word_subCheckP (s, sg) => wordBinaryCheckP (s, sg)
              | _ => Error.bug "SsaToRssa.Name.cFunctionRaise"
          end
