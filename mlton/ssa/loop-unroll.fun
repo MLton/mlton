@@ -379,7 +379,6 @@ fun checkPrim (args, prim, loadVar) =
       | NONE => NONE)
   | _ => NONE
 
-(* TODO possible simplify arith stuff *)
 (* Given:
     - a variable in the loop
     - another variable in the loop
@@ -406,72 +405,10 @@ fun varChain (origVar, endVar, blocks, loadVar, total) =
                       Exp.PrimApp {args, prim, ...} =>
                         checkPrim (args, prim, loadVar)
                       | _ => NONE))
-             val label = Block.label b
-             val blockArgs = Block.args b
-             (* If we found the assignment or the block isn't unary,
-                skip this step *)
-             val arithTransfers =
-              if ((Vector.length assignments) > 0) orelse
-                 ((Vector.length blockArgs) <> 1)
-              then
-                Vector.new0 ()
-              else
-                let
-                  val (blockArg, _) = Vector.sub (blockArgs, 0)
-                  val blockEntrys = Vector.keepAllMap (blocks, fn b' =>
-                    case Block.transfer b' of
-                      Transfer.Call {return, ...} =>
-                        (case return of
-                           Return.NonTail {cont, ...} =>
-                              if Label.equals (label, cont) then
-                                 SOME(NONE)
-                              else NONE
-                         | _ => NONE)
-                    | Transfer.Case {cases, ...} =>
-                        (case cases of
-                           Cases.Con v =>
-                              if Vector.exists (v, fn (_, lbl) =>
-                                 Label.equals (label, lbl)) then
-                                   SOME(NONE)
-                              else
-                                 NONE
-                         | Cases.Word (_, v) =>
-                              if Vector.exists (v, fn (_, lbl) =>
-                                 Label.equals (label, lbl)) then
-                                   SOME(NONE)
-                              else NONE)
-                    | Transfer.Goto {args, dst} =>
-                        if Label.equals (label, dst) then
-                          SOME(SOME(Vector.sub (args, 0), 0))
-                        else NONE
-                    | _ => NONE)
-                in
-                  if Var.equals (endVar, blockArg) then
-                    blockEntrys
-                  else
-                    Vector.new0 ()
-                end  
-             val assignments' =
-              if Vector.length (arithTransfers) > 0 then
-                case (Vector.fold (arithTransfers,
-                                Vector.sub (arithTransfers, 0),
-                                fn (trans, trans') =>
-                                  case (trans, trans') of
-                                    (SOME(a1, v1), SOME(a2, v2)) =>
-                                      if Var.equals (a1, a2) andalso
-                                         v1 = v2 then
-                                        trans
-                                      else
-                                        NONE
-                                  | _ => NONE)) of
-                  SOME(a, v) => Vector.new1 (a, v)
-                | NONE => assignments
-              else
-                assignments
           in
-             case Vector.length assignments' of
+             case Vector.length assignments of
                 0 => NONE
-              | 1 => SOME (Vector.sub (assignments', 0))
+              | 1 => SOME (Vector.sub (assignments, 0))
               | _ => raise Fail "Multiple assignments in SSA form!"
           end)
       in
