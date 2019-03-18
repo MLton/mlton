@@ -1576,7 +1576,6 @@ structure ApplyResult =
          Apply of 'a prim * 'b list
        | Bool of bool
        | Const of Const.t
-       | Overflow
        | Unknown
        | Var of 'b
 
@@ -1588,7 +1587,6 @@ structure ApplyResult =
                Apply (p, args) => seq [layoutPrim p, List.layout layoutX args]
              | Bool b => Bool.layout b
              | Const c => Const.layout c
-             | Overflow => str "Overflow"
              | Unknown => str "Unknown"
              | Var x => layoutX x
          end
@@ -1863,7 +1861,7 @@ fun ('a, 'b) apply (p: 'a t,
            | _ => ApplyResult.Unknown)
              handle Chr => ApplyResult.Unknown
                   | Div => ApplyResult.Unknown
-                  | Exn.Overflow => ApplyResult.Overflow
+                  | Exn.Overflow => ApplyResult.Unknown
                   | Subscript => ApplyResult.Unknown
       fun someVars () =
          let
@@ -2177,6 +2175,7 @@ fun ('a, 'b) apply (p: 'a t,
                               | Word_quot (s, _) => word (WordX.one s)
                               | Word_rem (s, _) => word (WordX.zero s)
                               | Word_sub s => word (WordX.zero s)
+                              | Word_subCheckP (s, _) => word (WordX.zero s)
                               | Word_xorb s => word (WordX.zero s)
                               | _ => Unknown
                           end

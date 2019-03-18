@@ -1072,7 +1072,6 @@ structure Program =
                                     end
                                | Bool b => replace (Operand.bool b)
                                | Const c => replace (Operand.Const c)
-                               | Overflow => keep ()
                                | Unknown => keep ()
                                | Var x => replace (Operand.Var x)
                         end
