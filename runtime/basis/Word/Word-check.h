@@ -31,56 +31,6 @@
     onSuccess;                                                  \
   } while (0)
 
-/**
- * Old-style overflow operators
- */
-
-#define WordS_addCheckBody(size, x, y, doOverflow, doSuccess)   \
-  add_overflow_b(x, y, S##size, doOverflow, doSuccess)
-#define WordS_addCheckBodyCX(size, c, x, doOverflow, doSuccess) \
-  WordS_addCheckBody(size, c, x, doOverflow, doSuccess)
-
-#define WordU_addCheckBody(size, x, y, doOverflow, doSuccess)   \
-  add_overflow_b(x, y, U##size, doOverflow, doSuccess)
-#define WordU_addCheckBodyCX(size, c, x, doOverflow, doSuccess) \
-  WordU_addCheckBody(size, c, x, doOverflow, doSuccess)
-
-#define WordS_mulCheckBody(size, x, y, doOverflow, doSuccess)   \
-  mul_overflow_b(x, y, S##size, doOverflow, doSuccess)
-
-#define WordU_mulCheckBody(size, x, y, doOverflow, doSuccess)   \
-  mul_overflow_b(x, y, U##size, doOverflow, doSuccess)
-
-#define WordS_negCheckBody(size, x, doOverflow, doSuccess)      \
-  neg_overflow_b(x, S##size, doOverflow, doSuccess)
-
-#define WordS_subCheckBody(size, x, y, doOverflow, doSuccess)   \
-  sub_overflow_b(x, y, S##size, doOverflow, doSuccess)
-#define WordS_subCheckBodyCX(size, c, x, doOverflow, doSuccess) \
-  WordS_subCheckBody(size, c, x, doOverflow, doSuccess)
-
-#define WordS_subCheckBodyXC(size, x, c, doOverflow, doSuccess) \
-  WordS_subCheckBody(size, x, c, doOverflow, doSuccess)
-
-/*
- * Old WordS_subCheckBodyXC:
- *
-  do {                                                          \
-    if (c <= 0) {                                               \
-      if (x > WordS##size##_max + c) {                          \
-        doOverflow;                                             \
-      }                                                         \
-    } else if (x < WordS##size##_min + c) {                     \
-      doOverflow;                                               \
-    }                                                           \
-    doSuccess;                                                  \
-  } while (0)
-  */
-
-/**
- * New-style overflow operators
- */
-
 #define WordS_addCheckP(size)                                           \
   MLTON_CODEGEN_STATIC_INLINE                                           \
   Bool WordS##size##_addCheckP (WordS##size x, WordS##size y) {         \

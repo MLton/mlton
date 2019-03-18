@@ -20,7 +20,6 @@ structure Exn =
       type exn = t
       exception Bind = Bind
       exception Match = Match
-      exception PrimOverflow = Overflow
    end
 structure List =
    struct

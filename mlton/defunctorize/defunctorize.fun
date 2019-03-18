@@ -1123,8 +1123,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
       val _ = (destroy1 (); destroy2 (); destroy3 ())
    in
       Xml.Program.T {body = body,
-                     datatypes = Vector.fromList (!datatypes),
-                     overflow = NONE}
+                     datatypes = Vector.fromList (!datatypes)}
    end
 
 end

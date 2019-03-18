@@ -242,11 +242,7 @@ signature XML_TREE =
                      datatypes: {cons: {arg: Type.t option,
                                         con: Con.t} vector,
                                  tycon: Tycon.t,
-                                 tyvars: Tyvar.t vector} vector,
-                     (* overflow is SOME only after exceptions have been
-                      * implemented.
-                      *)
-                     overflow: Var.t option}
+                                 tyvars: Tyvar.t vector} vector}
 
             val clear: t -> unit (* clear all property lists *)
             val layout: t -> Layout.t

@@ -42,7 +42,6 @@ signature LAMBDA_FREE =
        *)
       val lambdaFree:
          {program: Program.t,
-          overflow: Var.t,
           varInfo: Var.t -> {frees: Var.t list ref ref,
                              status: Status.t ref},
           lambdaInfo: Lambda.t -> {frees: Var.t vector ref,

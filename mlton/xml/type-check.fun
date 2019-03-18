@@ -13,7 +13,7 @@ struct
 open S
 open Dec PrimExp
 
-fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
+fun typeCheck (program as Program.T {datatypes, body}): unit =
    let
       (* tyvarInScope is used to ensure that tyvars never shadow themselves. *)
       val {get = tyvarInScope: Tyvar.t -> bool ref, ...} =
@@ -320,15 +320,6 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
          if Type.equals (checkExp body, Type.unit)
             then ()
          else Error.bug "Xml.TypeCheck.typeCheck: program must be of type unit"
-      val _ =
-         case overflow of
-            NONE => true
-          | SOME x =>
-               let val {tyvars, ty} = getVar x
-               in
-                  Vector.isEmpty tyvars
-                  andalso Type.equals (ty, Type.exn)
-               end
       val _ = Program.clear program
    in
       ()

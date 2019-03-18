@@ -229,7 +229,7 @@ fun shouldDuplicate (program as Program.T {body, ...}, hofo, small, product)
        | SOME {shouldDuplicate, ...} => !shouldDuplicate
    end
 
-fun transform (program as Program.T {datatypes, body, overflow},
+fun transform (program as Program.T {datatypes, body},
                hofo: bool,
                small: int,
                product: int) =
@@ -414,15 +414,9 @@ fun transform (program as Program.T {datatypes, body, overflow},
                      end
                 | _ => Error.bug "Polyvariance.loopDecs: saw bogus dec"
       val body = loopExp body
-      val overflow =
-         Option.map (overflow, fn x =>
-                     case varInfo x of
-                        Replace y => y
-                      | _ => Error.bug "Polyvariance.duplicate: duplicating Overflow?")
       val program =
          Program.T {datatypes = datatypes,
-                    body = body,
-                    overflow = overflow}
+                    body = body}
       val _ = Program.clear program
    in
       program

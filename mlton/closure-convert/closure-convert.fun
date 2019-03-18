@@ -208,7 +208,7 @@ val traceLoopBind =
     Unit.layout)
 
 fun closureConvert
-   (program as Sxml.Program.T {datatypes, body, overflow}): Ssa.Program.t =
+   (program as Sxml.Program.T {datatypes, body}): Ssa.Program.t =
    let
       val {get = conArg: Con.t -> Value.t option, set = setConArg, ...} =
          Property.getSetOnce (Con.plist,
@@ -393,12 +393,10 @@ fun closureConvert
                                                   str " ",
                                                   Value.layout (value x)]
                                           end)))
-      val overflow = valOf overflow
       val _ =
          Control.trace (Control.Pass, "free variables")
          LambdaFree.lambdaFree
          {program = program,
-          overflow = overflow,
           varInfo = fn x => let val {frees, status, ...} = varInfo x
                             in {frees = frees, status = status}
                             end,

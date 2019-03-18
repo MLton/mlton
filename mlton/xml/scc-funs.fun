@@ -16,7 +16,7 @@ open Dec PrimExp
 structure Graph = DirectedGraph
 structure Node = Graph.Node
 
-fun sccFuns (Program.T {datatypes, body, overflow}) =
+fun sccFuns (Program.T {datatypes, body}) =
    let
       (* For each function appearing in a fun dec record its node, which will
        * have edges to the nodes of other functions declared in the same dec
@@ -126,8 +126,7 @@ fun sccFuns (Program.T {datatypes, body, overflow}) =
          end
    in
       Program.T {datatypes = datatypes,
-                 body = loopExp body,
-                 overflow = overflow}
+                 body = loopExp body}
    end
 
 end

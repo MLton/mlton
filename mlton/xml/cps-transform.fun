@@ -15,7 +15,7 @@ datatype z = datatype PrimExp.t
 
 fun transform (prog: Program.t): Program.t =
    let
-      val Program.T {datatypes, body, overflow} = prog
+      val Program.T {datatypes, body} = prog
 
       (* Answer type is always unit in an XML IL program. *)
       val ansTy = Type.unit
@@ -64,9 +64,7 @@ fun transform (prog: Program.t): Program.t =
          (Var.plist, Property.initRaise ("getVarOrigType", Var.layout))
       val getVarExpOrigType = getVarOrigType o VarExp.var
 
-      (* A mayOverflow primitive needs a special translation with a wrapper
-       * datatype.  See transPrimExp:PrimApp.
-       *)
+      (* DEPRECATED
       val wrapDatatypes = ref []
       val {get = getWrap, destroy = destroyWrap, ...} =
          Property.destGet
@@ -87,7 +85,7 @@ fun transform (prog: Program.t): Program.t =
              {successCon = successCon, 
               failureCon = failureCon, 
               wrapTy = wrapTy}
-          end))
+          end)) *)
 
       fun transVarExpWithType (x: VarExp.t) : DirectExp.t * Type.t =
          let
@@ -341,109 +339,12 @@ fun transform (prog: Program.t): Program.t =
                   in 
                      return (DirectExp.fromLambda (l, eTy))
                   end
-             | PrimApp {args, prim, targs} => 
-                  let
-                     val primAppExp =
-                        DirectExp.primApp
-                        {args = Vector.map (args, transVarExp),
-                         prim = prim,
-                         targs = Vector.map (targs, transType),
-                         ty = eTy}
-                  in
-                     if Prim.mayOverflow prim
-                        then let
-                                (* A mayOverflow primitive has an
-                                 * implicit raise, which is introduced
-                                 * explicitly by closure-convert
-                                 * (transformation from SXML to SSA).
-                                 *
-                                 * We leave an explicit Handle around
-                                 * the primitive to catch the
-                                 * exception.  The non-exceptional
-                                 * result goes to the (normal)
-                                 * continuation, while the exception
-                                 * goes to the exception continuation.
-                                 *
-                                 * Naively, we would do:
-                                 *   (k (primApp)) handle x => h x
-                                 * But, this evaluates the (normal)
-                                 * continuation in the context of the
-                                 * handler.
-                                 * 
-                                 * Rather, we do:
-                                 *   case ((Success (primApp)) 
-                                 *         handle x => Failure x) of
-                                 *     Success x => k x
-                                 *     Failure x => h x
-                                 * This evaluates the (normal)
-                                 * continuation outside the context of
-                                 * the handler.  
-                                 * 
-                                 * See <src>/lib/mlton/basic/exn0.sml
-                                 * and "Exceptional Syntax" by Benton
-                                 * and Kennedy.
-                                 * 
-                                 *)
-
-                                val {successCon, failureCon, wrapTy} = 
-                                   getWrap eTy
-
-                                val testExp =
-                                   let
-                                      val xVar = Var.newNoname ()
-                                      val x = DirectExp.monoVar (xVar, exnTy)
-                                   in
-                                      DirectExp.handlee
-                                      {try = DirectExp.conApp
-                                             {arg = SOME primAppExp,
-                                              con = successCon,
-                                              targs = Vector.new0 (),
-                                              ty = wrapTy},
-                                       catch = (xVar, exnTy),
-                                       handler = DirectExp.conApp
-                                                 {arg = SOME x,
-                                                  con = failureCon,
-                                                  targs = Vector.new0 (),
-                                                  ty = wrapTy},
-                                       ty = wrapTy}
-                                   end
-
-                                val successCase =
-                                   let
-                                      val xVar = Var.newNoname ()
-                                   in
-                                      (Pat.T {arg = SOME (xVar, eTy),
-                                              con = successCon,
-                                              targs = Vector.new0 ()},
-                                       DirectExp.app
-                                       {func = k,
-                                        arg = DirectExp.monoVar (xVar, eTy),
-                                        ty = ansTy})
-                                   end
-                                val failureCase =
-                                   let
-                                      val xVar = Var.newNoname ()
-                                   in
-                                      (Pat.T 
-                                       {arg = SOME (xVar, exnTy),
-                                        con = failureCon,
-                                        targs = Vector.new0 ()},
-                                       DirectExp.app
-                                       {func = h,
-                                        arg = DirectExp.monoVar (xVar, exnTy),
-                                        ty = ansTy})
-                                   end
-                                val cases =
-                                   Cases.Con (Vector.new2 (successCase, failureCase))
-                             in
-                                DirectExp.casee
-                                {test = testExp,
-                                 cases = cases,
-                                 default = NONE,
-                                 ty = ansTy}
-                             end
-                     else return primAppExp
-                  end
+             | PrimApp {args, prim, targs} =>
+                 DirectExp.primApp
+                 {args = Vector.map (args, transVarExp),
+                  prim = prim,
+                  targs = Vector.map (targs, transType),
+                  ty = eTy}
              | Profile _ => 
                   let
                      (* Profile statements won't properly nest after
@@ -577,17 +478,17 @@ fun transform (prog: Program.t): Program.t =
       val body = DirectExp.toExp body
 
       (* Fetch accumulated wrap datatypes. *)
+      (* DEPRECATED
       val wrapDatatypes = Vector.fromList (!wrapDatatypes)
-      val datatypes = Vector.concat [datatypes, wrapDatatypes]
+      val datatypes = Vector.concat [datatypes, wrapDatatypes] *)
 
-      val prog = Program.T {datatypes = datatypes, 
-                            body = body, 
-                            overflow = overflow}
+      val prog = Program.T {datatypes = datatypes,
+                            body = body}
 
       (* Clear and destroy properties. *)
       val () = Exp.clear body
       val () = destroyTransType ()
-      val () = destroyWrap ()
+      (* DEPRECATED val () = destroyWrap () *)
    in
       prog
    end

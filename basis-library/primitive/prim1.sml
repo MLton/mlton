@@ -58,8 +58,6 @@ structure Exn =
           let val r = ! a
           in if ? a then raise Overflow else r
           end
-      val wrapOverflow: ('a -> 'b) -> ('a -> 'b) =
-         fn f => fn a => f a handle PrimOverflow => raise Overflow
    end
 
 structure Order =

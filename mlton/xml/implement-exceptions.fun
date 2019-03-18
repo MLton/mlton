@@ -202,7 +202,6 @@ fun transform (Program.T {datatypes, body, ...}): Program.t =
             NONE => false
           | SOME _ => true
       val exnValCons: {con: Con.t, arg: Type.t} list ref = ref []
-      val overflow = ref NONE
       val traceLoopDec =
          Trace.trace
          ("ImplementExceptions.loopDec", Dec.layout, List.layout Dec.layout)
@@ -244,10 +243,6 @@ fun transform (Program.T {datatypes, body, ...}): Program.t =
                             *)
                            let
                               val exn = Var.newNoname ()
-                              val _ =
-                                 if Con.equals (con, Con.overflow)
-                                    then overflow := SOME exn
-                                 else ()
                            in (Type.unitRef,
                                Dexp.vall {var = exn, exp = conApp uniq},
                                fn NONE => monoVar (exn, Type.exn)
@@ -519,8 +514,7 @@ fun transform (Program.T {datatypes, body, ...}): Program.t =
       val body = Dexp.toExp body
       val program =
          Program.T {datatypes = datatypes,
-                    body = body,
-                    overflow = !overflow}
+                    body = body}
       val _ = destroy ()
    in
       program

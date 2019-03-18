@@ -286,8 +286,6 @@ signature PRIM =
       val layoutApp: 'a t * 'b vector * ('b -> Layout.t) -> Layout.t
       val layoutFull: 'a t * ('a -> Layout.t) -> Layout.t
       val map: 'a t * ('a -> 'b) -> 'b t
-      (* examples: Word_addCheck, Word_mulCheck, Word_subCheck *)
-      val mayOverflow: 'a t -> bool
       (* examples: Array_update, Ref_assign
        * not examples: Array_sub, Array_uninit, Ref_deref, Ref_ref
        *)

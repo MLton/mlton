@@ -826,13 +826,6 @@ val isCommutative =
     | Word_xorb _ => true
     | _ => false
 
-val mayOverflow = fn _ => false
-   (* DEPRECATED fn Word_addCheck _ => true
-    | Word_mulCheck _ => true
-    | Word_negCheck _ => true
-    | Word_subCheck _ => true
-    | _ => false*)
-
 val kind: 'a t -> Kind.t =
    fn p =>
    let
