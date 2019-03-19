@@ -28,7 +28,7 @@ open Rssa
 structure Live = Live (Rssa)
 structure Restore = RestoreR (Rssa)
 
-fun shouldBounceAt (Block.T {kind, ...}) =
+fun shouldAvoid (Block.T {kind, ...}) =
    (* this definition is important;
     * we assume that no edge has even
     * one side inside a loop;
@@ -38,8 +38,17 @@ fun shouldBounceAt (Block.T {kind, ...}) =
     * into the loop without necessarily
     * going over a bad edge *)
    case kind of
-        Kind.Jump => false
-      | _ => true
+        Kind.Jump => true
+      | _ => false
+
+fun shouldBounceAt (Block.T {kind, ...}) =
+   (* This is based on the allocate
+    * registers choice, of which variables
+    * go to the stack, and similarly,
+    * cannot be frivolously changed *)
+   case Kind.frameStyle kind of
+        Kind.OffsetsAndSize => true
+      | _ => false
 
 structure Weight = struct
    type t = {depth: int, count: int}
@@ -83,7 +92,7 @@ fun transformFunc func =
 
       val {loops, ...} = DirectedGraph.LoopForest.dest
          (Function.loopForest (func, fn (b, _) =>
-            not (shouldBounceAt b)))
+            shouldAvoid b))
 
       val {get=varTy, set=setVarTy, ...} = Property.getSetOnce
          (Var.plist, Property.initRaise ("SeparateVars.transformFunc.varTy", Var.layout))
@@ -252,7 +261,7 @@ fun transformFunc func =
                   in
                      Statement.Bind {dst=dst, src=src,
                      (* temporary hack *)
-                     isMutable= direction = LeaveLoop}
+                     isMutable= true}
                   end)
             (* we use our condition here, the kind of a block on the edge
              * of a loop is never anything interesting, since calls are
