@@ -1861,7 +1861,7 @@ fun ('a, 'b) apply (p: 'a t,
            | _ => ApplyResult.Unknown)
              handle Chr => ApplyResult.Unknown
                   | Div => ApplyResult.Unknown
-                  | Exn.Overflow => ApplyResult.Unknown
+                  | Overflow => ApplyResult.Unknown
                   | Subscript => ApplyResult.Unknown
       fun someVars () =
          let
