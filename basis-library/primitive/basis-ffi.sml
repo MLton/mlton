@@ -1307,6 +1307,7 @@ val rem = _import "WordU16_rem" private : Word16.t * Word16.t -> Word16.t;
 val rndToReal32 = _import "WordU16_rndToReal32" private : Word16.t -> Real32.t;
 val rndToReal64 = _import "WordU16_rndToReal64" private : Word16.t -> Real64.t;
 val rshift = _import "WordU16_rshift" private : Word16.t * Word32.t -> Word16.t;
+val subCheckP = _import "WordU16_subCheckP" private : Word16.t * Word16.t -> Bool.t;
 end
 structure WordU32 = 
 struct
@@ -1326,6 +1327,7 @@ val rem = _import "WordU32_rem" private : Word32.t * Word32.t -> Word32.t;
 val rndToReal32 = _import "WordU32_rndToReal32" private : Word32.t -> Real32.t;
 val rndToReal64 = _import "WordU32_rndToReal64" private : Word32.t -> Real64.t;
 val rshift = _import "WordU32_rshift" private : Word32.t * Word32.t -> Word32.t;
+val subCheckP = _import "WordU32_subCheckP" private : Word32.t * Word32.t -> Bool.t;
 end
 structure WordU64 = 
 struct
@@ -1345,6 +1347,7 @@ val rem = _import "WordU64_rem" private : Word64.t * Word64.t -> Word64.t;
 val rndToReal32 = _import "WordU64_rndToReal32" private : Word64.t -> Real32.t;
 val rndToReal64 = _import "WordU64_rndToReal64" private : Word64.t -> Real64.t;
 val rshift = _import "WordU64_rshift" private : Word64.t * Word32.t -> Word64.t;
+val subCheckP = _import "WordU64_subCheckP" private : Word64.t * Word64.t -> Bool.t;
 end
 structure WordU8 = 
 struct
@@ -1364,6 +1367,7 @@ val rem = _import "WordU8_rem" private : Word8.t * Word8.t -> Word8.t;
 val rndToReal32 = _import "WordU8_rndToReal32" private : Word8.t -> Real32.t;
 val rndToReal64 = _import "WordU8_rndToReal64" private : Word8.t -> Real64.t;
 val rshift = _import "WordU8_rshift" private : Word8.t * Word32.t -> Word8.t;
+val subCheckP = _import "WordU8_subCheckP" private : Word8.t * Word8.t -> Bool.t;
 end
 end
 end

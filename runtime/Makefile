@@ -342,9 +342,9 @@ basis/Real/strto-pic.o: $(GDTOAHFILES)
 basis/Real/strto-gdb.o: $(GDTOAHFILES)
 basis/Real/strto.o:     $(GDTOAHFILES)
 basis/System/Date.c_XCFLAGS := -Wno-format-nonliteral
-basis/Word/Word-pic.o:  basis/Word/Word-consts.h basis/Word/Word-ops.h basis/Word/Word-check.h
-basis/Word/Word-gdb.o:  basis/Word/Word-consts.h basis/Word/Word-ops.h basis/Word/Word-check.h
-basis/Word/Word.o:      basis/Word/Word-consts.h basis/Word/Word-ops.h basis/Word/Word-check.h
+basis/Word/Word-pic.o:  basis/Word/Word-consts.h basis/Word/Word-ops.h
+basis/Word/Word-gdb.o:  basis/Word/Word-consts.h basis/Word/Word-ops.h
+basis/Word/Word.o:      basis/Word/Word-consts.h basis/Word/Word-ops.h
 basis/coerce-pic.o:     basis/coerce.h
 basis/coerce-gdb.o:     basis/coerce.h
 basis/coerce.o:         basis/coerce.h
