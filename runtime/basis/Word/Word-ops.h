@@ -117,14 +117,8 @@ bothBinaryOvflChk (size, mul)                   \
 negOvflOp (size)                                \
 negOvflChk (size)                               \
 unary (size, notb, ~)                           \
-/* WordS<N>_quot and WordS<N>_rem can't be inlined with the C-codegen,  \ 
- * because the gcc optimizer sometimes produces incorrect results       \
- * when one of the arguments is a constant.                             \
- */                                                                     \
-MLTON_CODEGEN_WORDSQUOTREM_IMPL(binary (S##size, quot, /))              \
-MLTON_CODEGEN_WORDSQUOTREM_IMPL(binary (S##size, rem, %))               \
-binary (U##size, quot, /)                       \
-binary (U##size, rem, %)                        \
+bothBinary (size, quot, /)                      \
+bothBinary (size, rem, %)                       \
 binary (size, orb, |)                           \
 rol(size)                                       \
 ror(size)                                       \

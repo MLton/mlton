@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 1999-2008,2019 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -195,16 +196,6 @@
  */
 #ifndef MLTON_CODEGEN_MATHFN
 #define MLTON_CODEGEN_MATHFN(decl) decl
-#endif
-/* WordS<N>_quot and WordS<N>_rem can't be inlined with the C-codegen,
- * because the gcc optimizer sometimes produces incorrect results when
- * one of the arguments is a constant.
- */
-#ifndef MLTON_CODEGEN_WORDSQUOTREM
-#define MLTON_CODEGEN_WORDSQUOTREM(func) PRIVATE
-#endif
-#ifndef MLTON_CODEGEN_WORDSQUOTREM_IMPL
-#define MLTON_CODEGEN_WORDSQUOTREM_IMPL(func)
 #endif
 /* Declare memcpy, since <string.h> isn't included.
  */
