@@ -122,9 +122,13 @@ bothBinary (size, rem, %)                       \
 binary (size, orb, |)                           \
 rol(size)                                       \
 ror(size)                                       \
-/* WordS<N>_rshift isn't ANSI C, because ANSI doesn't guarantee sign    \
- * extension.  We use it anyway cause it always seems to work.          \
- */                                                                     \
+/* WordS<N>_rshift has implementation-defined behavior under C11.
+ * "The result of E1 >> E2 is E1 right-shifted E2 bit positions. If E1 has a
+ * signed type and a negative value, the resulting value is
+ * implementation-defined."
+ * However, gcc and clang implement signed '>>' on negative numbers by sign
+ * extension.
+ */                                             \
 shift (S##size, rshift, >>)                     \
 shift (U##size, rshift, >>)                     \
 binaryOvflOp (size, sub)                        \
