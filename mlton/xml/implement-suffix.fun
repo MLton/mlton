@@ -15,7 +15,7 @@ datatype z = datatype Dec.t
 datatype z = datatype PrimExp.t
 structure Dexp = DirectExp
 
-fun transform (Program.T {datatypes, body, overflow, ...}): Program.t =
+fun transform (Program.T {datatypes, body, ...}): Program.t =
    let
       (* topLevelSuffix holds the ref cell containing the function of
        * type unit -> unit that should be called on program exit.
@@ -117,7 +117,6 @@ fun transform (Program.T {datatypes, body, overflow, ...}): Program.t =
       val body = Dexp.toExp body
    in
       Program.T {datatypes = datatypes,
-                 body = body,
-                 overflow = overflow}
+                 body = body}
    end
 end

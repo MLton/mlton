@@ -16,11 +16,7 @@ structure DirectExp =
 struct
 
 datatype t =
-   Arith of {prim: Type.t Prim.t,
-             args: t vector,
-             overflow: t,
-             ty: Type.t}
- | Call of {func: Func.t,
+   Call of {func: Func.t,
             args: t vector,
             ty: Type.t}
  | Case of {cases: cases,
@@ -67,7 +63,6 @@ and cases =
            body: t} vector
  | Word of WordSize.t * (WordX.t * t) vector
 
-val arith = Arith
 val call = Call
 val casee = Case
 val conApp = ConApp
@@ -127,10 +122,7 @@ local
 in
    fun layout e : Layout.t =
       case e of
-         Arith {prim, args, overflow, ...} =>
-            align [Prim.layoutApp (prim, args, layout),
-                   seq [str "Overflow => ", layout overflow]]
-       | Call {func, args, ty} =>
+         Call {func, args, ty} =>
             seq [Func.layout func, str " ", layouts args,
                  str ": ", Type.layout ty]
        | Case {cases, default, test, ...} =>
@@ -383,22 +375,7 @@ fun linearize' (e: t, h: Handler.t, k: Cont.t): Label.t * Block.t list =
          traceLinearizeLoop
          (fn (e: t, h: Handler.t, k: Cont.t) =>
          case e of
-            Arith {prim, args, overflow, ty} =>
-               loops
-               (args, h, fn xs =>
-                let
-                   val l = reify (k, ty)
-                   val k = Cont.goto l
-                in
-                   {statements = [],
-                    transfer =
-                    Transfer.Arith {prim = prim,
-                                    args = xs,
-                                    overflow = newLabel0 (overflow, h, k),
-                                    success = l,
-                                    ty = ty}}
-                end)
-          | Call {func, args, ty} =>
+            Call {func, args, ty} =>
                loops
                (args, h, fn xs =>
                 {statements = [],

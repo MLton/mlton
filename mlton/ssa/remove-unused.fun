@@ -470,12 +470,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
             else maybeVisitVarExp (var, exp))
       fun visitTransfer (t: Transfer.t, fi: FuncInfo.t) =
          case t of
-            Arith {args, overflow, success, ty, ...} =>
-               (visitVars args
-                ; visitLabel overflow
-                ; visitLabel success
-                ; visitType ty)
-          | Bug => ()
+            Bug => ()
           | Call {args, func, return} =>
                let
                   datatype u = None
@@ -816,8 +811,6 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                          in
                             (x, t)
                          end))
-      val getArithOverflowWrapperLabel = getOriginalWrapperLabel
-      val getArithSuccessWrapperLabel = getOriginalWrapperLabel
       val getRuntimeWrapperLabel = getOriginalWrapperLabel
       fun getBugFunc (fi: FuncInfo.t): Label.t =
          (* Can't share the Bug block across different places because the
@@ -1011,13 +1004,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
          Vector.keepAllMap (ss, simplifyStatement)
       fun simplifyTransfer (t: Transfer.t, fi: FuncInfo.t): Transfer.t =
          case t of
-            Arith {prim, args, overflow, success, ty} =>
-               Arith {prim = prim,
-                      args = args,
-                      overflow = getArithOverflowWrapperLabel overflow,
-                      success = getArithSuccessWrapperLabel success,
-                      ty = simplifyType ty}
-          | Bug => Bug
+            Bug => Bug
           | Call {func, args, return} =>
                let
                   val fi' = funcInfo func

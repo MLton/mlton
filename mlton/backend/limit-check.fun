@@ -457,6 +457,7 @@ fun insertFunction (f: Function.t,
                     | _ =>
                          let
                             val bytes = Var.newNoname ()
+                            val test = Var.newNoname ()
                             val extraBytes =
                                let
                                   val extraBytes =
@@ -472,20 +473,28 @@ fun insertFunction (f: Function.t,
                              | SOME extraBytes =>
                                   (ignore o newBlock)
                                   (true,
-                                   Vector.new0 (),
-                                   Transfer.Arith
-                                   {args = Vector.new2 (Operand.word extraBytes,
-                                                        bytesNeeded),
-                                    dst = bytes,
-                                    overflow = heapCheckTooLarge (),
-                                    prim = Prim.wordAddCheck (WordSize.csize (),
-                                                              {signed = false}),
-                                    success = (heapCheck
-                                               (false,
-                                                Operand.Var
-                                                {var = bytes,
-                                                 ty = Type.csize ()})),
-                                    ty = Type.csize ()})
+                                   Vector.new2
+                                   (Statement.PrimApp
+                                    {args = Vector.new2
+                                            (Operand.word extraBytes,
+                                             bytesNeeded),
+                                     dst = SOME (bytes, Type.csize ()),
+                                     prim = Prim.wordAdd (WordSize.csize ())},
+                                    Statement.PrimApp
+                                    {args = Vector.new2
+                                            (Operand.word extraBytes,
+                                             bytesNeeded),
+                                     dst = SOME (test, Type.bool),
+                                     prim = Prim.wordAddCheckP
+                                            (WordSize.csize (),
+                                             {signed = false})}),
+                                   Transfer.ifBool
+                                   (Operand.Var {var = test, ty = Type.bool},
+                                    {falsee = heapCheck (false,
+                                                         Operand.Var
+                                                         {var = bytes,
+                                                          ty = Type.csize ()}),
+                                     truee = heapCheckTooLarge ()}))
                          end
                 end
           in

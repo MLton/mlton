@@ -26,10 +26,6 @@ signature DIRECT_EXP =
                       body: t} vector
             | Word of WordSize.t * (WordX.t * t) vector
 
-           val arith: {prim: Type.t Prim.t,
-                       args: t vector,
-                       overflow: t,
-                       ty: Type.t} -> t
            (* For now, call always uses Handler.None.  This means it should only
             * be used for functions that cannot raise.
             *)

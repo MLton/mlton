@@ -199,7 +199,7 @@ local
       let
          open CoreML.Con
       in
-         [bind, match, overflow]
+         [bind, match]
       end
 
    structure Con =

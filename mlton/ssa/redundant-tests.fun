@@ -150,27 +150,7 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
          val (trueVar, trueStmt) = make Con.truee
          val (falseVar, falseStmt) = make Con.falsee
       end
-      local
-         val statements = ref []
-      in
-         val one =
-            WordSize.memoize
-            (fn s =>
-             let
-                val one = Var.newNoname ()
-                val () =
-                   List.push
-                   (statements,
-                    Statement.T {exp = Exp.Const (Const.word (WordX.one s)),
-                                 ty = Type.word s,
-                                 var = SOME one})
-             in
-                one
-             end)
-         val ones = Vector.fromList (!statements)
-      end
-      val globals = Vector.concat [Vector.new2 (trueStmt, falseStmt), ones,
-                                   globals]
+      val globals = Vector.concat [Vector.new2 (trueStmt, falseStmt), globals]
       val shrink = shrinkFunction {globals = globals}
       val numSimplified = ref 0
       fun simplifyFunction f =
@@ -457,88 +437,6 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                                                 checkPrimApp (args, prim)
                                             | _ => statement))
                         end)
-                    val noChange = (statements, transfer)
-                    fun arith (args: Var.t vector,
-                               prim: Type.t Prim.t,
-                               success: Label.t)
-                       : Statement.t vector * Transfer.t =
-                       let
-                          fun simplify (prim: Type.t Prim.t,
-                                        x: Var.t,
-                                        s: WordSize.t) =
-                             let
-                                val res = Var.newNoname ()
-                             in
-                                (Vector.concat
-                                 [statements,
-                                  Vector.new1
-                                  (Statement.T
-                                   {exp = PrimApp {args = Vector.new2 (x, one s),
-                                                   prim = prim,
-                                                   targs = Vector.new0 ()},
-                                    ty = Type.word s,
-                                    var = SOME res})],
-                                 Goto {args = Vector.new1 res,
-                                       dst = success})
-                             end
-                          fun add1 (x: Var.t, s: WordSize.t, sg) =
-                             if add1Eligible (x, s, sg)
-                             then simplify (Prim.wordAdd s, x, s)
-                             else noChange
-                          fun sub1 (x: Var.t, s: WordSize.t, sg) =
-                             if sub1Eligible (x, s, sg)
-                             then simplify (Prim.wordSub s, x, s)
-                             else noChange
-                          fun add (c: Const.t, x: Var.t, (s, sg as {signed})) =
-                             case c of
-                                Const.Word i =>
-                                   if WordX.isOne i
-                                      then add1 (x, s, sg)
-                                   else if signed andalso WordX.isNegOne i
-                                           then sub1 (x, s, sg)
-                                        else noChange
-                              | _ => Error.bug "RedundantTests.add: strange const"
-                          datatype z = datatype Prim.Name.t
-                       in
-                          case Prim.name prim of
-                             Word_addCheck s =>
-                                let
-                                   val x1 = Vector.sub (args, 0)
-                                   val x2 = Vector.sub (args, 1)
-                                in
-                                   case varInfo x1 of
-                                      Const c => add (c, x2, s)
-                                    | _ => (case varInfo x2 of
-                                               Const c => add (c, x1, s)
-                                             | _ => noChange)
-                                end
-                           | Word_subCheck (s, sg as {signed}) =>
-                                let
-                                   val x1 = Vector.sub (args, 0)
-                                   val x2 = Vector.sub (args, 1)
-                                in
-                                   case varInfo x2 of
-                                      Const c =>
-                                         (case c of
-                                             Const.Word w =>
-                                                if WordX.isOne w
-                                                   then sub1 (x1, s, sg)
-                                                else
-                                                   if (signed
-                                                       andalso WordX.isNegOne w)
-                                                      then add1 (x1, s, sg)
-                                                   else noChange
-                                           | _ =>
-                                                Error.bug "RedundantTests.sub: strage const")
-                                    | _ => noChange
-                                end
-                           | _ => noChange
-                       end
-                    val (statements, transfer) =
-                       case transfer of
-                          Arith {args, prim, success, ...} =>
-                             arith (args, prim, success)
-                        | _ => noChange
                  in
                    Block.T {label = label,
                             args = args,

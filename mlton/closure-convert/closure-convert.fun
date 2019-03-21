@@ -208,7 +208,7 @@ val traceLoopBind =
     Unit.layout)
 
 fun closureConvert
-   (program as Sxml.Program.T {datatypes, body, overflow}): Ssa.Program.t =
+   (program as Sxml.Program.T {datatypes, body}): Ssa.Program.t =
    let
       val {get = conArg: Con.t -> Value.t option, set = setConArg, ...} =
          Property.getSetOnce (Con.plist,
@@ -393,12 +393,10 @@ fun closureConvert
                                                   str " ",
                                                   Value.layout (value x)]
                                           end)))
-      val overflow = valOf overflow
       val _ =
          Control.trace (Control.Pass, "free variables")
          LambdaFree.lambdaFree
          {program = program,
-          overflow = overflow,
           varInfo = fn x => let val {frees, status, ...} = varInfo x
                             in {frees = frees, status = status}
                             end,
@@ -948,133 +946,126 @@ fun closureConvert
                                       targs = targs,
                                       ty = ty}
                   in
-                     if Prim.mayOverflow prim
-                        then simple (Dexp.arith
-                                     {args = Vector.map (args, convertVarExp),
-                                      overflow = Dexp.raisee (convertVar overflow),
-                                      prim = prim,
-                                      ty = ty})
-                     else
-                        let
-                           datatype z = datatype Prim.Name.t
-                        in
-                           simple
-                           (case Prim.name prim of
-                               Array_update =>
-                                  let
-                                     val a = varExpInfo (arg 0)
-                                     val y = varExpInfo (arg 2)
-                                     val v = Value.deArray (VarInfo.value a)
-                                  in
-                                     primApp (v1 (valueType v),
-                                              v3 (convertVarInfo a,
-                                                  convertVarExp (arg 1),
-                                                  coerce (convertVarInfo y,
-                                                          VarInfo.value y, v)))
-                                  end
-                             | MLton_eq =>
-                                  let
-                                     val a0 = varExpInfo (arg 0)
-                                     val a1 = varExpInfo (arg 1)
-                                     fun doit () =
-                                        primApp (v1 (valueType (VarInfo.value a0)),
-                                                 v2 (convertVarInfo a0,
-                                                     convertVarInfo a1))
-                                  in
-                                     case (Value.dest (VarInfo.value a0),
-                                           Value.dest (VarInfo.value a1)) of
-                                        (Value.Lambdas l, Value.Lambdas l') =>
-                                           if Lambdas.equals (l, l')
-                                              then doit () 
-                                           else Dexp.falsee
-                                      | _ => doit ()
-                                  end
-                             | MLton_equal =>
-                                  let
-                                     val a0 = varExpInfo (arg 0)
-                                     val a1 = varExpInfo (arg 1)
-                                     fun doit () =
-                                        primApp (v1 (valueType (VarInfo.value a0)),
-                                                 v2 (convertVarInfo a0,
-                                                     convertVarInfo a1))
-                                  in
-                                     case (Value.dest (VarInfo.value a0),
-                                           Value.dest (VarInfo.value a1)) of
-                                        (Value.Lambdas l, Value.Lambdas l') =>
-                                           if Lambdas.equals (l, l')
-                                              then doit () 
-                                           else Dexp.falsee
-                                      | _ => doit ()
-                                  end
-                             | MLton_handlesSignals =>
-                                  if handlesSignals
-                                     then Dexp.truee
-                                  else Dexp.falsee
-                             | Ref_assign =>
-                                  let
-                                     val r = varExpInfo (arg 0)
-                                     val y = varExpInfo (arg 1)
-                                     val v = Value.deRef (VarInfo.value r)
-                                  in
-                                     primApp (v1 (valueType v),
-                                              v2 (convertVarInfo r,
-                                                  coerce (convertVarInfo y,
-                                                          VarInfo.value y, v)))
-                                  end
-                             | Ref_ref =>
-                                  let
-                                     val y = varExpInfo (arg 0)
-                                     val v = Value.deRef v
-                                  in
-                                     primApp (v1 (valueType v),
-                                              v1 (coerce (convertVarInfo y,
-                                                          VarInfo.value y, v)))
-                                  end
-                             | MLton_serialize =>
-                                  let
-                                     val y = varExpInfo (arg 0)
-                                     val v =
-                                        Value.serialValue (Vector.first targs)
-                                  in
-                                     primApp (v1 (valueType v),
-                                              v1 (coerce (convertVarInfo y,
-                                                          VarInfo.value y, v)))
-                                  end
-                             | Vector_vector =>
-                                  let
-                                     val ys = Vector.map (args, varExpInfo)
-                                     val v = Value.deVector v
-                                  in
-                                     primApp (v1 (valueType v),
-                                              Vector.map (ys, fn y =>
-                                                          coerce (convertVarInfo y,
-                                                                  VarInfo.value y, v)))
-                                  end
-                             | Weak_new =>
-                                  let
-                                     val y = varExpInfo (arg 0)
-                                     val v = Value.deWeak v
-                                  in
-                                     primApp (v1 (valueType v),
-                                              v1 (coerce (convertVarInfo y,
-                                                          VarInfo.value y, v)))
-                                  end
-                             | _ =>
-                                  let
-                                     val args = Vector.map (args, varExpInfo)
-                                  in
-                                     primApp
-                                     (Prim.extractTargs
-                                      (prim,
-                                       {args = Vector.map (args, varInfoType),
-                                        result = ty,
-                                        typeOps = {deArray = Type.deArray,
-                                                   deArrow = fn _ => Error.bug "ClosureConvert.convertPrimExp: deArrow",
-                                                   deRef = Type.deRef,
-                                                   deVector = Type.deVector,
-                                                   deWeak = Type.deWeak}}),
-                                       Vector.map (args, convertVarInfo))
-                                  end)
+                      let
+                         datatype z = datatype Prim.Name.t
+                      in
+                         simple
+                         (case Prim.name prim of
+                             Array_update =>
+                                let
+                                   val a = varExpInfo (arg 0)
+                                   val y = varExpInfo (arg 2)
+                                   val v = Value.deArray (VarInfo.value a)
+                                in
+                                   primApp (v1 (valueType v),
+                                            v3 (convertVarInfo a,
+                                                convertVarExp (arg 1),
+                                                coerce (convertVarInfo y,
+                                                        VarInfo.value y, v)))
+                                end
+                           | MLton_eq =>
+                                let
+                                   val a0 = varExpInfo (arg 0)
+                                   val a1 = varExpInfo (arg 1)
+                                   fun doit () =
+                                      primApp (v1 (valueType (VarInfo.value a0)),
+                                               v2 (convertVarInfo a0,
+                                                   convertVarInfo a1))
+                                in
+                                   case (Value.dest (VarInfo.value a0),
+                                         Value.dest (VarInfo.value a1)) of
+                                      (Value.Lambdas l, Value.Lambdas l') =>
+                                         if Lambdas.equals (l, l')
+                                            then doit () 
+                                         else Dexp.falsee
+                                    | _ => doit ()
+                                end
+                           | MLton_equal =>
+                                let
+                                   val a0 = varExpInfo (arg 0)
+                                   val a1 = varExpInfo (arg 1)
+                                   fun doit () =
+                                      primApp (v1 (valueType (VarInfo.value a0)),
+                                               v2 (convertVarInfo a0,
+                                                   convertVarInfo a1))
+                                in
+                                   case (Value.dest (VarInfo.value a0),
+                                         Value.dest (VarInfo.value a1)) of
+                                      (Value.Lambdas l, Value.Lambdas l') =>
+                                         if Lambdas.equals (l, l')
+                                            then doit () 
+                                         else Dexp.falsee
+                                    | _ => doit ()
+                                end
+                           | MLton_handlesSignals =>
+                                if handlesSignals
+                                   then Dexp.truee
+                                else Dexp.falsee
+                           | Ref_assign =>
+                                let
+                                   val r = varExpInfo (arg 0)
+                                   val y = varExpInfo (arg 1)
+                                   val v = Value.deRef (VarInfo.value r)
+                                in
+                                   primApp (v1 (valueType v),
+                                            v2 (convertVarInfo r,
+                                                coerce (convertVarInfo y,
+                                                        VarInfo.value y, v)))
+                                end
+                           | Ref_ref =>
+                                let
+                                   val y = varExpInfo (arg 0)
+                                   val v = Value.deRef v
+                                in
+                                   primApp (v1 (valueType v),
+                                            v1 (coerce (convertVarInfo y,
+                                                        VarInfo.value y, v)))
+                                end
+                           | MLton_serialize =>
+                                let
+                                   val y = varExpInfo (arg 0)
+                                   val v =
+                                      Value.serialValue (Vector.first targs)
+                                in
+                                   primApp (v1 (valueType v),
+                                            v1 (coerce (convertVarInfo y,
+                                                        VarInfo.value y, v)))
+                                end
+                           | Vector_vector =>
+                                let
+                                   val ys = Vector.map (args, varExpInfo)
+                                   val v = Value.deVector v
+                                in
+                                   primApp (v1 (valueType v),
+                                            Vector.map (ys, fn y =>
+                                                        coerce (convertVarInfo y,
+                                                                VarInfo.value y, v)))
+                                end
+                           | Weak_new =>
+                                let
+                                   val y = varExpInfo (arg 0)
+                                   val v = Value.deWeak v
+                                in
+                                   primApp (v1 (valueType v),
+                                            v1 (coerce (convertVarInfo y,
+                                                        VarInfo.value y, v)))
+                                end
+                           | _ =>
+                                let
+                                   val args = Vector.map (args, varExpInfo)
+                                in
+                                   primApp
+                                   (Prim.extractTargs
+                                    (prim,
+                                     {args = Vector.map (args, varInfoType),
+                                      result = ty,
+                                      typeOps = {deArray = Type.deArray,
+                                                 deArrow = fn _ => Error.bug "ClosureConvert.convertPrimExp: deArrow",
+                                                 deRef = Type.deRef,
+                                                 deVector = Type.deVector,
+                                                 deWeak = Type.deWeak}}),
+                                     Vector.map (args, convertVarInfo))
+                                end)
                         end
                   end
              | SprimExp.Profile e => simple (Dexp.profile e)

@@ -587,22 +587,7 @@ struct
       fun toAMD64Blocks {returns, transfer,
                        transInfo as {frameInfoToAMD64, ...}: transInfo}
         = (case transfer
-             of Arith {prim, args, dst, overflow, success, ...}
-              => let
-                   val args = (Vector.concatV o Vector.map)
-                              (args, Operand.toAMD64Operand)
-                   val dsts = Operand.toAMD64Operand dst
-                 in
-                   AppendList.append
-                   (comments transfer,
-                    amd64MLton.arith {prim = prim,
-                                    args = args,
-                                    dsts = dsts,
-                                    overflow = overflow,
-                                    success = success,
-                                    transInfo = transInfo})
-                 end
-              | CCall {args, frameInfo, func, return}
+             of CCall {args, frameInfo, func, return}
               => let
                    val args = (Vector.concatV o Vector.map)
                               (args, Operand.toAMD64Operand)

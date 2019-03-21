@@ -171,12 +171,7 @@ signature SSA_TREE2 =
       structure Transfer:
          sig
             datatype t =
-               Arith of {args: Var.t vector,
-                         overflow: Label.t, (* Must be nullary. *)
-                         prim: Type.t Prim.t,
-                         success: Label.t, (* Must be unary. *)
-                         ty: Type.t} (* int or word *)
-             | Bug  (* MLton thought control couldn't reach here. *)
+               Bug  (* MLton thought control couldn't reach here. *)
              | Call of {args: Var.t vector,
                         func: Func.t,
                         return: Return.t}

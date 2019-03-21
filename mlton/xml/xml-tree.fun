@@ -1110,21 +1110,19 @@ structure Datatype =
 structure Program =
    struct
       datatype t = T of {body: Exp.t,
-                         datatypes: Datatype.t vector,
-                         overflow: Var.t option}
+                         datatypes: Datatype.t vector}
 
-      fun layout (T {body, datatypes, overflow, ...}) =
+      fun layout (T {body, datatypes, ...}) =
          let
             open Layout
          in
             align [str "\n\nDatatypes:",
                    align (Vector.toListMap (datatypes, Datatype.layout)),
-                   seq [str "\n\nOverflow: ", Option.layout Var.layout overflow],
                    str "\n\nBody:",
                    Exp.layout body]
          end
 
-      fun layouts (T {body, datatypes, overflow, ...}, output') =
+      fun layouts (T {body, datatypes, ...}, output') =
          let
             open Layout
             (* Layout includes an output function, so we need to rebind output
@@ -1134,7 +1132,6 @@ structure Program =
          in
             output (str "\n\n(* Datatypes: *)")
             ; Vector.foreach (datatypes, output o Datatype.layout)
-            ; output (seq [str "\n\n(* Overflow: *) ", Option.layout Var.layout overflow])
             ; output (str "\n\n(* Body: *)")
             ; output (Exp.layout body)
          end
@@ -1145,17 +1142,15 @@ structure Program =
 
             val () = Tyvar.parseReset {prims = Vector.new0 ()}
             val () = Tycon.parseReset {prims = Vector.fromListMap (Tycon.prims, #tycon)}
-            val () = Con.parseReset {prims = Vector.new4 (Con.truee, Con.falsee, Con.overflow, Con.reff)}
+            val () = Con.parseReset {prims = Vector.new3 (Con.truee, Con.falsee, Con.reff)}
             val () = Var.parseReset {prims = Vector.new0 ()}
 
             val parseProgram =
                T <$>
                (many Datatype.parse >>= (fn datatypes =>
-                option Var.parse >>= (fn overflow =>
                 Exp.parse >>= (fn body =>
                 pure {datatypes = Vector.fromList datatypes,
-                      overflow = overflow,
-                      body = body}))))
+                      body = body})))
          in
             compose (skipCommentsML, parseProgram <* (spaces *> (failing next <|> failCut "end of file")))
          end

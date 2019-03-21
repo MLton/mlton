@@ -61,14 +61,7 @@ fun 'a analyze
                         shouldReturns: 'a vector option,
                         shouldRaises: 'a vector option): unit =
         (case t of
-            Arith {prim, args, overflow, success, ty} =>
-               (coerces ("arith overflow", Vector.new0 (), labelValues overflow)
-                ; coerce {from = primApp {prim = prim,
-                                          args = values args,
-                                          resultType = ty,
-                                          resultVar = NONE},
-                          to = Vector.sub (labelValues success, 0)})
-          | Bug => ()
+            Bug => ()
           | Call {func, args, return, ...} =>
                let
                   val {args = formals, raises, returns} = funcInfo func

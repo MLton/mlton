@@ -141,9 +141,7 @@ fun coalesce (program as Program.T {functions, main, ...}, limit) =
                        Graph.== (graph, c, labelClass j)
                  in
                     case transfer of
-                       Arith {overflow, success, ...} =>
-                          (same overflow; same success)
-                     | CCall {return, ...} => Option.app (return, same)
+                       CCall {return, ...} => Option.app (return, same)
                      | Goto {dst, ...} => same dst
                      | Switch s => Switch.foreachLabel (s, same)
                      | _ => ()

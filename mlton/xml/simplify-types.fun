@@ -47,7 +47,7 @@ structure PowerSetLat =
          end
    end
 
-fun simplifyTypes (I.Program.T {body, datatypes, overflow}) =
+fun simplifyTypes (I.Program.T {body, datatypes}) =
    let
       val {get = tyconInfo: Tycon.t -> {used: PowerSetLat.t} option,
            set = setTyconInfo, ...} =
@@ -292,8 +292,7 @@ fun simplifyTypes (I.Program.T {body, datatypes, overflow}) =
       val body = fixExp body
    in
       O.Program.T {datatypes = datatypes,
-                   body = body,
-                   overflow = overflow}
+                   body = body}
    end
 
 end

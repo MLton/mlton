@@ -158,7 +158,6 @@ signature PRIM =
              | Weak_get (* to rssa (as runtime C fn) *)
              | Weak_new (* to rssa (as runtime C fn) *)
              | Word_add of WordSize.t (* codegen *)
-             | Word_addCheck of WordSize.t * {signed: bool} (* codegen *)
              | Word_addCheckP of WordSize.t * {signed: bool} (* codegen *)
              | Word_andb of WordSize.t (* codegen *)
              | Word_castToReal of WordSize.t * RealSize.t (* codegen *)
@@ -167,10 +166,8 @@ signature PRIM =
              | Word_lshift of WordSize.t (* codegen *)
              | Word_lt of WordSize.t * {signed: bool} (* codegen *)
              | Word_mul of WordSize.t * {signed: bool} (* codegen *)
-             | Word_mulCheck of WordSize.t * {signed: bool} (* codegen *)
              | Word_mulCheckP of WordSize.t * {signed: bool} (* codegen *)
              | Word_neg of WordSize.t (* codegen *)
-             | Word_negCheck of WordSize.t (* codegen *)
              | Word_negCheckP of WordSize.t (* codegen *)
              | Word_notb of WordSize.t (* codegen *)
              | Word_orb of WordSize.t (* codegen *)
@@ -181,7 +178,6 @@ signature PRIM =
              | Word_ror of WordSize.t (* codegen *)
              | Word_rshift of WordSize.t * {signed: bool} (* codegen *)
              | Word_sub of WordSize.t (* codegen *)
-             | Word_subCheck of WordSize.t * {signed: bool} (* codegen *)
              | Word_subCheckP of WordSize.t * {signed: bool} (* codegen *)
              | Word_toIntInf (* to rssa *)
              | Word_xorb of WordSize.t (* codegen *)
@@ -211,7 +207,6 @@ signature PRIM =
                Apply of 'a prim * 'b list
              | Bool of bool
              | Const of Const.t
-             | Overflow
              | Unknown
              | Var of 'b
 
@@ -286,8 +281,6 @@ signature PRIM =
       val layoutApp: 'a t * 'b vector * ('b -> Layout.t) -> Layout.t
       val layoutFull: 'a t * ('a -> Layout.t) -> Layout.t
       val map: 'a t * ('a -> 'b) -> 'b t
-      (* examples: Word_addCheck, Word_mulCheck, Word_subCheck *)
-      val mayOverflow: 'a t -> bool
       (* examples: Array_update, Ref_assign
        * not examples: Array_sub, Array_uninit, Ref_deref, Ref_ref
        *)
@@ -303,7 +296,7 @@ signature PRIM =
       val vectorLength: 'a t
       val vectorSub: 'a t
       val wordAdd: WordSize.t -> 'a t
-      val wordAddCheck: WordSize.t * {signed: bool} -> 'a t
+      val wordAddCheckP: WordSize.t * {signed: bool} -> 'a t
       val wordAndb: WordSize.t -> 'a t
       val wordCastToReal : WordSize.t * RealSize.t -> 'a t
       val wordEqual: WordSize.t -> 'a t
@@ -311,10 +304,13 @@ signature PRIM =
       val wordLshift: WordSize.t -> 'a t
       val wordLt: WordSize.t * {signed: bool} -> 'a t
       val wordMul: WordSize.t * {signed: bool} -> 'a t
+      val wordMulCheckP: WordSize.t * {signed: bool} -> 'a t
       val wordNeg: WordSize.t -> 'a t
+      val wordNegCheckP: WordSize.t -> 'a t
       val wordOrb: WordSize.t -> 'a t
       val wordQuot: WordSize.t * {signed: bool} -> 'a t
       val wordRshift: WordSize.t * {signed: bool} -> 'a t
       val wordSub: WordSize.t -> 'a t
+      val wordSubCheckP: WordSize.t * {signed: bool} -> 'a t
       val wordXorb: WordSize.t -> 'a t
    end

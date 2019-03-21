@@ -1058,29 +1058,7 @@ fun transform (program: Program.t): Program.t =
                         raises: Value.t vector option)
          : Block.t list * Transfer.t =
          case t of
-            Arith {prim, args, overflow, success, ty} =>
-               let
-                  val v = Value.fromType ty
-                  val _ = Value.Useful.makeUseful (Value.deground v)
-                  val res = Vector.new1 v
-                  val sargs = label success
-               in
-                  if agree (v, Vector.first sargs)
-                     then ([], t)
-                  else let
-                          val (l, b) = dropUseless
-                                       (res, sargs, fn args =>
-                                        Goto {dst = success, args = args})
-                       in
-                          ([b],
-                           Arith {prim = prim,
-                                  args = args,
-                                  overflow = overflow,
-                                  success = l,
-                                  ty = ty})
-                       end
-               end
-          | Bug => ([], Bug)
+            Bug => ([], Bug)
           | Call {func = f, args, return} =>
                let
                   val {args = fargs, returns = freturns, raises = fraises} = func f

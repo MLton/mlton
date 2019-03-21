@@ -271,13 +271,7 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
           | S.Cases.Word v => S2.Cases.Word v
       fun convertTransfer (t: S.Transfer.t): S2.Transfer.t =
          case t of
-            S.Transfer.Arith {args, overflow, prim, success, ty} =>
-               S2.Transfer.Arith {args = args,
-                                  overflow = overflow,
-                                  prim = convertPrim prim,
-                                  success = success,
-                                  ty = convertType ty}
-          | S.Transfer.Bug => S2.Transfer.Bug
+            S.Transfer.Bug => S2.Transfer.Bug
           | S.Transfer.Call {args, func, return} =>
                S2.Transfer.Call {args = args,
                                  func = func,

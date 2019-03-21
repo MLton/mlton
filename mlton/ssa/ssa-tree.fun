@@ -764,12 +764,7 @@ structure Return =
 structure Transfer =
    struct
       datatype t =
-         Arith of {prim: Type.t Prim.t,
-                   args: Var.t vector,
-                   overflow: Label.t, (* Must be nullary. *)
-                   success: Label.t, (* Must be unary. *)
-                   ty: Type.t}
-       | Bug (* MLton thought control couldn't reach here. *)
+         Bug (* MLton thought control couldn't reach here. *)
        | Call of {args: Var.t vector,
                   func: Func.t,
                   return: Return.t}
@@ -786,8 +781,7 @@ structure Transfer =
 
       (* Vals to determine the size for inline.fun and loop optimization*)
       val size =
-         fn Arith {args, ...} => 1 + Vector.length args
-          | Bug => 1
+         fn Bug => 1
           | Call {args, ...} => 1 + Vector.length args
           | Case {cases, ...} => 1 + Cases.length cases
           | Goto {args, ...} => 1 + Vector.length args
@@ -800,11 +794,7 @@ structure Transfer =
             fun vars xs = Vector.foreach (xs, var)
          in
             case t of
-               Arith {args, overflow, success, ...} =>
-                  (vars args
-                   ; label overflow 
-                   ; label success)
-             | Bug => ()
+               Bug => ()
              | Call {func = f, args, return, ...} =>
                   (func f
                    ; Return.foreachLabel (return, label)
@@ -835,13 +825,7 @@ structure Transfer =
             fun fxs xs = Vector.map (xs, fx)
          in
             case t of
-               Arith {prim, args, overflow, success, ty} =>
-                  Arith {prim = prim,
-                         args = fxs args,
-                         overflow = fl overflow,
-                         success = fl success,
-                         ty = ty}
-             | Bug => Bug
+               Bug => Bug
              | Call {func, args, return} =>
                   Call {func = func, 
                         args = fxs args,
@@ -893,11 +877,7 @@ structure Transfer =
                seq [Prim.layoutFull (prim, Type.layout), str " ", layoutArgs args]
          in
             case t of
-               Arith {prim, args, overflow, success, ty}=>
-                  seq [str "arith ", Type.layout ty, str " ", Label.layout success, str " ",
-                       paren (layoutPrim {prim = prim, args = args}),
-                       str " handle Overflow => ", Label.layout overflow]
-             | Bug => str "bug"
+               Bug => str "bug"
              | Call {func, args, return} =>
                   let
                      val call = seq [Func.layout func, str " ", layoutArgs args]
@@ -949,19 +929,7 @@ structure Transfer =
                pure (fn return => pure {func = func, args = args, return = return})))
          in
             any
-            [Arith <$>
-             (kw "arith" *>
-              Type.parse >>= (fn ty =>
-              Label.parse >>= (fn success =>
-              paren (Prim.parseFull Type.parse >>= (fn prim =>
-                     parseArgs >>= (fn args =>
-                     pure (prim, args)))) >>= (fn (prim, args) =>
-              kw "handle" *> kw "Overflow" *> sym "=>" *>
-              Label.parse >>= (fn overflow =>
-              pure {prim = prim, args = args,
-                    overflow = overflow,
-                    success = success, ty = ty}))))),
-             Bug <$ kw "bug",
+            [Bug <$ kw "bug",
              Call <$>
              (kw "call" *>
               any [kw "dead" *> parseCall >>= (fn mkCall => mkCall Return.Dead),
@@ -997,15 +965,7 @@ structure Transfer =
 
       fun equals (e: t, e': t): bool =
          case (e, e') of
-            (Arith {prim, args, overflow, success, ...},
-             Arith {prim = prim', args = args', 
-                    overflow = overflow', success = success', ...}) =>
-               Prim.equals (prim, prim') andalso
-               varsEquals (args, args') andalso
-               Label.equals (overflow, overflow') andalso
-               Label.equals (success, success')
-          | (Bug, Bug) => true
-          | (Call {func, args, return}, 
+            (Call {func, args, return}, 
              Call {func = func', args = args', return = return'}) =>
                Func.equals (func, func') andalso
                varsEquals (args, args') andalso
@@ -1037,10 +997,7 @@ structure Transfer =
          fun hash2 (w1: Word.t, w2: Word.t) = Hash.combine (w1, w2)
       in
          val hash: t -> Word.t =
-            fn Arith {args, overflow, success, ...} =>
-                  hashVars (args, hash2 (Label.hash overflow,
-                                         Label.hash success))
-             | Bug => bug
+            fn Bug => bug
              | Call {func, args, return} =>
                   hashVars (args, hash2 (Func.hash func, Return.hash return))
              | Case {test, cases, default} =>
@@ -1418,10 +1375,7 @@ structure Function =
                          edge (from, labelNode to, label, style)
                       val () =
                          case transfer of
-                            Arith {overflow, success, ...} =>
-                               (edge (success, "", Solid)
-                                ; edge (overflow, "Overflow", Dashed))
-                          | Bug => ()
+                            Bug => ()
                           | Call {return, ...} =>
                                let
                                   val _ =
@@ -2162,8 +2116,7 @@ structure Program =
                  | _ => ()
              fun loopTransfer t =
                 case t of
-                   Arith {prim, ...} => f prim
-                 | Runtime {prim, ...} => f prim
+                   Runtime {prim, ...} => f prim
                  | _ => ()
              val _ = Vector.foreach (globals, loopStatement)
              val _ =

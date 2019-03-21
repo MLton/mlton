@@ -416,19 +416,10 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
                 end
            | Xdec.Exception {con, arg} =>
                 let
-                   val con' =
-                      if Con.equals (con, Con.overflow)
-                         then
-                            (* We avoid renaming Overflow because the closure
-                             * converter needs to recognize it.  This is not
-                             * safe in general, but is OK in this case because
-                             * we know there is only one Overflow excon.
-                             *)
-                            con
-                      else Con.new con
+                   val con' = Con.new con
                    val _ = setCon (con, fn _ => con')
                 in
-                   fn () => 
+                   fn () =>
                    [Sdec.Exception {con = con',
                                     arg = monoTypeOpt arg}]
                 end) arg
@@ -439,8 +430,7 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
       val datatypes = finishDbs []
       val program =
          Sprogram.T {datatypes = Vector.fromList datatypes,
-                     body = body,
-                     overflow = NONE}
+                     body = body}
       val _ = Sprogram.clear program
       val _ = destroyCon ()
       val _ = destroyTycon ()

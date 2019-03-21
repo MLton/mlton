@@ -105,13 +105,7 @@ signature RSSA =
       structure Transfer:
          sig
             datatype t =
-               Arith of {args: Operand.t vector,
-                         dst: Var.t,
-                         overflow: Label.t, (* Must be nullary. *)
-                         prim: Type.t Prim.t,
-                         success: Label.t, (* Must be nullary. *)
-                         ty: Type.t}
-             | CCall of {args: Operand.t vector,
+               CCall of {args: Operand.t vector,
                          func: Type.t CFunction.t,
                          (* return is NONE iff the CFunction doesn't return.
                           * Else, return must be SOME l, where l is of kind
