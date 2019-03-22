@@ -1662,32 +1662,7 @@ fun ('a, 'b) apply (p: 'a t,
       val wordOpt = fn NONE => ApplyResult.Unknown | SOME w => word w
       fun wordVector (v: WordXVector.t): ('a, 'b) ApplyResult.t =
          ApplyResult.Const (Const.wordVector v)
-      fun iio (f, c1, c2) = intInf (f (c1, c2))
-      fun wordS (f: WordX.t * WordX.t * {signed: bool} -> WordX.t,
-                 (_: WordSize.t, sg),
-                 w: WordX.t,
-                 w': WordX.t) =
-         word (f (w, w', sg))
-      fun wordCmp (f: WordX.t * WordX.t * {signed: bool} -> bool,
-                   (_: WordSize.t, sg),
-                   w: WordX.t,
-                   w': WordX.t) =
-         bool (f (w, w', sg))
-      fun wordOrTrue (s, sg, w) = bool (not (WordSize.isInRange (s, w, sg)))
-      local
-         fun mkCheck toAppRes =
-            fn (f: IntInf.t * IntInf.t -> IntInf.t,
-                (s: WordSize.t, sg as {signed}),
-                w: WordX.t,
-                w': WordX.t) =>
-            let
-               val conv = if signed then WordX.toIntInfX else WordX.toIntInf
-            in
-               toAppRes (s, sg, f (conv w, conv w'))
-            end
-      in
-         val wcheckp = mkCheck wordOrTrue
-      end
+      fun wordChk (s, w, sg) = bool (not (WordSize.isInRange (s, w, sg)))
       val eq =
          fn (Word w1, Word w2) => bool (WordX.equals (w1, w2))
           | _ => ApplyResult.Unknown
@@ -1701,15 +1676,15 @@ fun ('a, 'b) apply (p: 'a t,
             then ApplyResult.Unknown
          else 
             case p of
-               IntInf_add => iio (IntInf.+, i1, i2)
-             | IntInf_andb => iio (IntInf.andb, i1, i2)
-             | IntInf_gcd => iio (IntInf.gcd, i1, i2)
-             | IntInf_mul => iio (IntInf.*, i1, i2)
-             | IntInf_orb => iio (IntInf.orb, i1, i2)
-             | IntInf_quot => iio (IntInf.quot, i1, i2)
-             | IntInf_rem => iio (IntInf.rem, i1, i2)
-             | IntInf_sub => iio (IntInf.-, i1, i2)
-             | IntInf_xorb => iio (IntInf.xorb, i1, i2)
+               IntInf_add => intInf (IntInf.+ (i1, i2))
+             | IntInf_andb => intInf (IntInf.andb (i1, i2))
+             | IntInf_gcd => intInf (IntInf.gcd (i1, i2))
+             | IntInf_mul => intInf (IntInf.* (i1, i2))
+             | IntInf_orb => intInf (IntInf.orb (i1, i2))
+             | IntInf_quot => intInf (IntInf.quot (i1, i2))
+             | IntInf_rem => intInf (IntInf.rem (i1, i2))
+             | IntInf_sub => intInf (IntInf.- (i1, i2))
+             | IntInf_xorb => intInf (IntInf.xorb (i1, i2))
              | _ => ApplyResult.Unknown
       fun intInfUnary (i1) =
          if intInfTooBig i1
@@ -1820,39 +1795,52 @@ fun ('a, 'b) apply (p: 'a t,
                 (RealX.fromIntInf
                  (if signed then WordX.toIntInfX w else WordX.toIntInf w, s))
            | (Word_add _, [Word w1, Word w2]) => word (WordX.add (w1, w2))
-           | (Word_addCheckP s, [Word w1, Word w2]) => wcheckp (op +, s, w1, w2)
+           | (Word_addCheckP (s, sg), [Word w1, Word w2]) =>
+                wordChk (s,
+                         IntInf.+ (WordX.toIntInfSg (w1, sg),
+                                   WordX.toIntInfSg (w2, sg)),
+                         sg)
            | (Word_andb _, [Word w1, Word w2]) => word (WordX.andb (w1, w2))
            | (Word_equal _, [Word w1, Word w2]) => bool (WordX.equals (w1, w2))
            | (Word_lshift _, [Word w1, Word w2]) => word (WordX.lshift (w1, w2))
-           | (Word_lt s, [Word w1, Word w2]) => wordCmp (WordX.lt, s, w1, w2)
-           | (Word_mul s, [Word w1, Word w2]) => wordS (WordX.mul, s, w1, w2)
-           | (Word_mulCheckP s, [Word w1, Word w2]) => wcheckp (op *, s, w1, w2)
+           | (Word_lt (_, sg), [Word w1, Word w2]) => bool (WordX.lt (w1, w2, sg))
+           | (Word_mul (_, sg), [Word w1, Word w2]) => word (WordX.mul (w1, w2, sg))
+           | (Word_mulCheckP (s, sg), [Word w1, Word w2]) =>
+                wordChk (s,
+                         IntInf.* (WordX.toIntInfSg (w1, sg),
+                                   WordX.toIntInfSg (w2, sg)),
+                         sg)
            | (Word_neg _, [Word w]) => word (WordX.neg w)
            | (Word_negCheckP s, [Word w]) =>
-                wordOrTrue (s, {signed = true}, ~ (WordX.toIntInfX w))
+                wordChk (s,
+                         IntInf.~ (WordX.toIntInfSg (w, {signed = true})),
+                         {signed = true})
            | (Word_notb _, [Word w]) => word (WordX.notb w)
            | (Word_orb _, [Word w1, Word w2]) => word (WordX.orb (w1, w2))
-           | (Word_quot s, [Word w1, Word w2]) =>
+           | (Word_quot (_, sg), [Word w1, Word w2]) =>
                 if WordX.isZero w2
                    then ApplyResult.Unknown
-                else wordS (WordX.quot, s, w1, w2)
-           | (Word_rem s, [Word w1, Word w2]) =>
+                else word (WordX.quot (w1, w2, sg))
+           | (Word_rem (_, sg), [Word w1, Word w2]) =>
                 if WordX.isZero w2
                    then ApplyResult.Unknown
-                else wordS (WordX.rem, s, w1, w2)
+                else word (WordX.rem (w1, w2, sg))
            | (Word_rol _, [Word w1, Word w2]) => word (WordX.rol (w1, w2))
            | (Word_ror _, [Word w1, Word w2]) => word (WordX.ror (w1, w2))
-           | (Word_rshift s, [Word w1, Word w2]) =>
-                wordS (WordX.rshift, s, w1, w2)
+           | (Word_rshift (_, sg), [Word w1, Word w2]) =>
+                word (WordX.rshift (w1, w2, sg))
            | (Word_sub _, [Word w1, Word w2]) => word (WordX.sub (w1, w2))
-           | (Word_subCheckP s, [Word w1, Word w2]) => wcheckp (op -, s, w1, w2)
+           | (Word_subCheckP (s, sg), [Word w1, Word w2]) =>
+                wordChk (s,
+                         IntInf.- (WordX.toIntInfSg (w1, sg),
+                                   WordX.toIntInfSg (w2, sg)),
+                         sg)
            | (Word_toIntInf, [Word w]) =>
                 (case IntInfRep.smallToIntInf w of
                     NONE => ApplyResult.Unknown
                   | SOME i => intInf i)
-           | (Word_extdToWord (_, s, {signed}), [Word w]) =>
-                word (if signed then WordX.resizeX (w, s)
-                      else WordX.resize (w, s))
+           | (Word_extdToWord (_, s, sg), [Word w]) =>
+                word (WordX.resizeSg (w, s, sg))
            | (Word_xorb _, [Word w1, Word w2]) => word (WordX.xorb (w1, w2))
            | (WordVector_toIntInf, [WordVector v]) =>
                 (case IntInfRep.bigToIntInf v of
