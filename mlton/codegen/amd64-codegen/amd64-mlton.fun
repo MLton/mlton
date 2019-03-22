@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1188,7 +1188,7 @@ struct
                  else
                    pmdcc (Instruction.MUL, amd64.Instruction.C)
              | Word_neg _ => unal Instruction.NEG
-             | Word_negCheckP _ => unalcc (Instruction.NEG, Instruction.O)
+             | Word_negCheckP (_, sg) => unalcc (Instruction.NEG, flag sg)
              | Word_notb _ => unal Instruction.NOT
              | Word_orb _ => binal Instruction.OR
              | Word_quot (_, {signed}) =>

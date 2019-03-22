@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -579,33 +580,7 @@ struct
                 transfer = NONE}]
             end
 
-        fun negcc ()
-          = let
-              val (src,srcsize) = getSrc1 ()
-              val (dst,dstsize) = getDst1 ()
-              val tmp = overflowCheckTempContentsOperand srcsize
-            in
-              AppendList.fromList
-              [Block.mkBlock'
-               {entry = NONE,
-                statements
-                = [Assembly.instruction_mov
-                   {dst = tmp,
-                    src = Operand.immediate_zero,
-                    size = srcsize},
-                   Assembly.instruction_binal
-                   {oper = Instruction.SUB,
-                    dst = tmp,
-                    src = src,
-                    size = srcsize},
-                   Assembly.instruction_setcc
-                   {condition = Instruction.O,
-                    dst = dst,
-                    size = dstsize}],
-                transfer = NONE}]
-            end
-
-        fun neg64cc ()
+        fun neg64cc cond
           = let
               val ((src1,src1size),
                    (src2,src2size)) = getSrc2 ()
@@ -640,7 +615,7 @@ struct
                     src = src2,
                     size = src2size},
                    Assembly.instruction_setcc
-                   {condition = Instruction.O,
+                   {condition = cond,
                     dst = dst,
                     size = dstsize}],
                 transfer = NONE}]
@@ -665,6 +640,31 @@ struct
                     size = srcsize},
                    Assembly.instruction_unal
                    {oper = oper,
+                    dst = dst,
+                    size = dstsize}],
+                transfer = NONE}]
+            end
+
+        fun unalcc (oper, condition)
+          = let
+              val (src,srcsize) = getSrc1 ()
+              val (dst,dstsize) = getDst1 ()
+              val tmp = overflowCheckTempContentsOperand srcsize
+            in
+              AppendList.fromList
+              [Block.mkBlock'
+               {entry = NONE,
+                statements
+                = [Assembly.instruction_mov
+                   {dst = tmp,
+                    src = src,
+                    size = srcsize},
+                   Assembly.instruction_unal
+                   {oper = oper,
+                    dst = tmp,
+                    size = srcsize},
+                   Assembly.instruction_setcc
+                   {condition = condition,
                     dst = dst,
                     size = dstsize}],
                 transfer = NONE}]
@@ -1608,12 +1608,16 @@ struct
                                                          oper = Instruction.ADC,
                                                          src = Operand.immediate_zero,
                                                          size = dstsize}]))
-             | Word_negCheckP s =>
-                (case WordSize.prim s of
-                    W8 => negcc ()
-                  | W16 => negcc ()
-                  | W32 => negcc ()
-                  | W64 => neg64cc ())
+             | Word_negCheckP (s, sg) =>
+                 let
+                    val cond = flag sg
+                 in
+                    case WordSize.prim s of
+                       W8 => unalcc (Instruction.NEG, cond)
+                     | W16 => unalcc (Instruction.NEG, cond)
+                     | W32 => unalcc (Instruction.NEG, cond)
+                     | W64 => neg64cc cond
+                 end
              | Word_notb s => 
                 (case WordSize.prim s of
                     W8 => unal Instruction.NOT

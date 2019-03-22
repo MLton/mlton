@@ -632,8 +632,8 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
           val tmp2 = nextLLVMReg ()
           val ty = llws ws
           val oper = concat ["\t", tmp1, " = call {", ty, ", i1} @llvm.",
-                             intrinsic, ".with.overflow.", llwsInt ws, "(", ty,
-                             " ", arg0, ", ", ty, " ", arg1, ")\n"]
+                             intrinsic, ".with.overflow.", llwsInt ws,
+                             "(", ty, " ", arg0, ", ", ty, " ", arg1, ")\n"]
           val extr = concat ["\t", tmp2, " = extractvalue {", ty, ", i1} ", tmp1,
                              ", 1\n"]
           val ext = mkconv (res, "zext", "i1", tmp2, "%Word32")
@@ -847,14 +847,15 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
           | Word_mulCheckP (ws, {signed}) =>
               mkoverflowp (ws, if signed then "smul" else "umul")
           | Word_neg ws => (mkinst (res, "sub", llws ws, "0", arg0), llws ws)
-          | Word_negCheckP ws =>
+          | Word_negCheckP (ws, {signed}) =>
             let
               val ty = llws ws
               val tmp1 = nextLLVMReg ()
               val tmp2 = nextLLVMReg ()
-              val oper = concat ["\t", tmp1, " = call {", ty,
-                                 ", i1} @llvm.ssub.with.overflow.", llwsInt ws,
-                                 "(", ty, " 0, ", ty, " ", arg0, ")\n"]
+              val intrinsic = if signed then "ssub" else "usub"
+              val oper = concat ["\t", tmp1, " = call {", ty, ", i1} @llvm.",
+                                 intrinsic, ".with.overflow.", llwsInt ws,
+                                 "(", ty,  " 0, ", ty, " ", arg0, ")\n"]
               val extr = concat ["\t", tmp2 , " = extractvalue {", ty, ", i1}",
                                  tmp1, ", 1\n"]
               val ext = mkconv (res, "zext", "i1", tmp2, "%Word32")

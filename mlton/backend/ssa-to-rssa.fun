@@ -563,8 +563,8 @@ structure Name =
              | Word_lt z => wordCompare z
              | Word_mul z => wordBinary z
              | Word_mulCheckP (s, sg) => wordBinaryCheckP (s, sg)
-             | Word_neg s => wordUnary (s, {signed = true})
-             | Word_negCheckP s => wordUnaryCheckP (s, {signed = true})
+             | Word_neg s => wordUnary (s, {signed = false})
+             | Word_negCheckP (s, sg) => wordUnaryCheckP (s, sg)
              | Word_notb s => wordUnary (s, {signed = false})
              | Word_orb s => wordBinary (s, {signed = false})
              | Word_quot z => wordBinary z

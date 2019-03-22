@@ -176,7 +176,7 @@ datatype 'a t =
  | Word_mul of WordSize.t * {signed: bool} (* codegen *)
  | Word_mulCheckP of WordSize.t * {signed: bool} (* codegen *)
  | Word_neg of WordSize.t (* codegen *)
- | Word_negCheckP of WordSize.t (* codegen *)
+ | Word_negCheckP of WordSize.t * {signed: bool} (* codegen *)
  | Word_notb of WordSize.t (* codegen *)
  | Word_orb of WordSize.t (* codegen *)
  | Word_quot of WordSize.t * {signed: bool} (* codegen *)
@@ -353,7 +353,7 @@ fun toString (n: 'a t): string =
        | Word_mul (s, sg) => wordS (s, sg, "mul")
        | Word_mulCheckP (s, sg) => wordS (s, sg, "mulCheckP")
        | Word_neg s => word (s, "neg")
-       | Word_negCheckP s => word (s, "negCheckP")
+       | Word_negCheckP (s, sg) => wordS (s, sg, "negCheckP")
        | Word_notb s => word (s, "notb")
        | Word_orb s => word (s, "orb")
        | Word_quot (s, sg) => wordS (s, sg, "quot")
@@ -519,7 +519,8 @@ val equals: 'a t * 'a t -> bool =
     | (Word_mulCheckP (s, sg), Word_mulCheckP (s', sg')) =>
          WordSize.equals (s, s') andalso sg = sg'
     | (Word_neg s, Word_neg s') => WordSize.equals (s, s')
-    | (Word_negCheckP s, Word_negCheckP s') => WordSize.equals (s, s')
+    | (Word_negCheckP (s, sg), Word_negCheckP (s', sg')) =>
+         WordSize.equals (s, s') andalso sg = sg'
     | (Word_notb s, Word_notb s') => WordSize.equals (s, s')
     | (Word_orb s, Word_orb s') => WordSize.equals (s, s')
     | (Word_quot (s, sg), Word_quot (s', sg')) =>
@@ -994,6 +995,7 @@ local
                     Word_lt,
                     Word_mul,
                     Word_mulCheckP,
+                    Word_negCheckP,
                     Word_quot,
                     Word_rem,
                     Word_rshift,
@@ -1007,7 +1009,6 @@ local
        (Word_equal s),
        (Word_lshift s),
        (Word_neg s),
-       (Word_negCheckP s),
        (Word_notb s),
        (Word_orb s),
        (Word_rol s),
@@ -1476,7 +1477,7 @@ fun 'a checkApp (prim: 'a t,
        | Word_mul (s, _) => wordBinary s
        | Word_mulCheckP (s, _) => wordBinaryP s
        | Word_neg s => wordUnary s
-       | Word_negCheckP s => wordUnaryP s
+       | Word_negCheckP (s, _) => wordUnaryP s
        | Word_notb s => wordUnary s
        | Word_orb s => wordBinary s
        | Word_quot (s, _) => wordBinary s
@@ -1811,10 +1812,10 @@ fun ('a, 'b) apply (p: 'a t,
                                    WordX.toIntInfSg (w2, sg)),
                          sg)
            | (Word_neg _, [Word w]) => word (WordX.neg w)
-           | (Word_negCheckP s, [Word w]) =>
+           | (Word_negCheckP (s, sg), [Word w]) =>
                 wordChk (s,
-                         IntInf.~ (WordX.toIntInfSg (w, {signed = true})),
-                         {signed = true})
+                         IntInf.~ (WordX.toIntInfSg (w, sg)),
+                         sg)
            | (Word_notb _, [Word w]) => word (WordX.notb w)
            | (Word_orb _, [Word w1, Word w2]) => word (WordX.orb (w1, w2))
            | (Word_quot (_, sg), [Word w1, Word w2]) =>

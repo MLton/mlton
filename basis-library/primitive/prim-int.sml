@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -124,7 +125,7 @@ structure Int8 =
       val *$ = Exn.mkOverflow ( *!, *? )
       val * = if Controls.detectOverflow then *$ else *!
 
-      val ~? = _prim "Word8_negCheckP": int -> bool;
+      val ~? = _prim "WordS8_negCheckP": int -> bool;
       val ~! = _prim "Word8_neg": int -> int;
       val ~$ = Exn.mkOverflow (~!, ~?)
       val ~ = if Controls.detectOverflow then ~$ else ~!
@@ -224,7 +225,7 @@ structure Int16 =
       val *$ = Exn.mkOverflow ( *!, *? )
       val * = if Controls.detectOverflow then *$ else *!
 
-      val ~? = _prim "Word16_negCheckP": int -> bool;
+      val ~? = _prim "WordS16_negCheckP": int -> bool;
       val ~! = _prim "Word16_neg": int -> int;
       val ~$ = Exn.mkOverflow (~!, ~?)
       val ~ = if Controls.detectOverflow then ~$ else ~!
@@ -388,7 +389,7 @@ structure Int32 =
       val *$ = Exn.mkOverflow ( *!, *? )
       val * = if Controls.detectOverflow then *$ else *!
 
-      val ~? = _prim "Word32_negCheckP": int -> bool;
+      val ~? = _prim "WordS32_negCheckP": int -> bool;
       val ~! = _prim "Word32_neg": int -> int;
       val ~$ = Exn.mkOverflow (~!, ~?)
       val ~ = if Controls.detectOverflow then ~$ else ~!
@@ -432,7 +433,7 @@ structure Int64 =
       val *$ = Exn.mkOverflow ( *!, *? )
       val * = if Controls.detectOverflow then *$ else *!
 
-      val ~? = _prim "Word64_negCheckP": int -> bool;
+      val ~? = _prim "WordS64_negCheckP": int -> bool;
       val ~! = _prim "Word64_neg": int -> int;
       val ~$ = Exn.mkOverflow (~!, ~?)
       val ~ = if Controls.detectOverflow then ~$ else ~!

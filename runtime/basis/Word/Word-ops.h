@@ -55,8 +55,8 @@ compare (U##size, name, op)
 
 #define negOvflChk(kind)                                                \
   MLTON_CODEGEN_STATIC_INLINE                                           \
-  Bool Word##kind##_negCheckP (WordS##kind w) {                         \
-    WordS##kind res;                                                    \
+  Bool Word##kind##_negCheckP (Word##kind w) {                          \
+    Word##kind res;                                                     \
     return __builtin_sub_overflow(0, w, &res);                          \
   }
 
@@ -115,7 +115,8 @@ bothCompare (size, lt, <)                       \
 bothBinaryOvflOp (size, mul)                    \
 bothBinaryOvflChk (size, mul)                   \
 negOvflOp (size)                                \
-negOvflChk (size)                               \
+negOvflChk (S##size)                            \
+negOvflChk (U##size)                            \
 unary (size, notb, ~)                           \
 bothBinary (size, quot, /)                      \
 bothBinary (size, rem, %)                       \
