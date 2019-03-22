@@ -31,8 +31,7 @@ datatype Context = Context of {
     labelChunk: Label.t -> ChunkLabel.t,
     entryLabels: Label.t vector,
     labelInfo: Label.t -> {block: Block.t,
-                           chunkLabel: ChunkLabel.t,
-                           layedOut: bool ref},
+                           chunkLabel: ChunkLabel.t},
     printblock: bool,
     printstmt: bool,
     printmove: bool
@@ -1370,8 +1369,7 @@ fun makeContext program =
     let
         val Program.T { chunks, frameLayouts, ...} = program
         val {get = labelInfo: Label.t -> {block: Block.t,
-                                          chunkLabel: ChunkLabel.t,
-                                          layedOut: bool ref},
+                                          chunkLabel: ChunkLabel.t},
              set = setLabelInfo, ...} =
             Property.getSetOnce
                 (Label.plist, Property.initRaise ("LLVMCodeGen.info", Label.layout))
@@ -1401,8 +1399,7 @@ fun makeContext program =
                        entry frameLayoutsIndex
            in
               setLabelInfo (label, {block = b,
-                                    chunkLabel = chunkLabel,
-                                    layedOut = ref false})
+                                    chunkLabel = chunkLabel})
            end))
         val a = Array.fromList (!entryLabels)
         val () = QuickSort.sortArray (a, fn ((_, i), (_, i')) => i <= i')
