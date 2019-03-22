@@ -30,8 +30,7 @@ datatype Context = Context of {
     chunkLabelIndex: ChunkLabel.t -> int,
     labelChunk: Label.t -> ChunkLabel.t,
     entryLabels: Label.t vector,
-    labelInfo: Label.t -> {block: Block.t,
-                           chunkLabel: ChunkLabel.t},
+    labelInfo: Label.t -> {chunkLabel: ChunkLabel.t},
     printblock: bool,
     printstmt: bool,
     printmove: bool
@@ -1368,8 +1367,7 @@ fun outputChunk (cxt, outputLL, chunk) =
 fun makeContext program =
     let
         val Program.T { chunks, frameLayouts, ...} = program
-        val {get = labelInfo: Label.t -> {block: Block.t,
-                                          chunkLabel: ChunkLabel.t},
+        val {get = labelInfo: Label.t -> {chunkLabel: ChunkLabel.t},
              set = setLabelInfo, ...} =
             Property.getSetOnce
                 (Label.plist, Property.initRaise ("LLVMCodeGen.info", Label.layout))
@@ -1379,7 +1377,7 @@ fun makeContext program =
          List.foreach
          (chunks, fn Chunk.T {blocks, chunkLabel, ...} =>
           Vector.foreach
-          (blocks, fn b as Block.T {kind, label, ...} =>
+          (blocks, fn Block.T {kind, label, ...} =>
            let
               fun entry (index: int) =
                  List.push (entryLabels, (label, index))
@@ -1398,8 +1396,7 @@ fun makeContext program =
                   | SOME (FrameInfo.T {frameLayoutsIndex, ...}) =>
                        entry frameLayoutsIndex
            in
-              setLabelInfo (label, {block = b,
-                                    chunkLabel = chunkLabel})
+              setLabelInfo (label, {chunkLabel = chunkLabel})
            end))
         val a = Array.fromList (!entryLabels)
         val () = QuickSort.sortArray (a, fn ((_, i), (_, i')) => i <= i')
