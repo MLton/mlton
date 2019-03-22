@@ -578,7 +578,7 @@ fun declareFFI (Chunk.T {blocks, ...}, {print: string -> unit}) =
 
 fun output {program as Machine.Program.T {chunks,
                                           frameLayouts,
-                                          main = {chunkLabel, label}, ...},
+                                          main = {label, ...}, ...},
             outputC: unit -> {file: File.t,
                               print: string -> unit,
                               done: unit -> unit}} =
@@ -781,27 +781,6 @@ fun output {program as Machine.Program.T {chunks,
       fun outputChunk (chunk as Chunk.T {chunkLabel, blocks, regMax, ...}) =
          let
             val {done, print, ...} = outputC ()
-            fun declareChunks () =
-               let
-                  val {get, ...} =
-                     Property.get (ChunkLabel.plist,
-                                   Property.initFun (fn _ => ref false))
-                  val _ =
-                     Vector.foreach
-                     (blocks, fn Block.T {transfer, ...} =>
-                      case transfer of
-                         Transfer.Call {label, ...} =>
-                            get (labelChunk label) := true
-                       | _ => ())
-                  val _ =
-                     List.foreach
-                     (chunks, fn c as Chunk.T {chunkLabel, ...} =>
-                      if ! (get chunkLabel)
-                         then declareChunk (c, print)
-                      else ())
-               in
-                  ()
-               end
             fun declareProfileLabels () =
                Vector.foreach
                (blocks, fn Block.T {statements, ...} =>
@@ -1066,9 +1045,8 @@ fun output {program as Machine.Program.T {chunks,
                            if ChunkLabel.equals (labelChunk source, dstChunk)
                               then gotoLabel label
                            else
-                              C.call ("\tFarJump",
-                                      [chunkLabelToString dstChunk,
-                                       labelToStringIndex label],
+                              C.call ("\tFarGoto",
+                                      [labelToStringIndex label],
                                       print)
                         end
                    | Goto dst => gotoLabel dst
@@ -1157,7 +1135,6 @@ fun output {program as Machine.Program.T {chunks,
             ; outputOffsets ()
             ; declareGlobals ("PRIVATE extern ", print)
             ; declareFFI (chunk, {print = print})
-            ; declareChunks ()
             ; declareProfileLabels ()
             ; C.callNoSemi ("Chunk", [chunkLabelToString chunkLabel], print)
             ; print "\n"
@@ -1176,12 +1153,11 @@ fun output {program as Machine.Program.T {chunks,
             ; done ()
          end
       val additionalMainArgs =
-         [chunkLabelToString chunkLabel,
-          labelToStringIndex label]
+         [labelToStringIndex label]
       val {print, done, ...} = outputC ()
       fun rest () =
          (List.foreach (chunks, fn c => declareChunk (c, print))
-          ; print "PRIVATE struct cont ( *nextChunks []) () = {"
+          ; print "PRIVATE uintptr_t (*nextChunks[]) (uintptr_t) = {\n"
           ; Vector.foreach (entryLabels, fn l =>
                             let
                                val {chunkLabel, ...} = labelInfo l

@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2008,2019 Matthew Fluet.
+/* Copyright (C) 2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -96,39 +96,33 @@
 #if (defined (__sun__) && defined (REGISTER_FRONTIER_STACKTOP))
 #define Chunk(n)                                                \
         DeclareChunk(n) {                                       \
-                struct cont cont;                               \
                 register unsigned int frontier asm("g5");       \
-                uintptr_t l_nextFun = nextFun;                  \
                 register unsigned int stackTop asm("g6");
 #else
 #define Chunk(n)                                \
         DeclareChunk(n) {                       \
-                struct cont cont;               \
                 Pointer frontier;               \
-                uintptr_t l_nextFun = nextFun;  \
                 Pointer stackTop;
 #endif
 
 #define ChunkSwitch(n)                                                  \
                 if (DEBUG_CCODEGEN)                                     \
-                        fprintf (stderr, "%s:%d: entering chunk %d  l_nextFun = %d\n", \
-                                        __FILE__, __LINE__, n, (int)l_nextFun); \
+                        fprintf (stderr, "%s:%d: entering chunk %d  nextBlock = %d\n", \
+                                        __FILE__, __LINE__, n, (int)nextBlock); \
                 CacheFrontier();                                        \
                 CacheStackTop();                                        \
                 while (1) {                                             \
-                top:                                                    \
-                switch (l_nextFun) {
+                doSwitchNextBlock:                                      \
+                switch (nextBlock) {
 
 #define EndChunk                                                        \
                 default:                                                \
-                        /* interchunk return */                         \
-                        nextFun = l_nextFun;                            \
-                        cont.nextChunk = (void*)nextChunks[nextFun];    \
-                        leaveChunk:                                     \
-                                FlushFrontier();                        \
-                                FlushStackTop();                        \
-                                return cont;                            \
-                } /* end switch (l_nextFun) */                          \
+                /* interchunk return */                                 \
+                doLeaveChunk:                                           \
+                        FlushFrontier();                                \
+                        FlushStackTop();                                \
+                        return nextBlock;                               \
+                } /* end switch (nextBlock) */                          \
                 } /* end while (1) */                                   \
         } /* end chunk */
 
@@ -141,18 +135,17 @@
                 if (DEBUG_CCODEGEN)                                     \
                         fprintf (stderr, "%s:%d: Thread_returnToC()\n", \
                                         __FILE__, __LINE__);            \
-                returnToC = TRUE;                                       \
-                return cont;                                            \
+                return (uintptr_t)-1;                                   \
         } while (0)
 
 /* ------------------------------------------------- */
-/*                      farJump                      */
+/*                      FarGoto                      */
 /* ------------------------------------------------- */
 
-#define FarJump(n, l)                           \
+#define FarGoto(l)                              \
         do {                                    \
-                PrepFarJump(n, l);              \
-                goto leaveChunk;                \
+                nextBlock = l;                  \
+                goto doLeaveChunk;              \
         } while (0)
 
 /* ------------------------------------------------- */
@@ -169,11 +162,11 @@
 
 #define Return()                                                                \
         do {                                                                    \
-                l_nextFun = *(uintptr_t*)(StackTop - sizeof(void*));            \
+                nextBlock = *(uintptr_t*)(StackTop - sizeof(void*));            \
                 if (DEBUG_CCODEGEN)                                             \
-                        fprintf (stderr, "%s:%d: Return()  l_nextFun = %d\n",   \
-                                        __FILE__, __LINE__, (int)l_nextFun);    \
-                goto top;                                                       \
+                        fprintf (stderr, "%s:%d: Return()  nextBlock = %d\n",   \
+                                        __FILE__, __LINE__, (int)nextBlock);    \
+                goto doSwitchNextBlock;                                         \
         } while (0)
 
 #define Raise()                                                                 \

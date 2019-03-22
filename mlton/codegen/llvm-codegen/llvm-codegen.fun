@@ -103,11 +103,7 @@ val llvmIntrinsics =
 \declare {i64, i1} @llvm.umul.with.overflow.i64(i64 %a, i64 %b)\n"
 
 val globalDeclarations =
-"%struct.cont = type { i8* }\n\
-\%struct.GC_state = type opaque\n\
-\@nextFun = external hidden global %uintptr_t\n\
-\@returnToC = external hidden global i32\n\
-\@nextChunks = external hidden global [0 x void (%struct.cont*)*]\n\
+"%struct.GC_state = type opaque\n\
 \@gcState = external hidden global %struct.GC_state\n"
 
 fun implementsPrim (p: 'a Prim.t): bool =
@@ -408,12 +404,11 @@ fun cacheStackTop () =
         concat [comment, pre, load, store]
     end
 
-(* l_nextFun = *(uintptr_t* )(StackTop - sizeof(void* ));
-   goto top;
+(* nextBlock = *(uintptr_t* )(StackTop - sizeof(void* ));
+   goto doSwitchNextBlock;
  *)
 fun callReturn () =
     let
-        val comment = "\t; Return\n"
         val stacktop = nextLLVMReg ()
         val loadst = mkload (stacktop, "%Pointer*", "%stackTop")
         val ptrsize = (llbytes o Bits.toBytes o Control.Target.Size.cpointer) ()
@@ -423,10 +418,10 @@ fun callReturn () =
         val cast = mkconv (castreg, "bitcast", "%Pointer", ptr, "%uintptr_t*")
         val loadreg = nextLLVMReg ()
         val loadofs = mkload (loadreg, "%uintptr_t*", castreg)
-        val store = mkstore ("%uintptr_t", loadreg, "%l_nextFun")
-        val br = "\tbr label %top\n"
+        val store = mkstore ("%uintptr_t", loadreg, "%nextBlock")
+        val br = "\tbr label %doSwitchNextBlock\n"
     in
-        concat [comment, loadst, gep, cast, loadofs, store, br]
+        concat [loadst, gep, cast, loadofs, store, br]
     end
 
 fun stackPush amt =
@@ -994,7 +989,6 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
     let
         val comment = concat ["\t; ", Layout.toString (Transfer.layout transfer), "\n"]
         val Context { labelToStringIndex = labelToStringIndex,
-                      chunkLabelToString = chunkLabelToString,
                       labelChunk = labelChunk,
                       printstmt = printstmt, ... } = cxt
         fun transferPush (return, size) =
@@ -1101,22 +1095,13 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                 val goto = if ChunkLabel.equals (labelChunk sourceLabel, dstChunk)
                            then concat ["\tbr label %", labelstr, "\n"]
                            else let
-                               val comment = "\t; FarJump\n"
-                               (* cont.nextChunk = ChunkN *)
-                               val funcname = "@Chunk" ^ chunkLabelToString dstChunk
-                               val func = nextLLVMReg ()
-                               val cast = mkconv (func, "bitcast", "%struct.cont ()*", funcname,
-                                                  "i8*")
-                               val nextchunkptr = nextLLVMReg ()
-                               val gep = mkgep (nextchunkptr, "%struct.cont*", "%cont", [("i32", "0"), ("i32", "0")])
-                               val storeNCP = mkstore ("i8*", func, nextchunkptr)
-                               val () = addCFunction (concat ["%struct.cont ", funcname, "()"])
-                               (* nextFun = l *)
-                               val storeNF = mkstore ("%uintptr_t", labelToStringIndex label,
-                                                      "@nextFun")
-                               val br = "\tbr label %leaveChunk\n"
+                               val comment = "\t; FarGoto\n"
+                               (* nextBlock = l *)
+                               val storeNB = mkstore ("%uintptr_t", labelToStringIndex label,
+                                                      "%nextBlock")
+                               val br = "\tbr label %doLeaveChunk\n"
                            in
-                               concat [comment, cast, gep, storeNCP, storeNF, br]
+                               concat [comment, storeNB, br]
                            end
             in
                 concat [push, goto]
@@ -1130,6 +1115,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
             end
           | Transfer.Raise =>
             let
+                val comment = "\t; Raise\n"
                 (* StackTop = StackBottom + ExnStack *)
                 val (sbpre, sbreg) = offsetGCState (GCField.StackBottom, "%Pointer*")
                 val stackBottom = nextLLVMReg ()
@@ -1140,25 +1126,11 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                 val sum = nextLLVMReg ()
                 val gep = mkgep (sum, "%Pointer", stackBottom, [("i32", exnStack)])
                 val store = mkstore ("%Pointer", sum, "%stackTop")
-                (* l_nextFun = *(uintptr_t* )(StackTop - sizeof(void* )); *)
-                val stackTop = nextLLVMReg ()
-                val loadStackTop = mkload (stackTop, "%Pointer*", "%stackTop")
-                val sizeofptr = (Bytes.toString o Bits.toBytes o Control.Target.Size.cpointer) ()
-                val offsetST = nextLLVMReg ()
-                val subPtrSize = mkgep (offsetST, "%Pointer", stackTop, [("i32", "-" ^ sizeofptr)])
-                val offsetIntPtr = nextLLVMReg ()
-                val toint = mkconv (offsetIntPtr, "bitcast", "%Pointer", offsetST,
-                                    "%uintptr_t*")
-                val offsetInt = nextLLVMReg ()
-                val loadOffset = mkload (offsetInt, "%uintptr_t*", offsetIntPtr)
-                val storeLNF = mkstore ("%uintptr_t", offsetInt, "%l_nextFun")
-                (* goto top *)
-                val gotoTop = "\tbr label %top\n"
             in
                 concat [comment, sbpre, loadStackBottom, espre, loadExnStack, gep, store,
-                        loadStackTop, subPtrSize, toint, loadOffset, storeLNF, gotoTop]
+                        callReturn()]
             end
-          | Transfer.Return => callReturn ()
+          | Transfer.Return => concat ["\t; Return\n", callReturn ()]
           | Transfer.Switch switch =>
             let
                 val Switch.T {cases, default, test, ...} = switch
@@ -1329,21 +1301,15 @@ fun outputChunk (cxt, outputLL, chunk) =
         val Chunk.T {blocks, chunkLabel, regMax} = chunk
         val { done, print, file=_ } = outputLL ()
         val () = outputLLVMDeclarations (cxt, print, chunk)
-        val () = print (concat ["define hidden %struct.cont @",
+        val () = print (concat ["define hidden %uintptr_t @",
                                 "Chunk" ^ chunkLabelToString chunkLabel,
-                                "() {\nentry:\n"])
+                                "(%uintptr_t %nextBlockArg) {\nentry:\n"])
         val () = if printblock
                  then print "\tcall i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([16 x i8]* @enteringChunk, i32 0, i32 0))\n"
                  else ()
-        val () = (print "\t%cont = alloca %struct.cont\n"
-                 ; print "\t%frontier = alloca %Pointer\n"
-                 ; print "\t%l_nextFun = alloca %uintptr_t\n")
-        val tmp1 = nextLLVMReg ()
-        val () = (print (mkload (tmp1, "%uintptr_t*", "@nextFun"))
-                 ; print (mkstore ("%uintptr_t", tmp1, "%l_nextFun"))
-                 ; print "\t%stackTop = alloca %Pointer\n"
-                 ; print (cacheFrontier ())
-                 ; print (cacheStackTop ()))
+        val () = print "\t%frontier = alloca %Pointer\n"
+        val () = print "\t%stackTop = alloca %Pointer\n"
+        val () = print "\t%nextBlock = alloca %uintptr_t\n"
         val () = List.foreach (CType.all,
                                fn t =>
                                   let
@@ -1353,9 +1319,12 @@ fun outputChunk (cxt, outputLL, chunk) =
                                       Int.for (0, 1 + regMax t,
                                                fn i => print (concat [pre, llint i, post]))
                                   end)
-        val () = print "\tbr label %top\ntop:\n"
-        val tmp2 = nextLLVMReg ()
-        val () = print (mkload (tmp2, "%uintptr_t*", "%l_nextFun"))
+        val () = print (cacheFrontier ())
+        val () = print (cacheStackTop ())
+        val () = print (mkstore ("%uintptr_t", "%nextBlockArg", "%nextBlock"))
+        val () = print "\tbr label %doSwitchNextBlock\n\ndoSwitchNextBlock:\n"
+        val tmp = nextLLVMReg ()
+        val () = print (mkload (tmp, "%uintptr_t*", "%nextBlock"))
         val entryLabelsInChunk = Vector.keepAll (entryLabels,
                                                  fn l => chunkLabelIndex chunkLabel =
                                                          chunkLabelIndex (labelChunk l))
@@ -1366,32 +1335,17 @@ fun outputChunk (cxt, outputLL, chunk) =
                            in
                                concat ["\t\t%uintptr_t ", i, ", label %", labelName, "\n"]
                            end))
-        val () = (print (concat ["\tswitch %uintptr_t ", tmp2,
-                                 ", label %default [\n", branches, "\t]\n"])
-                 ; print (String.concatV (Vector.map (blocks, fn b => outputBlock (cxt, b))))
-                 ; print "default:\n")
-        val nextFun = nextLLVMReg ()
-        val () = (print (mkload (nextFun, "%uintptr_t*", "%l_nextFun"))
-                 ; print (mkstore ("%uintptr_t", nextFun, "@nextFun")))
-        val nextChunks_nextFun_ptr = nextLLVMReg ()
-        val () = print (mkgep (nextChunks_nextFun_ptr,
-                              "[0 x void (%struct.cont*)*]*", "@nextChunks", [("i32", "0"), ("%uintptr_t", nextFun)]))
-        val nextChunks_nextFun = nextLLVMReg ()
-        val () = print (mkload (nextChunks_nextFun, "void (%struct.cont*)**",
-                                nextChunks_nextFun_ptr))
-        val nextChunks_nextFun_bc = nextLLVMReg ()
-        val () = print (mkconv (nextChunks_nextFun_bc, "bitcast", "void (%struct.cont*)*",
-                                nextChunks_nextFun, "i8*"))
-        val cont_nextChunk_ptr = nextLLVMReg ()
-        val () = (print (mkgep (cont_nextChunk_ptr, "%struct.cont*", "%cont", [("i32", "0"), ("i32", "0")]))
-                 ; print (mkstore ("i8*", nextChunks_nextFun_bc, cont_nextChunk_ptr))
-                 ; print "\tbr label %leaveChunk\n"
-                 ; print "leaveChunk:\n"
+        val () = print (concat ["\tswitch %uintptr_t ", tmp,
+                                ", label %doSwitchNextBlockDefault [\n", branches, "\t]\n\n"])
+        val () = print (String.concatV (Vector.map (blocks, fn b => outputBlock (cxt, b))))
+        val () = print "doSwitchNextBlockDefault:\n"
+        val () = (print "\tbr label %doLeaveChunk\n\n"
+                 ; print "doLeaveChunk:\n"
                  ; print (flushFrontier ())
                  ; print (flushStackTop ()))
         val leaveRet = nextLLVMReg ()
-        val () = (print (mkload (leaveRet, "%struct.cont*", "%cont"))
-                 ; print (concat ["\tret %struct.cont ", leaveRet, "\n"])
+        val () = (print (mkload (leaveRet, "%uintptr_t*", "%nextBlock"))
+                 ; print (concat ["\tret %uintptr_t ", leaveRet, "\n"])
                  ; print "}\n\n")
         val () = List.foreach (!cFunctions, fn f =>
                      print (concat ["declare ", f, "\n"]))
@@ -1506,9 +1460,8 @@ fun transC (cxt, outputC) =
         val {print, done, file=_} = outputC ()
         val Program.T {main = main, chunks = chunks, ... } = program
         val Context { chunkLabelToString, labelToStringIndex, entryLabels, labelInfo, ... } = cxt
-        val chunkLabel = chunkLabelToString (#chunkLabel main)
         val mainLabel = labelToStringIndex (#label main)
-        val additionalMainArgs = [chunkLabel, mainLabel]
+        val additionalMainArgs = [mainLabel]
         fun callNoSemi (f: string, xs: string list, print: string -> unit): unit
             = (print f
               ; print " ("
@@ -1527,7 +1480,7 @@ fun transC (cxt, outputC) =
                  print)
         fun rest () =
             (List.foreach (chunks, fn c => declareChunk (c, print))
-            ; print "PRIVATE struct cont ( *nextChunks []) () = {\n"
+            ; print "PRIVATE uintptr_t (*nextChunks[]) (uintptr_t) = {\n"
             ; Vector.foreach (entryLabels, fn l =>
                              let
                                  val {chunkLabel, ...} = labelInfo l
@@ -1559,4 +1512,3 @@ fun output {program, outputC, outputLL} =
     end
 
 end
-
