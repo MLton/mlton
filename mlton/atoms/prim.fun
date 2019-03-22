@@ -176,7 +176,7 @@ datatype 'a t =
  | Word_mul of WordSize.t * {signed: bool} (* codegen *)
  | Word_mulCheckP of WordSize.t * {signed: bool} (* codegen *)
  | Word_neg of WordSize.t (* codegen *)
- | Word_negCheckP of WordSize.t (* codegen *)
+ | Word_negCheckP of WordSize.t * {signed: bool} (* codegen *)
  | Word_notb of WordSize.t (* codegen *)
  | Word_orb of WordSize.t (* codegen *)
  | Word_quot of WordSize.t * {signed: bool} (* codegen *)
@@ -353,7 +353,7 @@ fun toString (n: 'a t): string =
        | Word_mul (s, sg) => wordS (s, sg, "mul")
        | Word_mulCheckP (s, sg) => wordS (s, sg, "mulCheckP")
        | Word_neg s => word (s, "neg")
-       | Word_negCheckP s => word (s, "negCheckP")
+       | Word_negCheckP (s, sg) => wordS (s, sg, "negCheckP")
        | Word_notb s => word (s, "notb")
        | Word_orb s => word (s, "orb")
        | Word_quot (s, sg) => wordS (s, sg, "quot")
@@ -519,7 +519,8 @@ val equals: 'a t * 'a t -> bool =
     | (Word_mulCheckP (s, sg), Word_mulCheckP (s', sg')) =>
          WordSize.equals (s, s') andalso sg = sg'
     | (Word_neg s, Word_neg s') => WordSize.equals (s, s')
-    | (Word_negCheckP s, Word_negCheckP s') => WordSize.equals (s, s')
+    | (Word_negCheckP (s, sg), Word_negCheckP (s', sg')) =>
+         WordSize.equals (s, s') andalso sg = sg'
     | (Word_notb s, Word_notb s') => WordSize.equals (s, s')
     | (Word_orb s, Word_orb s') => WordSize.equals (s, s')
     | (Word_quot (s, sg), Word_quot (s', sg')) =>
@@ -994,6 +995,7 @@ local
                     Word_lt,
                     Word_mul,
                     Word_mulCheckP,
+                    Word_negCheckP,
                     Word_quot,
                     Word_rem,
                     Word_rshift,
@@ -1007,7 +1009,6 @@ local
        (Word_equal s),
        (Word_lshift s),
        (Word_neg s),
-       (Word_negCheckP s),
        (Word_notb s),
        (Word_orb s),
        (Word_rol s),
@@ -1476,7 +1477,7 @@ fun 'a checkApp (prim: 'a t,
        | Word_mul (s, _) => wordBinary s
        | Word_mulCheckP (s, _) => wordBinaryP s
        | Word_neg s => wordUnary s
-       | Word_negCheckP s => wordUnaryP s
+       | Word_negCheckP (s, _) => wordUnaryP s
        | Word_notb s => wordUnary s
        | Word_orb s => wordBinary s
        | Word_quot (s, _) => wordBinary s
@@ -1662,32 +1663,7 @@ fun ('a, 'b) apply (p: 'a t,
       val wordOpt = fn NONE => ApplyResult.Unknown | SOME w => word w
       fun wordVector (v: WordXVector.t): ('a, 'b) ApplyResult.t =
          ApplyResult.Const (Const.wordVector v)
-      fun iio (f, c1, c2) = intInf (f (c1, c2))
-      fun wordS (f: WordX.t * WordX.t * {signed: bool} -> WordX.t,
-                 (_: WordSize.t, sg),
-                 w: WordX.t,
-                 w': WordX.t) =
-         word (f (w, w', sg))
-      fun wordCmp (f: WordX.t * WordX.t * {signed: bool} -> bool,
-                   (_: WordSize.t, sg),
-                   w: WordX.t,
-                   w': WordX.t) =
-         bool (f (w, w', sg))
-      fun wordOrTrue (s, sg, w) = bool (not (WordSize.isInRange (s, w, sg)))
-      local
-         fun mkCheck toAppRes =
-            fn (f: IntInf.t * IntInf.t -> IntInf.t,
-                (s: WordSize.t, sg as {signed}),
-                w: WordX.t,
-                w': WordX.t) =>
-            let
-               val conv = if signed then WordX.toIntInfX else WordX.toIntInf
-            in
-               toAppRes (s, sg, f (conv w, conv w'))
-            end
-      in
-         val wcheckp = mkCheck wordOrTrue
-      end
+      fun wordChk (s, w, sg) = bool (not (WordSize.isInRange (s, w, sg)))
       val eq =
          fn (Word w1, Word w2) => bool (WordX.equals (w1, w2))
           | _ => ApplyResult.Unknown
@@ -1701,15 +1677,15 @@ fun ('a, 'b) apply (p: 'a t,
             then ApplyResult.Unknown
          else 
             case p of
-               IntInf_add => iio (IntInf.+, i1, i2)
-             | IntInf_andb => iio (IntInf.andb, i1, i2)
-             | IntInf_gcd => iio (IntInf.gcd, i1, i2)
-             | IntInf_mul => iio (IntInf.*, i1, i2)
-             | IntInf_orb => iio (IntInf.orb, i1, i2)
-             | IntInf_quot => iio (IntInf.quot, i1, i2)
-             | IntInf_rem => iio (IntInf.rem, i1, i2)
-             | IntInf_sub => iio (IntInf.-, i1, i2)
-             | IntInf_xorb => iio (IntInf.xorb, i1, i2)
+               IntInf_add => intInf (IntInf.+ (i1, i2))
+             | IntInf_andb => intInf (IntInf.andb (i1, i2))
+             | IntInf_gcd => intInf (IntInf.gcd (i1, i2))
+             | IntInf_mul => intInf (IntInf.* (i1, i2))
+             | IntInf_orb => intInf (IntInf.orb (i1, i2))
+             | IntInf_quot => intInf (IntInf.quot (i1, i2))
+             | IntInf_rem => intInf (IntInf.rem (i1, i2))
+             | IntInf_sub => intInf (IntInf.- (i1, i2))
+             | IntInf_xorb => intInf (IntInf.xorb (i1, i2))
              | _ => ApplyResult.Unknown
       fun intInfUnary (i1) =
          if intInfTooBig i1
@@ -1820,39 +1796,52 @@ fun ('a, 'b) apply (p: 'a t,
                 (RealX.fromIntInf
                  (if signed then WordX.toIntInfX w else WordX.toIntInf w, s))
            | (Word_add _, [Word w1, Word w2]) => word (WordX.add (w1, w2))
-           | (Word_addCheckP s, [Word w1, Word w2]) => wcheckp (op +, s, w1, w2)
+           | (Word_addCheckP (s, sg), [Word w1, Word w2]) =>
+                wordChk (s,
+                         IntInf.+ (WordX.toIntInfSg (w1, sg),
+                                   WordX.toIntInfSg (w2, sg)),
+                         sg)
            | (Word_andb _, [Word w1, Word w2]) => word (WordX.andb (w1, w2))
            | (Word_equal _, [Word w1, Word w2]) => bool (WordX.equals (w1, w2))
            | (Word_lshift _, [Word w1, Word w2]) => word (WordX.lshift (w1, w2))
-           | (Word_lt s, [Word w1, Word w2]) => wordCmp (WordX.lt, s, w1, w2)
-           | (Word_mul s, [Word w1, Word w2]) => wordS (WordX.mul, s, w1, w2)
-           | (Word_mulCheckP s, [Word w1, Word w2]) => wcheckp (op *, s, w1, w2)
+           | (Word_lt (_, sg), [Word w1, Word w2]) => bool (WordX.lt (w1, w2, sg))
+           | (Word_mul (_, sg), [Word w1, Word w2]) => word (WordX.mul (w1, w2, sg))
+           | (Word_mulCheckP (s, sg), [Word w1, Word w2]) =>
+                wordChk (s,
+                         IntInf.* (WordX.toIntInfSg (w1, sg),
+                                   WordX.toIntInfSg (w2, sg)),
+                         sg)
            | (Word_neg _, [Word w]) => word (WordX.neg w)
-           | (Word_negCheckP s, [Word w]) =>
-                wordOrTrue (s, {signed = true}, ~ (WordX.toIntInfX w))
+           | (Word_negCheckP (s, sg), [Word w]) =>
+                wordChk (s,
+                         IntInf.~ (WordX.toIntInfSg (w, sg)),
+                         sg)
            | (Word_notb _, [Word w]) => word (WordX.notb w)
            | (Word_orb _, [Word w1, Word w2]) => word (WordX.orb (w1, w2))
-           | (Word_quot s, [Word w1, Word w2]) =>
+           | (Word_quot (_, sg), [Word w1, Word w2]) =>
                 if WordX.isZero w2
                    then ApplyResult.Unknown
-                else wordS (WordX.quot, s, w1, w2)
-           | (Word_rem s, [Word w1, Word w2]) =>
+                else word (WordX.quot (w1, w2, sg))
+           | (Word_rem (_, sg), [Word w1, Word w2]) =>
                 if WordX.isZero w2
                    then ApplyResult.Unknown
-                else wordS (WordX.rem, s, w1, w2)
+                else word (WordX.rem (w1, w2, sg))
            | (Word_rol _, [Word w1, Word w2]) => word (WordX.rol (w1, w2))
            | (Word_ror _, [Word w1, Word w2]) => word (WordX.ror (w1, w2))
-           | (Word_rshift s, [Word w1, Word w2]) =>
-                wordS (WordX.rshift, s, w1, w2)
+           | (Word_rshift (_, sg), [Word w1, Word w2]) =>
+                word (WordX.rshift (w1, w2, sg))
            | (Word_sub _, [Word w1, Word w2]) => word (WordX.sub (w1, w2))
-           | (Word_subCheckP s, [Word w1, Word w2]) => wcheckp (op -, s, w1, w2)
+           | (Word_subCheckP (s, sg), [Word w1, Word w2]) =>
+                wordChk (s,
+                         IntInf.- (WordX.toIntInfSg (w1, sg),
+                                   WordX.toIntInfSg (w2, sg)),
+                         sg)
            | (Word_toIntInf, [Word w]) =>
                 (case IntInfRep.smallToIntInf w of
                     NONE => ApplyResult.Unknown
                   | SOME i => intInf i)
-           | (Word_extdToWord (_, s, {signed}), [Word w]) =>
-                word (if signed then WordX.resizeX (w, s)
-                      else WordX.resize (w, s))
+           | (Word_extdToWord (_, s, sg), [Word w]) =>
+                word (WordX.resizeSg (w, s, sg))
            | (Word_xorb _, [Word w1, Word w2]) => word (WordX.xorb (w1, w2))
            | (WordVector_toIntInf, [WordVector v]) =>
                 (case IntInfRep.bigToIntInf v of
@@ -1975,21 +1964,6 @@ fun ('a, 'b) apply (p: 'a t,
             fun varWord (x, w, inOrder) =
                let
                   val zero = word o WordX.zero
-                  fun add () = if WordX.isZero w then Var x else Unknown
-                  fun mul ((s, {signed}), neg) =
-                     if WordX.isZero w
-                        then word w
-                     else if WordX.isOne w
-                             then Var x
-                          else if signed andalso WordX.isNegOne w
-                                  then Apply (neg s, [x])
-                               else Unknown
-                  fun sub (s, neg) =
-                     if WordX.isZero w
-                        then if inOrder
-                                then Var x
-                             else Apply (neg s, [x])
-                     else Unknown
                   fun ro s =
                      if inOrder
                         then
@@ -2024,7 +1998,7 @@ fun ('a, 'b) apply (p: 'a t,
                           else Unknown
                in
                   case p of
-                     CPointer_add => 
+                     CPointer_add =>
                         if WordX.isZero w
                            then Var x
                         else Unknown
@@ -2033,7 +2007,10 @@ fun ('a, 'b) apply (p: 'a t,
                            andalso inOrder
                            then Var x
                         else Unknown
-                   | Word_add _ => add ()
+                   | Word_add _ =>
+                        if WordX.isZero w
+                           then Var x
+                        else Unknown
                    | Word_addCheckP _ =>
                         if WordX.isZero w
                            then f
@@ -2049,7 +2026,14 @@ fun ('a, 'b) apply (p: 'a t,
                         if inOrder
                            then if WordX.isMin (w, sg) then f else Unknown
                         else if WordX.isMax (w, sg) then f else Unknown
-                   | Word_mul s => mul (s, wordNeg)
+                   | Word_mul (s, {signed}) =>
+                        if WordX.isZero w
+                           then zero s
+                        else if WordX.isOne w
+                                then Var x
+                             else if signed andalso WordX.isNegOne w
+                                     then Apply (wordNeg s, [x])
+                                  else Unknown
                    | Word_mulCheckP _ =>
                         if WordX.isZero w orelse WordX.isOne w
                            then f
@@ -2087,7 +2071,12 @@ fun ('a, 'b) apply (p: 'a t,
                                    else Unknown
                         else
                            shift s
-                   | Word_sub s => sub (s, wordNeg)
+                   | Word_sub s =>
+                        if WordX.isZero w
+                           then if inOrder
+                                   then Var x
+                                else Apply (wordNeg s, [x])
+                        else Unknown
                    | Word_subCheckP _ =>
                         if WordX.isZero w andalso inOrder
                            then f

@@ -1,4 +1,4 @@
-/* Copyright (C) 2010,2012,2016 Matthew Fluet.
+/* Copyright (C) 2010,2012,2016,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -93,12 +93,6 @@
 #endif
 #ifndef MLTON_CODEGEN_MATHFN
 #define MLTON_CODEGEN_MATHFN(decl)
-#endif
-#ifndef MLTON_CODEGEN_WORDSQUOTREM
-#define MLTON_CODEGEN_WORDSQUOTREM(func) func
-#endif
-#ifndef MLTON_CODEGEN_WORDSQUOTREM_IMPL
-#define MLTON_CODEGEN_WORDSQUOTREM_IMPL(func) func
 #endif
 #include "basis-ffi.h"
 

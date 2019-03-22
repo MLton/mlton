@@ -44,6 +44,9 @@ fun toIntInfX w =
       else v
    end
 
+fun toIntInfSg (w, {signed}) =
+   if signed then toIntInfX w else toIntInf w
+
 val toInt = IntInf.toInt o toIntInf
 
 fun toString (w, {suffix}) =
@@ -129,12 +132,12 @@ fun notb w = make (IntInf.notb (value w), size w)
 
 fun one s = make (1, s)
 
-fun toIntInfSg (w, {signed}) =
-   if signed then toIntInfX w else toIntInf w
-
 fun resize (w, s) = make (toIntInf w, s)
 
 fun resizeX (w, s) = make (toIntInfX w, s)
+
+fun resizeSg (w, s, {signed}) =
+   if signed then resizeX (w, s) else resize (w, s)
 
 fun toChar (w: t): char = Char.fromInt (Int.fromIntInf (value w))
 

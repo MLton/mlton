@@ -168,7 +168,7 @@ signature PRIM =
              | Word_mul of WordSize.t * {signed: bool} (* codegen *)
              | Word_mulCheckP of WordSize.t * {signed: bool} (* codegen *)
              | Word_neg of WordSize.t (* codegen *)
-             | Word_negCheckP of WordSize.t (* codegen *)
+             | Word_negCheckP of WordSize.t * {signed: bool} (* codegen *)
              | Word_notb of WordSize.t (* codegen *)
              | Word_orb of WordSize.t (* codegen *)
              | Word_quot of WordSize.t * {signed: bool} (* codegen *)
@@ -306,7 +306,8 @@ signature PRIM =
       val wordMul: WordSize.t * {signed: bool} -> 'a t
       val wordMulCheckP: WordSize.t * {signed: bool} -> 'a t
       val wordNeg: WordSize.t -> 'a t
-      val wordNegCheckP: WordSize.t -> 'a t
+      val wordNegCheckP: WordSize.t * {signed: bool} -> 'a t
+      val wordNotb: WordSize.t -> 'a t
       val wordOrb: WordSize.t -> 'a t
       val wordQuot: WordSize.t * {signed: bool} -> 'a t
       val wordRshift: WordSize.t * {signed: bool} -> 'a t

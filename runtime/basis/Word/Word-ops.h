@@ -55,8 +55,8 @@ compare (U##size, name, op)
 
 #define negOvflChk(kind)                                                \
   MLTON_CODEGEN_STATIC_INLINE                                           \
-  Bool Word##kind##_negCheckP (WordS##kind w) {                         \
-    WordS##kind res;                                                    \
+  Bool Word##kind##_negCheckP (Word##kind w) {                          \
+    Word##kind res;                                                     \
     return __builtin_sub_overflow(0, w, &res);                          \
   }
 
@@ -115,22 +115,21 @@ bothCompare (size, lt, <)                       \
 bothBinaryOvflOp (size, mul)                    \
 bothBinaryOvflChk (size, mul)                   \
 negOvflOp (size)                                \
-negOvflChk (size)                               \
+negOvflChk (S##size)                            \
+negOvflChk (U##size)                            \
 unary (size, notb, ~)                           \
-/* WordS<N>_quot and WordS<N>_rem can't be inlined with the C-codegen,  \ 
- * because the gcc optimizer sometimes produces incorrect results       \
- * when one of the arguments is a constant.                             \
- */                                                                     \
-MLTON_CODEGEN_WORDSQUOTREM_IMPL(binary (S##size, quot, /))              \
-MLTON_CODEGEN_WORDSQUOTREM_IMPL(binary (S##size, rem, %))               \
-binary (U##size, quot, /)                       \
-binary (U##size, rem, %)                        \
+bothBinary (size, quot, /)                      \
+bothBinary (size, rem, %)                       \
 binary (size, orb, |)                           \
 rol(size)                                       \
 ror(size)                                       \
-/* WordS<N>_rshift isn't ANSI C, because ANSI doesn't guarantee sign    \
- * extension.  We use it anyway cause it always seems to work.          \
- */                                                                     \
+/* WordS<N>_rshift has implementation-defined behavior under C11.
+ * "The result of E1 >> E2 is E1 right-shifted E2 bit positions. If E1 has a
+ * signed type and a negative value, the resulting value is
+ * implementation-defined."
+ * However, gcc and clang implement signed '>>' on negative numbers by sign
+ * extension.
+ */                                             \
 shift (S##size, rshift, >>)                     \
 shift (U##size, rshift, >>)                     \
 binaryOvflOp (size, sub)                        \
