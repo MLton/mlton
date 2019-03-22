@@ -32,7 +32,6 @@ datatype Context = Context of {
     entryLabels: Label.t vector,
     labelInfo: Label.t -> {block: Block.t,
                            chunkLabel: ChunkLabel.t,
-                           frameIndex: int option,
                            layedOut: bool ref},
     printblock: bool,
     printstmt: bool,
@@ -1372,11 +1371,9 @@ fun makeContext program =
         val Program.T { chunks, frameLayouts, ...} = program
         val {get = labelInfo: Label.t -> {block: Block.t,
                                           chunkLabel: ChunkLabel.t,
-                                          frameIndex: int option,
                                           layedOut: bool ref},
              set = setLabelInfo, ...} =
             Property.getSetOnce
-
                 (Label.plist, Property.initRaise ("LLVMCodeGen.info", Label.layout))
         val entryLabels: (Label.t * int) list ref = ref []
         val indexCounter = Counter.new (Vector.length frameLayouts)
@@ -1395,19 +1392,16 @@ fun makeContext program =
                     | Kind.Func => true
                     | Kind.Handler _ => true
                     | _ => false
-              val frameIndex =
+              val _ =
                  case Kind.frameInfoOpt kind of
-                    NONE => (if kindIsEntry kind
-                                then entry (Counter.next indexCounter)
-                             else ()
-                             ; NONE)
+                    NONE => if kindIsEntry kind
+                               then entry (Counter.next indexCounter)
+                               else ()
                   | SOME (FrameInfo.T {frameLayoutsIndex, ...}) =>
-                    (entry frameLayoutsIndex
-                    ; SOME frameLayoutsIndex)
+                       entry frameLayoutsIndex
            in
               setLabelInfo (label, {block = b,
                                     chunkLabel = chunkLabel,
-                                    frameIndex = frameIndex,
                                     layedOut = ref false})
            end))
         val a = Array.fromList (!entryLabels)

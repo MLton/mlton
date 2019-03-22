@@ -586,7 +586,6 @@ fun output {program as Machine.Program.T {chunks,
       datatype status = None | One | Many
       val {get = labelInfo: Label.t -> {block: Block.t,
                                         chunkLabel: ChunkLabel.t,
-                                        frameIndex: int option,
                                         status: status ref,
                                         layedOut: bool ref},
            set = setLabelInfo, ...} =
@@ -602,19 +601,17 @@ fun output {program as Machine.Program.T {chunks,
            let
               fun entry (index: int) =
                  List.push (entryLabels, (label, index))
-              val frameIndex =
+              val _ =
                  case Kind.frameInfoOpt kind of
-                    NONE => (if Kind.isEntry kind
-                                then entry (Counter.next indexCounter)
-                             else ()
-                             ; NONE)
+                    NONE =>
+                       if Kind.isEntry kind
+                          then entry (Counter.next indexCounter)
+                          else ()
                   | SOME (FrameInfo.T {frameLayoutsIndex, ...}) =>
-                       (entry frameLayoutsIndex
-                        ; SOME frameLayoutsIndex)
+                       entry frameLayoutsIndex
            in
               setLabelInfo (label, {block = b,
                                     chunkLabel = chunkLabel,
-                                    frameIndex = frameIndex,
                                     layedOut = ref false,
                                     status = ref None})
            end))
