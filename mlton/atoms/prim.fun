@@ -1964,21 +1964,6 @@ fun ('a, 'b) apply (p: 'a t,
             fun varWord (x, w, inOrder) =
                let
                   val zero = word o WordX.zero
-                  fun add () = if WordX.isZero w then Var x else Unknown
-                  fun mul ((s, {signed}), neg) =
-                     if WordX.isZero w
-                        then word w
-                     else if WordX.isOne w
-                             then Var x
-                          else if signed andalso WordX.isNegOne w
-                                  then Apply (neg s, [x])
-                               else Unknown
-                  fun sub (s, neg) =
-                     if WordX.isZero w
-                        then if inOrder
-                                then Var x
-                             else Apply (neg s, [x])
-                     else Unknown
                   fun ro s =
                      if inOrder
                         then
@@ -2013,7 +1998,7 @@ fun ('a, 'b) apply (p: 'a t,
                           else Unknown
                in
                   case p of
-                     CPointer_add => 
+                     CPointer_add =>
                         if WordX.isZero w
                            then Var x
                         else Unknown
@@ -2022,7 +2007,10 @@ fun ('a, 'b) apply (p: 'a t,
                            andalso inOrder
                            then Var x
                         else Unknown
-                   | Word_add _ => add ()
+                   | Word_add _ =>
+                        if WordX.isZero w
+                           then Var x
+                        else Unknown
                    | Word_addCheckP _ =>
                         if WordX.isZero w
                            then f
@@ -2038,7 +2026,14 @@ fun ('a, 'b) apply (p: 'a t,
                         if inOrder
                            then if WordX.isMin (w, sg) then f else Unknown
                         else if WordX.isMax (w, sg) then f else Unknown
-                   | Word_mul s => mul (s, wordNeg)
+                   | Word_mul (s, {signed}) =>
+                        if WordX.isZero w
+                           then zero s
+                        else if WordX.isOne w
+                                then Var x
+                             else if signed andalso WordX.isNegOne w
+                                     then Apply (wordNeg s, [x])
+                                  else Unknown
                    | Word_mulCheckP _ =>
                         if WordX.isZero w orelse WordX.isOne w
                            then f
@@ -2076,7 +2071,12 @@ fun ('a, 'b) apply (p: 'a t,
                                    else Unknown
                         else
                            shift s
-                   | Word_sub s => sub (s, wordNeg)
+                   | Word_sub s =>
+                        if WordX.isZero w
+                           then if inOrder
+                                   then Var x
+                                else Apply (wordNeg s, [x])
+                        else Unknown
                    | Word_subCheckP _ =>
                         if WordX.isZero w andalso inOrder
                            then f
