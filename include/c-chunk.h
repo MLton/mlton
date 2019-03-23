@@ -115,7 +115,7 @@
                 doSwitchNextBlock:                                      \
                 switch (nextBlock) {
 
-#define EndChunk                                                        \
+#define EndChunkSwitch                                                  \
                 default:                                                \
                 /* interchunk return */                                 \
                 doLeaveChunk:                                           \
@@ -123,7 +123,9 @@
                         FlushStackTop();                                \
                         return nextBlock;                               \
                 } /* end switch (nextBlock) */                          \
-                } /* end while (1) */                                   \
+                } /* end while (1) */
+
+#define EndChunk                                                        \
         } /* end chunk */
 
 /* ------------------------------------------------- */

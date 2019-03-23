@@ -36,8 +36,6 @@ structure Kind =
           | _ => false
    end
 
-val traceGotoLabel = Trace.trace ("CCodegen.gotoLabel", Label.layout, Unit.layout)
-
 structure C =
    struct
       val truee = "TRUE"
@@ -583,11 +581,9 @@ fun output {program as Machine.Program.T {chunks,
                               print: string -> unit,
                               done: unit -> unit}} =
    let
-      datatype status = None | One | Many
       val {get = labelInfo: Label.t -> {block: Block.t,
                                         chunkLabel: ChunkLabel.t,
-                                        status: status ref,
-                                        layedOut: bool ref},
+                                        marked: bool ref},
            set = setLabelInfo, ...} =
          Property.getSetOnce
          (Label.plist, Property.initRaise ("CCodeGen.info", Label.layout))
@@ -597,7 +593,7 @@ fun output {program as Machine.Program.T {chunks,
          List.foreach
          (chunks, fn Chunk.T {blocks, chunkLabel, ...} =>
           Vector.foreach
-          (blocks, fn b as Block.T {kind, label, ...} =>
+          (blocks, fn block as Block.T {kind, label, ...} =>
            let
               fun entry (index: int) =
                  List.push (entryLabels, (label, index))
@@ -610,10 +606,9 @@ fun output {program as Machine.Program.T {chunks,
                   | SOME (FrameInfo.T {frameLayoutsIndex, ...}) =>
                        entry frameLayoutsIndex
            in
-              setLabelInfo (label, {block = b,
+              setLabelInfo (label, {block = block,
                                     chunkLabel = chunkLabel,
-                                    layedOut = ref false,
-                                    status = ref None})
+                                    marked = ref false})
            end))
       val a = Array.fromList (!entryLabels)
       val () = QuickSort.sortArray (a, fn ((_, i), (_, i')) => i <= i')
@@ -786,35 +781,6 @@ fun output {program as Machine.Program.T {chunks,
                  case s of
                     Statement.ProfileLabel l => declareProfileLabel (l, print)
                   | _ => ()))
-            (* Count how many times each label is jumped to. *)
-            fun jump l =
-               let
-                  val {status, ...} = labelInfo l
-               in
-                  case !status of
-                     None => status := One
-                   | One => status := Many
-                   | Many => ()
-               end
-            fun force l = #status (labelInfo l) := Many
-            val _ =
-                Vector.foreach
-                (blocks, fn Block.T {kind, label, transfer, ...} =>
-                 let
-                    val _ = if Kind.isEntry kind then jump label else ()
-                    datatype z = datatype Transfer.t
-                 in
-                    case transfer of
-                       CCall {func, return, ...} =>
-                          if CFunction.maySwitchThreads func
-                             then ()
-                          else Option.app (return, jump)
-                     | Call {label, ...} => jump label
-                     | Goto dst => jump dst
-                     | Raise => ()
-                     | Return => ()
-                     | Switch s => Switch.foreachLabel (s, jump)
-                 end)
             fun push (return: Label.t, size: Bytes.t) =
                (print "\t"
                 ; print (move {dst = (StackOffset.toString
@@ -874,95 +840,19 @@ fun output {program as Machine.Program.T {chunks,
                   else (Vector.toListMap (args, fetchOperand),
                         fn () => ())
                end
-            val tracePrintLabelCode =
+            val traceGotoLabel =
                Trace.trace
-               ("CCodegen.printLabelCode",
-                fn {block, layedOut, ...} =>
-                Layout.record [("block", Label.layout (Block.label block)),
-                               ("layedOut", Bool.layout (!layedOut))],
+               ("CCodegen.gotoLabel",
+                Label.layout,
                 Unit.layout)
-            fun maybePrintLabel l =
-               if ! (#layedOut (labelInfo l))
-                  then ()
-               else gotoLabel l
-            and gotoLabel arg =
+            val gotoLabel =
                traceGotoLabel
-               (fn l =>
-                let
-                   val info as {layedOut, ...} = labelInfo l
-                in
-                   if !layedOut
-                      then print (concat ["\tgoto ", Label.toString l, ";\n"])
-                   else printLabelCode info
-                end) arg
-            and printLabelCode arg =
-               tracePrintLabelCode
-               (fn {block = Block.T {kind, label = l, live, statements,
-                                     transfer, ...},
-                    layedOut, status, ...} =>
-                let
-                  val _ = layedOut := true
-                  val _ =
-                     case !status of
-                        Many =>
-                           let
-                              val s = Label.toString l
-                           in
-                              print s
-                              ; print ":\n"
-                           end
-                      | _ => ()
-                  fun pop (fi: FrameInfo.t) =
-                     (C.push (Bytes.~ (Program.frameSize (program, fi)), print)
-                      ; if amTimeProfiling
-                           then print "\tFlushStackTop();\n"
-                        else ())
-                  val _ =
-                     case kind of
-                        Kind.Cont {frameInfo, ...} => pop frameInfo
-                      | Kind.CReturn {dst, frameInfo, ...} =>
-                           (case frameInfo of
-                               NONE => ()
-                             | SOME fi => pop fi
-                            ; (Option.app
-                               (dst, fn x =>
-                                let
-                                   val x = Live.toOperand x
-                                   val ty = Operand.ty x
-                                in
-                                   print
-                                   (concat
-                                    ["\t",
-                                     move {dst = operandToString x,
-                                           dstIsMem = Operand.isMem x,
-                                           src = creturn ty,
-                                           srcIsMem = false,
-                                           ty = ty}])
-                                end)))
-                      | Kind.Func => ()
-                      | Kind.Handler {frameInfo, ...} => pop frameInfo
-                      | Kind.Jump => ()
-                  val _ =
-                     if 0 = !Control.Native.commented
-                        then ()
-                     else print (let open Layout
-                                 in toString
-                                    (seq [str "\t/* live: ",
-                                          Vector.layout Live.layout live,
-                                          str " */\n"])
-                                 end)
-                  val _ = Vector.foreach (statements, fn s =>
-                                          outputStatement (s, print))
-                  val _ = outputTransfer (transfer, l)
-               in ()
-               end) arg
-            and outputTransfer (t, source: Label.t) =
+               (fn l => print (concat ["\tgoto ", Label.toString l, ";\n"]))
+            fun outputTransfer (t, source: Label.t) =
                let
                   fun iff (test, a, b) =
-                     (force a
-                      ; C.call ("\tBNZ", [test, Label.toString a], print)
-                      ; gotoLabel b
-                      ; maybePrintLabel a)
+                     (C.call ("\tBNZ", [test, Label.toString a], print)
+                      ; gotoLabel b)
                   datatype z = datatype Transfer.t
                in
                   case t of
@@ -1026,7 +916,9 @@ fun output {program as Machine.Program.T {chunks,
                            val _ =
                               if CFunction.maySwitchThreads func
                                  then print "\tReturn();\n"
-                              else Option.app (return, gotoLabel)
+                              else case return of
+                                      SOME return => gotoLabel return
+                                    | NONE => print "\t/* NoReturn(); */\n"
                         in
                            ()
                         end
@@ -1060,17 +952,17 @@ fun output {program as Machine.Program.T {chunks,
                                  val test = operandToString test
                                  fun switch (cases: (string * Label.t) vector,
                                              default: Label.t): unit =
-                                    (print "switch ("
+                                    (print "\tswitch ("
                                      ; print test
                                      ; print ") {\n"
                                      ; (Vector.foreach
-                                        (cases, fn (n, l) => (print "case "
+                                        (cases, fn (n, l) => (print "\tcase "
                                                               ; print n
-                                                              ; print ":\n"
+                                                              ; print ":\n\t"
                                                               ; gotoLabel l)))
-                                     ; print "default:\n"
+                                     ; print "\tdefault:\n\t"
                                      ; gotoLabel default
-                                     ; print "}\n")
+                                     ; print "\t}\n")
                               in
                                  case (Vector.length cases, default) of
                                     (0, NONE) =>
@@ -1108,6 +1000,61 @@ fun output {program as Machine.Program.T {chunks,
                            else normal ()
                         end
                end
+            val tracePrintLabelCode =
+               Trace.trace
+               ("CCodegen.printLabelCode",
+                fn block => Label.layout (Block.label block),
+                Unit.layout)
+            val printLabelCode =
+               tracePrintLabelCode
+               (fn Block.T {kind, label, live, statements, transfer, ...} =>
+                let
+                  val () = print (concat [Label.toString label, ":\n"])
+                  fun pop (fi: FrameInfo.t) =
+                     (C.push (Bytes.~ (Program.frameSize (program, fi)), print)
+                      ; if amTimeProfiling
+                           then print "\tFlushStackTop();\n"
+                        else ())
+                  val _ =
+                     case kind of
+                        Kind.Cont {frameInfo, ...} => pop frameInfo
+                      | Kind.CReturn {dst, frameInfo, ...} =>
+                           (case frameInfo of
+                               NONE => ()
+                             | SOME fi => pop fi
+                            ; (Option.app
+                               (dst, fn x =>
+                                let
+                                   val x = Live.toOperand x
+                                   val ty = Operand.ty x
+                                in
+                                   print
+                                   (concat
+                                    ["\t",
+                                     move {dst = operandToString x,
+                                           dstIsMem = Operand.isMem x,
+                                           src = creturn ty,
+                                           srcIsMem = false,
+                                           ty = ty}])
+                                end)))
+                      | Kind.Func => ()
+                      | Kind.Handler {frameInfo, ...} => pop frameInfo
+                      | Kind.Jump => ()
+                  val _ =
+                     if 0 = !Control.Native.commented
+                        then ()
+                     else print (let open Layout
+                                 in toString
+                                    (seq [str "\t/* live: ",
+                                          Vector.layout Live.layout live,
+                                          str " */\n"])
+                                 end)
+                  val _ = Vector.foreach (statements, fn s =>
+                                          outputStatement (s, print))
+                  val _ = outputTransfer (transfer, label)
+                  val _ = print "\n"
+               in ()
+               end)
             fun declareRegisters () =
                List.foreach
                (CType.all, fn t =>
@@ -1127,6 +1074,27 @@ fun output {program as Machine.Program.T {chunks,
                 fn (name, f) =>
                 print (concat ["#define ", name, " ",
                                Bytes.toString (GCField.offset f), "\n"]))
+            val dfsBlocks = ref []
+            fun visit label =
+               let
+                  val {block as Block.T {transfer, ...}, marked, ...} = labelInfo label
+                  datatype z = datatype Transfer.t
+               in
+                  if !marked
+                     then ()
+                     else (marked := true;
+                           List.push (dfsBlocks, block);
+                           case transfer of
+                              CCall {return, ...} =>
+                                 Option.app (return, visit)
+                            | Call _ => ()
+                            | Goto dst => visit dst
+                            | Raise => ()
+                            | Return => ()
+                            | Switch (Switch.T {cases, default, ...}) =>
+                                 (Vector.foreach (cases, visit o #2);
+                                  Option.app (default, visit)))
+               end
          in
             outputIncludes (["c-chunk.h"], print)
             ; outputOffsets ()
@@ -1144,8 +1112,11 @@ fun output {program as Machine.Program.T {chunks,
                                  then (print "case "
                                        ; print (labelToStringIndex label)
                                        ; print ":\n"
-                                       ; gotoLabel label)
+                                       ; gotoLabel label
+                                       ; visit label)
                               else ())
+            ; print "EndChunkSwitch\n\n"
+            ; List.foreach (List.rev (!dfsBlocks), printLabelCode)
             ; print "EndChunk\n"
             ; done ()
          end
