@@ -11,6 +11,11 @@
 #define _C_CHUNK_H_
 
 #include <stdio.h>
+/* `memcpy` is used by coercion `<ty>_castTo<ty>` functions (`basis/coerce.h`)
+ * and by misaligned `<ty>_fetch`, `<ty>_store`, and `<ty>_move` functions
+ * (`basis/Real/Real-ops.h` and `basis/Word/Word-ops.h`)
+ */
+#include <string.h>
 
 #include "ml-types.h"
 #include "c-types.h"
@@ -192,12 +197,6 @@
 #ifndef MLTON_CODEGEN_MATHFN
 #define MLTON_CODEGEN_MATHFN(decl) decl
 #endif
-/* Declare memcpy, since <string.h> isn't included.
- */
-#ifndef MLTON_CODEGEN_MEMCPY
-#define MLTON_CODEGEN_MEMCPY(decl)
-#endif
-MLTON_CODEGEN_MEMCPY(void * memcpy(void *, const void*, size_t);)
 #include "basis-ffi.h"
 #include "basis/coerce.h"
 #include "basis/cpointer.h"
