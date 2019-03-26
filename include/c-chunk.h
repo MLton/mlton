@@ -16,6 +16,10 @@
  * (`basis/Real/Real-ops.h` and `basis/Word/Word-ops.h`)
  */
 #include <string.h>
+/* Math functions used by `Real<n>_f` functions (`basis/Real/Real-ops.h` and
+ * `basis/Real/Math-fns.h`).
+ */
+#include <math.h>
 
 #include "ml-types.h"
 #include "c-types.h"
@@ -191,11 +195,6 @@
 
 #ifndef MLTON_CODEGEN_STATIC_INLINE
 #define MLTON_CODEGEN_STATIC_INLINE static inline
-#endif
-/* Declare inlined math functions, since <math.h> isn't included.
- */
-#ifndef MLTON_CODEGEN_MATHFN
-#define MLTON_CODEGEN_MATHFN(decl) decl
 #endif
 #include "basis-ffi.h"
 #include "basis/coerce.h"
