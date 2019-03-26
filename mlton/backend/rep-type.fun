@@ -329,7 +329,12 @@ structure Type =
                case node t of
                   CPointer => C.CPointer
                 | GCState => C.CPointer
-                | Label _ => C.CPointer
+                | Label _ =>
+                     (case !Control.codegen of
+                         Control.Codegen.AMD64Codegen => C.CPointer
+                       | Control.Codegen.CCodegen => C.fromBits (width t)
+                       | Control.Codegen.LLVMCodegen => C.CPointer
+                       | Control.Codegen.X86Codegen => C.fromBits (width t))
                 | Real s =>
                      (case s of
                          RealSize.R32 => C.Real32
