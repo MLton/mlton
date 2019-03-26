@@ -164,7 +164,7 @@
 
 #define Return()                                                                \
         do {                                                                    \
-                nextBlock = *(uintptr_t*)(StackTop - sizeof(void*));            \
+                nextBlock = *(uintptr_t*)(StackTop - sizeof(uintptr_t));        \
                 if (DEBUG_CCODEGEN)                                             \
                         fprintf (stderr, "%s:%d: Return()  nextBlock = %d\n",   \
                                         __FILE__, __LINE__, (int)nextBlock);    \
