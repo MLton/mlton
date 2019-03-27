@@ -16,8 +16,7 @@
  * (`basis/Real/Real-ops.h` and `basis/Word/Word-ops.h`)
  */
 #include <string.h>
-/* Math functions used by `Real<n>_f` functions (`basis/Real/Real-ops.h` and
- * `basis/Real/Math-fns.h`).
+/* Math functions used by `Real<n>_f` functions (`basis/Real/Real-ops.h`).
  */
 #include <math.h>
 
@@ -200,7 +199,6 @@
 #include "basis/coerce.h"
 #include "basis/cpointer.h"
 #include "basis/Real/Real-ops.h"
-#include "basis/Real/Math-fns.h"
 #include "basis/Word/Word-ops.h"
 
 #endif /* #ifndef _C_CHUNK_H_ */

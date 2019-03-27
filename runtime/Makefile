@@ -328,9 +328,6 @@ gc.o:     $(GCCFILES)
 
 gc.c_XCFLAGS := -Wno-unreachable-code
 
-basis/Real/Math-pic.o:  basis/Real/Math-fns.h
-basis/Real/Math-gdb.o:  basis/Real/Math-fns.h
-basis/Real/Math.o:      basis/Real/Math-fns.h
 basis/Real/Real-pic.o:  basis/Real/Real-ops.h
 basis/Real/Real-gdb.o:  basis/Real/Real-ops.h
 basis/Real/Real.o:      basis/Real/Real-ops.h
