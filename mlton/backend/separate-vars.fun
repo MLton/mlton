@@ -54,15 +54,15 @@ structure Weight = struct
 
    structure DefLoc = struct
       datatype t
-         = LoopLocal
+         = FunArg
          | Local
-         | FunArg
+         | LoopLocal
 
       fun op < (t1, t2) =
          case (t1, t2) of
-               (LoopLocal, Local) => true
-             | (LoopLocal, FunArg) => true
-             | (Local, FunArg) => true
+               (FunArg, Local) => true
+             | (FunArg, LoopLocal) => true
+             | (Local, LoopLocal) => true
              | _ => false
       val equals = op =
    end
