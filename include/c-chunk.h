@@ -36,67 +36,8 @@
 #define DEBUG_CCODEGEN FALSE
 #endif
 
-#define GCState ((Pointer)&gcState)
-#define ExnStack *(size_t*)(GCState + ExnStackOffset)
-#define FrontierMem *(Pointer*)(GCState + FrontierOffset)
-#define Frontier frontier
-#define StackBottom *(Pointer*)(GCState + StackBottomOffset)
-#define StackTopMem *(Pointer*)(GCState + StackTopOffset)
-#define StackTop stackTop
-
 /* ------------------------------------------------- */
-/*                      Memory                       */
-/* ------------------------------------------------- */
-
-#define C(ty, x) (*(ty*)(x))
-#define G(ty, i) (global##ty [i])
-#define GPNR(i) G(ObjptrNonRoot, i)
-#define O(ty, b, o) (*(ty*)((b) + (o)))
-#define X(ty, b, i, s, o) (*(ty*)((b) + ((i) * (s)) + (o)))
-#define S(ty, i) (*(ty*)(StackTop + (i)))
-
-/* ------------------------------------------------- */
-/*                       Tests                       */
-/* ------------------------------------------------- */
-
-#define BZ(x, l)                                                        \
-        do {                                                            \
-                if (DEBUG_CCODEGEN)                                     \
-                        fprintf (stderr, "%s:%d: BZ(%llu, %s)\n", \
-                                        __FILE__, __LINE__, ((unsigned long long)x), #l);   \
-                if (0 == (x)) goto l;                                   \
-        } while (0)
-
-#define BNZ(x, l)                                                       \
-        do {                                                            \
-                if (DEBUG_CCODEGEN)                                     \
-                        fprintf (stderr, "%s:%d: BNZ(%llu, %s)\n",        \
-                                        __FILE__, __LINE__, ((unsigned long long)x), #l);   \
-                if (x) goto l;                                          \
-        } while (0)
-
-#define FlushFrontier()                         \
-        do {                                    \
-                FrontierMem = Frontier;         \
-        } while (0)
-
-#define FlushStackTop()                         \
-        do {                                    \
-                StackTopMem = StackTop;         \
-        } while (0)
-
-#define CacheFrontier()                         \
-        do {                                    \
-                Frontier = FrontierMem;         \
-        } while (0)
-
-#define CacheStackTop()                         \
-        do {                                    \
-                StackTop = StackTopMem;         \
-        } while (0)
-
-/* ------------------------------------------------- */
-/*                       Chunk                       */
+/* Chunk                                             */
 /* ------------------------------------------------- */
 
 #define Chunk(n)                                \
@@ -126,30 +67,53 @@
                         return nextBlock;                               \
         } /* end chunk */
 
-/* ------------------------------------------------- */
-/*                Calling SML from C                 */
-/* ------------------------------------------------- */
-
-#define Thread_returnToC()                                              \
-        do {                                                            \
-                if (DEBUG_CCODEGEN)                                     \
-                        fprintf (stderr, "%s:%d: Thread_returnToC()\n", \
-                                        __FILE__, __LINE__);            \
-                return (uintptr_t)-1;                                   \
-        } while (0)
 
 /* ------------------------------------------------- */
-/*                      FarGoto                      */
+/*  Operands                                         */
 /* ------------------------------------------------- */
 
-#define FarGoto(l)                              \
+#define C(ty, x) (*(ty*)(x))
+#define G(ty, i) (global##ty [i])
+#define GPNR(i) G(ObjptrNonRoot, i)
+#define O(ty, b, o) (*(ty*)((b) + (o)))
+#define X(ty, b, i, s, o) (*(ty*)((b) + ((i) * (s)) + (o)))
+#define S(ty, i) (*(ty*)(StackTop + (i)))
+
+#define GCState ((Pointer)&gcState)
+#define Frontier frontier
+#define StackTop stackTop
+
+#define ExnStack *(size_t*)(GCState + ExnStackOffset)
+#define FrontierMem *(Pointer*)(GCState + FrontierOffset)
+#define StackBottom *(Pointer*)(GCState + StackBottomOffset)
+#define StackTopMem *(Pointer*)(GCState + StackTopOffset)
+
+/* ------------------------------------------------- */
+/* Cache and Flush                                   */
+/* ------------------------------------------------- */
+
+#define CacheFrontier()                         \
         do {                                    \
-                nextBlock = l;                  \
-                goto doLeaveChunk;              \
+                Frontier = FrontierMem;         \
+        } while (0)
+
+#define CacheStackTop()                         \
+        do {                                    \
+                StackTop = StackTopMem;         \
+        } while (0)
+
+#define FlushFrontier()                         \
+        do {                                    \
+                FrontierMem = Frontier;         \
+        } while (0)
+
+#define FlushStackTop()                         \
+        do {                                    \
+                StackTopMem = StackTop;         \
         } while (0)
 
 /* ------------------------------------------------- */
-/*                       Stack                       */
+/* Stack                                             */
 /* ------------------------------------------------- */
 
 #define Push(bytes)                                                     \
@@ -158,6 +122,32 @@
                         fprintf (stderr, "%s:%d: Push (%d)\n",          \
                                         __FILE__, __LINE__, bytes);     \
                 StackTop += (bytes);                                    \
+        } while (0)
+
+/* ------------------------------------------------- */
+/* Transfers                                         */
+/* ------------------------------------------------- */
+
+#define BZ(x, l)                                                        \
+        do {                                                            \
+                if (DEBUG_CCODEGEN)                                     \
+                        fprintf (stderr, "%s:%d: BZ(%llu, %s)\n",       \
+                                        __FILE__, __LINE__, ((unsigned long long)x), #l);   \
+                if (0 == (x)) goto l;                                   \
+        } while (0)
+
+#define BNZ(x, l)                                                       \
+        do {                                                            \
+                if (DEBUG_CCODEGEN)                                     \
+                        fprintf (stderr, "%s:%d: BNZ(%llu, %s)\n",      \
+                                        __FILE__, __LINE__, ((unsigned long long)x), #l);   \
+                if (x) goto l;                                          \
+        } while (0)
+
+#define FarGoto(l)                              \
+        do {                                    \
+                nextBlock = l;                  \
+                goto doLeaveChunk;              \
         } while (0)
 
 #define Return()                                                                \
@@ -178,8 +168,21 @@
                 Return();                                                       \
         } while (0)                                                             \
 
+
 /* ------------------------------------------------- */
-/*                       Primitives                  */
+/* Calling SML from C                                */
+/* ------------------------------------------------- */
+
+#define Thread_returnToC()                                              \
+        do {                                                            \
+                if (DEBUG_CCODEGEN)                                     \
+                        fprintf (stderr, "%s:%d: Thread_returnToC()\n", \
+                                        __FILE__, __LINE__);            \
+                return (uintptr_t)-1;                                   \
+        } while (0)
+
+/* ------------------------------------------------- */
+/* Primitives                                        */
 /* ------------------------------------------------- */
 
 #ifndef MLTON_CODEGEN_STATIC_INLINE
