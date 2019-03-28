@@ -1097,16 +1097,13 @@ fun output {program as Machine.Program.T {chunks,
                end
          in
             outputIncludes (["c-chunk.h"], print)
-            ; outputOffsets ()
-            ; declareGlobals ("PRIVATE extern ", print)
-            ; declareFFI (chunk, {print = print})
-            ; declareProfileLabels ()
-            ; C.callNoSemi ("Chunk", [chunkLabelToString chunkLabel], print)
-            ; print "\n"
-            ; declareRegisters ()
-            ; C.callNoSemi ("ChunkSwitch", [chunkLabelToString chunkLabel],
-                            print)
-            ; print "\n"
+            ; declareFFI (chunk, {print = print}); print "\n"
+            ; declareProfileLabels (); print "\n"
+            ; outputOffsets (); print "\n"
+            ; declareGlobals ("PRIVATE extern ", print); print "\n"
+            ; C.callNoSemi ("Chunk", [chunkLabelToString chunkLabel], print); print "\n"
+            ; declareRegisters (); print "\n"
+            ; C.callNoSemi ("ChunkSwitch", [chunkLabelToString chunkLabel], print); print "\n"
             ; Vector.foreach (blocks, fn Block.T {kind, label, ...} =>
                               if Kind.isEntry kind
                                  then (print "case "
