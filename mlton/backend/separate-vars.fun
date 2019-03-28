@@ -51,7 +51,23 @@ fun shouldBounceAt (Block.T {kind, ...}) =
       | _ => false
 
 structure Weight = struct
-   type t = {depth: int, count: int, localDef: bool}
+
+   structure DefLoc = struct
+      datatype t
+         = LoopLocal
+         | Local
+         | FunArg
+
+      fun op < (t1, t2) =
+         case (t1, t2) of
+               (LoopLocal, Local) => true
+             | (LoopLocal, FunArg) => true
+             | (Local, FunArg) => true
+             | _ => false
+      val equals = op =
+   end
+
+   type t = {depth: int, count: int, localDef: DefLoc.t}
    fun inc ({depth, count, localDef}, depth') =
       if depth' > depth
          then {depth=depth', count=1, localDef=localDef}
@@ -59,17 +75,16 @@ structure Weight = struct
          then {depth=depth', count=count + 1, localDef=localDef}
       else {depth=depth, count=count, localDef=localDef}
    fun new depth =
-      {depth=depth, count=0, localDef=false}
+      {depth=depth, count=0, localDef=DefLoc.Local}
+
    fun op < ({depth=depth1, count=count1, localDef=localDef1},
              {depth=depth2, count=count2, localDef=localDef2}) =
-      if localDef2 andalso not localDef1
-         then true
-      else if Int.< (depth1, depth2)
-         then true
-      else if Int.< (count1, count2)
-         then true
-      else false
-   fun setLocalDef ({depth, count, localDef}, newLocalDef) =
+      Int.< (depth1, depth2)
+      orelse Int.equals (depth1, depth2)
+         andalso (DefLoc.< (localDef1, localDef2)
+            orelse DefLoc.equals (localDef1, localDef2)
+               andalso (Int.< (count1, count2)))
+   fun setLocalDef ({depth, count, localDef=_}, newLocalDef) =
       {depth=depth, count=count, localDef=newLocalDef}
 end
 
@@ -114,6 +129,14 @@ fun transformFunc func =
             else ())
       (* foreach arg, set Consider? need to tell it how to
        * avoid setting the original again *)
+      val _ = Vector.foreach (args,
+         fn (x, _) =>
+            case varInfo x of
+                 Consider w =>
+                  setVarInfo (x, Consider (Weight.setLocalDef (w,
+                     Weight.DefLoc.FunArg)))
+               | _ => ())
+
 
       val {get=labelInfo, ...} = Property.get
          (Label.plist, Property.initFun
@@ -155,7 +178,8 @@ fun transformFunc func =
               val _ = Block.foreachDef (block,
                   fn (v, _) =>
                      modVarInfo (v,
-                        fn w => Weight.setLocalDef (w, true)))
+                        fn w => Weight.inc (Weight.setLocalDef (w, 
+                           Weight.DefLoc.LoopLocal), depth)))
 
               val _ = Block.foreachUse (block,
                   fn v =>
