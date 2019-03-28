@@ -59,8 +59,6 @@
 /*                       Tests                       */
 /* ------------------------------------------------- */
 
-#define IsInt(p) (0x3 & (int)(p))
-
 #define BZ(x, l)                                                        \
         do {                                                            \
                 if (DEBUG_CCODEGEN)                                     \
