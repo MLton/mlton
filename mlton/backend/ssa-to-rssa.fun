@@ -1023,10 +1023,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                        Option.map (toRtype (varType x), fn t =>
                                                    (x, t))
                                   | NONE => NONE
-                              fun primApp prim =
+                              fun primApp (prim, args) =
                                  add (PrimApp {dst = dst (),
                                                prim = prim,
-                                               args = varOps args})
+                                               args = args})
                               datatype z = datatype Prim.Name.t
                               fun bumpAtomicState n =
                                  let
@@ -1104,19 +1104,21 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                             ty = ty},
                                       src = a 2})
                         end
-                     fun codegenOrC (p: Prim.t) =
+                     fun codegenOrC (p: Prim.t, args) =
                         let
                            val n = Prim.name p
                         in
                            if codegenImplementsPrim p
-                              then primApp p
+                              then primApp (p, args)
                            else (case Name.cFunction n of
                                     NONE =>
                                        Error.bug (concat ["SsaToRssa.codegenOrC: ",
                                                           "unimplemented prim:",
                                                           Name.toString n])
-                                  | SOME f => simpleCCall f)
+                                  | SOME func => ccall {args = args, func = func})
                         end
+                     fun simpleCodegenOrC (p: Prim.t) =
+                        codegenOrC (p, varOps args)
                      datatype z = datatype Prim.Name.t
                            in
                               case Prim.name prim of
@@ -1310,9 +1312,27 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                     (case toRtype (varType (arg 0)) of
                                         NONE => move (Operand.bool true)
                                       | SOME t =>
-                                           codegenOrC
-                                           (Prim.wordEqual
-                                            (WordSize.fromBits (Type.width t))))
+                                           let
+                                              val ws = WordSize.fromBits (Type.width t)
+                                              val wordEqual = Prim.wordEqual ws
+                                              val args = varOps args
+                                              val (prim, args) =
+                                                 case Type.toCType t of
+                                                    CType.CPointer =>
+                                                       (Prim.cpointerEqual, args)
+                                                  | CType.Objptr =>
+                                                       (wordEqual,
+                                                        Vector.map
+                                                        (args, fn arg =>
+                                                         Operand.cast (arg, Type.word ws)))
+                                                  | CType.Word8 => (wordEqual, args)
+                                                  | CType.Word16 => (wordEqual, args)
+                                                  | CType.Word32 => (wordEqual, args)
+                                                  | CType.Word64 => (wordEqual, args)
+                                                  | _ => Error.bug (concat ["SsaToRssa.translateStatementsTransfer: PrimApp,MLton_eq,", Layout.toString (Type.layout t)])
+                                           in
+                                              codegenOrC (prim, args)
+                                           end)
                                | MLton_installSignalHandler => none ()
                                | MLton_share =>
                                     (case toRtype (varType (arg 0)) of
@@ -1504,8 +1524,9 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                      end,
                                      none)
                                | Word_equal s =>
-                                    codegenOrC (Prim.wordEqual
-                                               (WordSize.roundUpToPrim s))
+                                    simpleCodegenOrC
+                                    (Prim.wordEqual
+                                     (WordSize.roundUpToPrim s))
                                | Word_toIntInf => cast ()
                                | Word_extdToWord (s1, s2, {signed}) =>
                                     if WordSize.equals (s1, s2)
@@ -1522,7 +1543,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                           if WordSize.equals (s1, s2)
                                              then cast ()
                                           else
-                                             codegenOrC
+                                             simpleCodegenOrC
                                              (Prim.wordExtdToWord
                                               (s1, s2, {signed = signed}))
                                        end
@@ -1546,7 +1567,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                | World_save =>
                                     simpleCCallWithGCState
                                     (CFunction.worldSave ())
-                               | _ => codegenOrC prim
+                               | _ => simpleCodegenOrC prim
                            end
                       | S.Exp.Select {base, offset} =>
                            (case var of
