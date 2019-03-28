@@ -51,22 +51,26 @@ fun shouldBounceAt (Block.T {kind, ...}) =
       | _ => false
 
 structure Weight = struct
-   type t = {depth: int, count: int}
-   fun inc ({depth, count}, depth') =
+   type t = {depth: int, count: int, localDef: bool}
+   fun inc ({depth, count, localDef}, depth') =
       if depth' > depth
-         then {depth=depth', count=1}
+         then {depth=depth', count=1, localDef=localDef}
       else if depth' = depth
-         then {depth=depth', count=count + 1}
-      else {depth=depth, count=count}
+         then {depth=depth', count=count + 1, localDef=localDef}
+      else {depth=depth, count=count, localDef=localDef}
    fun new depth =
-      {depth=depth, count=0}
-   fun op < ({depth=depth1, count=count1},
-             {depth=depth2, count=count2}) =
-      if Int.< (depth1, depth2)
+      {depth=depth, count=0, localDef=false}
+   fun op < ({depth=depth1, count=count1, localDef=localDef1},
+             {depth=depth2, count=count2, localDef=localDef2}) =
+      if localDef2 andalso not localDef1
+         then true
+      else if Int.< (depth1, depth2)
          then true
       else if Int.< (count1, count2)
          then true
       else false
+   fun setLocalDef ({depth, count, localDef}, newLocalDef) =
+      {depth=depth, count=count, localDef=newLocalDef}
 end
 
 datatype varinfo
@@ -137,22 +141,28 @@ fun transformFunc func =
           * increment its usage for each depth *)
          fun checkActiveVars depth (block as Block.T {label, ...}) =
            let
-              fun incVarInfo v =
+              fun modVarInfo (v, f) =
                  let
                     val newInfo =
                        case varInfo v of
                             Ignore => Ignore
-                          | Consider d => Consider (Weight.inc (d, depth))
+                          | Consider w => Consider (f w)
                           | Rewrite _ => Error.bug "Unexpected Rewrite"
                     val _ = setVarInfo (v, newInfo)
                  in
                     ()
                  end
+              val _ = Block.foreachDef (block,
+                  fn (v, _) =>
+                     modVarInfo (v,
+                        fn w => Weight.setLocalDef (w, true)))
+
               val _ = Block.foreachUse (block,
                   fn v =>
                      case n of
                           NONE => setRewrite (v, Weight.new 0)
-                        | SOME _ => incVarInfo v)
+                        | SOME _ => modVarInfo (v,
+                             fn w => Weight.inc (w, depth)))
               val _ = (#inLoop o labelInfo) label := true
            in
              ()
