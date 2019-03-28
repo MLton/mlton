@@ -99,17 +99,10 @@
 /*                       Chunk                       */
 /* ------------------------------------------------- */
 
-#if (defined (__sun__) && defined (REGISTER_FRONTIER_STACKTOP))
-#define Chunk(n)                                                \
-        DeclareChunk(n) {                                       \
-                register unsigned int frontier asm("g5");       \
-                register unsigned int stackTop asm("g6");
-#else
 #define Chunk(n)                                \
         DeclareChunk(n) {                       \
                 Pointer frontier;               \
                 Pointer stackTop;
-#endif
 
 #define ChunkSwitch(n)                                                  \
                 if (DEBUG_CCODEGEN)                                     \
