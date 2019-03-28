@@ -88,8 +88,7 @@ structure SsaToSsa2 = SsaToSsa2 (structure Ssa = Ssa
 structure Backend = Backend (structure Ssa = Ssa2
                              structure Machine = Machine
                              fun funcToLabel f = f)
-structure CCodegen = CCodegen (structure Ffi = Ffi
-                               structure Machine = Machine)
+structure CCodegen = CCodegen (structure Machine = Machine)
 structure LLVMCodegen = LLVMCodegen (structure CCodegen = CCodegen
                                      structure Machine = Machine)
 structure x86Codegen = x86Codegen (structure CCodegen = CCodegen
