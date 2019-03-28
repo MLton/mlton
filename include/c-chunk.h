@@ -64,16 +64,16 @@
 #define BZ(x, l)                                                        \
         do {                                                            \
                 if (DEBUG_CCODEGEN)                                     \
-                        fprintf (stderr, "%s:%d: BZ(%d, %s)\n", \
-                                        __FILE__, __LINE__, (x), #l);   \
+                        fprintf (stderr, "%s:%d: BZ(%llu, %s)\n", \
+                                        __FILE__, __LINE__, ((unsigned long long)x), #l);   \
                 if (0 == (x)) goto l;                                   \
         } while (0)
 
 #define BNZ(x, l)                                                       \
         do {                                                            \
                 if (DEBUG_CCODEGEN)                                     \
-                        fprintf (stderr, "%s:%d: BNZ(%d, %s)\n",        \
-                                        __FILE__, __LINE__, (x), #l);   \
+                        fprintf (stderr, "%s:%d: BNZ(%llu, %s)\n",        \
+                                        __FILE__, __LINE__, ((unsigned long long)x), #l);   \
                 if (x) goto l;                                          \
         } while (0)
 
