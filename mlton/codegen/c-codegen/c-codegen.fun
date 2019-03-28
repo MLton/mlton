@@ -553,7 +553,7 @@ fun declareFFI (Chunk.T {blocks, ...}, {print: string -> unit}) =
                | _ => ())
           val _ =
              case transfer of
-                Transfer.CCall {func, ...} =>
+                Transfer.CCall {func, return, ...} =>
                    let
                       datatype z = datatype CFunction.Target.t
                       val CFunction.T {target, ...} = func
@@ -562,7 +562,10 @@ fun declareFFI (Chunk.T {blocks, ...}, {print: string -> unit}) =
                          Direct "Thread_returnToC" => ()
                        | Direct name =>
                             doit (name, fn () =>
-                                  concat [CFunction.cPrototype func, ";\n"])
+                                  concat [case return of
+                                             NONE => "NORETURN "
+                                           | SOME _ => "",
+                                          CFunction.cPrototype func, ";\n"])
                        | Indirect => ()
                    end
               | _ => ()
@@ -915,7 +918,7 @@ fun output {program as Machine.Program.T {chunks,
                                  then print "\tReturn();\n"
                               else case return of
                                       SOME return => gotoLabel return
-                                    | NONE => print "\t/* NoReturn(); */\n"
+                                    | NONE => print "\tUnreachable();\n"
                         in
                            ()
                         end

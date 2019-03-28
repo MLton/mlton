@@ -36,6 +36,9 @@
 #define DEBUG_CCODEGEN FALSE
 #endif
 
+#define NORETURN __attribute__ ((noreturn))
+#define Unreachable() __builtin_unreachable()
+
 /* ------------------------------------------------- */
 /* Chunk                                             */
 /* ------------------------------------------------- */
