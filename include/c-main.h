@@ -17,7 +17,7 @@ static GC_frameIndex returnAddressToFrameIndex (GC_returnAddress ra) {
         return (GC_frameIndex)ra;
 }
 
-#define MLtonCallFromC                                                  \
+#define MLtonCallFromC()                                                \
 static void MLton_callFromC () {                                        \
         uintptr_t nextBlock;                                            \
         uintptr_t (*nextChunk)(uintptr_t);                              \
@@ -48,7 +48,6 @@ static void MLton_callFromC () {                                        \
 }
 
 #define MLtonMain(al, mg, mfs, mmc, pk, ps, ml)                         \
-MLtonCallFromC                                                          \
 PUBLIC int MLton_main (int argc, char* argv[]) {                        \
         uintptr_t nextBlock;                                            \
         uintptr_t (*nextChunk)(uintptr_t);                              \
@@ -83,7 +82,6 @@ PUBLIC int MLton_main (int argc, char* argv[]) {                        \
 }
 
 #define MLtonLibrary(al, mg, mfs, mmc, pk, ps, mc, ml)                  \
-MLtonCallFromC                                                          \
 PUBLIC void LIB_OPEN(LIBNAME) (int argc, char* argv[]) {                \
         uintptr_t nextBlock;                                            \
         uintptr_t (*nextChunk)(uintptr_t);                              \

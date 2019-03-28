@@ -233,10 +233,9 @@ fun creturn (t: Type.t): string =
    concat ["CReturn", CType.name (Type.toCType t)]
 
 fun outputIncludes (includes, print) =
-   (List.foreach (includes, fn i => (print "#include <";
-                                     print i;
-                                     print ">\n"))
-    ; print "\n")
+   List.foreach (includes, fn i => (print "#include <";
+                                    print i;
+                                    print ">\n"))
 
 fun declareProfileLabel (l, print) =
    C.call ("DeclareProfileLabel", [ProfileLabel.toString l], print)
@@ -482,20 +481,18 @@ fun outputDeclarations
              | SOME z => doit z
          end
    in
-      outputIncludes (includes, print)
-      ; declareGlobals ("PRIVATE ", print)
+      outputIncludes (includes, print); print "\n"
+      ; declareGlobals ("PRIVATE ", print); print "\n"
+      ; declareLoadSaveGlobals (); print "\n"
+      ; declareVectors (); print "\n"
+      ; declareReals (); print "\n"
+      ; declareFrameOffsets (); declareFrameLayouts (); print "\n"
+      ; declareObjectTypes (); print "\n"
+      ; declareProfileInfo (); print "\n"
+      ; declareAtMLtons (); print "\n"
+      ; rest (); print "\n"
+      ; declareMLtonMain (); declareMain (); print "\n"
       ; declareExports ()
-      ; declareLoadSaveGlobals ()
-      ; declareVectors ()
-      ; declareReals ()
-      ; declareFrameOffsets ()
-      ; declareFrameLayouts ()
-      ; declareObjectTypes ()
-      ; declareProfileInfo ()
-      ; declareAtMLtons ()
-      ; rest ()
-      ; declareMLtonMain ()
-      ; declareMain ()
    end
 
 structure Type =
@@ -1096,7 +1093,7 @@ fun output {program as Machine.Program.T {chunks,
                                   Option.app (default, visit)))
                end
          in
-            outputIncludes (["c-chunk.h"], print)
+            outputIncludes (["c-chunk.h"], print); print "\n"
             ; declareFFI (chunk, {print = print}); print "\n"
             ; declareProfileLabels (); print "\n"
             ; outputOffsets (); print "\n"
