@@ -119,21 +119,20 @@
                                         __FILE__, __LINE__, n, (int)nextBlock); \
                 CacheFrontier();                                        \
                 CacheStackTop();                                        \
-                while (1) {                                             \
                 doSwitchNextBlock:                                      \
                 switch (nextBlock) {
 
 #define EndChunkSwitch                                                  \
                 default:                                                \
+                        goto doLeaveChunk;                              \
+                } /* end switch (nextBlock) */
+
+#define EndChunk                                                        \
                 /* interchunk return */                                 \
                 doLeaveChunk:                                           \
                         FlushFrontier();                                \
                         FlushStackTop();                                \
                         return nextBlock;                               \
-                } /* end switch (nextBlock) */                          \
-                } /* end while (1) */
-
-#define EndChunk                                                        \
         } /* end chunk */
 
 /* ------------------------------------------------- */
