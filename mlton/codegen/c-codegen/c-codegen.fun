@@ -631,13 +631,13 @@ fun output {program as Machine.Program.T {chunks,
                               Property.initRaise ("index", Label.layout))
       val _ =
          Vector.foreachi (entryLabels, fn (i, l) => setLabelIndex (l, i))
-      fun labelToStringIndex (l: Label.t): string =
+      fun labelToStringIndex (l: Label.t, {pretty}): string =
          let
             val s = C.int (labelIndex l)
          in
-            if 0 = !Control.Native.commented
-               then s
-            else concat [s, " /* ", Label.toString l, " */"]
+            if pretty
+               then concat ["/* ", Label.toString l, " */ ", s]
+               else s
          end
       val handleMisaligned =
          let
@@ -689,7 +689,7 @@ fun output {program as Machine.Program.T {chunks,
                                   C.args [Type.toC (Global.ty g),
                                           Int.toString (Global.index g)]]
                   else concat ["GPNR", C.args [Int.toString (Global.index g)]]
-             | Label l => labelToStringIndex l
+             | Label l => labelToStringIndex (l, {pretty = true})
              | Null => "NULL"
              | Offset {base, offset, ty} =>
                   concat ["O", C.args [Type.toC ty,
@@ -737,13 +737,8 @@ fun output {program as Machine.Program.T {chunks,
                             let
                                fun call (): string =
                                   concat
-                                  [Prim.toString prim,
-                                   " (",
-                                   concat
-                                   (List.separate
-                                    (Vector.toListMap (args, fetchOperand),
-                                     ", ")),
-                                   ")"]
+                                  [Prim.toString prim, " ",
+                                   C.args (Vector.toListMap (args, fetchOperand))]
                                fun app (): string =
                                   case Prim.name prim of
                                      Prim.Name.FFI_Symbol {name, ...} =>
@@ -788,7 +783,7 @@ fun output {program as Machine.Program.T {chunks,
                                        {offset = Bytes.- (size, Runtime.labelSize ()),
                                         ty = Type.label return})),
                                dstIsMem = true,
-                               src = operandToString (Operand.Label return),
+                               src = labelToStringIndex (return, {pretty = true}),
                                srcIsMem = false,
                                ty = Type.label return})
                 ; C.push (size, print)
@@ -840,19 +835,13 @@ fun output {program as Machine.Program.T {chunks,
                   else (Vector.toListMap (args, fetchOperand),
                         fn () => ())
                end
-            val traceGotoLabel =
-               Trace.trace
-               ("CCodegen.gotoLabel",
-                Label.layout,
-                Unit.layout)
-            val gotoLabel =
-               traceGotoLabel
-               (fn l => print (concat ["\tgoto ", Label.toString l, ";\n"]))
+            fun gotoLabel (l, {tab}) =
+               print (concat [if tab then "\tgoto " else "goto ", Label.toString l, ";\n"])
             fun outputTransfer (t, source: Label.t) =
                let
                   fun iff (test, a, b) =
                      (C.call ("\tBNZ", [test, Label.toString a], print)
-                      ; gotoLabel b)
+                      ; gotoLabel (b, {tab = true}))
                   datatype z = datatype Transfer.t
                in
                   case t of
@@ -876,11 +865,11 @@ fun output {program as Machine.Program.T {chunks,
                                     end
                            val _ =
                               if CFunction.modifiesFrontier func
-                                 then print "\tFlushFrontier();\n"
+                                 then print "\tFlushFrontier ();\n"
                               else ()
                            val _ =
                               if CFunction.readsStackTop func
-                                 then print "\tFlushStackTop();\n"
+                                 then print "\tFlushStackTop ();\n"
                               else ()
                            val _ = print "\t"
                            val _ =
@@ -907,18 +896,18 @@ fun output {program as Machine.Program.T {chunks,
                            val _ = afterCall ()
                            val _ =
                               if CFunction.modifiesFrontier func
-                                 then print "\tCacheFrontier();\n"
+                                 then print "\tCacheFrontier ();\n"
                               else ()
                            val _ =
                               if CFunction.writesStackTop func
-                                 then print "\tCacheStackTop();\n"
+                                 then print "\tCacheStackTop ();\n"
                               else ()
                            val _ =
                               if CFunction.maySwitchThreads func
                                  then print "\tReturn();\n"
                               else case return of
-                                      SOME return => gotoLabel return
-                                    | NONE => print "\tUnreachable();\n"
+                                      SOME return => gotoLabel (return, {tab = true})
+                                    | NONE => print "\tUnreachable ();\n"
                         in
                            ()
                         end
@@ -932,13 +921,14 @@ fun output {program as Machine.Program.T {chunks,
                                     push (return, size)
                         in
                            if ChunkLabel.equals (labelChunk source, dstChunk)
-                              then gotoLabel label
-                           else
-                              C.call ("\tFarGoto",
-                                      [labelToStringIndex label],
-                                      print)
+                              then C.call ("\tNearCall",
+                                           [Label.toString label],
+                                           print)
+                              else C.call ("\tFarCall",
+                                           [labelToStringIndex (label, {pretty = true})],
+                                           print)
                         end
-                   | Goto dst => gotoLabel dst
+                   | Goto dst => gotoLabel (dst, {tab = true})
                    | Raise => C.call ("\tRaise", [], print)
                    | Return => C.call ("\tReturn", [], print)
                    | Switch switch =>
@@ -955,21 +945,21 @@ fun output {program as Machine.Program.T {chunks,
                                     (print "\tswitch ("
                                      ; print test
                                      ; print ") {\n"
-                                     ; (Vector.foreach
-                                        (cases, fn (n, l) => (print "\tcase "
-                                                              ; print n
-                                                              ; print ":\n\t"
-                                                              ; gotoLabel l)))
-                                     ; print "\tdefault:\n\t"
-                                     ; gotoLabel default
+                                     ; Vector.foreach
+                                       (cases, fn (n, l) => (print "\tcase "
+                                                             ; print n
+                                                             ; print ": "
+                                                             ; gotoLabel (l, {tab = false})))
+                                     ; print "\tdefault: "
+                                     ; gotoLabel (default, {tab = false})
                                      ; print "\t}\n")
                               in
                                  case (Vector.length cases, default) of
                                     (0, NONE) =>
                                        Error.bug "CCodegen.outputTransfers: Switch"
-                                  | (0, SOME l) => gotoLabel l
+                                  | (0, SOME l) => gotoLabel (l, {tab = true})
                                   | (1, NONE) =>
-                                       gotoLabel (#2 (Vector.sub (cases, 0)))
+                                       gotoLabel (#2 (Vector.sub (cases, 0)), {tab = true})
                                   | (_, NONE) =>
                                        switch (Vector.dropPrefix (cases, 1),
                                                #2 (Vector.sub (cases, 0)))
@@ -1107,9 +1097,9 @@ fun output {program as Machine.Program.T {chunks,
             ; Vector.foreach (blocks, fn Block.T {kind, label, ...} =>
                               if Kind.isEntry kind
                                  then (print "case "
-                                       ; print (labelToStringIndex label)
-                                       ; print ":\n"
-                                       ; gotoLabel label
+                                       ; print (labelToStringIndex (label, {pretty = false}))
+                                       ; print ": "
+                                       ; gotoLabel (label, {tab = false})
                                        ; visit label)
                               else ())
             ; print "EndChunkSwitch\n\n"
@@ -1118,7 +1108,7 @@ fun output {program as Machine.Program.T {chunks,
             ; done ()
          end
       val additionalMainArgs =
-         [labelToStringIndex label]
+         [labelToStringIndex (label, {pretty = true})]
       val {print, done, ...} = outputC ()
       fun rest () =
          (List.foreach (chunks, fn c => declareChunk (c, print))

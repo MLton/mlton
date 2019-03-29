@@ -147,7 +147,10 @@
                 if (x) goto l;                                          \
         } while (0)
 
-#define FarGoto(l)                              \
+#define NearCall(l)                             \
+        goto l
+
+#define FarCall(l)                              \
         do {                                    \
                 nextBlock = l;                  \
                 goto doLeaveChunk;              \
