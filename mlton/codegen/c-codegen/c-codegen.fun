@@ -839,9 +839,6 @@ fun output {program as Machine.Program.T {chunks,
                print (concat [if tab then "\tgoto " else "goto ", Label.toString l, ";\n"])
             fun outputTransfer (t, source: Label.t) =
                let
-                  fun iff (test, a, b) =
-                     (C.call ("\tBNZ", [test, Label.toString a], print)
-                      ; gotoLabel (b, {tab = true}))
                   datatype z = datatype Transfer.t
                in
                   case t of
@@ -933,61 +930,50 @@ fun output {program as Machine.Program.T {chunks,
                    | Return => C.call ("\tReturn", [], print)
                    | Switch switch =>
                         let
-                           fun bool (test: Operand.t, t, f) =
-                              iff (operandToString test, t, f)
-                           fun doit {cases: (string * Label.t) vector,
-                                     default: Label.t option,
-                                     test: Operand.t}: unit =
-                              let
-                                 val test = operandToString test
-                                 fun switch (cases: (string * Label.t) vector,
-                                             default: Label.t): unit =
-                                    (print "\tswitch ("
-                                     ; print test
-                                     ; print ") {\n"
-                                     ; Vector.foreach
-                                       (cases, fn (n, l) => (print "\tcase "
-                                                             ; print n
-                                                             ; print ": "
-                                                             ; gotoLabel (l, {tab = false})))
-                                     ; print "\tdefault: "
-                                     ; gotoLabel (default, {tab = false})
-                                     ; print "\t}\n")
-                              in
-                                 case (Vector.length cases, default) of
-                                    (0, NONE) =>
-                                       Error.bug "CCodegen.outputTransfers: Switch"
-                                  | (0, SOME l) => gotoLabel (l, {tab = true})
-                                  | (1, NONE) =>
-                                       gotoLabel (#2 (Vector.sub (cases, 0)), {tab = true})
-                                  | (_, NONE) =>
-                                       switch (Vector.dropPrefix (cases, 1),
-                                               #2 (Vector.sub (cases, 0)))
-                                  | (_, SOME l) => switch (cases, l)
-                              end
                            val Switch.T {cases, default, test, ...} = switch
-                           fun normal () =
-                              doit {cases = Vector.map (cases, fn (c, l) =>
-                                                        (WordX.toC c, l)),
-                                    default = default,
-                                    test = test}
+                           val test = operandToString test
+                           fun bnz (lnz, lz) =
+                              C.call ("\tBNZ", [test, Label.toString lnz, Label.toString lz], print)
+                           fun switch (cases: (WordX.t * Label.t) vector,
+                                       default: Label.t): unit =
+                              (print "\tswitch ("
+                               ; print test
+                               ; print ") {\n"
+                               ; Vector.foreach
+                                 (cases, fn (w, l) => (print "\tcase "
+                                                       ; print (WordX.toC w)
+                                                       ; print ": "
+                                                       ; gotoLabel (l, {tab = false})))
+                               ; print "\tdefault: "
+                               ; gotoLabel (default, {tab = false})
+                               ; print "\t}\n")
                         in
-                           if 2 = Vector.length cases
-                              andalso Option.isNone default
-                              then
+                           case (Vector.length cases, default) of
+                              (0, NONE) => Error.bug "CCodegen.outputTransfers: Switch"
+                            | (0, SOME ld) => gotoLabel (ld, {tab = true})
+                            | (1, NONE) => gotoLabel (#2 (Vector.sub (cases, 0)), {tab = true})
+                            | (1, SOME ld) =>
                                  let
-                                    val (c0, l0) = Vector.sub (cases, 0)
-                                    val (c1, l1) = Vector.sub (cases, 1)
-                                    val i0 = WordX.toIntInf c0
-                                    val i1 = WordX.toIntInf c1
+                                    val (w, l) = Vector.sub (cases, 0)
                                  in
-                                    if i0 = 0 andalso i1 = 1
-                                       then bool (test, l1, l0)
-                                    else if i0 = 1 andalso i1 = 0
-                                            then bool (test, l0, l1)
-                                         else normal ()
+                                    if WordX.isZero w
+                                       then bnz (ld, l)
+                                       else switch (cases, ld)
                                  end
-                           else normal ()
+                            | (2, NONE) =>
+                                 let
+                                    val (wa, la) = Vector.sub (cases, 0)
+                                    val (wb, lb) = Vector.sub (cases, 1)
+                                 in
+                                    if WordX.isZero wa
+                                       then bnz (lb, la)
+                                    else if WordX.isZero wb
+                                       then bnz (la, lb)
+                                    else switch (Vector.new1 (wa, la), lb)
+                                 end
+                            | (_, NONE) => switch (Vector.dropPrefix (cases, 1),
+                                                   #2 (Vector.first cases))
+                            | (_, SOME ld) => switch (cases, ld)
                         end
                end
             val tracePrintLabelCode =
