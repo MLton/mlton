@@ -971,8 +971,8 @@ fun output {program as Machine.Program.T {chunks,
                                        then bnz (la, lb)
                                     else switch (Vector.new1 (wa, la), lb)
                                  end
-                            | (_, NONE) => switch (Vector.dropPrefix (cases, 1),
-                                                   #2 (Vector.first cases))
+                            | (_, NONE) => switch (Vector.dropSuffix (cases, 1),
+                                                   #2 (Vector.last cases))
                             | (_, SOME ld) => switch (cases, ld)
                         end
                end
