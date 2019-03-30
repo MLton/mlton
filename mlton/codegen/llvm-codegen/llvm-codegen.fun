@@ -1132,45 +1132,27 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
             let
                 val Switch.T {cases, default, test, ...} = switch
                 val (testpre, testty, testreg) = getOperandValue (cxt, test)
-                fun branch (ifTrue, ifFalse) =
-                    let
-                        val testi1 = nextLLVMReg ()
-                        val trunc = mkconv (testi1, "trunc", testty, testreg, "i1")
-                        val br = concat ["\tbr i1 ", testi1,
-                                         ", label %", Label.toString ifTrue,
-                                         ", label %", Label.toString ifFalse, "\n"]
-                    in
-                        concat [comment, testpre, trunc, br]
-                    end
-                fun switch () =
-                    let
-                        val (switchCases, switchDefault) =
-                            case default of
-                                SOME d => (cases, "%" ^ Label.toString d)
-                              | NONE => (Vector.dropPrefix (cases, 1),
-                                         "%" ^ Label.toString (#2 (Vector.first cases)))
-                        val branches = String.concatV (Vector.map (switchCases, fn (w, l) =>
-                                           concat ["\t\t", llws (WordX.size w), " ", llwordx w,
-                                                   ", label %", Label.toString l, "\n"]))
-                        val switch = concat ["\tswitch ", testty, " ", testreg,
-                                             ", label ", switchDefault, " [\n", branches, "\t]\n"]
-                    in
-                        concat [comment, testpre, switch]
-                    end
+                val (default, extra) =
+                   case default of
+                      SOME d => (d, "")
+                    | NONE => let
+                                 val d = Label.newNoname ()
+                              in
+                                 (d,
+                                  concat ["\n",
+                                          Label.toString d, ":\n",
+                                          "\tunreachable\n"])
+                              end
             in
-                if Vector.length cases = 2 andalso Option.isNone default
-                then
-                    let
-                        val (c0, l0) = Vector.sub (cases, 0)
-                        val (c1, l1) = Vector.sub (cases, 1)
-                    in
-                        if WordX.isZero c0 andalso WordX.isOne c1
-                        then branch (l1, l0)
-                        else if WordX.isZero c1 andalso WordX.isZero c0
-                             then branch (l0, l1)
-                             else switch ()
-                    end
-                else switch ()
+               concat [comment, testpre,
+                       "\tswitch ", testty, " ", testreg,
+                       ", label %", Label.toString default, " [\n",
+                       String.concatV
+                       (Vector.map
+                        (cases, fn (w, l) =>
+                         concat ["\t\t", llws (WordX.size w), " ", llwordx w,
+                                 ", label %", Label.toString l, "\n"])),
+                       "\t]\n", extra]
             end
     end
 
