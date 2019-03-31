@@ -908,7 +908,7 @@ fun output {program as Machine.Program.T {chunks,
                                  then print "\tCacheStackTop ();\n"
                               else ()
                            val _ =
-                              if CFunction.maySwitchThreads func
+                              if CFunction.maySwitchThreadsFrom func
                                  then print "\tReturn();\n"
                               else case return of
                                       SOME return => gotoLabel (return, {tab = true})

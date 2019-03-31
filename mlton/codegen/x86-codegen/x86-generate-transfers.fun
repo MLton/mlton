@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -627,7 +627,7 @@ struct
                                             Assembly.label label],
                                            AppendList.fromList
                                            (ProfileLabel.toAssemblyOpt profileLabel),
-                                           if CFunction.maySwitchThreads func
+                                           if CFunction.maySwitchThreadsTo func
                                              then (* entry from far assumptions *)
                                                   farEntry finish
                                              else (* near entry & live transfer assumptions *)
@@ -1484,7 +1484,7 @@ struct
                                    size = pointerSize}))
                            else AppendList.empty
                      val continue
-                       = if CFunction.maySwitchThreads func
+                       = if CFunction.maySwitchThreadsFrom func
                            then (* Returning from runtime *)
                                 (farTransfer MemLocSet.empty
                                  AppendList.empty

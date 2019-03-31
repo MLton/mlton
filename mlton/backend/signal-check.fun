@@ -60,7 +60,7 @@ fun insertInFunction (f: Function.t): Function.t =
           in
              if (case transfer of
                     Transfer.CCall {func, ...} =>
-                       CFunction.maySwitchThreads func
+                       CFunction.maySwitchThreadsFrom func
                   | _ => false)
                 then ()
              else

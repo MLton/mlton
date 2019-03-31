@@ -1059,7 +1059,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                                        val cacheStackTopCode = if CFunction.writesStackTop func
                                                                then cacheStackTop ()
                                                                else ""
-                                       val br = if CFunction.maySwitchThreads func
+                                       val br = if CFunction.maySwitchThreadsFrom func
                                                 then callReturn ()
                                                 else concat ["\tbr label %", Label.toString l,
                                                              "\n"]
