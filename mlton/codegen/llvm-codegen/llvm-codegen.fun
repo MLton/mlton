@@ -1052,7 +1052,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                                        val storeResult = if Type.isUnit returnTy
                                                          then ""
                                                          else mkstore (llty returnTy, resultReg,
-                                                                       "@CReturn" ^ CType.name (Type.toCType returnTy))
+                                                                       "%CReturn" ^ CType.name (Type.toCType returnTy))
                                        val cacheFrontierCode = if CFunction.modifiesFrontier func
                                                                then cacheFrontier ()
                                                                else ""
@@ -1186,7 +1186,7 @@ fun outputBlock (cxt, block) =
                                                val llvmTy = llty ty
                                                val reg = nextLLVMReg ()
                                                val load = mkload (reg, llvmTy ^ "*",
-                                                                  "@CReturn" ^
+                                                                  "%CReturn" ^
                                                                   CType.name (Type.toCType ty))
                                                val (dstpre, dstty, dstreg) =
                                                    getOperandAddr (cxt, xop)
@@ -1217,8 +1217,7 @@ fun outputLLVMDeclarations (cxt, print, chunk) =
                           in
                               concat ["@global", s, " = external hidden global [",
                                       llint (Global.numberOfType t),
-                                      " x %", s, "]\n@CReturn", CType.name t,
-                                      " = external hidden global %", s, "\n"]
+                                      " x %", s, "]\n"]
                           end))
         val nonroot = concat ["@globalObjptrNonRoot = external hidden global [",
                               llint (Global.numberOfNonRoot ()),
@@ -1289,6 +1288,10 @@ fun outputChunk (cxt, outputLL, chunk) =
         val () = print "\t%frontier = alloca %Pointer\n"
         val () = print "\t%stackTop = alloca %Pointer\n"
         val () = print "\t%nextBlock = alloca %uintptr_t\n"
+        val () = List.foreach (CType.all,
+                               fn t =>
+                                  print (concat ["\t%CReturn", CType.name t,
+                                                 " = alloca %", CType.toString t, "\n"]))
         val () = List.foreach (CType.all,
                                fn t =>
                                   let

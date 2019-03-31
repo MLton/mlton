@@ -254,7 +254,6 @@ fun declareGlobals (prefix: string, print) =
           in
              print (concat [prefix, s, " global", s,
                             " [", C.int (Global.numberOfType t), "];\n"])
-             ; print (concat [prefix, s, " CReturn", CType.name t, ";\n"])
           end)
       val _ =
          print (concat [prefix, "Pointer globalObjptrNonRoot [",
@@ -573,6 +572,15 @@ fun declareFFI (Chunk.T {blocks, ...}, {print: string -> unit}) =
           ()
        end)
    end
+
+fun declareCReturns (print) =
+   List.foreach
+   (CType.all, fn t =>
+    let
+       val s = CType.toString t
+    in
+       print (concat ["\tUNUSED ", s, " CReturn", CType.name t, ";\n"])
+    end)
 
 fun output {program as Machine.Program.T {chunks,
                                           frameLayouts,
@@ -1078,6 +1086,7 @@ fun output {program as Machine.Program.T {chunks,
             ; outputOffsets (); print "\n"
             ; declareGlobals ("PRIVATE extern ", print); print "\n"
             ; C.callNoSemi ("Chunk", [chunkLabelToString chunkLabel], print); print "\n"
+            ; declareCReturns print; print "\n"
             ; declareRegisters (); print "\n"
             ; C.callNoSemi ("ChunkSwitch", [chunkLabelToString chunkLabel], print); print "\n"
             ; Vector.foreach (blocks, fn Block.T {kind, label, ...} =>

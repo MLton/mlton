@@ -36,6 +36,7 @@
 #define DEBUG_CCODEGEN FALSE
 #endif
 
+#define UNUSED __attribute__ ((unused))
 #define NORETURN __attribute__ ((noreturn))
 #define Unreachable() __builtin_unreachable()
 
