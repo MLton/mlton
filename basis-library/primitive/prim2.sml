@@ -51,7 +51,6 @@ local
    val _ =
       P.TopLevel.setSuffix
       (fn () => 
-       (P.MLton.halt 0
-        ; P.MLton.bug ("missing suffix in Basis Library")))
+       P.MLton.bug ("missing suffix in Basis Library"))
 in
 end
