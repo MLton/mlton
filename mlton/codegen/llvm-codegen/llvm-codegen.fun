@@ -1036,13 +1036,17 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                                                            (Vector.zip (paramTypes, paramRegs),
                                                             fn (t, p) => t ^ " " ^ p),
                                                        ", ")
+                                   val llatts =
+                                      case return of
+                                         NONE => " noreturn"
+                                       | SOME _ => ""
                                    val cfunc = concat [ty, " @", name, "(",
                                                        String.concatWith
                                                            ((Vector.toList paramTypes), ", "),
-                                                       ")"]
+                                                       ")", llatts]
                                    val () = addCFunction cfunc
                                in
-                                   concat [lhs, "call ", ty, " @", name, "(", llparams, ")\n"]
+                                   concat [lhs, "call ", ty, " @", name, "(", llparams, ")", llatts, "\n"]
                                end
                              | CFunction.Target.Indirect => (* TODO *) ""
                 val epilogue = case return of
