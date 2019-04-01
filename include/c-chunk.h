@@ -46,29 +46,29 @@
 
 #define Chunk(n)                                \
         DeclareChunk(n) {                       \
+                if (DEBUG_CCODEGEN)             \
+                        fprintf (stderr, "%s:%d: entering chunk %d  nextBlock = %d\n", \
+                                        __FILE__, __LINE__, n, (int)nextBlock); \
                 Pointer frontier;               \
                 Pointer stackTop;
 
-#define ChunkSwitch(n)                                                  \
-                if (DEBUG_CCODEGEN)                                     \
-                        fprintf (stderr, "%s:%d: entering chunk %d  nextBlock = %d\n", \
-                                        __FILE__, __LINE__, n, (int)nextBlock); \
-                CacheFrontier();                                        \
-                CacheStackTop();                                        \
-                doSwitchNextBlock:                                      \
+#define ChunkSwitch(n)                          \
+                CacheFrontier();                \
+                CacheStackTop();                \
+                doSwitchNextBlock:              \
                 switch (nextBlock) {
 
-#define EndChunkSwitch                                                  \
-                default:                                                \
-                        goto doLeaveChunk;                              \
+#define EndChunkSwitch                          \
+                default:                        \
+                        goto doLeaveChunk;      \
                 } /* end switch (nextBlock) */
 
-#define EndChunk                                                        \
-                /* interchunk return */                                 \
-                doLeaveChunk:                                           \
-                        FlushFrontier();                                \
-                        FlushStackTop();                                \
-                        return nextBlock;                               \
+#define EndChunk                                \
+                /* interchunk return */         \
+                doLeaveChunk:                   \
+                FlushFrontier();                \
+                FlushStackTop();                \
+                return nextBlock;               \
         } /* end chunk */
 
 
