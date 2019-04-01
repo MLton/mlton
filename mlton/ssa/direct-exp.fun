@@ -92,8 +92,7 @@ fun primApp {args, prim, targs, ty} =
                   ty = ty}
    in
       case Prim.name prim of
-         Prim.Name.MLton_halt => runtime ()
-       | Prim.Name.Thread_copyCurrent => runtime ()
+         Prim.Name.Thread_copyCurrent => runtime ()
        | _ => PrimApp {args = args,
                        prim = prim,
                        targs = targs,

@@ -884,14 +884,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                   datatype z = datatype Prim.Name.t
                in
                   case Prim.name prim of
-                     MLton_halt =>
-                           ([],
-                            Transfer.CCall
-                            {args = Vector.concat [Vector.new1 GCState,
-                                                   vos args],
-                             func = CFunction.halt (),
-                             return = NONE})
-                   | Thread_copyCurrent =>
+                     Thread_copyCurrent =>
                         let
                            val func = CFunction.copyCurrentThread ()
                            val l =
@@ -1356,6 +1349,9 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                            in
                                               codegenOrC (prim, args)
                                            end)
+                               | MLton_halt =>
+                                    simpleCCallWithGCState
+                                    (CFunction.halt ())
                                | MLton_installSignalHandler => none ()
                                | MLton_share =>
                                     (case toRtype (varType (arg 0)) of
