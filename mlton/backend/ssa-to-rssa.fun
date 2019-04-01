@@ -98,7 +98,7 @@ structure CFunction =
             convention = Cdecl,
             kind = Kind.Runtime {bytesNeeded = NONE,
                                  ensuresBytesFree = NONE,
-                                 mayGC = false,
+                                 mayGC = true,
                                  maySwitchThreadsFrom = false,
                                  maySwitchThreadsTo = false,
                                  modifiesFrontier = true,
