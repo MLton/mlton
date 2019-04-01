@@ -1369,7 +1369,7 @@ fun makeContext program =
               fun kindIsEntry kind =
                   case kind of
                       Kind.Cont _ => true
-                    | Kind.CReturn {func, ...} => CFunction.mayGC func
+                    | Kind.CReturn {func, ...} => CFunction.maySwitchThreadsTo func
                     | Kind.Func => true
                     | Kind.Handler _ => true
                     | _ => false

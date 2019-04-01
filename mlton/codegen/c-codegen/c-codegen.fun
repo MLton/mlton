@@ -30,7 +30,7 @@ structure Kind =
       fun isEntry (k: t): bool =
          case k of
             Cont _ => true
-          | CReturn {func, ...} => CFunction.mayGC func
+          | CReturn {func, ...} => CFunction.maySwitchThreadsTo func
           | Func => true
           | Handler _ => true
           | _ => false
