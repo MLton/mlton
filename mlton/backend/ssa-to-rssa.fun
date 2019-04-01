@@ -522,8 +522,7 @@ structure Name =
                end
          in
             case n of
-               MLton_bug => CFunction.bug ()
-             | Real_Math_acos s => realUnary s
+               Real_Math_acos s => realUnary s
              | Real_Math_asin s => realUnary s
              | Real_Math_atan s => realUnary s
              | Real_Math_atan2 s => realBinary s
@@ -1322,6 +1321,12 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                | IntInf_xorb =>
                                     simpleCCallWithGCState
                                     (CFunction.intInfBinary IntInf_xorb)
+                               | MLton_bug =>
+                                    loop
+                                    (i - 1, [],
+                                     Transfer.CCall {args = vos args,
+                                                     func = CFunction.bug (),
+                                                     return = NONE})
                                | MLton_bogus =>
                                     (case toRtype ty of
                                         NONE => none ()
