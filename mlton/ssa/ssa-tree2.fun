@@ -1112,7 +1112,7 @@ structure Transfer =
        | Return of Var.t vector
        | Runtime of {prim: Type.t Prim.t,
                      args: Var.t vector,
-                     return: Label.t} (* Must be nullary. *)
+                     return: Label.t}
 
       fun foreachFuncLabelVar (t, func: Func.t -> unit, label: Label.t -> unit, var) =
          let

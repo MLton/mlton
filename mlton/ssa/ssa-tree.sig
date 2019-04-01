@@ -183,7 +183,7 @@ signature SSA_TREE =
              | Return of Var.t vector
              | Runtime of {args: Var.t vector,
                            prim: Type.t Prim.t,
-                           return: Label.t} (* Must be nullary. *)
+                           return: Label.t}
 
             val equals: t * t -> bool
             val foreachFunc : t * (Func.t -> unit) -> unit
