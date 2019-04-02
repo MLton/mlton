@@ -143,7 +143,7 @@
 #define NearCall(l)                             \
         goto l
 
-#define FarCall(l)                              \
+#define FarCall(n, l)                           \
         do {                                    \
                 nextBlock = l;                  \
                 goto doLeaveChunk;              \

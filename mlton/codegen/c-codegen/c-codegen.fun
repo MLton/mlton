@@ -930,7 +930,8 @@ fun output {program as Machine.Program.T {chunks,
                                            [Label.toString label],
                                            print)
                               else C.call ("\tFarCall",
-                                           [labelToStringIndex (label, {pretty = true})],
+                                           [chunkLabelToString dstChunk,
+                                            labelToStringIndex (label, {pretty = true})],
                                            print)
                         end
                    | Goto dst => gotoLabel (dst, {tab = true})
