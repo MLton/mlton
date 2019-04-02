@@ -255,7 +255,6 @@ let
          in
             c
          end
-      val handlers = ref []
       (* Set funcChunk and labelChunk. *)
       val _ =
          Vector.foreach
@@ -462,8 +461,7 @@ let
              | Word w => M.Operand.Word w
              | WordVector v => globalVector v
          end
-      fun parallelMove {chunk = _,
-                        dsts: M.Operand.t vector,
+      fun parallelMove {dsts: M.Operand.t vector,
                         srcs: M.Operand.t vector}: M.Statement.t vector =
          let
             val moves =
@@ -685,7 +683,6 @@ let
             val returns =
                Option.map (returns, fn ts =>
                            callReturnStackOffsets (ts, fn t => t, Bytes.zero))
-            val chunk = funcChunk name
             fun labelArgOperands (l: R.Label.t): M.Operand.t vector =
                Vector.map (#args (labelInfo l), varOperand o #1)
             fun newVarInfo (x, ty: Type.t) =
@@ -839,7 +836,7 @@ let
             (* ------------------------------------------------- *)
             (*                    genTransfer                    *)
             (* ------------------------------------------------- *)
-            fun genTransfer (t: R.Transfer.t, chunk: Chunk.t)
+            fun genTransfer (t: R.Transfer.t)
                : M.Statement.t vector * M.Transfer.t =
                let
                   fun simple t = (Vector.new0 (), t)
@@ -882,8 +879,7 @@ let
                               (args, R.Operand.ty, frameSize)
                            val setupArgs =
                               parallelMove
-                              {chunk = chunk,
-                               dsts = Vector.map (dsts, M.Operand.StackOffset),
+                              {dsts = Vector.map (dsts, M.Operand.StackOffset),
                                srcs = translateOperands args}
                            val live =
                               Vector.concat [operandsLive contLive,
@@ -897,8 +893,7 @@ let
                         end
                    | R.Transfer.Goto {dst, args} =>
                         (parallelMove {srcs = translateOperands args,
-                                       dsts = labelArgOperands dst,
-                                       chunk = labelChunk dst},
+                                       dsts = labelArgOperands dst},
                          M.Transfer.Goto dst)
                    | R.Transfer.Raise srcs =>
                         (M.Statement.moves {dsts = Vector.map (valOf raises,
@@ -906,8 +901,7 @@ let
                                             srcs = translateOperands srcs},
                          M.Transfer.Raise)
                    | R.Transfer.Return xs =>
-                        (parallelMove {chunk = chunk,
-                                       dsts = Vector.map (valOf returns,
+                        (parallelMove {dsts = Vector.map (valOf returns,
                                                           M.Operand.StackOffset),
                                        srcs = translateOperands xs},
                          M.Transfer.Return)
@@ -933,7 +927,7 @@ let
                end
             val genTransfer =
                Trace.trace ("Backend.genTransfer",
-                            R.Transfer.layout o #1,
+                            R.Transfer.layout,
                             Layout.tuple2 (Vector.layout M.Statement.layout,
                                            M.Transfer.layout))
                genTransfer
@@ -950,7 +944,7 @@ let
                                     Vector.map (returns, Live.StackOffset))
                              in
                                 Chunk.newBlock
-                                (chunk, 
+                                (funcChunk name,
                                  {label = funcToLabel name,
                                   kind = M.Kind.Func,
                                   live = operandsLive live,
@@ -961,12 +955,11 @@ let
                              end
                      else ()
                   val {live, liveNoFormals, size, ...} = labelRegInfo label
-                  val chunk = labelChunk label
                   val statements =
                      Vector.concatV
                      (Vector.map (statements, fn s =>
                                   genStatement (s, handlerLinkOffset)))
-                  val (preTransfer, transfer) = genTransfer (transfer, chunk)   
+                  val (preTransfer, transfer) = genTransfer transfer
                   val (kind, live, pre) =
                      case kind of
                         R.Kind.Cont _ =>
@@ -978,8 +971,7 @@ let
                                             frameInfo = valOf (frameInfo label)},
                                liveNoFormals,
                                parallelMove
-                               {chunk = chunk,
-                                dsts = Vector.map (args, varOperand o #1),
+                               {dsts = Vector.map (args, varOperand o #1),
                                 srcs = Vector.map (srcs, M.Operand.StackOffset)})
                            end
                       | R.Kind.CReturn {func, ...} =>
@@ -1000,10 +992,6 @@ let
                            end
                       | R.Kind.Handler =>
                            let
-                              val _ =
-                                 List.push
-                                 (handlers, {chunkLabel = Chunk.label chunk,
-                                             label = label})
                               val dsts = Vector.map (args, varOperand o #1)
                               val handles =
                                  raiseOperands (Vector.map (dsts, M.Operand.ty))
@@ -1041,7 +1029,7 @@ let
                      Option.map (returns, fn returns =>
                                  Vector.map (returns, Live.StackOffset))
                in
-                  Chunk.newBlock (chunk,
+                  Chunk.newBlock (labelChunk label,
                                   {kind = kind,
                                    label = label,
                                    live = operandsLive live,
