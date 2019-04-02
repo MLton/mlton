@@ -232,7 +232,7 @@ fun toMachine (program: Ssa.Program.t, codegen) =
          end
       val program =
          Control.pass
-         {display = Control.Layouts Machine.Program.layouts,
+         {display = Control.Layouts M.Program.layouts,
           name = "toMachine",
           stats = fn _ => Layout.empty,
           style = Control.No,
@@ -269,11 +269,11 @@ let
       (* FrameInfo. *)
       local
          val frameLabels = ref []
-         val frameLayouts: Machine.FrameLayout.t list ref = ref []
+         val frameLayouts: M.FrameLayout.t list ref = ref []
          val frameLayoutsCounter = Counter.new 0
          val _ = IntSet.reset ()
          val table = HashSet.new {hash = Word.fromInt o #frameOffsetsIndex}
-         val frameOffsets: Machine.FrameOffsets.t list ref = ref []
+         val frameOffsets: M.FrameOffsets.t list ref = ref []
          val frameOffsetsCounter = Counter.new 0
          val {get = frameOffsetsIndex: IntSet.t -> int, ...} =
             Property.get
@@ -282,7 +282,7 @@ let
              (fn offsets =>
               let
                  val _ = List.push (frameOffsets,
-                                    Machine.FrameOffsets.T
+                                    M.FrameOffsets.T
                                     (QuickSort.sortVector
                                      (Vector.fromListMap
                                       (IntSet.toList offsets, Bytes.fromInt),
@@ -300,7 +300,7 @@ let
             in
                (frameLabels, frameLayouts, frameOffsets)
             end
-         fun getFrameLayoutsIndex {kind: Machine.FrameLayout.Kind.t,
+         fun getFrameLayoutsIndex {kind: M.FrameLayout.Kind.t,
                                    label: Label.t,
                                    offsets: Bytes.t list,
                                    size: Bytes.t}: int =
@@ -312,7 +312,7 @@ let
                   let
                      val _ =
                         List.push (frameLayouts,
-                                   Machine.FrameLayout.T
+                                   M.FrameLayout.T
                                    {frameOffsetsIndex = foi,
                                     kind = kind,
                                     size = size})
@@ -816,8 +816,8 @@ let
                                []
                          val kind =
                             case kind of
-                               R.Kind.CReturn _ => Machine.FrameLayout.Kind.C_FRAME
-                             | _ => Machine.FrameLayout.Kind.ML_FRAME
+                               R.Kind.CReturn _ => M.FrameLayout.Kind.C_FRAME
+                             | _ => M.FrameLayout.Kind.ML_FRAME
                          val frameLayoutsIndex =
                             getFrameLayoutsIndex {kind = kind,
                                                   label = label,
@@ -1095,9 +1095,9 @@ let
                    ()
                 end)
          in
-            Machine.Chunk.T {chunkLabel = chunkLabel,
-                             blocks = blocks,
-                             regMax = ! o regMax}
+            M.Chunk.T {chunkLabel = chunkLabel,
+                       blocks = blocks,
+                       regMax = ! o regMax}
          end
       val mainName = R.Function.name main
       val main = {chunkLabel = Chunk.label (funcChunk mainName),
@@ -1148,7 +1148,7 @@ let
       val maxFrameSize = Bytes.alignWord32 maxFrameSize
       val profileInfo = makeProfileInfo {frames = frameLabels}
       val program =
-         Machine.Program.T
+         M.Program.T
          {chunks = chunks,
           frameLayouts = frameLayouts,
           frameOffsets = frameOffsets,
@@ -1204,7 +1204,7 @@ let
                   in
                      Array.toVector a
                   end
-               val Machine.Program.T
+               val M.Program.T
                   {chunks, frameLayouts, frameOffsets,
                    handlesSignals, main, maxFrameSize,
                    objectTypes, profileInfo,
@@ -1213,14 +1213,14 @@ let
                val chunks = shuffle chunks
                val chunks =
                   Vector.map
-                  (chunks, fn Machine.Chunk.T {blocks, chunkLabel, regMax} =>
-                   Machine.Chunk.T
+                  (chunks, fn M.Chunk.T {blocks, chunkLabel, regMax} =>
+                   M.Chunk.T
                    {blocks = shuffle blocks,
                     chunkLabel = chunkLabel,
                     regMax = regMax})
                val chunks = Vector.toList chunks
             in
-               Machine.Program.T
+               M.Program.T
                {chunks = chunks,
                 frameLayouts = frameLayouts,
                 frameOffsets = frameOffsets,
