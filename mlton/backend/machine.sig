@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014 Matthew Fluet.
+(* Copyright (C) 2009,2014,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -249,9 +249,9 @@ signature MACHINE =
                      frameLayouts: {frameOffsetsIndex: int,
                                     isC: bool,
                                     size: Bytes.t} vector,
-                     (* Each vector in frame Offsets specifies the offsets
+                     (* Each vector in frameOffsets specifies the offsets
                       * of live pointers in a stack frame.  A vector is referred
-                      * to by index as the offsetsIndex in frameLayouts.
+                      * to by index as the frameOffsetsIndex in frameLayouts.
                       *)
                      frameOffsets: Bytes.t vector vector,
                      handlesSignals: bool,
