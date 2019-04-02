@@ -269,11 +269,11 @@ let
       (* FrameInfo. *)
       local
          val frameLabels = ref []
-         val frameLayouts = ref []
+         val frameLayouts: Machine.FrameLayout.t list ref = ref []
          val frameLayoutsCounter = Counter.new 0
          val _ = IntSet.reset ()
          val table = HashSet.new {hash = Word.fromInt o #frameOffsetsIndex}
-         val frameOffsets: Bytes.t vector list ref = ref []
+         val frameOffsets: Machine.FrameOffsets.t list ref = ref []
          val frameOffsetsCounter = Counter.new 0
          val {get = frameOffsetsIndex: IntSet.t -> int, ...} =
             Property.get
@@ -282,10 +282,11 @@ let
              (fn offsets =>
               let
                  val _ = List.push (frameOffsets,
-                                    QuickSort.sortVector
-                                    (Vector.fromListMap
-                                     (IntSet.toList offsets, Bytes.fromInt),
-                                     Bytes.<=))
+                                    Machine.FrameOffsets.T
+                                    (QuickSort.sortVector
+                                     (Vector.fromListMap
+                                      (IntSet.toList offsets, Bytes.fromInt),
+                                      Bytes.<=)))
               in
                  Counter.next frameOffsetsCounter
               end))
@@ -311,6 +312,7 @@ let
                   let
                      val _ =
                         List.push (frameLayouts,
+                                   Machine.FrameLayout.T
                                    {frameOffsetsIndex = foi,
                                     kind = kind,
                                     size = size})
@@ -1133,7 +1135,7 @@ let
                   | SOME (M.FrameInfo.T {frameLayoutsIndex, ...}) =>
                        Bytes.max
                        (max,
-                        #size (Vector.sub (frameLayouts, frameLayoutsIndex)))
+                        M.FrameLayout.size (Vector.sub (frameLayouts, frameLayoutsIndex)))
               val max =
                  Vector.fold
                  (statements, max, fn (s, max) =>
@@ -1148,12 +1150,8 @@ let
       val program =
          Machine.Program.T
          {chunks = chunks,
-          frameLayouts = Vector.map (frameLayouts, fn {frameOffsetsIndex, kind, size} =>
-                                     Machine.FrameLayout.T
-                                     {frameOffsetsIndex = frameOffsetsIndex,
-                                      kind = kind,
-                                      size = size}),
-          frameOffsets = Vector.map (frameOffsets, Machine.FrameOffsets.T),
+          frameLayouts = frameLayouts,
+          frameOffsets = frameOffsets,
           handlesSignals = handlesSignals,
           main = main,
           maxFrameSize = maxFrameSize,
