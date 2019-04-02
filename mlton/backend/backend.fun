@@ -936,17 +936,24 @@ let
                   val _ =
                      if Label.equals (label, start)
                         then let
-                                val live = #live (labelRegInfo start)
+                                val {liveNoFormals, ...} = (labelRegInfo start)
                                 val returns =
                                    Option.map
                                    (returns, fn returns =>
                                     Vector.map (returns, Live.StackOffset))
+                                val frameInfo =
+                                   M.FrameInfo.T
+                                   {frameLayoutsIndex =
+                                    getFrameLayoutsIndex {kind = M.FrameLayout.Kind.ML_FRAME,
+                                                          label = funcToLabel name,
+                                                          offsets = [],
+                                                          size = Bytes.zero}}
                              in
                                 Chunk.newBlock
                                 (funcChunk name,
                                  {label = funcToLabel name,
-                                  kind = M.Kind.Func,
-                                  live = operandsLive live,
+                                  kind = M.Kind.Func {frameInfo = frameInfo},
+                                  live = operandsLive liveNoFormals,
                                   raises = raises,
                                   returns = returns,
                                   statements = Vector.new0 (),

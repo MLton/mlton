@@ -580,7 +580,7 @@ structure Kind =
        | CReturn of {dst: Live.t option,
                      frameInfo: FrameInfo.t option,
                      func: Type.t CFunction.t}
-       | Func
+       | Func of {frameInfo: FrameInfo.t}
        | Handler of {frameInfo: FrameInfo.t,
                      handles: Live.t vector}
        | Jump
@@ -600,7 +600,10 @@ structure Kind =
                        [("dst", Option.layout Live.layout dst),
                         ("frameInfo", Option.layout FrameInfo.layout frameInfo),
                         ("func", CFunction.layout (func, Type.layout))]]
-             | Func => str "Func"
+             | Func {frameInfo} =>
+                  seq [str "Func ",
+                       record
+                       [("frameInfo", FrameInfo.layout frameInfo)]]
              | Handler {frameInfo, handles} =>
                   seq [str "Handler ",
                        record [("frameInfo", FrameInfo.layout frameInfo),
@@ -612,8 +615,9 @@ structure Kind =
       val frameInfoOpt =
          fn Cont {frameInfo, ...} => SOME frameInfo
           | CReturn {frameInfo, ...} => frameInfo
+          | Func {frameInfo, ...} => SOME frameInfo
           | Handler {frameInfo, ...} => SOME frameInfo
-          | _ => NONE
+          | Jump => NONE
    end
 
 structure Block =
@@ -896,7 +900,7 @@ structure Program =
                       Vector.foreach
                       (blocks, fn Block.T {kind, label, statements, ...} =>
                        if (case kind of
-                              Kind.Func => true
+                              Kind.Func _ => true
                             | _ => false)
                           orelse (0 < Vector.length statements
                                   andalso (case Vector.first statements of
@@ -1089,7 +1093,8 @@ structure Program =
                                                    (case frameInfo of
                                                        NONE => true
                                                      | SOME fi => doit fi)
-                                              | Kind.Func => true
+                                              | Kind.Func {frameInfo, ...} =>
+                                                   doit frameInfo
                                               | Kind.Handler {frameInfo, ...} =>
                                                    doit frameInfo
                                               | Kind.Jump => true
@@ -1200,7 +1205,10 @@ structure Program =
                                           | SOME z => Alloc.defineLive (alloc, z))
                            else NONE
                         end
-                   | Func => SOME alloc
+                   | Func {frameInfo, ...} =>
+                        if frame (frameInfo, false, FrameLayout.Kind.ML_FRAME)
+                           then SOME alloc
+                        else NONE
                    | Handler {frameInfo, ...} =>
                         if frame (frameInfo, false, FrameLayout.Kind.ML_FRAME)
                            then SOME alloc

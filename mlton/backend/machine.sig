@@ -183,7 +183,7 @@ signature MACHINE =
              | CReturn of {dst: Live.t option,
                            frameInfo: FrameInfo.t option,
                            func: Type.t CFunction.t}
-             | Func
+             | Func of {frameInfo: FrameInfo.t}
              | Handler of {frameInfo: FrameInfo.t,
                            handles: Live.t vector}
              | Jump

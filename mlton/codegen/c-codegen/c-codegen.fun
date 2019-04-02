@@ -31,7 +31,7 @@ structure Kind =
          case k of
             Cont _ => true
           | CReturn {func, ...} => CFunction.maySwitchThreadsTo func
-          | Func => true
+          | Func _ => true
           | Handler _ => true
           | _ => false
    end
@@ -583,7 +583,6 @@ fun declareCReturns (print) =
     end)
 
 fun output {program as Machine.Program.T {chunks,
-                                          frameLayouts,
                                           main = {label, ...}, ...},
             outputC: unit -> {file: File.t,
                               print: string -> unit,
@@ -591,12 +590,12 @@ fun output {program as Machine.Program.T {chunks,
    let
       val {get = labelInfo: Label.t -> {block: Block.t,
                                         chunkLabel: ChunkLabel.t,
+                                        index: int option,
                                         marked: bool ref},
            set = setLabelInfo, ...} =
          Property.getSetOnce
-         (Label.plist, Property.initRaise ("CCodeGen.info", Label.layout))
+         (Label.plist, Property.initRaise ("CCodeGen.labelInfo", Label.layout))
       val entryLabels: (Label.t * int) list ref = ref []
-      val indexCounter = Counter.new (Vector.length frameLayouts)
       val _ =
          List.foreach
          (chunks, fn Chunk.T {blocks, chunkLabel, ...} =>
@@ -605,23 +604,31 @@ fun output {program as Machine.Program.T {chunks,
            let
               fun entry (index: int) =
                  List.push (entryLabels, (label, index))
-              val _ =
+              val index =
                  case Kind.frameInfoOpt kind of
-                    NONE =>
-                       if Kind.isEntry kind
-                          then entry (Counter.next indexCounter)
-                          else ()
+                    NONE => NONE
                   | SOME (FrameInfo.T {frameLayoutsIndex, ...}) =>
-                       entry frameLayoutsIndex
+                       (entry frameLayoutsIndex
+                        ; SOME frameLayoutsIndex)
            in
               setLabelInfo (label, {block = block,
                                     chunkLabel = chunkLabel,
+                                    index = index,
                                     marked = ref false})
            end))
       val a = Array.fromList (!entryLabels)
       val () = QuickSort.sortArray (a, fn ((_, i), (_, i')) => i <= i')
       val entryLabels = Vector.map (Vector.fromArray a, #1)
       val labelChunk = #chunkLabel o labelInfo
+      val labelIndex = #index o labelInfo
+      fun labelIndexAsString (l, {pretty}) =
+         let
+            val s = C.int (valOf (labelIndex l))
+         in
+            if pretty
+               then concat ["/* ", Label.toString l, " */ ", s]
+               else s
+         end
       val {get = chunkLabelIndex: ChunkLabel.t -> int, ...} =
          Property.getSet (ChunkLabel.plist,
                           Property.initFun (let
@@ -629,24 +636,11 @@ fun output {program as Machine.Program.T {chunks,
                                             in
                                                fn _ => Counter.next c
                                             end))
-      val chunkLabelToString = C.int o chunkLabelIndex
+      val chunkLabelIndexAsString = C.int o chunkLabelIndex
       fun declareChunk (Chunk.T {chunkLabel, ...}, print) =
          C.call ("DeclareChunk",
-                 [chunkLabelToString chunkLabel],
+                 [chunkLabelIndexAsString chunkLabel],
                  print)
-      val {get = labelIndex, set = setLabelIndex, ...} =
-         Property.getSetOnce (Label.plist,
-                              Property.initRaise ("index", Label.layout))
-      val _ =
-         Vector.foreachi (entryLabels, fn (i, l) => setLabelIndex (l, i))
-      fun labelToStringIndex (l: Label.t, {pretty}): string =
-         let
-            val s = C.int (labelIndex l)
-         in
-            if pretty
-               then concat ["/* ", Label.toString l, " */ ", s]
-               else s
-         end
       val handleMisaligned =
          let
             open Control
@@ -697,7 +691,7 @@ fun output {program as Machine.Program.T {chunks,
                                   C.args [Type.toC (Global.ty g),
                                           Int.toString (Global.index g)]]
                   else concat ["GPNR", C.args [Int.toString (Global.index g)]]
-             | Label l => labelToStringIndex (l, {pretty = true})
+             | Label l => labelIndexAsString (l, {pretty = true})
              | Null => "NULL"
              | Offset {base, offset, ty} =>
                   concat ["O", C.args [Type.toC ty,
@@ -791,7 +785,7 @@ fun output {program as Machine.Program.T {chunks,
                                        {offset = Bytes.- (size, Runtime.labelSize ()),
                                         ty = Type.label return})),
                                dstIsMem = true,
-                               src = labelToStringIndex (return, {pretty = true}),
+                               src = labelIndexAsString (return, {pretty = true}),
                                srcIsMem = false,
                                ty = Type.label return})
                 ; C.push (size, print)
@@ -930,8 +924,8 @@ fun output {program as Machine.Program.T {chunks,
                                            [Label.toString label],
                                            print)
                               else C.call ("\tFarCall",
-                                           [chunkLabelToString dstChunk,
-                                            labelToStringIndex (label, {pretty = true})],
+                                           [chunkLabelIndexAsString dstChunk,
+                                            labelIndexAsString (label, {pretty = true})],
                                            print)
                         end
                    | Goto dst => gotoLabel (dst, {tab = true})
@@ -1022,7 +1016,7 @@ fun output {program as Machine.Program.T {chunks,
                                            srcIsMem = false,
                                            ty = ty}])
                                 end)))
-                      | Kind.Func => ()
+                      | Kind.Func _ => ()
                       | Kind.Handler {frameInfo, ...} => pop frameInfo
                       | Kind.Jump => ()
                   val _ =
@@ -1086,14 +1080,14 @@ fun output {program as Machine.Program.T {chunks,
             ; declareProfileLabels (); print "\n"
             ; outputOffsets (); print "\n"
             ; declareGlobals ("PRIVATE extern ", print); print "\n"
-            ; C.callNoSemi ("Chunk", [chunkLabelToString chunkLabel], print); print "\n"
+            ; C.callNoSemi ("Chunk", [chunkLabelIndexAsString chunkLabel], print); print "\n"
             ; declareCReturns print; print "\n"
             ; declareRegisters (); print "\n"
-            ; C.callNoSemi ("ChunkSwitch", [chunkLabelToString chunkLabel], print); print "\n"
+            ; C.callNoSemi ("ChunkSwitch", [chunkLabelIndexAsString chunkLabel], print); print "\n"
             ; Vector.foreach (blocks, fn Block.T {kind, label, ...} =>
                               if Kind.isEntry kind
                                  then (print "case "
-                                       ; print (labelToStringIndex (label, {pretty = false}))
+                                       ; print (labelIndexAsString (label, {pretty = false}))
                                        ; print ": "
                                        ; gotoLabel (label, {tab = false})
                                        ; visit label)
@@ -1104,7 +1098,7 @@ fun output {program as Machine.Program.T {chunks,
             ; done ()
          end
       val additionalMainArgs =
-         [labelToStringIndex (label, {pretty = true})]
+         [labelIndexAsString (label, {pretty = true})]
       val {print, done, ...} = outputC ()
       fun rest () =
          (List.foreach (chunks, fn c => declareChunk (c, print))
@@ -1115,7 +1109,7 @@ fun output {program as Machine.Program.T {chunks,
                             in
                                print "\t"
                                ; C.callNoSemi ("Chunkp",
-                                               [chunkLabelToString chunkLabel],
+                                               [chunkLabelIndexAsString chunkLabel],
                                                print)
                                ; print ",\n"
                             end)

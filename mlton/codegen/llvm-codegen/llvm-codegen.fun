@@ -1355,13 +1355,12 @@ fun outputChunk (cxt, outputLL, chunk) =
 
 fun makeContext program =
     let
-        val Program.T { chunks, frameLayouts, ...} = program
+        val Program.T { chunks, ...} = program
         val {get = labelInfo: Label.t -> {chunkLabel: ChunkLabel.t},
              set = setLabelInfo, ...} =
             Property.getSetOnce
                 (Label.plist, Property.initRaise ("LLVMCodeGen.info", Label.layout))
         val entryLabels: (Label.t * int) list ref = ref []
-        val indexCounter = Counter.new (Vector.length frameLayouts)
         val _ =
          List.foreach
          (chunks, fn Chunk.T {blocks, chunkLabel, ...} =>
@@ -1370,18 +1369,9 @@ fun makeContext program =
            let
               fun entry (index: int) =
                  List.push (entryLabels, (label, index))
-              fun kindIsEntry kind =
-                  case kind of
-                      Kind.Cont _ => true
-                    | Kind.CReturn {func, ...} => CFunction.maySwitchThreadsTo func
-                    | Kind.Func => true
-                    | Kind.Handler _ => true
-                    | _ => false
               val _ =
                  case Kind.frameInfoOpt kind of
-                    NONE => if kindIsEntry kind
-                               then entry (Counter.next indexCounter)
-                               else ()
+                    NONE => ()
                   | SOME (FrameInfo.T {frameLayoutsIndex, ...}) =>
                        entry frameLayoutsIndex
            in
