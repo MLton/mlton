@@ -998,9 +998,7 @@ fun output {program as Machine.Program.T {chunks,
                      case kind of
                         Kind.Cont {frameInfo, ...} => pop frameInfo
                       | Kind.CReturn {dst, frameInfo, ...} =>
-                           (case frameInfo of
-                               NONE => ()
-                             | SOME fi => pop fi
+                           (Option.app (frameInfo, pop)
                             ; (Option.app
                                (dst, fn x =>
                                 let
