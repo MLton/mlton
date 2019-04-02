@@ -588,6 +588,10 @@ fun output {program as Machine.Program.T {chunks,
                               print: string -> unit,
                               done: unit -> unit}} =
    let
+      val {get = chunkLabelInfo: ChunkLabel.t -> {index: int},
+           set = setChunkLabelInfo, ...} =
+         Property.getSetOnce
+         (ChunkLabel.plist, Property.initRaise ("CCodegen.chunkLabelInfo", ChunkLabel.layout))
       val {get = labelInfo: Label.t -> {block: Block.t,
                                         chunkLabel: ChunkLabel.t,
                                         index: int option,
@@ -597,25 +601,26 @@ fun output {program as Machine.Program.T {chunks,
          (Label.plist, Property.initRaise ("CCodeGen.labelInfo", Label.layout))
       val entryLabels: (Label.t * int) list ref = ref []
       val _ =
-         List.foreach
-         (chunks, fn Chunk.T {blocks, chunkLabel, ...} =>
-          Vector.foreach
-          (blocks, fn block as Block.T {kind, label, ...} =>
-           let
-              fun entry (index: int) =
-                 List.push (entryLabels, (label, index))
-              val index =
-                 case Kind.frameInfoOpt kind of
-                    NONE => NONE
-                  | SOME (FrameInfo.T {frameLayoutsIndex, ...}) =>
-                       (entry frameLayoutsIndex
-                        ; SOME frameLayoutsIndex)
-           in
-              setLabelInfo (label, {block = block,
-                                    chunkLabel = chunkLabel,
-                                    index = index,
-                                    marked = ref false})
-           end))
+         List.foreachi
+         (chunks, fn (i, Chunk.T {blocks, chunkLabel, ...}) =>
+          (setChunkLabelInfo (chunkLabel, {index = i});
+           Vector.foreach
+           (blocks, fn block as Block.T {kind, label, ...} =>
+            let
+               fun entry (index: int) =
+                  List.push (entryLabels, (label, index))
+               val index =
+                  case Kind.frameInfoOpt kind of
+                     NONE => NONE
+                   | SOME (FrameInfo.T {frameLayoutsIndex, ...}) =>
+                        (entry frameLayoutsIndex
+                         ; SOME frameLayoutsIndex)
+            in
+               setLabelInfo (label, {block = block,
+                                     chunkLabel = chunkLabel,
+                                     index = index,
+                                     marked = ref false})
+            end)))
       val a = Array.fromList (!entryLabels)
       val () = QuickSort.sortArray (a, fn ((_, i), (_, i')) => i <= i')
       val entryLabels = Vector.map (Vector.fromArray a, #1)
@@ -629,13 +634,7 @@ fun output {program as Machine.Program.T {chunks,
                then concat ["/* ", Label.toString l, " */ ", s]
                else s
          end
-      val {get = chunkLabelIndex: ChunkLabel.t -> int, ...} =
-         Property.getSet (ChunkLabel.plist,
-                          Property.initFun (let
-                                               val c = Counter.new 0
-                                            in
-                                               fn _ => Counter.next c
-                                            end))
+      val chunkLabelIndex = #index o chunkLabelInfo
       val chunkLabelIndexAsString = C.int o chunkLabelIndex
       fun declareChunk (Chunk.T {chunkLabel, ...}, print) =
          C.call ("DeclareChunk",
