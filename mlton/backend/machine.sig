@@ -242,18 +242,38 @@ signature MACHINE =
                               getProfileInfo: unit -> t}
          end
 
+      structure FrameOffsets:
+         sig
+            datatype t = T of Bytes.t vector
+            val layout: t -> Layout.t
+         end
+
+      structure FrameLayout:
+         sig
+            structure Kind:
+               sig
+                  datatype t = C_FRAME | ML_FRAME
+                  val layout: t -> Layout.t
+                  val toString: t -> string
+               end
+            datatype t = T of {frameOffsetsIndex: int,
+                               kind: Kind.t,
+                               size: Bytes.t}
+            val layout: t -> Layout.t
+            val size: t -> Bytes.t
+         end
+
       structure Program:
          sig
             datatype t =
                T of {chunks: Chunk.t list,
-                     frameLayouts: {frameOffsetsIndex: int,
-                                    isC: bool,
-                                    size: Bytes.t} vector,
-                     (* Each vector in frameOffsets specifies the offsets
-                      * of live pointers in a stack frame.  A vector is referred
-                      * to by index as the frameOffsetsIndex in frameLayouts.
+                     frameLayouts: FrameLayout.t vector,
+                     (* Each vector in frameOffsetss specifies the
+                      * offsets of live pointers in a stack frame.  A
+                      * vector is referred to by index as the
+                      * frameOffsetsIndex in a FrameLayout.
                       *)
-                     frameOffsets: Bytes.t vector vector,
+                     frameOffsets: FrameOffsets.t vector,
                      handlesSignals: bool,
                      main: {chunkLabel: ChunkLabel.t,
                             label: Label.t},

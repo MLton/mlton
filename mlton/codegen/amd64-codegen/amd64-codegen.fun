@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2010,2014 Matthew Fluet.
+(* Copyright (C) 2009-2010,2014,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -359,8 +359,9 @@ struct
         fun frameInfoToAMD64 (Machine.FrameInfo.T {frameLayoutsIndex, ...}) =
            amd64.FrameInfo.T
            {frameLayoutsIndex = frameLayoutsIndex,
-            size = Bytes.toInt (#size (Vector.sub (frameLayouts,
-                                                   frameLayoutsIndex)))}
+            size = Bytes.toInt (Machine.FrameLayout.size
+                                (Vector.sub (frameLayouts,
+                                             frameLayoutsIndex)))}
 
         fun outputChunk (chunk as Machine.Chunk.T {blocks, chunkLabel, ...},
                          print)

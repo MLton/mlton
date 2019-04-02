@@ -300,7 +300,7 @@ let
             in
                (frameLabels, frameLayouts, frameOffsets)
             end
-         fun getFrameLayoutsIndex {isC: bool,
+         fun getFrameLayoutsIndex {kind: Machine.FrameLayout.Kind.t,
                                    label: Label.t,
                                    offsets: Bytes.t list,
                                    size: Bytes.t}: int =
@@ -313,7 +313,7 @@ let
                      val _ =
                         List.push (frameLayouts,
                                    {frameOffsetsIndex = foi,
-                                    isC = isC,
+                                    kind = kind,
                                     size = size})
                      val _ = List.push (frameLabels, label)
                   in
@@ -337,13 +337,13 @@ let
                #frameLayoutsIndex
                (HashSet.lookupOrInsert
                 (table, Word.fromInt foi,
-                 fn {frameOffsetsIndex = foi', isC = isC', size = s', ...} =>
+                 fn {frameOffsetsIndex = foi', kind = kind', size = s', ...} =>
                  foi = foi'
-                 andalso isC = isC'
+                 andalso kind = kind'
                  andalso Bytes.equals (size, s'),
                  fn () => {frameLayoutsIndex = new (),
                            frameOffsetsIndex = foi,
-                           isC = isC,
+                           kind = kind,
                            size = size}))
             end
       end
@@ -815,12 +815,12 @@ let
                                     | _ => ac)
                             else
                                []
-                         val isC =
+                         val kind =
                             case kind of
-                               R.Kind.CReturn _ => true
-                             | _ => false
+                               R.Kind.CReturn _ => Machine.FrameLayout.Kind.C_FRAME
+                             | _ => Machine.FrameLayout.Kind.ML_FRAME
                          val frameLayoutsIndex =
-                            getFrameLayoutsIndex {isC = isC,
+                            getFrameLayoutsIndex {kind = kind,
                                                   label = label,
                                                   offsets = offsets,
                                                   size = size}
@@ -1160,8 +1160,12 @@ let
       val program =
          Machine.Program.T
          {chunks = chunks,
-          frameLayouts = frameLayouts,
-          frameOffsets = frameOffsets,
+          frameLayouts = Vector.map (frameLayouts, fn {frameOffsetsIndex, kind, size} =>
+                                     Machine.FrameLayout.T
+                                     {frameOffsetsIndex = frameOffsetsIndex,
+                                      kind = kind,
+                                      size = size}),
+          frameOffsets = Vector.map (frameOffsets, Machine.FrameOffsets.T),
           handlesSignals = handlesSignals,
           main = main,
           maxFrameSize = maxFrameSize,

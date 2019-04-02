@@ -318,7 +318,7 @@ fun outputDeclarations
           ; print "}\n")
       fun declareFrameOffsets () =
          Vector.foreachi
-         (frameOffsets, fn (i, v) =>
+         (frameOffsets, fn (i, FrameOffsets.T v) =>
           (print (concat ["static uint16_t frameOffsets", C.int i, "[] = {"])
            ; print (C.int (Vector.length v))
            ; Vector.foreach (v, fn i => (print ","; print (C.bytes i)))
@@ -333,9 +333,9 @@ fun outputDeclarations
           ; print "};\n")
       fun declareFrameLayouts () =
          declareArray ("struct GC_frameLayout", "frameLayouts", frameLayouts,
-                       fn (_, {frameOffsetsIndex, isC, size}) =>
+                       fn (_, FrameLayout.T {frameOffsetsIndex, kind, size}) =>
                        concat ["{",
-                               if isC then "C_FRAME" else "ML_FRAME",
+                               FrameLayout.Kind.toString kind,
                                ", frameOffsets", C.int frameOffsetsIndex,
                                ", ", C.bytes size,
                                "}"])

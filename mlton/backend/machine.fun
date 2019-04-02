@@ -420,6 +420,42 @@ structure Statement =
           | _ => a
    end
 
+structure FrameOffsets =
+   struct
+      datatype t = T of Bytes.t vector
+      fun layout (T offsets) =
+         Vector.layout Bytes.layout offsets
+   end
+
+structure FrameLayout =
+   struct
+      structure Kind =
+         struct
+            datatype t = C_FRAME | ML_FRAME
+            fun toString k =
+               case k of
+                  C_FRAME => "C_FRAME"
+                | ML_FRAME => "ML_FRAME"
+            val layout = Layout.str o toString
+         end
+      datatype t = T of {frameOffsetsIndex: int,
+                         kind: Kind.t,
+                         size: Bytes.t}
+      fun layout (T {frameOffsetsIndex, kind, size}) =
+         let
+            open Layout
+         in
+            record [("frameOffsetsIndex", Int.layout frameOffsetsIndex),
+                    ("kind", Kind.layout kind),
+                    ("size", Bytes.layout size)]
+         end
+      local
+         fun make f (T r) = f r
+      in
+         val size = make #size
+      end
+   end
+
 structure FrameInfo =
    struct
       datatype t = T of {frameLayoutsIndex: int}
@@ -769,10 +805,8 @@ structure ProfileInfo =
 structure Program =
    struct
       datatype t = T of {chunks: Chunk.t list,
-                         frameLayouts: {frameOffsetsIndex: int,
-                                        isC: bool,
-                                        size: Bytes.t} vector,
-                         frameOffsets: Bytes.t vector vector,
+                         frameLayouts: FrameLayout.t vector,
+                         frameOffsets: FrameOffsets.t vector,
                          handlesSignals: bool,
                          main: {chunkLabel: ChunkLabel.t,
                                 label: Label.t},
@@ -788,7 +822,7 @@ structure Program =
 
       fun frameSize (T {frameLayouts, ...},
                      FrameInfo.T {frameLayoutsIndex, ...}) =
-         #size (Vector.sub (frameLayouts, frameLayoutsIndex))
+         FrameLayout.size (Vector.sub (frameLayouts, frameLayoutsIndex))
 
       fun layouts (T {chunks, frameLayouts, frameOffsets, handlesSignals,
                       main = {label, ...},
@@ -802,15 +836,8 @@ structure Program =
                     [("handlesSignals", Bool.layout handlesSignals),
                      ("main", Label.layout label),
                      ("maxFrameSize", Bytes.layout maxFrameSize),
-                     ("frameOffsets",
-                      Vector.layout (Vector.layout Bytes.layout) frameOffsets),
-                     ("frameLayouts",
-                      Vector.layout (fn {frameOffsetsIndex, isC, size} =>
-                                     record [("frameOffsetsIndex",
-                                              Int.layout frameOffsetsIndex),
-                                             ("isC", Bool.layout isC),
-                                             ("size", Bytes.layout size)])
-                      frameLayouts)])
+                     ("frameOffsets", Vector.layout FrameOffsets.layout frameOffsets),
+                     ("frameLayouts", Vector.layout FrameLayout.layout frameLayouts)])
             ; Option.app (profileInfo, fn pi =>
                           (output (str "\nProfileInfo:")
                            ; ProfileInfo.layouts (pi, output)))
@@ -920,11 +947,11 @@ structure Program =
                               else false
                            end
                         end
-            fun getFrameInfo (FrameInfo.T {frameLayoutsIndex, ...}) =
+            fun getFrameLayout (FrameInfo.T {frameLayoutsIndex, ...}) =
                Vector.sub (frameLayouts, frameLayoutsIndex)
             val _ =
                Vector.foreach
-               (frameLayouts, fn {frameOffsetsIndex, size, ...} =>
+               (frameLayouts, fn FrameLayout.T {frameOffsetsIndex, size, ...} =>
                 Err.check
                 ("frameLayouts",
                  fn () => (0 <= frameOffsetsIndex
@@ -1045,8 +1072,9 @@ structure Program =
                                                 labelBlock l
                                              fun doit fi =
                                                 let
-                                                   val {size, ...} =
-                                                      getFrameInfo fi
+                                                   val size =
+                                                      FrameLayout.size
+                                                      (getFrameLayout fi)
                                                 in
                                                    Bytes.equals
                                                    (size,
@@ -1093,13 +1121,13 @@ structure Program =
                   exception No
                   fun frame (FrameInfo.T {frameLayoutsIndex},
                              useSlots: bool,
-                             isC: bool): bool =
+                             kind: FrameLayout.Kind.t): bool =
                      let
-                        val {frameOffsetsIndex, isC = isC', ...} =
+                        val FrameLayout.T {frameOffsetsIndex, kind = kind', ...} =
                            Vector.sub (frameLayouts, frameLayoutsIndex)
                            handle Subscript => raise No
                      in
-                        isC = isC'
+                        kind = kind'
                         andalso
                         (not useSlots
                          orelse
@@ -1117,7 +1145,7 @@ structure Program =
                             val liveOffsets = Array.fromList liveOffsets
                             val () = QuickSort.sortArray (liveOffsets, Bytes.<=)
                             val liveOffsets = Vector.fromArray liveOffsets
-                            val liveOffsets' =
+                            val FrameOffsets.T liveOffsets' =
                                Vector.sub (frameOffsets, frameOffsetsIndex)
                                handle Subscript => raise No
                          in
@@ -1127,7 +1155,7 @@ structure Program =
                      end handle No => false
                   fun slotsAreInFrame (fi: FrameInfo.t): bool =
                      let
-                        val {size, ...} = getFrameInfo fi
+                        val size = FrameLayout.size (getFrameLayout fi)
                      in
                         Alloc.forall
                         (alloc, fn z =>
@@ -1139,7 +1167,7 @@ structure Program =
                in
                   case k of
                      Cont {args, frameInfo} =>
-                        if frame (frameInfo, true, false)
+                        if frame (frameInfo, true, FrameLayout.Kind.ML_FRAME)
                            andalso slotsAreInFrame frameInfo
                            then SOME (Vector.fold
                                       (args, alloc, fn (z, alloc) =>
@@ -1158,13 +1186,13 @@ structure Program =
                                   then (case frameInfo of
                                            NONE => false
                                          | SOME fi =>
-                                              (frame (fi, true, true)
+                                              (frame (fi, true, FrameLayout.Kind.C_FRAME)
                                                andalso slotsAreInFrame fi))
                                else if !Control.profile = Control.ProfileNone
                                        then true
                                     else (case frameInfo of
                                              NONE => false
-                                           | SOME fi => frame (fi, false, true)))
+                                           | SOME fi => frame (fi, false, FrameLayout.Kind.C_FRAME)))
                         in
                            if ok
                               then SOME (case dst of
@@ -1174,7 +1202,7 @@ structure Program =
                         end
                    | Func => SOME alloc
                    | Handler {frameInfo, ...} =>
-                        if frame (frameInfo, false, false)
+                        if frame (frameInfo, false, FrameLayout.Kind.ML_FRAME)
                            then SOME alloc
                         else NONE
                    | Jump => SOME alloc
@@ -1261,7 +1289,7 @@ structure Program =
                         (case kind of
                             Kind.Cont {args, frameInfo, ...} =>
                                (if Bytes.equals (size,
-                                                 #size (getFrameInfo frameInfo))
+                                                 FrameLayout.size (getFrameLayout frameInfo))
                                    then
                                       SOME
                                       (live,
