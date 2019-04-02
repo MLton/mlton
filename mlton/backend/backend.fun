@@ -83,13 +83,12 @@ structure VarOperand =
           | Const oper => oper
    end
 
-structure IntSet = UniqueSet (val cacheSize: int = 1
-                              val bits: int = 14
-                              structure Element =
-                                 struct
-                                    open Int
-                                    fun hash n = Word.fromInt n
-                                 end)
+structure ByteSet = UniqueSet (val cacheSize: int = 1
+                               val bits: int = 14
+                               structure Element =
+                                  struct
+                                     open Bytes
+                                  end)
 
 structure Chunk =
    struct
@@ -271,21 +270,21 @@ let
          val frameLabels = ref []
          val frameLayouts: M.FrameLayout.t list ref = ref []
          val frameLayoutsCounter = Counter.new 0
-         val _ = IntSet.reset ()
+         val _ = ByteSet.reset ()
          val table = HashSet.new {hash = Word.fromInt o #frameOffsetsIndex}
          val frameOffsets: M.FrameOffsets.t list ref = ref []
          val frameOffsetsCounter = Counter.new 0
-         val {get = frameOffsetsIndex: IntSet.t -> int, ...} =
+         val {get = frameOffsetsIndex: ByteSet.t -> int, ...} =
             Property.get
-            (IntSet.plist,
+            (ByteSet.plist,
              Property.initFun
              (fn offsets =>
               let
                  val _ = List.push (frameOffsets,
                                     M.FrameOffsets.T
                                     (QuickSort.sortVector
-                                     (Vector.fromListMap
-                                      (IntSet.toList offsets, Bytes.fromInt),
+                                     (Vector.fromList
+                                      (ByteSet.toList offsets),
                                       Bytes.<=)))
               in
                  Counter.next frameOffsetsCounter
@@ -305,9 +304,7 @@ let
                                    offsets: Bytes.t list,
                                    size: Bytes.t}: int =
             let
-               val foi =
-                  frameOffsetsIndex (IntSet.fromList
-                                     (List.map (offsets, Bytes.toInt)))
+               val foi = frameOffsetsIndex (ByteSet.fromList offsets)
                fun new () =
                   let
                      val _ =
