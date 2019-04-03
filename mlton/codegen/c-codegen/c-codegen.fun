@@ -1094,6 +1094,8 @@ fun output {program as Machine.Program.T {chunks,
             ; print "EndChunk\n"
             ; done ()
          end
+      val _ = List.foreach (chunks, outputChunk)
+
       val additionalMainArgs =
          [labelIndexAsString (label, {pretty = true})]
       val {print, done, ...} = outputC ()
@@ -1118,7 +1120,6 @@ fun output {program as Machine.Program.T {chunks,
                              print = print,
                              rest = rest}
       val _ = done ()
-      val _ = List.foreach (chunks, outputChunk)
    in
       ()
    end
