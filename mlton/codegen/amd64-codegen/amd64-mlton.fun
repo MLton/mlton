@@ -1273,7 +1273,6 @@ struct
       end
 
   fun ccall {args: (amd64.Operand.t * amd64.Size.t) vector,
-             frameInfo,
              func,
              return: {return: amd64.Label.t, size: int option} option,
              transInfo = {...}: transInfo}
@@ -1302,7 +1301,6 @@ struct
            statements = [],
            transfer = SOME (Transfer.ccall 
                             {args = Vector.toList args,
-                             frameInfo = frameInfo,
                              func = func,
                              return = return})})]
       end

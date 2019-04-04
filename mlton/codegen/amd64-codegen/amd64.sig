@@ -1067,7 +1067,6 @@ signature AMD64 =
           | Return of {live: MemLocSet.t}
           | Raise of {live: MemLocSet.t}
           | CCall of {args: (Operand.t * Size.t) list,
-                      frameInfo: FrameInfo.t option,
                       func: RepType.t CFunction.t,
                       return: {return: Label.t,
                                size: int option} option}
@@ -1099,7 +1098,6 @@ signature AMD64 =
         val return : {live: MemLocSet.t} -> t 
         val raisee : {live: MemLocSet.t} -> t
         val ccall: {args: (Operand.t * Size.t) list,
-                    frameInfo: FrameInfo.t option,
                     func: RepType.t CFunction.t,
                     return: {return: Label.t,
                              size: int option} option} -> t

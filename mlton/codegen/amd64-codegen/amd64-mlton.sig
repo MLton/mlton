@@ -31,7 +31,6 @@ signature AMD64_MLTON =
 
     (* c call, and primitive assembly sequences. *)
     val ccall: {args: (amd64.Operand.t * amd64.Size.t) vector,
-                frameInfo: amd64.FrameInfo.t option,
                 func: RepType.t Machine.CFunction.t,
                 return: {return: amd64.Label.t, size: int option} option,
                 transInfo: transInfo} -> amd64.Block.t' AppendList.t

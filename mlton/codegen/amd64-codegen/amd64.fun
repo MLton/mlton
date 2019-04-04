@@ -3585,7 +3585,6 @@ struct
         | Return of {live: MemLocSet.t}
         | Raise of {live: MemLocSet.t}
         | CCall of {args: (Operand.t * Size.t) list,
-                    frameInfo: FrameInfo.t option,
                     func: RepType.t CFunction.t,
                     return: {return: Label.t,
                              size: int option} option}
@@ -3726,13 +3725,12 @@ struct
            => Switch {test = replacer {use = true, def = false} test,
                       cases = cases,
                       default = default}
-           | CCall {args, frameInfo, func, return}
+           | CCall {args, func, return}
            => CCall {args = List.map(args,
                                      fn (oper,size) => (replacer {use = true,
                                                                   def = false}
                                                                  oper,
                                                         size)),
-                     frameInfo = frameInfo,
                      func = func,
                      return = return}
            | transfer => transfer

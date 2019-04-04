@@ -1145,7 +1145,7 @@ struct
                          {target = amd64MLton.gcState_stackTopMinusWordDerefOperand (),
                           absolute = true})))
                     end
-                | CCall {args, frameInfo, func, return}
+                | CCall {args, func, return}
                 => let
                      datatype z = datatype CFunction.Convention.t
                      datatype z = datatype CFunction.SymbolScope.t
@@ -1594,7 +1594,9 @@ struct
                          amd64.Assembly.directive_unreserve
                          {registers = List.map (reg_args, #2)}]
                      val kill
-                       = if isSome frameInfo
+                       = if (case return of
+                                SOME {size = SOME _, ...} => true
+                              | _ => false)
                            then AppendList.single
                                 (Assembly.directive_force
                                  {commit_memlocs = MemLocSet.empty,

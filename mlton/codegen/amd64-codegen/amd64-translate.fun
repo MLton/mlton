@@ -584,8 +584,7 @@ struct
             else AppendList.empty
 
 
-      fun toAMD64Blocks {returns, transfer,
-                       transInfo as {frameInfoToAMD64, ...}: transInfo}
+      fun toAMD64Blocks {returns, transfer, transInfo: transInfo}
         = (case transfer
              of CCall {args, frameInfo, func, return}
               => let
@@ -595,8 +594,6 @@ struct
                    AppendList.append
                    (comments transfer,  
                     amd64MLton.ccall {args = args,
-                                    frameInfo = (Option.map
-                                                 (frameInfo, frameInfoToAMD64)),
                                     func = func,
                                     return = Option.map (return, fn {return, size} =>
                                                          {return = return,
