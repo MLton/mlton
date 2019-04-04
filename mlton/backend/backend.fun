@@ -629,7 +629,6 @@ let
                   (globalVector
                    (WordXVector.fromString
                     "backend thought control shouldn't reach here"))),
-          frameInfo = NONE,
           func = Type.BuiltInCFunction.bug (),
           return = NONE}
       val {get = labelInfo: Label.t -> {args: (Var.t * Type.t) vector},
@@ -843,22 +842,20 @@ let
                   case t of
                      R.Transfer.CCall {args, func, return} =>
                         let
-                           val (frameInfo, return) =
+                           val return =
                               case return of
-                                 NONE => (NONE, NONE)
+                                 NONE => NONE
                                | SOME return =>
                                     let
                                        val fio = frameInfo return
                                        val {size, ...} = labelRegInfo return
                                     in
-                                       (fio,
                                         SOME {return = return,
-                                              size = Option.map (fio, fn _ => size)})
+                                              size = Option.map (fio, fn _ => size)}
                                     end
                         in
                            simple (M.Transfer.CCall
                                    {args = translateOperands args,
-                                    frameInfo = frameInfo,
                                     func = func,
                                     return = return})
                         end

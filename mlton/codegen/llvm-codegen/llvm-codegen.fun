@@ -1005,7 +1005,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
             end
     in
         case transfer of
-            Transfer.CCall {args, frameInfo, func, return} =>
+            Transfer.CCall {args, func, return} =>
             let
                 val CFunction.T {return = returnTy,
                                  target, ...} = func

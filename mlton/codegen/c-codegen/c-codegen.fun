@@ -843,7 +843,7 @@ fun output {program as Machine.Program.T {chunks,
                   datatype z = datatype Transfer.t
                in
                   case t of
-                     CCall {args, frameInfo, func, return} =>
+                     CCall {args, func, return} =>
                         let
                            val CFunction.T {return = returnTy,
                                             target, ...} = func

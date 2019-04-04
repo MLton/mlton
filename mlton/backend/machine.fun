@@ -520,7 +520,6 @@ structure Transfer =
    struct
       datatype t =
          CCall of {args: Operand.t vector,
-                   frameInfo: FrameInfo.t option,
                    func: Type.t CFunction.t,
                    return: {return: Label.t,
                             size: Bytes.t option} option}
@@ -539,11 +538,10 @@ structure Transfer =
             open Layout
          in
             case t of
-               CCall {args, frameInfo, func, return} =>
+               CCall {args, func, return} =>
                   seq [str "CCall ",
                        record
                        [("args", Vector.layout Operand.layout args),
-                        ("frameInfo", Option.layout FrameInfo.layout frameInfo),
                         ("func", CFunction.layout (func, Type.layout)),
                         ("return", Option.layout
                          (fn {return, size} =>
@@ -1398,7 +1396,7 @@ structure Program =
                   datatype z = datatype Transfer.t
                in
                   case t of
-                     CCall {args, frameInfo = fi, func, return} =>
+                     CCall {args, func, return} =>
                         let
                            val _ = checkOperands (args, alloc)
                         in
@@ -1418,13 +1416,11 @@ structure Program =
                                     andalso
                                     case labelKind return of
                                        Kind.CReturn
-                                       {frameInfo = fi', func = f, ...} => 
+                                       {frameInfo = fi, func = f, ...} =>
                                           CFunction.equals (func, f)
                                           andalso (Option.equals
-                                                   (size, Option.map (fi', FrameLayout.size o getFrameLayout),
+                                                   (size, Option.map (fi, FrameLayout.size o getFrameLayout),
                                                     Bytes.equals))
-                                          andalso (Option.equals
-                                                   (fi, fi', FrameInfo.equals))
                                      | _ => false
                                  end
                         end

@@ -154,7 +154,6 @@ signature MACHINE =
          sig
             datatype t =
                CCall of {args: Operand.t vector,
-                         frameInfo: FrameInfo.t option,
                          func: Type.t CFunction.t,
                          return: {return: Label.t (* must be CReturn *),
                                   size: Bytes.t option} option}

@@ -586,7 +586,7 @@ struct
 
       fun toAMD64Blocks {returns, transfer, transInfo: transInfo}
         = (case transfer
-             of CCall {args, frameInfo, func, return}
+             of CCall {args, func, return}
               => let
                    val args = (Vector.concatV o Vector.map)
                               (args, Operand.toAMD64Operand)
