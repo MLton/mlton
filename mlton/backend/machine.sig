@@ -156,17 +156,14 @@ signature MACHINE =
                CCall of {args: Operand.t vector,
                          frameInfo: FrameInfo.t option,
                          func: Type.t CFunction.t,
-                         (* return is NONE iff the func doesn't return.
-                          * Else, return must be SOME l, where l is of CReturn
-                          * kind with a matching func.
-                          *)
-                         return: Label.t option}
-             | Call of {label: Label.t, (* label must be a Func *)
+                         return: {return: Label.t (* must be CReturn *),
+                                  size: Bytes.t option} option}
+             | Call of {label: Label.t, (* must be kind Func *)
                         live: Live.t vector,
-                        return: {return: Label.t,
-                                 handler: Label.t option,
+                        return: {return: Label.t (* must be kind Cont *),
+                                 handler: Label.t option (* must be kind Handler*),
                                  size: Bytes.t} option}
-             | Goto of Label.t (* label must be a Jump *)
+             | Goto of Label.t (* must be kind Jump *)
              | Raise
              | Return
              | Switch of Switch.t

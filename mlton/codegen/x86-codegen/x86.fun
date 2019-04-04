@@ -3804,7 +3804,8 @@ struct
         | CCall of {args: (Operand.t * Size.t) list,
                     frameInfo: FrameInfo.t option,
                     func: RepType.t CFunction.t,
-                    return: Label.t option}
+                    return: {return: Label.t,
+                             size: int option} option}
 
       val toString
         = fn Goto {target}
@@ -3889,7 +3890,13 @@ struct
                       (List.map(args, fn (oper,_) => Operand.toString oper),
                        ", "),
                       ") <",
-                      Option.toString Label.toString return,
+                      Option.toString (fn {return, size} =>
+                                       concat ["(",
+                                               Label.toString return,
+                                               ", ",
+                                               Option.toString Int.toString size,
+                                               ")"])
+                                      return,
                       ">"]
 
       val uses_defs_kills
@@ -3919,7 +3926,7 @@ struct
            | CCall {return, ...} 
            => (case return of
                  NONE => []
-               | SOME l => [l])
+               | SOME {return, ...} => [return])
            | _ => []
 
       val live

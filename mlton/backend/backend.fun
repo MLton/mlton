@@ -842,13 +842,26 @@ let
                in
                   case t of
                      R.Transfer.CCall {args, func, return} =>
-                        simple (M.Transfer.CCall
-                                {args = translateOperands args,
-                                 frameInfo = (case return of
-                                                 NONE => NONE
-                                               | SOME l => frameInfo l),
-                                 func = func,
-                                 return = return})
+                        let
+                           val (frameInfo, return) =
+                              case return of
+                                 NONE => (NONE, NONE)
+                               | SOME return =>
+                                    let
+                                       val fio = frameInfo return
+                                       val {size, ...} = labelRegInfo return
+                                    in
+                                       (fio,
+                                        SOME {return = return,
+                                              size = Option.map (fio, fn _ => size)})
+                                    end
+                        in
+                           simple (M.Transfer.CCall
+                                   {args = translateOperands args,
+                                    frameInfo = frameInfo,
+                                    func = func,
+                                    return = return})
+                        end
                    | R.Transfer.Call {func, args, return} =>
                         let
                            datatype z = datatype R.Return.t

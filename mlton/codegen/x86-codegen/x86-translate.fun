@@ -610,7 +610,9 @@ struct
                                     frameInfo = (Option.map
                                                  (frameInfo, frameInfoToX86)),
                                     func = func,
-                                    return = return,
+                                    return = Option.map (return, fn {return, size} =>
+                                                         {return = return,
+                                                          size = Option.map (size, Bytes.toInt)}),
                                     transInfo = transInfo})
                  end
               | Return

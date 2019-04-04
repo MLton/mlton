@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -32,7 +33,8 @@ signature X86_MLTON =
     val ccall: {args: (x86.Operand.t * x86.Size.t) vector,
                 frameInfo: x86.FrameInfo.t option,
                 func: RepType.t Machine.CFunction.t,
-                return: x86.Label.t option,
+                return: {return: x86.Label.t,
+                         size: int option} option,
                 transInfo: transInfo} -> x86.Block.t' AppendList.t
     val creturn: {dsts: (x86.Operand.t * x86.Size.t) vector,
                   frameInfo: x86.FrameInfo.t option,

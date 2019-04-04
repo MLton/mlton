@@ -283,7 +283,7 @@ struct
                       | Raise {...}
                       => ()
                       | CCall {return, ...}
-                      => Option.app (return, doit)
+                      => Option.app (return, doit o #return)
                  end)
 
         val _
@@ -961,8 +961,8 @@ struct
                          => ()
                          | CCall {func, return, ...}
                          => if CFunction.maySwitchThreadsFrom func
-                              then Option.app (return, doit'')
-                            else Option.app (return, doit''' func)
+                              then Option.app (return, doit'' o #return)
+                            else Option.app (return, doit''' func o #return)
                     end
             end
 
@@ -1078,8 +1078,8 @@ struct
                        => ()
                        | CCall {func, return, ...}
                        => if CFunction.maySwitchThreadsFrom func
-                            then Option.app (return, doit'')
-                            else Option.app (return, doit')
+                            then Option.app (return, doit'' o #return)
+                            else Option.app (return, doit' o #return)
                   end
             in
               case !defed

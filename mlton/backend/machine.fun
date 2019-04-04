@@ -522,7 +522,8 @@ structure Transfer =
          CCall of {args: Operand.t vector,
                    frameInfo: FrameInfo.t option,
                    func: Type.t CFunction.t,
-                   return: Label.t option}
+                   return: {return: Label.t,
+                            size: Bytes.t option} option}
        | Call of {label: Label.t,
                   live: Live.t vector,
                   return: {return: Label.t,
@@ -544,7 +545,11 @@ structure Transfer =
                        [("args", Vector.layout Operand.layout args),
                         ("frameInfo", Option.layout FrameInfo.layout frameInfo),
                         ("func", CFunction.layout (func, Type.layout)),
-                        ("return", Option.layout Label.layout return)]]
+                        ("return", Option.layout
+                         (fn {return, size} =>
+                          record [("return", Label.layout return),
+                                  ("size", Option.layout Bytes.layout size)])
+                         return)]]
              | Call {label, live, return} => 
                   seq [str "Call ", 
                        record [("label", Label.layout label),
@@ -1292,7 +1297,7 @@ structure Program =
                let
                   val Block.T {kind, live, ...} = labelBlock cont
                in
-                  if Vector.forall (live, fn z => Alloc.doesDefine (alloc, z))
+                  if liveIsOk (live, alloc)
                      then
                         (case kind of
                             Kind.Cont {args, frameInfo, ...} =>
@@ -1405,24 +1410,26 @@ structure Program =
                            andalso
                            case return of
                               NONE => true
-                            | SOME l =>
+                            | SOME {return, size} =>
                                  let 
-                                    val Block.T {live, ...} = labelBlock l
+                                    val Block.T {live, ...} = labelBlock return
                                  in
                                     liveIsOk (live, alloc)
                                     andalso
-                                    case labelKind l of
+                                    case labelKind return of
                                        Kind.CReturn
                                        {frameInfo = fi', func = f, ...} => 
                                           CFunction.equals (func, f)
+                                          andalso (Option.equals
+                                                   (size, Option.map (fi', FrameLayout.size o getFrameLayout),
+                                                    Bytes.equals))
                                           andalso (Option.equals
                                                    (fi, fi', FrameInfo.equals))
                                      | _ => false
                                  end
                         end
                    | Call {label, live, return} =>
-                        Vector.forall
-                        (live, fn z => Alloc.doesDefine (alloc, z))
+                        liveIsOk (live, alloc)
                         andalso
                         callIsOk {alloc = alloc,
                                   dst = label,
@@ -1430,23 +1437,19 @@ structure Program =
                                   raises = raises,
                                   return = return,
                                   returns = returns}
-                      | Goto l => jump (l, alloc)
-                      | Raise =>
-                           (case raises of
-                               NONE => false
-                             | SOME zs =>
-                                  Vector.forall
-                                  (zs, fn z => Alloc.doesDefine (alloc, z)))
-                      | Return =>
-                           (case returns of
-                               NONE => false
-                             | SOME zs =>
-                                  Vector.forall
-                                  (zs, fn z => Alloc.doesDefine (alloc, z)))
-                      | Switch s =>
-                           Switch.isOk
-                           (s, {checkUse = fn z => checkOperand (z, alloc),
-                                labelIsOk = fn l => jump (l, alloc)})
+                   | Goto l => jump (l, alloc)
+                   | Raise =>
+                        (case raises of
+                            NONE => false
+                          | SOME live => liveIsOk (live, alloc))
+                   | Return =>
+                        (case returns of
+                            NONE => false
+                          | SOME live => liveIsOk (live, alloc))
+                   | Switch s =>
+                        Switch.isOk
+                        (s, {checkUse = fn z => checkOperand (z, alloc),
+                             labelIsOk = fn l => jump (l, alloc)})
                end
             val transferOk =
                Trace.trace

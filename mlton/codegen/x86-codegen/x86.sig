@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1131,7 +1131,8 @@ signature X86 =
           | CCall of {args: (Operand.t * Size.t) list,
                       frameInfo: FrameInfo.t option,
                       func: RepType.t CFunction.t,
-                      return: Label.t option}
+                      return: {return: Label.t,
+                               size: int option} option}
 
         val toString : t -> string
 
@@ -1162,7 +1163,8 @@ signature X86 =
         val ccall: {args: (Operand.t * Size.t) list,
                     frameInfo: FrameInfo.t option,
                     func: RepType.t CFunction.t,
-                    return: Label.t option} -> t 
+                    return: {return: Label.t,
+                             size: int option} option} -> t
       end
 
     structure ProfileLabel :

@@ -848,16 +848,17 @@ fun output {program as Machine.Program.T {chunks,
                            val CFunction.T {return = returnTy,
                                             target, ...} = func
                            val (args, afterCall) =
-                              case frameInfo of
+                              case return of
                                  NONE =>
                                     (Vector.toListMap (args, fetchOperand),
                                      fn () => ())
-                               | SOME frameInfo =>
+                               | SOME {size = NONE, ...} =>
+                                    (Vector.toListMap (args, fetchOperand),
+                                     fn () => ())
+                               | SOME {return, size = SOME size} =>
                                     let
-                                       val size =
-                                          Program.frameSize (program, frameInfo)
                                        val res = copyArgs args
-                                       val _ = push (valOf return, size)
+                                       val _ = push (return, size)
                                     in
                                        res
                                     end
@@ -903,9 +904,9 @@ fun output {program as Machine.Program.T {chunks,
                            val _ =
                               if CFunction.maySwitchThreadsFrom func
                                  then print "\tReturn();\n"
-                              else case return of
-                                      SOME return => gotoLabel (return, {tab = true})
-                                    | NONE => print "\tUnreachable ();\n"
+                              else (case return of
+                                       NONE => print "\tUnreachable ();\n"
+                                     | SOME {return, ...} => gotoLabel (return, {tab = true}))
                         in
                            ()
                         end
@@ -1062,7 +1063,7 @@ fun output {program as Machine.Program.T {chunks,
                            List.push (dfsBlocks, block);
                            case transfer of
                               CCall {return, ...} =>
-                                 Option.app (return, visit)
+                                 Option.app (return, visit o #return)
                             | Call _ => ()
                             | Goto dst => visit dst
                             | Raise => ()

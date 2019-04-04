@@ -1275,7 +1275,7 @@ struct
   fun ccall {args: (amd64.Operand.t * amd64.Size.t) vector,
              frameInfo,
              func,
-             return: amd64.Label.t option,
+             return: {return: amd64.Label.t, size: int option} option,
              transInfo = {...}: transInfo}
     = let
         val CFunction.T {convention, target, ...} = func

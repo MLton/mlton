@@ -1012,15 +1012,11 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                 val (paramPres, paramTypes, paramRegs) =
                     Vector.unzip3 (Vector.map (args, fn opr => getOperandValue (cxt, opr)))
                 val push =
-                    case frameInfo of
-                        NONE => ""
-                      | SOME fi =>
-                        let
-                            val Context { program = program, ... } = cxt
-                            val size = Program.frameSize (program, fi)
-                        in
-                            transferPush (valOf return, size)
-                        end
+                    case return of
+                       NONE => ""
+                     | SOME {size = NONE, ...} => ""
+                     | SOME {return, size = SOME size} =>
+                          transferPush (return, size)
                 val flushFrontierCode = if CFunction.modifiesFrontier func then flushFrontier () else ""
                 val flushStackTopCode = if CFunction.readsStackTop func then flushStackTop () else ""
                 val resultReg = if Type.isUnit returnTy then "" else nextLLVMReg ()
@@ -1051,7 +1047,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                              | CFunction.Target.Indirect => (* TODO *) ""
                 val epilogue = case return of
                                    NONE => "\tunreachable\n"
-                                 | SOME l =>
+                                 | SOME {return, ...} =>
                                    let
                                        val storeResult = if Type.isUnit returnTy
                                                          then ""
@@ -1065,7 +1061,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                                                                else ""
                                        val br = if CFunction.maySwitchThreadsFrom func
                                                 then callReturn ()
-                                                else concat ["\tbr label %", Label.toString l,
+                                                else concat ["\tbr label %", Label.toString return,
                                                              "\n"]
                                    in
                                        concat [storeResult, cacheFrontierCode, cacheStackTopCode,
