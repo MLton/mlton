@@ -31,7 +31,6 @@ signature X86_MLTON =
 
     (* c call, and primitive assembly sequences. *)
     val ccall: {args: (x86.Operand.t * x86.Size.t) vector,
-                frameInfo: x86.FrameInfo.t option,
                 func: RepType.t Machine.CFunction.t,
                 return: {return: x86.Label.t,
                          size: int option} option,

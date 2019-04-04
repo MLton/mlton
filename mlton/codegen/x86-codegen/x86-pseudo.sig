@@ -449,7 +449,6 @@ signature X86_PSEUDO =
         val return : {live: MemLocSet.t} -> t 
         val raisee : {live: MemLocSet.t} -> t
         val ccall : {args: (Operand.t * Size.t) list,
-                     frameInfo: FrameInfo.t option,
                      func: RepType.t CFunction.t,
                      return: {return: Label.t,
                               size: int option} option} -> t
