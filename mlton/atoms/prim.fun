@@ -2164,7 +2164,7 @@ fun ('a, 'b) apply (p: 'a t,
                               | Word_quot (s, _) => word (WordX.one s)
                               | Word_rem (s, _) => word (WordX.zero s)
                               | Word_sub s => word (WordX.zero s)
-                              | Word_subCheckP (s, _) => word (WordX.zero s)
+                              | Word_subCheckP _ => f
                               | Word_xorb s => word (WordX.zero s)
                               | _ => Unknown
                           end
