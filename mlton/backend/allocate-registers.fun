@@ -1,4 +1,4 @@
-(* Copyright (C) 2017 Matthew Fluet.
+(* Copyright (C) 2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -443,7 +443,7 @@ fun allocate {formalsStackOffsets,
       (* Do a DFS of the control-flow graph. *)
       val () =
          Function.dfs
-         (f, fn R.Block.T {args, label, kind, statements, transfer, ...} =>
+         (f, fn R.Block.T {args, label, kind, statements, ...} =>
           let
              val {begin, beginNoFormals, handler = handlerLive,
                   link = linkLive} = labelLive label
@@ -523,7 +523,6 @@ fun allocate {formalsStackOffsets,
              val _ =
                 Vector.foreach (statements, fn statement =>
                                 R.Statement.foreachDef (statement, one))
-             val _ = R.Transfer.foreachDef (transfer, one)
              val _ =
                 setLabelInfo (label, {live = addHS live,
                                       liveNoFormals = addHS liveNoFormals,

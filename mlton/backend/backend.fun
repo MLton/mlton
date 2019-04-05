@@ -715,7 +715,7 @@ let
             val _ = newVarInfos args
             val _ =
                Rssa.Function.dfs
-               (f, fn R.Block.T {args, label, statements, transfer, ...} =>
+               (f, fn R.Block.T {args, label, statements, ...} =>
                 let
                    val _ = setLabelInfo (label, {args = args})
                    val _ = newVarInfos args
@@ -761,7 +761,6 @@ let
                                    end
                            | _ => normal ()
                        end)
-                   val _ = R.Transfer.foreachDef (transfer, newVarInfo)
                 in
                    fn () => ()
                 end)

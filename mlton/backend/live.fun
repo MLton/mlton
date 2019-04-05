@@ -1,4 +1,4 @@
-(* Copyright (C) 2017 Matthew Fluet.
+(* Copyright (C) 2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -94,11 +94,10 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
              fun loopFormals v = Vector.foreach (v, loopVar)
              val () =
                 Vector.foreach
-                (blocks, fn Block.T {args, statements, transfer, ...} =>
+                (blocks, fn Block.T {args, statements, ...} =>
                  (loopFormals args
                   ; Vector.foreach (statements, fn s =>
-                                    Statement.foreachDef (s, loopVar))
-                  ; Transfer.foreachDef (transfer, loopVar)))
+                                    Statement.foreachDef (s, loopVar))))
              open Layout
           in
              align [seq [str "Live info for ",
@@ -216,9 +215,8 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
                    | _ => goto l
                end
             val _ =
-               Transfer.foreachDefLabelUse (transfer, {def = define o #1,
-                                                       label = label,
-                                                       use = use})
+               Transfer.foreachLabelUse (transfer, {label = label,
+                                                    use = use})
           in ()
           end)
       (* Back-propagate every variable from uses to define point. *)
