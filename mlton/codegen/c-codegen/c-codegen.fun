@@ -327,7 +327,7 @@ fun outputDeclarations
                         name: string,
                         v: 'a vector,
                         toString: int * 'a -> string) =
-         (print (concat ["static ", ty, " ", name, "[] = {\n"])
+         (print (concat ["static ", ty, " ", name, "[", C.int (Vector.length v), "] = {\n"])
           ; Vector.foreachi (v, fn (i, x) =>
                              print (concat ["\t", toString (i, x), ",\n"]))
           ; print "};\n")
@@ -1102,7 +1102,9 @@ fun output {program as Machine.Program.T {chunks,
       val {print, done, ...} = outputC ()
       fun rest () =
          (List.foreach (chunks, fn c => declareChunk (c, print))
-          ; print "PRIVATE uintptr_t (*nextChunks[]) (uintptr_t) = {\n"
+          ; print "PRIVATE uintptr_t (*nextChunks["
+          ; print (C.int (Vector.length entryLabels))
+          ; print "]) (uintptr_t) = {\n"
           ; Vector.foreach (entryLabels, fn l =>
                             let
                                val {chunkLabel, ...} = labelInfo l
