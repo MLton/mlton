@@ -47,7 +47,7 @@
 #define Chunk(n)                                \
         DeclareChunk(n) {                       \
                 if (DEBUG_CCODEGEN)             \
-                        fprintf (stderr, "%s:%d: entering chunk %d  nextBlock = %d\n", \
+                        fprintf (stderr, "%s:%d: Chunk%d(nextBlock = %d)\n", \
                                         __FILE__, __LINE__, n, (int)nextBlock); \
                 Pointer frontier;               \
                 Pointer stackTop;
@@ -56,6 +56,9 @@
                 CacheFrontier();                \
                 CacheStackTop();                \
                 doSwitchNextBlock:              \
+                if (DEBUG_CCODEGEN)             \
+                        fprintf (stderr, "%s:%d: ChunkSwitch%d(nextBlock = %d)\n", \
+                                        __FILE__, __LINE__, n, (int)nextBlock); \
                 switch (nextBlock) {
 
 #define EndChunkSwitch                          \
@@ -63,9 +66,12 @@
                         goto doLeaveChunk;      \
                 } /* end switch (nextBlock) */
 
-#define EndChunk                                \
+#define EndChunk(n)                             \
                 /* interchunk return */         \
                 doLeaveChunk:                   \
+                if (DEBUG_CCODEGEN)             \
+                        fprintf (stderr, "%s:%d: EndChunk%d(nextBlock = %d)\n", \
+                                        __FILE__, __LINE__, n, (int)nextBlock); \
                 FlushFrontier();                \
                 FlushStackTop();                \
                 return nextBlock;               \
@@ -145,6 +151,9 @@
 
 #define FarCall(n, l)                           \
         do {                                    \
+                if (DEBUG_CCODEGEN)             \
+                        fprintf (stderr, "%s:%d: FarCall(%d, %s)\n", \
+                                        __FILE__, __LINE__, (int)n, #l); \
                 nextBlock = l;                  \
                 goto doLeaveChunk;              \
         } while (0)
@@ -161,7 +170,7 @@
 #define Raise()                                                                 \
         do {                                                                    \
                 if (DEBUG_CCODEGEN)                                             \
-                        fprintf (stderr, "%s:%d: Raise\n",                      \
+                        fprintf (stderr, "%s:%d: Raise()\n",                    \
                                         __FILE__, __LINE__);                    \
                 StackTop = StackBottom + ExnStack;                              \
                 Return();                                                       \

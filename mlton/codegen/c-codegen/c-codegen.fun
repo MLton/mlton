@@ -1092,7 +1092,7 @@ fun output {program as Machine.Program.T {chunks,
                               else ())
             ; print "EndChunkSwitch\n\n"
             ; List.foreach (List.rev (!dfsBlocks), printLabelCode)
-            ; print "EndChunk\n"
+            ; C.callNoSemi ("EndChunk", [chunkLabelIndexAsString chunkLabel], print); print "\n"
             ; done ()
          end
       val _ = List.foreach (chunks, outputChunk)
