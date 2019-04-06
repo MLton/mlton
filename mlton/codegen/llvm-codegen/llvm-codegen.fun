@@ -29,8 +29,7 @@ datatype Context = Context of {
     chunkLabelToString: ChunkLabel.t -> string,
     chunkLabelIndex: ChunkLabel.t -> int,
     labelChunk: Label.t -> ChunkLabel.t,
-    entryLabels: Label.t vector,
-    labelInfo: Label.t -> {chunkLabel: ChunkLabel.t},
+    nextChunks: Label.t option vector,
     printblock: bool,
     printstmt: bool,
     printmove: bool
@@ -1274,8 +1273,7 @@ fun outputChunk (cxt, outputLL, chunk) =
     let
         val () = cFunctions := []
         val () = ffiSymbols := []
-        val Context { labelToStringIndex, chunkLabelIndex, labelChunk,
-                      chunkLabelToString, entryLabels, printblock, ... } = cxt
+        val Context { labelToStringIndex, chunkLabelToString, printblock, ... } = cxt
         val Chunk.T {blocks, chunkLabel, regMax} = chunk
         val { done, print, file=_ } = outputLL ()
         val () = outputLLVMDeclarations (cxt, print, chunk)
@@ -1307,18 +1305,17 @@ fun outputChunk (cxt, outputLL, chunk) =
         val () = print "\tbr label %doSwitchNextBlock\n\ndoSwitchNextBlock:\n"
         val tmp = nextLLVMReg ()
         val () = print (mkload (tmp, "%uintptr_t*", "%nextBlock"))
-        val entryLabelsInChunk = Vector.keepAll (entryLabels,
-                                                 fn l => chunkLabelIndex chunkLabel =
-                                                         chunkLabelIndex (labelChunk l))
-        val branches = String.concatV (Vector.map (entryLabelsInChunk, fn label =>
-                           let
-                               val labelName = Label.toString label
-                               val i = labelToStringIndex label
-                           in
-                               concat ["\t\t%uintptr_t ", i, ", label %", labelName, "\n"]
-                           end))
         val () = print (concat ["\tswitch %uintptr_t ", tmp,
-                                ", label %doSwitchNextBlockDefault [\n", branches, "\t]\n\n"])
+                                ", label %doSwitchNextBlockDefault [\n"])
+        val () = Vector.foreach (blocks, fn Block.T {kind, label, ...} =>
+                                 if Kind.isEntry kind
+                                    then print (concat ["\t\t%uintptr_t ",
+                                                        labelToStringIndex label,
+                                                        ", label %",
+                                                        Label.toString label,
+                                                        "\n"])
+                                    else ())
+        val () = print "\t]\n\n"
         val () = print (String.concatV (Vector.map (blocks, fn b => outputBlock (cxt, b))))
         val () = print "doSwitchNextBlockDefault:\n"
         val () = (print "\tbr label %doLeaveChunk\n\n"
@@ -1351,57 +1348,55 @@ fun outputChunk (cxt, outputLL, chunk) =
 
 fun makeContext program =
     let
-        val Program.T { chunks, ...} = program
-        val {get = labelInfo: Label.t -> {chunkLabel: ChunkLabel.t},
+        val Program.T { chunks, frameLayouts, ...} = program
+        val {get = chunkLabelInfo: ChunkLabel.t -> {index: int},
+             set = setChunkLabelInfo, ...} =
+           Property.getSetOnce
+           (ChunkLabel.plist, Property.initRaise ("LLVMCodegen.chunkLabelInfo", ChunkLabel.layout))
+        val {get = labelInfo: Label.t -> {chunkLabel: ChunkLabel.t,
+                                          index: int option},
              set = setLabelInfo, ...} =
-            Property.getSetOnce
-                (Label.plist, Property.initRaise ("LLVMCodeGen.info", Label.layout))
-        val entryLabels: (Label.t * int) list ref = ref []
+           Property.getSetOnce
+           (Label.plist, Property.initRaise ("LLVMCodeGen.labelInfo", Label.layout))
+        val nextChunks = Array.new (Vector.length frameLayouts, NONE)
         val _ =
-         List.foreach
-         (chunks, fn Chunk.T {blocks, chunkLabel, ...} =>
-          Vector.foreach
-          (blocks, fn Block.T {kind, label, ...} =>
-           let
-              fun entry (index: int) =
-                 List.push (entryLabels, (label, index))
-              val _ =
-                 case Kind.frameInfoOpt kind of
-                    NONE => ()
-                  | SOME (FrameInfo.T {frameLayoutsIndex, ...}) =>
-                       entry frameLayoutsIndex
-           in
-              setLabelInfo (label, {chunkLabel = chunkLabel})
-           end))
-        val a = Array.fromList (!entryLabels)
-        val () = QuickSort.sortArray (a, fn ((_, i), (_, i')) => i <= i')
-        val entryLabels = Vector.map (Vector.fromArray a, #1)
+           List.foreachi
+           (chunks, fn (i, Chunk.T {blocks, chunkLabel, ...}) =>
+            (setChunkLabelInfo (chunkLabel, {index = i});
+             Vector.foreach
+             (blocks, fn Block.T {kind, label, ...} =>
+              let
+                 val index =
+                    case Kind.frameInfoOpt kind of
+                       NONE => NONE
+                     | SOME (FrameInfo.T {frameLayoutsIndex, ...}) =>
+                          let
+                             val index = frameLayoutsIndex
+                          in
+                             if Kind.isEntry kind
+                                then (Assert.assert ("LLVMCodegen.nextChunks", fn () =>
+                                                     Option.isNone (Array.sub (nextChunks, index)))
+                                      ; Array.update (nextChunks, index, SOME label))
+                                else ()
+                             ; SOME index
+                          end
+              in
+                 setLabelInfo (label, {chunkLabel = chunkLabel,
+                                       index = index})
+              end)))
+        val nextChunks = Vector.fromArray nextChunks
         val labelChunk = #chunkLabel o labelInfo
-        val {get = chunkLabelIndex: ChunkLabel.t -> int, ...} =
-            Property.getSet (ChunkLabel.plist,
-                             Property.initFun (let
-                                                  val c = Counter.new 0
-                                              in
-                                                  fn _ => Counter.next c
-                                              end))
-        val chunkLabelToString = llint o chunkLabelIndex
-        val {get = labelIndex, set = setLabelIndex, ...} =
-            Property.getSetOnce (Label.plist,
-                                 Property.initRaise ("index", Label.layout))
-        val _ =
-            Vector.foreachi (entryLabels, fn (i, l) => setLabelIndex (l, i))
-        (* NB: This should always return the same value as
-         * (Int.toString o valOf o #frameIndex o labelInfo) l
-         *)
+        val labelIndex = valOf o #index o labelInfo
         fun labelToStringIndex (l: Label.t): string = llint (labelIndex l)
+        val chunkLabelIndex = #index o chunkLabelInfo
+        val chunkLabelToString = llint o chunkLabelIndex
     in
         Context { program = program,
                   labelToStringIndex = labelToStringIndex,
                   chunkLabelIndex = chunkLabelIndex,
                   chunkLabelToString = chunkLabelToString,
                   labelChunk = labelChunk,
-                  entryLabels = entryLabels,
-                  labelInfo = labelInfo,
+                  nextChunks = nextChunks,
                   printblock = !Control.Native.commented > 0,
                   printstmt = !Control.Native.commented > 1,
                   printmove = !Control.Native.commented > 2
@@ -1422,7 +1417,7 @@ fun transC (cxt, outputC) =
         val Context { program, ... } = cxt
         val {print, done, file=_} = outputC ()
         val Program.T {main = main, chunks = chunks, ... } = program
-        val Context { chunkLabelToString, labelToStringIndex, entryLabels, labelInfo, ... } = cxt
+        val Context { chunkLabelToString, labelToStringIndex, labelChunk, nextChunks, ... } = cxt
         val mainLabel = labelToStringIndex (#label main)
         val additionalMainArgs = [mainLabel]
         fun callNoSemi (f: string, xs: string list, print: string -> unit): unit
@@ -1442,19 +1437,20 @@ fun transC (cxt, outputC) =
                  [chunkLabelToString chunkLabel],
                  print)
         fun rest () =
-            (List.foreach (chunks, fn c => declareChunk (c, print))
+           (List.foreach (chunks, fn c => declareChunk (c, print))
             ; print "PRIVATE uintptr_t (*nextChunks[]) (uintptr_t) = {\n"
-            ; Vector.foreach (entryLabels, fn l =>
-                             let
-                                 val {chunkLabel, ...} = labelInfo l
-                             in
-                                 print "\t"
-                               ; callNoSemi ("Chunkp",
-                                             [chunkLabelToString chunkLabel],
-                                             print)
-                               ; print ",\n"
-                             end)
-            ; print "};\n")
+            ; Vector.foreach
+              (nextChunks, fn label =>
+               (print "\t"
+                ; (case label of
+                      NONE => print "NULL"
+                    | SOME label =>
+                         (print "\t"
+                          ; callNoSemi ("Chunkp",
+                                        [chunkLabelToString (labelChunk label)],
+                                        print)))
+                ; print ",\n"))
+              ; print "};\n")
     in
         CCodegen.outputDeclarations
             {additionalMainArgs = additionalMainArgs,

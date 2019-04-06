@@ -16,6 +16,7 @@ structure M = Machine
 local
    open Machine
 in
+   structure CFunction = CFunction
    structure Global = Global
    structure Label = Label
    structure Live = Live
@@ -299,7 +300,8 @@ let
             in
                (frameLabels, frameLayouts, frameOffsets)
             end
-         fun getFrameLayoutsIndex {kind: M.FrameLayout.Kind.t,
+         fun getFrameLayoutsIndex {entry: bool,
+                                   kind: M.FrameLayout.Kind.t,
                                    label: Label.t,
                                    offsets: Bytes.t list,
                                    size: Bytes.t}: int =
@@ -318,17 +320,22 @@ let
                      Counter.next frameLayoutsCounter
                   end
             in
-               (* We need to give each frame its own layout index in two cases.
-                * 1. If we are using the C codegen, in which case we want the
-                *    indices in a chunk to be consecutive integers so that gcc
-                *    will use a jump table.
-                * 2. If we are profiling, we want every frame to have a
-                *    different index so that it can have its own profiling info.
-                *    This will be created by the call to makeProfileInfo at the
-                *    end of the backend.
+               (* We need to give a frame a unique layout index in two cases.
+                * 1. If we are using the C or LLVM codegens, then we
+                *    want each entry frame to have a different index,
+                *    because the index will be used for the trampoline
+                *    (nextChunks mapping and ChunkSwitch); moreover,
+                *    we want the indices of entry frames of a chunk to
+                *    be consecutive integers so that gcc will use a
+                *    jump table.
+                * 2. If we are profiling, we want every frame to have
+                *    a different index so that it can have its own
+                *    profiling info.  This will be created by the call
+                *    to makeProfileInfo at the end of the backend.
                 *)
-               if !Control.codegen = Control.CCodegen
-                  orelse !Control.codegen = Control.LLVMCodegen
+               if ((!Control.codegen = Control.CCodegen
+                    orelse !Control.codegen = Control.LLVMCodegen)
+                   andalso entry)
                   orelse !Control.profile <> Control.ProfileNone
                   then new ()
                else
@@ -809,12 +816,16 @@ let
                                     | _ => ac)
                             else
                                []
-                         val kind =
+                         val (entry, kind) =
                             case kind of
-                               R.Kind.CReturn _ => M.FrameLayout.Kind.C_FRAME
-                             | _ => M.FrameLayout.Kind.ML_FRAME
+                               R.Kind.Cont _=> (true, M.FrameLayout.Kind.ML_FRAME)
+                             | R.Kind.CReturn {func} => (CFunction.maySwitchThreadsTo func,
+                                                         M.FrameLayout.Kind.C_FRAME)
+                             | R.Kind.Handler => (true, M.FrameLayout.Kind.ML_FRAME)
+                             | R.Kind.Jump => (false, M.FrameLayout.Kind.ML_FRAME)
                          val frameLayoutsIndex =
-                            getFrameLayoutsIndex {kind = kind,
+                            getFrameLayoutsIndex {entry = entry,
+                                                  kind = kind,
                                                   label = label,
                                                   offsets = offsets,
                                                   size = size}
@@ -953,7 +964,8 @@ let
                                 val frameInfo =
                                    M.FrameInfo.T
                                    {frameLayoutsIndex =
-                                    getFrameLayoutsIndex {kind = M.FrameLayout.Kind.ML_FRAME,
+                                    getFrameLayoutsIndex {entry = true,
+                                                          kind = M.FrameLayout.Kind.ML_FRAME,
                                                           label = funcToLabel name,
                                                           offsets = [],
                                                           size = Bytes.zero}}

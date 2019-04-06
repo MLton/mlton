@@ -569,7 +569,7 @@ fun declareCReturns (print) =
        print (concat ["\tUNUSED ", s, " CReturn", CType.name t, ";\n"])
     end)
 
-fun output {program as Machine.Program.T {chunks,
+fun output {program as Machine.Program.T {chunks, frameLayouts,
                                           main = {label, ...}, ...},
             outputC: unit -> {file: File.t,
                               print: string -> unit,
@@ -586,7 +586,7 @@ fun output {program as Machine.Program.T {chunks,
            set = setLabelInfo, ...} =
          Property.getSetOnce
          (Label.plist, Property.initRaise ("CCodeGen.labelInfo", Label.layout))
-      val entryLabels: (Label.t * int) list ref = ref []
+      val nextChunks = Array.new (Vector.length frameLayouts, NONE)
       val _ =
          List.foreachi
          (chunks, fn (i, Chunk.T {blocks, chunkLabel, ...}) =>
@@ -594,23 +594,25 @@ fun output {program as Machine.Program.T {chunks,
            Vector.foreach
            (blocks, fn block as Block.T {kind, label, ...} =>
             let
-               fun entry (index: int) =
-                  List.push (entryLabels, (label, index))
                val index =
                   case Kind.frameInfoOpt kind of
                      NONE => NONE
                    | SOME (FrameInfo.T {frameLayoutsIndex, ...}) =>
-                        (entry frameLayoutsIndex
-                         ; SOME frameLayoutsIndex)
+                        let
+                           val index = frameLayoutsIndex
+                        in
+                           if Kind.isEntry kind
+                              then Array.update (nextChunks, index, SOME label)
+                              else ()
+                           ; SOME frameLayoutsIndex
+                        end
             in
                setLabelInfo (label, {block = block,
                                      chunkLabel = chunkLabel,
                                      index = index,
                                      marked = ref false})
             end)))
-      val a = Array.fromList (!entryLabels)
-      val () = QuickSort.sortArray (a, fn ((_, i), (_, i')) => i <= i')
-      val entryLabels = Vector.fromArray a
+      val nextChunks = Vector.fromArray nextChunks
       val labelChunk = #chunkLabel o labelInfo
       val labelIndex = #index o labelInfo
       fun labelIndexAsString (l, {pretty}) =
@@ -1090,26 +1092,28 @@ fun output {program as Machine.Program.T {chunks,
       fun rest () =
          (List.foreach (chunks, fn c => declareChunk (c, print))
           ; print "PRIVATE uintptr_t (*nextChunks["
-          ; print (C.int (Vector.length entryLabels))
+          ; print (C.int (Vector.length nextChunks))
           ; print "]) (uintptr_t) = {\n"
-          ; Vector.foreachi (entryLabels, fn (i, (label, index)) =>
-                             let
-                                val {chunkLabel, index, ...} = labelInfo label
-                             in
-                                print "\t"
-                                ; print "/* "
-                                ; print (C.int i)
-                                ; print ": */ "
-                                ; print "/* "
-                                ; print (Label.toString label)
-                                ; print " "
-                                ; print (C.int (valOf index))
-                                ; print " */ "
-                                ; C.callNoSemi ("Chunkp",
-                                                [chunkLabelIndexAsString chunkLabel],
-                                                print)
-                                ; print ",\n"
-                             end)
+          ; Vector.foreachi
+            (nextChunks, fn (i, label) =>
+             (print "\t"
+              ; print "/* "
+              ; print (C.int i)
+              ; print ": */ "
+              ; (case label of
+                    NONE => print "NULL"
+                  | SOME label =>
+                       let
+                          val {chunkLabel, ...} = labelInfo label
+                       in
+                          print "/* "
+                          ; print (Label.toString label)
+                          ; print " */ "
+                          ; C.callNoSemi ("Chunkp",
+                                          [chunkLabelIndexAsString chunkLabel],
+                                          print)
+                   end)
+              ; print ",\n"))
           ; print "};\n")
       val _ =
          outputDeclarations {additionalMainArgs = additionalMainArgs,
