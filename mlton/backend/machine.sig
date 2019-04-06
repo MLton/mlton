@@ -184,6 +184,7 @@ signature MACHINE =
                            handles: Live.t vector}
              | Jump
 
+            val isEntry: t -> bool
             val frameInfoOpt: t -> FrameInfo.t option
          end
 

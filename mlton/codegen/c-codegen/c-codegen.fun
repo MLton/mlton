@@ -23,19 +23,6 @@ in
    structure GCField = GCField
 end
 
-structure Kind =
-   struct
-      open Kind
-
-      fun isEntry (k: t): bool =
-         case k of
-            Cont _ => true
-          | CReturn {func, ...} => CFunction.maySwitchThreadsTo func
-          | Func _ => true
-          | Handler _ => true
-          | _ => false
-   end
-
 structure C =
    struct
       val truee = "TRUE"

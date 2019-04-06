@@ -615,6 +615,14 @@ structure Kind =
              | Jump => str "Jump"
          end
 
+      fun isEntry (k: t): bool =
+         case k of
+            Cont _ => true
+          | CReturn {func, ...} => CFunction.maySwitchThreadsTo func
+          | Func _ => true
+          | Handler _ => true
+          | _ => false
+
       val frameInfoOpt =
          fn Cont {frameInfo, ...} => SOME frameInfo
           | CReturn {frameInfo, ...} => frameInfo
