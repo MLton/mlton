@@ -111,9 +111,13 @@ fun transformFunc func =
       (* foreach arg, set Consider? need to tell it how to
        * avoid setting the original again *)
 
+      datatype InLoop
+        = InLoop of {header: bool, lid: int}
+        | NotInLoop
+
       val {get=labelInfo, ...} = Property.get
          (Label.plist, Property.initFun
-            (fn _ => {inLoop=ref false, block=ref NONE}))
+            (fn _ => {inLoop=ref NotInLoop, block=ref NONE}))
 
       val numRewritten = ref 0
 
@@ -133,10 +137,12 @@ fun transformFunc func =
             seq [str "Bounce rssa limit: ", Option.layout Int.layout n]
          end)
       val _ = let
+         val counter = ref 0
          (* now for each var in consideration, check if active in loop,
           * increment its usage for each depth *)
          fun checkActiveVars depth (block as Block.T {label, ...}) =
            let
+              val i = (Int.inc counter ; !counter)
               fun incVarInfo v =
                  let
                     val newInfo =
@@ -153,11 +159,22 @@ fun transformFunc func =
                      case n of
                           NONE => setRewrite (v, Weight.new 0)
                         | SOME _ => incVarInfo v)
-              val _ = (#inLoop o labelInfo) label := true
+              val _ = (#inLoop o labelInfo) label :=
+                InLoop {header=false, lid=i}
            in
              ()
            end
-         fun processLoop loop = loopForeach (1, loop, checkActiveVars)
+         fun setHeader (Block.T {label, ...}) =
+            let
+               val inLoop = (#inLoop o labelInfo) label
+            in
+               case !inLoop  of
+                    InLoop {lid, ...} => inLoop := InLoop {header=true, lid=lid}
+                  | _ => ()
+            end
+         fun processLoop (loop as {headers,...}) =
+           (loopForeach (1, loop, checkActiveVars) ;
+            Vector.foreach (headers, setHeader))
       in
          Vector.foreach (loops, processLoop)
       end
@@ -281,24 +298,35 @@ fun transformFunc func =
          let
             val {inLoop, ...} = labelInfo label
             val inLoop = !inLoop
-            val direction = if inLoop then LeaveLoop else EnterLoop
             fun test l =
                let
                   val {inLoop=inLoop', ...} = labelInfo l
                   val inLoop' = !inLoop'
                in
-                  not (inLoop = inLoop')
+                  case (inLoop, inLoop') of
+                       (NotInLoop, InLoop _) => SOME EnterLoop
+                     | (InLoop _, NotInLoop) => SOME LeaveLoop
+                     | (InLoop {lid, ...},
+                        InLoop {header=true, lid=lid'}) =>
+                           if lid = lid'
+                           then NONE
+                           else NONE (* Depends whether we allow loops
+                           to differ in the location of specific variables *)
+                           (*SOME EnterLoop*)
+                     | _ => NONE
                end
-            val r = ref false
+            val needsRewrite = ref false
             fun rewrite destLabel =
-               if test destLabel
-               then ( r := true ; insertRewriteBlock (destLabel, direction))
-               else destLabel
+               case test destLabel of
+                    NONE => destLabel
+                  | SOME dir =>
+                       ( needsRewrite := true ;
+                         insertRewriteBlock (destLabel, dir))
             val newTransfer = Transfer.replaceLabels(transfer, rewrite)
             val newBlock = Block.T {args=args, kind=kind, label=label, statements=statements, transfer=newTransfer}
          in
             (* save some garbage if we don't need to change *)
-            if !r
+            if !needsRewrite
                then newBlock
                else b
          end
