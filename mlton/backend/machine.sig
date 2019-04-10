@@ -180,6 +180,7 @@ signature MACHINE =
             structure Kind:
                sig
                   datatype t = C_FRAME | ML_FRAME
+                  val equals: t * t -> bool
                   val layout: t -> Layout.t
                   val toString: t -> string
                end

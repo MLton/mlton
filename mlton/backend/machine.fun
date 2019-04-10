@@ -564,6 +564,11 @@ structure FrameLayout =
       structure Kind =
          struct
             datatype t = C_FRAME | ML_FRAME
+            fun equals (k1, k2) =
+               case (k1, k2) of
+                  (C_FRAME, C_FRAME) => true
+                | (ML_FRAME, ML_FRAME) => true
+                | _ => false
             fun toString k =
                case k of
                   C_FRAME => "C_FRAME"

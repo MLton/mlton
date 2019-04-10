@@ -272,7 +272,19 @@ let
          val frameLayouts: M.FrameLayout.t list ref = ref []
          val frameLayoutsCounter = Counter.new 0
          val _ = ByteSet.reset ()
-         val table = HashSet.new {hash = M.FrameOffsets.hash o #frameOffsets}
+         val table =
+            let
+               fun equals ({kind = k1, frameOffsets = fo1, size = s1},
+                           {kind = k2, frameOffsets = fo2, size = s2}) =
+                  M.FrameLayout.Kind.equals (k1, k2)
+                  andalso M.FrameOffsets.equals (fo1, fo2)
+                  andalso Bytes.equals (s1, s2)
+               fun hash {kind = _, frameOffsets, size} =
+                  Hash.combine (M.FrameOffsets.hash frameOffsets, Bytes.hash size)
+            in
+               HashTable.new {equals = equals,
+                              hash = hash}
+            end
          val frameOffsets: M.FrameOffsets.t list ref = ref []
          val frameOffsetsCounter = Counter.new 0
          val {get = getFrameOffsets: ByteSet.t -> M.FrameOffsets.t, ...} =
@@ -308,13 +320,13 @@ let
                                    offsets: Bytes.t list,
                                    size: Bytes.t}: int =
             let
-               val fo = getFrameOffsets (ByteSet.fromList offsets)
+               val frameOffsets = getFrameOffsets (ByteSet.fromList offsets)
                fun new () =
                   let
                      val _ =
                         List.push (frameLayouts,
                                    M.FrameLayout.T
-                                   {frameOffsets = fo,
+                                   {frameOffsets = frameOffsets,
                                     kind = kind,
                                     size = size})
                      val _ = List.push (frameLabels, label)
@@ -341,17 +353,12 @@ let
                   orelse !Control.profile <> Control.ProfileNone
                   then new ()
                else
-               #frameLayoutsIndex
-               (HashSet.lookupOrInsert
-                (table, M.FrameOffsets.hash fo,
-                 fn {frameOffsets = fo', kind = kind', size = s', ...} =>
-                 M.FrameOffsets.equals (fo, fo')
-                 andalso kind = kind'
-                 andalso Bytes.equals (size, s'),
-                 fn () => {frameLayoutsIndex = new (),
-                           frameOffsets = fo,
-                           kind = kind,
-                           size = size}))
+               HashTable.lookupOrInsert
+               (table,
+                {frameOffsets = frameOffsets,
+                 kind = kind,
+                 size = size},
+                fn () => new ())
             end
       end
       val {get = frameInfo: Label.t -> M.FrameInfo.t option,
