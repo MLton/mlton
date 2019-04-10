@@ -400,47 +400,34 @@ let
          VarOperand.operand o #operand o varInfo
       (* Hash tables for uniquifying globals. *)
       local
-         fun ('a, 'b) make (equals: 'a * 'a -> bool,
-                            info: 'a -> string * Type.t * 'b) =
+         fun 'a make {equals: 'a * 'a -> bool,
+                      hash: 'a -> word,
+                      ty: 'a -> Type.t} =
             let
-               val set: {a: 'a,
-                         global: M.Global.t,
-                         hash: word,
-                         value: 'b} HashSet.t = HashSet.new {hash = #hash}
-               fun get (a: 'a): M.Operand.t =
-                  let
-                     val (string, ty, value) = info a
-                     val hash = String.hash string
-                  in
-                     M.Operand.Global
-                     (#global
-                      (HashSet.lookupOrInsert
-                       (set, hash,
-                        fn {a = a', ...} => equals (a, a'),
-                        fn () => {a = a,
-                                  hash = hash,
-                                  global = M.Global.new {isRoot = true,
-                                                         ty = ty},
-                                  value = value})))
-                  end
+               val table: ('a, M.Global.t) HashTable.t =
+                  HashTable.new {equals = equals, hash = hash}
+               fun get (value: 'a): M.Operand.t =
+                  M.Operand.Global
+                  (HashTable.lookupOrInsert
+                   (table, value, fn () =>
+                    M.Global.new {isRoot = true,
+                                  ty = ty value}))
                fun all () =
-                  HashSet.fold
-                  (set, [], fn ({global, value, ...}, ac) =>
+                  HashTable.fold
+                  (table, [], fn ((value, global), ac) =>
                    (global, value) :: ac)
             in
                (all, get)
             end
       in
          val (allReals, globalReal) =
-            make (RealX.equals,
-                  fn r => (RealX.toString (r, {suffix = true}),
-                           Type.real (RealX.size r),
-                           r))
+            make {equals = RealX.equals,
+                  hash = RealX.hash,
+                  ty = Type.real o RealX.size}
          val (allVectors, globalVector) =
-            make (WordXVector.equals,
-                  fn v => (WordXVector.toString v,
-                           Type.ofWordXVector v,
-                           v))
+            make {equals = WordXVector.equals,
+                  hash = WordXVector.hash,
+                  ty = Type.ofWordXVector}
       end
       fun bogusOp (t: Type.t): M.Operand.t =
          case Type.deReal t of
