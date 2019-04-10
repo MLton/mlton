@@ -168,6 +168,7 @@ signature MACHINE =
             type t
 
             val equals: t * t -> bool
+            val hash: t -> word
             val index: t -> int
             val layout: t -> Layout.t
             val new: {index: int, offsets: Bytes.t vector} -> t
@@ -182,7 +183,7 @@ signature MACHINE =
                   val layout: t -> Layout.t
                   val toString: t -> string
                end
-            datatype t = T of {frameOffsetsIndex: int,
+            datatype t = T of {frameOffsets: FrameOffsets.t,
                                kind: Kind.t,
                                size: Bytes.t}
             val layout: t -> Layout.t

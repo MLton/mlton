@@ -272,10 +272,10 @@ let
          val frameLayouts: M.FrameLayout.t list ref = ref []
          val frameLayoutsCounter = Counter.new 0
          val _ = ByteSet.reset ()
-         val table = HashSet.new {hash = Word.fromInt o #frameOffsetsIndex}
+         val table = HashSet.new {hash = M.FrameOffsets.hash o #frameOffsets}
          val frameOffsets: M.FrameOffsets.t list ref = ref []
          val frameOffsetsCounter = Counter.new 0
-         val {get = frameOffsetsIndex: ByteSet.t -> int, ...} =
+         val {get = getFrameOffsets: ByteSet.t -> M.FrameOffsets.t, ...} =
             Property.get
             (ByteSet.plist,
              Property.initFun
@@ -290,7 +290,7 @@ let
                     M.FrameOffsets.new {index = index, offsets = offsets}
                  val _ = List.push (frameOffsets, fo)
               in
-                 index
+                 fo
               end))
       in
          fun allFrameInfo () =
@@ -308,13 +308,13 @@ let
                                    offsets: Bytes.t list,
                                    size: Bytes.t}: int =
             let
-               val foi = frameOffsetsIndex (ByteSet.fromList offsets)
+               val fo = getFrameOffsets (ByteSet.fromList offsets)
                fun new () =
                   let
                      val _ =
                         List.push (frameLayouts,
                                    M.FrameLayout.T
-                                   {frameOffsetsIndex = foi,
+                                   {frameOffsets = fo,
                                     kind = kind,
                                     size = size})
                      val _ = List.push (frameLabels, label)
@@ -343,13 +343,13 @@ let
                else
                #frameLayoutsIndex
                (HashSet.lookupOrInsert
-                (table, Word.fromInt foi,
-                 fn {frameOffsetsIndex = foi', kind = kind', size = s', ...} =>
-                 foi = foi'
+                (table, M.FrameOffsets.hash fo,
+                 fn {frameOffsets = fo', kind = kind', size = s', ...} =>
+                 M.FrameOffsets.equals (fo, fo')
                  andalso kind = kind'
                  andalso Bytes.equals (size, s'),
                  fn () => {frameLayoutsIndex = new (),
-                           frameOffsetsIndex = foi,
+                           frameOffsets = fo,
                            kind = kind,
                            size = size}))
             end

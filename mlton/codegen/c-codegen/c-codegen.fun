@@ -324,10 +324,10 @@ fun outputDeclarations
           ; print "};\n")
       fun declareFrameLayouts () =
          declareArray ("struct GC_frameLayout", "frameLayouts", frameLayouts,
-                       fn (_, FrameLayout.T {frameOffsetsIndex, kind, size}) =>
+                       fn (_, FrameLayout.T {frameOffsets, kind, size}) =>
                        concat ["{",
                                FrameLayout.Kind.toString kind,
-                               ", frameOffsets", C.int frameOffsetsIndex,
+                               ", frameOffsets", C.int (FrameOffsets.index frameOffsets),
                                ", ", C.bytes size,
                                "}"])
       fun declareAtMLtons () =

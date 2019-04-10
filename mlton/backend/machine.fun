@@ -554,6 +554,9 @@ structure FrameOffsets =
             record [("index", Int.layout index),
                     ("offsets", Vector.layout Bytes.layout offsets)]
          end
+
+      fun hash (T {index, offsets}) =
+         Hash.combine (Word.fromInt index, Hash.vectorMap (offsets, Bytes.hash))
    end
 
 structure FrameLayout =
@@ -567,14 +570,14 @@ structure FrameLayout =
                 | ML_FRAME => "ML_FRAME"
             val layout = Layout.str o toString
          end
-      datatype t = T of {frameOffsetsIndex: int,
+      datatype t = T of {frameOffsets: FrameOffsets.t,
                          kind: Kind.t,
                          size: Bytes.t}
-      fun layout (T {frameOffsetsIndex, kind, size}) =
+      fun layout (T {frameOffsets, kind, size}) =
          let
             open Layout
          in
-            record [("frameOffsetsIndex", Int.layout frameOffsetsIndex),
+            record [("frameOffsets", FrameOffsets.layout frameOffsets),
                     ("kind", Kind.layout kind),
                     ("size", Bytes.layout size)]
          end
@@ -999,17 +1002,14 @@ structure Program =
                Vector.sub (frameLayouts, frameLayoutsIndex)
             val _ =
                Vector.foreach
-               (frameLayouts, fn FrameLayout.T {frameOffsetsIndex, size, ...} =>
+               (frameLayouts, fn f as FrameLayout.T {frameOffsets, size, ...} =>
                 Err.check
                 ("frameLayouts",
-                 fn () => (0 <= frameOffsetsIndex
-                           andalso frameOffsetsIndex < Vector.length frameOffsets
+                 fn () => ((checkFrameOffsets frameOffsets; true)
                            andalso Bytes.<= (size, maxFrameSize)
                            andalso Bytes.<= (size, Runtime.maxFrameSize)
                            andalso Bytes.isWord32Aligned size),
-                 fn () => Layout.record [("frameOffsetsIndex",
-                                          Int.layout frameOffsetsIndex),
-                                         ("size", Bytes.layout size)]))
+                 fn () => FrameLayout.layout f))
             val _ =
                Vector.foreach
                (objectTypes, fn ty =>
@@ -1172,7 +1172,7 @@ structure Program =
                              useSlots: bool,
                              kind: FrameLayout.Kind.t): bool =
                      let
-                        val FrameLayout.T {frameOffsetsIndex, kind = kind', ...} =
+                        val FrameLayout.T {frameOffsets, kind = kind', ...} =
                            Vector.sub (frameLayouts, frameLayoutsIndex)
                            handle Subscript => raise No
                      in
@@ -1194,12 +1194,10 @@ structure Program =
                             val liveOffsets = Array.fromList liveOffsets
                             val () = QuickSort.sortArray (liveOffsets, Bytes.<=)
                             val liveOffsets = Vector.fromArray liveOffsets
-                            val fo =
-                               Vector.sub (frameOffsets, frameOffsetsIndex)
-                               handle Subscript => raise No
                          in
-                            Vector.equals (liveOffsets, FrameOffsets.offsets fo,
-                                           Bytes.equals)
+                            Vector.equals
+                            (liveOffsets, FrameOffsets.offsets frameOffsets,
+                             Bytes.equals)
                          end)
                      end handle No => false
                   fun slotsAreInFrame (fi: FrameInfo.t): bool =
