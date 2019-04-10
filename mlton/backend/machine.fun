@@ -530,9 +530,30 @@ structure Transfer =
 
 structure FrameOffsets =
    struct
-      datatype t = T of Bytes.t vector
-      fun layout (T offsets) =
-         Vector.layout Bytes.layout offsets
+      datatype t = T of {index: int,
+                         offsets: Bytes.t vector}
+
+      local
+         fun make f (T r) = f r
+      in
+         val index = make #index
+         val offsets = make #offsets
+      end
+
+      fun new {index, offsets} =
+         T {index = index, offsets = offsets}
+
+      fun equals (fo1, fo2) =
+         Int.equals (index fo1, index fo2)
+         andalso Vector.equals (offsets fo1, offsets fo2, Bytes.equals)
+
+      fun layout (T {index, offsets}) =
+         let
+            open Layout
+         in
+            record [("index", Int.layout index),
+                    ("offsets", Vector.layout Bytes.layout offsets)]
+         end
    end
 
 structure FrameLayout =
@@ -962,6 +983,18 @@ structure Program =
                               else false
                            end
                         end
+            fun checkFrameOffsets fo =
+               Err.check ("frameOffsets",
+                          fn () => let
+                                      val index = FrameOffsets.index fo
+                                   in
+                                      FrameOffsets.equals (fo, Vector.sub (frameOffsets, index))
+                                      handle Subscript => false
+                                   end,
+                          fn () => FrameOffsets.layout fo)
+            val _ =
+               Vector.foreach
+               (frameOffsets, checkFrameOffsets)
             fun getFrameLayout (FrameInfo.T {frameLayoutsIndex, ...}) =
                Vector.sub (frameLayouts, frameLayoutsIndex)
             val _ =
@@ -1161,11 +1194,11 @@ structure Program =
                             val liveOffsets = Array.fromList liveOffsets
                             val () = QuickSort.sortArray (liveOffsets, Bytes.<=)
                             val liveOffsets = Vector.fromArray liveOffsets
-                            val FrameOffsets.T liveOffsets' =
+                            val fo =
                                Vector.sub (frameOffsets, frameOffsetsIndex)
                                handle Subscript => raise No
                          in
-                            Vector.equals (liveOffsets, liveOffsets',
+                            Vector.equals (liveOffsets, FrameOffsets.offsets fo,
                                            Bytes.equals)
                          end)
                      end handle No => false

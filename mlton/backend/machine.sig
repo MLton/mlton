@@ -165,8 +165,13 @@ signature MACHINE =
 
       structure FrameOffsets:
          sig
-            datatype t = T of Bytes.t vector
+            type t
+
+            val equals: t * t -> bool
+            val index: t -> int
             val layout: t -> Layout.t
+            val new: {index: int, offsets: Bytes.t vector} -> t
+            val offsets: t -> Bytes.t vector
          end
 
       structure FrameLayout:

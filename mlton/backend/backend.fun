@@ -281,14 +281,16 @@ let
              Property.initFun
              (fn offsets =>
               let
-                 val _ = List.push (frameOffsets,
-                                    M.FrameOffsets.T
-                                    (QuickSort.sortVector
-                                     (Vector.fromList
-                                      (ByteSet.toList offsets),
-                                      Bytes.<=)))
+                 val index = Counter.next frameOffsetsCounter
+                 val offsets =
+                    QuickSort.sortVector
+                    (Vector.fromList (ByteSet.toList offsets),
+                     Bytes.<=)
+                 val fo =
+                    M.FrameOffsets.new {index = index, offsets = offsets}
+                 val _ = List.push (frameOffsets, fo)
               in
-                 Counter.next frameOffsetsCounter
+                 index
               end))
       in
          fun allFrameInfo () =

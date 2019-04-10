@@ -305,11 +305,15 @@ fun outputDeclarations
           ; print "}\n")
       fun declareFrameOffsets () =
          Vector.foreachi
-         (frameOffsets, fn (i, FrameOffsets.T v) =>
-          (print (concat ["static uint16_t frameOffsets", C.int i, "[] = {"])
-           ; print (C.int (Vector.length v))
-           ; Vector.foreach (v, fn i => (print ","; print (C.bytes i)))
-           ; print "};\n"))
+         (frameOffsets, fn (i, fo) =>
+          let
+             val offsets = FrameOffsets.offsets fo
+          in
+             print (concat ["static uint16_t frameOffsets", C.int i, "[] = {"])
+             ; print (C.int (Vector.length offsets))
+             ; Vector.foreach (offsets, fn i => (print ","; print (C.bytes i)))
+             ; print "};\n"
+          end)
       fun declareArray (ty: string,
                         name: string,
                         v: 'a vector,
