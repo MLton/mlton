@@ -420,53 +420,6 @@ structure Statement =
           | _ => a
    end
 
-structure FrameOffsets =
-   struct
-      datatype t = T of Bytes.t vector
-      fun layout (T offsets) =
-         Vector.layout Bytes.layout offsets
-   end
-
-structure FrameLayout =
-   struct
-      structure Kind =
-         struct
-            datatype t = C_FRAME | ML_FRAME
-            fun toString k =
-               case k of
-                  C_FRAME => "C_FRAME"
-                | ML_FRAME => "ML_FRAME"
-            val layout = Layout.str o toString
-         end
-      datatype t = T of {frameOffsetsIndex: int,
-                         kind: Kind.t,
-                         size: Bytes.t}
-      fun layout (T {frameOffsetsIndex, kind, size}) =
-         let
-            open Layout
-         in
-            record [("frameOffsetsIndex", Int.layout frameOffsetsIndex),
-                    ("kind", Kind.layout kind),
-                    ("size", Bytes.layout size)]
-         end
-      local
-         fun make f (T r) = f r
-      in
-         val size = make #size
-      end
-   end
-
-structure FrameInfo =
-   struct
-      datatype t = T of {frameLayoutsIndex: int}
-
-      fun layout (T {frameLayoutsIndex, ...}) =
-         Layout.record [("frameLayoutsIndex", Int.layout frameLayoutsIndex)]
-
-      fun equals (T {frameLayoutsIndex = i}, T {frameLayoutsIndex = i'}) =
-         i = i'
-   end
-
 structure Live =
    struct
       datatype t =
@@ -573,6 +526,53 @@ structure Transfer =
                (s, ac, {label = fn (_, a) => a,
                         use = f})
           | _ => ac
+   end
+
+structure FrameOffsets =
+   struct
+      datatype t = T of Bytes.t vector
+      fun layout (T offsets) =
+         Vector.layout Bytes.layout offsets
+   end
+
+structure FrameLayout =
+   struct
+      structure Kind =
+         struct
+            datatype t = C_FRAME | ML_FRAME
+            fun toString k =
+               case k of
+                  C_FRAME => "C_FRAME"
+                | ML_FRAME => "ML_FRAME"
+            val layout = Layout.str o toString
+         end
+      datatype t = T of {frameOffsetsIndex: int,
+                         kind: Kind.t,
+                         size: Bytes.t}
+      fun layout (T {frameOffsetsIndex, kind, size}) =
+         let
+            open Layout
+         in
+            record [("frameOffsetsIndex", Int.layout frameOffsetsIndex),
+                    ("kind", Kind.layout kind),
+                    ("size", Bytes.layout size)]
+         end
+      local
+         fun make f (T r) = f r
+      in
+         val size = make #size
+      end
+   end
+
+structure FrameInfo =
+   struct
+      datatype t = T of {frameLayoutsIndex: int}
+
+      fun layout (T {frameLayoutsIndex, ...}) =
+         Layout.record [("frameLayoutsIndex", Int.layout frameLayoutsIndex)]
+
+      fun equals (T {frameLayoutsIndex = i}, T {frameLayoutsIndex = i'}) =
+         i = i'
    end
 
 structure Kind =

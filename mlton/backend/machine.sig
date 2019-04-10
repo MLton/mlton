@@ -142,14 +142,6 @@ signature MACHINE =
             val object: {dst: Operand.t, header: word, size: Bytes.t} -> t vector
          end
 
-      structure FrameInfo:
-         sig
-            datatype t = T of {frameLayoutsIndex: int}
-
-            val equals: t * t -> bool
-            val layout: t -> Layout.t
-         end
-
       structure Transfer:
          sig
             datatype t =
@@ -168,6 +160,35 @@ signature MACHINE =
              | Switch of Switch.t
 
             val foldOperands: t * 'a * (Operand.t * 'a -> 'a) -> 'a
+            val layout: t -> Layout.t
+         end
+
+      structure FrameOffsets:
+         sig
+            datatype t = T of Bytes.t vector
+            val layout: t -> Layout.t
+         end
+
+      structure FrameLayout:
+         sig
+            structure Kind:
+               sig
+                  datatype t = C_FRAME | ML_FRAME
+                  val layout: t -> Layout.t
+                  val toString: t -> string
+               end
+            datatype t = T of {frameOffsetsIndex: int,
+                               kind: Kind.t,
+                               size: Bytes.t}
+            val layout: t -> Layout.t
+            val size: t -> Bytes.t
+         end
+
+      structure FrameInfo:
+         sig
+            datatype t = T of {frameLayoutsIndex: int}
+
+            val equals: t * t -> bool
             val layout: t -> Layout.t
          end
 
@@ -237,27 +258,6 @@ signature MACHINE =
             val modify: t -> {newProfileLabel: ProfileLabel.t -> ProfileLabel.t,
                               delProfileLabel: ProfileLabel.t -> unit,
                               getProfileInfo: unit -> t}
-         end
-
-      structure FrameOffsets:
-         sig
-            datatype t = T of Bytes.t vector
-            val layout: t -> Layout.t
-         end
-
-      structure FrameLayout:
-         sig
-            structure Kind:
-               sig
-                  datatype t = C_FRAME | ML_FRAME
-                  val layout: t -> Layout.t
-                  val toString: t -> string
-               end
-            datatype t = T of {frameOffsetsIndex: int,
-                               kind: Kind.t,
-                               size: Bytes.t}
-            val layout: t -> Layout.t
-            val size: t -> Bytes.t
          end
 
       structure Program:
