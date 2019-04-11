@@ -39,8 +39,8 @@ structure C =
             ; (case xs
                   of [] => ()
                 | x :: xs => (print x
-                              ; List.foreach (xs,
-                                             fn x => (print ", "; print x))))
+                              ; List.foreach (xs, fn x =>
+                                              (print ", "; print x))))
             ; print ")")
 
       fun call (f, xs, print) =
@@ -616,7 +616,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos,
                                      index = index,
                                      marked = ref false})
             end)))
-      val nextChunks = Vector.fromArray nextChunks
+      val nextChunks = Vector.keepAllMap (Vector.fromArray nextChunks, fn lo => lo)
       val labelChunk = #chunkLabel o labelInfo
       val labelIndex = #index o labelInfo
       fun labelIndexAsString (l, {pretty}) =
@@ -1100,24 +1100,21 @@ fun output {program as Machine.Program.T {chunks, frameInfos,
           ; print "]) (uintptr_t) = {\n"
           ; Vector.foreachi
             (nextChunks, fn (i, label) =>
-             (print "\t"
-              ; print "/* "
-              ; print (C.int i)
-              ; print ": */ "
-              ; (case label of
-                    NONE => print "NULL"
-                  | SOME label =>
-                       let
-                          val {chunkLabel, ...} = labelInfo label
-                       in
-                          print "/* "
-                          ; print (Label.toString label)
-                          ; print " */ "
-                          ; C.callNoSemi ("Chunkp",
-                                          [chunkLabelIndexAsString chunkLabel],
-                                          print)
-                   end)
-              ; print ",\n"))
+             let
+                val {chunkLabel, ...} = labelInfo label
+             in
+                print "\t"
+                ; print "/* "
+                ; print (C.int i)
+                ; print ": */ "
+                ; print "/* "
+                ; print (Label.toString label)
+                ; print " */ "
+                ; C.callNoSemi ("Chunkp",
+                                [chunkLabelIndexAsString chunkLabel],
+                                print)
+                ; print ",\n"
+             end)
           ; print "};\n")
       val _ =
          outputDeclarations {additionalMainArgs = additionalMainArgs,

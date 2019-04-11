@@ -29,7 +29,7 @@ datatype Context = Context of {
     chunkLabelToString: ChunkLabel.t -> string,
     chunkLabelIndex: ChunkLabel.t -> int,
     labelChunk: Label.t -> ChunkLabel.t,
-    nextChunks: Label.t option vector,
+    nextChunks: Label.t vector,
     printblock: bool,
     printstmt: bool,
     printmove: bool
@@ -1384,7 +1384,7 @@ fun makeContext program =
                  setLabelInfo (label, {chunkLabel = chunkLabel,
                                        index = index})
               end)))
-        val nextChunks = Vector.fromArray nextChunks
+        val nextChunks = Vector.keepAllMap (Vector.fromArray nextChunks, fn lo => lo)
         val labelChunk = #chunkLabel o labelInfo
         val labelIndex = valOf o #index o labelInfo
         fun labelToStringIndex (l: Label.t): string = llint (labelIndex l)
@@ -1442,14 +1442,10 @@ fun transC (cxt, outputC) =
             ; Vector.foreach
               (nextChunks, fn label =>
                (print "\t"
-                ; (case label of
-                      NONE => print "NULL"
-                    | SOME label =>
-                         (print "\t"
-                          ; callNoSemi ("Chunkp",
-                                        [chunkLabelToString (labelChunk label)],
-                                        print)))
-                ; print ",\n"))
+                ; callNoSemi ("Chunkp",
+                              [chunkLabelToString (labelChunk label)],
+                              print)
+               ; print ",\n"))
               ; print "};\n")
     in
         CCodegen.outputDeclarations
