@@ -315,10 +315,10 @@ let
                (frameLabels, frameInfos, frameOffsets)
             end
          fun getFrameInfo {entry: bool,
-                             kind: M.FrameInfo.Kind.t,
-                             label: Label.t,
-                             offsets: Bytes.t list,
-                             size: Bytes.t}: M.FrameInfo.t =
+                           kind: M.FrameInfo.Kind.t,
+                           label: Label.t,
+                           offsets: Bytes.t list,
+                           size: Bytes.t}: M.FrameInfo.t =
             let
                val frameOffsets = getFrameOffsets (ByteSet.fromList offsets)
                fun new () =
@@ -958,10 +958,10 @@ let
                                     Vector.map (returns, Live.StackOffset))
                                 val frameInfo =
                                    getFrameInfo {entry = true,
-                                                   kind = M.FrameInfo.Kind.ML_FRAME,
-                                                   label = funcToLabel name,
-                                                   offsets = [],
-                                                   size = Bytes.zero}
+                                                 kind = M.FrameInfo.Kind.ML_FRAME,
+                                                 label = funcToLabel name,
+                                                 offsets = [],
+                                                 size = Bytes.zero}
                              in
                                 Chunk.newBlock
                                 (funcChunk name,
