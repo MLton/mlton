@@ -286,9 +286,13 @@ struct
     struct
       structure Kind = Machine.Kind
 
+      fun frameInfoToAMD64 fi =
+         amd64.FrameInfo.T
+         {frameLayoutsIndex = Machine.FrameInfo.index fi,
+          size = Bytes.toInt (Machine.FrameInfo.size fi)}
+
       fun toAMD64Blocks {label, kind, 
-                       transInfo as {frameInfoToAMD64, live, liveInfo,
-                                     ...}: transInfo}
+                         transInfo as {live, liveInfo, ...}: transInfo}
         = (
            amd64Liveness.LiveInfo.setLiveOperands
            (liveInfo, label, live label);
@@ -743,8 +747,7 @@ struct
       open Machine.Chunk
 
       fun toAMD64Chunk {chunk = T {blocks, ...}, 
-                      frameInfoToAMD64,
-                      liveInfo}
+                        liveInfo}
         = let
             val data = ref []
             val addData = fn l => List.push (data, l)
@@ -760,7 +763,6 @@ struct
                                Vector.concatV o Vector.map)
                               (live, Operand.toAMD64Operand o Live.toOperand)))
             val transInfo = {addData = addData,
-                             frameInfoToAMD64 = frameInfoToAMD64,
                              live = live,
                              liveInfo = liveInfo}
             val amd64Blocks 
@@ -783,12 +785,10 @@ struct
     end
 
   fun translateChunk {chunk: amd64MLton.Machine.Chunk.t,
-                      frameInfoToAMD64,
                       liveInfo: amd64Liveness.LiveInfo.t}:
                      {chunk: amd64.Chunk.t}
     = {chunk = Chunk.toAMD64Chunk {chunk = chunk,
-                                 frameInfoToAMD64 = frameInfoToAMD64,
-                                 liveInfo = liveInfo}}
+                                   liveInfo = liveInfo}}
 
   val (translateChunk, translateChunk_msg)
     = tracerTop

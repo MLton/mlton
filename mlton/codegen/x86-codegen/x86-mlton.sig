@@ -24,8 +24,6 @@ signature X86_MLTON =
     sharing Machine = x86MLtonBasic.Machine
 
     type transInfo = {addData : x86.Assembly.t list -> unit,
-                      frameInfoToX86: (x86MLtonBasic.Machine.FrameInfo.t
-                                       -> x86.FrameInfo.t),
                       live: x86.Label.t -> x86.Operand.t list,
                       liveInfo: x86Liveness.LiveInfo.t}
 
@@ -40,8 +38,8 @@ signature X86_MLTON =
                   func: RepType.t Machine.CFunction.t,
                   label: x86.Label.t, 
                   transInfo: transInfo} -> x86.Block.t' AppendList.t
-  val implementsPrim: RepType.t Machine.Prim.t -> bool
-  val prim: {prim: RepType.t Machine.Prim.t,
+    val implementsPrim: RepType.t Machine.Prim.t -> bool
+    val prim: {prim: RepType.t Machine.Prim.t,
                args: (x86.Operand.t * x86.Size.t) vector,
                dsts: (x86.Operand.t * x86.Size.t) vector,
                transInfo: transInfo} -> x86.Block.t' AppendList.t

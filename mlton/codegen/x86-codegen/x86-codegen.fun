@@ -373,11 +373,6 @@ struct
         val liveInfo = x86Liveness.LiveInfo.newLiveInfo ()
         val jumpInfo = x86JumpInfo.newJumpInfo ()
 
-        fun frameInfoToX86 fi =
-           x86.FrameInfo.T
-           {frameLayoutsIndex = Machine.FrameInfo.index fi,
-            size = Bytes.toInt (Machine.FrameInfo.size fi)}
-
         fun outputChunk (chunk as Machine.Chunk.T {blocks, chunkLabel, ...},
                          print)
           = let
@@ -392,7 +387,6 @@ struct
               val {chunk}
                 = x86Translate.translateChunk 
                   {chunk = chunk,
-                   frameInfoToX86 = frameInfoToX86,
                    liveInfo = liveInfo}
 
               val chunk : x86.Chunk.t

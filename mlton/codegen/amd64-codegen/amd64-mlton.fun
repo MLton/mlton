@@ -25,8 +25,6 @@ struct
   end
 
   type transInfo = {addData : amd64.Assembly.t list -> unit,
-                    frameInfoToAMD64: (amd64MLtonBasic.Machine.FrameInfo.t
-                                     -> amd64.FrameInfo.t),
                     live: amd64.Label.t -> amd64.Operand.t list,
                     liveInfo: amd64Liveness.LiveInfo.t}
 

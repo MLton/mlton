@@ -297,9 +297,13 @@ struct
     struct
       structure Kind = Machine.Kind
 
+      fun frameInfoToX86 fi =
+         x86.FrameInfo.T
+         {frameLayoutsIndex = Machine.FrameInfo.index fi,
+          size = Bytes.toInt (Machine.FrameInfo.size fi)}
+
       fun toX86Blocks {label, kind, 
-                       transInfo as {frameInfoToX86, live, liveInfo,
-                                     ...}: transInfo}
+                       transInfo as {live, liveInfo, ...}: transInfo}
         = (
            x86Liveness.LiveInfo.setLiveOperands
            (liveInfo, label, live label);
@@ -755,7 +759,6 @@ struct
       open Machine.Chunk
 
       fun toX86Chunk {chunk = T {blocks, ...}, 
-                      frameInfoToX86,
                       liveInfo}
         = let
             val data = ref []
@@ -772,7 +775,6 @@ struct
                                Vector.concatV o Vector.map)
                               (live, Operand.toX86Operand o Live.toOperand)))
             val transInfo = {addData = addData,
-                             frameInfoToX86 = frameInfoToX86,
                              live = live,
                              liveInfo = liveInfo}
             val x86Blocks 
@@ -795,11 +797,9 @@ struct
     end
 
   fun translateChunk {chunk: x86MLton.Machine.Chunk.t,
-                      frameInfoToX86,
                       liveInfo: x86Liveness.LiveInfo.t}:
                      {chunk: x86.Chunk.t}
     = {chunk = Chunk.toX86Chunk {chunk = chunk,
-                                 frameInfoToX86 = frameInfoToX86,
                                  liveInfo = liveInfo}}
 
   val (translateChunk, translateChunk_msg)

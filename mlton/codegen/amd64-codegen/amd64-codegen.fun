@@ -355,11 +355,6 @@ struct
         val liveInfo = amd64Liveness.LiveInfo.newLiveInfo ()
         val jumpInfo = amd64JumpInfo.newJumpInfo ()
 
-        fun frameInfoToAMD64 fi =
-           amd64.FrameInfo.T
-           {frameLayoutsIndex = Machine.FrameInfo.index fi,
-            size = Bytes.toInt (Machine.FrameInfo.size fi)}
-
         fun outputChunk (chunk as Machine.Chunk.T {blocks, chunkLabel, ...},
                          print)
           = let
@@ -374,7 +369,6 @@ struct
               val {chunk}
                 = amd64Translate.translateChunk 
                   {chunk = chunk,
-                   frameInfoToAMD64 = frameInfoToAMD64,
                    liveInfo = liveInfo}
 
               val chunk : amd64.Chunk.t

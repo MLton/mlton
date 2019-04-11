@@ -25,8 +25,6 @@ struct
   end
 
   type transInfo = {addData : x86.Assembly.t list -> unit,
-                    frameInfoToX86: (x86MLtonBasic.Machine.FrameInfo.t
-                                     -> x86.FrameInfo.t),
                     live: x86.Label.t -> x86.Operand.t list,
                     liveInfo: x86Liveness.LiveInfo.t}
 

@@ -24,8 +24,6 @@ signature AMD64_MLTON =
     sharing Machine = amd64MLtonBasic.Machine
 
     type transInfo = {addData : amd64.Assembly.t list -> unit,
-                      frameInfoToAMD64: (amd64MLtonBasic.Machine.FrameInfo.t
-                                       -> amd64.FrameInfo.t),
                       live: amd64.Label.t -> amd64.Operand.t list,
                       liveInfo: amd64Liveness.LiveInfo.t}
 
@@ -39,8 +37,8 @@ signature AMD64_MLTON =
                   func: RepType.t Machine.CFunction.t,
                   label: amd64.Label.t, 
                   transInfo: transInfo} -> amd64.Block.t' AppendList.t
-  val implementsPrim: RepType.t Machine.Prim.t -> bool
-  val prim: {prim: RepType.t Machine.Prim.t,
+    val implementsPrim: RepType.t Machine.Prim.t -> bool
+    val prim: {prim: RepType.t Machine.Prim.t,
                args: (amd64.Operand.t * amd64.Size.t) vector,
                dsts: (amd64.Operand.t * amd64.Size.t) vector,
                transInfo: transInfo} -> amd64.Block.t' AppendList.t
