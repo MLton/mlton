@@ -62,8 +62,7 @@ struct
                             structure x86MLton = x86MLton)
 
   open x86
-  fun output {program as Machine.Program.T {chunks, frameLayouts, handlesSignals,
-                                            main, ...},
+  fun output {program as Machine.Program.T {chunks, handlesSignals, main, ...},
               outputC: unit -> {file: File.t,
                                 print: string -> unit,
                                 done: unit -> unit},
@@ -97,7 +96,7 @@ struct
               local
                 val Machine.Program.T 
                     {chunks, 
-                     frameLayouts, 
+                     frameInfos,
                      frameOffsets, 
                      handlesSignals, 
                      main, 
@@ -110,7 +109,7 @@ struct
                 val program =
                   Machine.Program.T 
                   {chunks = chunks, 
-                   frameLayouts = frameLayouts, 
+                   frameInfos = frameInfos,
                    frameOffsets = frameOffsets, 
                    handlesSignals = handlesSignals, 
                    main = main, 
@@ -374,12 +373,10 @@ struct
         val liveInfo = x86Liveness.LiveInfo.newLiveInfo ()
         val jumpInfo = x86JumpInfo.newJumpInfo ()
 
-        fun frameInfoToX86 (Machine.FrameInfo.T {frameLayoutsIndex, ...}) =
+        fun frameInfoToX86 fi =
            x86.FrameInfo.T
-           {frameLayoutsIndex = frameLayoutsIndex,
-            size = Bytes.toInt (Machine.FrameLayout.size
-                                (Vector.sub (frameLayouts,
-                                             frameLayoutsIndex)))}
+           {frameLayoutsIndex = Machine.FrameInfo.index fi,
+            size = Bytes.toInt (Machine.FrameInfo.size fi)}
 
         fun outputChunk (chunk as Machine.Chunk.T {blocks, chunkLabel, ...},
                          print)

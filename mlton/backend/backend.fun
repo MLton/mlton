@@ -269,14 +269,14 @@ let
       (* FrameInfo. *)
       local
          val frameLabels = ref []
-         val frameLayouts: M.FrameLayout.t list ref = ref []
-         val frameLayoutsCounter = Counter.new 0
+         val frameInfos: M.FrameInfo.t list ref = ref []
+         val frameInfosCounter = Counter.new 0
          val _ = ByteSet.reset ()
          val table =
             let
                fun equals ({kind = k1, frameOffsets = fo1, size = s1},
                            {kind = k2, frameOffsets = fo2, size = s2}) =
-                  M.FrameLayout.Kind.equals (k1, k2)
+                  M.FrameInfo.Kind.equals (k1, k2)
                   andalso M.FrameOffsets.equals (fo1, fo2)
                   andalso Bytes.equals (s1, s2)
                fun hash {kind = _, frameOffsets, size} =
@@ -309,31 +309,31 @@ let
             let
                (* Reverse lists because the index is from back of list. *)
                val frameLabels = Vector.fromListRev (!frameLabels)
-               val frameLayouts = Vector.fromListRev (!frameLayouts)
+               val frameInfos = Vector.fromListRev (!frameInfos)
                val frameOffsets = Vector.fromListRev (!frameOffsets)
             in
-               (frameLabels, frameLayouts, frameOffsets)
+               (frameLabels, frameInfos, frameOffsets)
             end
-         fun getFrameLayoutsIndex {entry: bool,
-                                   kind: M.FrameLayout.Kind.t,
-                                   label: Label.t,
-                                   offsets: Bytes.t list,
-                                   size: Bytes.t}: int =
+         fun getFrameInfo {entry: bool,
+                             kind: M.FrameInfo.Kind.t,
+                             label: Label.t,
+                             offsets: Bytes.t list,
+                             size: Bytes.t}: M.FrameInfo.t =
             let
                val frameOffsets = getFrameOffsets (ByteSet.fromList offsets)
                fun new () =
                   let
-                     val index = Counter.next frameLayoutsCounter
-                     val frameLayout =
-                        M.FrameLayout.new
+                     val index = Counter.next frameInfosCounter
+                     val frameInfo =
+                        M.FrameInfo.new
                         {frameOffsets = frameOffsets,
                          index = index,
                          kind = kind,
                          size = size}
-                     val _ = List.push (frameLayouts, frameLayout)
+                     val _ = List.push (frameInfos, frameInfo)
                      val _ = List.push (frameLabels, label)
                   in
-                     index
+                     frameInfo
                   end
             in
                (* We need to give a frame a unique layout index in two cases.
@@ -816,22 +816,19 @@ let
                                []
                          val (entry, kind) =
                             case kind of
-                               R.Kind.Cont _=> (true, M.FrameLayout.Kind.ML_FRAME)
+                               R.Kind.Cont _=> (true, M.FrameInfo.Kind.ML_FRAME)
                              | R.Kind.CReturn {func} => (CFunction.maySwitchThreadsTo func,
-                                                         M.FrameLayout.Kind.C_FRAME)
-                             | R.Kind.Handler => (true, M.FrameLayout.Kind.ML_FRAME)
-                             | R.Kind.Jump => (false, M.FrameLayout.Kind.ML_FRAME)
-                         val frameLayoutsIndex =
-                            getFrameLayoutsIndex {entry = entry,
-                                                  kind = kind,
-                                                  label = label,
-                                                  offsets = offsets,
-                                                  size = size}
+                                                         M.FrameInfo.Kind.C_FRAME)
+                             | R.Kind.Handler => (true, M.FrameInfo.Kind.ML_FRAME)
+                             | R.Kind.Jump => (false, M.FrameInfo.Kind.ML_FRAME)
+                         val frameInfo =
+                            getFrameInfo {entry = entry,
+                                            kind = kind,
+                                            label = label,
+                                            offsets = offsets,
+                                            size = size}
                       in
-                         setFrameInfo
-                         (label,
-                          SOME (M.FrameInfo.T
-                                {frameLayoutsIndex = frameLayoutsIndex}))
+                         setFrameInfo (label, SOME frameInfo)
                       end
                 in
                    case R.Kind.frameStyle kind of
@@ -960,13 +957,11 @@ let
                                    (returns, fn returns =>
                                     Vector.map (returns, Live.StackOffset))
                                 val frameInfo =
-                                   M.FrameInfo.T
-                                   {frameLayoutsIndex =
-                                    getFrameLayoutsIndex {entry = true,
-                                                          kind = M.FrameLayout.Kind.ML_FRAME,
-                                                          label = funcToLabel name,
-                                                          offsets = [],
-                                                          size = Bytes.zero}}
+                                   getFrameInfo {entry = true,
+                                                   kind = M.FrameInfo.Kind.ML_FRAME,
+                                                   label = funcToLabel name,
+                                                   offsets = [],
+                                                   size = Bytes.zero}
                              in
                                 Chunk.newBlock
                                 (funcChunk name,
@@ -1131,7 +1126,7 @@ let
        *)
       val _ = List.foreach (chunks, fn M.Chunk.T {blocks, ...} =>
                             Vector.foreach (blocks, Label.clear o M.Block.label))
-      val (frameLabels, frameLayouts, frameOffsets) = allFrameInfo ()
+      val (frameLabels, frameInfos, frameOffsets) = allFrameInfo ()
       val maxFrameSize: Bytes.t =
          List.fold
          (chunks, Bytes.zero, fn (M.Chunk.T {blocks, ...}, max) =>
@@ -1155,10 +1150,7 @@ let
               val max =
                  case M.Kind.frameInfoOpt kind of
                     NONE => max
-                  | SOME (M.FrameInfo.T {frameLayoutsIndex, ...}) =>
-                       Bytes.max
-                       (max,
-                        M.FrameLayout.size (Vector.sub (frameLayouts, frameLayoutsIndex)))
+                  | SOME fi => Bytes.max (max, M.FrameInfo.size fi)
               val max =
                  Vector.fold
                  (statements, max, fn (s, max) =>
@@ -1173,7 +1165,7 @@ let
       val program =
          M.Program.T
          {chunks = chunks,
-          frameLayouts = frameLayouts,
+          frameInfos = frameInfos,
           frameOffsets = frameOffsets,
           handlesSignals = handlesSignals,
           main = main,
@@ -1228,7 +1220,7 @@ let
                      Array.toVector a
                   end
                val M.Program.T
-                  {chunks, frameLayouts, frameOffsets,
+                  {chunks, frameInfos, frameOffsets,
                    handlesSignals, main, maxFrameSize,
                    objectTypes, profileInfo,
                    reals, vectors} = p
@@ -1245,7 +1237,7 @@ let
             in
                M.Program.T
                {chunks = chunks,
-                frameLayouts = frameLayouts,
+                frameInfos = frameInfos,
                 frameOffsets = frameOffsets,
                 handlesSignals = handlesSignals,
                 main = main,

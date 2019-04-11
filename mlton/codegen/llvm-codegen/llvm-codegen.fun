@@ -1157,7 +1157,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
 
 fun outputBlock (cxt, block) =
     let
-        val Context { program = program, printblock = printblock, ... } = cxt
+        val Context { printblock = printblock, ... } = cxt
         val Block.T {kind, label, statements, transfer, ...} = block
         val labelstr = Label.toString label
         val labelstrLen = Int.toString (String.size labelstr + 1)
@@ -1168,7 +1168,7 @@ fun outputBlock (cxt, block) =
             "i8* getelementptr inbounds ([", labelstrLen, " x i8]* @labelstr_", labelstr,
                  ", i32 0, i32 0))\n"]
             else ""
-        fun pop fi = (stackPush o llbytes o Bytes.~ o Program.frameSize) (program, fi)
+        fun pop fi = (stackPush o llbytes o Bytes.~ o FrameInfo.size) fi
         val dopop = case kind of
                         Kind.Cont {frameInfo, ...} => pop frameInfo
                       | Kind.CReturn {dst, frameInfo, ...} =>
@@ -1348,7 +1348,7 @@ fun outputChunk (cxt, outputLL, chunk) =
 
 fun makeContext program =
     let
-        val Program.T { chunks, frameLayouts, ...} = program
+        val Program.T { chunks, frameInfos, ...} = program
         val {get = chunkLabelInfo: ChunkLabel.t -> {index: int},
              set = setChunkLabelInfo, ...} =
            Property.getSetOnce
@@ -1358,7 +1358,7 @@ fun makeContext program =
              set = setLabelInfo, ...} =
            Property.getSetOnce
            (Label.plist, Property.initRaise ("LLVMCodeGen.labelInfo", Label.layout))
-        val nextChunks = Array.new (Vector.length frameLayouts, NONE)
+        val nextChunks = Array.new (Vector.length frameInfos, NONE)
         val _ =
            List.foreachi
            (chunks, fn (i, Chunk.T {blocks, chunkLabel, ...}) =>
@@ -1369,9 +1369,9 @@ fun makeContext program =
                  val index =
                     case Kind.frameInfoOpt kind of
                        NONE => NONE
-                     | SOME (FrameInfo.T {frameLayoutsIndex, ...}) =>
+                     | SOME fi =>
                           let
-                             val index = frameLayoutsIndex
+                             val index = FrameInfo.index fi
                           in
                              if Kind.isEntry kind
                                 then (Assert.assert ("LLVMCodegen.nextChunks", fn () =>

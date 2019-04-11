@@ -62,8 +62,7 @@ struct
                             structure amd64MLton = amd64MLton)
 
   open amd64
-  fun output {program as Machine.Program.T {chunks, frameLayouts, handlesSignals,
-                                            main, ...},
+  fun output {program as Machine.Program.T {chunks, handlesSignals, main, ...},
               outputC: unit -> {file: File.t,
                                 print: string -> unit,
                                 done: unit -> unit},
@@ -95,7 +94,7 @@ struct
               local
                 val Machine.Program.T 
                     {chunks, 
-                     frameLayouts, 
+                     frameInfos,
                      frameOffsets, 
                      handlesSignals, 
                      main, 
@@ -108,7 +107,7 @@ struct
                 val program =
                   Machine.Program.T 
                   {chunks = chunks, 
-                   frameLayouts = frameLayouts, 
+                   frameInfos = frameInfos,
                    frameOffsets = frameOffsets, 
                    handlesSignals = handlesSignals, 
                    main = main, 
@@ -356,12 +355,10 @@ struct
         val liveInfo = amd64Liveness.LiveInfo.newLiveInfo ()
         val jumpInfo = amd64JumpInfo.newJumpInfo ()
 
-        fun frameInfoToAMD64 (Machine.FrameInfo.T {frameLayoutsIndex, ...}) =
+        fun frameInfoToAMD64 fi =
            amd64.FrameInfo.T
-           {frameLayoutsIndex = frameLayoutsIndex,
-            size = Bytes.toInt (Machine.FrameLayout.size
-                                (Vector.sub (frameLayouts,
-                                             frameLayoutsIndex)))}
+           {frameLayoutsIndex = Machine.FrameInfo.index fi,
+            size = Bytes.toInt (Machine.FrameInfo.size fi)}
 
         fun outputChunk (chunk as Machine.Chunk.T {blocks, chunkLabel, ...},
                          print)

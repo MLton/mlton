@@ -255,7 +255,7 @@ fun outputDeclarations
     includes: string list,
     print: string -> unit,
     program = (Program.T
-               {frameLayouts, frameOffsets, maxFrameSize,
+               {frameInfos, frameOffsets, maxFrameSize,
                 objectTypes, profileInfo, reals, vectors, ...}),
     rest: unit -> unit
     }: unit =
@@ -323,12 +323,12 @@ fun outputDeclarations
                              print (concat ["\t /* ", C.int i, ": */ ", toString (i, x), ",\n"]))
           ; print "};\n")
       fun declareFrameLayouts () =
-         declareArray ("struct GC_frameLayout", "frameLayouts", frameLayouts,
-                       fn (_, fl) =>
+         declareArray ("struct GC_frameLayout", "frameLayouts", frameInfos,
+                       fn (_, fi) =>
                        concat ["{",
-                               FrameLayout.Kind.toString (FrameLayout.kind fl),
-                               ", frameOffsets", C.int (FrameOffsets.index (FrameLayout.frameOffsets fl)),
-                               ", ", C.bytes (FrameLayout.size fl),
+                               FrameInfo.Kind.toString (FrameInfo.kind fi),
+                               ", frameOffsets", C.int (FrameOffsets.index (FrameInfo.frameOffsets fi)),
+                               ", ", C.bytes (FrameInfo.size fi),
                                "}"])
       fun declareAtMLtons () =
          declareArray ("char*", "atMLtons", !Control.atMLtons, C.string o #2)
@@ -573,7 +573,7 @@ fun declareCReturns (print) =
        print (concat ["\tUNUSED ", s, " CReturn", CType.name t, ";\n"])
     end)
 
-fun output {program as Machine.Program.T {chunks, frameLayouts,
+fun output {program as Machine.Program.T {chunks, frameInfos,
                                           main = {label, ...}, ...},
             outputC: unit -> {file: File.t,
                               print: string -> unit,
@@ -590,7 +590,7 @@ fun output {program as Machine.Program.T {chunks, frameLayouts,
            set = setLabelInfo, ...} =
          Property.getSetOnce
          (Label.plist, Property.initRaise ("CCodeGen.labelInfo", Label.layout))
-      val nextChunks = Array.new (Vector.length frameLayouts, NONE)
+      val nextChunks = Array.new (Vector.length frameInfos, NONE)
       val _ =
          List.foreachi
          (chunks, fn (i, Chunk.T {blocks, chunkLabel, ...}) =>
@@ -601,14 +601,14 @@ fun output {program as Machine.Program.T {chunks, frameLayouts,
                val index =
                   case Kind.frameInfoOpt kind of
                      NONE => NONE
-                   | SOME (FrameInfo.T {frameLayoutsIndex, ...}) =>
+                   | SOME fi =>
                         let
-                           val index = frameLayoutsIndex
+                           val index = FrameInfo.index fi
                         in
                            if Kind.isEntry kind
                               then Array.update (nextChunks, index, SOME label)
                               else ()
-                           ; SOME frameLayoutsIndex
+                           ; SOME index
                         end
             in
                setLabelInfo (label, {block = block,
@@ -983,7 +983,7 @@ fun output {program as Machine.Program.T {chunks, frameLayouts,
                 let
                   val () = print (concat [Label.toString label, ":\n"])
                   fun pop (fi: FrameInfo.t) =
-                     (C.push (Bytes.~ (Program.frameSize (program, fi)), print)
+                     (C.push (Bytes.~ (FrameInfo.size fi), print)
                       ; if amTimeProfiling
                            then print "\tFlushStackTop();\n"
                         else ())

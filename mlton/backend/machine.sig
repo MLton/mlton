@@ -175,7 +175,7 @@ signature MACHINE =
             val offsets: t -> Bytes.t vector
          end
 
-      structure FrameLayout:
+      structure FrameInfo:
          sig
             structure Kind:
                sig
@@ -196,15 +196,8 @@ signature MACHINE =
                       index: int,
                       kind: Kind.t,
                       size: Bytes.t} -> t
+            val offsets: t -> Bytes.t vector
             val size: t -> Bytes.t
-         end
-
-      structure FrameInfo:
-         sig
-            datatype t = T of {frameLayoutsIndex: int}
-
-            val equals: t * t -> bool
-            val layout: t -> Layout.t
          end
 
       structure Kind:
@@ -279,12 +272,7 @@ signature MACHINE =
          sig
             datatype t =
                T of {chunks: Chunk.t list,
-                     frameLayouts: FrameLayout.t vector,
-                     (* Each vector in frameOffsetss specifies the
-                      * offsets of live pointers in a stack frame.  A
-                      * vector is referred to by index as the
-                      * frameOffsetsIndex in a FrameLayout.
-                      *)
+                     frameInfos: FrameInfo.t vector,
                      frameOffsets: FrameOffsets.t vector,
                      handlesSignals: bool,
                      main: {chunkLabel: ChunkLabel.t,
@@ -295,7 +283,6 @@ signature MACHINE =
                      reals: (Global.t * RealX.t) list,
                      vectors: (Global.t * WordXVector.t) list}
 
-            val frameSize: t * FrameInfo.t -> Bytes.t
             val clearLabelNames: t -> unit
             val layouts: t * (Layout.t -> unit) -> unit
             val typeCheck: t -> unit
