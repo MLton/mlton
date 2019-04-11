@@ -575,22 +575,42 @@ structure FrameLayout =
                 | ML_FRAME => "ML_FRAME"
             val layout = Layout.str o toString
          end
+
       datatype t = T of {frameOffsets: FrameOffsets.t,
+                         index: int,
                          kind: Kind.t,
                          size: Bytes.t}
-      fun layout (T {frameOffsets, kind, size}) =
+
+      local
+         fun make f (T r) = f r
+      in
+         val frameOffsets = make #frameOffsets
+         val index = make #index
+         val kind = make #kind
+         val size = make #size
+      end
+
+      fun new {frameOffsets, index, kind, size} =
+         T {frameOffsets = frameOffsets,
+            index = index,
+            kind = kind,
+            size = size}
+
+      fun equals (fl1, fl2) =
+         FrameOffsets.equals (frameOffsets fl1, frameOffsets fl2)
+         andalso Int.equals (index fl1, index fl2)
+         andalso Kind.equals (kind fl1, kind fl2)
+         andalso Bytes.equals (size fl1, size fl2)
+
+      fun layout (T {frameOffsets, index, kind, size}) =
          let
             open Layout
          in
             record [("frameOffsets", FrameOffsets.layout frameOffsets),
+                    ("index", Int.layout index),
                     ("kind", Kind.layout kind),
                     ("size", Bytes.layout size)]
          end
-      local
-         fun make f (T r) = f r
-      in
-         val size = make #size
-      end
    end
 
 structure FrameInfo =
@@ -991,30 +1011,53 @@ structure Program =
                               else false
                            end
                         end
-            fun checkFrameOffsets fo =
-               Err.check ("frameOffsets",
-                          fn () => let
-                                      val index = FrameOffsets.index fo
-                                   in
-                                      FrameOffsets.equals (fo, Vector.sub (frameOffsets, index))
-                                      handle Subscript => false
-                                   end,
-                          fn () => FrameOffsets.layout fo)
             val _ =
-               Vector.foreach
-               (frameOffsets, checkFrameOffsets)
+               Vector.foreachi
+               (frameOffsets, fn (i, fo) =>
+                let
+                   val index = FrameOffsets.index fo
+                   val offsets = FrameOffsets.offsets fo
+                in
+                   Err.check ("frameOffsets",
+                              fn () => (Int.equals (i, index)
+                                        andalso Vector.forall
+                                                (offsets, fn offset =>
+                                                 Bytes.< (offset, maxFrameSize))),
+                              fn () => FrameOffsets.layout fo)
+                end)
+            fun checkFrameOffsets fo =
+               let
+                  val index = FrameOffsets.index fo
+               in
+                  FrameOffsets.equals (Vector.sub (frameOffsets, index), fo)
+                  handle Subscript => false
+               end
+            val _ =
+               Vector.foreachi
+               (frameLayouts, fn (i, fl) =>
+                let
+                   val index = FrameLayout.index fl
+                   val frameOffsets = FrameLayout.frameOffsets fl
+                   val size = FrameLayout.size fl
+                in
+                   Err.check
+                   ("frameLayouts",
+                    fn () => (Int.equals (i, index)
+                              andalso checkFrameOffsets frameOffsets
+                              andalso Bytes.<= (size, maxFrameSize)
+                              andalso Bytes.<= (size, Runtime.maxFrameSize)
+                              andalso Bytes.isWord32Aligned size),
+                    fn () => FrameLayout.layout fl)
+                end)
+            fun checkFrameLayout fl =
+               let
+                  val index = FrameLayout.index fl
+               in
+                  FrameLayout.equals (Vector.sub (frameLayouts, index), fl)
+                  handle Subscript => false
+               end
             fun getFrameLayout (FrameInfo.T {frameLayoutsIndex, ...}) =
                Vector.sub (frameLayouts, frameLayoutsIndex)
-            val _ =
-               Vector.foreach
-               (frameLayouts, fn f as FrameLayout.T {frameOffsets, size, ...} =>
-                Err.check
-                ("frameLayouts",
-                 fn () => ((checkFrameOffsets frameOffsets; true)
-                           andalso Bytes.<= (size, maxFrameSize)
-                           andalso Bytes.<= (size, Runtime.maxFrameSize)
-                           andalso Bytes.isWord32Aligned size),
-                 fn () => FrameLayout.layout f))
             val _ =
                Vector.foreach
                (objectTypes, fn ty =>

@@ -323,15 +323,17 @@ let
                val frameOffsets = getFrameOffsets (ByteSet.fromList offsets)
                fun new () =
                   let
-                     val _ =
-                        List.push (frameLayouts,
-                                   M.FrameLayout.T
-                                   {frameOffsets = frameOffsets,
-                                    kind = kind,
-                                    size = size})
+                     val index = Counter.next frameLayoutsCounter
+                     val frameLayout =
+                        M.FrameLayout.new
+                        {frameOffsets = frameOffsets,
+                         index = index,
+                         kind = kind,
+                         size = size}
+                     val _ = List.push (frameLayouts, frameLayout)
                      val _ = List.push (frameLabels, label)
                   in
-                     Counter.next frameLayoutsCounter
+                     index
                   end
             in
                (* We need to give a frame a unique layout index in two cases.
