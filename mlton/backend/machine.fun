@@ -577,7 +577,7 @@ structure FrameInfo =
          end
 
       datatype t = T of {frameOffsets: FrameOffsets.t,
-                         index: int,
+                         index: int ref,
                          kind: Kind.t,
                          size: Bytes.t}
 
@@ -585,21 +585,23 @@ structure FrameInfo =
          fun make f (T r) = f r
       in
          val frameOffsets = make #frameOffsets
-         val index = make #index
+         val indexRef = make #index
          val kind = make #kind
          val size = make #size
       end
+      val index = ! o indexRef
+      fun setIndex (fi, i) = indexRef fi := i
       val offsets = FrameOffsets.offsets o frameOffsets
 
       fun new {frameOffsets, index, kind, size} =
          T {frameOffsets = frameOffsets,
-            index = index,
+            index = ref index,
             kind = kind,
             size = size}
 
       fun equals (fi1, fi2) =
          FrameOffsets.equals (frameOffsets fi1, frameOffsets fi2)
-         andalso Int.equals (index fi1, index fi2)
+         andalso Ref.equals (indexRef fi1, indexRef fi2)
          andalso Kind.equals (kind fi1, kind fi2)
          andalso Bytes.equals (size fi1, size fi2)
 
@@ -608,7 +610,7 @@ structure FrameInfo =
             open Layout
          in
             record [("frameOffsets", FrameOffsets.layout frameOffsets),
-                    ("index", Int.layout index),
+                    ("index", Ref.layout Int.layout index),
                     ("kind", Kind.layout kind),
                     ("size", Bytes.layout size)]
          end

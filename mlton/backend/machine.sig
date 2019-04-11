@@ -197,6 +197,7 @@ signature MACHINE =
                       kind: Kind.t,
                       size: Bytes.t} -> t
             val offsets: t -> Bytes.t vector
+            val setIndex: t * int -> unit
             val size: t -> Bytes.t
          end
 
