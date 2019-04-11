@@ -927,7 +927,9 @@ fun doit program =
             val _ =
                List.foreach (!frameProfileIndices, fn (l, i) =>
                              set (l, i))
-            val frameSources = Vector.map (frames, get)
+            val frames = Array.fromList (frames ())
+            val () = QuickSort.sortArray (frames, fn ((_,i1), (_,i2)) => i1 < i2)
+            val frameSources = Array.toVectorMap (frames, fn (l, _) => get l)
          in
             SOME (Machine.ProfileInfo.T
                   {frameSources = frameSources,

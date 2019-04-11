@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 2002-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -19,6 +19,6 @@ signature IMPLEMENT_PROFILING =
 
       val doit:
          Rssa.Program.t
-         -> Rssa.Program.t * ({frames: Rssa.Label.t vector}
+         -> Rssa.Program.t * ({frames: unit -> (Rssa.Label.t * int) list}
                               -> Machine.ProfileInfo.t option)
    end

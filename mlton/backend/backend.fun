@@ -268,7 +268,6 @@ let
           end)
       (* FrameInfo. *)
       local
-         val frameLabels = ref []
          val frameInfos: M.FrameInfo.t list ref = ref []
          val frameInfosCounter = Counter.new 0
          val _ = ByteSet.reset ()
@@ -305,18 +304,52 @@ let
                  fo
               end))
       in
-         fun allFrameInfo () =
+         fun allFrameInfo chunks =
             let
                (* Reverse lists because the index is from back of list. *)
-               val frameLabels = Vector.fromListRev (!frameLabels)
                val frameInfos = Vector.fromListRev (!frameInfos)
                val frameOffsets = Vector.fromListRev (!frameOffsets)
+               (* If we are using the C or LLVM codegens, then we reindex the
+                * frameInfos so that the indices of the entry frames of a chunk
+                * are consecutive integers so that gcc will use a jump table.
+                *)
+               val frameInfos =
+                  if !Control.codegen = Control.CCodegen orelse !Control.codegen = Control.LLVMCodegen
+                     then let
+                             val done =
+                                Array.array (Vector.length frameInfos, false)
+                             val newFrameInfos = ref []
+                             fun newFrameInfo fi =
+                                if Array.sub (done, M.FrameInfo.index fi)
+                                   then ()
+                                   else (Array.update (done, M.FrameInfo.index fi, true)
+                                         ; List.push (newFrameInfos, fi))
+                             val () =
+                                List.foreach
+                                (chunks, fn M.Chunk.T {blocks, ...} =>
+                                 Vector.foreach
+                                 (blocks, fn M.Block.T {kind, ...} =>
+                                  case M.Kind.frameInfoOpt kind of
+                                     NONE => ()
+                                   | SOME fi => if M.Kind.isEntry kind
+                                                   then newFrameInfo fi
+                                                   else ()))
+                             val () = Vector.foreach (frameInfos, newFrameInfo)
+                             val frameInfos =
+                                Vector.fromListRev (!newFrameInfos)
+                             val () =
+                                Vector.foreachi
+                                (frameInfos, fn (i, fi) =>
+                                 M.FrameInfo.setIndex (fi, i))
+                          in
+                             frameInfos
+                          end
+                     else frameInfos
             in
-               (frameLabels, frameInfos, frameOffsets)
+               (frameInfos, frameOffsets)
             end
          fun getFrameInfo {entry: bool,
                            kind: M.FrameInfo.Kind.t,
-                           label: Label.t,
                            offsets: Bytes.t list,
                            size: Bytes.t}: M.FrameInfo.t =
             let
@@ -331,7 +364,6 @@ let
                          kind = kind,
                          size = size}
                      val _ = List.push (frameInfos, frameInfo)
-                     val _ = List.push (frameLabels, label)
                   in
                      frameInfo
                   end
@@ -823,10 +855,9 @@ let
                              | R.Kind.Jump => (false, M.FrameInfo.Kind.ML_FRAME)
                          val frameInfo =
                             getFrameInfo {entry = entry,
-                                            kind = kind,
-                                            label = label,
-                                            offsets = offsets,
-                                            size = size}
+                                          kind = kind,
+                                          offsets = offsets,
+                                          size = size}
                       in
                          setFrameInfo (label, SOME frameInfo)
                       end
@@ -959,7 +990,6 @@ let
                                 val frameInfo =
                                    getFrameInfo {entry = true,
                                                  kind = M.FrameInfo.Kind.ML_FRAME,
-                                                 label = funcToLabel name,
                                                  offsets = [],
                                                  size = Bytes.zero}
                              in
@@ -1126,7 +1156,7 @@ let
        *)
       val _ = List.foreach (chunks, fn M.Chunk.T {blocks, ...} =>
                             Vector.foreach (blocks, Label.clear o M.Block.label))
-      val (frameLabels, frameInfos, frameOffsets) = allFrameInfo ()
+      val (frameInfos, frameOffsets) = allFrameInfo chunks
       val maxFrameSize: Bytes.t =
          List.fold
          (chunks, Bytes.zero, fn (M.Chunk.T {blocks, ...}, max) =>
@@ -1161,6 +1191,20 @@ let
               max
            end))
       val maxFrameSize = Bytes.alignWord32 maxFrameSize
+      fun frameLabels () =
+         let
+            val frameLabels = ref []
+            val () =
+               List.foreach
+               (chunks, fn M.Chunk.T {blocks, ...} =>
+                Vector.foreach
+                (blocks, fn M.Block.T {label, kind, ...} =>
+                 case M.Kind.frameInfoOpt kind of
+                    NONE => ()
+                  | SOME fi => List.push (frameLabels, (label, M.FrameInfo.index fi))))
+         in
+            !frameLabels
+         end
       val profileInfo = makeProfileInfo {frames = frameLabels}
       val program =
          M.Program.T
