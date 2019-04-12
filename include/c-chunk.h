@@ -47,8 +47,8 @@
 #define Chunk(n)                                \
         DeclareChunk(n) {                       \
                 if (DEBUG_CCODEGEN)             \
-                        fprintf (stderr, "%s:%d: Chunk%d(nextBlock = %d)\n", \
-                                        __FILE__, __LINE__, n, (int)nextBlock); \
+                        fprintf (stderr, "%s:%d: Chunk%d(nextBlock = %d)  %p %p\n", \
+                                        __FILE__, __LINE__, n, (int)nextBlock, __builtin_return_address(0), __builtin_frame_address(0)); \
                 Pointer frontier;               \
                 Pointer stackTop;
 
@@ -66,7 +66,7 @@
                         goto doLeaveChunk;      \
                 } /* end switch (nextBlock) */
 
-#define EndChunk(n)                             \
+#define EndChunk(n, tail)                       \
                 /* interchunk return */         \
                 doLeaveChunk:                   \
                 if (DEBUG_CCODEGEN)             \
@@ -74,7 +74,11 @@
                                         __FILE__, __LINE__, n, (int)nextBlock); \
                 FlushFrontier();                \
                 FlushStackTop();                \
-                return nextBlock;               \
+                if (tail) {                     \
+                        return (*(nextChunks[nextBlock]))(nextBlock); \
+                } else {                        \
+                        return nextBlock;       \
+                }                               \
         } /* end chunk */
 
 
@@ -149,13 +153,19 @@
 #define NearCall(l)                             \
         goto l
 
-#define FarCall(n, l)                           \
+#define FarCall(n, l, tail)                     \
         do {                                    \
                 if (DEBUG_CCODEGEN)             \
                         fprintf (stderr, "%s:%d: FarCall(%d, %s)\n", \
                                         __FILE__, __LINE__, (int)n, #l); \
-                nextBlock = l;                  \
-                goto doLeaveChunk;              \
+                if (tail) {                     \
+                        FlushFrontier();        \
+                        FlushStackTop();        \
+                        return ChunkName(n)(l); \
+                } else {                        \
+                        nextBlock = l;          \
+                        goto doLeaveChunk;      \
+                }                               \
         } while (0)
 
 #define Return()                                                                \

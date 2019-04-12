@@ -64,6 +64,10 @@ val chunk = control {name = "chunk",
                      default = Coalesce {limit = 4096},
                      toString = Chunk.toString}
 
+val chunkTailCall = control {name = "chunkTailCall",
+                             default = false,
+                             toString = Bool.toString}
+
 val closureConvertGlobalize = control {name = "closureConvertGlobalize",
                                        default = true,
                                        toString = Bool.toString}

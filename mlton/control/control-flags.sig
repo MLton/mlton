@@ -34,6 +34,8 @@ signature CONTROL_FLAGS =
 
       val chunk: chunk ref
 
+      val chunkTailCall: bool ref
+
       val closureConvertGlobalize: bool ref
       val closureConvertShrink: bool ref
 

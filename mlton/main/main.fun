@@ -286,6 +286,9 @@ fun makeOptions {usage} =
                                                  end
                                             else usage ()
                                       end))),
+       (Expert, "chunk-tail-call", " {false|true}",
+        "whether to use tail calls for interchunk transfers",
+        Bool (fn b => chunkTailCall := b)),
        (Expert, "closure-convert-globalize", " {true|false}",
         "whether to globalize during closure conversion",
         Bool (fn b => (closureConvertGlobalize := b))),

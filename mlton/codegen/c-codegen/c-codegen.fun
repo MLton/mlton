@@ -918,7 +918,8 @@ fun output {program as Machine.Program.T {chunks, frameInfos,
                                            print)
                               else C.call ("\tFarCall",
                                            [chunkLabelIndexAsString dstChunk,
-                                            labelIndexAsString (label, {pretty = true})],
+                                            labelIndexAsString (label, {pretty = true}),
+                                            C.bool (!Control.chunkTailCall)],
                                            print)
                         end
                    | Goto dst => gotoLabel (dst, {tab = true})
@@ -1071,6 +1072,8 @@ fun output {program as Machine.Program.T {chunks, frameInfos,
             ; declareProfileLabels (); print "\n"
             ; outputOffsets (); print "\n"
             ; declareGlobals ("PRIVATE extern ", print); print "\n"
+            ; List.foreach (chunks, fn c => declareChunk (c, print))
+            ; print "PRIVATE extern uintptr_t (*nextChunks[]) (uintptr_t);\n\n"
             ; C.callNoSemi ("Chunk", [chunkLabelIndexAsString chunkLabel], print); print "\n"
             ; declareCReturns print; print "\n"
             ; declareRegisters (); print "\n"
@@ -1085,7 +1088,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos,
                               else ())
             ; print "EndChunkSwitch\n\n"
             ; List.foreach (List.rev (!dfsBlocks), printLabelCode)
-            ; C.callNoSemi ("EndChunk", [chunkLabelIndexAsString chunkLabel], print); print "\n"
+            ; C.callNoSemi ("EndChunk", [chunkLabelIndexAsString chunkLabel, C.bool (!Control.chunkTailCall)], print); print "\n"
             ; done ()
          end
       val _ = List.foreach (chunks, outputChunk)
