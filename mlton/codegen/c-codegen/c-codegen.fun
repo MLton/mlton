@@ -238,14 +238,20 @@ fun declareGlobals (prefix: string, print) =
          (CType.all, fn t =>
           let
              val s = CType.toString t
+             val n = Global.numberOfType t
           in
-             print (concat [prefix, s, " global", s,
-                            " [", C.int (Global.numberOfType t), "];\n"])
+             if n > 0
+                then print (concat [prefix, s, " global", s, " [", C.int n, "];\n"])
+                else ()
           end)
       val _ =
-         print (concat [prefix, "Pointer globalObjptrNonRoot [",
-                        C.int (Global.numberOfNonRoot ()),
-                        "];\n"])
+         let
+            val n = Global.numberOfNonRoot ()
+         in
+            if n > 0
+               then print (concat [prefix, "Objptr globalObjptrNonRoot [", C.int n, "];\n"])
+               else ()
+         end
    in
       ()
    end
@@ -268,15 +274,19 @@ fun outputDeclarations
                (print "static int saveGlobals (FILE *f) {\n"
                 ; (List.foreach
                    (CType.all, fn t =>
-                    print (concat ["\tSaveArray (global",
-                                   CType.toString t, ", f);\n"])))
+                    if Global.numberOfType t > 0
+                       then print (concat ["\tSaveArray (global",
+                                           CType.toString t, ", f);\n"])
+                          else ()))
                 ; print "\treturn 0;\n}\n")
             val _ =
                (print "static int loadGlobals (FILE *f) {\n"
                 ; (List.foreach
                    (CType.all, fn t =>
-                    print (concat ["\tLoadArray (global",
-                                   CType.toString t, ", f);\n"])))
+                    if Global.numberOfType t > 0
+                       then print (concat ["\tLoadArray (global",
+                                           CType.toString t, ", f);\n"])
+                       else ()))
                 ; print "\treturn 0;\n}\n")
          in
             ()
