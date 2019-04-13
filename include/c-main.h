@@ -20,12 +20,9 @@ static GC_frameIndex returnAddressToFrameIndex (GC_returnAddress ra) {
 #define MLtonCallFromC()                                                \
 static void MLton_callFromC () {                                        \
         uintptr_t nextBlock;                                            \
-        uintptr_t (*nextChunk)(uintptr_t);                              \
-        GC_state s;                                                     \
-                                                                        \
+        GC_state s = &gcState;                                          \
         if (DEBUG_CCODEGEN)                                             \
                 fprintf (stderr, "MLton_callFromC() starting\n");       \
-        s = &gcState;                                                   \
         GC_setSavedThread (s, GC_getCurrentThread (s));                 \
         s->atomicState += 3;                                            \
         if (s->signalsInfo.signalIsPending)                             \
@@ -34,8 +31,7 @@ static void MLton_callFromC () {                                        \
         GC_switchToThread (s, GC_getCallFromCHandlerThread (s), 0);     \
         nextBlock = *(uintptr_t*)(s->stackTop - GC_RETURNADDRESS_SIZE); \
         do {                                                            \
-                nextChunk = nextChunks[nextBlock];                      \
-                nextBlock = (*nextChunk)(nextBlock);                    \
+                nextBlock = (*(nextChunks[nextBlock]))(nextBlock);      \
         } while (nextBlock != (uintptr_t)-1);                           \
         s->atomicState += 1;                                            \
         GC_switchToThread (s, GC_getSavedThread (s), 0);                \
@@ -50,48 +46,45 @@ static void MLton_callFromC () {                                        \
 #define MLtonMain(al, mg, mfs, mmc, pk, ps, ml)                         \
 PUBLIC int MLton_main (int argc, char* argv[]) {                        \
         uintptr_t nextBlock;                                            \
-        uintptr_t (*nextChunk)(uintptr_t);                              \
+        GC_state s = &gcState;                                          \
         Initialize (al, mg, mfs, mmc, pk, ps);                          \
-        if (gcState.amOriginal) {                                       \
+        if (s->amOriginal) {                                            \
                 real_Init();                                            \
                 nextBlock = ml;                                         \
         } else {                                                        \
                 /* Return to the saved world */                         \
-                nextBlock = *(uintptr_t*)(gcState.stackTop - GC_RETURNADDRESS_SIZE); \
+                nextBlock = *(uintptr_t*)(s->stackTop - GC_RETURNADDRESS_SIZE); \
         }                                                               \
         /* Trampoline */                                                \
-        while (1) {                                                     \
-                nextChunk = nextChunks[nextBlock];                      \
-                nextBlock = (*nextChunk)(nextBlock);                    \
-        }                                                               \
+        do {                                                            \
+                nextBlock = (*(nextChunks[nextBlock]))(nextBlock);      \
+        } while (1);                                                    \
         return 1;                                                       \
 }
 
 #define MLtonLibrary(al, mg, mfs, mmc, pk, ps, mc, ml)                  \
 PUBLIC void LIB_OPEN(LIBNAME) (int argc, char* argv[]) {                \
         uintptr_t nextBlock;                                            \
-        uintptr_t (*nextChunk)(uintptr_t);                              \
+        GC_state s = &gcState;                                          \
         Initialize (al, mg, mfs, mmc, pk, ps);                          \
-        if (gcState.amOriginal) {                                       \
+        if (s->amOriginal) {                                            \
                 real_Init();                                            \
                 nextBlock = ml;                                         \
         } else {                                                        \
                 /* Return to the saved world */                         \
-                nextBlock = *(uintptr_t*)(gcState.stackTop - GC_RETURNADDRESS_SIZE); \
+                nextBlock = *(uintptr_t*)(s->stackTop - GC_RETURNADDRESS_SIZE); \
         }                                                               \
         /* Trampoline */                                                \
         do {                                                            \
-                nextChunk = nextChunks[nextBlock];                      \
-                nextBlock = (*nextChunk)(nextBlock);                    \
+                nextBlock = (*(nextChunks[nextBlock]))(nextBlock);      \
         } while (nextBlock != (uintptr_t)-1);                           \
 }                                                                       \
 PUBLIC void LIB_CLOSE(LIBNAME) () {                                     \
         uintptr_t nextBlock;                                            \
-        uintptr_t (*nextChuck)(uintptr_t);                              \
-        nextBlock = *(uintptr_t*)(gcState.stackTop - GC_RETURNADDRESS_SIZE); \
+        GC_state s = &gcState;                                          \
+        nextBlock = *(uintptr_t*)(s->stackTop - GC_RETURNADDRESS_SIZE); \
         do {                                                            \
-                nextChunk = nextChunks[nextBlock];                      \
-                nextBlock = (*nextChunk)(nextBlock);                    \
+                nextBlock = (*(nextChunks[nextBlock]))(nextBlock);      \
         } while (nextBlock != (uintptr_t)-1);                           \
         GC_done(&gcState);                                              \
 }
