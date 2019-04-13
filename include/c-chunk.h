@@ -47,8 +47,8 @@
 #define Chunk(n)                                \
         DeclareChunk(n) {                       \
                 if (DEBUG_CCODEGEN)             \
-                        fprintf (stderr, "%s:%d: Chunk%d(nextBlock = %d)  %p %p\n", \
-                                        __FILE__, __LINE__, n, (int)nextBlock, __builtin_return_address(0), __builtin_frame_address(0)); \
+                        fprintf (stderr, "%s:%d: Chunk%d(nextBlock = %d)\n", \
+                                        __FILE__, __LINE__, n, (int)nextBlock); \
                 Pointer frontier;               \
                 Pointer stackTop;
 
