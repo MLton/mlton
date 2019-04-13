@@ -63,20 +63,6 @@ PUBLIC int MLton_main (int argc, char* argv[]) {                        \
         while (1) {                                                     \
                 nextChunk = nextChunks[nextBlock];                      \
                 nextBlock = (*nextChunk)(nextBlock);                    \
-                nextChunk = nextChunks[nextBlock];                      \
-                nextBlock = (*nextChunk)(nextBlock);                    \
-                nextChunk = nextChunks[nextBlock];                      \
-                nextBlock = (*nextChunk)(nextBlock);                    \
-                nextChunk = nextChunks[nextBlock];                      \
-                nextBlock = (*nextChunk)(nextBlock);                    \
-                nextChunk = nextChunks[nextBlock];                      \
-                nextBlock = (*nextChunk)(nextBlock);                    \
-                nextChunk = nextChunks[nextBlock];                      \
-                nextBlock = (*nextChunk)(nextBlock);                    \
-                nextChunk = nextChunks[nextBlock];                      \
-                nextBlock = (*nextChunk)(nextBlock);                    \
-                nextChunk = nextChunks[nextBlock];                      \
-                nextBlock = (*nextChunk)(nextBlock);                    \
         }                                                               \
         return 1;                                                       \
 }
