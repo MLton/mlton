@@ -1094,24 +1094,26 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                            else if !Control.chunkTailCall
                                    then let
                                            val comment = "\t; FarCall\n"
-                                           val tmp = nextLLVMReg ()
-                                           val call = concat ["\t", tmp, " = musttail call ",
+                                           val stackTopArg = nextLLVMReg ()
+                                           val frontierArg = nextLLVMReg ()
+                                           val loadStackTop = mkload (stackTopArg, "%Pointer*", "%stackTop")
+                                           val loadFrontier = mkload (frontierArg, "%Pointer*", "%frontier")
+                                           val resReg = nextLLVMReg ()
+                                           val call = concat ["\t", resReg, " = musttail call ",
                                                               "%uintptr_t ",
-                                                              "@Chunk", chunkLabelToString dstChunk,
-                                                              "(%uintptr_t ", labelToStringIndex label,
-                                                              ")\n"]
-                                           val ret = concat ["\tret %uintptr_t ", tmp, "\n"]
+                                                              "@Chunk", chunkLabelToString dstChunk, "(",
+                                                              "%uintptr_t ", labelToStringIndex label, ", ",
+                                                              "%Pointer ", stackTopArg, ", ",
+                                                              "%Pointer ", frontierArg, ")\n"]
+                                           val ret = concat ["\tret %uintptr_t ", resReg, "\n"]
                                         in
-                                           concat [comment, flushFrontier(), flushStackTop (), call, ret]
+                                           concat [comment, loadStackTop, loadFrontier, call, ret]
                                         end
                                    else let
                                            val comment = "\t; FarCall\n"
-                                           (* nextBlock = l *)
-                                           val storeNB = mkstore ("%uintptr_t", labelToStringIndex label,
-                                                                  "%nextBlock")
-                                           val br = "\tbr label %doLeaveChunk\n"
+                                           val ret = concat ["\tret %uintptr_t ", labelToStringIndex label, "\n"]
                                         in
-                                           concat [comment, storeNB, br]
+                                           concat [comment, flushFrontier (), flushStackTop (), ret]
                                         end
             in
                 concat [push, goto]
@@ -1227,14 +1229,21 @@ fun outputLLVMDeclarations (cxt, print, chunk) =
         val globals = concat (List.map (CType.all, fn t =>
                           let
                               val s = CType.toString t
+                              val n = Global.numberOfType t
                           in
-                              concat ["@global", s, " = external hidden global [",
-                                      llint (Global.numberOfType t),
-                                      " x %", s, "]\n"]
+                              if n > 0
+                                 then concat ["@global", s, " = external hidden global [",
+                                              llint n, " x %", s, "]\n"]
+                                 else ""
                           end))
-        val nonroot = concat ["@globalObjptrNonRoot = external hidden global [",
-                              llint (Global.numberOfNonRoot ()),
-                              " x %Pointer]\n"]
+        val nonroot = let
+                         val n = Global.numberOfNonRoot ()
+                      in
+                         if n > 0
+                            then concat ["@globalObjptrNonRoot = external hidden global [",
+                                         llint n, " x %Objptr]\n"]
+                            else ""
+                      end
         val printBlockStrings = if chunkLabelIndex chunkLabel = 0
                                 then
 "declare i32 @printf(i8*, ...)\n\
@@ -1302,19 +1311,19 @@ fun outputChunk (cxt, outputLL, chunk) =
                         then ()
                         else print (concat ["declare hidden %uintptr_t @",
                                             "Chunk" ^ chunkLabelToString chunkLabel,
-                                            "(%uintptr_t)\n"]))
-                    ; print "@nextChunks = external hidden global [0 x %uintptr_t(%uintptr_t)*]\n"
+                                            "(%uintptr_t,%Pointer,%Pointer)\n"]))
+                    ; print "@nextChunks = external hidden global [0 x %uintptr_t(%uintptr_t,%Pointer,%Pointer)*]\n"
                     ; print "\n"
                  end
         val () = print (concat ["define hidden %uintptr_t @",
                                 "Chunk" ^ chunkLabelToString chunkLabel,
-                                "(%uintptr_t %nextBlockArg) {\nentry:\n"])
+                                "(%uintptr_t %nextBlockArg, %Pointer %stackTopArg, %Pointer %frontierArg) {\nentry:\n"])
         val () = if printblock
                  then print "\tcall i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([16 x i8]* @enteringChunk, i32 0, i32 0))\n"
                  else ()
-        val () = print "\t%frontier = alloca %Pointer\n"
-        val () = print "\t%stackTop = alloca %Pointer\n"
         val () = print "\t%nextBlock = alloca %uintptr_t\n"
+        val () = print "\t%stackTop = alloca %Pointer\n"
+        val () = print "\t%frontier = alloca %Pointer\n"
         val () = List.foreach (CType.all,
                                fn t =>
                                   print (concat ["\t%CReturn", CType.name t,
@@ -1328,10 +1337,11 @@ fun outputChunk (cxt, outputLL, chunk) =
                                       Int.for (0, 1 + regMax t,
                                                fn i => print (concat [pre, llint i, post]))
                                   end)
-        val () = print (cacheFrontier ())
-        val () = print (cacheStackTop ())
         val () = print (mkstore ("%uintptr_t", "%nextBlockArg", "%nextBlock"))
-        val () = print "\tbr label %doSwitchNextBlock\n\ndoSwitchNextBlock:\n"
+        val () = print (mkstore ("%Pointer", "%stackTopArg", "%stackTop"))
+        val () = print (mkstore ("%Pointer", "%frontierArg", "%frontier"))
+        val () = print "\tbr label %doSwitchNextBlock\n\n"
+        val () = print "doSwitchNextBlock:\n"
         val tmp = nextLLVMReg ()
         val () = print (mkload (tmp, "%uintptr_t*", "%nextBlock"))
         val () = print (concat ["\tswitch %uintptr_t ", tmp,
@@ -1349,29 +1359,38 @@ fun outputChunk (cxt, outputLL, chunk) =
         val () = print "doSwitchNextBlockDefault:\n"
         val () = print "\tbr label %doLeaveChunk\n\n"
         val () = print "doLeaveChunk:\n"
-        val () = print (flushFrontier ())
-        val () = print (flushStackTop ())
         val nextBlockReg = nextLLVMReg ()
         val () = print (mkload (nextBlockReg, "%uintptr_t*", "%nextBlock"))
         val resReg = if !Control.chunkTailCall
                         then let
                                 val chkFnPtrPtrReg = nextLLVMReg ()
                                 val () = print (concat ["\t", chkFnPtrPtrReg, " = getelementptr inbounds ",
-                                                        "[0 x %uintptr_t(%uintptr_t)*], ",
-                                                        "[0 x %uintptr_t(%uintptr_t)*]* @nextChunks, ",
+                                                        "[0 x %uintptr_t(%uintptr_t,%Pointer,%Pointer)*], ",
+                                                        "[0 x %uintptr_t(%uintptr_t,%Pointer,%Pointer)*]* @nextChunks, ",
                                                         "i64 0, ",
                                                         "%uintptr_t ", nextBlockReg, "\n"])
                                 val chkFnPtrReg = nextLLVMReg ()
-                                val () = print (mkload (chkFnPtrReg, "%uintptr_t(%uintptr_t)**", chkFnPtrPtrReg))
+                                val () = print (mkload (chkFnPtrReg, "%uintptr_t(%uintptr_t,%Pointer,%Pointer)**", chkFnPtrPtrReg))
+                                val stackTopArg = nextLLVMReg ()
+                                val frontierArg = nextLLVMReg ()
+                                val () = print (mkload (stackTopArg, "%Pointer*", "%stackTop"))
+                                val () = print (mkload (frontierArg, "%Pointer*", "%frontier"))
                                 val resReg = nextLLVMReg ()
                                 val () = print (concat ["\t", resReg, " = musttail call ",
                                                         "%uintptr_t ",
-                                                        chkFnPtrReg,
-                                                        "(%uintptr_t ", nextBlockReg, ")\n"])
+                                                        chkFnPtrReg, "(",
+                                                        "%uintptr_t ", nextBlockReg, ", ",
+                                                        "%Pointer ", stackTopArg, ", ",
+                                                        "%Pointer ", frontierArg, ")\n"])
                              in
                                 resReg
                              end
-                        else nextBlockReg
+                        else let
+                                val () = print (flushFrontier ())
+                                val () = print (flushStackTop ())
+                             in
+                                nextBlockReg
+                             end
         val () = print (concat ["\tret %uintptr_t ", resReg, "\n"])
         val () = print "}\n\n"
         val () = List.foreach (!cFunctions, fn f =>
@@ -1486,7 +1505,7 @@ fun transC (cxt, outputC) =
                  print)
         fun rest () =
            (List.foreach (chunks, fn c => declareChunk (c, print))
-            ; print "PRIVATE uintptr_t (*nextChunks[]) (uintptr_t) = {\n"
+            ; print "PRIVATE uintptr_t (*nextChunks[]) (uintptr_t, Pointer, Pointer) = {\n"
             ; Vector.foreach
               (nextChunks, fn label =>
                (print "\t"

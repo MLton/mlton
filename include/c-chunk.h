@@ -48,13 +48,9 @@
         DeclareChunk(n) {                       \
                 if (DEBUG_CCODEGEN)             \
                         fprintf (stderr, "%s:%d: Chunk%d(nextBlock = %d)\n", \
-                                        __FILE__, __LINE__, n, (int)nextBlock); \
-                Pointer frontier;               \
-                Pointer stackTop;
+                                        __FILE__, __LINE__, n, (int)nextBlock);
 
 #define ChunkSwitch(n)                          \
-                CacheFrontier();                \
-                CacheStackTop();                \
                 doSwitchNextBlock:              \
                 if (DEBUG_CCODEGEN)             \
                         fprintf (stderr, "%s:%d: ChunkSwitch%d(nextBlock = %d)\n", \
@@ -72,11 +68,11 @@
                 if (DEBUG_CCODEGEN)             \
                         fprintf (stderr, "%s:%d: EndChunk%d(nextBlock = %d)\n", \
                                         __FILE__, __LINE__, n, (int)nextBlock); \
-                FlushFrontier();                \
-                FlushStackTop();                \
                 if (tail) {                     \
-                        return (*(nextChunks[nextBlock]))(nextBlock); \
+                        return (*(nextChunks[nextBlock]))(nextBlock, stackTop, frontier); \
                 } else {                        \
+                        FlushFrontier();        \
+                        FlushStackTop();        \
                         return nextBlock;       \
                 }                               \
         } /* end chunk */
@@ -159,12 +155,11 @@
                         fprintf (stderr, "%s:%d: FarCall(%d, %s)\n", \
                                         __FILE__, __LINE__, (int)n, #l); \
                 if (tail) {                     \
+                        return ChunkName(n)(l, stackTop, frontier); \
+                } else {                        \
                         FlushFrontier();        \
                         FlushStackTop();        \
-                        return ChunkName(n)(l); \
-                } else {                        \
-                        nextBlock = l;          \
-                        goto doLeaveChunk;      \
+                        return l;               \
                 }                               \
         } while (0)
 

@@ -1083,7 +1083,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos,
             ; outputOffsets (); print "\n"
             ; declareGlobals ("PRIVATE extern ", print); print "\n"
             ; List.foreach (chunks, fn c => declareChunk (c, print))
-            ; print "PRIVATE extern uintptr_t (*nextChunks[]) (uintptr_t);\n\n"
+            ; print "PRIVATE extern uintptr_t (*nextChunks[]) (uintptr_t, Pointer, Pointer);\n\n"
             ; C.callNoSemi ("Chunk", [chunkLabelIndexAsString chunkLabel], print); print "\n"
             ; declareCReturns print; print "\n"
             ; declareRegisters (); print "\n"
@@ -1110,7 +1110,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos,
          (List.foreach (chunks, fn c => declareChunk (c, print))
           ; print "PRIVATE uintptr_t (*nextChunks["
           ; print (C.int (Vector.length nextChunks))
-          ; print "]) (uintptr_t) = {\n"
+          ; print "]) (uintptr_t, Pointer, Pointer) = {\n"
           ; Vector.foreachi
             (nextChunks, fn (i, label) =>
              let

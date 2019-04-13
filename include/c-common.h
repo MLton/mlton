@@ -19,7 +19,7 @@
 #define ChunkName(n) Chunk ## n
 
 #define DeclareChunk(n)                         \
-        PRIVATE uintptr_t ChunkName(n)(uintptr_t nextBlock)
+        PRIVATE uintptr_t ChunkName(n)(uintptr_t nextBlock, Pointer stackTop, Pointer frontier)
 
 #define Chunkp(n) &(ChunkName(n))
 
