@@ -51,22 +51,41 @@ fun shouldBounceAt (Block.T {kind, ...}) =
       | _ => false
 
 structure Weight = struct
-   type t = {depth: int, count: int}
-   fun inc ({depth, count}, depth') =
+
+   structure DefLoc = struct
+      datatype t
+         = FunArg
+         | Local
+         | LoopLocal
+
+      fun op < (t1, t2) =
+         case (t1, t2) of
+               (FunArg, Local) => true
+             | (FunArg, LoopLocal) => true
+             | (Local, LoopLocal) => true
+             | _ => false
+      val equals = op =
+   end
+
+   type t = {depth: int, count: int, localDef: DefLoc.t}
+   fun inc ({depth, count, localDef}, depth') =
       if depth' > depth
-         then {depth=depth', count=1}
+         then {depth=depth', count=1, localDef=localDef}
       else if depth' = depth
-         then {depth=depth', count=count + 1}
-      else {depth=depth, count=count}
+         then {depth=depth', count=count + 1, localDef=localDef}
+      else {depth=depth, count=count, localDef=localDef}
    fun new depth =
-      {depth=depth, count=0}
-   fun op < ({depth=depth1, count=count1},
-             {depth=depth2, count=count2}) =
-      if Int.< (depth1, depth2)
-         then true
-      else if Int.< (count1, count2)
-         then true
-      else false
+      {depth=depth, count=0, localDef=DefLoc.Local}
+
+   fun op < ({depth=depth1, count=count1, localDef=localDef1},
+             {depth=depth2, count=count2, localDef=localDef2}) =
+      Int.< (depth1, depth2)
+      orelse Int.equals (depth1, depth2)
+         andalso (DefLoc.< (localDef1, localDef2)
+            orelse DefLoc.equals (localDef1, localDef2)
+               andalso (Int.< (count1, count2)))
+   fun setLocalDef ({depth, count, localDef=_}, newLocalDef) =
+      {depth=depth, count=count, localDef=newLocalDef}
 end
 
 datatype varinfo
@@ -110,6 +129,14 @@ fun transformFunc func =
             else ())
       (* foreach arg, set Consider? need to tell it how to
        * avoid setting the original again *)
+      val _ = Vector.foreach (args,
+         fn (x, _) =>
+            case varInfo x of
+                 Consider w =>
+                  setVarInfo (x, Consider (Weight.setLocalDef (w,
+                     Weight.DefLoc.FunArg)))
+               | _ => ())
+
 
       datatype InLoop
         = InLoop of {header: bool, lid: int}
@@ -142,23 +169,29 @@ fun transformFunc func =
           * increment its usage for each depth *)
          fun checkActiveVars depth (block as Block.T {label, ...}) =
            let
-              val i = (Int.inc counter ; !counter)
-              fun incVarInfo v =
+              fun modVarInfo (v, f) =
                  let
                     val newInfo =
                        case varInfo v of
                             Ignore => Ignore
-                          | Consider d => Consider (Weight.inc (d, depth))
+                          | Consider w => Consider (f w)
                           | Rewrite _ => Error.bug "Unexpected Rewrite"
                     val _ = setVarInfo (v, newInfo)
                  in
                     ()
                  end
+              val _ = Block.foreachDef (block,
+                  fn (v, _) =>
+                     modVarInfo (v,
+                        fn w => Weight.inc (Weight.setLocalDef (w,
+                           Weight.DefLoc.LoopLocal), depth)))
+
               val _ = Block.foreachUse (block,
                   fn v =>
                      case n of
                           NONE => setRewrite (v, Weight.new 0)
-                        | SOME _ => incVarInfo v)
+                        | SOME _ => modVarInfo (v,
+                             fn w => Weight.inc (w, depth)))
               val _ = (#inLoop o labelInfo) label :=
                 InLoop {header=false, lid=i}
            in
