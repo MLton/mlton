@@ -51,6 +51,7 @@
                                         __FILE__, __LINE__, n, (int)nextBlock);
 
 #define ChunkSwitch(n)                          \
+                goto doSwitchNextBlock;         \
                 doSwitchNextBlock:              \
                 if (DEBUG_CCODEGEN)             \
                         fprintf (stderr, "%s:%d: ChunkSwitch%d(nextBlock = %d)\n", \
