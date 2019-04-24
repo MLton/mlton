@@ -286,6 +286,8 @@ fun makeOptions {usage} =
                                                  end
                                             else usage ()
                                       end))),
+       (Expert, "chunk-batch", " <n>", "batch c files at size ~n",
+        Int (fn n => chunkBatch := n)),
        (Expert, "chunk-tail-call", " {false|true}",
         "whether to use tail calls for interchunk transfers",
         Bool (fn b => chunkTailCall := b)),

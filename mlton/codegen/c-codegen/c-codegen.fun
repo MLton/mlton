@@ -1138,7 +1138,26 @@ fun output {program as Machine.Program.T {chunks, frameInfos,
             ; List.foreach (chunks, fn chunk => outputChunkFn (chunk, print))
             ; done ()
          end
-      val () = List.foreach (chunks, fn chunk => outputChunks [chunk])
+      val chunks =
+         List.revMap
+         (chunks, fn chunk as Chunk.T {blocks, ...} =>
+          (chunk,
+           Vector.fold
+           (blocks, 0, fn (Block.T {statements, ...}, n) =>
+            n + Vector.length statements + 1)))
+      fun batch (chunks, acc, n) =
+         case chunks of
+            [] => outputChunks acc
+          | (chunk, s)::chunks' =>
+               let
+                  val m = n + s
+               in
+                  if List.isEmpty acc orelse m <= !Control.chunkBatch
+                     then batch (chunks', chunk::acc, m)
+                     else (outputChunks acc;
+                           batch (chunks, [], 0))
+               end
+      val () = batch (chunks, [], 0)
 
       val {print, done, ...} = outputC ()
       val _ =
