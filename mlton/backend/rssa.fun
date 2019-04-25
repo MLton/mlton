@@ -866,6 +866,20 @@ structure Function =
                  returns = returns,
                  start = start}
          end
+
+      fun shuffle (f: t): t =
+         let
+            val {args, blocks, name, raises, returns, start} = dest f
+            val blocks = Array.fromVector blocks
+            val () = Array.shuffle blocks
+         in
+            new {args = args,
+                 blocks = Array.toVector blocks,
+                 name = name,
+                 raises = raises,
+                 returns = returns,
+                 start = start}
+         end
    end
 
 structure Program =
@@ -1153,6 +1167,18 @@ structure Program =
                   objectTypes = objectTypes}
             val p = copyProp p
             val () = clear p
+         in
+            p
+         end
+
+      fun shuffle (T {functions, handlesSignals, main, objectTypes}) =
+         let
+            val functions = Array.fromListMap (functions, Function.shuffle)
+            val () = Array.shuffle functions
+            val p = T {functions = Array.toList functions,
+                       handlesSignals = handlesSignals,
+                       main = Function.shuffle main,
+                       objectTypes = objectTypes}
          in
             p
          end

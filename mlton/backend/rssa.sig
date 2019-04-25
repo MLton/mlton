@@ -215,6 +215,7 @@ signature RSSA =
             val layoutStats: t -> Layout.t
             val orderFunctions: t -> t
             val shrink: t -> t
+            val shuffle: t -> t
             val typeCheck: t -> unit
          end
    end

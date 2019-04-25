@@ -206,6 +206,9 @@ fun toMachine (program: Ssa.Program.t, codegen) =
             val p = maybePass ({name = "rssaOrderFunctions", 
                                 doit = Program.orderFunctions,
                                 execute = true}, p)
+            val p = maybePass ({name = "rssaShuffle",
+                                doit = Program.shuffle,
+                                execute = false}, p)
          in
             (p, makeProfileInfo)
          end
