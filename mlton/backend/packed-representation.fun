@@ -1555,24 +1555,32 @@ structure Objptrs =
                                                      else Vector.new0 (),
                                               dst = dst}})
                  | _ => NONE)
-            val default =
-               if Vector.length variants = Vector.length cases
-                  then NONE
-               else default
-            val cases =
-               QuickSort.sortVector (cases, fn ((w, _), (w', _)) =>
-                                     WordX.le (w, w', {signed = false}))
-            val shift = Operand.word (WordX.one WordSize.shiftArg)
-            val (s, tag) =
-               Statement.rshift (Offset {base = test,
-                                         offset = Runtime.headerOffset (),
-                                         ty = Type.objptrHeader ()},
-                                 shift)
          in
-            ([s], Switch (Switch.T {cases = cases,
-                                    default = default,
-                                    size = WordSize.objptrHeader (),
-                                    test = tag}))
+            if Vector.isEmpty cases
+               then case default of
+                       NONE => ([], Transfer.bug ())
+                     | SOME default =>
+                          ([], Goto {args = Vector.new0 (), dst = default})
+               else let
+                       val default =
+                          if Vector.length variants = Vector.length cases
+                             then NONE
+                             else default
+                       val cases =
+                          QuickSort.sortVector (cases, fn ((w, _), (w', _)) =>
+                                                WordX.le (w, w', {signed = false}))
+                       val shift = Operand.word (WordX.one WordSize.shiftArg)
+                       val (s, tag) =
+                          Statement.rshift (Offset {base = test,
+                                                    offset = Runtime.headerOffset (),
+                                                    ty = Type.objptrHeader ()},
+                                            shift)
+                    in
+                       ([s], Switch (Switch.T {cases = cases,
+                                               default = default,
+                                               size = WordSize.objptrHeader (),
+                                               test = tag}))
+                    end
          end
    end
 
