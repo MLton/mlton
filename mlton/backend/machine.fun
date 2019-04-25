@@ -103,10 +103,11 @@ structure Global =
          let
             open Layout
          in
-            seq [str "glob ",
-                 record [("index", Int.layout index),
-                         ("isRoot", Bool.layout isRoot),
-                         ("ty", Type.layout ty)]]
+            seq [str (concat ["G", Type.name ty,
+                              if isRoot then "" else "NR"]),
+                 paren (Int.layout index),
+                 str ": ",
+                 Type.layout ty]
          end
 
       local
