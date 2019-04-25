@@ -1451,14 +1451,14 @@ structure Program =
                 returns: Live.t vector option,
                 alloc: Alloc.t): bool =
                let
-                  fun jump (l: Label.t, a: Alloc.t) =
+                  fun jump (l: Label.t) =
                      let
                         val b as Block.T {kind, ...} = labelBlock l
                      in
                         (case kind of
                             Kind.Jump => true
                           | _ => false)
-                            andalso goto (b, raises, returns, a)
+                        andalso goto (b, raises, returns, alloc)
                      end
                   datatype z = datatype Transfer.t
                in
@@ -1500,7 +1500,7 @@ structure Program =
                                   raises = raises,
                                   return = return,
                                   returns = returns}
-                   | Goto l => jump (l, alloc)
+                   | Goto l => jump l
                    | Raise =>
                         (case raises of
                             NONE => false
@@ -1512,7 +1512,7 @@ structure Program =
                    | Switch s =>
                         Switch.isOk
                         (s, {checkUse = fn z => checkOperand (z, alloc),
-                             labelIsOk = fn l => jump (l, alloc)})
+                             labelIsOk = jump})
                end
             val transferOk =
                Trace.trace
