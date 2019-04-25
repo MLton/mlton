@@ -979,10 +979,10 @@ let
             fun genBlock (R.Block.T {args, kind, label, statements, transfer,
                                      ...}) : unit =
                let
+                  val {live, liveNoFormals, size, ...} = labelRegInfo label
                   val _ =
                      if Label.equals (label, start)
                         then let
-                                val {liveNoFormals, ...} = (labelRegInfo start)
                                 val returns =
                                    Option.map
                                    (returns, fn returns =>
@@ -1004,7 +1004,6 @@ let
                                   transfer = M.Transfer.Goto start})
                              end
                      else ()
-                  val {live, liveNoFormals, size, ...} = labelRegInfo label
                   val statements =
                      Vector.concatV
                      (Vector.map (statements, fn s =>
@@ -1015,14 +1014,23 @@ let
                         R.Kind.Cont _ =>
                            let
                               val srcs = callReturnStackOffsets (args, #2, size)
+                              val (dsts', srcs') =
+                                 Vector.unzip
+                                 (Vector.keepAllMapi
+                                  (args, fn (i, (arg, _)) =>
+                                   let
+                                      val dst = varOperand arg
+                                   in
+                                      if Vector.exists (live, fn var =>
+                                                        M.Operand.equals (var, dst))
+                                         then SOME (dst, M.Operand.StackOffset (Vector.sub (srcs, i)))
+                                         else NONE
+                                   end))
                            in
-                              (M.Kind.Cont {args = Vector.map (srcs,
-                                                               Live.StackOffset),
+                              (M.Kind.Cont {args = Vector.map (srcs, Live.StackOffset),
                                             frameInfo = valOf (frameInfo label)},
                                liveNoFormals,
-                               parallelMove
-                               {dsts = Vector.map (args, varOperand o #1),
-                                srcs = Vector.map (srcs, M.Operand.StackOffset)})
+                               parallelMove {dsts = dsts', srcs = srcs'})
                            end
                       | R.Kind.CReturn {func, ...} =>
                            let
@@ -1043,16 +1051,21 @@ let
                       | R.Kind.Handler =>
                            let
                               val dsts = Vector.map (args, varOperand o #1)
-                              val handles =
-                                 raiseOperands (Vector.map (dsts, M.Operand.ty))
+                              val handles = raiseOperands (Vector.map (dsts, M.Operand.ty))
+                              val (dsts', srcs') =
+                                 Vector.unzip
+                                 (Vector.keepAllMapi
+                                  (dsts, fn (i, dst) =>
+                                   if Vector.exists (live, fn var =>
+                                                     M.Operand.equals (var, dst))
+                                      then SOME (dst, Live.toOperand (Vector.sub (handles, i)))
+                                      else NONE))
                            in
                               (M.Kind.Handler
                                {frameInfo = valOf (frameInfo label),
                                 handles = handles},
                                liveNoFormals,
-                               M.Statement.moves
-                               {dsts = dsts,
-                                srcs = Vector.map (handles, Live.toOperand)})
+                               M.Statement.moves {dsts = dsts', srcs = srcs'})
                            end
                       | R.Kind.Jump => (M.Kind.Jump, live, Vector.new0 ())
                   val (first, statements) =
