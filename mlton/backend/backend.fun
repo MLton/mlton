@@ -79,9 +79,9 @@ structure VarOperand =
              | Const oper => seq [str "Const ", M.Operand.layout oper]
          end
 
-      val operand: t -> M.Operand.t =
-         fn Allocate {operand, ...} => valOf (!operand)
-          | Const oper => oper
+      val operand: t -> M.Operand.t option =
+         fn Allocate {operand, ...} => !operand
+          | Const oper => SOME oper
    end
 
 structure ByteSet = UniqueSet (val cacheSize: int = 1
@@ -439,8 +439,9 @@ let
                       fn {operand, ...} =>
                       Layout.record [("operand", VarOperand.layout operand)])
          varInfo
-      val varOperand: Var.t -> M.Operand.t =
+      val varOperandOpt: Var.t -> M.Operand.t option =
          VarOperand.operand o #operand o varInfo
+      val varOperand: Var.t -> M.Operand.t = valOf o varOperandOpt
       (* Hash tables for uniquifying globals. *)
       local
          fun 'a make {equals: 'a * 'a -> bool,
@@ -1016,16 +1017,15 @@ let
                               val srcs = callReturnStackOffsets (args, #2, size)
                               val (dsts', srcs') =
                                  Vector.unzip
-                                 (Vector.keepAllMapi
-                                  (args, fn (i, (arg, _)) =>
-                                   let
-                                      val dst = varOperand arg
-                                   in
-                                      if Vector.exists (live, fn var =>
-                                                        M.Operand.equals (var, dst))
-                                         then SOME (dst, M.Operand.StackOffset (Vector.sub (srcs, i)))
-                                         else NONE
-                                   end))
+                                 (Vector.keepAllMap2
+                                  (args, srcs, fn ((arg, _), src) =>
+                                   case varOperandOpt arg of
+                                      NONE => NONE
+                                    | SOME dst =>
+                                         if Vector.exists (live, fn var =>
+                                                           M.Operand.equals (var, dst))
+                                            then SOME (dst, M.Operand.StackOffset src)
+                                            else NONE))
                            in
                               (M.Kind.Cont {args = Vector.map (srcs, Live.StackOffset),
                                             frameInfo = valOf (frameInfo label)},
@@ -1037,9 +1037,9 @@ let
                               val dst =
                                  case Vector.length args of
                                     0 => NONE
-                                  | 1 => SOME (operandLive
-                                               (varOperand
-                                                (#1 (Vector.sub (args, 0)))))
+                                  | 1 => Option.map
+                                         (varOperandOpt (#1 (Vector.first args)),
+                                          operandLive)
                                   | _ => Error.bug "Backend.genBlock: CReturn"
                            in
                               (M.Kind.CReturn {dst = dst,
@@ -1050,16 +1050,18 @@ let
                            end
                       | R.Kind.Handler =>
                            let
-                              val dsts = Vector.map (args, varOperand o #1)
-                              val handles = raiseOperands (Vector.map (dsts, M.Operand.ty))
+                              val handles = raiseOperands (Vector.map (args, #2))
                               val (dsts', srcs') =
                                  Vector.unzip
-                                 (Vector.keepAllMapi
-                                  (dsts, fn (i, dst) =>
-                                   if Vector.exists (live, fn var =>
-                                                     M.Operand.equals (var, dst))
-                                      then SOME (dst, Live.toOperand (Vector.sub (handles, i)))
-                                      else NONE))
+                                 (Vector.keepAllMap2
+                                  (args, handles, fn ((arg, _), h) =>
+                                   case varOperandOpt arg of
+                                      NONE => NONE
+                                    | SOME dst =>
+                                         if Vector.exists (live, fn var =>
+                                                           M.Operand.equals (var, dst))
+                                            then SOME (dst, Live.toOperand h)
+                                            else NONE))
                            in
                               (M.Kind.Handler
                                {frameInfo = valOf (frameInfo label),

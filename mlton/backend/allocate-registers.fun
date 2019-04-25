@@ -514,7 +514,11 @@ fun allocate {formalsStackOffsets,
                                         "bad size ",
                                         Bytes.toString size,
                                         " in ", Label.toString label])
-             val _ = Vector.foreach (args, fn (x, _) => allocateVar (x, a))
+             val _ = Vector.foreach (args, fn (x, _) =>
+                                     if Vector.exists (begin, fn y =>
+                                                       Var.equals (x, y))
+                                        then allocateVar (x, a)
+                                        else ())
              (* Must compute live after allocateVar'ing the args, since that
               * sets the operands for the args.
               *)
