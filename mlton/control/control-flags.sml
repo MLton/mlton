@@ -69,7 +69,7 @@ val chunkTailCall = control {name = "chunkTailCall",
                              toString = Bool.toString}
 
 val chunkBatch = control {name = "chunkBatch",
-                          default = 8192,
+                          default = Int.pow(2,15),
                           toString = Int.toString}
 
 val closureConvertGlobalize = control {name = "closureConvertGlobalize",
