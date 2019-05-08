@@ -1196,29 +1196,10 @@ fun outputLLVMDeclarations print =
                        "\n", globals, nonroot, "\n", globalDeclarations, "\n"])
     end
 
-fun outputChunk (cxt, outputLL, chunk) =
-    let
-        val () = cFunctions := []
-        val () = ffiSymbols := []
-        val Context { labelToStringIndex, chunkLabelToString, program, ... } = cxt
+fun outputChunkFn (cxt, chunk, print) =
+   let
+        val Context { labelToStringIndex, chunkLabelToString, ... } = cxt
         val Chunk.T {blocks, chunkLabel, regMax} = chunk
-        val { done, print, file=_ } = outputLL ()
-        val () = outputLLVMDeclarations print
-        val () = print "\n"
-        val () = let
-                    val thisChunkLabel = chunkLabel
-                    val Program.T {chunks, ...} = program
-                 in
-                    List.foreach
-                    (chunks, fn Chunk.T {chunkLabel, ...} =>
-                     if ChunkLabel.equals (thisChunkLabel, chunkLabel)
-                        then ()
-                        else print (concat ["declare hidden %uintptr_t @",
-                                            "Chunk" ^ chunkLabelToString chunkLabel,
-                                            "(%uintptr_t,%Pointer,%Pointer)\n"]))
-                    ; print "@nextChunks = external hidden global [0 x %uintptr_t(%uintptr_t,%Pointer,%Pointer)*]\n"
-                    ; print "\n"
-                 end
         val () = print (concat ["define hidden %uintptr_t @",
                                 "Chunk" ^ chunkLabelToString chunkLabel,
                                 "(%uintptr_t %nextBlockArg, %Pointer %stackTopArg, %Pointer %frontierArg) {\nentry:\n"])
@@ -1294,6 +1275,36 @@ fun outputChunk (cxt, outputLL, chunk) =
                              end
         val () = print (concat ["\tret %uintptr_t ", resReg, "\n"])
         val () = print "}\n\n"
+   in
+      ()
+   end
+
+fun outputChunks (cxt, chunks,
+                  outputLL: unit -> {file: File.t,
+                                     print: string -> unit,
+                                     done: unit -> unit}) =
+   let
+        val Context { chunkLabelToString, program, ... } = cxt
+        val () = cFunctions := []
+        val () = ffiSymbols := []
+        val { done, print, file=_ } = outputLL ()
+        val () = outputLLVMDeclarations print
+        val () = print "\n"
+        val () = let
+                    fun declareChunk (Chunk.T {chunkLabel, ...}) =
+                       if List.exists (chunks, fn chunk =>
+                                       ChunkLabel.equals (chunkLabel, Chunk.chunkLabel chunk))
+                          then ()
+                          else print (concat ["declare hidden %uintptr_t @",
+                                              "Chunk" ^ chunkLabelToString chunkLabel,
+                                              "(%uintptr_t,%Pointer,%Pointer)\n"])
+                    val Program.T {chunks, ...} = program
+                 in
+                    List.foreach (chunks, declareChunk)
+                    ; print "@nextChunks = external hidden global [0 x %uintptr_t(%uintptr_t,%Pointer,%Pointer)*]\n"
+                    ; print "\n\n"
+                 end
+        val () = List.foreach (chunks, fn chunk => outputChunkFn (cxt, chunk, print))
         val () = List.foreach (!cFunctions, fn f =>
                      print (concat ["declare ", f, "\n"]))
         val () = List.foreach (!ffiSymbols, fn {name, cty, symbolScope} =>
@@ -1310,9 +1321,9 @@ fun outputChunk (cxt, outputLL, chunk) =
                                        "\n"])
                     end)
 
-    in
-        done ()
-    end
+   in
+      done ()
+   end
 
 fun makeContext program =
     let
@@ -1372,9 +1383,27 @@ fun transLLVM (cxt, outputLL) =
     let
         val Context { program, ... } = cxt
         val Program.T { chunks, ...} = program
-        val () = List.foreach (chunks, fn chunk => outputChunk (cxt, outputLL, chunk))
+        val chunks =
+           List.revMap
+           (chunks, fn chunk as Chunk.T {blocks, ...} =>
+            (chunk,
+             Vector.fold
+             (blocks, 0, fn (Block.T {statements, ...}, n) =>
+              n + Vector.length statements + 1)))
+        fun batch (chunks, acc, n) =
+           case chunks of
+              [] => outputChunks (cxt, acc, outputLL)
+            | (chunk, s)::chunks' =>
+                 let
+                    val m = n + s
+                 in
+                    if List.isEmpty acc orelse m <= !Control.chunkBatch
+                       then batch (chunks', chunk::acc, m)
+                       else (outputChunks (cxt, acc, outputLL);
+                             batch (chunks, [], 0))
+                 end
     in
-        ()
+       batch (chunks, [], 0)
     end
 
 fun transC (cxt, outputC) =
