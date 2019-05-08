@@ -738,6 +738,12 @@ structure Chunk =
                          chunkLabel: ChunkLabel.t,
                          regMax: CType.t -> int}
 
+      local
+         fun make sel (T r) = sel r
+      in
+         val chunkLabel = make #chunkLabel
+      end
+
       fun layouts (T {blocks, ...}, output : Layout.t -> unit) =
          Vector.foreach (blocks, fn block => Block.layouts (block, output))
 

@@ -244,6 +244,7 @@ signature MACHINE =
                       * for all registers in the chunk.
                       *)
                      regMax: CType.t -> int}
+            val chunkLabel: t -> ChunkLabel.t
          end
 
       structure ProfileInfo:
