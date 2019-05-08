@@ -25,10 +25,10 @@ datatype z = datatype WordSize.prim
    be shared amongst all codegen functions. *)
 datatype Context = Context of {
     program: Program.t,
-    labelToStringIndex: Label.t -> string,
-    chunkLabelToString: ChunkLabel.t -> string,
     chunkLabelIndex: ChunkLabel.t -> int,
+    chunkLabelIndexAsString: ChunkLabel.t -> string,
     labelChunk: Label.t -> ChunkLabel.t,
+    labelIndexAsString: Label.t -> string,
     nextChunks: Label.t vector
 }
 
@@ -521,7 +521,7 @@ and getOperandValue (cxt, operand) =
             in
                 (pre ^ load, ty, reg)
             end
-        val Context { labelToStringIndex, ... } = cxt
+        val Context { labelIndexAsString, ... } = cxt
     in
         case operand of
             Operand.Cast (oper, ty) =>
@@ -570,7 +570,7 @@ and getOperandValue (cxt, operand) =
           | Operand.Label label =>
             let
                 val reg = nextLLVMReg ()
-                val cast = mkconv (reg, "inttoptr", "%Word32", labelToStringIndex label,
+                val cast = mkconv (reg, "inttoptr", "%Word32", labelIndexAsString label,
                                    "%CPointer")
             in
                 (cast, "%CPointer", reg)
@@ -947,14 +947,11 @@ fun outputStatement (cxt: Context, stmt: Statement.t): string =
 fun outputTransfer (cxt, transfer, sourceLabel) =
     let
         val comment = concat ["\t; ", Layout.toString (Transfer.layout transfer), "\n"]
-        val Context { labelToStringIndex = labelToStringIndex,
-                      labelChunk = labelChunk,
-                      chunkLabelToString = chunkLabelToString,
-                      ... } = cxt
+        val Context { chunkLabelIndexAsString, labelChunk, labelIndexAsString, ... } = cxt
         fun transferPush (return, size) =
             let
                 val offset = llbytes (Bytes.- (size, Runtime.labelSize ()))
-                val frameIndex = labelToStringIndex return
+                val frameIndex = labelIndexAsString return
                 val stackTop = nextLLVMReg ()
                 val load = mkload (stackTop, "%Pointer*", "%stackTop")
                 val gepReg = nextLLVMReg ()
@@ -1060,8 +1057,8 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                                            val resReg = nextLLVMReg ()
                                            val call = concat ["\t", resReg, " = musttail call ",
                                                               "%uintptr_t ",
-                                                              "@Chunk", chunkLabelToString dstChunk, "(",
-                                                              "%uintptr_t ", labelToStringIndex label, ", ",
+                                                              "@Chunk", chunkLabelIndexAsString dstChunk, "(",
+                                                              "%uintptr_t ", labelIndexAsString label, ", ",
                                                               "%Pointer ", stackTopArg, ", ",
                                                               "%Pointer ", frontierArg, ")\n"]
                                            val ret = concat ["\tret %uintptr_t ", resReg, "\n"]
@@ -1070,7 +1067,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                                         end
                                    else let
                                            val comment = "\t; FarCall\n"
-                                           val ret = concat ["\tret %uintptr_t ", labelToStringIndex label, "\n"]
+                                           val ret = concat ["\tret %uintptr_t ", labelIndexAsString label, "\n"]
                                         in
                                            concat [comment, flushFrontier (), flushStackTop (), ret]
                                         end
@@ -1200,10 +1197,10 @@ fun outputLLVMDeclarations print =
 fun outputChunkFn (cxt, chunk, print) =
    let
         val () = resetLLVMReg ()
-        val Context { labelToStringIndex, chunkLabelToString, ... } = cxt
+        val Context { chunkLabelIndexAsString, labelIndexAsString, ... } = cxt
         val Chunk.T {blocks, chunkLabel, regMax} = chunk
         val () = print (concat ["define hidden %uintptr_t @",
-                                "Chunk" ^ chunkLabelToString chunkLabel,
+                                "Chunk" ^ chunkLabelIndexAsString chunkLabel,
                                 "(%uintptr_t %nextBlockArg, %Pointer %stackTopArg, %Pointer %frontierArg) {\nentry:\n"])
         val () = print "\t%nextBlock = alloca %uintptr_t\n"
         val () = print "\t%stackTop = alloca %Pointer\n"
@@ -1233,7 +1230,7 @@ fun outputChunkFn (cxt, chunk, print) =
         val () = Vector.foreach (blocks, fn Block.T {kind, label, ...} =>
                                  if Kind.isEntry kind
                                     then print (concat ["\t\t%uintptr_t ",
-                                                        labelToStringIndex label,
+                                                        labelIndexAsString label,
                                                         ", label %",
                                                         Label.toString label,
                                                         "\n"])
@@ -1286,7 +1283,7 @@ fun outputChunks (cxt, chunks,
                                      print: string -> unit,
                                      done: unit -> unit}) =
    let
-        val Context { chunkLabelToString, program, ... } = cxt
+        val Context { chunkLabelIndexAsString, program, ... } = cxt
         val () = cFunctions := []
         val () = ffiSymbols := []
         val { done, print, file=_ } = outputLL ()
@@ -1298,7 +1295,7 @@ fun outputChunks (cxt, chunks,
                                        ChunkLabel.equals (chunkLabel, Chunk.chunkLabel chunk))
                           then ()
                           else print (concat ["declare hidden %uintptr_t @",
-                                              "Chunk" ^ chunkLabelToString chunkLabel,
+                                              "Chunk" ^ chunkLabelIndexAsString chunkLabel,
                                               "(%uintptr_t,%Pointer,%Pointer)\n"])
                     val Program.T {chunks, ...} = program
                  in
@@ -1368,14 +1365,14 @@ fun makeContext program =
         val nextChunks = Vector.keepAllMap (Vector.fromArray nextChunks, fn lo => lo)
         val labelChunk = #chunkLabel o labelInfo
         val labelIndex = valOf o #index o labelInfo
-        fun labelToStringIndex (l: Label.t): string = llint (labelIndex l)
+        fun labelIndexAsString (l: Label.t): string = llint (labelIndex l)
         val chunkLabelIndex = #index o chunkLabelInfo
-        val chunkLabelToString = llint o chunkLabelIndex
+        val chunkLabelIndexAsString = llint o chunkLabelIndex
     in
         Context { program = program,
-                  labelToStringIndex = labelToStringIndex,
+                  labelIndexAsString = labelIndexAsString,
                   chunkLabelIndex = chunkLabelIndex,
-                  chunkLabelToString = chunkLabelToString,
+                  chunkLabelIndexAsString = chunkLabelIndexAsString,
                   labelChunk = labelChunk,
                   nextChunks = nextChunks
                 }
@@ -1408,56 +1405,56 @@ fun transLLVM (cxt, outputLL) =
        batch (chunks, [], 0)
     end
 
+structure C = CCodegen.C
+
 fun transC (cxt, outputC) =
-    let
-        val Context { program, ... } = cxt
-        val {print, done, file=_} = outputC ()
-        val Program.T {main = main, chunks = chunks, ... } = program
-        val Context { chunkLabelToString, labelToStringIndex, labelChunk, nextChunks, ... } = cxt
-        val mainLabel = labelToStringIndex (#label main)
-        val additionalMainArgs = [mainLabel]
-        fun callNoSemi (f: string, xs: string list, print: string -> unit): unit
-            = (print f
-              ; print " ("
-              ; (case xs
-                  of [] => ()
-                   | x :: xs => (print x
-                                ; List.foreach (xs,
-                                                fn x => (print ", "; print x))))
-              ; print ")")
-        fun ccall (f, xs, print) =
-            (callNoSemi (f, xs, print)
-            ; print ";\n")
-        fun declareChunk (Chunk.T {chunkLabel, ...}, print) =
-            ccall ("DeclareChunk",
-                 [chunkLabelToString chunkLabel],
-                 print)
-        fun rest () =
-           (List.foreach (chunks, fn c => declareChunk (c, print))
-            ; print "PRIVATE uintptr_t (*nextChunks[]) (uintptr_t, Pointer, Pointer) = {\n"
-            ; Vector.foreach
-              (nextChunks, fn label =>
-               (print "\t"
-                ; callNoSemi ("Chunkp",
-                              [chunkLabelToString (labelChunk label)],
+   let
+      val Context { program, ... } = cxt
+      val Program.T {main = main, chunks = chunks, ... } = program
+      val Context { chunkLabelIndexAsString, labelChunk, labelIndexAsString, nextChunks, ... } = cxt
+
+      fun defineNextChunks print =
+         (List.foreach
+          (chunks, fn Chunk.T {chunkLabel, ...} =>
+           C.call ("DeclareChunk",
+                   [chunkLabelIndexAsString chunkLabel],
+                   print))
+          ; print "PRIVATE uintptr_t (*nextChunks["
+          ; print (C.int (Vector.length nextChunks))
+          ; print "]) (uintptr_t, Pointer, Pointer) = {\n"
+          ; Vector.foreachi
+            (nextChunks, fn (i, label) =>
+             (print "\t"
+              ; print "/* "
+              ; print (C.int i)
+              ; print ": */ "
+              ; print "/* "
+              ; print (Label.toString label)
+              ; print " */ "
+              ; C.callNoSemi ("Chunkp",
+                              [chunkLabelIndexAsString (labelChunk label)],
                               print)
-               ; print ",\n"))
-              ; print "};\n")
-    in
-        CCodegen.outputDeclarations
-            {additionalMainArgs = additionalMainArgs,
-             includes = ["c-main.h"],
-             print = print,
-             program = program,
-             rest = rest}
-      ; done ()
-    end
+              ; print ",\n"))
+          ; print "};\n")
+
+      val {print, done, file = _} = outputC ()
+      val _ =
+         CCodegen.outputDeclarations
+         {additionalMainArgs = [labelIndexAsString (#label main)],
+          includes = ["c-main.h"],
+          print = print,
+          program = program,
+          rest = fn () => defineNextChunks print}
+      val _ = done ()
+   in
+      ()
+   end
 
 fun output {program, outputC, outputLL} =
     let
         val context = makeContext program
-        val () = transC (context, outputC)
         val () = transLLVM (context, outputLL)
+        val () = transC (context, outputC)
     in
         ()
     end
