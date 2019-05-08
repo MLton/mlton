@@ -567,14 +567,7 @@ and getOperandValue (cxt, operand) =
                 (cast, "%Pointer", reg)
             end
           | Operand.Global _ => loadOperand ()
-          | Operand.Label label =>
-            let
-                val reg = nextLLVMReg ()
-                val cast = mkconv (reg, "inttoptr", "%Word32", labelIndexAsString label,
-                                   "%CPointer")
-            in
-                (cast, "%CPointer", reg)
-            end
+          | Operand.Label label => ("", llws (WordSize.cpointer ()), labelIndexAsString label)
           | Operand.Null => ("", "i8*", "null")
           | Operand.Offset _ => loadOperand ()
           | Operand.Real real => ("", (llrs o RealX.size) real, RealX.toString (real, {suffix = false}))
