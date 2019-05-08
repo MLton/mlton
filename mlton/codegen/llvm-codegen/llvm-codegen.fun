@@ -294,6 +294,7 @@ fun getAndIncReg () =
         regval
     end
 
+fun resetLLVMReg() = regnum := 0
 fun nextLLVMReg () = concat ["%r", Int.toString (getAndIncReg ())]
 
 fun regName (ty: CType.t, index: int): string =
@@ -1198,6 +1199,7 @@ fun outputLLVMDeclarations print =
 
 fun outputChunkFn (cxt, chunk, print) =
    let
+        val () = resetLLVMReg ()
         val Context { labelToStringIndex, chunkLabelToString, ... } = cxt
         val Chunk.T {blocks, chunkLabel, regMax} = chunk
         val () = print (concat ["define hidden %uintptr_t @",
