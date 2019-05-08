@@ -29,10 +29,7 @@ datatype Context = Context of {
     chunkLabelToString: ChunkLabel.t -> string,
     chunkLabelIndex: ChunkLabel.t -> int,
     labelChunk: Label.t -> ChunkLabel.t,
-    nextChunks: Label.t vector,
-    printblock: bool,
-    printstmt: bool,
-    printmove: bool
+    nextChunks: Label.t vector
 }
 
 fun ctypes () =
@@ -189,31 +186,6 @@ fun llint (i: int) =
     else "-" ^ Int.toString (~ i)
 
 fun llbytes b = llint (Bytes.toInt b)
-
-fun llstring s =
-    let
-        fun escapeLLVM s =
-            concat (List.map (String.explode s, fn c =>
-                if Char.isCntrl c
-                then
-                    (* take the integer value of the char, convert it into a
-                     * 2-digit hex string, and put a backslash in front of it
-                     *)
-                    let
-                        val hex = IntInf.format (Int.toIntInf (Char.ord c), StringCvt.HEX)
-                    in
-                        if String.length hex = 1
-                        then "\\0" ^ hex
-                        else "\\" ^ hex
-                    end
-                else
-                    case c of (* " and \ need to be escaped, everything else is fine *)
-                        #"\"" => "\\22"
-                      | #"\\" => "\\5C"
-                      | _ => Char.toString c))
-    in
-        concat ["c\"", escapeLLVM s, "\\00\""]
-    end
 
 fun llws (ws: WordSize.t): string =
     case WordSize.prim ws of
@@ -954,10 +926,6 @@ fun outputPrimApp (cxt, p) =
 fun outputStatement (cxt: Context, stmt: Statement.t): string =
     let
         val comment = concat ["\t; ", Layout.toString (Statement.layout stmt), "\n"]
-        val Context { printstmt, printmove, ...} = cxt
-        val printcode = if printstmt
-                        then "\tcall i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([11 x i8]* @stmt, i32 0, i32 0))\n"
-                        else ""
         val stmtcode =
             case stmt of
                 Statement.Move {dst, src} =>
@@ -965,20 +933,14 @@ fun outputStatement (cxt: Context, stmt: Statement.t): string =
                     val (srcpre, _, srcreg) = getOperandValue (cxt, src)
                     val (dstpre, dstty, dstreg) = getOperandAddr (cxt, dst)
                     val store = mkstore (dstty, srcreg, dstreg)
-                    val gotlhs = if printmove
-                                 then "\tcall i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @gotlhs, i32 0, i32 0))\n"
-                                 else ""
-                    val gotrhs = if printmove
-                                 then "\tcall i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([9 x i8]* @gotrhs, i32 0, i32 0))\n"
-                                 else ""
                 in
-                    concat [srcpre, gotrhs, dstpre, gotlhs, store]
+                    concat [srcpre, dstpre, store]
                 end
               | Statement.Noop => "\t; Noop\n"
               | Statement.PrimApp p => outputPrimApp (cxt, p)
               | Statement.ProfileLabel _ => "\t; ProfileLabel\n"
     in
-        concat [comment, printcode, stmtcode]
+        concat [comment, stmtcode]
     end
 
 fun outputTransfer (cxt, transfer, sourceLabel) =
@@ -987,7 +949,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
         val Context { labelToStringIndex = labelToStringIndex,
                       labelChunk = labelChunk,
                       chunkLabelToString = chunkLabelToString,
-                      printstmt = printstmt, ... } = cxt
+                      ... } = cxt
         fun transferPush (return, size) =
             let
                 val offset = llbytes (Bytes.- (size, Runtime.labelSize ()))
@@ -1067,9 +1029,6 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                                        concat [storeResult, cacheFrontierCode, cacheStackTopCode,
                                                br]
                                    end
-                val fcall = if printstmt
-                            then "\tcall i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([15 x i8]* @fcall, i32 0, i32 0))\n"
-                            else ""
             in
                 concat [comment,
                         "\t; GetOperands\n",
@@ -1078,7 +1037,6 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                         flushFrontierCode,
                         flushStackTopCode,
                         "\t; Call\n",
-                        fcall,
                         call,
                         epilogue]
             end
@@ -1173,17 +1131,9 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
 
 fun outputBlock (cxt, block) =
     let
-        val Context { printblock = printblock, ... } = cxt
         val Block.T {kind, label, statements, transfer, ...} = block
         val labelstr = Label.toString label
-        val labelstrLen = Int.toString (String.size labelstr + 1)
         val blockLabel = labelstr ^ ":\n"
-        val printBlock = if printblock
-            then concat ["\tcall i32 (i8*, ...)* @printf(",
-            "i8* getelementptr inbounds ([19 x i8]* @enteringBlock, i32 0, i32 0), ",
-            "i8* getelementptr inbounds ([", labelstrLen, " x i8]* @labelstr_", labelstr,
-                 ", i32 0, i32 0))\n"]
-            else ""
         fun pop fi = (stackPush o llbytes o Bytes.~ o FrameInfo.size) fi
         val dopop = case kind of
                         Kind.Cont {frameInfo, ...} => pop frameInfo
@@ -1218,14 +1168,11 @@ fun outputBlock (cxt, block) =
         val blockBody = String.concatV (Vector.map (statements, outputStatementWithCxt))
         val blockTransfer = outputTransfer (cxt, transfer, label)
     in
-        concat [blockLabel, printBlock, dopop, blockBody, blockTransfer, "\n"]
+        concat [blockLabel, dopop, blockBody, blockTransfer, "\n"]
     end
 
-fun outputLLVMDeclarations (cxt, print, chunk) =
+fun outputLLVMDeclarations print =
     let
-        val Context { printblock = printblock, printstmt = printstmt, printmove = printmove,
-                      chunkLabelIndex = chunkLabelIndex, ...} = cxt
-        val Chunk.T { chunkLabel, ... } = chunk
         val globals = concat (List.map (CType.all, fn t =>
                           let
                               val s = CType.toString t
@@ -1244,62 +1191,19 @@ fun outputLLVMDeclarations (cxt, print, chunk) =
                                          llint n, " x %Objptr]\n"]
                             else ""
                       end
-        val printBlockStrings = if chunkLabelIndex chunkLabel = 0
-                                then
-"declare i32 @printf(i8*, ...)\n\
-\@enteringChunk = global [16 x i8] c\"Entering chunk\\0A\\00\"\n\
-\@enteringBlock = global [19 x i8] c\"Entering block %s\\0A\\00\"\n"
-                                else
-"declare i32 @printf(i8*, ...)\n\
-\@enteringChunk = external hidden global [16 x i8]\n\
-\@enteringBlock = external hidden global [19 x i8]\n"
-        val printStmtStrings = if chunkLabelIndex chunkLabel = 0
-                               then
-"@fcall = global [15 x i8] c\"Function call\\0A\\00\"\n\
-\@stmt = global [11 x i8] c\"statement\\0A\\00\"\n"
-                               else
-"@fcall = external hidden global [15 x i8]\n\
-\@stmt = external hidden global [11 x i8]\n"
-        val printMoveStrings = if chunkLabelIndex chunkLabel = 0
-                               then
-"@gotlhs = global [9 x i8] c\"got lhs\\0A\\00\"\n\
-\@gotrhs = global [9 x i8] c\"got rhs\\0A\\00\"\n"
-                               else
-"gotlhs = external hidden global [9 x i8]\n\
-\gotrhs = external hidden global [9 x i8]\n"
-        val labelStrings = if printblock
-                           then
-                               let
-                                   val Chunk.T { blocks = blocks, ... } = chunk
-                               in
-                                   String.concatV (Vector.map (blocks, fn b =>
-                                       let
-                                           val Block.T { label = label, ... } = b
-                                           val labelstr = Label.toString label
-                                           val len = Int.toString (String.size labelstr + 1)
-                                       in
-                                           concat ["@labelstr_", labelstr, " = global [", len,
-                                                   " x i8] ", llstring labelstr, "\n"]
-                                       end))
-                               end
-                           else ""
     in
         print (concat [llvmIntrinsics, "\n", mltypes, "\n", ctypes (),
-                       "\n", globals, nonroot, "\n", globalDeclarations, "\n",
-                       if printblock then printBlockStrings else "",
-                       if printstmt then printStmtStrings else "",
-                       if printmove then printMoveStrings else "",
-                       labelStrings, "\n"])
+                       "\n", globals, nonroot, "\n", globalDeclarations, "\n"])
     end
 
 fun outputChunk (cxt, outputLL, chunk) =
     let
         val () = cFunctions := []
         val () = ffiSymbols := []
-        val Context { labelToStringIndex, chunkLabelToString, program, printblock, ... } = cxt
+        val Context { labelToStringIndex, chunkLabelToString, program, ... } = cxt
         val Chunk.T {blocks, chunkLabel, regMax} = chunk
         val { done, print, file=_ } = outputLL ()
-        val () = outputLLVMDeclarations (cxt, print, chunk)
+        val () = outputLLVMDeclarations print
         val () = print "\n"
         val () = let
                     val thisChunkLabel = chunkLabel
@@ -1318,9 +1222,6 @@ fun outputChunk (cxt, outputLL, chunk) =
         val () = print (concat ["define hidden %uintptr_t @",
                                 "Chunk" ^ chunkLabelToString chunkLabel,
                                 "(%uintptr_t %nextBlockArg, %Pointer %stackTopArg, %Pointer %frontierArg) {\nentry:\n"])
-        val () = if printblock
-                 then print "\tcall i32 (i8*, ...)* @printf(i8* getelementptr inbounds ([16 x i8]* @enteringChunk, i32 0, i32 0))\n"
-                 else ()
         val () = print "\t%nextBlock = alloca %uintptr_t\n"
         val () = print "\t%stackTop = alloca %Pointer\n"
         val () = print "\t%frontier = alloca %Pointer\n"
@@ -1463,10 +1364,7 @@ fun makeContext program =
                   chunkLabelIndex = chunkLabelIndex,
                   chunkLabelToString = chunkLabelToString,
                   labelChunk = labelChunk,
-                  nextChunks = nextChunks,
-                  printblock = !Control.Native.commented > 0,
-                  printstmt = !Control.Native.commented > 1,
-                  printmove = !Control.Native.commented > 2
+                  nextChunks = nextChunks
                 }
     end
 
