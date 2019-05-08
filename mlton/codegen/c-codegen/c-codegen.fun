@@ -565,8 +565,7 @@ fun declareFFI (chunks, print) =
       ; if !empty then () else print "\n"
    end
 
-fun output {program as Machine.Program.T {chunks, frameInfos,
-                                          main = {label, ...}, ...},
+fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
             outputC: unit -> {file: File.t,
                               print: string -> unit,
                               done: unit -> unit}} =
@@ -1162,7 +1161,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos,
       val {print, done, ...} = outputC ()
       val _ =
          outputDeclarations
-         {additionalMainArgs = [labelIndexAsString (label, {pretty = true})],
+         {additionalMainArgs = [labelIndexAsString (#label main, {pretty = true})],
           includes = ["c-main.h"],
           program = program,
           print = print,
