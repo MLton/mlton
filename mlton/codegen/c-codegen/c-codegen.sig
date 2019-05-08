@@ -16,6 +16,13 @@ signature C_CODEGEN =
    sig
       include C_CODEGEN_STRUCTS
 
+      structure C:
+         sig
+            val callNoSemi: string * string list * (string -> unit) -> unit
+            val call: string * string list * (string -> unit) -> unit
+            val int: int -> string
+         end
+
       val implementsPrim: 'a Machine.Prim.t -> bool
       val output: {program: Machine.Program.t,
                    outputC: unit -> {file: File.t,
