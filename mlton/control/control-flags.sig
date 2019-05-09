@@ -27,14 +27,16 @@ signature CONTROL_FLAGS =
 
       val atMLtons: string vector ref
 
-      datatype chunk =
-         OneChunk
-       | ChunkPerFunc
-       | Coalesce of {limit: int}
-
-      val chunk: chunk ref
-
       val chunkBatch: int ref
+
+      structure Chunkify:
+         sig
+            datatype t = Coalesce of {limit: int}
+                       | One
+                       | PerFunc
+         end
+      val chunkify: Chunkify.t ref
+
       val chunkTailCall: bool ref
 
       val closureConvertGlobalize: bool ref

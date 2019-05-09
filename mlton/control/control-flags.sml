@@ -45,32 +45,30 @@ val atMLtons = control {name = "atMLtons",
                         toString = fn v => Layout.toString (Vector.layout
                                                             String.layout v)}
 
-structure Chunk =
+val chunkBatch = control {name = "chunkBatch",
+                          default = Int.pow(2,15),
+                          toString = Int.toString}
+
+structure Chunkify =
    struct
       datatype t =
-         OneChunk
-       | ChunkPerFunc
-       | Coalesce of {limit: int}
+         Coalesce of {limit: int}
+       | One
+       | PerFunc
 
       val toString =
-         fn OneChunk => "one chunk"
-          | ChunkPerFunc => "chunk per function"
+         fn One => "one"
+          | PerFunc => "per function"
           | Coalesce {limit} => concat ["coalesce ", Int.toString limit]
    end
 
-datatype chunk = datatype Chunk.t
-
-val chunk = control {name = "chunk",
-                     default = Coalesce {limit = 4096},
-                     toString = Chunk.toString}
+val chunkify = control {name = "chunkify",
+                        default = Chunkify.Coalesce {limit = 4096},
+                        toString = Chunkify.toString}
 
 val chunkTailCall = control {name = "chunkTailCall",
                              default = false,
                              toString = Bool.toString}
-
-val chunkBatch = control {name = "chunkBatch",
-                          default = Int.pow(2,15),
-                          toString = Int.toString}
 
 val closureConvertGlobalize = control {name = "closureConvertGlobalize",
                                        default = true,
