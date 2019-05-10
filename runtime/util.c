@@ -8,5 +8,6 @@
 
 #include "util.h"
 
+#define MLTON_UTIL
 #include "util/die.c"
 #include "util/to-string.c"
