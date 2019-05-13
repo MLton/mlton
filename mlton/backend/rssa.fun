@@ -857,9 +857,9 @@ structure Function =
                 (blocks, [],
                  fn (Block.T {args, kind, label, statements, transfer}, ac) =>
                  let
-                    val {inline, occurrences, ...} = labelInfo label
+                    val {inline, occurrences, replace, ...} = labelInfo label
                  in
-                    if !inline orelse 0 = !occurrences
+                    if !inline orelse 0 = !occurrences orelse isSome (!replace)
                        then ac
                     else
                        let
