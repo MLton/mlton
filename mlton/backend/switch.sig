@@ -39,4 +39,5 @@ signature SWITCH =
       val isOk: t * {checkUse: Use.t -> unit,
                      labelIsOk: Label.t -> bool} -> bool
       val layout: t -> Layout.t
+      val replaceLabels: t * (Label.t -> Label.t) -> t
    end
