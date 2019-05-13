@@ -143,6 +143,7 @@ signature RSSA =
             (* in ifZero, the operand should be of type defaultWord *)
             val ifZero: Operand.t * {falsee: Label.t, truee: Label.t} -> t
             val layout: t -> Layout.t
+            val replaceLabels: t * (Label.t -> Label.t) -> t
             val replaceUses: t * (Var.t -> Operand.t) -> t
          end
 
