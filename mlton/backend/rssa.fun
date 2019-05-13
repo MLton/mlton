@@ -780,6 +780,7 @@ structure Function =
                (blocks, fn block as Block.T {label, ...} =>
                 setLabelInfo (label, {block = block,
                                       inline = ref false,
+                                      replace = ref NONE,
                                       occurrences = ref 0}))
             fun visitLabel l = Int.inc (#occurrences (labelInfo l))
             val () = visitLabel start
@@ -790,21 +791,41 @@ structure Function =
             datatype z = datatype Transfer.t
             val () =
                Vector.foreach
-               (blocks, fn Block.T {transfer, ...} =>
+               (blocks, fn Block.T {args, kind, label, statements, transfer} =>
                 case transfer of
-                   Goto {dst, ...} =>
+                   Goto {args=dstArgs, dst, ...} =>
                       let
+                         val {replace, ...} = labelInfo label
                          val {inline, occurrences, ...} = labelInfo dst
                       in
                          if 1 = !occurrences
                             then inline := true
-                         else ()
+                         else
+                            case (Vector.isEmpty statements, kind) of
+                                 (true, Kind.Jump) =>
+                                    if Vector.length args = Vector.length dstArgs
+                                       andalso Vector.forall2 (args, dstArgs,
+                                          fn ((v, _), oper) =>
+                                             case oper of
+                                                  Operand.Var {var=v', ...} =>
+                                                      Var.equals (v, v')
+                                                | _ => false)
+                                    then replace := SOME dst
+                                    else ()
+                              | _ => ()
+
                       end
                  | _ => ())
             fun expand (ss: Statement.t vector list, t: Transfer.t)
                : Statement.t vector * Transfer.t =
                let
-                  fun done () = (Vector.concat (rev ss), t)
+                  fun replaceTransfer t =
+                     Transfer.replaceLabels (t,
+                        fn l =>
+                           case (! o #replace o labelInfo) l of
+                                SOME l' => l'
+                              | NONE => l)
+                  fun done () = (Vector.concat (rev ss), replaceTransfer t)
                in
                   case t of
                      Goto {args, dst} =>
@@ -825,7 +846,7 @@ structure Function =
                                            isMutable = false,
                                            src = src})
                               in
-                                 expand (statements :: binds :: ss, transfer)
+                                 expand (statements :: binds :: ss, replaceTransfer transfer)
                               end
                         end
                    | _ => done ()
