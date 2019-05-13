@@ -819,12 +819,12 @@ structure Function =
             fun expand (ss: Statement.t vector list, t: Transfer.t)
                : Statement.t vector * Transfer.t =
                let
+                  fun getReplace l =
+                     case (! o #replace o labelInfo) l of
+                          SOME l' => getReplace l'
+                        | NONE => l
                   fun replaceTransfer t =
-                     Transfer.replaceLabels (t,
-                        fn l =>
-                           case (! o #replace o labelInfo) l of
-                                SOME l' => l'
-                              | NONE => l)
+                     Transfer.replaceLabels (t, getReplace)
                   fun done () = (Vector.concat (rev ss), replaceTransfer t)
                in
                   case t of
