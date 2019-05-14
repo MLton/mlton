@@ -613,7 +613,7 @@ fun restoreFunction {main: Function.t}
                         else st
                   end)
             end
-        fun rewriteTransfer addPost (t: Transfer.t) =
+        fun rewriteTransfer (t: Transfer.t) =
            let
               val t =
                  case t of
@@ -646,7 +646,7 @@ fun restoreFunction {main: Function.t}
                             (LabelInfo.phiArgs' li, fn x => doit x)
               val args = Vector.concat [args, phiArgs]
               val statements = Vector.map (statements, rewriteStatement addPost)
-              val transfer = rewriteTransfer addPost transfer
+              val transfer = rewriteTransfer transfer
               val kind =
                  case kind of
                       Kind.Cont {handler=Handler.Handle _} => Kind.Jump

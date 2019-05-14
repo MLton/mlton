@@ -156,7 +156,6 @@ fun transformFunc func =
             seq [str "Bounce rssa limit: ", Option.layout Int.layout n]
          end)
       val _ = let
-         val counter = ref 0
          (* now for each var in consideration, check if active in loop *)
          fun checkActiveVars (block as Block.T {label, ...}) =
            let
