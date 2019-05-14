@@ -67,25 +67,17 @@ structure Weight = struct
       val equals = op =
    end
 
-   type t = {depth: int, count: int, localDef: DefLoc.t}
-   fun inc ({depth, count, localDef}, depth') =
-      if depth' > depth
-         then {depth=depth', count=1, localDef=localDef}
-      else if depth' = depth
-         then {depth=depth', count=count + 1, localDef=localDef}
-      else {depth=depth, count=count, localDef=localDef}
-   fun new depth =
-      {depth=depth, count=0, localDef=DefLoc.Local}
-
-   fun op < ({depth=depth1, count=count1, localDef=localDef1},
-             {depth=depth2, count=count2, localDef=localDef2}) =
-      Int.< (depth1, depth2)
-      orelse Int.equals (depth1, depth2)
-         andalso (DefLoc.< (localDef1, localDef2)
-            orelse DefLoc.equals (localDef1, localDef2)
-               andalso (Int.< (count1, count2)))
-   fun setLocalDef ({depth, count, localDef=_}, newLocalDef) =
-      {depth=depth, count=count, localDef=newLocalDef}
+   type t = {count: int, localDef: DefLoc.t}
+   fun inc ({count, localDef}) =
+      {count=count + 1, localDef=localDef}
+   val new = {count=0, localDef=DefLoc.Local}
+   fun op < ({count=count1, localDef=localDef1},
+             {count=count2, localDef=localDef2}) =
+      (DefLoc.< (localDef1, localDef2)
+         orelse DefLoc.equals (localDef1, localDef2)
+            andalso (Int.< (count1, count2)))
+   fun setLocalDef ({count, localDef=_}, newLocalDef) =
+      {count=count, localDef=newLocalDef}
 end
 
 datatype varinfo
@@ -93,14 +85,14 @@ datatype varinfo
    | Consider of Weight.t
    | Rewrite of Weight.t
 
-fun loopForeach (depth, {headers, child}, f) =
+fun loopForeach ({headers, child}, f) =
    case DirectedGraph.LoopForest.dest child of
         {loops, notInLoop} =>
         let
-           val _ = Vector.foreach (headers, f depth)
-           val _ = Vector.foreach (notInLoop, f depth)
+           val _ = Vector.foreach (headers, f)
+           val _ = Vector.foreach (notInLoop, f)
         in
-           Vector.foreach (loops, fn loop => loopForeach (depth, loop, f))
+           Vector.foreach (loops, fn loop => loopForeach (loop, f))
         end
 
 fun transformFunc func =
@@ -125,7 +117,7 @@ fun transformFunc func =
          fn b as Block.T {label, ...} =>
             if shouldBounceAt b
             then Vector.foreach (beginNoFormals label,
-               fn v => setVarInfo (v, Consider (Weight.new 0)))
+               fn v => setVarInfo (v, Consider Weight.new))
             else ())
       (* foreach arg, set Consider? need to tell it how to
        * avoid setting the original again *)
@@ -165,9 +157,8 @@ fun transformFunc func =
          end)
       val _ = let
          val counter = ref 0
-         (* now for each var in consideration, check if active in loop,
-          * increment its usage for each depth *)
-         fun checkActiveVars depth (block as Block.T {label, ...}) =
+         (* now for each var in consideration, check if active in loop *)
+         fun checkActiveVars (block as Block.T {label, ...}) =
            let
               fun modVarInfo (v, f) =
                  let
@@ -184,14 +175,14 @@ fun transformFunc func =
                   fn (v, _) =>
                      modVarInfo (v,
                         fn w => Weight.inc (Weight.setLocalDef (w,
-                           Weight.DefLoc.LoopLocal), depth)))
+                           Weight.DefLoc.LoopLocal))))
 
               val _ = Block.foreachUse (block,
                   fn v =>
                      case n of
-                          NONE => setRewrite (v, Weight.new 0)
+                          NONE => setRewrite (v, Weight.new)
                         | SOME _ => modVarInfo (v,
-                             fn w => Weight.inc (w, depth)))
+                             fn w => Weight.inc w))
               val _ = (#inLoop o labelInfo) label :=
                 InLoop {header=false}
            in
@@ -206,7 +197,7 @@ fun transformFunc func =
                   | _ => ()
             end
          fun processLoop (loop as {headers,...}) =
-           (loopForeach (1, loop, checkActiveVars) ;
+           (loopForeach (loop, checkActiveVars) ;
             Vector.foreach (headers, setHeader))
       in
          Vector.foreach (loops, processLoop)
@@ -218,7 +209,7 @@ fun transformFunc func =
       fun mkLoopPicker n loop =
          let
             (* assume n is small, else we should use a proper heap *)
-            val heap = Array.new (n, (NONE, Weight.new 0))
+            val heap = Array.new (n, (NONE, Weight.new))
             fun insert (i, x, xw) =
                if i >= n
                   then ()
@@ -241,9 +232,9 @@ fun transformFunc func =
                      * the weights more consistently *)
                   | Rewrite w => insert (0, SOME x, w)
                   | _ => ()
-            fun insertVars _ block =
+            fun insertVars block =
                Block.foreachUse (block, insertVar)
-            val _ = loopForeach (0, loop, insertVars)
+            val _ = loopForeach (loop, insertVars)
             val _ = Array.foreach (heap,
                fn (x, xw) =>
                   case x of
