@@ -56,13 +56,10 @@ structure Weight = struct
       datatype t
          = FunArg
          | Local
-         | LoopLocal
 
       fun op < (t1, t2) =
          case (t1, t2) of
                (FunArg, Local) => true
-             | (FunArg, LoopLocal) => true
-             | (Local, LoopLocal) => true
              | _ => false
       val equals = op =
    end
@@ -157,6 +154,7 @@ fun transformFunc func =
          end)
       val _ = let
          (* now for each var in consideration, check if active in loop *)
+         fun count reff _ = Int.inc reff
          fun checkActiveVars (block as Block.T {label, ...}) =
            let
               fun modVarInfo (v, f) =
@@ -174,7 +172,7 @@ fun transformFunc func =
                   fn (v, _) =>
                      modVarInfo (v,
                         fn w => Weight.inc (Weight.setLocalDef (w,
-                           Weight.DefLoc.LoopLocal))))
+                           Weight.DefLoc.Local))))
 
               val _ = Block.foreachUse (block,
                   fn v =>
@@ -196,8 +194,20 @@ fun transformFunc func =
                   | _ => ()
             end
          fun processLoop (loop as {headers,...}) =
-           (loopForeach (loop, checkActiveVars) ;
-            Vector.foreach (headers, setHeader))
+            let
+               val size = ref 0
+               val _ = loopForeach (loop, count size)
+               val _ =
+                  (* this bound is a conservative bound
+                   * backed up by data showing no improvements at
+                   * all over this size, so we'll save the overhead *)
+                  if !size < 40
+                  then loopForeach (loop, checkActiveVars)
+                  else ()
+               val _ = Vector.foreach (headers, setHeader)
+            in
+               ()
+            end
       in
          Vector.foreach (loops, processLoop)
       end
@@ -210,7 +220,12 @@ fun transformFunc func =
             (* assume n is small, else we should use a proper heap *)
             val heap = Array.new (n, (NONE, Weight.new))
             fun insert (i, x, xw) =
-               if i >= n
+               if i >= n orelse
+                     #count xw >= 15
+                     (* Variables with lots of uses are usually worse
+                      * candidates than shorter lived variables used once or
+                      * twice since they have much longer lifespans,
+                      * 15 is a conservative bound backed by some data *)
                   then ()
                else
                   let
@@ -218,7 +233,7 @@ fun transformFunc func =
                      val (x, xw) =
                         (* maximize weight *)
                         if (Weight.< (yw, xw))
-                        then ( Array.update (heap, i, (x, xw)) ; (y, yw))
+                        then (Array.update (heap, i, (x, xw)) ; (y, yw))
                         else (x, xw)
                   in
                      insert (i + 1, x, xw)
