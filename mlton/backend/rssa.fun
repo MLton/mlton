@@ -512,24 +512,6 @@ structure Transfer =
              | Return zs => Return (opers zs)
              | Switch s => Switch (Switch.replaceVar (s, f))
          end
-
-      fun replaceLabels (t: t, f: Label.t -> Label.t): t =
-         case t of
-               CCall {args, func, return} =>
-                  CCall {args = args,
-                         func = func,
-                         return = Option.map (return, f)}
-             | Call {args, func, return} =>
-                  Call {args = args,
-                        func = func,
-                        return = Return.map (return, f)}
-             | Goto {args, dst} =>
-                  Goto {args = args,
-                        dst = f dst}
-             | Raise zs => Raise zs
-             | Return zs => Return zs
-             | Switch s => Switch (Switch.replaceLabels (s, f))
-
    end
 
 structure Kind =
