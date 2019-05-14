@@ -515,14 +515,7 @@ structure Transfer =
 
       fun replaceLabels (t: t, f: Label.t -> Label.t): t =
          case t of
-               Arith {args, dst, overflow, prim, success, ty} =>
-                  Arith {args = args,
-                         dst = dst,
-                         overflow = f overflow,
-                         prim = prim,
-                         success = f success,
-                         ty = ty}
-             | CCall {args, func, return} =>
+               CCall {args, func, return} =>
                   CCall {args = args,
                          func = func,
                          return = Option.map (return, f)}

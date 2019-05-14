@@ -617,16 +617,7 @@ fun restoreFunction {main: Function.t}
            let
               val t =
                  case t of
-                   Arith {args, dst, overflow, prim, success, ...} =>
-                     let
-                        val {var=dst, ty, ...} = rewriteVarDef addPost dst
-                        val success = route false success
-                        val overflow = route false overflow
-                     in
-                        Arith {args=args, dst=dst, overflow=overflow,
-                               prim=prim, success=success, ty=ty}
-                     end
-                 | Call {args, func,
+                   Call {args, func,
                         return=Return.NonTail
                         {cont, handler=Handler.Handle h}} =>
                      let
