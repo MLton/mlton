@@ -139,7 +139,7 @@ fun transformFunc func =
 
 
       datatype InLoop
-        = InLoop of {header: bool, lid: int}
+        = InLoop of {header: bool}
         | NotInLoop
 
       val {get=labelInfo, ...} = Property.get
@@ -193,7 +193,7 @@ fun transformFunc func =
                         | SOME _ => modVarInfo (v,
                              fn w => Weight.inc (w, depth)))
               val _ = (#inLoop o labelInfo) label :=
-                InLoop {header=false, lid=i}
+                InLoop {header=false}
            in
              ()
            end
@@ -202,7 +202,7 @@ fun transformFunc func =
                val inLoop = (#inLoop o labelInfo) label
             in
                case !inLoop  of
-                    InLoop {lid, ...} => inLoop := InLoop {header=true, lid=lid}
+                    InLoop {...} => inLoop := InLoop {header=true}
                   | _ => ()
             end
          fun processLoop (loop as {headers,...}) =
@@ -339,13 +339,6 @@ fun transformFunc func =
                   case (inLoop, inLoop') of
                        (NotInLoop, InLoop _) => SOME EnterLoop
                      | (InLoop _, NotInLoop) => SOME LeaveLoop
-                     | (InLoop {lid, ...},
-                        InLoop {header=true, lid=lid'}) =>
-                           if lid = lid'
-                           then NONE
-                           else NONE (* Depends whether we allow loops
-                           to differ in the location of specific variables *)
-                           (*SOME EnterLoop*)
                      | _ => NONE
                end
             val needsRewrite = ref false
