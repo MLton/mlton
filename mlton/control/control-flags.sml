@@ -64,7 +64,7 @@ structure BounceRssa =
    end
 
 val bounceRssaLimit = control {name = "bounceRssaLimit",
-                               default = SOME 8,
+                               default = SOME 2,
                                toString = Option.toString Int.toString}
 
 
