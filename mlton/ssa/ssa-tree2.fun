@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014,2017-2018 Matthew Fluet.
+(* Copyright (C) 2009,2014,2017-2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -12,6 +12,11 @@ struct
 
 open S
 
+(* infix declarations for Parse.Ops *)
+infix  1 <|> >>=
+infix  3 <*> <* *>
+infixr 4 <$> <$$> <$$$> <$$$$> <$ <$?>
+
 structure Prod =
    struct
       datatype 'a t = T of {elt: 'a, isMutable: bool} vector
@@ -21,6 +26,13 @@ structure Prod =
       val make = T
 
       fun empty () = T (Vector.new0 ())
+
+      local
+         fun new1 {elt, isMutable} = T (Vector.new1 {elt = elt, isMutable = isMutable})
+      in
+         fun new1Immutable elt = new1 {elt = elt, isMutable = false}
+         fun new1Mutable elt = new1 {elt = elt, isMutable = true}
+      end
 
       fun fold (p, b, f) =
          Vector.fold (dest p, b, fn ({elt, ...}, b) => f (elt, b))
@@ -47,7 +59,7 @@ structure Prod =
                             {elt = e2, isMutable = m2}) =>
                         m1 = m2 andalso equals (e1, e2))
 
-      fun layout (p, layout) =
+      fun layout (p, layoutElt) =
          let
             open Layout
          in
@@ -55,10 +67,21 @@ structure Prod =
                  (mayAlign o separateRight)
                  (Vector.toListMap (dest p, fn {elt, isMutable} =>
                                     if isMutable
-                                       then seq [layout elt, str " ref"]
-                                       else layout elt),
+                                       then seq [layoutElt elt, str " ref"]
+                                       else layoutElt elt),
                   ","),
                  str ")"]
+         end
+
+      fun parse (parseElt: 'a Parse.t): 'a t Parse.t =
+         let
+            open Parse
+         in
+            make <$>
+            vector (parseElt >>= (fn elt =>
+                    optional (kw "ref") >>= (fn isMutable =>
+                    pure {elt = elt, isMutable = Option.isSome isMutable})))
+
          end
 
       val map: 'a t * ('a -> 'b) -> 'b t =
@@ -102,6 +125,12 @@ structure ObjectCon =
              | Sequence => str "sequence"
              | Tuple => str "tuple"
          end
+
+      local
+         val conAlts = Vector.fromList [("sequence", Sequence), ("tuple", Tuple)]
+      in
+         val parse = Con.parseAs (conAlts, Con)
+      end
    end
 
 datatype z = datatype ObjectCon.t
@@ -251,13 +280,8 @@ structure Type =
 
       fun sequence p = object {args = p, con = Sequence}
 
-      local
-         fun make isMutable t =
-            sequence (Prod.make (Vector.new1 {elt = t, isMutable = isMutable}))
-      in
-         val array1 = make true
-         val vector1 = make false
-      end
+      fun array1 ty = sequence (Prod.new1Mutable ty)
+      fun vector1 ty = sequence (Prod.new1Immutable ty)
 
       fun ofConst c =
          let
@@ -302,19 +326,49 @@ structure Type =
                | Object {args, con} =>
                     if isUnit t
                        then str "unit"
-                    else
-                       let
-                          val args = Prod.layout (args, layout)
-                       in
-                          case con of
-                             Con c => seq [args, str " ", Con.layout c]
-                           | Sequence => seq [args, str " sequence"]
-                           | Tuple => seq [args, str " tuple"]
-                       end
+                    else seq [Prod.layout (args, layout),
+                              str " ",
+                              ObjectCon.layout con]
                | Real s => str (concat ["real", RealSize.toString s])
                | Thread => str "thread"
-               | Weak t => seq [str "(", layout t, str ") weak"]
+               | Weak t => seq [paren (layout t), str " ", str "weak"]
                | Word s => str (concat ["word", WordSize.toString s])))
+      end
+
+      local
+         structure P = Parse
+         open Parse.Ops
+
+         val tyconAlts =
+            Vector.fromList
+            ([("cpointer", cpointer),
+              ("intInf", intInf),
+              ("unit", unit),
+              ("thread", thread)] @
+             List.map (WordSize.all, fn ws => ("word" ^ WordSize.toString ws, word ws)) @
+             List.map (RealSize.all, fn rs => ("real" ^ RealSize.toString rs, real rs)))
+         val unary =
+            Con.parseAs (Vector.new3 (("sequence", sequence o Prod.new1Immutable),
+                                      ("tuple", tuple o Prod.new1Immutable),
+                                      ("weak", weak)),
+                         fn con => fn ty =>
+                         conApp (con, Prod.new1Immutable ty))
+      in
+         fun parse () =
+            let
+               val parse = P.delay parse
+            in
+               Tycon.parseAs (tyconAlts, datatypee)
+               <|>
+               (P.paren parse >>= (fn ty =>
+                unary >>= (fn unary =>
+                P.pure (unary ty))))
+               <|>
+               (Prod.parse parse >>= (fn args =>
+                ObjectCon.parse >>= (fn con =>
+                P.pure (object {args = args, con = con}))))
+            end
+         val parse = parse ()
       end
 
       fun checkPrimApp {args, prim, result}: bool =
@@ -528,14 +582,48 @@ structure Base =
        | SequenceSub of {index: 'a,
                          sequence: 'a}
 
-      fun layout (b: 'a t, layoutX: 'a -> Layout.t): Layout.t =
+      fun layout (base: 'a t, layoutX: 'a -> Layout.t): Layout.t =
          let
             open Layout
          in
-            case b of
+            case base of
                Object x => layoutX x
              | SequenceSub {index, sequence} =>
-                  seq [str "$", Vector.layout layoutX (Vector.new2 (sequence, index))]
+                  seq [str "$", tuple [layoutX sequence, layoutX index]]
+         end
+
+      fun parse (parseX: 'a Parse.t): 'a t Parse.t =
+         let
+            open Parse
+         in
+            SequenceSub <$>
+            (spaces *> str "$(" *>
+             parseX >>= (fn sequence =>
+             spaces *> str "," *>
+             parseX >>= (fn index =>
+             spaces *> str ")" *>
+             pure {index = index, sequence = sequence})))
+            <|>
+            (Object <$> parseX)
+         end
+
+      fun layoutWithOffset (base: 'a t, offset, layoutX: 'a -> Layout.t): Layout.t =
+         let
+            open Layout
+         in
+            seq [str "#", Int.layout offset, str " ",
+                 layout (base, layoutX)]
+         end
+
+      fun parseWithOffset (parseX: 'a Parse.t): ('a t * int) Parse.t =
+         let
+            open Parse
+         in
+            spaces *> char #"#" *>
+            (peek (nextSat Char.isDigit) *>
+             fromScan (Function.curry Int.scan StringCvt.DEC)) >>= (fn offset =>
+            parse parseX >>= (fn base =>
+            pure (base, offset)))
          end
 
       val equals: 'a t * 'a t * ('a * 'a -> bool) -> bool =
@@ -626,24 +714,52 @@ structure Exp =
             fun layoutArgs xs = Vector.layout layoutVar xs
          in
             case e of
-               Const c => seq [str "const ", Const.layout c]
+               Const c => Const.layout c
              | Inject {sum, variant} =>
                   seq [str "inj ", paren (layoutVar variant), str ": ", Tycon.layout sum]
              | Object {con, args} =>
-                  seq [str "new ",
+                  seq [str "obj ",
                        (case con of
-                           NONE => str "tuple "
+                           NONE => empty
                          | SOME c => seq [Con.layout c, str " "]),
                        layoutArgs args]
              | PrimApp {args, prim} =>
                   seq [str "prim ", Prim.layoutFull (prim, Type.layout), str " ", layoutArgs args]
              | Select {base, offset} =>
-                  seq [str "sel ", Int.layout offset, str " ",
-                       paren (Base.layout (base, layoutVar))]
+                  Base.layoutWithOffset (base, offset, layoutVar)
              | Var x => layoutVar x
          end
 
       fun layout e = layout' (e, Var.layout)
+
+      val parse =
+         let
+            open Parse
+            val parseArgs = vector Var.parse
+         in
+            any
+            [Const <$> Const.parse,
+             Inject <$>
+             (kw "inj" *>
+              paren Var.parse >>= (fn variant =>
+              sym ":" *>
+              Tycon.parse >>= (fn sum =>
+              pure {variant = variant, sum = sum}))),
+             Object <$>
+             (kw "obj" *>
+              optional Con.parse >>= (fn con =>
+              parseArgs >>= (fn args =>
+              pure {con = con, args = args}))),
+             PrimApp <$>
+             (kw "prim" *>
+              Prim.parseFull Type.parse >>= (fn prim =>
+              parseArgs >>= (fn args =>
+              pure {prim = prim, args = args}))),
+             Select <$>
+             (Base.parseWithOffset Var.parse >>= (fn (base, offset) =>
+              pure {base = base, offset = offset})),
+             Var <$> Var.parse]
+         end
 
       fun maySideEffect (e: t): bool =
          case e of
@@ -734,13 +850,29 @@ structure Statement =
              | Profile p => seq [str "prof ", ProfileExp.layout p]
              | Update {base, offset, value} =>
                   mayAlign [seq [str "upd ",
-                                 Exp.layout' (Exp.Select {base = base,
-                                                          offset = offset},
-                                              layoutVar),
+                                 Base.layoutWithOffset (base, offset, layoutVar),
                                  str " :="],
                             layoutVar value]
          end
       fun layout s = layout' (s, Var.layout)
+
+      val parse =
+         let
+            open Parse
+         in
+            any
+            [Bind <$>
+             (kw "val" *>
+              ((SOME <$> Var.parse) <|> (NONE <$ kw "_")) >>= (fn var =>
+              sym ":" *> Type.parse >>= (fn ty =>
+              sym "=" *> Exp.parse >>= (fn exp =>
+              pure {var = var, ty = ty, exp = exp})))),
+             Update <$>
+             (kw "upd" *>
+              Base.parseWithOffset Var.parse >>= (fn (base, offset) =>
+              sym ":=" *> Var.parse >>= (fn value =>
+              pure {base = base, offset = offset, value = value})))]
+         end
 
       val profile = Profile
 
@@ -778,8 +910,11 @@ structure Statement =
                                                    String.suffix (s, backSize)]
                                       else s
                              in
-                                setGlobal (var, Layout.seq [Var.layout var,
-                                                            Layout.str (" (*" ^ s ^ "*)")])
+                                if String.hasSubstring (s, {substring = "(*"})
+                                   orelse String.hasSubstring (s, {substring = "*)"})
+                                   then ()
+                                   else setGlobal (var, Layout.seq [Var.layout var,
+                                                                    Layout.str (" (*" ^ s ^ "*)")])
                              end
                        in
                           case exp of
@@ -964,12 +1099,7 @@ structure Return =
 structure Transfer =
    struct
       datatype t =
-         Arith of {prim: Type.t Prim.t,
-                   args: Var.t vector,
-                   overflow: Label.t, (* Must be nullary. *)
-                   success: Label.t, (* Must be unary. *)
-                   ty: Type.t}
-       | Bug (* MLton thought control couldn't reach here. *)
+         Bug (* MLton thought control couldn't reach here. *)
        | Call of {args: Var.t vector,
                   func: Func.t,
                   return: Return.t}
@@ -989,11 +1119,7 @@ structure Transfer =
             fun vars xs = Vector.foreach (xs, var)
          in
             case t of
-               Arith {args, overflow, success, ...} =>
-                  (vars args
-                   ; label overflow 
-                   ; label success)
-             | Bug => ()
+               Bug => ()
              | Call {func = f, args, return, ...} =>
                   (func f
                    ; Return.foreachLabel (return, label)
@@ -1026,13 +1152,7 @@ structure Transfer =
             fun fxs xs = Vector.map (xs, fx)
          in
             case t of
-               Arith {prim, args, overflow, success, ty} =>
-                  Arith {prim = prim,
-                         args = fxs args,
-                         overflow = fl overflow,
-                         success = fl success,
-                         ty = ty}
-             | Bug => Bug
+               Bug => Bug
              | Call {func, args, return} =>
                   Call {func = func, 
                         args = fxs args,
@@ -1057,89 +1177,124 @@ structure Transfer =
       val _ = replaceLabel
       fun replaceVar (t, f) = replaceLabelVar (t, fn l => l, f)
 
-      local
-         fun layoutCase ({test, cases, default}, layoutVar) =
-            let
-               open Layout
-               fun doit (l, layout) =
-                  Vector.toListMap
-                  (l, fn (i, l) =>
-                   seq [layout i, str " => ", Label.layout l])
-               datatype z = datatype Cases.t
-               val suffix =
-                  case cases of
-                     Con _ => empty
-                   | Word (size, _) => str (WordSize.toString size)
-               val cases =
-                  case cases of
-                     Con l => doit (l, Con.layout)
-                   | Word (_, l) => doit (l, WordX.layout)
-               val cases =
-                  case default of
-                     NONE => cases
-                   | SOME j =>
-                        cases @ [seq [str "_ => ", Label.layout j]]
-            in
-               align [seq [str "case", suffix, str " ", layoutVar test, str " of"],
-                      indent (alignPrefix (cases, "| "), 2)]
-            end
-      in
-         fun layout' (t, layoutVar) =
-            let
-               open Layout
-               fun layoutArgs xs = Vector.layout layoutVar xs
-               fun layoutPrim {prim, args} =
-                  Exp.layout'
-                  (Exp.PrimApp {prim = prim,
-                                args = args},
-                   layoutVar)
-            in
-               case t of
-                  Arith {prim, args, overflow, success, ty} =>
-                     seq [str "arith ", Type.layout ty, str " ", Label.layout success, str " ",
-                          tuple [layoutPrim {prim = prim, args = args}],
-                          str " handle Overflow => ", Label.layout overflow]
-                | Bug => str "bug"
-                | Call {func, args, return} =>
-                     let
-                        val call = seq [Func.layout func, str " ", layoutArgs args]
-                     in
-                        case return of
-                           Return.Dead => seq [str "call dead ", paren call]
-                         | Return.NonTail {cont, handler} =>
-                              seq [str "call ", Label.layout cont, str " ",
-                                   paren call,
-                                   str " handle _ => ",
-                                   case handler of
-                                      Handler.Caller => str "raise"
-                                    | Handler.Dead => str "dead"
-                                    | Handler.Handle l => Label.layout l]
-                         | Return.Tail => seq [str "call return ", paren call]
-                     end
-                | Case arg => layoutCase (arg, layoutVar)
-                | Goto {dst, args} =>
-                     seq [str "goto ", Label.layout dst, str " ", layoutArgs args]
-                | Raise xs => seq [str "raise ", layoutArgs xs]
-                | Return xs => seq [str "return ", layoutArgs xs]
-                | Runtime {prim, args, return} =>
-                     seq [str "runtime ", Label.layout return, str " ",
-                          tuple [layoutPrim {prim = prim, args = args}]]
-            end
-      end
+      fun layout' (t, layoutVar) =
+         let
+            open Layout
+            fun layoutArgs xs = Vector.layout layoutVar xs
+            fun layoutCase {test, cases, default} =
+               let
+                  fun doit (l, layout) =
+                     Vector.toListMap
+                     (l, fn (i, l) =>
+                      seq [layout i, str " => ", Label.layout l])
+                  datatype z = datatype Cases.t
+                  val (suffix, cases) =
+                     case cases of
+                        Con l => (empty, doit (l, Con.layout))
+                      | Word (size, l) => (str (WordSize.toString size),
+                                           doit (l, fn w => (WordX.layout (w, {suffix = true}))))
+                  val cases =
+                     case default of
+                        NONE => cases
+                      | SOME j =>
+                           cases @ [seq [str "_ => ", Label.layout j]]
+               in
+                  align [seq [str "case", suffix, str " ", layoutVar test, str " of"],
+                         indent (alignPrefix (cases, "| "), 2)]
+               end
+            fun layoutPrim {prim, args} =
+               seq [Prim.layoutFull (prim, Type.layout), str " ", layoutArgs args]
+         in
+            case t of
+               Bug => str "bug"
+             | Call {func, args, return} =>
+                  let
+                     val call = seq [Func.layout func, str " ", layoutArgs args]
+                  in
+                     case return of
+                        Return.Dead => seq [str "call dead ", call]
+                      | Return.NonTail {cont, handler} =>
+                           seq [str "call ", Label.layout cont, str " ",
+                                paren call,
+                                str " handle _ => ",
+                                case handler of
+                                   Handler.Caller => str "raise"
+                                 | Handler.Dead => str "dead"
+                                 | Handler.Handle l => Label.layout l]
+                      | Return.Tail => seq [str "call tail ", call]
+                  end
+             | Case arg => layoutCase arg
+             | Goto {dst, args} =>
+                  seq [str "goto ", Label.layout dst, str " ", layoutArgs args]
+             | Raise xs => seq [str "raise ", layoutArgs xs]
+             | Return xs => seq [str "return ", layoutArgs xs]
+             | Runtime {prim, args, return} =>
+                  seq [str "runtime ", Label.layout return, str " ",
+                       paren (layoutPrim {prim = prim, args = args})]
+         end
       fun layout t = layout' (t, Var.layout)
+
+      val parse =
+         let
+            open Parse
+            val parseArgs = vector Var.parse
+            fun parseCase (parse', mk) =
+               Var.parse >>= (fn test =>
+               kw "of" *>
+               (Vector.fromList <$>
+                sepBy (parse' >>= (fn p =>
+                       sym "=>" *>
+                       Label.parse >>= (fn l =>
+                       pure (p, l))),
+                       sym "|")) >>= (fn cases =>
+               optional ((if Vector.isEmpty cases then pure () else sym "|") *>
+                         kw "_" *> sym "=>" *> Label.parse) >>= (fn default =>
+               pure {test = test,
+                     cases = mk cases,
+                     default = default})))
+            val parseCall =
+               Func.parse >>= (fn func =>
+               parseArgs >>= (fn args =>
+               pure (fn return => pure {func = func, args = args, return = return})))
+         in
+            any
+            [Bug <$ kw "bug",
+             Call <$>
+             (kw "call" *>
+              any [kw "dead" *> parseCall >>= (fn mkCall => mkCall Return.Dead),
+                   kw "tail" *> parseCall >>= (fn mkCall => mkCall Return.Tail),
+                   Label.parse >>= (fn cont =>
+                   paren parseCall >>= (fn mkCall =>
+                   kw "handle" *> kw "_" *> sym "=>" *>
+                   any [kw "raise" *> mkCall (Return.NonTail {cont = cont, handler = Handler.Caller}),
+                        kw "dead" *> mkCall (Return.NonTail {cont = cont, handler = Handler.Dead}),
+                        Label.parse >>= (fn h => mkCall (Return.NonTail {cont = cont, handler = Handler.Handle h}))]))]),
+             Case <$>
+             any ((kw "case" *> parseCase (Con.parse, Cases.Con)) ::
+                  (List.map (WordSize.all, fn ws =>
+                             kw ("case" ^ WordSize.toString ws) *>
+                             parseCase (WordX.parse, fn cases => Cases.Word (ws, cases))))),
+             Goto <$>
+             (kw "goto" *>
+              Label.parse >>= (fn dst =>
+              parseArgs >>= (fn args =>
+              pure {dst = dst, args = args}))),
+             Raise <$> (kw "raise" *> parseArgs),
+             Return <$> (kw "return" *> parseArgs),
+             Runtime <$>
+             (kw "runtime" *>
+              Label.parse >>= (fn return =>
+              paren (Prim.parseFull Type.parse >>= (fn prim =>
+                     parseArgs >>= (fn args =>
+                     pure (prim, args)))) >>= (fn (prim, args) =>
+              pure {prim = prim, args = args, return = return})))]
+         end
 
       fun varsEquals (xs, xs') = Vector.equals (xs, xs', Var.equals)
 
       fun equals (e: t, e': t): bool =
          case (e, e') of
-            (Arith {prim, args, overflow, success, ...},
-             Arith {prim = prim', args = args', 
-                    overflow = overflow', success = success', ...}) =>
-               Prim.equals (prim, prim') andalso
-               varsEquals (args, args') andalso
-               Label.equals (overflow, overflow') andalso
-               Label.equals (success, success')
-          | (Bug, Bug) => true
+            (Bug, Bug) => true
           | (Call {func, args, return}, 
              Call {func = func', args = args', return = return'}) =>
                Func.equals (func, func') andalso
@@ -1174,10 +1329,7 @@ structure Transfer =
          fun hash2 (w1: Word.t, w2: Word.t) = Hash.combine (w1, w2)
       in
          val hash: t -> Word.t =
-            fn Arith {args, overflow, success, ...} =>
-                  hashVars (args, hash2 (Label.hash overflow,
-                                         Label.hash success))
-             | Bug => bug
+            fn Bug => bug
              | Call {func, args, return} =>
                   hashVars (args, hash2 (Func.hash func, Return.hash return))
              | Case {test, cases, default} =>
@@ -1206,11 +1358,20 @@ local
 in
    fun layoutFormals (xts: (Var.t * Type.t) vector) =
       Vector.layout (fn (x, t) =>
-                    seq [Var.layout x,
-                         if !Control.showTypes
-                            then seq [str ": ", Type.layout t]
-                         else empty])
+                     if !Control.showTypes
+                        then mayAlign [seq [Var.layout x, str ":"],
+                                       indent (Type.layout t, 2)]
+                        else Var.layout x)
       xts
+end
+local
+   open Parse
+in
+   val parseFormals =
+      vector (Var.parse >>= (fn x =>
+              sym ":" *>
+              Type.parse >>= (fn ty =>
+              pure (x, ty))))
 end
 
 structure Block =
@@ -1235,7 +1396,7 @@ structure Block =
             fun layoutStatement s = Statement.layout' (s, layoutVar)
             fun layoutTransfer t = Transfer.layout' (t, layoutVar)
          in
-            align [seq [str "block: ", Label.layout label, str " ",
+            align [seq [str "block ", Label.layout label, str " ",
                         layoutFormals args],
                    indent (align
                            [align
@@ -1244,6 +1405,22 @@ structure Block =
                            2)]
          end
       fun layout b = layout' (b, Var.layout)
+
+      val parse =
+         let
+            open Parse
+         in
+            T <$>
+            (kw "block" *>
+             Label.parse >>= (fn label =>
+             parseFormals >>= (fn args =>
+             many Statement.parse >>= (fn statements =>
+             Transfer.parse >>= (fn transfer =>
+             pure {label = label,
+                   args = args,
+                   statements = Vector.fromList statements,
+                   transfer = transfer})))))
+         end
 
       fun clear (T {label, args, statements, ...}) =
          (Label.clear label
@@ -1262,7 +1439,7 @@ structure Datatype =
          let
             open Layout
          in
-            seq [Tycon.layout tycon,
+            seq [str "datatype ", Tycon.layout tycon,
                  str " = ",
                  alignPrefix
                  (Vector.toListMap
@@ -1270,6 +1447,20 @@ structure Datatype =
                    seq [Prod.layout (args, Type.layout), str " ",
                         Con.layout con]),
                   "| ")]
+         end
+
+      val parse =
+         let
+            open Parse
+         in
+            T <$>
+            (kw "datatype" *> Tycon.parse >>= (fn tycon =>
+             sym "=" *>
+             sepBy (Prod.parse Type.parse >>= (fn args =>
+                    Con.parse >>= (fn con =>
+                    pure {con = con, args = args})),
+                    sym "|") >>= (fn cons =>
+             pure {tycon = tycon, cons = Vector.fromList cons})))
          end
 
       fun clear (T {cons, tycon}) =
@@ -1467,10 +1658,7 @@ structure Function =
                          edge (from, labelNode to, label, style)
                       val () =
                          case transfer of
-                            Arith {overflow, success, ...} =>
-                               (edge (success, "", Solid)
-                                ; edge (overflow, "Overflow", Dashed))
-                          | Bug => ()
+                            Bug => ()
                           | Call {return, ...} =>
                                let
                                   val _ =
@@ -1496,7 +1684,7 @@ structure Function =
                                         Cases.Con v =>
                                            doit (v, Con.toString)
                                       | Cases.Word (_, v) =>
-                                           doit (v, WordX.toString)
+                                           doit (v, fn w => WordX.toString (w, {suffix = true}))
                                   val _ = 
                                      case default of
                                         NONE => ()
@@ -1629,7 +1817,7 @@ structure Function =
 
       fun layoutHeader (f: t): Layout.t =
          let
-            val {args, name, raises, returns, start, ...} = dest f
+            val {args, name, mayInline, raises, returns, start, ...} = dest f
             open Layout
             val (sep, rty) =
                if !Control.showTypes
@@ -1647,12 +1835,31 @@ structure Function =
                   else (str " =", empty)
          in
             mayAlign [mayAlign [seq [str "fun ",
+                                     if mayInline then empty else str "noinline ",
                                      Func.layout name,
                                      str " ",
                                      layoutFormals args,
                                      sep],
                                 rty],
-                      Transfer.layout (Transfer.Goto {dst = start, args = Vector.new0 ()})]
+                      seq [Label.layout start, str " ()"]]
+         end
+
+      val parseHeader =
+         let
+            open Parse
+         in
+            kw "fun" *>
+            optional (kw "noinline") >>= (fn noInline =>
+            Func.parse >>= (fn name =>
+            parseFormals >>= (fn args =>
+            sym ":" *>
+            cbrack (ffield ("returns", option (vector Type.parse)) >>= (fn returns =>
+                    nfield ("raises", option (vector Type.parse)) >>= (fn raises =>
+                    pure (returns, raises)))) >>= (fn (returns, raises) =>
+            sym "=" *>
+            Label.parse >>= (fn start =>
+            paren (pure ()) *>
+            pure (Option.isNone noInline, name, args, returns, raises, start))))))
          end
 
       fun layout' (f: t, layoutVar) =
@@ -1665,6 +1872,22 @@ structure Function =
                    indent (align (Vector.toListMap (blocks, layoutBlock)), 2)]
          end
       fun layout f = layout' (f, Var.layout)
+
+      val parse =
+         let
+            open Parse
+         in
+            new <$>
+            (parseHeader >>= (fn (mayInline, name, args, returns, raises, start) =>
+             many Block.parse >>= (fn blocks =>
+             pure {mayInline = mayInline,
+                   name = name,
+                   args = args,
+                   returns = returns,
+                   raises = raises,
+                   start = start,
+                   blocks = Vector.fromList blocks})))
+         end
 
       fun layouts (f: t, layoutVar, output: Layout.t -> unit): unit =
          let
@@ -2011,14 +2234,14 @@ structure Program =
              *)
             val output = output' 
          in
-            output (str "\n\nDatatypes:")
+            output (str "\n\n(* Datatypes: *)")
             ; Vector.foreach (datatypes, output o Datatype.layout)
-            ; output (str "\n\nGlobals:")
+            ; output (str "\n\n(* Globals: *)")
             ; Vector.foreach (globals, output o (fn s => Statement.layout' (s, layoutVar)))
-            ; output (seq [str "\n\nMain: ", Func.layout main])
-            ; output (str "\n\nFunctions:")
+            ; output (str "\n\n(* Functions: *)")
             ; List.foreach (functions, fn f =>
                             Function.layouts (f, layoutVar, output))
+            ; output (seq [str "\n\n(* Main: *) ", Func.layout main])
             ; if not (!Control.keepDot)
                  then ()
               else
@@ -2030,6 +2253,30 @@ structure Program =
                      Dot, (), Layout (fn () =>
                                       layoutCallGraph (p, !Control.inputFile)))
                  end
+         end
+
+      fun parse () =
+         let
+            open Parse
+
+            val () = Tycon.parseReset {prims = Vector.new1 Tycon.bool}
+            val () = Con.parseReset {prims = Vector.new2 (Con.truee, Con.falsee)}
+            val () = Var.parseReset {prims = Vector.new0 ()}
+            val () = Label.parseReset {prims = Vector.new0 ()}
+            val () = Func.parseReset {prims = Vector.new0 ()}
+
+            val parseProgram =
+               T <$>
+               (many Datatype.parse >>= (fn datatypes =>
+                many Statement.parse >>= (fn globals =>
+                many Function.parse >>= (fn functions =>
+                Func.parse >>= (fn main =>
+                pure {datatypes = Vector.fromList datatypes,
+                      globals = Vector.fromList globals,
+                      functions = functions,
+                      main = main})))))
+         in
+            compose (skipCommentsML, parseProgram <* (spaces *> (failing next <|> failCut "end of file")))
          end
 
       fun layoutStats (T {datatypes, globals, functions, main, ...}) =
@@ -2146,8 +2393,7 @@ structure Program =
                  | _ => ()
              fun loopTransfer t =
                 case t of
-                   Arith {args, prim, ...} => f {args = args, prim = prim}
-                 | Runtime {args, prim, ...} => f {args = args, prim = prim}
+                   Runtime {args, prim, ...} => f {args = args, prim = prim}
                  | _ => ()
              val _ = Vector.foreach (globals, loopStatement)
              val _ =

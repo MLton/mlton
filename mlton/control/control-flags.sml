@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2012,2014-2017 Matthew Fluet.
+(* Copyright (C) 2009-2012,2014-2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -12,6 +12,18 @@ struct
 
 structure C = Control ()
 open C
+fun layout' {pre, suf} =
+   let
+      open Layout
+      val (pre, suf) = (str pre, str suf)
+   in
+      align
+      ((seq [pre, str "control flags:", suf]) ::
+       (List.map
+        (all (), fn {name, value} =>
+         seq [pre, str "   ", str name, str ": ", str value, suf])))
+   end
+fun layout () = layout' {pre = "", suf = ""}
 
 structure Align =
    struct
@@ -838,6 +850,22 @@ val gcCheck = control {name = "gc check",
                        default = Limit,
                        toString = GcCheck.toString}
 
+val globalizeArrays = control {name = "globalize arrays",
+                               default = false,
+                               toString = Bool.toString}
+
+val globalizeRefs = control {name = "globalize refs",
+                             default = true,
+                             toString = Bool.toString}
+
+val globalizeSmallIntInf = control {name = "globalize int-inf as small type)",
+                                    default = true,
+                                    toString = Bool.toString}
+
+val globalizeSmallType = control {name = "globalize small type",
+                                  default = 1,
+                                  toString = Int.toString}
+
 val indentation = control {name = "indentation",
                            default = 3,
                            toString = Int.toString}
@@ -1331,6 +1359,22 @@ structure Verbosity =
           | Top => "Top"
           | Pass => "Pass"
           | Detail => "Detail"
+
+      fun compare (v1, v2) =
+         case (v1, v2) of
+            (Silent, Silent) => EQUAL
+          | (Silent, _) => LESS
+          | (_, Silent) => GREATER
+          | (Top, Top) => EQUAL
+          | (Top, _) => LESS
+          | (_, Top) => GREATER
+          | (Pass, Pass) => EQUAL
+          | (Pass, _) => LESS
+          | (_, Pass) => GREATER
+          | (Detail, Detail) => EQUAL
+
+      val {<, <=, ...} =
+         Relation.compare compare
    end
 
 datatype verbosity = datatype Verbosity.t

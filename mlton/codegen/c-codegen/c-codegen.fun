@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014-2017 Matthew Fluet.
+(* Copyright (C) 2009,2014-2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -90,7 +90,7 @@ structure RealX =
              * SML uses "~" while C uses "-".
              *)
             val s =
-               String.translate (toString r,
+               String.translate (toString (r, {suffix = false}),
                                  fn #"~" => "-" | c => String.fromChar c)
             (* Also, inf is spelled INFINITY and nan is NAN in C. *)
             val s =
@@ -113,7 +113,7 @@ structure WordX =
       fun toC (w: t): string =
          let
             fun doit s =
-               concat ["(Word", s, ")(", toString w, "ull)"]
+               concat ["(Word", s, ")(", toString (w, {suffix = false}), "ull)"]
          in
             case WordSize.prim (size w) of
                W8 => doit "8"
@@ -206,7 +206,6 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Real_round _ => true
        | Real_sub _ => true
        | Word_add _ => true
-       | Word_addCheck _ => true
        | Word_addCheckP _ => true
        | Word_andb _ => true
        | Word_castToReal _ => true
@@ -215,10 +214,8 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Word_lshift _ => true
        | Word_lt _ => true
        | Word_mul _ => true
-       | Word_mulCheck _ => true
        | Word_mulCheckP _ => true
        | Word_neg _ => true
-       | Word_negCheck _ => true
        | Word_negCheckP _ => true
        | Word_notb _ => true
        | Word_orb _ => true
@@ -229,7 +226,6 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Word_ror _ => true
        | Word_rshift _ => true
        | Word_sub _ => true
-       | Word_subCheck _ => true
        | Word_subCheckP _ => true
        | Word_xorb _ => true
        | _ => false
@@ -833,9 +829,7 @@ fun output {program as Machine.Program.T {chunks,
                     datatype z = datatype Transfer.t
                  in
                     case transfer of
-                       Arith {overflow, success, ...} =>
-                          (jump overflow; jump success)
-                     | CCall {func, return, ...} =>
+                       CCall {func, return, ...} =>
                           if CFunction.maySwitchThreads func
                              then ()
                           else Option.app (return, jump)
@@ -996,49 +990,7 @@ fun output {program as Machine.Program.T {chunks,
                   datatype z = datatype Transfer.t
                in
                   case t of
-                     Arith {prim, args, dst, overflow, success, ...} =>
-                        let
-                           val prim =
-                              let
-                                 datatype z = datatype Prim.Name.t
-                                 fun const i =
-                                    case Vector.sub (args, i) of
-                                       Operand.Word _ => true
-                                     | _ => false
-                                 fun const0 () = const 0
-                                 fun const1 () = const 1
-                              in
-                                 case Prim.name prim of
-                                    Word_addCheck _ =>
-                                       concat [Prim.toString prim,
-                                               if const0 ()
-                                                  then "CX"
-                                               else if const1 ()
-                                                       then "XC"
-                                                    else ""]
-                                  | Word_mulCheck _ => Prim.toString prim
-                                  | Word_negCheck _ => Prim.toString prim
-                                  | Word_subCheck _ =>
-                                       concat [Prim.toString prim,
-                                               if const0 ()
-                                                  then "CX"
-                                               else if const1 ()
-                                                       then "XC"
-                                                    else ""]
-                                  | _ => Error.bug "CCodegen.outputTransfer: Arith"
-                              end
-                           val _ = force overflow
-                        in
-                           print "\t"
-                           ; C.call (prim,
-                                     operandToString dst
-                                     :: (Vector.toListMap (args, operandToString)
-                                         @ [Label.toString overflow]),
-                                     print)
-                           ; gotoLabel success
-                           ; maybePrintLabel overflow
-                        end
-                   | CCall {args, frameInfo, func, return} =>
+                     CCall {args, frameInfo, func, return} =>
                         let
                            val CFunction.T {return = returnTy,
                                             target, ...} = func

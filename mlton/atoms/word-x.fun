@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014 Matthew Fluet.
+(* Copyright (C) 2009,2014,2019 Matthew Fluet.
  * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -44,11 +44,39 @@ fun toIntInfX w =
       else v
    end
 
+fun toIntInfSg (w, {signed}) =
+   if signed then toIntInfX w else toIntInf w
+
 val toInt = IntInf.toInt o toIntInf
 
-fun toString w = concat ["0x", IntInf.format (toIntInf w, StringCvt.HEX)]
+fun toString (w, {suffix}) =
+   let
+      val doit =
+         if suffix
+            then fn (w, s) => w ^ s ()
+            else fn (w, _) => w
+   in
+      doit ("0x" ^ IntInf.format (toIntInf w, StringCvt.HEX),
+            fn () => ":w" ^ WordSize.toString (size w))
+   end
 
 val layout = Layout.str o toString
+
+val parse =
+   let
+      open Parse
+      infix  1 <|> >>=
+      infix  3 <*> <* *>
+      infixr 4 <$> <$$> <$$$> <$$$$> <$ <$?>
+   in
+      spaces *>
+      str "0x" *>
+      (peek (nextSat Char.isHexDigit) *>
+       fromScan (Function.curry IntInf.scan StringCvt.HEX)) >>= (fn i =>
+      str ":w" *>
+      WordSize.parse >>= (fn s =>
+      pure (make (i, s))))
+   end
 
 fun zero s = make (0, s)
 
@@ -104,12 +132,12 @@ fun notb w = make (IntInf.notb (value w), size w)
 
 fun one s = make (1, s)
 
-fun toIntInfSg (w, {signed}) =
-   if signed then toIntInfX w else toIntInf w
-
 fun resize (w, s) = make (toIntInf w, s)
 
 fun resizeX (w, s) = make (toIntInfX w, s)
+
+fun resizeSg (w, s, {signed}) =
+   if signed then resizeX (w, s) else resize (w, s)
 
 fun toChar (w: t): char = Char.fromInt (Int.fromIntInf (value w))
 
@@ -196,9 +224,5 @@ in
    val gt = make (IntInf.>, "gt")
    val ge = make (IntInf.>=, "ge")
 end
-
-fun layoutSg {signed} = Layout.record [("signed", Bool.layout signed)]
-
-val lt = Trace.trace3 ("WordX.lt", layout, layout, layoutSg, Bool.layout) lt
 
 end

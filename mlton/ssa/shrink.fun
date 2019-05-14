@@ -364,12 +364,7 @@ fun shrinkFunction {globals: Statement.t vector} =
                   end
             in
                case transfer of
-                  Arith {args, overflow, success, ...} =>
-                     (incVars args
-                      ; incLabel overflow
-                      ; incLabel success
-                      ; normal ())
-                | Bug =>
+                  Bug =>
                      if Vector.forall (statements, Statement.isProfile)
                         andalso (case returns of
                                     NONE => true
@@ -800,62 +795,7 @@ fun shrinkFunction {globals: Statement.t vector} =
             traceSimplifyTransfer
             (fn (t: Transfer.t) =>
             case t of
-                Arith {prim, args, overflow, success, ty} =>
-                   let
-                      val args = varInfos args
-                   in
-                      case primApp (prim, args) of
-                         Prim.ApplyResult.Const c =>
-                            let
-                               val _ = deleteLabel overflow
-                               val x = Var.newNoname ()
-                               val isUsed = ref false
-                               val vi =
-                                  VarInfo.T {isUsed = isUsed,
-                                             numOccurrences = ref 0,
-                                             ty = SOME ty,
-                                             value = ref (SOME (Value.Const c)),
-                                             var = x}
-                               val (ss, t) = goto (success, Vector.new1 vi)
-                               val ss =
-                                  if !isUsed
-                                     then Statement.T {var = SOME x,
-                                                       ty = Type.ofConst c,
-                                                       exp = Exp.Const c}
-                                        :: ss
-                                  else ss
-                            in
-                               (ss, t)
-                            end
-                       | Prim.ApplyResult.Var x =>
-                            let
-                               val _ = deleteLabel overflow
-                            in
-                               goto (success, Vector.new1 x)
-                            end
-                       | Prim.ApplyResult.Overflow =>
-                            let
-                               val _ = deleteLabel success
-                            in
-                               goto (overflow, Vector.new0 ())
-                            end
-                       | Prim.ApplyResult.Apply (prim, args) =>
-                            let val args = Vector.fromList args
-                            in
-                               ([], Arith {prim = prim,
-                                           args = uses args,
-                                           overflow = simplifyLabel overflow,
-                                           success = simplifyLabel success,
-                                           ty = ty})
-                            end                                 
-                       | _ =>
-                            ([], Arith {prim = prim,
-                                        args = uses args,
-                                        overflow = simplifyLabel overflow,
-                                        success = simplifyLabel success,
-                                        ty = ty})
-                   end
-             | Bug => ([], Bug)
+               Bug => ([], Bug)
              | Call {func, args, return} =>
                   let
                      val (statements, return) =

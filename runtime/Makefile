@@ -1,4 +1,4 @@
-## Copyright (C) 2010-2013,2018 Matthew Fluet.
+## Copyright (C) 2010-2013,2018,2019 Matthew Fluet.
  # Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -342,9 +342,9 @@ basis/Real/strto-pic.o: $(GDTOAHFILES)
 basis/Real/strto-gdb.o: $(GDTOAHFILES)
 basis/Real/strto.o:     $(GDTOAHFILES)
 basis/System/Date.c_XCFLAGS := -Wno-format-nonliteral
-basis/Word/Word-pic.o:  basis/Word/Word-consts.h basis/Word/Word-ops.h basis/Word/Word-check.h
-basis/Word/Word-gdb.o:  basis/Word/Word-consts.h basis/Word/Word-ops.h basis/Word/Word-check.h
-basis/Word/Word.o:      basis/Word/Word-consts.h basis/Word/Word-ops.h basis/Word/Word-check.h
+basis/Word/Word-pic.o:  basis/Word/Word-ops.h
+basis/Word/Word-gdb.o:  basis/Word/Word-ops.h
+basis/Word/Word.o:      basis/Word/Word-ops.h
 basis/coerce-pic.o:     basis/coerce.h
 basis/coerce-gdb.o:     basis/coerce.h
 basis/coerce.o:         basis/coerce.h

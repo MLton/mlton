@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -305,8 +306,7 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
                   SprimExp.Case
                   {test = monoVarExp test,
                    cases = cases,
-                   default = Option.map (default, fn (e, r) =>
-                                         (monoExp e, r))}
+                   default = Option.map (default, monoExp)}
                end
           | XprimExp.ConApp {con, targs, arg} =>
                let val con = monoCon (con, targs)
@@ -416,19 +416,10 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
                 end
            | Xdec.Exception {con, arg} =>
                 let
-                   val con' =
-                      if Con.equals (con, Con.overflow)
-                         then
-                            (* We avoid renaming Overflow because the closure
-                             * converter needs to recognize it.  This is not
-                             * safe in general, but is OK in this case because
-                             * we know there is only one Overflow excon.
-                             *)
-                            con
-                      else Con.new con
+                   val con' = Con.new con
                    val _ = setCon (con, fn _ => con')
                 in
-                   fn () => 
+                   fn () =>
                    [Sdec.Exception {con = con',
                                     arg = monoTypeOpt arg}]
                 end) arg
@@ -439,8 +430,7 @@ fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
       val datatypes = finishDbs []
       val program =
          Sprogram.T {datatypes = Vector.fromList datatypes,
-                     body = body,
-                     overflow = NONE}
+                     body = body}
       val _ = Sprogram.clear program
       val _ = destroyCon ()
       val _ = destroyTycon ()

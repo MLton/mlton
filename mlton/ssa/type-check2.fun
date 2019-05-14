@@ -128,8 +128,7 @@ fun checkScopes (program as
          end
          handle exn => Error.reraiseSuffix (exn, concat [" in ", Layout.toString (Statement.layout s)])
       val loopTransfer =
-         fn Arith {args, ty, ...} => (getVars args; loopType ty)
-          | Bug => ()
+         fn Bug => ()
           | Call {func, args, ...} => (getFunc func; getVars args)
           | Case {test, cases, default, ...} =>
                let

@@ -1,4 +1,5 @@
-(* Copyright (C) 2002-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 2002-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a HPND-style license.
@@ -44,7 +45,7 @@ fun layout (T {cases, default, test, ...})=
            record [("test", Use.layout test),
                    ("default", Option.layout Label.layout default),
                    ("cases",
-                    Vector.layout (Layout.tuple2 (WordX.layout, Label.layout))
+                    Vector.layout (Layout.tuple2 (fn w => WordX.layout (w, {suffix = true}), Label.layout))
                     cases)]]
    end
 

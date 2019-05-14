@@ -70,9 +70,7 @@ struct
 
          fun loopTransfer transfer =
             case transfer of
-                 Transfer.Arith {args, overflow, prim, success, ty} =>
-                    Transfer.Arith {args=freshenVec args, overflow=overflow, prim=prim, success=success, ty=ty}
-               | Transfer.Bug => Transfer.Bug
+                 Transfer.Bug => Transfer.Bug
                | Transfer.Call {args, func, return} =>
                     Transfer.Call {args=freshenVec args, func=func, return=return}
                | Transfer.Case {cases, default, test} =>

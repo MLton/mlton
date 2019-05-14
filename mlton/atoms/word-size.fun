@@ -1,4 +1,5 @@
-(* Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a HPND-style license.
@@ -15,6 +16,17 @@ datatype t = T of Bits.t
 fun bits (T b) = b
 
 val toString = Bits.toString o bits
+
+val parse =
+   let
+      open Parse
+      infix 1 >>=
+      infix 3 *>
+   in
+      (peek (nextSat Char.isDigit) *>
+       fromScan (Function.curry IntInf.scan StringCvt.DEC)) >>= (fn ii =>
+      pure (T (Bits.fromIntInf ii)))
+   end
 
 fun compare (s, s') = Bits.compare (bits s, bits s')
 

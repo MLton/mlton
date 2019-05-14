@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -14,7 +15,7 @@ datatype z = datatype Dec.t
 datatype z = datatype PrimExp.t
 structure Dexp = DirectExp
 
-fun transform (Program.T {datatypes, body, overflow, ...}): Program.t =
+fun transform (Program.T {datatypes, body, ...}): Program.t =
    let
       (* topLevelSuffix holds the ref cell containing the function of
        * type unit -> unit that should be called on program exit.
@@ -50,9 +51,7 @@ fun transform (Program.T {datatypes, body, overflow, ...}): Program.t =
             case exp of
                Case {test, cases, default} =>
                   primExp (Case {cases = Cases.map (cases, loop),
-                                 default = (Option.map
-                                            (default, fn (e, r) =>
-                                             (loop e, r))),
+                                 default = Option.map (default, loop),
                                  test = test})
              | ConApp {...} => keep ()
              | Handle {try, catch = (catch, ty), handler} =>
@@ -118,7 +117,6 @@ fun transform (Program.T {datatypes, body, overflow, ...}): Program.t =
       val body = Dexp.toExp body
    in
       Program.T {datatypes = datatypes,
-                 body = body,
-                 overflow = overflow}
+                 body = body}
    end
 end

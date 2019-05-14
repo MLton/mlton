@@ -1,4 +1,4 @@
-(* Copyright (C) 2017 Jason Carr.
+(* Copyright (C) 2017,2019 Jason Carr, Matthew Fluet.
  *
  * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
@@ -250,6 +250,10 @@ fun fromReader (r : State.t -> ('a * State.t) option) (s : State.t) =
          Success (b, s')
     | NONE => fail "fromReader" s
 
+fun fromScan scan = fromReader (scan (toReader next))
+
+val int = fromScan (Function.curry Int.scan StringCvt.DEC)
+
 fun compose (p1 : char list t, p2 : 'a t) (s : State.t) =
    let
       (* easiest way to escape here *)
@@ -269,24 +273,80 @@ fun compose (p1 : char list t, p2 : 'a t) (s : State.t) =
    in
       p2 (makeStr (s) () ) handle ComposeFail m => Failure m end
 
-
-val digits = many (nextSat (fn c => Char.isDigit c orelse c = #"~"))
-
-val int = (fromReader (Int.scan (StringCvt.DEC, (toReader next)))) <|> failCut "integer"
-val intInf = (fromReader (IntInf.scan (StringCvt.DEC, (toReader next)))) <|> failCut "integer"
-
-val uint = (fromReader (Int.scan (StringCvt.DEC, (toReader (nextSat Char.isDigit))))) <|> failCut "unsigned integer"
-val uintInf = (fromReader (IntInf.scan (StringCvt.DEC, (toReader (nextSat Char.isDigit))))) <|> failCut "unsigned integer"
-
 val space = nextSat Char.isSpace
-
 val spaces = many space
 
-fun tuple p = Vector.fromList <$>
-   (char #"(" *> sepBy(spaces *> p, char #",") <* char #")")
 
-fun vector p = Vector.fromList <$>
-   (char #"[" *> sepBy(spaces *> p, char #",") <* char #"]")
+(* The following parsers always (and only) consume spaces before
+ * performing a `char` or `str`.
+ *)
 
+(* parse SML-style keyword (not followed by alphanum id character) *)
+fun kw s =
+   spaces *> str s *>
+   failing (nextSat (fn c => Char.isAlphaNum c orelse c = #"_" orelse c = #"'"))
+(* parse SML-style symbol (not followed by symbolic id character) *)
+fun sym s =
+   spaces *> str s *>
+   failing (nextSat (fn c => String.contains ("!%&$#+-/:<=>?@\\~`^|*", c)))
+
+(* parse `Bool.layout` *)
+val bool: bool t =
+   (true <$ kw "true") <|> (false <$ kw "false")
+
+(* parse `Option.layout` *)
+fun option (p: 'a t): 'a option t =
+   (SOME <$> (kw "Some" *> p)) <|> (NONE <$ kw "None")
+
+local
+   fun between (l, p: 'a t, r): 'a t =
+      spaces *> char l *> p <* spaces <* char r
+in
+   fun paren p = between (#"(", p, #")")
+   fun cbrack p = between (#"{", p, #"}")
+   fun sbrack p = between (#"[", p, #"]")
+end
+(* parse `List.layout` (not, `Layout.list`) *)
+fun list (p: 'a t): 'a list t =
+   sbrack (sepBy (p, spaces *> char #","))
+fun listOpt (p: 'a t): 'a list t =
+   list p <|> pure []
+(* parse `Vector.layout` (not, `Layout.vector`) *)
+fun vector (p: 'a t): 'a vector t =
+   Vector.fromList <$> paren (sepBy (p, spaces *> char #","))
+fun vectorOpt (p: 'a t): 'a vector t =
+   vector p <|> pure (Vector.new0 ())
+
+local
+   fun field (s, p) = kw s *> sym "=" *> p
+in
+   (* parse first field of a record (not preceded by `,`) *)
+   val ffield = field
+   (* parse next field of a record (preceded by `,`) *)
+   fun nfield (s, p) = spaces *> char #"," *> field (s, p)
+end
+
+local
+   fun finiComment n () =
+      any
+      [str "(*" *> delay (finiComment (n + 1)),
+       str "*)" *> (if n = 1 then pure [Char.space] else delay (finiComment (n - 1))),
+       next *> delay (finiComment n)]
+
+   val skipComments =
+      any
+      [str "(*" *> finiComment 1 (),
+       (fn cs =>
+        Char.dquote ::
+        (List.foldr
+         (cs, [Char.dquote], fn (c, cs) =>
+          String.explode (Char.escapeSML c) @ cs))) <$>
+       (char Char.dquote *>
+        many (fromScan Char.scan) <*
+        char Char.dquote),
+       each [next]]
+in
+   val skipCommentsML = skipComments
+end
 
 end

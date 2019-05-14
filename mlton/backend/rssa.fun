@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2016-2017 Matthew Fluet.
+(* Copyright (C) 2009,2016-2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -39,7 +39,6 @@ structure Operand =
       datatype t =
          Cast of t * Type.t
        | Const of Const.t
-       | EnsuresBytesFree
        | GCState
        | Offset of {base: t,
                     offset: Bytes.t,
@@ -76,7 +75,6 @@ structure Operand =
                    | Word w => Type.ofWordX w
                    | WordVector v => Type.ofWordXVector v
                end
-          | EnsuresBytesFree => Type.csize ()
           | GCState => Type.gcState ()
           | Offset {ty, ...} => ty
           | ObjptrTycon _ => Type.objptrHeader ()
@@ -92,7 +90,6 @@ structure Operand =
                Cast (z, ty) =>
                   seq [str "Cast ", tuple [layout z, Type.layout ty]]
              | Const c => seq [Const.layout c, constrain (ty z)]
-             | EnsuresBytesFree => str "<EnsuresBytesFree>"
              | GCState => str "<GCState>"
              | Offset {base, offset, ty} =>
                   seq [str (concat ["O", Type.name ty, " "]),
@@ -362,13 +359,7 @@ datatype z = datatype Statement.t
 structure Transfer =
    struct
       datatype t =
-         Arith of {args: Operand.t vector,
-                   dst: Var.t,
-                   overflow: Label.t,
-                   prim: Type.t Prim.t,
-                   success: Label.t,
-                   ty: Type.t}
-       | CCall of {args: Operand.t vector,
+         CCall of {args: Operand.t vector,
                    func: Type.t CFunction.t,
                    return: Label.t option}
        | Call of {args: Operand.t vector,
@@ -385,15 +376,7 @@ structure Transfer =
             open Layout
          in
             case t of
-               Arith {args, dst, overflow, prim, success, ty} =>
-                  seq [str "Arith ",
-                       record [("args", Vector.layout Operand.layout args),
-                               ("dst", Var.layout dst),
-                               ("overflow", Label.layout overflow),
-                               ("prim", Prim.layout prim),
-                               ("success", Label.layout success),
-                               ("ty", Type.layout ty)]]
-             | CCall {args, func, return} =>
+               CCall {args, func, return} =>
                   seq [str "CCall ",
                        record [("args", Vector.layout Operand.layout args),
                                ("func", CFunction.layout (func, Type.layout)),
@@ -427,21 +410,13 @@ structure Transfer =
                                label: Label.t * 'a -> 'a,
                                use: Var.t * 'a -> 'a}): 'a =
          let
+            val _ = def (* FIXME suppress unused warning *)
             fun useOperand (z, a) = Operand.foldVars (z, a, use)
             fun useOperands (zs: Operand.t vector, a) =
                Vector.fold (zs, a, useOperand)
          in
             case t of
-               Arith {args, dst, overflow, success, ty, ...} =>
-                  let
-                     val a = label (overflow, a)
-                     val a = label (success, a)
-                     val a = def (dst, ty, a)
-                     val a = useOperands (args, a)
-                  in
-                     a
-                  end
-             | CCall {args, return, ...} =>
+               CCall {args, return, ...} =>
                   useOperands (args,
                                case return of
                                   NONE => a
@@ -499,20 +474,30 @@ structure Transfer =
                      test = test})
       end
 
+      fun replaceLabels (t: t, f: Label.t -> Label.t): t =
+         case t of
+               CCall {args, func, return} =>
+                  CCall {args = args,
+                         func = func,
+                         return = Option.map (return, f)}
+             | Call {args, func, return} =>
+                  Call {args = args,
+                        func = func,
+                        return = Return.map (return, f)}
+             | Goto {args, dst} =>
+                  Goto {args = args,
+                        dst = f dst}
+             | Raise zs => Raise zs
+             | Return zs => Return zs
+             | Switch s => Switch (Switch.replaceLabels (s, f))
+
       fun replaceUses (t: t, f: Var.t -> Operand.t): t =
          let
             fun oper z = Operand.replaceVar (z, f)
             fun opers zs = Vector.map (zs, oper)
          in
             case t of
-               Arith {args, dst, overflow, prim, success, ty} =>
-                  Arith {args = opers args,
-                         dst = dst,
-                         overflow = overflow,
-                         prim = prim,
-                         success = success,
-                         ty = ty}
-             | CCall {args, func, return} =>
+               CCall {args, func, return} =>
                   CCall {args = opers args,
                          func = func,
                          return = return}
@@ -831,6 +816,7 @@ structure Function =
                (blocks, fn block as Block.T {label, ...} =>
                 setLabelInfo (label, {block = block,
                                       inline = ref false,
+                                      replace = ref NONE,
                                       occurrences = ref 0}))
             fun visitLabel l = Int.inc (#occurrences (labelInfo l))
             val () = visitLabel start
@@ -841,21 +827,41 @@ structure Function =
             datatype z = datatype Transfer.t
             val () =
                Vector.foreach
-               (blocks, fn Block.T {transfer, ...} =>
+               (blocks, fn Block.T {args, kind, label, statements, transfer} =>
                 case transfer of
-                   Goto {dst, ...} =>
+                   Goto {args=dstArgs, dst, ...} =>
                       let
+                         val {replace, ...} = labelInfo label
                          val {inline, occurrences, ...} = labelInfo dst
                       in
                          if 1 = !occurrences
                             then inline := true
-                         else ()
+                         else
+                            case (Vector.isEmpty statements, kind) of
+                                 (true, Kind.Jump) =>
+                                    if Vector.length args = Vector.length dstArgs
+                                       andalso Vector.forall2 (args, dstArgs,
+                                          fn ((v, _), oper) =>
+                                             case oper of
+                                                  Operand.Var {var=v', ...} =>
+                                                      Var.equals (v, v')
+                                                | _ => false)
+                                    then replace := SOME dst
+                                    else ()
+                              | _ => ()
+
                       end
                  | _ => ())
             fun expand (ss: Statement.t vector list, t: Transfer.t)
                : Statement.t vector * Transfer.t =
                let
-                  fun done () = (Vector.concat (rev ss), t)
+                  fun getReplace l =
+                     case (! o #replace o labelInfo) l of
+                          SOME l' => getReplace l'
+                        | NONE => l
+                  fun replaceTransfer t =
+                     Transfer.replaceLabels (t, getReplace)
+                  fun done () = (Vector.concat (rev ss), replaceTransfer t)
                in
                   case t of
                      Goto {args, dst} =>
@@ -876,7 +882,7 @@ structure Function =
                                            isMutable = false,
                                            src = src})
                               in
-                                 expand (statements :: binds :: ss, transfer)
+                                 expand (statements :: binds :: ss, replaceTransfer transfer)
                               end
                         end
                    | _ => done ()
@@ -887,9 +893,9 @@ structure Function =
                 (blocks, [],
                  fn (Block.T {args, kind, label, statements, transfer}, ac) =>
                  let
-                    val {inline, ...} = labelInfo label
+                    val {inline, occurrences, replace, ...} = labelInfo label
                  in
-                    if !inline
+                    if !inline orelse 0 = !occurrences orelse isSome (!replace)
                        then ac
                     else
                        let
@@ -1137,7 +1143,6 @@ structure Program =
                                     end
                                | Bool b => replace (Operand.bool b)
                                | Const c => replace (Operand.Const c)
-                               | Overflow => keep ()
                                | Unknown => keep ()
                                | Var x => replace (Operand.Var x)
                         end
@@ -1359,9 +1364,7 @@ structure Program =
                            datatype z = datatype Transfer.t
                         in
                            case transfer of
-                              Arith {overflow, success, ...} =>
-                                 (goto overflow; goto success)
-                            | CCall {return, ...} => Option.app (return, goto)
+                              CCall {return, ...} => Option.app (return, goto)
                             | Call {return, ...} =>
                                  assert
                                  ("return",
@@ -1564,7 +1567,6 @@ structure Program =
                                              to = ty,
                                              tyconTy = tyconTy})
                        | Const _ => true
-                       | EnsuresBytesFree => true
                        | GCState => true
                        | Offset {base, offset, ty} =>
                             Type.offsetIsOk {base = Operand.ty base,
@@ -1745,20 +1747,7 @@ structure Program =
                         datatype z = datatype Transfer.t
                      in
                         case t of
-                           Arith {args, overflow, prim, success, ty, ...} =>
-                              let
-                                 val _ = checkOperands args
-                              in
-                                 Prim.mayOverflow prim
-                                 andalso labelIsNullaryJump overflow
-                                 andalso labelIsNullaryJump success
-                                 andalso
-                                 Type.checkPrimApp
-                                 {args = Vector.map (args, Operand.ty),
-                                  prim = prim,
-                                  result = SOME ty}
-                              end
-                         | CCall {args, func, return} =>
+                           CCall {args, func, return} =>
                               let
                                  val _ = checkOperands args
                               in

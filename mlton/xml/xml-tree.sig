@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2017 Matthew Fluet.
+(* Copyright (C) 2009,2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -92,7 +92,7 @@ signature XML_TREE =
                App of {arg: VarExp.t,
                        func: VarExp.t}
              | Case of {cases: exp Cases.t,
-                        default: (exp * Region.t) option,
+                        default: exp option,
                         test: VarExp.t}
              | ConApp of {arg: VarExp.t option,
                           con: Con.t,
@@ -183,7 +183,7 @@ signature XML_TREE =
             val bug: string -> t
             val casee:
                {cases: t Cases.t,
-                default: (t * Region.t) option,
+                default: t option,
                 test: t,
                 ty: Type.t} (* type of entire case expression *)
                -> t
@@ -242,15 +242,12 @@ signature XML_TREE =
                      datatypes: {cons: {arg: Type.t option,
                                         con: Con.t} vector,
                                  tycon: Tycon.t,
-                                 tyvars: Tyvar.t vector} vector,
-                     (* overflow is SOME only after exceptions have been
-                      * implemented.
-                      *)
-                     overflow: Var.t option}
+                                 tyvars: Tyvar.t vector} vector}
 
             val clear: t -> unit (* clear all property lists *)
             val layout: t -> Layout.t
             val layouts: t * (Layout.t -> unit) -> unit
             val layoutStats: t -> Layout.t
+            val parse: unit -> t Parse.t
          end
    end

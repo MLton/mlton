@@ -28,13 +28,7 @@ signature AMD64_MLTON =
                       live: amd64.Label.t -> amd64.Operand.t list,
                       liveInfo: amd64Liveness.LiveInfo.t}
 
-    (* arith, c call, and primitive assembly sequences. *)
-    val arith: {prim: RepType.t Machine.Prim.t,
-                args: (amd64.Operand.t * amd64.Size.t) vector,
-                dsts: (amd64.Operand.t * amd64.Size.t) vector,
-                overflow: amd64.Label.t,
-                success: amd64.Label.t,
-                transInfo : transInfo} -> amd64.Block.t' AppendList.t
+    (* c call, and primitive assembly sequences. *)
     val ccall: {args: (amd64.Operand.t * amd64.Size.t) vector,
                 frameInfo: amd64.FrameInfo.t option,
                 func: RepType.t Machine.CFunction.t,

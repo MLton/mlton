@@ -129,11 +129,7 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                         | _ => ())
                    val _ =
                       case transfer of
-                         Arith {args, overflow, success, ...} =>
-                            (forces args
-                             ; forceArgs overflow
-                             ; forceArgs success) 
-                       | Bug => ()
+                         Bug => ()
                        | Call {args, return, ...} =>
                             (forces args
                              ; Return.foreachLabel (return, forceArgs))

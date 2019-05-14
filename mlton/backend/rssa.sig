@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2017 Matthew Fluet.
+(* Copyright (C) 2009,2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -40,13 +40,6 @@ signature RSSA =
             datatype t =
                Cast of t * Type.t
              | Const of Const.t
-               (* EnsuresBytesFree is a pseudo-op used by C functions (like
-                * GC_allocateArray) that take a number of bytes as an argument
-                * and ensure that that number of bytes is free upon return.
-                * EnsuresBytesFree is replaced by the limit check pass with
-                * a real operand.
-                *)
-             | EnsuresBytesFree
              | GCState
              | Offset of {base: t,
                           offset: Bytes.t,
@@ -112,13 +105,7 @@ signature RSSA =
       structure Transfer:
          sig
             datatype t =
-               Arith of {args: Operand.t vector,
-                         dst: Var.t,
-                         overflow: Label.t, (* Must be nullary. *)
-                         prim: Type.t Prim.t,
-                         success: Label.t, (* Must be nullary. *)
-                         ty: Type.t}
-             | CCall of {args: Operand.t vector,
+               CCall of {args: Operand.t vector,
                          func: Type.t CFunction.t,
                          (* return is NONE iff the CFunction doesn't return.
                           * Else, return must be SOME l, where l is of kind
@@ -156,6 +143,7 @@ signature RSSA =
             (* in ifZero, the operand should be of type defaultWord *)
             val ifZero: Operand.t * {falsee: Label.t, truee: Label.t} -> t
             val layout: t -> Layout.t
+            val replaceLabels: t * (Label.t -> Label.t) -> t
             val replaceUses: t * (Var.t -> Operand.t) -> t
             val replaceLabels: t * (Label.t -> Label.t) -> t
          end

@@ -373,16 +373,8 @@ fun checkPrim (args, prim, loadVar) =
       (case varConst(args, loadVar, false) of
         SOME(nextVar, x, _) => SOME (nextVar, x)
       | NONE => NONE)
-  | Name.Word_addCheck (_, {signed}) =>
-      (case varConst(args, loadVar, signed) of
-        SOME(nextVar, x, _) => SOME(nextVar, x)
-      | NONE => NONE)
   | Name.Word_sub _ =>
       (case varConst(args, loadVar, false) of
-        SOME(nextVar, x, _) => SOME (nextVar, ~x)
-      | NONE => NONE)
-  | Name.Word_subCheck (_, {signed}) =>
-      (case varConst(args, loadVar, signed) of
         SOME(nextVar, x, _) => SOME (nextVar, ~x)
       | NONE => NONE)
   | _ => NONE
@@ -413,76 +405,10 @@ fun varChain (origVar, endVar, blocks, loadVar, total) =
                       Exp.PrimApp {args, prim, ...} =>
                         checkPrim (args, prim, loadVar)
                       | _ => NONE))
-             val label = Block.label b
-             val blockArgs = Block.args b
-             (* If we found the assignment or the block isn't unary,
-                skip this step *)
-             val arithTransfers =
-              if ((Vector.length assignments) > 0) orelse
-                 ((Vector.length blockArgs) <> 1)
-              then
-                Vector.new0 ()
-              else
-                let
-                  val (blockArg, _) = Vector.sub (blockArgs, 0)
-                  val blockEntrys = Vector.keepAllMap (blocks, fn b' =>
-                    case Block.transfer b' of
-                      Transfer.Arith {args, prim, success, ...} =>
-                        if Label.equals (label, success) then
-                           SOME(checkPrim(args, prim, loadVar))
-                        else NONE
-                    | Transfer.Call {return, ...} =>
-                        (case return of
-                           Return.NonTail {cont, ...} =>
-                              if Label.equals (label, cont) then
-                                 SOME(NONE)
-                              else NONE
-                         | _ => NONE)
-                    | Transfer.Case {cases, ...} =>
-                        (case cases of
-                           Cases.Con v =>
-                              if Vector.exists (v, fn (_, lbl) =>
-                                 Label.equals (label, lbl)) then
-                                   SOME(NONE)
-                              else
-                                 NONE
-                         | Cases.Word (_, v) =>
-                              if Vector.exists (v, fn (_, lbl) =>
-                                 Label.equals (label, lbl)) then
-                                   SOME(NONE)
-                              else NONE)
-                    | Transfer.Goto {args, dst} =>
-                        if Label.equals (label, dst) then
-                          SOME(SOME(Vector.sub (args, 0), 0))
-                        else NONE
-                    | _ => NONE)
-                in
-                  if Var.equals (endVar, blockArg) then
-                    blockEntrys
-                  else
-                    Vector.new0 ()
-                end  
-             val assignments' =
-              if Vector.length (arithTransfers) > 0 then
-                case (Vector.fold (arithTransfers,
-                                Vector.sub (arithTransfers, 0),
-                                fn (trans, trans') =>
-                                  case (trans, trans') of
-                                    (SOME(a1, v1), SOME(a2, v2)) =>
-                                      if Var.equals (a1, a2) andalso
-                                         v1 = v2 then
-                                        trans
-                                      else
-                                        NONE
-                                  | _ => NONE)) of
-                  SOME(a, v) => Vector.new1 (a, v)
-                | NONE => assignments
-              else
-                assignments
           in
-             case Vector.length assignments' of
+             case Vector.length assignments of
                 0 => NONE
-              | 1 => SOME (Vector.sub (assignments', 0))
+              | 1 => SOME (Vector.sub (assignments, 0))
               | _ => raise Fail "Multiple assignments in SSA form!"
           end)
       in
@@ -577,9 +503,7 @@ fun isLoopBranch (loopLabels, cases, default) =
 
 fun transfersToHeader (headerLabel, block) =
   case Block.transfer block of
-    Transfer.Arith {success, ...} =>
-      Label.equals (headerLabel, success)
-  | Transfer.Call {return, ...} =>
+    Transfer.Call {return, ...} =>
       (case return of
         Return.NonTail {handler, ...} =>
           (case handler of
@@ -623,13 +547,7 @@ fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody,
             get the variable at argIndex *)
          val loopVars = Vector.keepAllMap (loopBody, fn block => 
             case Block.transfer block of
-               Transfer.Arith {args, prim, success, ...} =>
-                  if Label.equals (headerLabel, success) then
-                     case checkPrim (args, prim, loadVar) of
-                       NONE => (unsupportedTransfer := true ; NONE)
-                     | SOME (arg, x) => SOME (arg, x)
-                  else NONE
-             | Transfer.Call {return, ...} =>
+               Transfer.Call {return, ...} =>
                   (case return of
                      Return.NonTail {cont, ...} =>
                         if Label.equals (headerLabel, cont) then
@@ -817,11 +735,7 @@ fun findOpportunity(functionBody: Block.t vector,
                           if Vector.contains (loopBody, block, blockEquals) then
                             NONE
                           else case Block.transfer block of
-                             Transfer.Arith {success, ...} =>
-                              if Label.equals (headerLabel, success) then
-                                 emptyArgs
-                              else NONE
-                           | Transfer.Call {return, ...} =>
+                             Transfer.Call {return, ...} =>
                               (case return of
                                  Return.NonTail {cont, ...} =>
                                     if Label.equals (headerLabel, cont) then
@@ -950,20 +864,7 @@ fun copyLoop(blocks: Block.t vector,
             end
           else
             case transfer of
-              Transfer.Arith {args, overflow, prim, success, ty} =>
-                if Label.equals (success, headerLabel) then
-                  Transfer.Arith {args = args,
-                                  overflow = f(overflow),
-                                  prim = prim,
-                                  success = nextLabel,
-                                  ty = ty}
-                else
-                  Transfer.Arith {args = args,
-                                  overflow = f(overflow),
-                                  prim = prim,
-                                  success = f(success),
-                                  ty = ty}
-            | Transfer.Call {args, func, return} =>
+              Transfer.Call {args, func, return} =>
                 let
                   val newReturn =
                     case return of

@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2017 Matthew Fluet.
+(* Copyright (C) 2009,2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -167,12 +167,7 @@ signature SSA_TREE =
       structure Transfer:
          sig
             datatype t =
-               Arith of {args: Var.t vector,
-                         overflow: Label.t, (* Must be nullary. *)
-                         prim: Type.t Prim.t,
-                         success: Label.t, (* Must be unary. *)
-                         ty: Type.t} (* int or word *)
-             | Bug  (* MLton thought control couldn't reach here. *)
+               Bug  (* MLton thought control couldn't reach here. *)
              | Call of {args: Var.t vector,
                         func: Func.t,
                         return: Return.t}
@@ -299,5 +294,6 @@ signature SSA_TREE =
             val layouts: t * (Layout.t -> unit) -> unit
             val layoutStats: t -> Layout.t
             val mainFunction: t -> Function.t
+            val parse: unit -> t Parse.t
          end
    end

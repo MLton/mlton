@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2011,2014,2017 Matthew Fluet.
+(* Copyright (C) 2009,2011,2014,2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -60,7 +60,7 @@ structure CFunction =
          T {args = Vector.new1 (Type.gcState ()),
             convention = Cdecl,
             kind = Kind.Runtime {bytesNeeded = NONE,
-                                 ensuresBytesFree = false,
+                                 ensuresBytesFree = NONE,
                                  mayGC = true,
                                  maySwitchThreads = false,
                                  modifiesFrontier = true,
@@ -76,7 +76,7 @@ structure CFunction =
          T {args = Vector.new2 (Type.gcState (), Type.thread ()),
             convention = Cdecl,
             kind = Kind.Runtime {bytesNeeded = NONE,
-                                 ensuresBytesFree = false,
+                                 ensuresBytesFree = NONE,
                                  mayGC = true,
                                  maySwitchThreads = false,
                                  modifiesFrontier = true,
@@ -95,7 +95,7 @@ structure CFunction =
          T {args = Vector.new2 (Type.gcState (), Type.cint ()),
             convention = Cdecl,
             kind = Kind.Runtime {bytesNeeded = NONE,
-                                 ensuresBytesFree = false,
+                                 ensuresBytesFree = NONE,
                                  mayGC = false,
                                  maySwitchThreads = false,
                                  modifiesFrontier = true,
@@ -113,7 +113,7 @@ structure CFunction =
                                 Type.objptrHeader ()),
             convention = Cdecl,
             kind = Kind.Runtime {bytesNeeded = NONE,
-                                 ensuresBytesFree = true,
+                                 ensuresBytesFree = SOME 1,
                                  mayGC = true,
                                  maySwitchThreads = false,
                                  modifiesFrontier = true,
@@ -137,12 +137,12 @@ structure CFunction =
                                 Type.seqIndex ()),
             convention = Cdecl,
             kind = Kind.Runtime {bytesNeeded = NONE,
-                                 ensuresBytesFree = true,
-                                 mayGC = true,
+                                 ensuresBytesFree = NONE,
+                                 mayGC = false,
                                  maySwitchThreads = false,
-                                 modifiesFrontier = true,
-                                 readsStackTop = true,
-                                 writesStackTop = true},
+                                 modifiesFrontier = false,
+                                 readsStackTop = false,
+                                 writesStackTop = false},
             prototype = (Vector.new6 (CType.gcState,
                                       CType.Objptr,
                                       CType.seqIndex (),
@@ -158,7 +158,7 @@ structure CFunction =
          T {args = Vector.new0 (),
             convention = Cdecl,
             kind = Kind.Runtime {bytesNeeded = NONE,
-                                 ensuresBytesFree = false,
+                                 ensuresBytesFree = NONE,
                                  mayGC = true,
                                  maySwitchThreads = true,
                                  modifiesFrontier = true,
@@ -174,7 +174,7 @@ structure CFunction =
          T {args = Vector.new3 (Type.gcState (), Type.thread (), Type.csize ()),
             convention = Cdecl,
             kind = Kind.Runtime {bytesNeeded = NONE,
-                                 ensuresBytesFree = true,
+                                 ensuresBytesFree = SOME 2,
                                  mayGC = true,
                                  maySwitchThreads = true,
                                  modifiesFrontier = true,
@@ -193,7 +193,7 @@ structure CFunction =
          T {args = Vector.new2 (Type.gcState (), arg),
             convention = Cdecl,
             kind = Kind.Runtime {bytesNeeded = NONE,
-                                 ensuresBytesFree = false,
+                                 ensuresBytesFree = NONE,
                                  mayGC = false,
                                  maySwitchThreads = false,
                                  modifiesFrontier = false,
@@ -210,7 +210,7 @@ structure CFunction =
          T {args = Vector.new2 (Type.gcState (), arg),
             convention = Cdecl,
             kind = Kind.Runtime {bytesNeeded = NONE,
-                                 ensuresBytesFree = false,
+                                 ensuresBytesFree = NONE,
                                  mayGC = false,
                                  maySwitchThreads = false,
                                  modifiesFrontier = false,
@@ -227,7 +227,7 @@ structure CFunction =
          T {args = Vector.new3 (Type.gcState (), Type.objptrHeader (), arg),
             convention = Cdecl,
             kind = Kind.Runtime {bytesNeeded = NONE,
-                                 ensuresBytesFree = false,
+                                 ensuresBytesFree = NONE,
                                  mayGC = true,
                                  maySwitchThreads = false,
                                  modifiesFrontier = true,
@@ -245,7 +245,7 @@ structure CFunction =
          T {args = Vector.new2 (Type.gcState (), Type.string ()),
             convention = Cdecl,
             kind = Kind.Runtime {bytesNeeded = NONE,
-                                 ensuresBytesFree = false,
+                                 ensuresBytesFree = NONE,
                                  mayGC = true,
                                  maySwitchThreads = false,
                                  modifiesFrontier = true,
@@ -261,7 +261,7 @@ structure CFunction =
          T {args = Vector.new2 (Type.gcState (), t),
             convention = Cdecl,
             kind = Kind.Runtime {bytesNeeded = NONE,
-                                 ensuresBytesFree = false,
+                                 ensuresBytesFree = NONE,
                                  mayGC = true, (* MLton.share works by tracing an object.
                                                 * Make sure all the GC invariants are true,
                                                 * because tracing might encounter the current
@@ -281,7 +281,7 @@ structure CFunction =
          T {args = Vector.new2 (Type.gcState (), t),
             convention = Cdecl,
             kind = Kind.Runtime {bytesNeeded = NONE,
-                                 ensuresBytesFree = false,
+                                 ensuresBytesFree = NONE,
                                  mayGC = true, (* MLton.size works by tracing an object.
                                                 * Make sure all the GC invariants are true,
                                                 * because tracing might encounter the current
@@ -306,7 +306,7 @@ structure CFunction =
                                           Type.csize ()),
                       convention = Cdecl,
                       kind = CFunction.Kind.Runtime {bytesNeeded = SOME 3,
-                                                     ensuresBytesFree = false,
+                                                     ensuresBytesFree = NONE,
                                                      mayGC = false,
                                                      maySwitchThreads = false,
                                                      modifiesFrontier = true,
@@ -327,7 +327,7 @@ structure CFunction =
                                           Type.intInf ()),
                       convention = Cdecl,
                       kind = CFunction.Kind.Runtime {bytesNeeded = NONE,
-                                                     ensuresBytesFree = false,
+                                                     ensuresBytesFree = NONE,
                                                      mayGC = false,
                                                      maySwitchThreads = false,
                                                      modifiesFrontier = false,
@@ -347,7 +347,7 @@ structure CFunction =
                                           Type.csize ()),
                       convention = Cdecl,
                       kind = CFunction.Kind.Runtime {bytesNeeded = SOME 3,
-                                                     ensuresBytesFree = false,
+                                                     ensuresBytesFree = NONE,
                                                      mayGC = false,
                                                      maySwitchThreads = false,
                                                      modifiesFrontier = true,
@@ -369,7 +369,7 @@ structure CFunction =
                                           Type.csize ()),
                       convention = Cdecl,
                       kind = CFunction.Kind.Runtime {bytesNeeded = SOME 3,
-                                                     ensuresBytesFree = false,
+                                                     ensuresBytesFree = NONE,
                                                      mayGC = false,
                                                      maySwitchThreads = false,
                                                      modifiesFrontier = true,
@@ -389,7 +389,7 @@ structure CFunction =
                                           Type.csize ()),
                       convention = Cdecl,
                       kind = CFunction.Kind.Runtime {bytesNeeded = SOME 2,
-                                                     ensuresBytesFree = false,
+                                                     ensuresBytesFree = NONE,
                                                      mayGC = false,
                                                      maySwitchThreads = false,
                                                      modifiesFrontier = true,
@@ -466,16 +466,6 @@ structure Name =
                               prototype = (Vector.new (n, ct), SOME ct),
                               return = t}
                   end
-               fun makeCheck n (s, sg) =
-                  let
-                     val t = word s
-                     val ct = CType.word (s, sg)
-                  in
-                     vanilla {args = Vector.new (n, t),
-                              name = name ^ "P",
-                              prototype = (Vector.new (n, ct), SOME CType.bool),
-                              return = Type.bool}
-                  end
                fun makeCheckP n (s, sg) =
                   let
                      val t = word s
@@ -488,10 +478,8 @@ structure Name =
                   end
             in
                val wordBinary = make 2
-               val wordBinaryCheck = makeCheck 2
                val wordBinaryCheckP = makeCheckP 2
                val wordUnary = make 1
-               val wordUnaryCheck = makeCheck 1
                val wordUnaryCheckP = makeCheckP 1
             end
             fun wordCompare (s, sg) =
@@ -562,7 +550,6 @@ structure Name =
              | Real_sub s => realBinary s
              | Thread_returnToC => CFunction.returnToC ()
              | Word_add s => wordBinary (s, {signed = false})
-             | Word_addCheck (s, sg) => wordBinaryCheck (s, sg)
              | Word_addCheckP (s, sg) => wordBinaryCheckP (s, sg)
              | Word_andb s => wordBinary (s, {signed = false})
              | Word_castToReal (s1, s2) =>
@@ -575,11 +562,9 @@ structure Name =
              | Word_lshift s => wordShift (s, {signed = false})
              | Word_lt z => wordCompare z
              | Word_mul z => wordBinary z
-             | Word_mulCheck (s, sg) => wordBinaryCheck (s, sg)
              | Word_mulCheckP (s, sg) => wordBinaryCheckP (s, sg)
-             | Word_neg s => wordUnary (s, {signed = true})
-             | Word_negCheck s => wordUnaryCheck (s, {signed = true})
-             | Word_negCheckP s => wordUnaryCheckP (s, {signed = true})
+             | Word_neg s => wordUnary (s, {signed = false})
+             | Word_negCheckP (s, sg) => wordUnaryCheckP (s, sg)
              | Word_notb s => wordUnary (s, {signed = false})
              | Word_orb s => wordBinary (s, {signed = false})
              | Word_quot z => wordBinary z
@@ -592,7 +577,6 @@ structure Name =
              | Word_ror s => wordShift (s, {signed = false})
              | Word_rshift z => wordShift z
              | Word_sub s => wordBinary (s, {signed = false})
-             | Word_subCheck (s, sg) => wordBinaryCheck (s, sg)
              | Word_subCheckP (s, sg) => wordBinaryCheckP (s, sg)
              | _ => Error.bug "SsaToRssa.Name.cFunctionRaise"
          end
@@ -848,113 +832,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
       fun translateTransfer (t: S.Transfer.t): (Statement.t list *
                                                 Transfer.t) =
          case t of
-            S.Transfer.Arith {args, overflow, prim, success, ty} =>
-               let
-                  val prim = translatePrim prim
-                  val ty = valOf (toRtype ty)
-                  val res = Var.newNoname ()
-                  val noOverflow =
-                     newBlock
-                     {args = Vector.new0 (),
-                      kind = Kind.Jump,
-                      statements = Vector.new0 (),
-                      transfer = (Transfer.Goto
-                                  {dst = success,
-                                   args = (Vector.new1
-                                           (Var {var = res, ty = ty}))})}
-               in
-                  if codegenImplementsPrim prim
-                     then ([],
-                           Transfer.Arith {dst = res,
-                                           args = vos args,
-                                           overflow = overflow,
-                                           prim = prim,
-                                           success = noOverflow,
-                                           ty = ty})
-                     else
-                        let
-                           datatype z = datatype Prim.Name.t
-                           fun doOperCheckCF (operCheck) =
-                              let
-                                 val operCheckCF =
-                                    case Name.cFunction operCheck of
-                                       NONE =>
-                                          Error.bug
-                                          (concat ["SsaToRssa.translateTransfer: ",
-                                                   "unimplemented arith:",
-                                                   Name.toString operCheck])
-                                     | SOME operCheckCF => operCheckCF
-                                 val afterOperCheck =
-                                    let
-                                       val checkRes = Var.newNoname ()
-                                    in
-                                       newBlock
-                                       {args = Vector.new1 (checkRes, Type.bool),
-                                        kind = Kind.CReturn {func = operCheckCF},
-                                        statements = Vector.new0 (),
-                                        transfer = (Transfer.ifBool
-                                                    (Var {var = checkRes,
-                                                          ty = Type.bool},
-                                                     {falsee = noOverflow,
-                                                      truee = overflow}))}
-                                    end
-                              in
-                                 Transfer.CCall
-                                 {args = vos args,
-                                  func = operCheckCF,
-                                  return = SOME afterOperCheck}
-                              end
-                           fun doOperCF (oper, operCheck) =
-                              let
-                                 val operCF =
-                                    case Name.cFunction oper of
-                                       NONE =>
-                                          Error.bug
-                                          (concat ["SsaToRssa.translateTransfer: ",
-                                                   "unimplemented arith:",
-                                                   Name.toString oper])
-                                     | SOME operCF => operCF
-                                 val afterOper =
-                                    newBlock
-                                    {args = Vector.new1 (res, ty),
-                                     kind = Kind.CReturn {func = operCF},
-                                     statements = Vector.new0 (),
-                                     transfer = doOperCheckCF operCheck}
-                              in
-                                 Transfer.CCall
-                                 {args = vos args,
-                                  func = operCF,
-                                  return = SOME afterOper}
-                              end
-                           fun doPrim prim =
-                              [Statement.PrimApp
-                               {dst = SOME (res, ty),
-                                prim = prim,
-                                args = vos args}]
-                           fun doit (prim, operCheck) =
-                              if codegenImplementsPrim prim
-                                 then (doPrim prim, doOperCheckCF operCheck)
-                              else ([], doOperCF (Prim.name prim, operCheck))
-                        in
-                           case Prim.name prim of
-                              Word_addCheck (s, sg) =>
-                                 doit (Prim.wordAdd s,
-                                       Word_addCheck (s, sg))
-                            | Word_mulCheck (s, sg) =>
-                                 doit (Prim.wordMul (s, sg),
-                                       Word_mulCheck (s, sg))
-                            | Word_negCheck s =>
-                                 doit (Prim.wordNeg s,
-                                       Word_negCheck s)
-                            | Word_subCheck (s, sg) =>
-                                 doit (Prim.wordSub s,
-                                       Word_subCheck (s, sg))
-                            | _ => Error.bug (concat ["SsaToRssa.translateTransfer: ",
-                                                      "strange arith:",
-                                                      Name.toString (Prim.name prim)])
-                        end
-               end
-          | S.Transfer.Bug => ([], Transfer.bug ())
+            S.Transfer.Bug => ([], Transfer.bug ())
           | S.Transfer.Call {func, args, return} =>
                let
                   datatype z = datatype S.Return.t
@@ -1198,7 +1076,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                     val result = valOf (toRtype ty)
                                     val args =
                                        Vector.new4 (GCState,
-                                                    EnsuresBytesFree,
+                                                    Operand.zero (WordSize.csize ()),
                                                     numElts,
                                                     ObjptrTycon opt)
                                     val func =
@@ -1581,7 +1459,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                     ccall {args = (Vector.new3
                                                    (GCState,
                                                     a 0,
-                                                    EnsuresBytesFree)),
+                                                    Operand.zero (WordSize.csize ()))),
                                            func = CFunction.threadSwitchTo ()}
                                | Vector_length => arrayOrVectorLength ()
                                | Weak_canGet =>

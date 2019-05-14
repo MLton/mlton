@@ -1,4 +1,4 @@
-(* Copyright (C) 2017 Matthew Fluet.
+(* Copyright (C) 2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -42,6 +42,7 @@ datatype t = T of {hash: word,
                    originalName: string,
                    printName: string option ref,
                    plist: Plist.t}
+type id = t
 
 local
    fun make f (T r) = f r
@@ -115,6 +116,66 @@ local
 in
    fun fromString s = make (s, SOME s)
    fun newString s = make (s, NONE)
+end
+
+local
+   open Parse
+   infix  1 <|> >>=
+   infix  3 *>
+   infixr 4 <$> <$$> <$$$>
+
+   val cache =
+      HashTable.new {hash = String.hash,
+                     equals = String.equals}
+   fun insert id =
+      (ignore o HashTable.lookupOrInsert)
+      (cache, toString id, fn () => id)
+
+   val alphanum =
+      nextSat (fn c => Char.isAlphaNum c orelse c = #"_" orelse c = #"'")
+   val sym =
+      nextSat (fn c => String.contains ("!%&$#+-/:<=>?@\\~`^|*", c))
+
+   val alphanumId =
+      (op ::) <$$> (nextSat Char.isAlpha, many alphanum)
+   val symId =
+      (fn (c,cs,suf) => (c::(cs@suf))) <$$$>
+      (sym, many sym,
+       (op ::) <$$> (char #"_", many (nextSat Char.isDigit))
+       <|> pure [])
+   val tyvarId =
+      (op ::) <$$> (nextSat (fn c => c = #"'"), many alphanum)
+
+   fun parseGen (alts: (string * 'a Parse.t) vector, fromId: id -> 'a Parse.t) : 'a Parse.t =
+      spaces *>
+      (String.implode <$>
+       (if String.sub (noname, 0) = #"'"
+           then tyvarId
+           else alphanumId <|> symId)) >>= (fn printName =>
+      let
+         fun make () =
+           let
+              fun loop (i, b) =
+                if Char.isDigit (String.sub (printName, i))
+                   then loop (i - 1, true)
+                else if b andalso String.sub (printName, i) = #"_"
+                        then newString (String.substring (printName, 0, i))
+                        else fromString printName
+           in
+              loop (String.size printName - 1, false)
+           end
+      in
+         case Vector.peek (alts, fn (s, _) => String.equals (printName, s)) of
+            SOME (_, res) => res
+          | NONE => fromId (HashTable.lookupOrInsert (cache, printName, make))
+      end)
+in
+   fun parseAs (alts, fromId) = parseGen (Vector.map (alts, fn (s, r) => (s, pure r)), pure o fromId)
+   fun parseExcept ss = parseGen (Vector.map (ss, fn s => (s, fail "fail")), pure)
+   val parse = parseExcept (Vector.new0 ())
+   fun parseReset {prims} =
+      (HashTable.removeAll (cache, fn _ => true);
+       Vector.foreach (prims, insert))
 end
 
 val new = newString o originalName

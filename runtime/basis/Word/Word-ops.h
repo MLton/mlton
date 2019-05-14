@@ -1,25 +1,39 @@
-
 #define binary(kind, name, op)                                          \
   MLTON_CODEGEN_STATIC_INLINE                                           \
   Word##kind Word##kind##_##name (Word##kind w1, Word##kind w2) {       \
     return w1 op w2;                                                    \
   }
 
-#define binaryBuiltin(kind, name, builtin)                              \
-  MLTON_CODEGEN_STATIC_INLINE                                           \
-  Word##kind Word##kind##_##name (Word##kind w1, Word##kind w2) {       \
-    Word##kind res;                                                     \
-    __builtin_##builtin##_overflow(w1, w2, &res);                       \
-    return res;                                                         \
-  }
-
 #define bothBinary(size, name, op)              \
 binary (S##size, name, op)                      \
 binary (U##size, name, op)
 
-#define bothBinaryBuiltin(size, name, builtin)      \
-  binaryBuiltin(S##size, name, builtin)             \
-  binaryBuiltin(U##size, name, builtin)
+/* Use `__builtin_<op>_overflow` for `Word<N>_<op>`,
+ * because it has defined semantics even if the operation overflows
+ * and to encourage fusing with matching `Word<N>_<op>CheckP`.
+ */
+#define binaryOvflOp(kind, name)                                        \
+  MLTON_CODEGEN_STATIC_INLINE                                           \
+  Word##kind Word##kind##_##name (Word##kind w1, Word##kind w2) {       \
+    Word##kind res;                                                     \
+    __builtin_##name##_overflow(w1, w2, &res);                          \
+    return res;                                                         \
+  }
+
+#define bothBinaryOvflOp(size, name)            \
+binaryOvflOp (S##size, name)                    \
+binaryOvflOp (U##size, name)
+
+#define binaryOvflChk(kind, name)                                       \
+  MLTON_CODEGEN_STATIC_INLINE                                           \
+  Bool Word##kind##_##name##CheckP (Word##kind w1, Word##kind w2) {     \
+    Word##kind res;                                                     \
+    return __builtin_##name##_overflow(w1, w2, &res);                   \
+  }
+
+#define bothBinaryOvflChk(size, name)           \
+binaryOvflChk (S##size, name)                   \
+binaryOvflChk (U##size, name)
 
 #define compare(kind, name, op)                                         \
   MLTON_CODEGEN_STATIC_INLINE                                           \
@@ -30,6 +44,21 @@ binary (U##size, name, op)
 #define bothCompare(size, name, op)             \
 compare (S##size, name, op)                     \
 compare (U##size, name, op)
+
+#define negOvflOp(kind)                                                 \
+  MLTON_CODEGEN_STATIC_INLINE                                           \
+  Word##kind Word##kind##_neg (Word##kind w) {                          \
+    Word##kind res;                                                     \
+    __builtin_sub_overflow(0, w, &res);                                 \
+    return res;                                                         \
+  }
+
+#define negOvflChk(kind)                                                \
+  MLTON_CODEGEN_STATIC_INLINE                                           \
+  Bool Word##kind##_negCheckP (Word##kind w) {                          \
+    Word##kind res;                                                     \
+    return __builtin_sub_overflow(0, w, &res);                          \
+  }
 
 #define rol(size)                                                       \
   MLTON_CODEGEN_STATIC_INLINE                                           \
@@ -49,7 +78,7 @@ compare (U##size, name, op)
     return (Word##kind)(w1 op w2);                                      \
   }
 
-#define unary(kind, name, op)                                           \
+#define unary(kind, name, op)                                         \
   MLTON_CODEGEN_STATIC_INLINE                                           \
   Word##kind Word##kind##_##name (Word##kind w) {                       \
     return (Word##kind)(op w);                                          \
@@ -74,7 +103,8 @@ compare (U##size, name, op)
   }
 
 #define all(size)                               \
-binaryBuiltin (size, add, add)                  \
+binaryOvflOp (size, add)                        \
+bothBinaryOvflChk (size, add)                   \
 binary (size, andb, &)                          \
 compare (size, equal, ==)                       \
 bothCompare (size, ge, >=)                      \
@@ -82,26 +112,28 @@ bothCompare (size, gt, >)                       \
 bothCompare (size, le, <=)                      \
 shift (size, lshift, <<)                        \
 bothCompare (size, lt, <)                       \
-bothBinaryBuiltin (size, mul, mul)              \
-unary (size, neg, -)                            \
+bothBinaryOvflOp (size, mul)                    \
+bothBinaryOvflChk (size, mul)                   \
+negOvflOp (size)                                \
+negOvflChk (S##size)                            \
+negOvflChk (U##size)                            \
 unary (size, notb, ~)                           \
-/* WordS<N>_quot and WordS<N>_rem can't be inlined with the C-codegen,  \ 
- * because the gcc optimizer sometimes produces incorrect results       \
- * when one of the arguments is a constant.                             \
- */                                                                     \
-MLTON_CODEGEN_WORDSQUOTREM_IMPL(binary (S##size, quot, /))              \
-MLTON_CODEGEN_WORDSQUOTREM_IMPL(binary (S##size, rem, %))               \
-binary (U##size, quot, /)                       \
-binary (U##size, rem, %)                        \
+bothBinary (size, quot, /)                      \
+bothBinary (size, rem, %)                       \
 binary (size, orb, |)                           \
 rol(size)                                       \
 ror(size)                                       \
-/* WordS<N>_rshift isn't ANSI C, because ANSI doesn't guarantee sign    \
- * extension.  We use it anyway cause it always seems to work.          \
- */                                                                     \
+/* WordS<N>_rshift has implementation-defined behavior under C11.
+ * "The result of E1 >> E2 is E1 right-shifted E2 bit positions. If E1 has a
+ * signed type and a negative value, the resulting value is
+ * implementation-defined."
+ * However, gcc and clang implement signed '>>' on negative numbers by sign
+ * extension.
+ */                                             \
 shift (S##size, rshift, >>)                     \
 shift (U##size, rshift, >>)                     \
-binaryBuiltin (size, sub, sub)                  \
+binaryOvflOp (size, sub)                        \
+bothBinaryOvflChk (size, sub)                   \
 binary (size, xorb, ^)
 
 all (8)
@@ -117,7 +149,15 @@ misaligned(64)
 #undef shift
 #undef ror
 #undef rol
+#undef negOvfl
+#undef negOvflChk
+#undef negOvflOp
 #undef bothCompare
 #undef compare
+#undef bothBinaryOvfl
+#undef bothBinaryOvflChk
+#undef binaryOvflChk
+#undef bothBinaryOvflOp
+#undef binaryOvflOp
 #undef bothBinary
 #undef binary

@@ -22,6 +22,5 @@ val truee = fromString "true"
 (* exception constructors *)
 val bind = fromString "Bind"
 val match = fromString "Match"
-val overflow = fromString "Overflow"
 
 end

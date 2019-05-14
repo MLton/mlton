@@ -1,4 +1,4 @@
-(* Copyright (C) 2017 Jason Carr.
+(* Copyright (C) 2017,2019 Jason Carr, Matthew Fluet.
  *
  * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
@@ -76,7 +76,9 @@ signature PARSE =
       (* succeeds if and only if its argument fails to parse *)
       val failing: 'a t -> unit t
       (* return the parser representation of a given reader *)
-      val fromReader: (State.t -> ('a * State.t) option)-> 'a t
+      val fromReader: (State.t -> ('a * State.t) option) -> 'a t
+      (* return the parser corresponding to a scanner *)
+      val fromScan: ((char, State.t) StringCvt.reader -> ('a, State.t) StringCvt.reader) -> 'a t
       (* returns the current source location of the parser *)
       val location: Location.t t
       (* succeeds for each time the parser succeeds in succession *)
@@ -98,7 +100,6 @@ signature PARSE =
       val optional: 'a t -> 'a option t
       (* parse an integer, as Integer.scan StringCVT.DEC *)
       val int: int t
-      val intInf: IntInf.t t
       (* run a parser but consume no input *)
       val peek: 'a t -> 'a t
       (* succeeds if the parser succeeded with an input that passed the predicate *)
@@ -112,9 +113,29 @@ signature PARSE =
       val str: string -> string t
       (* returns a reader representation of the parser *)
       val toReader: 'a t -> State.t -> ('a * State.t) option
-      val tuple: 'a t -> 'a vector t
-      (* parse a decimal word *)
-      val uint: int t
-      val uintInf: IntInf.t t
+
+      (* The following parsers always (and only) consume spaces before
+       * performing a `char` or `str`.
+       *)
+      val bool: bool t
+      val cbrack: 'a t -> 'a t
+      (* parse first field of a record (not preceded by `,`) *)
+      val ffield: string * 'a t -> 'a t
+      (* parse SML-style keyword (not followed by alphanum id character) *)
+      val kw: string -> unit t
+      (* parse `List.layout` (not `Layout.list`) *)
+      val list: 'a t -> 'a list t
+      val listOpt: 'a t -> 'a list t
+      (* parse next field of a record (preceded by `,`) *)
+      val nfield: string * 'a t -> 'a t
+      (* parse `Option.layout` *)
+      val option: 'a t -> 'a option t
+      val paren: 'a t -> 'a t
+      (* parse SML-style symbol (not followed by symbolic id character) *)
+      val sym: string -> unit t
+      (* parse `Vector.layout` (not `Layout.vector`) *)
       val vector: 'a t -> 'a vector t
+      val vectorOpt: 'a t -> 'a vector t
+
+      val skipCommentsML: char list t
    end

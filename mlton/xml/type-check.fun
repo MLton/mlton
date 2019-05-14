@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -12,7 +13,7 @@ struct
 open S
 open Dec PrimExp
 
-fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
+fun typeCheck (program as Program.T {datatypes, body}): unit =
    let
       (* tyvarInScope is used to ensure that tyvars never shadow themselves. *)
       val {get = tyvarInScope: Tyvar.t -> bool ref, ...} =
@@ -176,7 +177,7 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
                App {arg, func} => checkApp (checkVarExp func, arg)
              | Case {cases, default, test} =>
                   let
-                     val default = Option.map (default, checkExp o #1)
+                     val default = Option.map (default, checkExp)
                      fun equalss v =
                         if Vector.isEmpty v
                            then Error.bug "Xml.TypeCheck.equalss"
@@ -319,15 +320,6 @@ fun typeCheck (program as Program.T {datatypes, body, overflow}): unit =
          if Type.equals (checkExp body, Type.unit)
             then ()
          else Error.bug "Xml.TypeCheck.typeCheck: program must be of type unit"
-      val _ =
-         case overflow of
-            NONE => true
-          | SOME x =>
-               let val {tyvars, ty} = getVar x
-               in
-                  Vector.isEmpty tyvars
-                  andalso Type.equals (ty, Type.exn)
-               end
       val _ = Program.clear program
    in
       ()

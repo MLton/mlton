@@ -1,4 +1,5 @@
-(* Copyright (C) 2002-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 2002-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a HPND-style license.
@@ -26,7 +27,7 @@ structure CFunction =
             T {args = args,
                convention = Convention.Cdecl,
                kind = Kind.Runtime {bytesNeeded = NONE,
-                                    ensuresBytesFree = false,
+                                    ensuresBytesFree = NONE,
                                     mayGC = false,
                                     maySwitchThreads = false,
                                     modifiesFrontier = false,

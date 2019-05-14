@@ -22,7 +22,6 @@ signature PRIM_CONS =
       val falsee: con
       val match: con
       val nill: con
-      val overflow: con
       val reff: con
       val truee: con
    end

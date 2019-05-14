@@ -1,4 +1,4 @@
-(* Copyright (C) 2014,2017 Matthew Fluet.
+(* Copyright (C) 2014,2017,2019 Matthew Fluet.
  * Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -32,6 +32,7 @@ signature WORD_X_VECTOR =
       val layout: t -> Layout.t
       val le : t * t -> bool
       val length: t -> int
+      val parse: t Parse.t
       val sub: t * int -> WordX.t
       val tabulate: {elementSize: WordSize.t} * int * (int -> WordX.t) -> t
       val toListMap: t * (WordX.t -> 'a) -> 'a list

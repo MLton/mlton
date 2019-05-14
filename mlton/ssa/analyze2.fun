@@ -1,4 +1,4 @@
-(* Copyright (C) 2011,2017 Matthew Fluet.
+(* Copyright (C) 2011,2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -61,14 +61,7 @@ fun 'a analyze
                         shouldReturns: 'a vector option,
                         shouldRaises: 'a vector option): unit =
         (case t of
-            Arith {prim, args, overflow, success, ty} =>
-               (coerces ("arith overflow", Vector.new0 (), labelValues overflow)
-                ; coerce {from = primApp {prim = prim,
-                                          args = values args,
-                                          resultType = ty,
-                                          resultVar = NONE},
-                          to = Vector.sub (labelValues success, 0)})
-          | Bug => ()
+            Bug => ()
           | Call {func, args, return, ...} =>
                let
                   val {args = formals, raises, returns} = funcInfo func
@@ -129,7 +122,7 @@ fun 'a analyze
                      if WordSize.equals (s, WordX.size w)
                         then ()
                      else Error.bug (concat ["Analyze.loopTransfer (case ",
-                                             WordX.toString w,
+                                             WordX.toString (w, {suffix = true}),
                                              " must be size ",
                                              WordSize.toString s,
                                              ")"])

@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -128,7 +128,7 @@ structure Value =
           | Tuple vs => PrimExp.Tuple (Vector.map (vs, VarInfo.varExp))
    end
 
-fun shrinkOnce (Program.T {datatypes, body, overflow}) =
+fun shrinkOnce (Program.T {datatypes, body}) =
    let
       (* Keep track of the number of constuctors in each datatype so that
        * we can eliminate redundant defaults.
@@ -397,12 +397,12 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
                                     (Vector.foreachR (cases, i + 1,
                                                       Vector.length cases,
                                                       deleteExp o #2)
-                                     ; Option.app (default, deleteExp o #1)
+                                     ; Option.app (default, deleteExp)
                                      ; Vector.Done (expression e))
                               else (deleteExp e; Vector.Continue ())
                            fun done () =
                               case default of
-                                 SOME (e, _) => expression e
+                                 SOME e => expression e
                                | NONE => Error.bug "Xml.Shrink.shrinkMonoVal: Case, match"
                         in Vector.fold' (cases, 0, (), step, done)
                         end
@@ -411,10 +411,9 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
                            (* Eliminate redundant default case. *)
                            val default =
                               if isExhaustive cases
-                                 then (Option.app (default, deleteExp o #1)
+                                 then (Option.app (default, deleteExp)
                                        ; NONE)
-                              else Option.map (default, fn (e, r) =>
-                                               (shrinkExp e, r))
+                              else Option.map (default, shrinkExp)
                         in
                            expansive
                            (Case {test = test,
@@ -451,20 +450,12 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
                              | _ => Error.bug "Xml.Shrink.shrinkMonoVal: Case, default"
                   end
              | ConApp {con, targs, arg} =>
-                  if Con.equals (con, Con.overflow)
-                     then
-                        expansive
-                        (ConApp
-                         {con = con,
-                          targs = targs,
-                          arg = Option.map (arg, shrinkVarExp)})
-                  else
-                     let
-                        val arg = Option.map (arg, varExpInfo)
-                     in nonExpansiveValue
-                        (fn () => Option.app (arg, VarInfo.delete),
-                         Value.ConApp {con = con, targs = targs, arg = arg})
-                     end                             
+                  let
+                     val arg = Option.map (arg, varExpInfo)
+                  in nonExpansiveValue
+                     (fn () => Option.app (arg, VarInfo.delete),
+                      Value.ConApp {con = con, targs = targs, arg = arg})
+                  end
              | Const c => nonExpansiveValue (fn () => (), Value.Const c)
              | Handle {try, catch, handler} =>
                   expansive (Handle {try = shrinkExp try,
@@ -586,29 +577,13 @@ fun shrinkOnce (Program.T {datatypes, body, overflow}) =
                           mayInline = mayInline}
           end) l
       val _ = countExp body
-      val _ =
-         Option.app
-         (overflow, fn x =>
-          case varInfo x of
-             InternalVarInfo.VarInfo i => VarInfo.inc1 i
-           | _ => Error.bug "Xml.Shrink.shrinkOnce: strange overflow var")
       val body = shrinkExp body
-      (* Must lookup the overflow variable again because it may have been set
-       * during shrinking.
-       *)
-      val overflow =
-         Option.map
-         (overflow, fn x =>
-          case varInfo x of
-             InternalVarInfo.VarInfo i => VarExp.var (VarInfo.varExp i)
-           | _ => Error.bug "Xml.Shrink.shrinkOnce: strange overflow var")
       val _ = Exp.clear body
       val _ = Vector.foreach (datatypes, fn {cons, ...} =>
                               Vector.foreach (cons, Con.clear o #con))
    in
       Program.T {datatypes = datatypes,
-                 body = body,
-                 overflow = overflow}
+                 body = body}
    end
 
 val shrinkOnce =

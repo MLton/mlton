@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2010,2014,2016-2017 Matthew Fluet.
+(* Copyright (C) 2009-2010,2014,2016-2017,2019 Matthew Fluet.
  * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -636,7 +636,6 @@ fun checkPrimApp {args, prim, result} =
        | Real_sub s => realBinary s
        | Thread_returnToC => done ([], NONE)
        | Word_add s => wordBinary s
-       | Word_addCheck (s, _) => wordBinary s
        | Word_addCheckP (s, _) => wordBinaryP s
        | Word_andb s => wordBinary s
        | Word_castToReal (s, s') => done ([word s], SOME (real s'))
@@ -646,11 +645,9 @@ fun checkPrimApp {args, prim, result} =
        | Word_lshift s => wordShift s
        | Word_lt (s, _) => wordCompare s
        | Word_mul (s, _) => wordBinary s
-       | Word_mulCheck (s, _) => wordBinary s
        | Word_mulCheckP (s, _) => wordBinaryP s
        | Word_neg s => wordUnary s
-       | Word_negCheck s => wordUnary s
-       | Word_negCheckP s => wordUnaryP s
+       | Word_negCheckP (s, _) => wordUnaryP s
        | Word_notb s => wordUnary s
        | Word_orb s => wordBinary s
        | Word_quot (s, _) => wordBinary s
@@ -660,7 +657,6 @@ fun checkPrimApp {args, prim, result} =
        | Word_ror s => wordShift s
        | Word_rshift (s, _) => wordShift s
        | Word_sub s => wordBinary s
-       | Word_subCheck (s, _) => wordBinary s
        | Word_subCheckP (s, _) => wordBinaryP s
        | Word_xorb s => wordBinary s
        | _ => Error.bug (concat ["RepType.checkPrimApp got strange prim: ",
@@ -856,7 +852,7 @@ structure BuiltInCFunction =
             T {args = Vector.new3 (Type.gcState (), Type.csize (), Type.bool),
                    convention = Cdecl,
                    kind = Kind.Runtime {bytesNeeded = NONE,
-                                        ensuresBytesFree = true,
+                                        ensuresBytesFree = SOME 1,
                                         mayGC = true,
                                         maySwitchThreads = b,
                                         modifiesFrontier = true,

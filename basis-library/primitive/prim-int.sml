@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -116,36 +117,24 @@ structure Int8 =
 
       val +? = _prim "WordS8_addCheckP": int * int -> bool;
       val +! = _prim "Word8_add": int * int -> int;
-      val +$ = if Controls.newOverflow then
-                  Exn.mkOverflow (+!, +?)
-               else
-                  Exn.wrapOverflow (_prim "WordS8_addCheck": int * int -> int;)
+      val +$ = Exn.mkOverflow (+!, +?)
       val + = if Controls.detectOverflow then +$ else +!
 
       val *? = _prim "WordS8_mulCheckP": int * int -> bool;
       val *! = _prim "WordS8_mul": int * int -> int;
-      val *$ = if Controls.newOverflow then
-                  Exn.mkOverflow ( *!, *? )
-               else
-                  Exn.wrapOverflow (_prim "WordS8_mulCheck": int * int -> int;)
+      val *$ = Exn.mkOverflow ( *!, *? )
       val * = if Controls.detectOverflow then *$ else *!
 
-      val ~? = _prim "Word8_negCheckP": int -> bool;
+      val ~? = _prim "WordS8_negCheckP": int -> bool;
       val ~! = _prim "Word8_neg": int -> int;
-      val ~$ = if Controls.newOverflow then
-                  Exn.mkOverflow (~!, ~?)
-               else
-                  Exn.wrapOverflow (_prim "Word8_negCheck": int -> int;)
+      val ~$ = Exn.mkOverflow (~!, ~?)
       val ~ = if Controls.detectOverflow then ~$ else ~!
 
       val quotUnsafe = _prim "WordS8_quot": int * int -> int;
 
       val -? = _prim "WordS8_subCheckP": int * int -> bool;
       val -! = _prim "Word8_sub": int * int -> int;
-      val -$ = if Controls.newOverflow then
-                  Exn.mkOverflow (-!, -?)
-               else
-                  Exn.wrapOverflow (_prim "WordS8_subCheck": int * int -> int;)
+      val -$ = Exn.mkOverflow (-!, -?)
       val - = if Controls.detectOverflow then -$ else -!
 
       val remUnsafe = _prim "WordS8_rem": int * int -> int;
@@ -228,36 +217,24 @@ structure Int16 =
 
       val +? = _prim "WordS16_addCheckP": int * int -> bool;
       val +! = _prim "Word16_add": int * int -> int;
-      val +$ = if Controls.newOverflow then
-                  Exn.mkOverflow (+!, +?)
-               else
-                  Exn.wrapOverflow (_prim "WordS16_addCheck": int * int -> int;)
+      val +$ = Exn.mkOverflow (+!, +?)
       val + = if Controls.detectOverflow then +$ else +!
 
       val *? = _prim "WordS16_mulCheckP": int * int -> bool;
       val *! = _prim "WordS16_mul": int * int -> int;
-      val *$ = if Controls.newOverflow then
-                  Exn.mkOverflow ( *!, *? )
-               else
-                  Exn.wrapOverflow (_prim "WordS16_mulCheck": int * int -> int;)
+      val *$ = Exn.mkOverflow ( *!, *? )
       val * = if Controls.detectOverflow then *$ else *!
 
-      val ~? = _prim "Word16_negCheckP": int -> bool;
+      val ~? = _prim "WordS16_negCheckP": int -> bool;
       val ~! = _prim "Word16_neg": int -> int;
-      val ~$ = if Controls.newOverflow then
-                  Exn.mkOverflow (~!, ~?)
-               else
-                  Exn.wrapOverflow (_prim "Word16_negCheck": int -> int;)
+      val ~$ = Exn.mkOverflow (~!, ~?)
       val ~ = if Controls.detectOverflow then ~$ else ~!
 
       val quotUnsafe = _prim "WordS16_quot": int * int -> int;
 
       val -? = _prim "WordS16_subCheckP": int * int -> bool;
       val -! = _prim "Word16_sub": int * int -> int;
-      val -$ = if Controls.newOverflow then
-                  Exn.mkOverflow (-!, -?)
-               else
-                  Exn.wrapOverflow (_prim "WordS16_subCheck": int * int -> int;)
+      val -$ = Exn.mkOverflow (-!, -?)
       val - = if Controls.detectOverflow then -$ else -!
 
       val remUnsafe = _prim "WordS16_rem": int * int -> int;
@@ -404,36 +381,24 @@ structure Int32 =
 
       val +? = _prim "WordS32_addCheckP": int * int -> bool;
       val +! = _prim "Word32_add": int * int -> int;
-      val +$ = if Controls.newOverflow then
-                  Exn.mkOverflow (+!, +?)
-               else
-                  Exn.wrapOverflow (_prim "WordS32_addCheck": int * int -> int;)
+      val +$ = Exn.mkOverflow (+!, +?)
       val + = if Controls.detectOverflow then +$ else +!
 
       val *? = _prim "WordS32_mulCheckP": int * int -> bool;
       val *! = _prim "WordS32_mul": int * int -> int;
-      val *$ = if Controls.newOverflow then
-                  Exn.mkOverflow ( *!, *? )
-               else
-                  Exn.wrapOverflow (_prim "WordS32_mulCheck": int * int -> int;)
+      val *$ = Exn.mkOverflow ( *!, *? )
       val * = if Controls.detectOverflow then *$ else *!
 
-      val ~? = _prim "Word32_negCheckP": int -> bool;
+      val ~? = _prim "WordS32_negCheckP": int -> bool;
       val ~! = _prim "Word32_neg": int -> int;
-      val ~$ = if Controls.newOverflow then
-                  Exn.mkOverflow (~!, ~?)
-               else
-                  Exn.wrapOverflow (_prim "Word32_negCheck": int -> int;)
+      val ~$ = Exn.mkOverflow (~!, ~?)
       val ~ = if Controls.detectOverflow then ~$ else ~!
 
       val quotUnsafe = _prim "WordS32_quot": int * int -> int;
 
       val -? = _prim "WordS32_subCheckP": int * int -> bool;
       val -! = _prim "Word32_sub": int * int -> int;
-      val -$ = if Controls.newOverflow then
-                  Exn.mkOverflow (-!, -?)
-               else
-                  Exn.wrapOverflow (_prim "WordS32_subCheck": int * int -> int;)
+      val -$ = Exn.mkOverflow (-!, -?)
       val - = if Controls.detectOverflow then -$ else -!
 
       val remUnsafe = _prim "WordS32_rem": int * int -> int;
@@ -460,36 +425,24 @@ structure Int64 =
 
       val +? = _prim "WordS64_addCheckP": int * int -> bool;
       val +! = _prim "Word64_add": int * int -> int;
-      val +$ = if Controls.newOverflow then
-                  Exn.mkOverflow (+!, +?)
-               else
-                  Exn.wrapOverflow (_prim "WordS64_addCheck": int * int -> int;)
+      val +$ = Exn.mkOverflow (+!, +?)
       val + = if Controls.detectOverflow then +$ else +!
 
       val *? = _prim "WordS64_mulCheckP": int * int -> bool;
       val *! = _prim "WordS64_mul": int * int -> int;
-      val *$ = if Controls.newOverflow then
-                  Exn.mkOverflow ( *!, *? )
-               else
-                  Exn.wrapOverflow (_prim "WordS64_mulCheck": int * int -> int;)
+      val *$ = Exn.mkOverflow ( *!, *? )
       val * = if Controls.detectOverflow then *$ else *!
 
-      val ~? = _prim "Word64_negCheckP": int -> bool;
+      val ~? = _prim "WordS64_negCheckP": int -> bool;
       val ~! = _prim "Word64_neg": int -> int;
-      val ~$ = if Controls.newOverflow then
-                  Exn.mkOverflow (~!, ~?)
-               else
-                  Exn.wrapOverflow (_prim "Word64_negCheck": int -> int;)
+      val ~$ = Exn.mkOverflow (~!, ~?)
       val ~ = if Controls.detectOverflow then ~$ else ~!
 
       val quotUnsafe = _prim "WordS64_quot": int * int -> int;
 
       val -? = _prim "WordS64_subCheckP": int * int -> bool;
       val -! = _prim "Word64_sub": int * int -> int;
-      val -$ = if Controls.newOverflow then
-                  Exn.mkOverflow (-!, -?)
-               else
-                  Exn.wrapOverflow (_prim "WordS64_subCheck": int * int -> int;)
+      val -$ = Exn.mkOverflow (-!, -?)
       val - = if Controls.detectOverflow then -$ else -!
 
       val remUnsafe = _prim "WordS64_rem": int * int -> int;

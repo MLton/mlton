@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -15,7 +16,7 @@ open Dec PrimExp
 structure Graph = DirectedGraph
 structure Node = Graph.Node
 
-fun sccFuns (Program.T {datatypes, body, overflow}) =
+fun sccFuns (Program.T {datatypes, body}) =
    let
       (* For each function appearing in a fun dec record its node, which will
        * have edges to the nodes of other functions declared in the same dec
@@ -51,8 +52,7 @@ fun sccFuns (Program.T {datatypes, body, overflow}) =
           | Case {test, cases, default} =>
                (loopVarExp test
                 ; Case {cases = Cases.map (cases, loopExp),
-                        default = Option.map (default, fn (e, r) =>
-                                              (loopExp e, r)),
+                        default = Option.map (default, loopExp),
                         test = test})
           | ConApp {arg, ...} => (Option.app (arg, loopVarExp); e)
           | Const _ => e
@@ -126,8 +126,7 @@ fun sccFuns (Program.T {datatypes, body, overflow}) =
          end
    in
       Program.T {datatypes = datatypes,
-                 body = loopExp body,
-                 overflow = overflow}
+                 body = loopExp body}
    end
 
 end

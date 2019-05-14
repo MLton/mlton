@@ -599,22 +599,7 @@ struct
       fun toX86Blocks {returns, transfer,
                        transInfo as {frameInfoToX86, ...}: transInfo}
         = (case transfer
-             of Arith {prim, args, dst, overflow, success, ...}
-              => let
-                   val args = (Vector.concatV o Vector.map)
-                              (args, Operand.toX86Operand)
-                   val dsts = Operand.toX86Operand dst
-                 in
-                   AppendList.append
-                   (comments transfer,
-                    x86MLton.arith {prim = prim,
-                                    args = args,
-                                    dsts = dsts,
-                                    overflow = overflow,
-                                    success = success,
-                                    transInfo = transInfo})
-                 end
-              | CCall {args, frameInfo, func, return}
+             of CCall {args, frameInfo, func, return}
               => let
                    val args = (Vector.concatV o Vector.map)
                               (args, Operand.toX86Operand)

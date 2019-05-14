@@ -153,15 +153,7 @@ signature MACHINE =
       structure Transfer:
          sig
             datatype t =
-               (* In an arith transfer, dst is modified whether or not the
-                * prim succeeds.
-                *)
-               Arith of {args: Operand.t vector,
-                         dst: Operand.t,
-                         overflow: Label.t,
-                         prim: Type.t Prim.t,
-                         success: Label.t}
-             | CCall of {args: Operand.t vector,
+               CCall of {args: Operand.t vector,
                          frameInfo: FrameInfo.t option,
                          func: Type.t CFunction.t,
                          (* return is NONE iff the func doesn't return.

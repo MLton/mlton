@@ -1,4 +1,4 @@
-(* Copyright (C) 2015,2017 Matthew Fluet.
+(* Copyright (C) 2015,2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -245,7 +245,6 @@ fun casee {ctxt: unit -> Layout.t,
                MatchCompile.matchCompile {caseType = caseType,
                                           cases = cases,
                                           conTycon = conTycon,
-                                          region = region,
                                           test = testVar,
                                           testType = testType,
                                           tyconCons = tyconCons}
@@ -1124,8 +1123,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
       val _ = (destroy1 (); destroy2 (); destroy3 ())
    in
       Xml.Program.T {body = body,
-                     datatypes = Vector.fromList (!datatypes),
-                     overflow = NONE}
+                     datatypes = Vector.fromList (!datatypes)}
    end
 
 end

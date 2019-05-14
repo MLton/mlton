@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -46,7 +47,7 @@ structure PowerSetLat =
          end
    end
 
-fun simplifyTypes (I.Program.T {body, datatypes, overflow}) =
+fun simplifyTypes (I.Program.T {body, datatypes}) =
    let
       val {get = tyconInfo: Tycon.t -> {used: PowerSetLat.t} option,
            set = setTyconInfo, ...} =
@@ -262,8 +263,7 @@ fun simplifyTypes (I.Program.T {body, datatypes, overflow}) =
                            (s, Vector.map (v, fn (c, e) => (c, fixExp e)))
                in
                   O.PrimExp.Case {cases = cases,
-                                  default = Option.map (default, fn (e, r) =>
-                                                        (fixExp e, r)),
+                                  default = Option.map (default, fixExp),
                                   test = fixVarExp test}
                end
           | I.PrimExp.ConApp {arg, con, targs} =>
@@ -292,8 +292,7 @@ fun simplifyTypes (I.Program.T {body, datatypes, overflow}) =
       val body = fixExp body
    in
       O.Program.T {datatypes = datatypes,
-                   body = body,
-                   overflow = overflow}
+                   body = body}
    end
 
 end
