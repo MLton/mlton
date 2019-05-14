@@ -63,17 +63,6 @@ structure BounceRssa =
           | NoCalls => "Only loops without function calls"
    end
 
-datatype bounceRssaLocations = datatype BounceRssa.loc
-datatype bounceRssaLoops = datatype BounceRssa.loop
-
-val bounceRssaLocations = control {name = "bounceRssaLocations",
-                              default = GCCollect,
-                              toString = BounceRssa.locToString}
-
-val bounceRssaLoops = control {name = "bounceRssaLoops",
-                               default = NoCalls,
-                               toString = BounceRssa.loopToString}
-
 val bounceRssaLimit = control {name = "bounceRssaLimit",
                                default = SOME 8,
                                toString = Option.toString Int.toString}
