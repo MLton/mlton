@@ -101,7 +101,7 @@ WARNXCFLAGS += -Wnested-externs
 # WARNXCFLAGS += -Wunreachable-code
 
 XCFLAGS := -std=gnu11 -fno-common $(WARNXCFLAGS)
-OPTXCFLAGS := -Wdisabled-optimization -O2 -fomit-frame-pointer
+OPTXCFLAGS := -Wdisabled-optimization -O2
 DEBUGXCFLAGS := -DASSERT=1 -Wno-uninitialized -O0 -g
 PICXCFLAGS :=
 
