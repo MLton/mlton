@@ -827,13 +827,13 @@ structure Function =
 
                       end
                  | _ => ())
+            fun getReplace l =
+               case (! o #replace o labelInfo) l of
+                    SOME l' => getReplace l'
+                  | NONE => l
             fun expand (ss: Statement.t vector list, t: Transfer.t)
                : Statement.t vector * Transfer.t =
                let
-                  fun getReplace l =
-                     case (! o #replace o labelInfo) l of
-                          SOME l' => getReplace l'
-                        | NONE => l
                   fun replaceTransfer t =
                      Transfer.replaceLabels (t, getReplace)
                   fun done () = (Vector.concat (rev ss), replaceTransfer t)
@@ -884,6 +884,7 @@ structure Function =
                                    transfer = transfer} :: ac
                        end
                  end))
+            val start = getReplace start
             val () = Vector.foreach (blocks, rem o Block.label)
          in
             new {args = args,
