@@ -254,22 +254,6 @@ fun makeOptions {usage} =
        (Expert, "bounce-rssa-limit", "<n>",
         "Maximum number of rssa variables to bounce around gc",
         Int (fn i => bounceRssaLimit := (if i < 0 then NONE else SOME i))),
-       (Expert, "bounce-rssa-locations", " {anyGC|gcCollect}",
-        "which calls to bounce rssa variables around",
-        SpaceString (fn s =>
-                     bounceRssaLocations :=
-                     (case s of
-                         "anyGC" => AnyGC
-                       | "gcCollect" => GCCollect
-                       | _ => usage (concat ["invalid -bounce-rssa-locations flag: ", s])))),
-       (Expert, "bounce-rssa-loops", " {anyLoop|noCalls}",
-        "what types of loops to bounce rssa vars inside",
-        SpaceString (fn s =>
-                     bounceRssaLoops :=
-                     (case s of
-                         "anyLoop" => AnyLoop
-                       | "noCalls" => NoCalls
-                       | _ => usage (concat ["invalid -bounce-rssa-loops flag: ", s])))),
        (Expert, "build-constants", " {false|true}",
         "output C file that prints basis constants",
         boolRef buildConstants),
