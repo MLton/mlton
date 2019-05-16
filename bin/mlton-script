@@ -96,14 +96,7 @@ doit "$lib" \
         -target-cc-opt ia64-hpux "-mlp64"                        \
         -target-cc-opt ia64 "-mtune=itanium2"                    \
         -target-cc-opt sparc '-m32 -mcpu=v8 -Wa,-xarch=v8plusa'  \
-        -target-cc-opt x86                                       \
-                '-m32
-                -fno-strength-reduce
-                -fschedule-insns
-                -fschedule-insns2
-                -falign-functions=5
-                -falign-jumps=2
-                -falign-loops=2'                                 \
+        -target-cc-opt x86 '-m32'                                \
         -target-link-opt amd64 '-m64'                            \
         -target-link-opt alpha                                   \
                 '-mieee -mbwx -mtune=ev6 -mfp-rounding-mode=d'   \
