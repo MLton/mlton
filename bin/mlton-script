@@ -80,6 +80,7 @@ doit "$lib" \
         -cc "$CC"                                                \
         -cc-opt '-std=gnu11 -fno-common'                         \
         -cc-opt '-O1 -fno-strict-aliasing'                       \
+        -cc-opt '-foptimize-sibling-calls'                       \
         -cc-opt '-w'                                             \
         -cc-opt-quote "-I$lib/include"                           \
         -link-opt '-lm -lgmp'                                    \

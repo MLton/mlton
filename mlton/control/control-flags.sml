@@ -67,7 +67,7 @@ val chunkify = control {name = "chunkify",
                         toString = Chunkify.toString}
 
 val chunkTailCall = control {name = "chunkTailCall",
-                             default = false,
+                             default = true,
                              toString = Bool.toString}
 
 val closureConvertGlobalize = control {name = "closureConvertGlobalize",
