@@ -987,8 +987,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                            val test = operandToString test
                            fun bnz (lnz, lz) =
                               C.call ("\tBNZ", [test, Label.toString lnz, Label.toString lz], print)
-                           fun switch (cases: (WordX.t * Label.t) vector,
-                                       default: Label.t): unit =
+                           fun switch () =
                               (print "\tswitch ("
                                ; print test
                                ; print ") {\n"
@@ -998,7 +997,9 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                                        ; print ": "
                                                        ; gotoLabel (l, {tab = false})))
                                ; print "\tdefault: "
-                               ; gotoLabel (default, {tab = false})
+                               ; (case default of
+                                     NONE => print "\tUnreachable();\n"
+                                   | SOME default => gotoLabel (default, {tab = false}))
                                ; print "\t}\n")
                         in
                            case (Vector.length cases, default) of
@@ -1011,7 +1012,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                  in
                                     if WordX.isZero w
                                        then bnz (ld, l)
-                                       else switch (cases, ld)
+                                       else switch ()
                                  end
                             | (2, NONE) =>
                                  let
@@ -1022,11 +1023,9 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                        then bnz (lb, la)
                                     else if WordX.isZero wb
                                        then bnz (la, lb)
-                                    else switch (Vector.new1 (wa, la), lb)
+                                    else switch ()
                                  end
-                            | (_, NONE) => switch (Vector.dropSuffix (cases, 1),
-                                                   #2 (Vector.last cases))
-                            | (_, SOME ld) => switch (cases, ld)
+                            | _ => switch ()
                         end
                end
             fun outputBlock (Block.T {kind, label, statements, transfer, ...}) =
