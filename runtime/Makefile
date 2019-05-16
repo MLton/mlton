@@ -61,44 +61,7 @@ CPPFLAGS :=
 CFLAGS :=
 
 WARNXCFLAGS :=
-WARNXCFLAGS += -pedantic -Wall
-ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
-WARNXCFLAGS += -Wextra
-endif
-WARNXCFLAGS += -Wformat=2
-ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
-WARNXCFLAGS += -Wswitch-default -Wswitch-enum
-endif
-WARNXCFLAGS += -Wuninitialized
-ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
-WARNXCFLAGS += -Winit-self
-endif
-ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
-WARNXCFLAGS += -Wstrict-aliasing=2
-endif
-WARNXCFLAGS += -Wfloat-equal
-WARNXCFLAGS += -Wundef
-WARNXCFLAGS += -Wshadow
-WARNXCFLAGS += -Wpointer-arith
-WARNXCFLAGS += -Wbad-function-cast -Wcast-qual
-WARNXCFLAGS += -Wwrite-strings
-# WARNXCFLAGS += -Wconversion
-WARNXCFLAGS += -Waggregate-return
-WARNXCFLAGS += -Wstrict-prototypes
-ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
-WARNXCFLAGS += -Wold-style-definition
-endif
-WARNXCFLAGS += -Wmissing-prototypes -Wmissing-declarations
-ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
-WARNXCFLAGS += -Wmissing-field-initializers
-endif
-WARNXCFLAGS += -Wmissing-noreturn
-WARNXCFLAGS += -Wmissing-format-attribute
-# WARNXCFLAGS += -Wpacked
-# WARNXCFLAGS += -Wpadded
-WARNXCFLAGS += -Wredundant-decls
-WARNXCFLAGS += -Wnested-externs
-# WARNXCFLAGS += -Wunreachable-code
+WARNXCFLAGS += -pedantic -Wall -Wextra
 
 XCFLAGS := -std=gnu11 -fno-common $(WARNXCFLAGS)
 OPTXCFLAGS := -Wdisabled-optimization -O2
