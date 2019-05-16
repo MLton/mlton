@@ -74,10 +74,8 @@ PICXCFLAGS += -fPIC
 endif
 
 # Make mlton library symbols private (win32&64 use another technique)
-ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
 ifeq ($(findstring $(TARGET_OS), mingw cygwin),)
 XCFLAGS += -fvisibility=hidden
-endif
 endif
 
 ifeq ($(TARGET_ARCH), alpha)
