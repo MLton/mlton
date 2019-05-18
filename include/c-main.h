@@ -31,7 +31,7 @@ static void MLton_callFromC () {                                        \
         GC_switchToThread (s, GC_getCallFromCHandlerThread (s), 0);     \
         nextBlock = *(uintptr_t*)(s->stackTop - GC_RETURNADDRESS_SIZE); \
         do {                                                            \
-                nextBlock = (*(nextChunks[nextBlock]))(nextBlock, s->stackTop, s->frontier); \
+                nextBlock = (*(nextChunks[nextBlock]))(s, s->stackTop, s->frontier, nextBlock); \
         } while (nextBlock != (uintptr_t)-1);                           \
         s->atomicState += 1;                                            \
         GC_switchToThread (s, GC_getSavedThread (s), 0);                \
@@ -57,7 +57,7 @@ PUBLIC int MLton_main (int argc, char* argv[]) {                        \
         }                                                               \
         /* Trampoline */                                                \
         do {                                                            \
-                nextBlock = (*(nextChunks[nextBlock]))(nextBlock, s->stackTop, s->frontier); \
+                nextBlock = (*(nextChunks[nextBlock]))(s, s->stackTop, s->frontier, nextBlock); \
         } while (1);                                                    \
         return 1;                                                       \
 }
@@ -76,7 +76,7 @@ PUBLIC void LIB_OPEN(LIBNAME) (int argc, char* argv[]) {                \
         }                                                               \
         /* Trampoline */                                                \
         do {                                                            \
-                nextBlock = (*(nextChunks[nextBlock]))(nextBlock, s->stackTop, s->frontier); \
+                nextBlock = (*(nextChunks[nextBlock]))(s, s->stackTop, s->frontier, nextBlock); \
         } while (nextBlock != (uintptr_t)-1);                           \
 }                                                                       \
 PUBLIC void LIB_CLOSE(LIBNAME) () {                                     \
@@ -84,7 +84,7 @@ PUBLIC void LIB_CLOSE(LIBNAME) () {                                     \
         GC_state s = &gcState;                                          \
         nextBlock = *(uintptr_t*)(s->stackTop - GC_RETURNADDRESS_SIZE); \
         do {                                                            \
-                nextBlock = (*(nextChunks[nextBlock]))(nextBlock, s->stackTop, s->frontier); \
+                nextBlock = (*(nextChunks[nextBlock]))(s, s->stackTop, s->frontier, nextBlock); \
         } while (nextBlock != (uintptr_t)-1);                           \
         GC_done(&gcState);                                              \
 }

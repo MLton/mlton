@@ -70,7 +70,7 @@
                         fprintf (stderr, "%s:%d: EndChunk%d(nextBlock = %d)\n", \
                                         __FILE__, __LINE__, n, (int)nextBlock); \
                 if (tail) {                     \
-                        return (*(nextChunks[nextBlock]))(nextBlock, stackTop, frontier); \
+                        return (*(nextChunks[nextBlock]))(gcState, stackTop, frontier, nextBlock); \
                 } else {                        \
                         FlushFrontier();        \
                         FlushStackTop();        \
@@ -90,7 +90,7 @@
 #define X(ty, b, i, s, o) (*(ty*)((b) + ((i) * (s)) + (o)))
 #define S(ty, i) (*(ty*)(StackTop + (i)))
 
-#define GCState ((Pointer)&gcState)
+#define GCState gcState
 #define Frontier frontier
 #define StackTop stackTop
 
@@ -156,7 +156,7 @@
                         fprintf (stderr, "%s:%d: FarCall(%d, %s)\n", \
                                         __FILE__, __LINE__, (int)n, #l); \
                 if (tail) {                     \
-                        return ChunkName(n)(l, stackTop, frontier); \
+                        return ChunkName(n)(gcState, stackTop, frontier, l); \
                 } else {                        \
                         FlushFrontier();        \
                         FlushStackTop();        \

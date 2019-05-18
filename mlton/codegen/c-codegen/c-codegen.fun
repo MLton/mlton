@@ -631,7 +631,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                         declareChunk (chunkLabel, print))
           ; print "PRIVATE uintptr_t (*nextChunks["
           ; print (C.int (Vector.length nextChunks))
-          ; print "]) (uintptr_t, Pointer, Pointer) = {\n"
+          ; print "]) (CPointer, CPointer, CPointer, uintptr_t) = {\n"
           ; Vector.foreachi
             (nextChunks, fn (i, label) =>
              let
@@ -672,7 +672,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                     Transfer.Call {label, ...} =>
                        declareChunk (labelChunk label)
                   |  _ => ())))
-            ; print "PRIVATE extern uintptr_t (*nextChunks[]) (uintptr_t, Pointer, Pointer);\n"
+            ; print "PRIVATE extern uintptr_t (*nextChunks[]) (CPointer, CPointer, CPointer, uintptr_t);\n"
          end
 
       val handleMisaligned =
