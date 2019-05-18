@@ -312,9 +312,9 @@ fun addFfiSymbol s = if not (List.contains (!ffiSymbols, s, fn ({name=n1, ...}, 
 fun offsetGCState (gcfield, ty) =
     let
         val ptr1 = nextLLVMReg ()
-        val gep = mkgep (ptr1, "%Pointer", "%gcState", [("i32", llbytes (GCField.offset gcfield))])
+        val gep = mkgep (ptr1, "%CPointer", "%gcState", [("i32", llbytes (GCField.offset gcfield))])
         val ptr2 = nextLLVMReg ()
-        val cast = mkconv (ptr2, "bitcast", "%Pointer", ptr1, ty)
+        val cast = mkconv (ptr2, "bitcast", "%CPointer", ptr1, ty)
     in
         (concat [gep, cast], ptr2)
     end
@@ -323,10 +323,10 @@ fun offsetGCState (gcfield, ty) =
 fun flushFrontier () =
     let
         val comment = "\t; FlushFrontier\n"
-        val (pre, reg) = offsetGCState (GCField.Frontier, "%Pointer*")
+        val (pre, reg) = offsetGCState (GCField.Frontier, "%CPointer*")
         val frontier = nextLLVMReg ()
-        val load = mkload (frontier, "%Pointer*", "%frontier")
-        val store = mkstore ("%Pointer", frontier, reg)
+        val load = mkload (frontier, "%CPointer*", "%frontier")
+        val store = mkstore ("%CPointer", frontier, reg)
     in
         concat [comment, pre, load, store]
     end
@@ -335,10 +335,10 @@ fun flushFrontier () =
 fun flushStackTop () =
     let
         val comment = "\t; FlushStackTop\n"
-        val (pre, reg) = offsetGCState (GCField.StackTop, "%Pointer*")
+        val (pre, reg) = offsetGCState (GCField.StackTop, "%CPointer*")
         val stacktop = nextLLVMReg ()
-        val load = mkload (stacktop, "%Pointer*", "%stackTop")
-        val store = mkstore ("%Pointer", stacktop, reg)
+        val load = mkload (stacktop, "%CPointer*", "%stackTop")
+        val store = mkstore ("%CPointer", stacktop, reg)
     in
         concat [comment, pre, load, store]
     end
@@ -347,10 +347,10 @@ fun flushStackTop () =
 fun cacheFrontier () =
     let
         val comment = "\t; CacheFrontier\n"
-        val (pre, reg) = offsetGCState (GCField.Frontier, "%Pointer*")
+        val (pre, reg) = offsetGCState (GCField.Frontier, "%CPointer*")
         val frontier = nextLLVMReg ()
-        val load = mkload (frontier, "%Pointer*", reg)
-        val store = mkstore ("%Pointer", frontier, "%frontier")
+        val load = mkload (frontier, "%CPointer*", reg)
+        val store = mkstore ("%CPointer", frontier, "%frontier")
     in
         concat [comment, pre, load, store]
     end
@@ -359,10 +359,10 @@ fun cacheFrontier () =
 fun cacheStackTop () =
     let
         val comment = "\t; CacheStackTop\n"
-        val (pre, reg) = offsetGCState (GCField.StackTop, "%Pointer*")
+        val (pre, reg) = offsetGCState (GCField.StackTop, "%CPointer*")
         val stacktop = nextLLVMReg ()
-        val load = mkload (stacktop, "%Pointer*", reg)
-        val store = mkstore ("%Pointer", stacktop, "%stackTop")
+        val load = mkload (stacktop, "%CPointer*", reg)
+        val store = mkstore ("%CPointer", stacktop, "%stackTop")
     in
         concat [comment, pre, load, store]
     end
@@ -373,12 +373,12 @@ fun cacheStackTop () =
 fun callReturn () =
     let
         val stacktop = nextLLVMReg ()
-        val loadst = mkload (stacktop, "%Pointer*", "%stackTop")
+        val loadst = mkload (stacktop, "%CPointer*", "%stackTop")
         val ptrsize = (llbytes o Bits.toBytes o Control.Target.Size.cpointer) ()
         val ptr = nextLLVMReg ()
-        val gep = mkgep (ptr, "%Pointer", stacktop, [("i32", "-" ^ ptrsize)])
+        val gep = mkgep (ptr, "%CPointer", stacktop, [("i32", "-" ^ ptrsize)])
         val castreg = nextLLVMReg ()
-        val cast = mkconv (castreg, "bitcast", "%Pointer", ptr, "%uintptr_t*")
+        val cast = mkconv (castreg, "bitcast", "%CPointer", ptr, "%uintptr_t*")
         val loadreg = nextLLVMReg ()
         val loadofs = mkload (loadreg, "%uintptr_t*", castreg)
         val store = mkstore ("%uintptr_t", loadreg, "%nextBlock")
@@ -390,10 +390,10 @@ fun callReturn () =
 fun stackPush amt =
     let
         val stacktop = nextLLVMReg ()
-        val load = mkload (stacktop, "%Pointer*", "%stackTop")
+        val load = mkload (stacktop, "%CPointer*", "%stackTop")
         val ptr = nextLLVMReg ()
-        val gep = mkgep (ptr, "%Pointer", stacktop, [("i32", amt)])
-        val store = mkstore ("%Pointer", ptr, "%stackTop")
+        val gep = mkgep (ptr, "%CPointer", stacktop, [("i32", amt)])
+        val store = mkstore ("%CPointer", ptr, "%stackTop")
         val comment = concat ["\t; Push(", amt, ")\n"]
     in
         concat [comment, load, gep, store]
@@ -432,7 +432,7 @@ fun getOperandAddr (cxt, operand) =
         in
             (concat [operPre, load, cast], llvmTy, reg)
         end
-      | Operand.Frontier => ("", "%Pointer", "%frontier")
+      | Operand.Frontier => ("", "%CPointer", "%frontier")
       | Operand.Global global =>
         let
             val globalType = Global.ty global
@@ -492,16 +492,16 @@ fun getOperandAddr (cxt, operand) =
             val StackOffset.T {offset, ty} = stackOffset
             val idx = llbytes offset
             val stackTop = nextLLVMReg ()
-            val load = mkload (stackTop, "%Pointer*", "%stackTop")
+            val load = mkload (stackTop, "%CPointer*", "%stackTop")
             val gepReg = nextLLVMReg ()
-            val gep = mkgep (gepReg, "%Pointer", stackTop, [("i32", idx)])
+            val gep = mkgep (gepReg, "%CPointer", stackTop, [("i32", idx)])
             val llvmTy = llty ty
             val reg = nextLLVMReg ()
-            val cast = mkconv (reg, "bitcast", "%Pointer", gepReg, llvmTy ^ "*")
+            val cast = mkconv (reg, "bitcast", "%CPointer", gepReg, llvmTy ^ "*")
         in
             (concat [load, gep, cast], llvmTy, reg)
         end
-      | Operand.StackTop => ("", "%Pointer", "%stackTop")
+      | Operand.StackTop => ("", "%CPointer", "%stackTop")
       | _ => Error.bug ("Cannot get address of " ^ Operand.toString operand)
 
 (* ty is the type of the value *)
@@ -553,7 +553,7 @@ and getOperandValue (cxt, operand) =
             end
           | Operand.Contents _ => loadOperand ()
           | Operand.Frontier => loadOperand ()
-          | Operand.GCState => ("", "%Pointer", "%gcState")
+          | Operand.GCState => ("", "%CPointer", "%gcState")
           | Operand.Global _ => loadOperand ()
           | Operand.Label label => ("", llws (WordSize.cpointer ()), labelIndexAsString label)
           | Operand.Null => ("", "i8*", "null")
@@ -590,19 +590,19 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
             CPointer_add =>
             let
                 val tmp1 = nextLLVMReg ()
-                val inst1 = mkconv (tmp1, "ptrtoint", "%Pointer", arg0, "%uintptr_t")
+                val inst1 = mkconv (tmp1, "ptrtoint", "%CPointer", arg0, "%uintptr_t")
                 val tmp2 = nextLLVMReg ()
                 val inst2 = mkinst (tmp2, "add", "%uintptr_t", tmp1, arg1)
-                val inst3 = mkconv (res, "inttoptr", "%uintptr_t", tmp2, "%Pointer")
+                val inst3 = mkconv (res, "inttoptr", "%uintptr_t", tmp2, "%CPointer")
             in
-                (concat [inst1, inst2, inst3], "%Pointer")
+                (concat [inst1, inst2, inst3], "%CPointer")
             end
           | CPointer_diff =>
             let
                 val tmp1 = nextLLVMReg ()
-                val inst1 = mkconv (tmp1, "ptrtoint", "%Pointer", arg0, "%uintptr_t")
+                val inst1 = mkconv (tmp1, "ptrtoint", "%CPointer", arg0, "%uintptr_t")
                 val tmp2 = nextLLVMReg ()
-                val inst2 = mkconv (tmp2, "ptrtoint", "%Pointer", arg1, "%uintptr_t")
+                val inst2 = mkconv (tmp2, "ptrtoint", "%CPointer", arg1, "%uintptr_t")
                 val inst3 = mkinst (res, "sub", "%uintptr_t", tmp1, tmp2)
             in
                 (concat [inst1, inst2, inst3], "%uintptr_t")
@@ -610,17 +610,17 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
           | CPointer_equal =>
             let
                 val reg = nextLLVMReg ()
-                val cmp = mkinst (reg, "icmp eq", "%Pointer", arg0, arg1)
+                val cmp = mkinst (reg, "icmp eq", "%CPointer", arg0, arg1)
                 val ext = mkconv (res, "zext", "i1", reg, "%Word32")
             in
                 (concat [cmp, ext], "%Word32")
             end
           | CPointer_fromWord =>
-            (mkconv (res, "inttoptr", "%uintptr_t", arg0, "%Pointer"), "%Pointer")
+            (mkconv (res, "inttoptr", "%uintptr_t", arg0, "%CPointer"), "%CPointer")
           | CPointer_lt =>
             let
                 val reg = nextLLVMReg ()
-                val cmp = mkinst (reg, "icmp ult", "%Pointer", arg0, arg1)
+                val cmp = mkinst (reg, "icmp ult", "%CPointer", arg0, arg1)
                 val ext = mkconv (res, "zext", "i1", reg, "%Word32")
             in
                 (concat [cmp, ext], "%Word32")
@@ -628,24 +628,24 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
           | CPointer_sub =>
             let
                 val tmp1 = nextLLVMReg ()
-                val inst1 = mkconv (tmp1, "ptrtoint", "%Pointer", arg0, "%uintptr_t")
+                val inst1 = mkconv (tmp1, "ptrtoint", "%CPointer", arg0, "%uintptr_t")
                 val tmp2 = nextLLVMReg ()
                 val inst2 = mkinst (tmp2, "sub", "%uintptr_t", tmp1, arg1)
-                val inst3 = mkconv (res, "inttoptr", "%uintptr_t", tmp2, "%Pointer")
+                val inst3 = mkconv (res, "inttoptr", "%uintptr_t", tmp2, "%CPointer")
             in
-                (concat [inst1, inst2, inst3], "%Pointer")
+                (concat [inst1, inst2, inst3], "%CPointer")
             end
           | CPointer_toWord =>
-            (mkconv (res, "ptrtoint", "%Pointer", arg0, "%uintptr_t"), "%Pointer")
+            (mkconv (res, "ptrtoint", "%CPointer", arg0, "%uintptr_t"), "%CPointer")
           | FFI_Symbol (s as {name, cty, ...}) =>
             let
                 val () = addFfiSymbol s
                 val ty = case cty of
                              SOME t => "%" ^ CType.toString t
                            | NONE => Error.bug ("ffi symbol is void function?") (* TODO *)
-                val inst = mkconv (res, "bitcast", ty ^ "*", "@" ^ name, "%Pointer")
+                val inst = mkconv (res, "bitcast", ty ^ "*", "@" ^ name, "%CPointer")
             in
-                (inst, "%Pointer")
+                (inst, "%CPointer")
             end
           | Real_Math_cos rs => (mkmath (res, "cos", rs, arg0), llrs rs)
           | Real_Math_exp rs => (mkmath (res, "exp", rs, arg0), llrs rs)
@@ -934,11 +934,11 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                 val offset = llbytes (Bytes.- (size, Runtime.labelSize ()))
                 val frameIndex = labelIndexAsString return
                 val stackTop = nextLLVMReg ()
-                val load = mkload (stackTop, "%Pointer*", "%stackTop")
+                val load = mkload (stackTop, "%CPointer*", "%stackTop")
                 val gepReg = nextLLVMReg ()
-                val gep = mkgep (gepReg, "%Pointer", stackTop, [("i32", offset)])
+                val gep = mkgep (gepReg, "%CPointer", stackTop, [("i32", offset)])
                 val castreg = nextLLVMReg ()
-                val cast = mkconv (castreg, "bitcast", "%Pointer", gepReg, "%uintptr_t*")
+                val cast = mkconv (castreg, "bitcast", "%CPointer", gepReg, "%uintptr_t*")
                 val storeIndex = mkstore ("%uintptr_t", frameIndex, castreg)
                 val pushcode = stackPush (llbytes size)
             in
@@ -1033,15 +1033,15 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                                            val comment = "\t; FarCall\n"
                                            val stackTopArg = nextLLVMReg ()
                                            val frontierArg = nextLLVMReg ()
-                                           val loadStackTop = mkload (stackTopArg, "%Pointer*", "%stackTop")
-                                           val loadFrontier = mkload (frontierArg, "%Pointer*", "%frontier")
+                                           val loadStackTop = mkload (stackTopArg, "%CPointer*", "%stackTop")
+                                           val loadFrontier = mkload (frontierArg, "%CPointer*", "%frontier")
                                            val resReg = nextLLVMReg ()
                                            val call = concat ["\t", resReg, " = musttail call ",
                                                               "%uintptr_t ",
                                                               "@Chunk", chunkLabelIndexAsString dstChunk, "(",
-                                                              "%Pointer ", "%gcState", ", ",
-                                                              "%Pointer ", stackTopArg, ", ",
-                                                              "%Pointer ", frontierArg, ", ",
+                                                              "%CPointer ", "%gcState", ", ",
+                                                              "%CPointer ", stackTopArg, ", ",
+                                                              "%CPointer ", frontierArg, ", ",
                                                               "%uintptr_t ", labelIndexAsString label, ")\n"]
                                            val ret = concat ["\tret %uintptr_t ", resReg, "\n"]
                                         in
@@ -1067,15 +1067,15 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
             let
                 val comment = "\t; Raise\n"
                 (* StackTop = StackBottom + ExnStack *)
-                val (sbpre, sbreg) = offsetGCState (GCField.StackBottom, "%Pointer*")
+                val (sbpre, sbreg) = offsetGCState (GCField.StackBottom, "%CPointer*")
                 val stackBottom = nextLLVMReg ()
-                val loadStackBottom = mkload (stackBottom, "%Pointer*", sbreg)
+                val loadStackBottom = mkload (stackBottom, "%CPointer*", sbreg)
                 val (espre, esreg) = offsetGCState (GCField.ExnStack, "i32*")
                 val exnStack = nextLLVMReg ()
                 val loadExnStack = mkload (exnStack, "i32*", esreg)
                 val sum = nextLLVMReg ()
-                val gep = mkgep (sum, "%Pointer", stackBottom, [("i32", exnStack)])
-                val store = mkstore ("%Pointer", sum, "%stackTop")
+                val gep = mkgep (sum, "%CPointer", stackBottom, [("i32", exnStack)])
+                val store = mkstore ("%CPointer", sum, "%stackTop")
             in
                 concat [comment, sbpre, loadStackBottom, espre, loadExnStack, gep, store,
                         callReturn()]
@@ -1183,9 +1183,9 @@ fun outputChunkFn (cxt, chunk, print) =
         val Chunk.T {blocks, chunkLabel, regMax} = chunk
         val () = print (concat ["define hidden %uintptr_t @",
                                 "Chunk" ^ chunkLabelIndexAsString chunkLabel,
-                                "(%Pointer %gcState, %Pointer %stackTopArg, %Pointer %frontierArg, %uintptr_t %nextBlockArg) {\nentry:\n"])
-        val () = print "\t%stackTop = alloca %Pointer\n"
-        val () = print "\t%frontier = alloca %Pointer\n"
+                                "(%CPointer %gcState, %CPointer %stackTopArg, %CPointer %frontierArg, %uintptr_t %nextBlockArg) {\nentry:\n"])
+        val () = print "\t%stackTop = alloca %CPointer\n"
+        val () = print "\t%frontier = alloca %CPointer\n"
         val () = print "\t%nextBlock = alloca %uintptr_t\n"
         val () = List.foreach (CType.all,
                                fn t =>
@@ -1200,8 +1200,8 @@ fun outputChunkFn (cxt, chunk, print) =
                                       Int.for (0, 1 + regMax t,
                                                fn i => print (concat [pre, llint i, post]))
                                   end)
-        val () = print (mkstore ("%Pointer", "%stackTopArg", "%stackTop"))
-        val () = print (mkstore ("%Pointer", "%frontierArg", "%frontier"))
+        val () = print (mkstore ("%CPointer", "%stackTopArg", "%stackTop"))
+        val () = print (mkstore ("%CPointer", "%frontierArg", "%frontier"))
         val () = print (mkstore ("%uintptr_t", "%nextBlockArg", "%nextBlock"))
         val () = print "\tbr label %doSwitchNextBlock\n\n"
         val () = print "doSwitchNextBlock:\n"
@@ -1228,23 +1228,23 @@ fun outputChunkFn (cxt, chunk, print) =
                         then let
                                 val chkFnPtrPtrReg = nextLLVMReg ()
                                 val () = print (concat ["\t", chkFnPtrPtrReg, " = getelementptr inbounds ",
-                                                        "[0 x %uintptr_t(%Pointer,%Pointer,%Pointer,%uintptr_t)*], ",
-                                                        "[0 x %uintptr_t(%Pointer,%Pointer,%Pointer,%uintptr_t)*]* @nextChunks, ",
+                                                        "[0 x %uintptr_t(%CPointer,%CPointer,%CPointer,%uintptr_t)*], ",
+                                                        "[0 x %uintptr_t(%CPointer,%CPointer,%CPointer,%uintptr_t)*]* @nextChunks, ",
                                                         "i64 0, ",
                                                         "%uintptr_t ", nextBlockReg, "\n"])
                                 val chkFnPtrReg = nextLLVMReg ()
-                                val () = print (mkload (chkFnPtrReg, "%uintptr_t(%Pointer,%Pointer,%Pointer,%uintptr_t)**", chkFnPtrPtrReg))
+                                val () = print (mkload (chkFnPtrReg, "%uintptr_t(%CPointer,%CPointer,%CPointer,%uintptr_t)**", chkFnPtrPtrReg))
                                 val stackTopArg = nextLLVMReg ()
                                 val frontierArg = nextLLVMReg ()
-                                val () = print (mkload (stackTopArg, "%Pointer*", "%stackTop"))
-                                val () = print (mkload (frontierArg, "%Pointer*", "%frontier"))
+                                val () = print (mkload (stackTopArg, "%CPointer*", "%stackTop"))
+                                val () = print (mkload (frontierArg, "%CPointer*", "%frontier"))
                                 val resReg = nextLLVMReg ()
                                 val () = print (concat ["\t", resReg, " = musttail call ",
                                                         "%uintptr_t ",
                                                         chkFnPtrReg, "(",
-                                                        "%Pointer ", "%gcState", ", ",
-                                                        "%Pointer ", stackTopArg, ", ",
-                                                        "%Pointer ", frontierArg, ", ",
+                                                        "%CPointer ", "%gcState", ", ",
+                                                        "%CPointer ", stackTopArg, ", ",
+                                                        "%CPointer ", frontierArg, ", ",
                                                         "%uintptr_t ", nextBlockReg, ")\n"])
                              in
                                 resReg
@@ -1279,11 +1279,11 @@ fun outputChunks (cxt, chunks,
                           then ()
                           else print (concat ["declare hidden %uintptr_t @",
                                               "Chunk" ^ chunkLabelIndexAsString chunkLabel,
-                                              "(%Pointer,%Pointer,%Pointer,%uintptr_t)\n"])
+                                              "(%CPointer,%CPointer,%CPointer,%uintptr_t)\n"])
                     val Program.T {chunks, ...} = program
                  in
                     List.foreach (chunks, declareChunk)
-                    ; print "@nextChunks = external hidden global [0 x %uintptr_t(%Pointer,%Pointer,%Pointer,%uintptr_t)*]\n"
+                    ; print "@nextChunks = external hidden global [0 x %uintptr_t(%CPointer,%CPointer,%CPointer,%uintptr_t)*]\n"
                     ; print "\n\n"
                  end
         val () = List.foreach (chunks, fn chunk => outputChunkFn (cxt, chunk, print))
