@@ -892,7 +892,16 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                   datatype z = datatype Transfer.t
                in
                   case t of
-                     CCall {args, func, return} =>
+                     CCall {func =
+                            CFunction.T
+                            {target =
+                             CFunction.Target.Direct "Thread_returnToC", ...},
+                            return = SOME {return, size = SOME size}, ...} =>
+                        (push (return, size);
+                         print "\tFlushFrontier ();\n";
+                         print "\tFlushStackTop ();\n";
+                         print "\tThread_returnToC ();\n")
+                   | CCall {args, func, return} =>
                         let
                            val CFunction.T {return = returnTy,
                                             target, ...} = func
