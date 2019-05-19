@@ -642,7 +642,7 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
                 val () = addFfiSymbol s
                 val ty = case cty of
                              SOME t => "%" ^ CType.toString t
-                           | NONE => Error.bug ("ffi symbol is void function?") (* TODO *)
+                           | NONE => "i8"
                 val inst = mkconv (res, "bitcast", ty ^ "*", "@" ^ name, "%CPointer")
             in
                 (inst, "%CPointer")
@@ -1293,7 +1293,7 @@ fun outputChunks (cxt, chunks,
                     let
                         val ty = case cty of
                                         SOME t => "%" ^ CType.toString t
-                                      | NONE => "void"
+                                      | NONE => "i8"
                         val visibility = case symbolScope of
                                              CFunction.SymbolScope.External => "default"
                                            | CFunction.SymbolScope.Private => "hidden"
