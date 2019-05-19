@@ -742,13 +742,6 @@ fun outputPrim (prim, res, argty, arg0, arg1, arg2) =
             end
           | Real_round rs => (mkmath (res, "rint", rs, arg0), llrs rs)
           | Real_sub rs => (mkinst (res, "fsub", llrs rs, arg0, arg1), llrs rs)
-          | Thread_returnToC =>
-            let
-                val store = mkstore ("i32", "1", "@returnToC")
-                val ret = "\tret %struct.cont %cont\n"
-            in
-                (concat [store, ret], "")
-            end
           | Word_add ws => (mkinst (res, "add", llws ws, arg0, arg1), llws ws)
           | Word_addCheckP (ws, {signed}) =>
               mkoverflowp (ws, if signed then "sadd" else "uadd")
@@ -946,7 +939,16 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
             end
     in
         case transfer of
-            Transfer.CCall {args, func, return} =>
+            Transfer.CCall {func =
+                            CFunction.T
+                            {target = CFunction.Target.Direct "Thread_returnToC", ...},
+                            return = SOME {return, size = SOME size}, ...} =>
+            concat [comment,
+                    transferPush (return, size),
+                    flushFrontier (),
+                    flushStackTop (),
+                    "\tret %uintptr_t -1\n"]
+          | Transfer.CCall {args, func, return} =>
             let
                val CFunction.T {return = returnTy, target, ...} = func
                val (argsPre, args) =
