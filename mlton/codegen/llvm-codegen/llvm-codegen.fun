@@ -948,76 +948,109 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
         case transfer of
             Transfer.CCall {args, func, return} =>
             let
-                val CFunction.T {return = returnTy,
-                                 target, ...} = func
-                val (paramPres, paramTypes, paramRegs) =
-                    Vector.unzip3 (Vector.map (args, fn opr => getOperandValue (cxt, opr)))
-                val push =
-                    case return of
-                       NONE => ""
-                     | SOME {size = NONE, ...} => ""
-                     | SOME {return, size = SOME size} =>
-                          transferPush (return, size)
-                val flushFrontierCode = if CFunction.modifiesFrontier func then flushFrontier () else ""
-                val flushStackTopCode = if CFunction.readsStackTop func then flushStackTop () else ""
-                val resultReg = if Type.isUnit returnTy then "" else nextLLVMReg ()
-                val call = case target of
-                               CFunction.Target.Direct name =>
-                               let
-                                   val (lhs, ty) = if Type.isUnit returnTy
-                                                   then ("\t", "void")
-                                                   else (concat ["\t", resultReg, " = "],
-                                                         llty returnTy)
-                                   val llparams = String.concatWith
-                                                      (Vector.toListMap
-                                                           (Vector.zip (paramTypes, paramRegs),
-                                                            fn (t, p) => t ^ " " ^ p),
-                                                       ", ")
-                                   val llatts =
-                                      case return of
-                                         NONE => " noreturn"
-                                       | SOME _ => ""
-                                   val cfunc = concat [ty, " @", name, "(",
-                                                       String.concatWith
-                                                           ((Vector.toList paramTypes), ", "),
-                                                       ")", llatts]
-                                   val () = addCFunction cfunc
-                               in
-                                   concat [lhs, "call ", ty, " @", name, "(", llparams, ")", llatts, "\n"]
-                               end
-                             | CFunction.Target.Indirect => (* TODO *) ""
-                val epilogue = case return of
-                                   NONE => "\tunreachable\n"
-                                 | SOME {return, ...} =>
-                                   let
-                                       val storeResult = if Type.isUnit returnTy
-                                                         then ""
-                                                         else mkstore (llty returnTy, resultReg,
-                                                                       "%CReturn" ^ CType.name (Type.toCType returnTy))
-                                       val cacheFrontierCode = if CFunction.modifiesFrontier func
-                                                               then cacheFrontier ()
-                                                               else ""
-                                       val cacheStackTopCode = if CFunction.writesStackTop func
-                                                               then cacheStackTop ()
-                                                               else ""
-                                       val br = if CFunction.maySwitchThreadsFrom func
-                                                then callReturn ()
-                                                else concat ["\tbr label %", Label.toString return,
-                                                             "\n"]
-                                   in
-                                       concat [storeResult, cacheFrontierCode, cacheStackTopCode,
-                                               br]
-                                   end
+               val CFunction.T {return = returnTy, target, ...} = func
+               val (argsPre, args) =
+                  let
+                     val args = Vector.toListMap (args, fn opr => getOperandValue (cxt, opr))
+                  in
+                     (String.concat (List.map (args, #1)),
+                      List.map (args, fn (_, ty, reg) => (ty, reg)))
+                  end
+               val push =
+                  case return of
+                     NONE => ""
+                   | SOME {size = NONE, ...} => ""
+                   | SOME {return, size = SOME size} => transferPush (return, size)
+               val flushFrontierCode = if CFunction.modifiesFrontier func then flushFrontier () else ""
+               val flushStackTopCode = if CFunction.readsStackTop func then flushStackTop () else ""
+               val (callLHS, callType, afterCall) =
+                  if Type.isUnit returnTy
+                     then ("\t", "void", "")
+                     else let
+                             val resReg = nextLLVMReg ()
+                          in
+                             (concat ["\t", resReg, " = "],
+                              llty returnTy,
+                              mkstore (llty returnTy, resReg,
+                                       "%CReturn" ^ CType.name (Type.toCType returnTy)))
+                          end
+               val callAttrs =
+                  case return of
+                     NONE => " noreturn"
+                   | SOME _ => ""
+               val (fnptrPre, fnptrVal, args) =
+                  case target of
+                     CFunction.Target.Direct name =>
+                        let
+                           val name = "@" ^ name
+                           val () =
+                              addCFunction
+                              (concat [callType, " ",
+                                       name, " (",
+                                       String.concatWith
+                                       (List.map (args, #1),
+                                        ", "), ")",
+                                       callAttrs])
+                        in
+                           ("", name, args)
+                        end
+                   | CFunction.Target.Indirect =>
+                        let
+                           val (fnptrArgTy, fnptrArgReg, args) =
+                              case args of
+                                 (fnptrTy, fnptrReg)::args => (fnptrTy, fnptrReg, args)
+                               | _ => Error.bug "LLVMCodegen.outputTransfer: CCall,Indirect"
+                           val fnptrTy =
+                              concat [callType, " (",
+                                      String.concatWith
+                                      (List.map (args, #1),
+                                       ", "), ") *"]
+                           val fnptrReg = nextLLVMReg ()
+                           val cast = mkconv (fnptrReg, "bitcast",
+                                              fnptrArgTy, fnptrArgReg,
+                                              fnptrTy)
+                        in
+                           (cast,
+                            fnptrReg,
+                            args)
+                        end
+               val call =
+                  concat [callLHS,
+                          "call ",
+                          callType, " ",
+                          fnptrVal, "(",
+                          String.concatWith
+                          (List.map
+                           (args, fn (ty, reg) => ty ^ " " ^ reg),
+                           ", "), ")",
+                          callAttrs]
+               val epilogue =
+                  case return of
+                     NONE => "\tunreachable\n"
+                   | SOME {return, ...} =>
+                        let
+                           val cacheFrontierCode =
+                              if CFunction.modifiesFrontier func then cacheFrontier () else ""
+                           val cacheStackTopCode =
+                              if CFunction.writesStackTop func then cacheStackTop () else ""
+                           val br = if CFunction.maySwitchThreadsFrom func
+                                       then callReturn ()
+                                       else concat ["\tbr label %", Label.toString return, "\n"]
+                        in
+                           concat [cacheFrontierCode, cacheStackTopCode, br]
+                        end
             in
-                concat [comment,
-                        "\t; GetOperands\n",
-                        String.concatV paramPres,
-                        push,
-                        flushFrontierCode,
-                        flushStackTopCode,
-                        "\t; Call\n",
-                        call,
-                        epilogue]
+               concat [comment,
+                       "\t; GetOperands\n",
+                       argsPre,
+                       push,
+                       flushFrontierCode,
+                       flushStackTopCode,
+                       "\t; Call\n",
+                       fnptrPre,
+                       call,
+                       afterCall,
+                       epilogue]
             end
           | Transfer.Call {label, return, ...} =>
             let
