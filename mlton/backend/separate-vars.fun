@@ -78,9 +78,10 @@ structure Weight = struct
 end
 
 datatype varinfo
-   = Ignore
-   | Consider of Weight.t
-   | Rewrite of Weight.t
+   = Ignore (* No consideration *)
+   | ConsiderBounce (* Used in loop, haven't checked bouncing *)
+   | Consider of Weight.t (* Should be considered for bouncing *)
+   | Rewrite of Weight.t (* Will be bounced *)
 
 fun loopForeach ({headers, child}, f) =
    case DirectedGraph.LoopForest.dest child of
@@ -110,23 +111,6 @@ fun transformFunc func =
       val {get=varInfo, set=setVarInfo, ...} = Property.getSet
          (Var.plist, Property.initConst Ignore)
 
-      val _ = Vector.foreach (blocks,
-         fn b as Block.T {label, ...} =>
-            if shouldBounceAt b
-            then Vector.foreach (beginNoFormals label,
-               fn v => setVarInfo (v, Consider Weight.new))
-            else ())
-      (* foreach arg, set Consider? need to tell it how to
-       * avoid setting the original again *)
-      val _ = Vector.foreach (args,
-         fn (x, _) =>
-            case varInfo x of
-                 Consider w =>
-                  setVarInfo (x, Consider (Weight.setLocalDef (w,
-                     Weight.DefLoc.FunArg)))
-               | _ => ())
-
-
       datatype InLoop
         = InLoop of {header: bool}
         | NotInLoop
@@ -138,12 +122,12 @@ fun transformFunc func =
       val numRewritten = ref 0
 
       fun setRewrite (v, weight) =
-         case varInfo v of
+         (case varInfo v of
               Consider _ =>
-                  if Control.optFuelAvailAndUse ()
+                  (if Control.optFuelAvailAndUse ()
                   then ( Int.inc numRewritten ; setVarInfo (v, Rewrite weight))
-                  else ()
-            | _ => ()
+                  else ())
+            | _ => ())
 
       val n = !Control.bounceRssaLimit
       val _ = Control.diagnostic (fn () =>
@@ -152,22 +136,97 @@ fun transformFunc func =
          in
             seq [str "Bounce rssa limit: ", Option.layout Int.layout n]
          end)
+
+      fun modVarInfo (v, f) =
+         let
+            val newInfo =
+               case varInfo v of
+                    Ignore => Ignore
+                  | ConsiderBounce => ConsiderBounce
+                  | Consider w => Consider (f w)
+                  | Rewrite w => Rewrite (f w)
+            val _ = setVarInfo (v, newInfo)
+         in
+            ()
+         end
       val _ = let
          (* now for each var in consideration, check if active in loop *)
-         fun count reff _ = Int.inc reff
-         fun checkActiveVars (block as Block.T {label, ...}) =
+         fun setConsiderVars (block as Block.T {label, ...}) =
+           (let
+              val _ = Block.foreachUse (block,
+                  fn v => setVarInfo (v, ConsiderBounce))
+              val _ = (#inLoop o labelInfo) label :=
+                InLoop {header=false}
+           in
+             ()
+           end)
+         fun setHeader (Block.T {label, ...}) =
+            let
+               val inLoop = (#inLoop o labelInfo) label
+            in
+               case !inLoop  of
+                    InLoop {...} => inLoop := InLoop {header=true}
+                  | _ => ()
+            end
+         fun processLoop (loop as {headers,...}) =
+            let
+               fun count reff _ = Int.inc reff
+               val size = ref 0
+               val _ = loopForeach (loop, count size)
+               val _ =
+                  (* this bound is a conservative bound
+                   * backed up by data showing no improvements at
+                   * all over this size, so we'll save the overhead *)
+                  if !size < 40
+                  then loopForeach (loop, setConsiderVars)
+                  else ()
+               val _ = Vector.foreach (headers, setHeader)
+            in
+               ()
+            end
+      in
+         Vector.foreach (loops, processLoop)
+      end
+
+      (* Now check each bounce point, and set vars to consider,
+       * if there's not too many used here *)
+
+      val _ = Vector.foreach (blocks,
+         fn b as Block.T {label, ...} =>
+            if shouldBounceAt b
+            then
+               (if
+                  (8 <
+                     (Vector.length
+                        (Vector.keepAll
+                           (beginNoFormals label,
+                            fn v => ConsiderBounce = varInfo v))))
+                  then
+                     Vector.foreach (beginNoFormals label,
+                        fn v => setVarInfo (v, Consider Weight.new))
+                  else
+                     (* more live variables than we can realistically deal with,
+                      * and other locations may find the variable to bounce *)
+                     ())
+            else ())
+      (* foreach arg, set Consider and FunArg *)
+      val _ = Vector.foreach (args,
+         fn (x, _) =>
+            setVarInfo (x, Consider (Weight.setLocalDef
+                   (Weight.new, Weight.DefLoc.FunArg))))
+
+
+      (* Finally, vars with Consider are actually worth checking,
+       * so set their weights accurately *)
+      val _ = let
+         fun setVarWeights (block as Block.T {label, ...}) =
            let
-              fun modVarInfo (v, f) =
-                 let
-                    val newInfo =
-                       case varInfo v of
-                            Ignore => Ignore
-                          | Consider w => Consider (f w)
-                          | Rewrite _ => Error.bug "Unexpected Rewrite"
-                    val _ = setVarInfo (v, newInfo)
-                 in
-                    ()
-                 end
+              val modVarInfo = fn (v, f) =>
+               ((case varInfo v of
+                    ConsiderBounce =>
+                     setVarInfo (v, Consider Weight.new)
+                  | _ => ())
+               ; modVarInfo (v, f))
               val _ = Block.foreachDef (block,
                   fn (v, _) =>
                      modVarInfo (v,
@@ -185,16 +244,9 @@ fun transformFunc func =
            in
              ()
            end
-         fun setHeader (Block.T {label, ...}) =
+         fun processLoop loop =
             let
-               val inLoop = (#inLoop o labelInfo) label
-            in
-               case !inLoop  of
-                    InLoop {...} => inLoop := InLoop {header=true}
-                  | _ => ()
-            end
-         fun processLoop (loop as {headers,...}) =
-            let
+               fun count reff _ = Int.inc reff
                val size = ref 0
                val _ = loopForeach (loop, count size)
                val _ =
@@ -202,15 +254,18 @@ fun transformFunc func =
                    * backed up by data showing no improvements at
                    * all over this size, so we'll save the overhead *)
                   if !size < 40
-                  then loopForeach (loop, checkActiveVars)
+                  then loopForeach (loop, setVarWeights)
                   else ()
-               val _ = Vector.foreach (headers, setHeader)
             in
                ()
             end
       in
          Vector.foreach (loops, processLoop)
       end
+
+
+
+
       (* Process variables in two passes so that
        * the choices are consistent amongst different loops;
        * combined weights are taken into account and every variable
