@@ -44,27 +44,8 @@ val atMLtons = control {name = "atMLtons",
                         default = Vector.new0 (),
                         toString = fn v => Layout.toString (Vector.layout
                                                             String.layout v)}
-structure BounceRssa =
-   struct
-      datatype loc =
-         AnyGC
-       | GCCollect
-
-      val locToString =
-         fn AnyGC => "any possibly gc-ing function"
-          | GCCollect => "only definite gc collection points"
-
-      datatype loop =
-         AnyLoop
-       | NoCalls
-
-      val loopToString =
-         fn AnyLoop => "Any loop in a function"
-          | NoCalls => "Only loops without function calls"
-   end
-
 val bounceRssaLimit = control {name = "bounceRssaLimit",
-                               default = SOME 2,
+                               default = SOME 8,
                                toString = Option.toString Int.toString}
 
 
