@@ -50,7 +50,12 @@ val bounceRssaLimit = control {name = "bounceRssaLimit",
 val bounceRssaLiveCutoff = control {name = "bounceRssaLiveCutoff",
                                default = SOME 12,
                                toString = Option.toString Int.toString}
-
+val bounceRssaLoopCutoff = control {name = "bounceRssaLiveCutoff",
+                               default = SOME 40,
+                               toString = Option.toString Int.toString}
+val bounceRssaUsageCutoff = control {name = "bounceRssaLiveCutoff",
+                               default = SOME 15,
+                               toString = Option.toString Int.toString}
 
 
 structure Chunk =

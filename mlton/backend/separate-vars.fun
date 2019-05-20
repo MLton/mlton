@@ -177,9 +177,11 @@ fun transformFunc func =
                   (* this bound is a conservative bound
                    * backed up by data showing no improvements at
                    * all over this size, so we'll save the overhead *)
-                  if !size < 40
-                  then loopForeach (loop, setConsiderVars)
-                  else ()
+                  case !Control.bounceRssaLoopCutoff of
+                       SOME n => if !size < n
+                                 then loopForeach (loop, setConsiderVars)
+                                 else ()
+                     | NONE => ()
                val _ = Vector.foreach (headers, setHeader)
             in
                ()
@@ -275,7 +277,9 @@ fun transformFunc func =
             val heap = Array.new (n, (NONE, Weight.new))
             fun insert (i, x, xw) =
                if i >= n orelse
-                     #count xw >= 15
+                     (case !Control.bounceRssaUsageCutoff of
+                           SOME n => #count xw >= n
+                         | NONE => false)
                      (* Variables with lots of uses are usually worse
                       * candidates than shorter lived variables used once or
                       * twice since they have much longer lifespans,

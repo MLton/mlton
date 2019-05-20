@@ -29,6 +29,8 @@ signature CONTROL_FLAGS =
 
       val bounceRssaLimit: int option ref
       val bounceRssaLiveCutoff: int option ref
+      val bounceRssaLoopCutoff: int option ref
+      val bounceRssaUsageCutoff: int option ref
 
       datatype chunk =
          OneChunk
