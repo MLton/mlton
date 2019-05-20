@@ -28,6 +28,7 @@ signature CONTROL_FLAGS =
       val atMLtons: string vector ref
 
       val bounceRssaLimit: int option ref
+      val bounceRssaLiveCutoff: int option ref
 
       datatype chunk =
          OneChunk

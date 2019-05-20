@@ -47,6 +47,9 @@ val atMLtons = control {name = "atMLtons",
 val bounceRssaLimit = control {name = "bounceRssaLimit",
                                default = SOME 8,
                                toString = Option.toString Int.toString}
+val bounceRssaLiveCutoff = control {name = "bounceRssaLiveCutoff",
+                               default = SOME 12,
+                               toString = Option.toString Int.toString}
 
 
 

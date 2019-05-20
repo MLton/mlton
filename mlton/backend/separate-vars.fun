@@ -191,23 +191,22 @@ fun transformFunc func =
       (* Now check each bounce point, and set vars to consider,
        * if there's not too many used here *)
 
+      val cutoff =
+         case !Control.bounceRssaLiveCutoff of
+              SOME n => n
+            | NONE => ~1
       val _ = Vector.foreach (blocks,
          fn b as Block.T {label, ...} =>
-            if shouldBounceAt b
-            then
-               (if
-                  (8 <
-                     (Vector.length
-                        (Vector.keepAll
-                           (beginNoFormals label,
-                            fn v => ConsiderBounce = varInfo v))))
-                  then
-                     Vector.foreach (beginNoFormals label,
-                        fn v => setVarInfo (v, Consider Weight.new))
-                  else
-                     (* more live variables than we can realistically deal with,
-                      * and other locations may find the variable to bounce *)
-                     ())
+            if shouldBounceAt b andalso
+               (cutoff < 0 orelse
+               cutoff <=
+               (Vector.length
+                  (Vector.keepAll
+                  (beginNoFormals label,
+                   fn v => ConsiderBounce = varInfo v))))
+               then
+                  Vector.foreach (beginNoFormals label,
+                  fn v => setVarInfo (v, Consider Weight.new))
             else ())
       (* foreach arg, set Consider and FunArg *)
       val _ = Vector.foreach (args,
