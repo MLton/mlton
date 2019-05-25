@@ -53,8 +53,7 @@ structure AllocateRegisters = AllocateRegisters (structure Machine = Machine
                                                  structure Rssa = Rssa)
 structure Chunkify = Chunkify (Rssa)
 structure ImplementHandlers = ImplementHandlers (structure Rssa = Rssa)
-structure ImplementProfiling = ImplementProfiling (structure Machine = Machine
-                                                   structure Rssa = Rssa)
+structure ImplementProfiling = ImplementProfiling (structure Rssa = Rssa)
 structure LimitCheck = LimitCheck (structure Rssa = Rssa)
 structure ParallelMove = ParallelMove ()
 structure SignalCheck = SignalCheck(structure Rssa = Rssa)

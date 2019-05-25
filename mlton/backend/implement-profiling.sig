@@ -8,9 +8,7 @@
 
 signature IMPLEMENT_PROFILING_STRUCTS = 
    sig
-      structure Machine: MACHINE
       structure Rssa: RSSA
-      sharing Machine.ProfileLabel = Rssa.ProfileLabel
    end
 
 signature IMPLEMENT_PROFILING = 
@@ -20,5 +18,5 @@ signature IMPLEMENT_PROFILING =
       val doit:
          Rssa.Program.t
          -> Rssa.Program.t * ({frames: unit -> (Rssa.Label.t * int) list}
-                              -> Machine.ProfileInfo.t option)
+                              -> Rssa.ProfileInfo.t option)
    end
