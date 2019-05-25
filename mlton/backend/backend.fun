@@ -198,10 +198,8 @@ fun toMachine (program: Ssa.Program.t, codegen) =
                                 doit = Program.shrink,
                                 execute = true}, p)
             val () = Program.checkHandlers p
-            val (p, makeProfileInfo) =
-               pass' ({name = "implementProfiling",
-                       doit = ImplementProfiling.doit},
-                      fn (p,_) => p, p)
+            val p = pass ({name = "implementProfiling",
+                           doit = ImplementProfiling.transform}, p)
             val p = maybePass ({name = "rssaOrderFunctions", 
                                 doit = Program.orderFunctions,
                                 execute = true}, p)
@@ -209,18 +207,17 @@ fun toMachine (program: Ssa.Program.t, codegen) =
                                 doit = Program.shuffle,
                                 execute = false}, p)
          in
-            (p, makeProfileInfo)
+            p
          end
-      val (program, makeProfileInfo) =
+      val program =
          Control.passTypeCheck
-         {display = Control.Layouts (fn ((program, _), output) =>
-                                     Rssa.Program.layouts (program, output)),
+         {display = Control.Layouts Rssa.Program.layouts,
           name = "rssaSimplify",
-          stats = fn (program,_) => Rssa.Program.layoutStats program,
+          stats = Rssa.Program.layoutStats,
           style = Control.ML,
           suffix = "rssa",
           thunk = fn () => rssaSimplify program,
-          typeCheck = R.Program.typeCheck o #1}
+          typeCheck = R.Program.typeCheck}
       val _ =
          let
             open Control
@@ -241,7 +238,7 @@ fun toMachine (program: Ssa.Program.t, codegen) =
           suffix = "machine",
           thunk = fn () =>
 let
-      val R.Program.T {functions, handlesSignals, main, objectTypes} = program
+      val R.Program.T {functions, handlesSignals, main, objectTypes, makeProfileInfo} = program
       (* Chunk information *)
       val {get = labelChunk, set = setLabelChunk, ...} =
          Property.getSetOnce (Label.plist,
@@ -1222,7 +1219,8 @@ let
          in
             !frameLabels
          end
-      val profileInfo = makeProfileInfo {frames = frameLabels}
+      val profileInfo = Option.map (makeProfileInfo, fn makeProfileInfo =>
+                                    makeProfileInfo {frames = frameLabels})
       val program =
          M.Program.T
          {chunks = chunks,

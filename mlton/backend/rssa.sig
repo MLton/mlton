@@ -201,7 +201,8 @@ signature RSSA =
                T of {functions: Function.t list,
                      handlesSignals: bool,
                      main: Function.t,
-                     objectTypes: ObjectType.t vector}
+                     objectTypes: ObjectType.t vector,
+                     makeProfileInfo: ({frames: unit -> (Label.t * int) list} -> ProfileInfo.t) option}
 
             val clear: t -> unit
             val checkHandlers: t -> unit

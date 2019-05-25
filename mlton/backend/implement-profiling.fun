@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor ImplementProfiling (S: IMPLEMENT_PROFILING_STRUCTS): IMPLEMENT_PROFILING = 
+functor ImplementProfiling (S: RSSA_TRANSFORM_STRUCTS): RSSA_TRANSFORM =
 struct
 
 open S
@@ -138,12 +138,12 @@ val traceEnter =
                  SourceInfo.layout,
                  Layout.tuple2 (List.layout Push.layout, Bool.layout))
 
-fun doit program =
+fun transform program =
    if !Control.profile = Control.ProfileNone
-      then (program, fn _ => NONE)
+      then program
    else
    let
-      val Program.T {functions, handlesSignals, main, objectTypes} = program
+      val Program.T {functions, handlesSignals, main, objectTypes, ...} = program
       val debug = false
       datatype z = datatype Control.profile
       val profile = !Control.profile
@@ -927,19 +927,18 @@ fun doit program =
             val () = QuickSort.sortArray (frames, fn ((_,i1), (_,i2)) => i1 < i2)
             val frameSources = Array.toVectorMap (frames, fn (l, _) => get l)
          in
-            SOME (ProfileInfo.T
-                  {frameSources = frameSources,
-                   sourceLabels = sourceLabels,
-                   sourceNames = sourceNames,
-                   sourceSeqs = sourceSeqs,
-                   sources = sources})
+            ProfileInfo.T {frameSources = frameSources,
+                           sourceLabels = sourceLabels,
+                           sourceNames = sourceNames,
+                           sourceSeqs = sourceSeqs,
+                           sources = sources}
          end
-      val program = Program.T {functions = functions,
-                               handlesSignals = handlesSignals,
-                               main = main,
-                               objectTypes = objectTypes}
-   in 
-      (program, makeProfileInfo)
+   in
+      Program.T {functions = functions,
+                 handlesSignals = handlesSignals,
+                 main = main,
+                 objectTypes = objectTypes,
+                 makeProfileInfo = SOME makeProfileInfo}
    end
 
 end

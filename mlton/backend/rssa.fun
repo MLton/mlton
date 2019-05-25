@@ -888,7 +888,8 @@ structure Program =
          T of {functions: Function.t list,
                handlesSignals: bool,
                main: Function.t,
-               objectTypes: ObjectType.t vector}
+               objectTypes: ObjectType.t vector,
+               makeProfileInfo: ({frames: unit -> (Label.t * int) list} -> ProfileInfo.t) option}
 
       fun clear (T {functions, main, ...}) =
          (List.foreach (functions, Function.clear)
@@ -936,12 +937,13 @@ structure Program =
              seq [str "num object types in program = ", Int.layout (numObjectTypes)]]
          end
 
-      fun dropProfile (T {functions, handlesSignals, main, objectTypes}) =
+      fun dropProfile (T {functions, handlesSignals, main, objectTypes, ...}) =
          (Control.profile := Control.ProfileNone
           ; T {functions = List.map (functions, Function.dropProfile),
                handlesSignals = handlesSignals,
                main = Function.dropProfile main,
-               objectTypes = objectTypes})
+               objectTypes = objectTypes,
+               makeProfileInfo = NONE})
       (* quell unused warning *)
       val _ = dropProfile
 
@@ -982,7 +984,7 @@ structure Program =
             ()
          end
 
-      fun orderFunctions (p as T {handlesSignals, objectTypes, ...}) =
+      fun orderFunctions (p as T {handlesSignals, objectTypes, makeProfileInfo, ...}) =
          let
             val functions = ref []
             val () =
@@ -1015,10 +1017,11 @@ structure Program =
             T {functions = functions,
                handlesSignals = handlesSignals,
                main = main,
-               objectTypes = objectTypes}
+               objectTypes = objectTypes,
+               makeProfileInfo = makeProfileInfo}
          end
 
-      fun copyProp (T {functions, handlesSignals, main, objectTypes, ...}): t =
+      fun copyProp (T {functions, handlesSignals, main, objectTypes, makeProfileInfo, ...}): t =
          let
             val tracePrimApply =
                Trace.trace3
@@ -1155,30 +1158,33 @@ structure Program =
             T {functions = functions,
                handlesSignals = handlesSignals,
                main = main,
-               objectTypes = objectTypes}
+               objectTypes = objectTypes,
+               makeProfileInfo = makeProfileInfo}
          end
 
-      fun shrink (T {functions, handlesSignals, main, objectTypes}) =
+      fun shrink (T {functions, handlesSignals, main, objectTypes, makeProfileInfo}) =
          let
             val p = 
                T {functions = List.revMap (functions, Function.shrink),
                   handlesSignals = handlesSignals,
                   main = Function.shrink main,
-                  objectTypes = objectTypes}
+                  objectTypes = objectTypes,
+                  makeProfileInfo = makeProfileInfo}
             val p = copyProp p
             val () = clear p
          in
             p
          end
 
-      fun shuffle (T {functions, handlesSignals, main, objectTypes}) =
+      fun shuffle (T {functions, handlesSignals, main, objectTypes, makeProfileInfo}) =
          let
             val functions = Array.fromListMap (functions, Function.shuffle)
             val () = Array.shuffle functions
             val p = T {functions = Array.toList functions,
                        handlesSignals = handlesSignals,
                        main = Function.shuffle main,
-                       objectTypes = objectTypes}
+                       objectTypes = objectTypes,
+                       makeProfileInfo = makeProfileInfo}
          in
             p
          end
