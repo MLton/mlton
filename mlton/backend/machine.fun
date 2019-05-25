@@ -859,7 +859,7 @@ structure Program =
                      else Error.bug 
                           "Machine.Program.typeCheck.profileLabelIsOk: profileInfo = NONE"
                 | SOME (ProfileInfo.T {frameSources,
-                                       labels = profileLabels, ...}) =>
+                                       sourceLabels, ...}) =>
                      if !Control.profile = Control.ProfileNone
                         orelse (Vector.length frameSources
                                 <> Vector.length frameInfos)
@@ -873,9 +873,9 @@ structure Program =
                                Property.initFun (fn _ => ref 0))
                            val _ =
                               Vector.foreach
-                              (profileLabels, fn {label, ...} =>
+                              (sourceLabels, fn {profileLabel, ...} =>
                                let
-                                  val r = profileLabelCount label
+                                  val r = profileLabelCount profileLabel
                                in
                                   if 0 = !r
                                      then r := 1
@@ -883,9 +883,9 @@ structure Program =
                                        "Machine.Program.typeCheck.profileLabelIsOk: duplicate profile label"
                                end)
                         in
-                           fn l =>
+                           fn pl =>
                            let
-                              val r = profileLabelCount l
+                              val r = profileLabelCount pl
                            in
                               if 1 = !r 
                                  then (r := 2; true)

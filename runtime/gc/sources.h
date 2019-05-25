@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -36,30 +37,41 @@ typedef struct GC_source {
 } *GC_source;
 
 typedef struct GC_sourceLabel {
-  code_pointer label;
+  code_pointer profileLabel;
   GC_sourceSeqIndex sourceSeqIndex;
 } *GC_sourceLabel;
 
 struct GC_sourceMaps {
-  volatile GC_sourceSeqIndex curSourceSeqsIndex;
-  /* frameSources is an array of cardinality frameLayoutsLength that
+  volatile GC_sourceSeqIndex curSourceSeqIndex;
+  /* frameSources is an array of cardinality frameLayoutsLength;
    * for each stack frame, gives an index into sourceSeqs of the
-   * sequence of source functions corresponding to the frame.
+   * sequence of source names corresponding to the frame.
    */
   GC_sourceSeqIndex *frameSources;
   uint32_t frameSourcesLength;
+  /* sourceLabels is an array of cardinality sourceLabelsLength;
+   * the collection of profile labels embedded in output program
+   * paired with an index into sourceSeqs of the sequence of source
+   * names corresponding to the code pointer; only used with
+   * ProfileTimeLabel.
+   */
   struct GC_sourceLabel *sourceLabels;
   uint32_t sourceLabelsLength;
+  /* sourceNames is an array of cardinality sourceNamesLength;
+   * the collection of source names from the program.
+   */
   char **sourceNames;
   uint32_t sourceNamesLength;
-  /* Each entry in sourceSeqs is a vector, whose first element is a
-   * length, and subsequent elements index into sources.
+  /* sourceSeqs is an array of cardinality sourceSeqsLength;
+   * each entry describes a sequence of source names as a length
+   * followed by the sequence of indices into sources.
    */
   uint32_t **sourceSeqs;
   uint32_t sourceSeqsLength;
-  /* sources is an array of cardinality sourcesLength.  Each entry
-   * specifies an index into sourceNames and an index into sourceSeqs,
-   * giving the name of the function and the successors, respectively.
+  /* sources is an array of cardinality sourcesLength;
+   * each entry describes a source name and successor sources as
+   * the pair of an index into sourceNames and an index into
+   * sourceSeqs.
    */
   struct GC_source *sources;
   uint32_t sourcesLength;

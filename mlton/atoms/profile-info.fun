@@ -12,70 +12,76 @@ struct
 open S
 
 datatype t =
-   T of {frameSources: int vector,
-         labels: {label: ProfileLabel.t,
-                  sourceSeqsIndex: int} vector,
-         names: string vector,
-         sourceSeqs: int vector vector,
-         sources: {nameIndex: int,
-                   successorsIndex: int} vector}
+   T of {frameSources: {sourceSeqIndex: int} vector,
+         sourceLabels: {profileLabel: ProfileLabel.t,
+                        sourceSeqIndex: int} vector,
+         sourceNames: string vector,
+         sourceSeqs: {sourceIndex: int} vector vector,
+         sources: {sourceNameIndex: int,
+                   successorSourceSeqIndex: int} vector}
 
 val empty = T {frameSources = Vector.new0 (),
-               labels = Vector.new0 (),
-               names = Vector.new0 (),
+               sourceLabels = Vector.new0 (),
+               sourceNames = Vector.new0 (),
                sourceSeqs = Vector.new0 (),
                sources = Vector.new0 ()}
 
-fun clear (T {labels, ...}) =
-   Vector.foreach (labels, ProfileLabel.clear o #label)
+fun clear (T {sourceLabels, ...}) =
+   Vector.foreach (sourceLabels, ProfileLabel.clear o #profileLabel)
 
-fun layout (T {frameSources, labels, names, sourceSeqs, sources}) =
+fun layout (T {frameSources, sourceLabels, sourceNames, sourceSeqs, sources}) =
    Layout.record
-   [("frameSources", Vector.layout Int.layout frameSources),
-    ("labels",
-     Vector.layout (fn {label, sourceSeqsIndex} =>
+   [("frameSources",
+     Vector.layout (fn {sourceSeqIndex} =>
+                    Layout.record [("sourceSeqIndex", Int.layout sourceSeqIndex)])
+     frameSources),
+    ("sourceLabels",
+     Vector.layout (fn {profileLabel, sourceSeqIndex} =>
                     Layout.record
-                    [("label", ProfileLabel.layout label),
-                     ("sourceSeqsIndex",
-                      Int.layout sourceSeqsIndex)])
-     labels),
-    ("names", Vector.layout String.layout names),
-    ("sourceSeqs", Vector.layout (Vector.layout Int.layout) sourceSeqs),
+                    [("profileLabel", ProfileLabel.layout profileLabel),
+                     ("sourceSeqIndex", Int.layout sourceSeqIndex)])
+     sourceLabels),
+    ("sourceNames", Vector.layout String.layout sourceNames),
+    ("sourceSeqs",
+     Vector.layout (Vector.layout (fn {sourceIndex} =>
+                                   Layout.record
+                                   [("sourceIndex", Int.layout sourceIndex)]))
+     sourceSeqs),
     ("sources",
-     Vector.layout (fn {nameIndex, successorsIndex} =>
-                    Layout.record [("nameIndex", Int.layout nameIndex),
-                                   ("successorsIndex",
-                                    Int.layout successorsIndex)])
+     Vector.layout (fn {sourceNameIndex, successorSourceSeqIndex} =>
+                    Layout.record [("sourceNameIndex", Int.layout sourceNameIndex),
+                                   ("successorSourceSeqIndex", Int.layout successorSourceSeqIndex)])
      sources)]
 
 fun layouts (pi, output) = output (layout pi)
 
-fun isOK (T {frameSources, labels, names, sourceSeqs, sources}): bool =
+fun isOK (T {frameSources, sourceLabels, sourceNames, sourceSeqs, sources}): bool =
    let
-      val namesLength = Vector.length names
+      val sourceNamesLength = Vector.length sourceNames
       val sourceSeqsLength = Vector.length sourceSeqs
       val sourcesLength = Vector.length sources
    in
       !Control.profile = Control.ProfileNone
       orelse
-      (Vector.forall (frameSources, fn i =>
-                      0 <= i andalso i < sourceSeqsLength)
+      (Vector.forall (frameSources, fn {sourceSeqIndex} =>
+                      0 <= sourceSeqIndex andalso sourceSeqIndex < sourceSeqsLength)
        andalso (Vector.forall
-                (labels, fn {sourceSeqsIndex = i, ...} =>
-                 0 <= i andalso i < sourceSeqsLength))
+                (sourceLabels, fn {sourceSeqIndex, ...} =>
+                 0 <= sourceSeqIndex andalso sourceSeqIndex < sourceSeqsLength))
        andalso (Vector.forall
                 (sourceSeqs, fn v =>
                  Vector.forall
-                 (v, fn i => 0 <= i andalso i < sourcesLength)))
+                 (v, fn {sourceIndex} =>
+                  0 <= sourceIndex andalso sourceIndex < sourcesLength)))
        andalso (Vector.forall
-                (sources, fn {nameIndex, successorsIndex} =>
-                 0 <= nameIndex
-                 andalso nameIndex < namesLength
-                 andalso 0 <= successorsIndex
-                 andalso successorsIndex < sourceSeqsLength)))
+                (sources, fn {sourceNameIndex, successorSourceSeqIndex} =>
+                 0 <= sourceNameIndex andalso sourceNameIndex < sourceNamesLength
+                 andalso
+                 0 <= successorSourceSeqIndex
+                 andalso successorSourceSeqIndex < sourceSeqsLength)))
    end
 
-fun modify (T {frameSources, labels, names, sourceSeqs, sources})
+fun modify (T {frameSources, sourceLabels, sourceNames, sourceSeqs, sources})
    : {newProfileLabel: ProfileLabel.t -> ProfileLabel.t,
       delProfileLabel: ProfileLabel.t -> unit,
       getProfileInfo: unit -> t} =
@@ -86,26 +92,30 @@ fun modify (T {frameSources, labels, names, sourceSeqs, sources})
           Property.initRaise ("ProfileInfo.extend", ProfileLabel.layout))
       val _ =
          Vector.foreach
-         (labels, fn {label, sourceSeqsIndex} =>
-          set (label, sourceSeqsIndex))
+         (sourceLabels, fn {profileLabel, sourceSeqIndex} =>
+          set (profileLabel, sourceSeqIndex))
       val new = ref []
-      fun newProfileLabel l =
+      fun newProfileLabel pl =
          let
-            val i = get l
-            val l' = ProfileLabel.new ()
-            val _ = set (l', i)
-            val _ = List.push (new, {label = l', sourceSeqsIndex = i})
+            val sourceSeqIndex = get pl
+            val pl' = ProfileLabel.new ()
+            val _ = set (pl', sourceSeqIndex)
+            val _ = List.push (new, {profileLabel = pl',
+                                     sourceSeqIndex = sourceSeqIndex})
          in
-            l'
+            pl'
          end
-      fun delProfileLabel l = set (l, ~1)
+      fun delProfileLabel pl = set (pl, ~1)
       fun getProfileInfo () =
          let
-            val labels = Vector.concat [labels, Vector.fromList (!new)]
-            val labels = Vector.keepAll (labels, fn {label, ...} => get label <> ~1)
+            val sourceLabels =
+               Vector.concat [sourceLabels, Vector.fromList (!new)]
+            val sourceLabels =
+               Vector.keepAll (sourceLabels, fn {profileLabel, ...} =>
+                               get profileLabel <> ~1)
             val pi = T {frameSources = frameSources,
-                        labels = Vector.concat [labels, Vector.fromList (!new)],
-                        names = names,
+                        sourceLabels = sourceLabels,
+                        sourceNames = sourceNames,
                         sourceSeqs = sourceSeqs,
                         sources = sources}
          in

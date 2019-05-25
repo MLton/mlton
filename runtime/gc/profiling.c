@@ -1,4 +1,4 @@
-/* Copyright (C) 2011-2012 Matthew Fluet.
+/* Copyright (C) 2011-2012,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -336,17 +336,17 @@ static GC_state handleSigProfState;
 void GC_handleSigProf (code_pointer pc) {
   GC_frameIndex frameIndex;
   GC_state s;
-  GC_sourceSeqIndex sourceSeqsIndex;
+  GC_sourceSeqIndex sourceSeqIndex;
 
   s = handleSigProfState;
   if (DEBUG_PROFILE)
     fprintf (stderr, "GC_handleSigProf ("FMTPTR")\n", (uintptr_t)pc);
   if (s->amInGC)
-    sourceSeqsIndex = SOURCE_SEQ_GC;
+    sourceSeqIndex = SOURCE_SEQ_GC;
   else {
     frameIndex = getCachedStackTopFrameIndex (s);
     if (C_FRAME == s->frameLayouts[frameIndex].kind)
-      sourceSeqsIndex = s->sourceMaps.frameSources[frameIndex];
+      sourceSeqIndex = s->sourceMaps.frameSources[frameIndex];
     else {
       if (PROFILE_TIME_LABEL == s->profiling.kind) {
         uint32_t start, end, i;
@@ -356,7 +356,7 @@ void GC_handleSigProf (code_pointer pc) {
         end = s->sourceMaps.sourceLabelsLength;
         while (end - start > 1) {
           i = (start+end)/2;
-          if ((uintptr_t)s->sourceMaps.sourceLabels[i].label <= (uintptr_t)pc)
+          if ((uintptr_t)s->sourceMaps.sourceLabels[i].profileLabel <= (uintptr_t)pc)
             start = i;
           else
             end = i;
@@ -368,19 +368,19 @@ void GC_handleSigProf (code_pointer pc) {
          */
         if (i-1 == s->sourceMaps.sourceLabelsLength ||
             (i == 0 && 
-             (uintptr_t)pc < (uintptr_t)s->sourceMaps.sourceLabels[i].label)) {
+             (uintptr_t)pc < (uintptr_t)s->sourceMaps.sourceLabels[i].profileLabel)) {
           if (DEBUG_PROFILE)
             fprintf (stderr, "pc out of bounds\n");
-          sourceSeqsIndex = SOURCE_SEQ_UNKNOWN;
+          sourceSeqIndex = SOURCE_SEQ_UNKNOWN;
         } else {
-          sourceSeqsIndex = s->sourceMaps.sourceLabels[start].sourceSeqIndex;
+          sourceSeqIndex = s->sourceMaps.sourceLabels[start].sourceSeqIndex;
         }
       } else {
-        sourceSeqsIndex = s->sourceMaps.curSourceSeqsIndex;
+        sourceSeqIndex = s->sourceMaps.curSourceSeqIndex;
       }
     }
   }
-  incForProfiling (s, 1, sourceSeqsIndex);
+  incForProfiling (s, 1, sourceSeqIndex);
 }
 
 static void initProfilingTime (GC_state s) {
@@ -390,7 +390,7 @@ static void initProfilingTime (GC_state s) {
   if (PROFILE_TIME_LABEL == s->profiling.kind) {
     initSourceLabels (s);
   } else {
-    s->sourceMaps.curSourceSeqsIndex = SOURCE_SEQ_UNKNOWN;
+    s->sourceMaps.curSourceSeqIndex = SOURCE_SEQ_UNKNOWN;
   }
   /*
    * Install catcher, which handles SIGPROF and calls MLton_Profile_inc.

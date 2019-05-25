@@ -16,19 +16,30 @@ signature PROFILE_INFO =
       include PROFILE_INFO_STRUCTS
 
       datatype t =
-         T of {(* For each frame, gives the index into sourceSeqs of the
-                * source functions corresponding to the frame.
+         T of {(* for each stack frame, gives an index into sourceSeqs of the
+                * sequence of source names corresponding to the frame.
                 *)
-               frameSources: int vector,
-               labels: {label: ProfileLabel.t,
-                        sourceSeqsIndex: int} vector,
-               names: string vector,
-               (* Each sourceSeq describes a sequence of source functions,
-                * each given as an index into the source vector.
+               frameSources: {sourceSeqIndex: int} vector,
+               (* the collection of profile labels embedded in output program
+                * paired with an index into sourceSeqs of the sequence of source
+                * names corresponding to the code pointer; only used with
+                * ProfileTimeLabel.
                 *)
-               sourceSeqs: int vector vector,
-               sources: {nameIndex: int,
-                         successorsIndex: int} vector}
+               sourceLabels: {profileLabel: ProfileLabel.t,
+                              sourceSeqIndex: int} vector,
+               (* the collection of source names from the program.
+                *)
+               sourceNames: string vector,
+               (* each entry describes a sequence of source names as a sequence
+                * of indices into sources.
+                *)
+               sourceSeqs: {sourceIndex: int} vector vector,
+               (* each entry describes a source name and successor sources as
+                * the pair of an index into sourceNames and an index into
+                * sourceSeqs.
+                *)
+               sources: {sourceNameIndex: int,
+                         successorSourceSeqIndex: int} vector}
 
       val empty: t
       val clear: t -> unit

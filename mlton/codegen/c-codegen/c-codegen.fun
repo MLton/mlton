@@ -438,32 +438,33 @@ fun outputDeclarations
          else ()
       fun declareProfileInfo () =
          let
-            fun doit (ProfileInfo.T {frameSources, labels, names, sourceSeqs,
-                                     sources}) =
-               (Vector.foreach (labels, fn {label, ...} =>
-                                declareProfileLabel (label, print))
+            fun doit (ProfileInfo.T {frameSources, sourceLabels,
+                                     sourceNames, sourceSeqs, sources}) =
+               (Vector.foreach (sourceLabels, fn {profileLabel, ...} =>
+                                declareProfileLabel (profileLabel, print))
                 ; (Vector.foreachi
                    (sourceSeqs, fn (i, v) =>
                     (print (concat ["static uint32_t sourceSeq",
                                     Int.toString i,
                                     "[] = {"])
                      ; print (C.int (Vector.length v))
-                     ; Vector.foreach (v, fn i =>
-                                       (print (concat [",", C.int i])))
+                     ; Vector.foreach (v, fn {sourceIndex} =>
+                                       (print (concat [",", C.int sourceIndex])))
                      ; print "};\n")))
                 ; declareArray ("uint32_t*", "sourceSeqs", sourceSeqs, fn (i, _) =>
                                 concat ["sourceSeq", Int.toString i])
-                ; declareArray ("GC_sourceSeqIndex", "frameSources", frameSources, C.int o #2)
+                ; declareArray ("GC_sourceSeqIndex", "frameSources", frameSources,
+                                fn (_, {sourceSeqIndex}) => C.int sourceSeqIndex)
                 ; (declareArray
-                   ("struct GC_sourceLabel", "sourceLabels", labels,
-                    fn (_, {label, sourceSeqsIndex}) =>
-                    concat ["{(pointer)&", ProfileLabel.toString label, ", ",
-                            C.int sourceSeqsIndex, "}"]))
-                ; declareArray ("char*", "sourceNames", names, C.string o #2)
+                   ("struct GC_sourceLabel", "sourceLabels", sourceLabels,
+                    fn (_, {profileLabel, sourceSeqIndex}) =>
+                    concat ["{(pointer)&", ProfileLabel.toString profileLabel, ", ",
+                            C.int sourceSeqIndex, "}"]))
+                ; declareArray ("char*", "sourceNames", sourceNames, C.string o #2)
                 ; declareArray ("struct GC_source", "sources", sources,
-                                fn (_, {nameIndex, successorsIndex}) =>
-                                concat ["{ ", Int.toString nameIndex, ", ",
-                                        Int.toString successorsIndex, " }"]))
+                                fn (_, {sourceNameIndex, successorSourceSeqIndex}) =>
+                                concat ["{ ", Int.toString sourceNameIndex, ", ",
+                                        Int.toString successorSourceSeqIndex, " }"]))
          in
             case profileInfo of
                NONE => doit ProfileInfo.empty

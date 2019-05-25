@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -28,8 +29,8 @@ char* GC_sourceName (GC_state s, GC_sourceIndex i) {
 int compareSourceLabels (const void *v1, const void *v2) {
   const struct GC_sourceLabel* l1 = (const struct GC_sourceLabel*)v1;
   const struct GC_sourceLabel* l2 = (const struct GC_sourceLabel*)v2;
-  uintptr_t ui1 = (uintptr_t)(l1->label);
-  uintptr_t ui2 = (uintptr_t)(l2->label);
+  uintptr_t ui1 = (uintptr_t)(l1->profileLabel);
+  uintptr_t ui2 = (uintptr_t)(l2->profileLabel);
 
   if (ui1 < ui2)
     return -1;
@@ -47,12 +48,12 @@ void sortSourceLabels (GC_state s) {
          s->sourceMaps.sourceLabelsLength, 
          sizeof (*s->sourceMaps.sourceLabels),
          compareSourceLabels);
-  if (0 == s->sourceMaps.sourceLabels[s->sourceMaps.sourceLabelsLength - 1].label)
+  if (0 == s->sourceMaps.sourceLabels[s->sourceMaps.sourceLabelsLength - 1].profileLabel)
     die ("Max source label is 0 -- something is wrong.");
   if (ASSERT)
     for (i = 1; i < s->sourceMaps.sourceLabelsLength; i++)
-      assert (s->sourceMaps.sourceLabels[i-1].label
-              <= s->sourceMaps.sourceLabels[i].label);
+      assert (s->sourceMaps.sourceLabels[i-1].profileLabel
+              <= s->sourceMaps.sourceLabels[i].profileLabel);
 }
 
 void compressSourceLabels (GC_state s) {
@@ -74,7 +75,7 @@ void compressSourceLabels (GC_state s) {
   if (DEBUG_SOURCES)
     for (i = 0; i < s->sourceMaps.sourceLabelsLength; i++)
       fprintf (stderr, FMTPTR"  "FMTSSI"\n",
-               (uintptr_t)s->sourceMaps.sourceLabels[i].label,
+               (uintptr_t)s->sourceMaps.sourceLabels[i].profileLabel,
                s->sourceMaps.sourceLabels[i].sourceSeqIndex);
 }
 
