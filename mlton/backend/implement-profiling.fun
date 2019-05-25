@@ -258,30 +258,30 @@ fun transform program =
          sourceInfoNode
       val sourceSeqs: {sourceIndex: int} vector list ref = ref []
       local
-         val table: {hash: word,
-                     index: int,
-                     sourceSeq: {sourceIndex: int} vector} HashSet.t =
-            HashSet.new {hash = #hash}
+         val table: ({sourceIndex: int} vector, int) HashTable.t =
+            let
+               fun equals (sourceSeq1, sourceSeq2) =
+                  Vector.equals (sourceSeq1, sourceSeq2,
+                                 fn ({sourceIndex = si1}, {sourceIndex = si2}) =>
+                                 si1 = si2)
+               fun hash sourceSeq =
+                  Hash.vectorMap (sourceSeq, fn {sourceIndex} =>
+                                  Word.fromInt sourceIndex)
+            in
+               HashTable.new
+               {equals = equals,
+                hash = hash}
+            end
          val c = Counter.new 0
       in
          fun sourceSeqIndex (s: sourceSeq): int =
             let
                val s = Vector.fromListRev s
-               val hash =
-                  Vector.fold (s, 0w0, fn ({sourceIndex}, w) =>
-                               w * 0w31 + Word.fromInt sourceIndex)
             in
-               #index
-               (HashSet.lookupOrInsert
-                (table, hash,
-                 fn {sourceSeq = s', ...} => s = s',
-                 fn () => let
-                             val _ = List.push (sourceSeqs, s)
-                          in
-                             {hash = hash,
-                              index = Counter.next c,
-                              sourceSeq = s}
-                          end))
+               HashTable.lookupOrInsert
+               (table, s, fn () =>
+                (List.push (sourceSeqs, s)
+                 ; Counter.next c))
             end
       end
       (* Ensure that [SourceInfo.unknown] is index 0. *)
