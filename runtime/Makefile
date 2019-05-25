@@ -61,47 +61,10 @@ CPPFLAGS :=
 CFLAGS :=
 
 WARNXCFLAGS :=
-WARNXCFLAGS += -pedantic -Wall
-ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
-WARNXCFLAGS += -Wextra
-endif
-WARNXCFLAGS += -Wformat=2
-ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
-WARNXCFLAGS += -Wswitch-default -Wswitch-enum
-endif
-WARNXCFLAGS += -Wuninitialized
-ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
-WARNXCFLAGS += -Winit-self
-endif
-ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
-WARNXCFLAGS += -Wstrict-aliasing=2
-endif
-WARNXCFLAGS += -Wfloat-equal
-WARNXCFLAGS += -Wundef
-WARNXCFLAGS += -Wshadow
-WARNXCFLAGS += -Wpointer-arith
-WARNXCFLAGS += -Wbad-function-cast -Wcast-qual
-WARNXCFLAGS += -Wwrite-strings
-# WARNXCFLAGS += -Wconversion
-WARNXCFLAGS += -Waggregate-return
-WARNXCFLAGS += -Wstrict-prototypes
-ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
-WARNXCFLAGS += -Wold-style-definition
-endif
-WARNXCFLAGS += -Wmissing-prototypes -Wmissing-declarations
-ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
-WARNXCFLAGS += -Wmissing-field-initializers
-endif
-WARNXCFLAGS += -Wmissing-noreturn
-WARNXCFLAGS += -Wmissing-format-attribute
-# WARNXCFLAGS += -Wpacked
-# WARNXCFLAGS += -Wpadded
-WARNXCFLAGS += -Wredundant-decls
-WARNXCFLAGS += -Wnested-externs
-# WARNXCFLAGS += -Wunreachable-code
+WARNXCFLAGS += -pedantic -Wall -Wextra
 
 XCFLAGS := -std=gnu11 -fno-common $(WARNXCFLAGS)
-OPTXCFLAGS := -Wdisabled-optimization -O2 -fomit-frame-pointer
+OPTXCFLAGS := -Wdisabled-optimization -O2
 DEBUGXCFLAGS := -DASSERT=1 -Wno-uninitialized -O0 -g
 PICXCFLAGS :=
 
@@ -111,10 +74,8 @@ PICXCFLAGS += -fPIC
 endif
 
 # Make mlton library symbols private (win32&64 use another technique)
-ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
 ifeq ($(findstring $(TARGET_OS), mingw cygwin),)
 XCFLAGS += -fvisibility=hidden
-endif
 endif
 
 ifeq ($(TARGET_ARCH), alpha)
@@ -151,7 +112,6 @@ endif
 
 ifeq ($(TARGET_ARCH), x86)
 XCFLAGS += -m32
-OPTXCFLAGS += -falign-loops=2 -falign-jumps=2 -falign-functions=5
 endif
 
 ifeq ($(TARGET_OS), cygwin)
@@ -328,9 +288,6 @@ gc.o:     $(GCCFILES)
 
 gc.c_XCFLAGS := -Wno-unreachable-code
 
-basis/Real/Math-pic.o:  basis/Real/Math-fns.h
-basis/Real/Math-gdb.o:  basis/Real/Math-fns.h
-basis/Real/Math.o:      basis/Real/Math-fns.h
 basis/Real/Real-pic.o:  basis/Real/Real-ops.h
 basis/Real/Real-gdb.o:  basis/Real/Real-ops.h
 basis/Real/Real.o:      basis/Real/Real-ops.h

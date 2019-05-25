@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -67,7 +68,7 @@ struct
                          | Transfer.CCall {return, func, ...} 
                          => (case return
                                of NONE => true
-                                | SOME l => isCReturn l func)))
+                                | SOME {return, ...} => isCReturn return func)))
         val _ = destroy ()
         val _ = if b then ()
                   else List.foreach(blocks, Block.printBlock)

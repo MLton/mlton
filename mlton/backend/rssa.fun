@@ -405,12 +405,10 @@ structure Transfer =
             Call {func, ...} => f func
           | _ => ()
 
-      fun 'a foldDefLabelUse (t, a: 'a,
-                              {def: Var.t * Type.t * 'a -> 'a,
-                               label: Label.t * 'a -> 'a,
-                               use: Var.t * 'a -> 'a}): 'a =
+      fun 'a foldLabelUse (t, a: 'a,
+                           {label: Label.t * 'a -> 'a,
+                            use: Var.t * 'a -> 'a}): 'a =
          let
-            val _ = def (* FIXME suppress unused warning *)
             fun useOperand (z, a) = Operand.foldVars (z, a, use)
             fun useOperands (zs: Operand.t vector, a) =
                Vector.fold (zs, a, useOperand)
@@ -430,32 +428,19 @@ structure Transfer =
                                                        use = useOperand})
          end
 
-      fun foreachDefLabelUse (t, {def, label, use}) =
-         foldDefLabelUse (t, (), {def = fn (x, t, ()) => def (x, t),
-                                  label = label o #1,
-                                  use = use o #1})
+      fun foreachLabelUse (t, {label, use}) =
+         foldLabelUse (t, (), {label = label o #1,
+                               use = use o #1})
 
-      fun foldLabel (t, a, f) = foldDefLabelUse (t, a, {def = #3,
-                                                        label = f,
-                                                        use = #2})
+      fun foldLabel (t, a, f) = foldLabelUse (t, a, {label = f,
+                                                     use = #2})
 
       fun foreachLabel (t, f) = foldLabel (t, (), f o #1)
 
-      fun foldDef (t, a, f) = foldDefLabelUse (t, a, {def = f,
-                                                      label = #2,
-                                                      use = #2})
-
-      fun foreachDef (t, f) =
-         foldDef (t, (), fn (x, t, ()) => f (x, t))
-
-      fun foldUse (t, a, f) = foldDefLabelUse (t, a, {def = #3,
-                                                      label = #2,
-                                                      use = f})
+      fun foldUse (t, a, f) = foldLabelUse (t, a, {label = #2,
+                                                   use = f})
 
       fun foreachUse (t, f) = foldUse (t, (), f o #1)
-
-      fun clear (t: t): unit =
-         foreachDef (t, Var.clear o #1)
 
       local
          fun make i = WordX.fromIntInf (i, WordSize.bool)
@@ -579,11 +564,10 @@ structure Block =
          val label = make #label
       end
 
-      fun clear (T {args, label, statements, transfer, ...}) =
+      fun clear (T {args, label, statements, ...}) =
          (Vector.foreach (args, Var.clear o #1)
           ; Label.clear label
-          ; Vector.foreach (statements, Statement.clear)
-          ; Transfer.clear transfer)
+          ; Vector.foreach (statements, Statement.clear))
 
       fun layout (T {args, kind, label, statements, transfer, ...}) =
          let
@@ -603,10 +587,9 @@ structure Block =
                            2)]
          end
 
-      fun foreachDef (T {args, statements, transfer, ...}, f) =
+      fun foreachDef (T {args, statements, ...}, f) =
          (Vector.foreach (args, f)
-          ; Vector.foreach (statements, fn s => Statement.foreachDef (s, f))
-          ; Transfer.foreachDef (transfer, f))
+          ; Vector.foreach (statements, fn s => Statement.foreachDef (s, f)))
 
       fun foreachUse (T {statements, transfer, ...}, f) =
          (Vector.foreach (statements, fn s => Statement.foreachUse (s, f))
@@ -883,6 +866,20 @@ structure Function =
                  returns = returns,
                  start = start}
          end
+
+      fun shuffle (f: t): t =
+         let
+            val {args, blocks, name, raises, returns, start} = dest f
+            val blocks = Array.fromVector blocks
+            val () = Array.shuffle blocks
+         in
+            new {args = args,
+                 blocks = Array.toVector blocks,
+                 name = name,
+                 raises = raises,
+                 returns = returns,
+                 start = start}
+         end
    end
 
 structure Program =
@@ -1114,8 +1111,7 @@ structure Program =
                 | _ => keep ()
                end
             fun loopTransfer t =
-               (Transfer.foreachDef (t, dontReplace)
-                ; Transfer.replaceUses (t, replaceVar))
+               Transfer.replaceUses (t, replaceVar)
             fun loopFormals args = Vector.foreach (args, dontReplace)
             fun loopFunction (f: Function.t): Function.t =
                let
@@ -1171,6 +1167,18 @@ structure Program =
                   objectTypes = objectTypes}
             val p = copyProp p
             val () = clear p
+         in
+            p
+         end
+
+      fun shuffle (T {functions, handlesSignals, main, objectTypes}) =
+         let
+            val functions = Array.fromListMap (functions, Function.shuffle)
+            val () = Array.shuffle functions
+            val p = T {functions = Array.toList functions,
+                       handlesSignals = handlesSignals,
+                       main = Function.shuffle main,
+                       objectTypes = objectTypes}
          in
             p
          end
@@ -1466,7 +1474,6 @@ structure Program =
                              (Statement.foreachUse (s, getVar)
                               ; Statement.foreachDef (s, bindVar o #1)))
                          val _ = Transfer.foreachUse (transfer, getVar)
-                         val _ = Transfer.foreachDef (transfer, bindVar o #1)
                       in
                          fn () =>
                          if isMain
@@ -1477,8 +1484,6 @@ structure Program =
                                   Vector.foreach
                                   (statements, fn s =>
                                    Statement.foreachDef (s, unbindVar o #1))
-                               val _ =
-                                  Transfer.foreachDef (transfer, unbindVar o #1)
                                val _ = Vector.foreach (args, unbindVar o #1)
                             in
                                ()
@@ -1698,14 +1703,12 @@ structure Program =
                   val _ = Vector.foreach (args, setVarType)
                   val _ =
                      Vector.foreach
-                     (blocks, fn b as Block.T {args, label, statements,
-                                               transfer, ...} =>
+                     (blocks, fn b as Block.T {args, label, statements, ...} =>
                       (setLabelBlock (label, b)
                        ; Vector.foreach (args, setVarType)
                        ; Vector.foreach (statements, fn s =>
                                          Statement.foreachDef
-                                         (s, setVarType))
-                       ; Transfer.foreachDef (transfer, setVarType)))
+                                         (s, setVarType))))
                   val _ = labelIsNullaryJump start
                   fun transferOk (t: Transfer.t): bool =
                      let

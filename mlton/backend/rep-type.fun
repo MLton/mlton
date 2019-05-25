@@ -329,7 +329,12 @@ structure Type =
                case node t of
                   CPointer => C.CPointer
                 | GCState => C.CPointer
-                | Label _ => C.CPointer
+                | Label _ =>
+                     (case !Control.codegen of
+                         Control.Codegen.AMD64Codegen => C.CPointer
+                       | Control.Codegen.CCodegen => C.fromBits (width t)
+                       | Control.Codegen.LLVMCodegen => C.fromBits (width t)
+                       | Control.Codegen.X86Codegen => C.CPointer)
                 | Real s =>
                      (case s of
                          RealSize.R32 => C.Real32
@@ -854,7 +859,8 @@ structure BuiltInCFunction =
                    kind = Kind.Runtime {bytesNeeded = NONE,
                                         ensuresBytesFree = SOME 1,
                                         mayGC = true,
-                                        maySwitchThreads = b,
+                                        maySwitchThreadsFrom = b,
+                                        maySwitchThreadsTo = b,
                                         modifiesFrontier = true,
                                         readsStackTop = true,
                                         writesStackTop = true},

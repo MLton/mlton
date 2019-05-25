@@ -74,7 +74,7 @@ val buildConstants: bool ref = ref false
 val debugRuntime: bool ref = ref false
 val expert: bool ref = ref false
 val explicitAlign: Control.align option ref = ref NONE
-val explicitChunk: Control.chunk option ref = ref NONE
+val explicitChunkify: Control.Chunkify.t option ref = ref NONE
 datatype explicitCodegen = Native | Explicit of Control.Codegen.t
 val explicitCodegen: explicitCodegen option ref = ref NONE
 val keepGenerated = ref false
@@ -263,12 +263,12 @@ fun makeOptions {usage} =
        (Expert, "cc-opt-quote", " <opt>", "pass (quoted) option to C compiler",
         SpaceString
         (fn s => List.push (ccOpts, {opt = s, pred = OptPred.Yes}))),
-       (Expert, "chunkify", " {coalesce<n>|func|one}", "set chunkify method",
+       (Expert, "chunkify", " {coalesce<n>|func|one}", "set chunkify stategy",
         SpaceString (fn s =>
-                     explicitChunk
+                     explicitChunkify
                      := SOME (case s of
-                                 "func" => ChunkPerFunc
-                               | "one" => OneChunk
+                                 "func" => Chunkify.PerFunc
+                               | "one" => Chunkify.One
                                | _ => let
                                          val usage = fn () =>
                                             usage (concat ["invalid -chunkify flag: ", s])
@@ -280,12 +280,18 @@ fun makeOptions {usage} =
                                                     if String.forall (s, Char.isDigit)
                                                        then (case Int.fromString s of
                                                                 NONE => usage ()
-                                                              | SOME n => Coalesce
-                                                                          {limit = n})
+                                                              | SOME n =>
+                                                                   Chunkify.Coalesce
+                                                                   {limit = n})
                                                        else usage ()
                                                  end
                                             else usage ()
                                       end))),
+       (Expert, "chunk-batch", " <n>", "batch c files at size ~n",
+        Int (fn n => chunkBatch := n)),
+       (Expert, "chunk-tail-call", " {false|true}",
+        "whether to use tail calls for interchunk transfers",
+        Bool (fn b => chunkTailCall := b)),
        (Expert, "closure-convert-globalize", " {true|false}",
         "whether to globalize during closure conversion",
         Bool (fn b => (closureConvertGlobalize := b))),
@@ -1170,13 +1176,13 @@ fun commandLine (args: string list): unit =
                                        | (MinGW, X86) => true
                                        | _ => false)
       val _ =
-         chunk :=
-         (case !explicitChunk of
+         chunkify :=
+         (case !explicitChunkify of
              NONE => (case !codegen of
-                         AMD64Codegen => ChunkPerFunc
-                       | CCodegen => Coalesce {limit = 4096}
-                       | LLVMCodegen => Coalesce {limit = 4096}
-                       | X86Codegen => ChunkPerFunc
+                         AMD64Codegen => Chunkify.PerFunc
+                       | CCodegen => Chunkify.Coalesce {limit = 4096}
+                       | LLVMCodegen => Chunkify.Coalesce {limit = 4096}
+                       | X86Codegen => Chunkify.PerFunc
                        )
            | SOME c => c)
       val _ = if not (!Control.codegen = X86Codegen) andalso !Native.IEEEFP

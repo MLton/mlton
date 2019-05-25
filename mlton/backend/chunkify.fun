@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -12,20 +13,8 @@ struct
 open S
 datatype z = datatype Transfer.t
 
-(* A chunkifier that puts each function in its own chunk. *)
-fun chunkPerFunc (Program.T {functions, main, ...}) =
-   Vector.fromListMap
-   (main :: functions, fn f =>
-    let
-       val {name, blocks, ...} = Function.dest f
-    in
-       {funcs = Vector.new1 name,
-        labels = Vector.map (blocks, Block.label)}
-    end)
-
-(* A simple chunkifier that puts all code in the same chunk.
- *)
-fun oneChunk (Program.T {functions, main, ...}) =
+(* A simple chunkifier that puts all code in the same chunk. *)
+fun one (Program.T {functions, main, ...}) =
    let
       val functions = main :: functions
    in
@@ -35,6 +24,18 @@ fun oneChunk (Program.T {functions, main, ...}) =
                                 (functions, fn f =>
                                  Vector.map (Function.blocks f, Block.label)))}
    end
+
+(* A chunkifier that puts each function in its own chunk. *)
+fun perFunc (Program.T {functions, main, ...}) =
+   Vector.fromListMap
+   (main :: functions, fn f =>
+    let
+       val {name, blocks, ...} = Function.dest f
+    in
+       {funcs = Vector.new1 name,
+        labels = Vector.map (blocks, Block.label)}
+    end)
+
 
 fun blockSize (Block.T {statements, transfer, ...}): int =
    let
@@ -232,10 +233,10 @@ fun coalesce (program as Program.T {functions, main, ...}, limit) =
    end
 
 fun chunkify p =
-   case !Control.chunk of
-      Control.ChunkPerFunc => chunkPerFunc p
-    | Control.OneChunk => oneChunk p
-    | Control.Coalesce {limit} => coalesce (p, limit)
+   case !Control.chunkify of
+      Control.Chunkify.Coalesce {limit} => coalesce (p, limit)
+    | Control.Chunkify.One => one p
+    | Control.Chunkify.PerFunc => perFunc p
 
 val chunkify =
    fn p =>
@@ -252,7 +253,7 @@ val chunkify =
                 (chunks, fn {funcs, labels} =>
                  display
                  (record ([("funcs", Vector.layout Func.layout funcs),
-                           ("jumps", Vector.layout Label.layout labels)])))
+                           ("labels", Vector.layout Label.layout labels)])))
           in
              ()
           end)

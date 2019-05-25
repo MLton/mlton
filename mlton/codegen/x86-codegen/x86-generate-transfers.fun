@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -627,7 +627,7 @@ struct
                                             Assembly.label label],
                                            AppendList.fromList
                                            (ProfileLabel.toAssemblyOpt profileLabel),
-                                           if CFunction.maySwitchThreads func
+                                           if CFunction.maySwitchThreadsTo func
                                              then (* entry from far assumptions *)
                                                   farEntry finish
                                              else (* near entry & live transfer assumptions *)
@@ -1132,7 +1132,7 @@ struct
                          {target = x86MLton.gcState_stackTopMinusWordDerefOperand (),
                           absolute = true})))
                     end
-                | CCall {args, frameInfo, func, return}
+                | CCall {args, func, return}
                 => let
                      datatype z = datatype CFunction.Convention.t
                      datatype z = datatype CFunction.SymbolScope.t
@@ -1239,11 +1239,10 @@ struct
                                     size_args + space)
                         end
                      val flush =
-                        case frameInfo of
-                           SOME (FrameInfo.T {size, ...}) =>
+                        case return of
+                           SOME {return, size = SOME size} =>
                                 (* Entering runtime *)
                                 let
-                                  val return = valOf return
                                   val _ = enque return
 
                                   val stackTopTemp
@@ -1331,7 +1330,7 @@ struct
                                       dead_memlocs = MemLocSet.empty,
                                       dead_classes = ClassSet.empty})))
                                 end
-                         | NONE => 
+                         | _ =>
                                 AppendList.single
                                 (Assembly.directive_force
                                  {commit_memlocs = let
@@ -1440,7 +1439,9 @@ struct
                                {target = applyFFTempFun,
                                 absolute = true}]
                      val kill
-                       = if isSome frameInfo
+                       = if (case return of
+                                SOME {size = SOME _, ...} => true
+                              | _ => false)
                            then AppendList.single
                                 (Assembly.directive_force
                                  {commit_memlocs = MemLocSet.empty,
@@ -1484,7 +1485,7 @@ struct
                                    size = pointerSize}))
                            else AppendList.empty
                      val continue
-                       = if CFunction.maySwitchThreads func
+                       = if CFunction.maySwitchThreadsFrom func
                            then (* Returning from runtime *)
                                 (farTransfer MemLocSet.empty
                                  AppendList.empty
@@ -1495,20 +1496,21 @@ struct
                                     absolute = true})))
                          else case return
                                 of NONE => AppendList.empty
-                                 | SOME l => (if isSome frameInfo
-                                                then (* Don't need to trampoline,
-                                                      * since didn't switch threads,
-                                                      * but can't fall because
-                                                      * frame layout data is prefixed
-                                                      * to l's code; use fallNone
-                                                      * to force a jmp with near
-                                                      * jump assumptions.
-                                                      *)
-                                                     fallNone
-                                                else fall)
-                                             gef 
-                                             {label = l,
-                                              live = getLive (liveInfo, l)}
+                                 | SOME {return, size} =>
+                                      (if isSome size
+                                          then (* Don't need to trampoline,
+                                                * since didn't switch threads,
+                                                * but can't fall because
+                                                * frame layout data is prefixed
+                                                * to l's code; use fallNone
+                                                * to force a jmp with near
+                                                * jump assumptions.
+                                                *)
+                                             fallNone
+                                          else fall)
+                                      gef
+                                      {label = return,
+                                       live = getLive (liveInfo, return)}
                    in
                      AppendList.appends
                      [cacheEsp (),

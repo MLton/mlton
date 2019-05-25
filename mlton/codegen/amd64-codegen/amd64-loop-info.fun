@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -109,8 +110,8 @@ struct
                       => ()
                       | CCall {return, func, ...}
                       => Option.app (return, if CFunction.mayGC func
-                                               then doit''
-                                               else doit')
+                                               then doit'' o #return
+                                               else doit' o #return)
                  end)
         val _ = destInfo ()
 

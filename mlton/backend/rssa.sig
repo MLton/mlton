@@ -127,15 +127,8 @@ signature RSSA =
              | Switch of Switch.t
 
             val bug: unit -> t
-            (* foldDef (t, a, f)
-             * If t defines a variable x, then return f (x, a), else return a.
-             *)
-            val foldDef: t * 'a * (Var.t * Type.t * 'a -> 'a) -> 'a
-            (* foreachDef (t, f) = foldDef (t, (), fn (x, ()) => f x) *)
-            val foreachDef: t * (Var.t * Type.t -> unit) -> unit
-            val foreachDefLabelUse: t * {def: Var.t * Type.t -> unit,
-                                         label: Label.t -> unit,
-                                         use: Var.t -> unit} -> unit
+            val foreachLabelUse: t * {label: Label.t -> unit,
+                                      use: Var.t -> unit} -> unit
             val foreachFunc: t * (Func.t -> unit) -> unit
             val foreachLabel: t * (Label.t -> unit) -> unit
             val foreachUse: t * (Var.t -> unit) -> unit
@@ -222,6 +215,7 @@ signature RSSA =
             val layoutStats: t -> Layout.t
             val orderFunctions: t -> t
             val shrink: t -> t
+            val shuffle: t -> t
             val typeCheck: t -> unit
          end
    end

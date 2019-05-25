@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 Matthew Fluet.
+/* Copyright (C) 2014,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -67,7 +67,5 @@ PRIVATE Pointer gcStateAddress;
 #define LIB_PASTE(x,y) x ## y
 #define LIB_OPEN(x) LIB_PASTE(x, _open)
 #define LIB_CLOSE(x) LIB_PASTE(x, _close)
-
-static void MLton_callFromC ();
 
 #endif /* #ifndef _COMMON_MAIN_H_ */

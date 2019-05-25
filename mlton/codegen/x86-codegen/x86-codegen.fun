@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2010,2014 Matthew Fluet.
+(* Copyright (C) 2009-2010,2014,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -62,8 +62,7 @@ struct
                             structure x86MLton = x86MLton)
 
   open x86
-  fun output {program as Machine.Program.T {chunks, frameLayouts, handlesSignals,
-                                            main, ...},
+  fun output {program as Machine.Program.T {chunks, handlesSignals, main, ...},
               outputC: unit -> {file: File.t,
                                 print: string -> unit,
                                 done: unit -> unit},
@@ -97,7 +96,7 @@ struct
               local
                 val Machine.Program.T 
                     {chunks, 
-                     frameLayouts, 
+                     frameInfos,
                      frameOffsets, 
                      handlesSignals, 
                      main, 
@@ -110,7 +109,7 @@ struct
                 val program =
                   Machine.Program.T 
                   {chunks = chunks, 
-                   frameLayouts = frameLayouts, 
+                   frameInfos = frameInfos,
                    frameOffsets = frameOffsets, 
                    handlesSignals = handlesSignals, 
                    main = main, 
@@ -374,12 +373,6 @@ struct
         val liveInfo = x86Liveness.LiveInfo.newLiveInfo ()
         val jumpInfo = x86JumpInfo.newJumpInfo ()
 
-        fun frameInfoToX86 (Machine.FrameInfo.T {frameLayoutsIndex, ...}) =
-           x86.FrameInfo.T
-           {frameLayoutsIndex = frameLayoutsIndex,
-            size = Bytes.toInt (#size (Vector.sub (frameLayouts,
-                                                   frameLayoutsIndex)))}
-
         fun outputChunk (chunk as Machine.Chunk.T {blocks, chunkLabel, ...},
                          print)
           = let
@@ -394,7 +387,6 @@ struct
               val {chunk}
                 = x86Translate.translateChunk 
                   {chunk = chunk,
-                   frameInfoToX86 = frameInfoToX86,
                    liveInfo = liveInfo}
 
               val chunk : x86.Chunk.t

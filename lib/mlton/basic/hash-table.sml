@@ -1,4 +1,4 @@
-(* Copyright (C) 2018 Jason Carr
+(* Copyright (C) 2018-2019 Jason Carr, Matthew Fluet.
  * Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -53,5 +53,9 @@ fun removeWhen (T {set, hash, equals, ...}, a, cond) =
                fn {key, value, ...} => cond value andalso equals key a)
 fun remove (t, a) = removeWhen (t, a, fn _ => true)
 fun removeAll (T {set, ...}, f) = Set.removeAll (set, f o toPair)
+
+fun fold (T {set, ...}, b, f) =
+   Set.fold (set, b, fn ({key, value, ...}, b) =>
+             f ((key, value), b))
 
 end

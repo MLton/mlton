@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -76,6 +76,7 @@ local
                val equals: t * t -> bool
                val fromInt: int -> t
                val fromIntInf: IntInf.t -> t
+               val hash: t -> word
                (* val inWord8: t *)
                (* val inWord16: t *)
                val inWord32: t

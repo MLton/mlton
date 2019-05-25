@@ -1555,24 +1555,32 @@ structure Objptrs =
                                                      else Vector.new0 (),
                                               dst = dst}})
                  | _ => NONE)
-            val default =
-               if Vector.length variants = Vector.length cases
-                  then NONE
-               else default
-            val cases =
-               QuickSort.sortVector (cases, fn ((w, _), (w', _)) =>
-                                     WordX.le (w, w', {signed = false}))
-            val shift = Operand.word (WordX.one WordSize.shiftArg)
-            val (s, tag) =
-               Statement.rshift (Offset {base = test,
-                                         offset = Runtime.headerOffset (),
-                                         ty = Type.objptrHeader ()},
-                                 shift)
          in
-            ([s], Switch (Switch.T {cases = cases,
-                                    default = default,
-                                    size = WordSize.objptrHeader (),
-                                    test = tag}))
+            if Vector.isEmpty cases
+               then case default of
+                       NONE => ([], Transfer.bug ())
+                     | SOME default =>
+                          ([], Goto {args = Vector.new0 (), dst = default})
+               else let
+                       val default =
+                          if Vector.length variants = Vector.length cases
+                             then NONE
+                             else default
+                       val cases =
+                          QuickSort.sortVector (cases, fn ((w, _), (w', _)) =>
+                                                WordX.le (w, w', {signed = false}))
+                       val shift = Operand.word (WordX.one WordSize.shiftArg)
+                       val (s, tag) =
+                          Statement.rshift (Offset {base = test,
+                                                    offset = Runtime.headerOffset (),
+                                                    ty = Type.objptrHeader ()},
+                                            shift)
+                    in
+                       ([s], Switch (Switch.T {cases = cases,
+                                               default = default,
+                                               size = WordSize.objptrHeader (),
+                                               test = tag}))
+                    end
          end
    end
 
@@ -1650,23 +1658,6 @@ structure Small =
                  | _ => NONE)
             val cases = QuickSort.sortVector (cases, fn ((w, _), (w', _)) =>
                                               WordX.le (w, w', {signed = false}))
-            val tagOp =
-               if isObjptr
-                  then Operand.cast (test, Type.bits testBits)
-               else test
-            val (tagOp, ss) =
-               if isEnum
-                  then (tagOp, [])
-               else
-                  let
-                     val mask =
-                        Operand.word (WordX.resize
-                                      (WordX.max (tagSize, {signed = false}),
-                                       testSize))
-                     val (s, tagOp) = Statement.andb (tagOp, mask)
-                  in
-                     (tagOp, [s])
-                  end
             val default =
                if Vector.length variants = Vector.length cases
                   then notSmall
@@ -1692,13 +1683,36 @@ structure Small =
                            SOME (Block.new {statements = Vector.new1 s,
                                             transfer = t})
                         end
-            val transfer =
-               Switch (Switch.T {cases = cases,
-                                 default = default,
-                                 size = testSize,
-                                 test = tagOp})
          in
-            (ss, transfer)
+            if Vector.isEmpty cases
+               then (case default of
+                        NONE => ([], Transfer.bug ())
+                      | SOME default => ([], Goto {args = Vector.new0 (), dst = default}))
+               else let
+                       val tagOp =
+                          if isObjptr
+                             then Operand.cast (test, Type.bits testBits)
+                             else test
+                       val (tagOp, ss) =
+                          if isEnum
+                             then (tagOp, [])
+                             else let
+                                     val mask =
+                                        Operand.word (WordX.resize
+                                                      (WordX.max (tagSize, {signed = false}),
+                                                       testSize))
+                                     val (s, tagOp) = Statement.andb (tagOp, mask)
+                                  in
+                                     (tagOp, [s])
+                                  end
+                       val transfer =
+                          Switch (Switch.T {cases = cases,
+                                            default = default,
+                                            size = testSize,
+                                            test = tagOp})
+                    in
+                       (ss, transfer)
+                    end
          end
 
       val genCase =

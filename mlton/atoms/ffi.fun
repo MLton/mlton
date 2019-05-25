@@ -1,4 +1,5 @@
-(* Copyright (C) 2004-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 2004-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a HPND-style license.
@@ -66,87 +67,87 @@ end
 val headers: string list ref = ref []
 
 fun declareExports {print} =
-   let
-      val _ = print "PRIVATE Pointer MLton_FFI_opArgsResPtr;\n"
-   in
-      List.foreach
-      (!symbols, fn {name, ty, symbolScope} =>
-       let
-          val (headerSymbolScope, symbolScope) =
-             case symbolScope of
-                SymbolScope.External =>
-                   Error.bug "Ffi.declareExports.symbols: External"
-              | SymbolScope.Private => ("MLLIB_PRIVATE", "PRIVATE")
-              | SymbolScope.Public => ("MLLIB_PUBLIC", "PUBLIC")
-          val headerDecl =
-             concat [headerSymbolScope,
-                     "(extern ",
-                     CType.toString ty, " ",
-                     name, ";)"]
-          val decl =
-             concat [symbolScope, " ",
-                     CType.toString ty, " ",
-                     name]
-       in
-         List.push (headers, headerDecl);
-         print (decl ^ ";\n")
-       end);
-      List.foreach
-      (!exports, fn {args, convention, id, name, res, symbolScope} =>
-       let
-          val args =
-             Vector.mapi
-             (args, fn (i,t) =>
-              let
-                 val x = concat ["x", Int.toString i]
-                 val t = CType.toString t
-              in
-                 (concat [t, " ", x],
-                  concat ["\tlocalOpArgsRes[", Int.toString (i + 1), "] = ",
-                          "(Pointer)(&", x, ");\n"])
-              end)
-          val (headerSymbolScope, symbolScope) =
-             case symbolScope of
-                SymbolScope.External =>
-                   Error.bug "Ffi.declareExports.exports: External"
-              | SymbolScope.Private => ("MLLIB_PRIVATE","PRIVATE")
-              | SymbolScope.Public => ("MLLIB_PUBLIC","PUBLIC")
-          val prototype =
-             concat [case res of
-                        NONE => "void"
-                      | SOME t => CType.toString t,
-                     if convention <> Convention.Cdecl
-                        then concat [" __attribute__ ((",
-                                     Convention.toString convention,
-                                     ")) "]
-                     else " ",
-                     name, " (",
-                     concat (List.separate (Vector.toListMap (args, #1), ", ")),
-                     ")"]
-          val n =
-             1 + (Vector.length args)
-             + (case res of NONE => 0 | SOME _ => 1)
-       in
-          List.push (headers, concat [headerSymbolScope, "(", prototype, ";)"])
-          ; print (concat [symbolScope, " ", prototype, " {\n"])
-          ; print (concat ["\tPointer localOpArgsRes[", Int.toString n,"];\n"])
-          ; print (concat ["\tMLton_FFI_opArgsResPtr = (Pointer)(localOpArgsRes);\n"])
-          ; print (concat ["\tInt32 localOp = ", Int.toString id, ";\n",
-                           "\tlocalOpArgsRes[0] = (Pointer)(&localOp);\n"])
-          ; Vector.foreach (args, fn (_, set) => print set)
-          ; (case res of
-                NONE => ()
-              | SOME t =>
-                   print (concat ["\t", CType.toString t, " localRes;\n",
-                                  "\tlocalOpArgsRes[", Int.toString (Vector.length args + 1), "] = ",
-                                  "(Pointer)(&localRes);\n"]))
-          ; print ("\tMLton_callFromC ();\n")
-          ; (case res of
-                NONE => ()
-              | SOME _ => print "\treturn localRes;\n")
-          ; print "}\n"
-       end)
-   end
+   (List.foreach
+    (!symbols, fn {name, ty, symbolScope} =>
+     let
+        val (headerSymbolScope, symbolScope) =
+           case symbolScope of
+              SymbolScope.External =>
+                 Error.bug "Ffi.declareExports.symbols: External"
+            | SymbolScope.Private => ("MLLIB_PRIVATE", "PRIVATE")
+            | SymbolScope.Public => ("MLLIB_PUBLIC", "PUBLIC")
+        val headerDecl =
+           concat [headerSymbolScope,
+                   "(extern ",
+                   CType.toString ty, " ",
+                   name, ";)"]
+        val decl =
+           concat [symbolScope, " ",
+                   CType.toString ty, " ",
+                   name]
+     in
+       List.push (headers, headerDecl);
+       print (decl ^ ";\n")
+     end);
+    if List.isEmpty (!exports)
+       then ()
+       else (print "MLtonCallFromC ()\n";
+             print "PRIVATE Pointer MLton_FFI_opArgsResPtr;\n");
+    List.foreach
+    (!exports, fn {args, convention, id, name, res, symbolScope} =>
+     let
+        val args =
+           Vector.mapi
+           (args, fn (i,t) =>
+            let
+               val x = concat ["x", Int.toString i]
+               val t = CType.toString t
+            in
+               (concat [t, " ", x],
+                concat ["\tlocalOpArgsRes[", Int.toString (i + 1), "] = ",
+                        "(Pointer)(&", x, ");\n"])
+            end)
+        val (headerSymbolScope, symbolScope) =
+           case symbolScope of
+              SymbolScope.External =>
+                 Error.bug "Ffi.declareExports.exports: External"
+            | SymbolScope.Private => ("MLLIB_PRIVATE","PRIVATE")
+            | SymbolScope.Public => ("MLLIB_PUBLIC","PUBLIC")
+        val prototype =
+           concat [case res of
+                      NONE => "void"
+                    | SOME t => CType.toString t,
+                   if convention <> Convention.Cdecl
+                      then concat [" __attribute__ ((",
+                                   Convention.toString convention,
+                                   ")) "]
+                   else " ",
+                   name, " (",
+                   concat (List.separate (Vector.toListMap (args, #1), ", ")),
+                   ")"]
+        val n =
+           1 + (Vector.length args)
+           + (case res of NONE => 0 | SOME _ => 1)
+     in
+        List.push (headers, concat [headerSymbolScope, "(", prototype, ";)"])
+        ; print (concat [symbolScope, " ", prototype, " {\n"])
+        ; print (concat ["\tPointer localOpArgsRes[", Int.toString n,"];\n"])
+        ; print (concat ["\tMLton_FFI_opArgsResPtr = (Pointer)(localOpArgsRes);\n"])
+        ; print (concat ["\tInt32 localOp = ", Int.toString id, ";\n",
+                         "\tlocalOpArgsRes[0] = (Pointer)(&localOp);\n"])
+        ; Vector.foreach (args, fn (_, set) => print set)
+        ; (case res of
+              NONE => ()
+            | SOME t =>
+                 print (concat ["\t", CType.toString t, " localRes;\n",
+                                "\tlocalOpArgsRes[", Int.toString (Vector.length args + 1), "] = ",
+                                "(Pointer)(&localRes);\n"]))
+        ; print ("\tMLton_callFromC ();\n")
+        ; (case res of
+              NONE => ()
+            | SOME _ => print "\treturn localRes;\n")
+        ; print "}\n"
+     end))
 
 fun declareHeaders {print} =
    (declareExports {print = fn _ => ()}

@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -417,9 +417,9 @@ signature AMD64_PSEUDO =
         val return : {live: MemLocSet.t} -> t 
         val raisee : {live: MemLocSet.t} -> t
         val ccall : {args: (Operand.t * Size.t) list,
-                     frameInfo: FrameInfo.t option,
                      func: RepType.t CFunction.t,
-                     return: Label.t option} -> t
+                     return: {return: Label.t,
+                              size: int option} option} -> t
       end
 
     structure ProfileLabel :

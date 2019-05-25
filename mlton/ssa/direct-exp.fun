@@ -16,7 +16,8 @@ structure DirectExp =
 struct
 
 datatype t =
-   Call of {func: Func.t,
+   Bug
+ | Call of {func: Func.t,
             args: t vector,
             ty: Type.t}
  | Case of {cases: cases,
@@ -90,14 +91,16 @@ fun primApp {args, prim, targs, ty} =
          Runtime {args = args,
                   prim = prim,
                   ty = ty}
+      fun primApp () =
+         PrimApp {args = args,
+                  prim = prim,
+                  targs = targs,
+                  ty = ty}
    in
       case Prim.name prim of
-         Prim.Name.MLton_halt => runtime ()
+         Prim.Name.MLton_bug => Seq (primApp (), Bug)
        | Prim.Name.Thread_copyCurrent => runtime ()
-       | _ => PrimApp {args = args,
-                       prim = prim,
-                       targs = targs,
-                       ty = ty}
+       | _ => primApp ()
    end
 
 local
@@ -122,7 +125,8 @@ local
 in
    fun layout e : Layout.t =
       case e of
-         Call {func, args, ty} =>
+         Bug => str "bug"
+       | Call {func, args, ty} =>
             seq [Func.layout func, str " ", layouts args,
                  str ": ", Type.layout ty]
        | Case {cases, default, test, ...} =>
@@ -375,7 +379,9 @@ fun linearize' (e: t, h: Handler.t, k: Cont.t): Label.t * Block.t list =
          traceLinearizeLoop
          (fn (e: t, h: Handler.t, k: Cont.t) =>
          case e of
-            Call {func, args, ty} =>
+            Bug => {statements = [],
+                    transfer = Transfer.Bug}
+          | Call {func, args, ty} =>
                loops
                (args, h, fn xs =>
                 {statements = [],

@@ -29,7 +29,8 @@ structure CFunction =
                kind = Kind.Runtime {bytesNeeded = NONE,
                                     ensuresBytesFree = NONE,
                                     mayGC = false,
-                                    maySwitchThreads = false,
+                                    maySwitchThreadsFrom = false,
+                                    maySwitchThreadsTo = false,
                                     modifiesFrontier = false,
                                     readsStackTop = true,
                                     writesStackTop = false},
@@ -285,7 +286,7 @@ fun doit program =
          fun makeSourceSeqs () = Vector.fromListRev (!sourceSeqs)
       end
       (* Ensure that [SourceInfo.unknown] is index 0. *)
-      val _ = sourceSeqIndex [InfoNode.sourcesIndex unknownInfoNode]
+      val unknownSourceSeqIndex = sourceSeqIndex [InfoNode.sourcesIndex unknownInfoNode]
       (* Ensure that [SourceInfo.gc] is index 1. *)
       val _ = sourceSeqIndex [InfoNode.sourcesIndex gcInfoNode]
       fun addFrameProfileIndex (label: Label.t,
@@ -922,12 +923,13 @@ fun doit program =
          let
             val {get, set, ...} =
                Property.getSetOnce
-               (Label.plist,
-                Property.initRaise ("frameProfileIndex", Label.layout))
+               (Label.plist, Property.initConst unknownSourceSeqIndex)
             val _ =
                List.foreach (!frameProfileIndices, fn (l, i) =>
                              set (l, i))
-            val frameSources = Vector.map (frames, get)
+            val frames = Array.fromList (frames ())
+            val () = QuickSort.sortArray (frames, fn ((_,i1), (_,i2)) => i1 < i2)
+            val frameSources = Array.toVectorMap (frames, fn (l, _) => get l)
          in
             SOME (Machine.ProfileInfo.T
                   {frameSources = frameSources,

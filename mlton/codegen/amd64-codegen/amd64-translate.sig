@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -22,8 +22,6 @@ signature AMD64_TRANSLATE =
     include AMD64_TRANSLATE_STRUCTS
 
     val translateChunk : {chunk: amd64MLton.Machine.Chunk.t,
-                          frameInfoToAMD64: (amd64MLton.Machine.FrameInfo.t
-                                           -> amd64.FrameInfo.t),
                           liveInfo: amd64Liveness.LiveInfo.t}
                          -> {chunk: amd64.Chunk.t}
 
