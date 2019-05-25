@@ -247,29 +247,6 @@ signature MACHINE =
             val chunkLabel: t -> ChunkLabel.t
          end
 
-      structure ProfileInfo:
-         sig
-            datatype t =
-               T of {(* For each frame, gives the index into sourceSeqs of the
-                      * source functions corresponding to the frame.
-                      *)
-                     frameSources: int vector,
-                     labels: {label: ProfileLabel.t,
-                              sourceSeqsIndex: int} vector,
-                     names: string vector,
-                     (* Each sourceSeq describes a sequence of source functions,
-                      * each given as an index into the source vector.
-                      *)
-                     sourceSeqs: int vector vector,
-                     sources: {nameIndex: int,
-                               successorsIndex: int} vector}
-
-            val empty: t
-            val modify: t -> {newProfileLabel: ProfileLabel.t -> ProfileLabel.t,
-                              delProfileLabel: ProfileLabel.t -> unit,
-                              getProfileInfo: unit -> t}
-         end
-
       structure Program:
          sig
             datatype t =

@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -27,6 +28,7 @@ signature ATOMS' =
       structure Label: LABEL
       structure Prim: PRIM
       structure ProfileExp: PROFILE_EXP
+      structure ProfileInfo: PROFILE_INFO
       structure ProfileLabel: PROFILE_LABEL
       structure RealSize: REAL_SIZE
       structure RealX: REAL_X
@@ -50,6 +52,7 @@ signature ATOMS' =
       sharing Const = Prim.Const
       sharing Field = Record.Field = SortedRecord.Field
       sharing IntSize = Tycon.IntSize
+      sharing ProfileLabel = ProfileInfo.ProfileLabel
       sharing RealSize = CType.RealSize = Prim.RealSize = RealX.RealSize
          = Tycon.RealSize
       sharing RealX = Const.RealX
@@ -88,6 +91,7 @@ signature ATOMS =
       sharing Label = Atoms.Label
       sharing Prim = Atoms.Prim
       sharing ProfileExp = Atoms.ProfileExp
+      sharing ProfileInfo = Atoms.ProfileInfo
       sharing ProfileLabel = Atoms.ProfileLabel
       sharing RealSize = Atoms.RealSize
       sharing RealX = Atoms.RealX

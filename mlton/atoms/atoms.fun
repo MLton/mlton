@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -72,6 +73,7 @@ structure Atoms =
       structure SourceInfo = SourceInfo ()
       structure ProfileLabel = ProfileLabel ()
       structure ProfileExp = ProfileExp (structure SourceInfo = SourceInfo)
+      structure ProfileInfo = ProfileInfo (structure ProfileLabel = ProfileLabel)
    end
 
 open Atoms
