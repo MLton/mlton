@@ -50,10 +50,10 @@ val bounceRssaLimit = control {name = "bounceRssaLimit",
 val bounceRssaLiveCutoff = control {name = "bounceRssaLiveCutoff",
                                default = SOME 12,
                                toString = Option.toString Int.toString}
-val bounceRssaLoopCutoff = control {name = "bounceRssaLiveCutoff",
+val bounceRssaLoopCutoff = control {name = "bounceRssaLoopCutoff",
                                default = SOME 40,
                                toString = Option.toString Int.toString}
-val bounceRssaUsageCutoff = control {name = "bounceRssaLiveCutoff",
+val bounceRssaUsageCutoff = control {name = "bounceRssaUsageCutoff",
                                default = SOME 15,
                                toString = Option.toString Int.toString}
 
