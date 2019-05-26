@@ -26,7 +26,7 @@ struct
 open S
 open Rssa
 structure Live = Live (Rssa)
-structure Restore = RestoreR (Rssa)
+structure Restore = RestoreRssa (Rssa)
 
 fun shouldAvoid (Block.T {kind, ...}) =
    (* this definition is important;

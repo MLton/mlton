@@ -6,14 +6,14 @@
  * See the file MLton-LICENSE for details.
  *)
 
-signature RESTORE_R_STRUCTS =
+signature RESTORE_RSSA_STRUCTS =
    sig
       include RSSA
    end
 
-signature RESTORE_R =
+signature RESTORE_RSSA =
    sig
-      include RESTORE_R_STRUCTS
+      include RESTORE_RSSA_STRUCTS
 
       val restoreFunction:
          {main: Function.t} -> Function.t -> Function.t

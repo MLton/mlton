@@ -27,7 +27,7 @@
  * different places, but SetHandler statements may be missing if they were deemed unnecessary.
  *)
 
-functor RestoreR (S: RESTORE_R_STRUCTS): RESTORE_R =
+functor RestoreRssa (S: RESTORE_RSSA_STRUCTS): RESTORE_RSSA =
 struct
 
 structure Control =
