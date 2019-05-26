@@ -152,7 +152,6 @@ fun transform program =
          profile = ProfileTimeLabel orelse profile = ProfileLabel
       val needCodeCoverage: bool =
          needProfileLabels orelse (profile = ProfileTimeField)
-      val frameSources: (Label.t * int) list ref = ref []
       val infoNodes: InfoNode.t list ref = ref []
       val sourceNames: string list ref = ref []
       local
@@ -288,8 +287,22 @@ fun transform program =
       val unknownSourceSeqIndex = sourceSeqIndex [{sourceIndex = InfoNode.sourceIndex unknownInfoNode}]
       (* Ensure that [SourceInfo.gc] is index 1. *)
       val _ = sourceSeqIndex [{sourceIndex = InfoNode.sourceIndex gcInfoNode}]
-      fun addFrameSourceSeqIndex (label: Label.t, sourceSeqIndex: int): unit =
-         List.push (frameSources, (label, sourceSeqIndex))
+      local
+         (* Cannot use Label.plist, because RSSA Labels are cleared
+          * between ImplementProfiling and conversion to Machine.
+          *)
+         val frameSourceSeqIndex: (Label.t, int) HashTable.t =
+            HashTable.new {equals = Label.equals, hash = Label.hash}
+      in
+         fun addFrameSourceSeqIndex (label: Label.t, sourceSeqIndex: int): unit =
+            (ignore o HashTable.insertIfNew)
+            (frameSourceSeqIndex, label, fn () => sourceSeqIndex, fn _ =>
+             Error.bug ("ImplementProfiling.addFrameSourceSeqIndex: " ^ Label.toString label))
+         fun getFrameSourceSeqIndex (label: Label.t) : int =
+            case HashTable.peek (frameSourceSeqIndex, label) of
+               NONE => unknownSourceSeqIndex
+             | SOME sourceSeqIndex => sourceSeqIndex
+      end
       fun addFramePushes (label: Label.t, pushes: Push.t list): unit =
          addFrameSourceSeqIndex (label, sourceSeqIndex (Push.toSourceSeq pushes))
       val {get = labelInfo: Label.t -> {block: Block.t,
@@ -917,15 +930,10 @@ fun transform program =
       val sourceSeqs = Vector.fromListRev (!sourceSeqs)
       fun makeProfileInfo {frames} =
          let
-            val {get, set, ...} =
-               Property.getSetOnce
-               (Label.plist, Property.initConst {sourceSeqIndex = unknownSourceSeqIndex})
-            val _ =
-               List.foreach (!frameSources, fn (l, i) =>
-                             set (l, {sourceSeqIndex = i}))
             val frames = Array.fromList (frames ())
             val () = QuickSort.sortArray (frames, fn ((_,i1), (_,i2)) => i1 < i2)
-            val frameSources = Array.toVectorMap (frames, fn (l, _) => get l)
+            val frameSources = Array.toVectorMap (frames, fn (l, _) =>
+                                                  {sourceSeqIndex= getFrameSourceSeqIndex l})
          in
             ProfileInfo.T {frameSources = frameSources,
                            sourceLabels = sourceLabels,
