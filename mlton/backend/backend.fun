@@ -445,6 +445,11 @@ let
       val varOperandOpt: Var.t -> M.Operand.t option =
          VarOperand.operand o #operand o varInfo
       val varOperand: Var.t -> M.Operand.t = valOf o varOperandOpt
+      val varOperand =
+         Trace.trace ("Backend.varOperand",
+                      Var.layout,
+                      M.Operand.layout)
+         varOperand
       (* Hash tables for uniquifying globals. *)
       local
          fun 'a make {equals: 'a * 'a -> bool,
