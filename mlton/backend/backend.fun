@@ -445,6 +445,11 @@ let
       val varOperandOpt: Var.t -> M.Operand.t option =
          VarOperand.operand o #operand o varInfo
       val varOperand: Var.t -> M.Operand.t = valOf o varOperandOpt
+      val varOperand =
+         Trace.trace ("Backend.varOperand",
+                      Var.layout,
+                      M.Operand.layout)
+         varOperand
       (* Hash tables for uniquifying globals. *)
       local
          fun 'a make {equals: 'a * 'a -> bool,
@@ -722,8 +727,6 @@ let
             val returns =
                Option.map (returns, fn ts =>
                            callReturnStackOffsets (ts, fn t => t, Bytes.zero))
-            fun labelArgOperands (l: R.Label.t): M.Operand.t vector =
-               Vector.map (#args (labelInfo l), varOperand o #1)
             fun newVarInfo (x, ty: Type.t) =
                let
                   val operand =
@@ -941,9 +944,18 @@ let
                            (setupArgs, transfer)
                         end
                    | R.Transfer.Goto {dst, args} =>
-                        (parallelMove {srcs = translateOperands args,
-                                       dsts = labelArgOperands dst},
-                         M.Transfer.Goto dst)
+                        let
+                           val (dsts', srcs') =
+                              Vector.unzip
+                              (Vector.keepAllMap2
+                               (#args (labelInfo dst), args, fn ((dst, _), src) =>
+                                case varOperandOpt dst of
+                                   NONE => NONE
+                                 | SOME dst => SOME (dst, translateOperand src)))
+                        in
+                           (parallelMove {srcs = srcs', dsts = dsts'},
+                            M.Transfer.Goto dst)
+                        end
                    | R.Transfer.Raise srcs =>
                         (M.Statement.moves {dsts = Vector.map (valOf raises,
                                                                Live.toOperand),
@@ -1021,14 +1033,10 @@ let
                               val (dsts', srcs') =
                                  Vector.unzip
                                  (Vector.keepAllMap2
-                                  (args, srcs, fn ((arg, _), src) =>
-                                   case varOperandOpt arg of
+                                  (args, srcs, fn ((dst, _), src) =>
+                                   case varOperandOpt dst of
                                       NONE => NONE
-                                    | SOME dst =>
-                                         if Vector.exists (live, fn var =>
-                                                           M.Operand.equals (var, dst))
-                                            then SOME (dst, M.Operand.StackOffset src)
-                                            else NONE))
+                                    | SOME dst => SOME (dst, M.Operand.StackOffset src)))
                            in
                               (M.Kind.Cont {args = Vector.map (srcs, Live.StackOffset),
                                             frameInfo = valOf (frameInfo label)},
@@ -1057,14 +1065,10 @@ let
                               val (dsts', srcs') =
                                  Vector.unzip
                                  (Vector.keepAllMap2
-                                  (args, handles, fn ((arg, _), h) =>
-                                   case varOperandOpt arg of
+                                  (args, handles, fn ((dst, _), h) =>
+                                   case varOperandOpt dst of
                                       NONE => NONE
-                                    | SOME dst =>
-                                         if Vector.exists (live, fn var =>
-                                                           M.Operand.equals (var, dst))
-                                            then SOME (dst, Live.toOperand h)
-                                            else NONE))
+                                    | SOME dst =>SOME (dst, Live.toOperand h)))
                            in
                               (M.Kind.Handler
                                {frameInfo = valOf (frameInfo label),
