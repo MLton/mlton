@@ -889,7 +889,8 @@ structure Program =
                handlesSignals: bool,
                main: Function.t,
                objectTypes: ObjectType.t vector,
-               makeProfileInfo: ({frames: unit -> (Label.t * int) list} -> ProfileInfo.t) option}
+               makeProfileInfo: (({frames: unit -> (Label.t * int) list} -> ProfileInfo.t)
+                                 * (Label.t -> int)) option}
 
       fun clear (T {functions, main, ...}) =
          (List.foreach (functions, Function.clear)

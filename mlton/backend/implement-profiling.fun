@@ -933,7 +933,7 @@ fun transform program =
             val frames = Array.fromList (frames ())
             val () = QuickSort.sortArray (frames, fn ((_,i1), (_,i2)) => i1 < i2)
             val frameSources = Array.toVectorMap (frames, fn (l, _) =>
-                                                  {sourceSeqIndex= getFrameSourceSeqIndex l})
+                                                  {sourceSeqIndex = getFrameSourceSeqIndex l})
          in
             ProfileInfo.T {frameSources = frameSources,
                            sourceLabels = sourceLabels,
@@ -946,7 +946,7 @@ fun transform program =
                  handlesSignals = handlesSignals,
                  main = main,
                  objectTypes = objectTypes,
-                 makeProfileInfo = SOME makeProfileInfo}
+                 makeProfileInfo = SOME (makeProfileInfo, getFrameSourceSeqIndex)}
    end
 
 end

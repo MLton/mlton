@@ -1219,7 +1219,7 @@ let
          in
             !frameLabels
          end
-      val profileInfo = Option.map (makeProfileInfo, fn makeProfileInfo =>
+      val profileInfo = Option.map (makeProfileInfo, fn (makeProfileInfo, _) =>
                                     makeProfileInfo {frames = frameLabels})
       val program =
          M.Program.T
