@@ -873,11 +873,8 @@ structure Program =
                         then fn _ => false
                      else Error.bug 
                           "Machine.Program.typeCheck.profileLabelIsOk: profileInfo = NONE"
-                | SOME (ProfileInfo.T {frameSources,
-                                       sourceLabels, ...}) =>
+                | SOME (ProfileInfo.T {sourceLabels, ...}) =>
                      if !Control.profile = Control.ProfileNone
-                        orelse (Vector.length frameSources
-                                <> Vector.length frameInfos)
                         then Error.bug 
                              "Machine.Program.typeCheck.profileLabelIsOk: profileInfo = SOME"
                      else

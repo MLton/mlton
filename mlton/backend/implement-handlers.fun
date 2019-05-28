@@ -210,11 +210,11 @@ fun flow (f: Function.t): Function.t =
                     start = newStart}
    end
 
-fun transform (Program.T {functions, handlesSignals, main, objectTypes, makeProfileInfo}) =
+fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileInfo}) =
    Program.T {functions = List.revMap (functions, flow),
               handlesSignals = handlesSignals,
               main = flow main,
               objectTypes = objectTypes,
-              makeProfileInfo = makeProfileInfo}
+              profileInfo = profileInfo}
 
 end

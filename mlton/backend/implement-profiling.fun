@@ -284,7 +284,7 @@ fun transform program =
             end
       end
       (* Ensure that [SourceInfo.unknown] is index 0. *)
-      val unknownSourceSeqIndex = sourceSeqIndex [{sourceIndex = InfoNode.sourceIndex unknownInfoNode}]
+      val _ = sourceSeqIndex [{sourceIndex = InfoNode.sourceIndex unknownInfoNode}]
       (* Ensure that [SourceInfo.gc] is index 1. *)
       val _ = sourceSeqIndex [{sourceIndex = InfoNode.sourceIndex gcInfoNode}]
       local
@@ -300,7 +300,7 @@ fun transform program =
              Error.bug ("ImplementProfiling.addFrameSourceSeqIndex: " ^ Label.toString label))
          fun getFrameSourceSeqIndex (label: Label.t) : int =
             case HashTable.peek (frameSourceSeqIndex, label) of
-               NONE => unknownSourceSeqIndex
+               NONE => Error.bug "ImplementProfiling.getFrameSourceSeqIndex"
              | SOME sourceSeqIndex => sourceSeqIndex
       end
       fun addFramePushes (label: Label.t, pushes: Push.t list): unit =
@@ -928,36 +928,17 @@ fun transform program =
        * since making sources creates new sourceSeqs.
        *)
       val sourceSeqs = Vector.fromListRev (!sourceSeqs)
-      fun makeProfileInfo {frames} =
-         let
-            val frames = Array.fromList (frames ())
-            val () = QuickSort.sortArray (frames, fn ((_,i1), (_,i2)) => i1 <= i2)
-            val (_, _, frameSources) =
-               Array.fold (frames, (~1, ~1, []), fn ((label, index), (lastIndex, lastSourceSeqIndex, frameSources)) =>
-                           if index = lastIndex
-                              then if getFrameSourceSeqIndex label = lastSourceSeqIndex
-                                      then (lastIndex, lastSourceSeqIndex, frameSources)
-                                      else Error.bug "ImplementProfiling.makeProfileInfo"
-                              else let
-                                      val sourceSeqIndex = getFrameSourceSeqIndex label
-                                   in
-                                      (index, sourceSeqIndex,
-                                       {sourceSeqIndex = sourceSeqIndex} :: frameSources)
-                                   end)
-            val frameSources = Vector.fromListRev frameSources
-         in
-            ProfileInfo.T {frameSources = frameSources,
-                           sourceLabels = sourceLabels,
-                           sourceNames = sourceNames,
-                           sourceSeqs = sourceSeqs,
-                           sources = sources}
-         end
+      val profileInfo =
+         ProfileInfo.T {sourceLabels = sourceLabels,
+                        sourceNames = sourceNames,
+                        sourceSeqs = sourceSeqs,
+                        sources = sources}
    in
       Program.T {functions = functions,
                  handlesSignals = handlesSignals,
                  main = main,
                  objectTypes = objectTypes,
-                 makeProfileInfo = SOME (makeProfileInfo, getFrameSourceSeqIndex)}
+                 profileInfo = SOME (profileInfo, getFrameSourceSeqIndex)}
    end
 
 end

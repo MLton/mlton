@@ -16,11 +16,7 @@ signature PROFILE_INFO =
       include PROFILE_INFO_STRUCTS
 
       datatype t =
-         T of {(* for each stack frame, gives an index into sourceSeqs of the
-                * sequence of source names corresponding to the frame.
-                *)
-               frameSources: {sourceSeqIndex: int} vector,
-               (* the collection of profile labels embedded in output program
+         T of {(* the collection of profile labels embedded in output program
                 * paired with an index into sourceSeqs of the sequence of source
                 * names corresponding to the code pointer; only used with
                 * ProfileTimeLabel.

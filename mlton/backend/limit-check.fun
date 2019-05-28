@@ -832,7 +832,7 @@ fun insertCoalesce (f: Function.t, handlesSignals) =
       f
    end
 
-fun transform (Program.T {functions, handlesSignals, main, objectTypes, makeProfileInfo}) =
+fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileInfo}) =
    let
       val _ = Control.diagnostic (fn () => Layout.str "Limit Check maxPaths")
       datatype z = datatype Control.limitCheck
@@ -869,7 +869,7 @@ fun transform (Program.T {functions, handlesSignals, main, objectTypes, makeProf
                  handlesSignals = handlesSignals,
                  main = main,
                  objectTypes = objectTypes,
-                 makeProfileInfo = makeProfileInfo}
+                 profileInfo = profileInfo}
    end
 
 end

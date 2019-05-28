@@ -889,8 +889,7 @@ structure Program =
                handlesSignals: bool,
                main: Function.t,
                objectTypes: ObjectType.t vector,
-               makeProfileInfo: (({frames: unit -> (Label.t * int) list} -> ProfileInfo.t)
-                                 * (Label.t -> int)) option}
+               profileInfo: (ProfileInfo.t * (Label.t -> int)) option}
 
       fun clear (T {functions, main, ...}) =
          (List.foreach (functions, Function.clear)
@@ -944,7 +943,7 @@ structure Program =
                handlesSignals = handlesSignals,
                main = Function.dropProfile main,
                objectTypes = objectTypes,
-               makeProfileInfo = NONE})
+               profileInfo = NONE})
       (* quell unused warning *)
       val _ = dropProfile
 
@@ -985,7 +984,7 @@ structure Program =
             ()
          end
 
-      fun orderFunctions (p as T {handlesSignals, objectTypes, makeProfileInfo, ...}) =
+      fun orderFunctions (p as T {handlesSignals, objectTypes, profileInfo, ...}) =
          let
             val functions = ref []
             val () =
@@ -1019,10 +1018,10 @@ structure Program =
                handlesSignals = handlesSignals,
                main = main,
                objectTypes = objectTypes,
-               makeProfileInfo = makeProfileInfo}
+               profileInfo = profileInfo}
          end
 
-      fun copyProp (T {functions, handlesSignals, main, objectTypes, makeProfileInfo, ...}): t =
+      fun copyProp (T {functions, handlesSignals, main, objectTypes, profileInfo, ...}): t =
          let
             val tracePrimApply =
                Trace.trace3
@@ -1160,24 +1159,24 @@ structure Program =
                handlesSignals = handlesSignals,
                main = main,
                objectTypes = objectTypes,
-               makeProfileInfo = makeProfileInfo}
+               profileInfo = profileInfo}
          end
 
-      fun shrink (T {functions, handlesSignals, main, objectTypes, makeProfileInfo}) =
+      fun shrink (T {functions, handlesSignals, main, objectTypes, profileInfo}) =
          let
             val p = 
                T {functions = List.revMap (functions, Function.shrink),
                   handlesSignals = handlesSignals,
                   main = Function.shrink main,
                   objectTypes = objectTypes,
-                  makeProfileInfo = makeProfileInfo}
+                  profileInfo = profileInfo}
             val p = copyProp p
             val () = clear p
          in
             p
          end
 
-      fun shuffle (T {functions, handlesSignals, main, objectTypes, makeProfileInfo}) =
+      fun shuffle (T {functions, handlesSignals, main, objectTypes, profileInfo}) =
          let
             val functions = Array.fromListMap (functions, Function.shuffle)
             val () = Array.shuffle functions
@@ -1185,7 +1184,7 @@ structure Program =
                        handlesSignals = handlesSignals,
                        main = Function.shuffle main,
                        objectTypes = objectTypes,
-                       makeProfileInfo = makeProfileInfo}
+                       profileInfo = profileInfo}
          in
             p
          end

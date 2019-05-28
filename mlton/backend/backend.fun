@@ -238,12 +238,8 @@ fun toMachine (program: Ssa.Program.t, codegen) =
           suffix = "machine",
           thunk = fn () =>
 let
-      val R.Program.T {functions, handlesSignals, main, objectTypes, makeProfileInfo} = program
-      val getFrameSourceSeqIndex =
-          case makeProfileInfo of
-             NONE => (fn _ => NONE)
-           | SOME (_, getFrameSourceSeqIndex) => SOME o getFrameSourceSeqIndex
-      (* Chunk information *)
+      val R.Program.T {functions, handlesSignals, main, objectTypes, profileInfo} = program
+      (* Chunk info *)
       val {get = labelChunk, set = setLabelChunk, ...} =
          Property.getSetOnce (Label.plist,
                               Property.initRaise ("labelChunk", Label.layout))
@@ -269,7 +265,12 @@ let
           in
              ()
           end)
-      (* FrameInfo. *)
+      (* Profile info *)
+      val (profileInfo, getFrameSourceSeqIndex) =
+         case profileInfo of
+            NONE => (NONE, fn _ => NONE)
+          | SOME (profileInfo, getFrameSourceSeqIndex) => (SOME profileInfo, SOME o getFrameSourceSeqIndex)
+      (* Frame info *)
       local
          val frameInfos: M.FrameInfo.t list ref = ref []
          val frameInfosCounter = Counter.new 0
@@ -1211,22 +1212,6 @@ let
               max
            end))
       val maxFrameSize = Bytes.alignWord32 maxFrameSize
-      fun frameLabels () =
-         let
-            val frameLabels = ref []
-            val () =
-               List.foreach
-               (chunks, fn M.Chunk.T {blocks, ...} =>
-                Vector.foreach
-                (blocks, fn M.Block.T {label, kind, ...} =>
-                 case M.Kind.frameInfoOpt kind of
-                    NONE => ()
-                  | SOME fi => List.push (frameLabels, (label, M.FrameInfo.index fi))))
-         in
-            !frameLabels
-         end
-      val profileInfo = Option.map (makeProfileInfo, fn (makeProfileInfo, _) =>
-                                    makeProfileInfo {frames = frameLabels})
       val program =
          M.Program.T
          {chunks = chunks,

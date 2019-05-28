@@ -182,7 +182,7 @@ fun insertInFunction (f: Function.t): Function.t =
 
 fun transform p =
    let
-      val Program.T {functions, handlesSignals, main, objectTypes, makeProfileInfo} = p
+      val Program.T {functions, handlesSignals, main, objectTypes, profileInfo} = p
    in
       if not handlesSignals
          then p
@@ -191,7 +191,7 @@ fun transform p =
                     handlesSignals = handlesSignals,
                     main = main,
                     objectTypes = objectTypes,
-                    makeProfileInfo = makeProfileInfo}
+                    profileInfo = profileInfo}
    end
 
 end

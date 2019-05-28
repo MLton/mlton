@@ -1685,7 +1685,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                          handlesSignals = handlesSignals,
                          main = main,
                          objectTypes = Vector.concat [objectTypes, Vector.fromListRev (!newObjectTypes)],
-                         makeProfileInfo = NONE}
+                         profileInfo = NONE}
       val _ = Program.clear p
    in
       p

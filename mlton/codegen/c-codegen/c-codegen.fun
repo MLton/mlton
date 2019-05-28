@@ -441,10 +441,16 @@ fun outputDeclarations
          else ()
       fun declareProfileInfo () =
          let
-            fun doit (ProfileInfo.T {frameSources, sourceLabels,
-                                     sourceNames, sourceSeqs, sources}) =
+            fun doit (ProfileInfo.T {sourceLabels, sourceNames, sourceSeqs, sources}) =
                (Vector.foreach (sourceLabels, fn {profileLabel, ...} =>
                                 declareProfileLabel (profileLabel, print))
+
+                ; (declareArray
+                   ("struct GC_sourceLabel", "sourceLabels", sourceLabels,
+                    fn (_, {profileLabel, sourceSeqIndex}) =>
+                    concat ["{(pointer)&", ProfileLabel.toString profileLabel, ", ",
+                            C.int sourceSeqIndex, "}"]))
+                ; declareArray ("char*", "sourceNames", sourceNames, C.string o #2)
                 ; (Vector.foreachi
                    (sourceSeqs, fn (i, v) =>
                     (print (concat ["static uint32_t sourceSeq",
@@ -456,12 +462,6 @@ fun outputDeclarations
                      ; print "};\n")))
                 ; declareArray ("uint32_t*", "sourceSeqs", sourceSeqs, fn (i, _) =>
                                 concat ["sourceSeq", Int.toString i])
-                ; (declareArray
-                   ("struct GC_sourceLabel", "sourceLabels", sourceLabels,
-                    fn (_, {profileLabel, sourceSeqIndex}) =>
-                    concat ["{(pointer)&", ProfileLabel.toString profileLabel, ", ",
-                            C.int sourceSeqIndex, "}"]))
-                ; declareArray ("char*", "sourceNames", sourceNames, C.string o #2)
                 ; declareArray ("struct GC_source", "sources", sources,
                                 fn (_, {sourceNameIndex, successorSourceSeqIndex}) =>
                                 concat ["{ ", Int.toString sourceNameIndex, ", ",

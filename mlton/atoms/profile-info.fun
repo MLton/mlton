@@ -12,16 +12,14 @@ struct
 open S
 
 datatype t =
-   T of {frameSources: {sourceSeqIndex: int} vector,
-         sourceLabels: {profileLabel: ProfileLabel.t,
+   T of {sourceLabels: {profileLabel: ProfileLabel.t,
                         sourceSeqIndex: int} vector,
          sourceNames: string vector,
          sourceSeqs: {sourceIndex: int} vector vector,
          sources: {sourceNameIndex: int,
                    successorSourceSeqIndex: int} vector}
 
-val empty = T {frameSources = Vector.new0 (),
-               sourceLabels = Vector.new0 (),
+val empty = T {sourceLabels = Vector.new0 (),
                sourceNames = Vector.new0 (),
                sourceSeqs = Vector.new0 (),
                sources = Vector.new0 ()}
@@ -29,13 +27,9 @@ val empty = T {frameSources = Vector.new0 (),
 fun clear (T {sourceLabels, ...}) =
    Vector.foreach (sourceLabels, ProfileLabel.clear o #profileLabel)
 
-fun layout (T {frameSources, sourceLabels, sourceNames, sourceSeqs, sources}) =
+fun layout (T {sourceLabels, sourceNames, sourceSeqs, sources}) =
    Layout.record
-   [("frameSources",
-     Vector.layout (fn {sourceSeqIndex} =>
-                    Layout.record [("sourceSeqIndex", Int.layout sourceSeqIndex)])
-     frameSources),
-    ("sourceLabels",
+   [("sourceLabels",
      Vector.layout (fn {profileLabel, sourceSeqIndex} =>
                     Layout.record
                     [("profileLabel", ProfileLabel.layout profileLabel),
@@ -55,7 +49,7 @@ fun layout (T {frameSources, sourceLabels, sourceNames, sourceSeqs, sources}) =
 
 fun layouts (pi, output) = output (layout pi)
 
-fun isOK (T {frameSources, sourceLabels, sourceNames, sourceSeqs, sources}): bool =
+fun isOK (T {sourceLabels, sourceNames, sourceSeqs, sources}): bool =
    let
       val sourceNamesLength = Vector.length sourceNames
       val sourceSeqsLength = Vector.length sourceSeqs
@@ -63,11 +57,9 @@ fun isOK (T {frameSources, sourceLabels, sourceNames, sourceSeqs, sources}): boo
    in
       !Control.profile = Control.ProfileNone
       orelse
-      (Vector.forall (frameSources, fn {sourceSeqIndex} =>
-                      0 <= sourceSeqIndex andalso sourceSeqIndex < sourceSeqsLength)
-       andalso (Vector.forall
-                (sourceLabels, fn {sourceSeqIndex, ...} =>
-                 0 <= sourceSeqIndex andalso sourceSeqIndex < sourceSeqsLength))
+      ((Vector.forall
+        (sourceLabels, fn {sourceSeqIndex, ...} =>
+         0 <= sourceSeqIndex andalso sourceSeqIndex < sourceSeqsLength))
        andalso (Vector.forall
                 (sourceSeqs, fn v =>
                  Vector.forall
@@ -81,7 +73,7 @@ fun isOK (T {frameSources, sourceLabels, sourceNames, sourceSeqs, sources}): boo
                  andalso successorSourceSeqIndex < sourceSeqsLength)))
    end
 
-fun modify (T {frameSources, sourceLabels, sourceNames, sourceSeqs, sources})
+fun modify (T {sourceLabels, sourceNames, sourceSeqs, sources})
    : {newProfileLabel: ProfileLabel.t -> ProfileLabel.t,
       delProfileLabel: ProfileLabel.t -> unit,
       getProfileInfo: unit -> t} =
@@ -113,8 +105,7 @@ fun modify (T {frameSources, sourceLabels, sourceNames, sourceSeqs, sources})
             val sourceLabels =
                Vector.keepAll (sourceLabels, fn {profileLabel, ...} =>
                                get profileLabel <> ~1)
-            val pi = T {frameSources = frameSources,
-                        sourceLabels = sourceLabels,
+            val pi = T {sourceLabels = sourceLabels,
                         sourceNames = sourceNames,
                         sourceSeqs = sourceSeqs,
                         sources = sources}
