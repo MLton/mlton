@@ -84,14 +84,13 @@ datatype varinfo
    | Rewrite of Weight.t (* Will be bounced *)
 
 fun loopForeach ({headers, child}, f) =
-   case DirectedGraph.LoopForest.dest child of
-        {loops, notInLoop} =>
-        let
-           val _ = Vector.foreach (headers, f)
-           val _ = Vector.foreach (notInLoop, f)
-        in
-           Vector.foreach (loops, fn loop => loopForeach (loop, f))
-        end
+     let
+        val _ = Vector.foreach (headers, f)
+        val {loops, notInLoop} = DirectedGraph.LoopForest.dest child
+        val _ = Vector.foreach (notInLoop, f)
+     in
+        Vector.foreach (loops, fn loop => loopForeach (loop, f))
+     end
 
 fun transformFunc func =
    let
@@ -130,25 +129,12 @@ fun transformFunc func =
             | _ => ())
 
       val n = !Control.bounceRssaLimit
-      val _ = Control.diagnostic (fn () =>
-         let
-            open Layout
-         in
-            seq [str "Bounce rssa limit: ", Option.layout Int.layout n]
-         end)
 
-      fun modVarInfo (v, f) =
-         let
-            val newInfo =
-               case varInfo v of
-                    Ignore => Ignore
-                  | ConsiderBounce => ConsiderBounce
-                  | Consider w => Consider (f w)
-                  | Rewrite w => Rewrite (f w)
-            val _ = setVarInfo (v, newInfo)
-         in
-            ()
-         end
+      fun checkLoopSize sizeref =
+         case !Control.bounceRssaLoopCutoff of
+              SOME n => !sizeref < n
+            | NONE => true
+
       val _ = let
          (* now for each var in consideration, check if active in loop *)
          fun setConsiderVars (block as Block.T {label, ...}) =
@@ -174,14 +160,9 @@ fun transformFunc func =
                val size = ref 0
                val _ = loopForeach (loop, count size)
                val _ =
-                  (* this bound is a conservative bound
-                   * backed up by data showing no improvements at
-                   * all over this size, so we'll save the overhead *)
-                  case !Control.bounceRssaLoopCutoff of
-                       SOME n => if !size < n
-                                 then loopForeach (loop, setConsiderVars)
-                                 else ()
-                     | NONE => ()
+                  if checkLoopSize size
+                     then loopForeach (loop, setConsiderVars)
+                     else ()
                val _ = Vector.foreach (headers, setHeader)
             in
                ()
@@ -222,17 +203,24 @@ fun transformFunc func =
       val _ = let
          fun setVarWeights (block as Block.T {label, ...}) =
            let
-              val modVarInfo = fn (v, f) =>
-               ((case varInfo v of
-                    ConsiderBounce =>
-                     setVarInfo (v, Consider Weight.new)
-                  | _ => ())
-               ; modVarInfo (v, f))
+               fun modVarInfo (v, f) =
+                  let
+                     val newInfo =
+                        case varInfo v of
+                             Ignore => Ignore
+                           | ConsiderBounce => Consider (f Weight.new)
+                           | Consider w => Consider (f w)
+                           | Rewrite w => Rewrite (f w)
+                     val _ = setVarInfo (v, newInfo)
+                  in
+                     ()
+                  end
               val _ = Block.foreachDef (block,
                   fn (v, _) =>
                      modVarInfo (v,
-                        fn w => Weight.inc (Weight.setLocalDef (w,
-                           Weight.DefLoc.Local))))
+                        fn w => Weight.inc
+                           (Weight.setLocalDef (w,
+                              Weight.DefLoc.Local))))
 
               val _ = Block.foreachUse (block,
                   fn v =>
@@ -247,14 +235,13 @@ fun transformFunc func =
            end
          fun processLoop loop =
             let
-               fun count reff _ = Int.inc reff
                val size = ref 0
-               val _ = loopForeach (loop, count size)
+               val _ = loopForeach (loop, fn Block.T {...} => Int.inc size)
                val _ =
                   (* this bound is a conservative bound
                    * backed up by data showing no improvements at
                    * all over this size, so we'll save the overhead *)
-                  if !size < 40
+                  if checkLoopSize size
                   then loopForeach (loop, setVarWeights)
                   else ()
             in
