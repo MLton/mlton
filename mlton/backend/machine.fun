@@ -570,6 +570,16 @@ structure FrameInfo =
                   (C_FRAME, C_FRAME) => true
                 | (ML_FRAME, ML_FRAME) => true
                 | _ => false
+            local
+               val newHash = Random.word
+               val c = newHash ()
+               val ml = newHash ()
+            in
+               fun hash k =
+                  case k of
+                     C_FRAME => c
+                   | ML_FRAME => ml
+            end
             fun toString k =
                case k of
                   C_FRAME => "C_FRAME"
@@ -580,7 +590,8 @@ structure FrameInfo =
       datatype t = T of {frameOffsets: FrameOffsets.t,
                          index: int ref,
                          kind: Kind.t,
-                         size: Bytes.t}
+                         size: Bytes.t,
+                         sourceSeqIndex: int option}
 
       local
          fun make f (T r) = f r
@@ -589,31 +600,35 @@ structure FrameInfo =
          val indexRef = make #index
          val kind = make #kind
          val size = make #size
+         val sourceSeqIndex = make #sourceSeqIndex
       end
       val index = ! o indexRef
       fun setIndex (fi, i) = indexRef fi := i
       val offsets = FrameOffsets.offsets o frameOffsets
 
-      fun new {frameOffsets, index, kind, size} =
+      fun new {frameOffsets, index, kind, size, sourceSeqIndex} =
          T {frameOffsets = frameOffsets,
             index = ref index,
             kind = kind,
-            size = size}
+            size = size,
+            sourceSeqIndex = sourceSeqIndex}
 
       fun equals (fi1, fi2) =
          FrameOffsets.equals (frameOffsets fi1, frameOffsets fi2)
          andalso Ref.equals (indexRef fi1, indexRef fi2)
          andalso Kind.equals (kind fi1, kind fi2)
          andalso Bytes.equals (size fi1, size fi2)
+         andalso Option.equals (sourceSeqIndex fi1, sourceSeqIndex fi2, Int.equals)
 
-      fun layout (T {frameOffsets, index, kind, size}) =
+      fun layout (T {frameOffsets, index, kind, size, sourceSeqIndex}) =
          let
             open Layout
          in
             record [("frameOffsets", FrameOffsets.layout frameOffsets),
                     ("index", Ref.layout Int.layout index),
                     ("kind", Kind.layout kind),
-                    ("size", Bytes.layout size)]
+                    ("size", Bytes.layout size),
+                    ("sourceSeqIndex", Option.layout Int.layout sourceSeqIndex)]
          end
    end
 

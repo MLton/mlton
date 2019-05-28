@@ -26,8 +26,10 @@
  * marker.)  The offsets field points to an array (the zeroeth element
  * recording the size of the array) whose elements record byte offsets
  * from the bottom of the frame at which live heap pointers are
- * located. The size field indicates the size of the frame, including
- * space for the return address.
+ * located.  The size field indicates the size of the frame, including
+ * space for the return address.  The sourceSeqIndex field indicates
+ * the sequence of source names corresponding to the frame as an index
+ * into sourceSeqs; see sources.h.
  */
 typedef uint16_t *GC_frameOffsets;
 
@@ -40,6 +42,7 @@ typedef struct GC_frameInfo {
   GC_frameKind kind;
   GC_frameOffsets offsets;
   uint16_t size;
+  GC_sourceSeqIndex sourceSeqIndex;
 } *GC_frameInfo;
 typedef uint32_t GC_frameIndex;
 #define PRIFI PRIu32

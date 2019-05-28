@@ -931,9 +931,20 @@ fun transform program =
       fun makeProfileInfo {frames} =
          let
             val frames = Array.fromList (frames ())
-            val () = QuickSort.sortArray (frames, fn ((_,i1), (_,i2)) => i1 < i2)
-            val frameSources = Array.toVectorMap (frames, fn (l, _) =>
-                                                  {sourceSeqIndex = getFrameSourceSeqIndex l})
+            val () = QuickSort.sortArray (frames, fn ((_,i1), (_,i2)) => i1 <= i2)
+            val (_, _, frameSources) =
+               Array.fold (frames, (~1, ~1, []), fn ((label, index), (lastIndex, lastSourceSeqIndex, frameSources)) =>
+                           if index = lastIndex
+                              then if getFrameSourceSeqIndex label = lastSourceSeqIndex
+                                      then (lastIndex, lastSourceSeqIndex, frameSources)
+                                      else Error.bug "ImplementProfiling.makeProfileInfo"
+                              else let
+                                      val sourceSeqIndex = getFrameSourceSeqIndex label
+                                   in
+                                      (index, sourceSeqIndex,
+                                       {sourceSeqIndex = sourceSeqIndex} :: frameSources)
+                                   end)
+            val frameSources = Vector.fromListRev frameSources
          in
             ProfileInfo.T {frameSources = frameSources,
                            sourceLabels = sourceLabels,

@@ -239,6 +239,10 @@ fun toMachine (program: Ssa.Program.t, codegen) =
           thunk = fn () =>
 let
       val R.Program.T {functions, handlesSignals, main, objectTypes, makeProfileInfo} = program
+      val getFrameSourceSeqIndex =
+          case makeProfileInfo of
+             NONE => (fn _ => NONE)
+           | SOME (_, getFrameSourceSeqIndex) => SOME o getFrameSourceSeqIndex
       (* Chunk information *)
       val {get = labelChunk, set = setLabelChunk, ...} =
          Property.getSetOnce (Label.plist,
@@ -272,13 +276,17 @@ let
          val _ = ByteSet.reset ()
          val table =
             let
-               fun equals ({kind = k1, frameOffsets = fo1, size = s1},
-                           {kind = k2, frameOffsets = fo2, size = s2}) =
+               fun equals ({kind = k1, frameOffsets = fo1, size = s1, sourceSeqIndex = ssi1},
+                           {kind = k2, frameOffsets = fo2, size = s2, sourceSeqIndex = ssi2}) =
                   M.FrameInfo.Kind.equals (k1, k2)
                   andalso M.FrameOffsets.equals (fo1, fo2)
                   andalso Bytes.equals (s1, s2)
-               fun hash {kind = _, frameOffsets, size} =
-                  Hash.combine (M.FrameOffsets.hash frameOffsets, Bytes.hash size)
+                  andalso Option.equals (ssi1, ssi2, Int.equals)
+               fun hash {kind, frameOffsets, size, sourceSeqIndex} =
+                  Hash.list [M.FrameInfo.Kind.hash kind,
+                             M.FrameOffsets.hash frameOffsets,
+                             Bytes.hash size,
+                             Hash.optionMap (sourceSeqIndex, Word.fromInt)]
             in
                HashTable.new {equals = equals,
                               hash = hash}
@@ -350,7 +358,8 @@ let
          fun getFrameInfo {entry: bool,
                            kind: M.FrameInfo.Kind.t,
                            offsets: Bytes.t list,
-                           size: Bytes.t}: M.FrameInfo.t =
+                           size: Bytes.t,
+                           sourceSeqIndex: int option}: M.FrameInfo.t =
             let
                val frameOffsets = getFrameOffsets (ByteSet.fromList offsets)
                fun new () =
@@ -361,37 +370,32 @@ let
                         {frameOffsets = frameOffsets,
                          index = index,
                          kind = kind,
-                         size = size}
+                         size = size,
+                         sourceSeqIndex = sourceSeqIndex}
                      val _ = List.push (frameInfos, frameInfo)
                   in
                      frameInfo
                   end
             in
-               (* We need to give a frame a unique layout index in two cases.
-                * 1. If we are using the C or LLVM codegens, then we
-                *    want each entry frame to have a different index,
-                *    because the index will be used for the trampoline
-                *    (nextChunks mapping and ChunkSwitch); moreover,
-                *    we want the indices of entry frames of a chunk to
-                *    be consecutive integers so that gcc will use a
-                *    jump table.
-                * 2. If we are profiling, we want every frame to have
-                *    a different index so that it can have its own
-                *    profiling info.  This will be created by the call
-                *    to makeProfileInfo at the end of the backend.
+               (* If we are using the C or LLVM codegens, then we want
+                * each entry frame to have a different index, because
+                * the index will be used for the trampoline
+                * (nextChunks mapping and ChunkSwitch); moreover, we
+                * want the indices of entry frames of a chunk to be
+                * consecutive integers so that gcc will use a jump
+                * table.
                 *)
-               if ((!Control.codegen = Control.CCodegen
-                    orelse !Control.codegen = Control.LLVMCodegen)
-                   andalso entry)
-                  orelse !Control.profile <> Control.ProfileNone
+               if entry
+                  andalso (!Control.codegen = Control.CCodegen
+                           orelse !Control.codegen = Control.LLVMCodegen)
                   then new ()
-               else
-               HashTable.lookupOrInsert
-               (table,
-                {frameOffsets = frameOffsets,
-                 kind = kind,
-                 size = size},
-                fn () => new ())
+                  else HashTable.lookupOrInsert
+                       (table,
+                        {frameOffsets = frameOffsets,
+                         kind = kind,
+                         size = size,
+                         sourceSeqIndex = sourceSeqIndex},
+                        fn () => new ())
             end
       end
       val {get = frameInfo: Label.t -> M.FrameInfo.t option,
@@ -857,7 +861,8 @@ let
                             getFrameInfo {entry = entry,
                                           kind = kind,
                                           offsets = offsets,
-                                          size = size}
+                                          size = size,
+                                          sourceSeqIndex = getFrameSourceSeqIndex label}
                       in
                          setFrameInfo (label, SOME frameInfo)
                       end
@@ -991,7 +996,8 @@ let
                                    getFrameInfo {entry = true,
                                                  kind = M.FrameInfo.Kind.ML_FRAME,
                                                  offsets = [],
-                                                 size = Bytes.zero}
+                                                 size = Bytes.zero,
+                                                 sourceSeqIndex = NONE}
                              in
                                 Chunk.newBlock
                                 (funcChunk name,

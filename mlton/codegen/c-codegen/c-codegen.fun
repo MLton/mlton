@@ -328,6 +328,9 @@ fun outputDeclarations
                                FrameInfo.Kind.toString (FrameInfo.kind fi),
                                ", frameOffsets", C.int (FrameOffsets.index (FrameInfo.frameOffsets fi)),
                                ", ", C.bytes (FrameInfo.size fi),
+                               ", ", (case FrameInfo.sourceSeqIndex fi of
+                                         NONE => C.int 0
+                                       | SOME ssi => C.int ssi),
                                "}"])
       fun declareAtMLtons () =
          declareArray ("char*", "atMLtons", !Control.atMLtons, C.string o #2)

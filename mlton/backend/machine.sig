@@ -181,6 +181,7 @@ signature MACHINE =
                sig
                   datatype t = C_FRAME | ML_FRAME
                   val equals: t * t -> bool
+                  val hash: t -> word
                   val layout: t -> Layout.t
                   val toString: t -> string
                end
@@ -195,10 +196,12 @@ signature MACHINE =
             val new: {frameOffsets: FrameOffsets.t,
                       index: int,
                       kind: Kind.t,
-                      size: Bytes.t} -> t
+                      size: Bytes.t,
+                      sourceSeqIndex: int option} -> t
             val offsets: t -> Bytes.t vector
             val setIndex: t * int -> unit
             val size: t -> Bytes.t
+            val sourceSeqIndex: t -> int option
          end
 
       structure Kind:
