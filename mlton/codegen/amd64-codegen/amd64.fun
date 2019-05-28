@@ -3371,13 +3371,13 @@ struct
   structure FrameInfo =
      struct
         datatype t = T of {size: int, 
-                           frameLayoutsIndex: int}
+                           frameInfosIndex: int}
 
-        fun toString (T {size, frameLayoutsIndex})
+        fun toString (T {size, frameInfosIndex})
            = concat ["{",
                      "size = ", Int.toString size, ", ",
-                     "frameLayoutsIndex = ", 
-                     Int.toString frameLayoutsIndex, "}"]
+                     "frameInfosIndex = ",
+                     Int.toString frameInfosIndex, "}"]
      end
 
   structure Entry =

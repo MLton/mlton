@@ -36,8 +36,8 @@ PRIVATE Pointer gcStateAddress;
         gcState.alignment = al;                                         \
         gcState.atMLtons = atMLtons;                                    \
         gcState.atMLtonsLength = cardof(atMLtons);                      \
-        gcState.frameLayouts = frameLayouts;                            \
-        gcState.frameLayoutsLength = cardof(frameLayouts);              \
+        gcState.frameInfos = frameInfos;                                \
+        gcState.frameInfosLength = cardof(frameInfos);                  \
         gcState.globals = (objptr*)globalObjptr;                        \
         gcState.globalsLength = cardof(globalObjptr);                   \
         gcState.loadGlobals = loadGlobals;                              \

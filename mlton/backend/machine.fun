@@ -922,7 +922,7 @@ structure Program =
                    val size = FrameInfo.size fi
                 in
                    Err.check
-                   ("frameLayouts",
+                   ("frameInfos",
                     fn () => (Int.equals (i, index)
                               andalso checkFrameOffsets frameOffsets
                               andalso Bytes.<= (size, maxFrameSize)

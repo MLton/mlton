@@ -1,4 +1,4 @@
-/* Copyright (C) 2012,2016 Matthew Fluet.
+/* Copyright (C) 2012,2016,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -91,19 +91,19 @@ GC_frameIndex getStackTopFrameIndex (GC_state s, GC_stack stack) {
   return res;
 }
 
-GC_frameLayout getStackTopFrameLayout (GC_state s, GC_stack stack) {
-  GC_frameLayout layout;
+GC_frameInfo getStackTopFrameInfo (GC_state s, GC_stack stack) {
+  GC_frameInfo frameInfo;
 
-  layout = getFrameLayoutFromFrameIndex (s, getStackTopFrameIndex (s, stack));
-  return layout;
+  frameInfo = getFrameInfoFromFrameIndex (s, getStackTopFrameIndex (s, stack));
+  return frameInfo;
 }
 
 uint16_t getStackTopFrameSize (GC_state s, GC_stack stack) {
-  GC_frameLayout layout;
+  GC_frameInfo frameInfo;
 
   assert (not (isStackEmpty (stack)));
-  layout = getStackTopFrameLayout (s, stack);
-  return layout->size;
+  frameInfo = getStackTopFrameInfo (s, stack);
+  return frameInfo->size;
 }
 
 

@@ -288,7 +288,7 @@ struct
 
       fun frameInfoToAMD64 fi =
          amd64.FrameInfo.T
-         {frameLayoutsIndex = Machine.FrameInfo.index fi,
+         {frameInfosIndex = Machine.FrameInfo.index fi,
           size = Bytes.toInt (Machine.FrameInfo.size fi)}
 
       fun toAMD64Blocks {label, kind, 

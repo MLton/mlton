@@ -299,7 +299,7 @@ struct
 
       fun frameInfoToX86 fi =
          x86.FrameInfo.T
-         {frameLayoutsIndex = Machine.FrameInfo.index fi,
+         {frameInfosIndex = Machine.FrameInfo.index fi,
           size = Bytes.toInt (Machine.FrameInfo.size fi)}
 
       fun toX86Blocks {label, kind, 

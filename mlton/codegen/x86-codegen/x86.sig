@@ -1050,7 +1050,7 @@ signature X86 =
     structure FrameInfo:
        sig
           datatype t = T of {size: int, 
-                             frameLayoutsIndex: int}
+                             frameInfosIndex: int}
        end
 
     structure Entry:

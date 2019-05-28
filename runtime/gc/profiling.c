@@ -345,7 +345,7 @@ void GC_handleSigProf (code_pointer pc) {
     sourceSeqIndex = SOURCE_SEQ_GC;
   else {
     frameIndex = getCachedStackTopFrameIndex (s);
-    if (C_FRAME == s->frameLayouts[frameIndex].kind)
+    if (C_FRAME == s->frameInfos[frameIndex].kind)
       sourceSeqIndex = s->sourceMaps.frameSources[frameIndex];
     else {
       if (PROFILE_TIME_LABEL == s->profiling.kind) {
@@ -440,7 +440,7 @@ void initProfiling (GC_state s) {
     s->profiling.isOn = FALSE;
   else {
     s->profiling.isOn = TRUE;
-    assert (s->sourceMaps.frameSourcesLength == s->frameLayoutsLength);
+    assert (s->sourceMaps.frameSourcesLength == s->frameInfosLength);
     switch (s->profiling.kind) {
     case PROFILE_ALLOC:
     case PROFILE_COUNT:

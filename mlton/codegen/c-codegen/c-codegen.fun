@@ -321,8 +321,8 @@ fun outputDeclarations
           ; Vector.foreachi (v, fn (i, x) =>
                              print (concat ["\t /* ", C.int i, ": */ ", toString (i, x), ",\n"]))
           ; print "};\n")
-      fun declareFrameLayouts () =
-         declareArray ("struct GC_frameLayout", "frameLayouts", frameInfos,
+      fun declareFrameInfos () =
+         declareArray ("struct GC_frameInfo", "frameInfos", frameInfos,
                        fn (_, fi) =>
                        concat ["{",
                                FrameInfo.Kind.toString (FrameInfo.kind fi),
@@ -476,7 +476,7 @@ fun outputDeclarations
       ; declareLoadSaveGlobals (); print "\n"
       ; declareVectors (); print "\n"
       ; declareReals (); print "\n"
-      ; declareFrameOffsets (); declareFrameLayouts (); print "\n"
+      ; declareFrameOffsets (); declareFrameInfos (); print "\n"
       ; declareObjectTypes (); print "\n"
       ; declareProfileInfo (); print "\n"
       ; declareAtMLtons (); print "\n"

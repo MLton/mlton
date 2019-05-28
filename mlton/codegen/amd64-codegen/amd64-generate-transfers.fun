@@ -607,7 +607,7 @@ struct
                                  case frameInfo of
                                    SOME fi =>
                                       let
-                                          val FrameInfo.T {size, frameLayoutsIndex}
+                                          val FrameInfo.T {size, frameInfosIndex}
                                             = fi
                                           val finish
                                             = AppendList.appends
@@ -634,7 +634,7 @@ struct
                                            [Assembly.pseudoop_p2align 
                                             (Immediate.int 4, NONE, NONE),
                                             Assembly.pseudoop_long 
-                                            [Immediate.int frameLayoutsIndex],
+                                            [Immediate.int frameInfosIndex],
                                             Assembly.label label],
                                            AppendList.fromList
                                            (ProfileLabel.toAssemblyOpt profileLabel),
@@ -684,7 +684,7 @@ struct
                                 (farEntry AppendList.empty)]
                             | Cont {label, 
                                     frameInfo = FrameInfo.T {size,
-                                                             frameLayoutsIndex},
+                                                             frameInfosIndex},
                                     ...}
                             =>
                                AppendList.appends
@@ -692,7 +692,7 @@ struct
                                 [Assembly.pseudoop_p2align
                                  (Immediate.int 4, NONE, NONE),
                                  Assembly.pseudoop_long
-                                 [Immediate.int frameLayoutsIndex],
+                                 [Immediate.int frameInfosIndex],
                                  Assembly.label label],
                                 AppendList.fromList
                                 (ProfileLabel.toAssemblyOpt profileLabel),
@@ -714,7 +714,7 @@ struct
                                       profileStackTopCommit)
                                   end))]
                             | Handler {frameInfo = (FrameInfo.T
-                                                    {frameLayoutsIndex, size}),
+                                                    {frameInfosIndex, size}),
                                        label,
                                        ...}
                             => AppendList.appends
@@ -722,7 +722,7 @@ struct
                                 [Assembly.pseudoop_p2align 
                                  (Immediate.int 4, NONE, NONE),
                                  Assembly.pseudoop_long
-                                 [Immediate.int frameLayoutsIndex],
+                                 [Immediate.int frameInfosIndex],
                                  Assembly.label label],
                                 AppendList.fromList
                                 (ProfileLabel.toAssemblyOpt profileLabel),

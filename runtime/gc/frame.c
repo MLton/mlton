@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -16,23 +17,23 @@ GC_frameIndex getFrameIndexFromReturnAddress (GC_state s, GC_returnAddress ra) {
   return res;
 }
 
-GC_frameLayout getFrameLayoutFromFrameIndex (GC_state s, GC_frameIndex findex) {
-  GC_frameLayout layout;
+GC_frameInfo getFrameInfoFromFrameIndex (GC_state s, GC_frameIndex frameIndex) {
+  GC_frameInfo frameInfo;
 
   if (DEBUG_DETAILED)
-    fprintf (stderr, "findex = "FMTFI"  frameLayoutsLength = %"PRIu32"\n",
-            findex, s->frameLayoutsLength);
-  assert (findex < s->frameLayoutsLength);
-  layout = &(s->frameLayouts[findex]);
-  assert (layout->size > 0);
-  return layout;
+    fprintf (stderr, "frameIndex = "FMTFI"  frameInfosLength = %"PRIu32"\n",
+            frameIndex, s->frameInfosLength);
+  assert (frameIndex < s->frameInfosLength);
+  frameInfo = &(s->frameInfos[frameIndex]);
+  assert (frameInfo->size > 0);
+  return frameInfo;
 }
 
-GC_frameLayout getFrameLayoutFromReturnAddress (GC_state s, GC_returnAddress ra) {
-  GC_frameLayout layout;
-  GC_frameIndex findex;
+GC_frameInfo getFrameInfoFromReturnAddress (GC_state s, GC_returnAddress ra) {
+  GC_frameInfo frameInfo;
+  GC_frameIndex frameIndex;
 
-  findex = getFrameIndexFromReturnAddress (s, ra);
-  layout = getFrameLayoutFromFrameIndex(s, findex);
-  return layout;
+  frameIndex = getFrameIndexFromReturnAddress (s, ra);
+  frameInfo = getFrameInfoFromFrameIndex(s, frameIndex);
+  return frameInfo;
 }

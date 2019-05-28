@@ -43,7 +43,7 @@ typedef struct GC_sourceLabel {
 
 struct GC_sourceMaps {
   volatile GC_sourceSeqIndex curSourceSeqIndex;
-  /* frameSources is an array of cardinality frameLayoutsLength;
+  /* frameSources is an array of cardinality frameInfosLength;
    * for each stack frame, gives an index into sourceSeqs of the
    * sequence of source names corresponding to the frame.
    */
