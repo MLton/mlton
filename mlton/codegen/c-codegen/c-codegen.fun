@@ -456,8 +456,6 @@ fun outputDeclarations
                      ; print "};\n")))
                 ; declareArray ("uint32_t*", "sourceSeqs", sourceSeqs, fn (i, _) =>
                                 concat ["sourceSeq", Int.toString i])
-                ; declareArray ("GC_sourceSeqIndex", "frameSources", frameSources,
-                                fn (_, {sourceSeqIndex}) => C.int sourceSeqIndex)
                 ; (declareArray
                    ("struct GC_sourceLabel", "sourceLabels", sourceLabels,
                     fn (_, {profileLabel, sourceSeqIndex}) =>

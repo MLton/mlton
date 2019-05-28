@@ -11,8 +11,8 @@ GC_sourceSeqIndex getCachedStackTopFrameSourceSeqIndex (GC_state s) {
   GC_frameIndex i;
 
   i = getCachedStackTopFrameIndex (s);
-  assert(i < s->sourceMaps.frameSourcesLength);
-  return s->sourceMaps.frameSources[i];
+  assert(i < s->frameInfosLength);
+  return s->frameInfos[i].sourceSeqIndex;
 }
 
 char* getSourceName (GC_state s, GC_sourceIndex i) {

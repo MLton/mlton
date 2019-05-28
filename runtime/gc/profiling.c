@@ -97,7 +97,7 @@ void enterForProfiling (GC_state s, GC_sourceSeqIndex sourceSeqIndex) {
 }
 
 void enterFrameForProfiling (GC_state s, GC_frameIndex i) {
-  enterForProfiling (s, s->sourceMaps.frameSources[i]);
+  enterForProfiling (s, s->frameInfos[i].sourceSeqIndex);
 }
 
 void GC_profileEnter (GC_state s) {
@@ -346,7 +346,7 @@ void GC_handleSigProf (code_pointer pc) {
   else {
     frameIndex = getCachedStackTopFrameIndex (s);
     if (C_FRAME == s->frameInfos[frameIndex].kind)
-      sourceSeqIndex = s->sourceMaps.frameSources[frameIndex];
+      sourceSeqIndex = s->frameInfos[frameIndex].sourceSeqIndex;
     else {
       if (PROFILE_TIME_LABEL == s->profiling.kind) {
         uint32_t start, end, i;
@@ -440,7 +440,6 @@ void initProfiling (GC_state s) {
     s->profiling.isOn = FALSE;
   else {
     s->profiling.isOn = TRUE;
-    assert (s->sourceMaps.frameSourcesLength == s->frameInfosLength);
     switch (s->profiling.kind) {
     case PROFILE_ALLOC:
     case PROFILE_COUNT:
