@@ -727,8 +727,6 @@ let
             val returns =
                Option.map (returns, fn ts =>
                            callReturnStackOffsets (ts, fn t => t, Bytes.zero))
-            fun labelArgOperands (l: R.Label.t): M.Operand.t vector =
-               Vector.map (#args (labelInfo l), varOperand o #1)
             fun newVarInfo (x, ty: Type.t) =
                let
                   val operand =
@@ -946,9 +944,18 @@ let
                            (setupArgs, transfer)
                         end
                    | R.Transfer.Goto {dst, args} =>
-                        (parallelMove {srcs = translateOperands args,
-                                       dsts = labelArgOperands dst},
-                         M.Transfer.Goto dst)
+                        let
+                           val (dsts', srcs') =
+                              Vector.unzip
+                              (Vector.keepAllMap2
+                               (#args (labelInfo dst), args, fn ((dst, _), src) =>
+                                case varOperandOpt dst of
+                                   NONE => NONE
+                                 | SOME dst => SOME (dst, translateOperand src)))
+                        in
+                           (parallelMove {srcs = srcs', dsts = dsts'},
+                            M.Transfer.Goto dst)
+                        end
                    | R.Transfer.Raise srcs =>
                         (M.Statement.moves {dsts = Vector.map (valOf raises,
                                                                Live.toOperand),
