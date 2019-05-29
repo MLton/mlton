@@ -53,22 +53,26 @@ fun shouldBounceAt (Block.T {kind, ...}) =
 structure Weight = struct
 
    (* t is a positive rational weight: count/loopSize, and a definition location *)
-   type t = {count: int, size: int}
+   datatype t = T of {count: IntInf.t, size: IntInf.t}
 
-   val op + =  fn ({count=count1, size=size1},
-                  {count=count2, size=size2}) =>
+   val op + =  fn (T {count=count1, size=size1},
+                   T {count=count2, size=size2}) =>
       let
-         val l = Int.lcm (size1, size2)
+         open IntInf
+         val l = lcm (size1, size2)
       in
-         {count= count1 * (l div size2) + count2 * (l div size1),
-          size=l}
+         T {count= count1 * (l div size2) + count2 * (l div size1),
+            size=l}
       end
+   fun count (T {count, ...}) = count
 
-   fun inc size t = t + {count=1, size=size}
-   val new = {count=0, size=1}
-   val op < = fn ({count=count1, size=size1},
-                  {count=count2, size=size2}) =>
-      count1 * size2 < count2 * size1
+   fun inc size t = t + T {count=IntInf.fromInt 1, size=IntInf.fromInt size}
+   val new = T {count=IntInf.fromInt 0, size=IntInf.fromInt 1}
+   val op < = fn (T {count=count1, size=size1},
+                  T {count=count2, size=size2}) =>
+      let open IntInf in
+         count1 * size2 < count2 * size1
+      end
 
 end
 
@@ -254,7 +258,7 @@ fun transformFunc func =
             fun insert (i, x, xw) =
                if i >= n orelse
                      (case !Control.bounceRssaUsageCutoff of
-                           SOME n => #count xw >= n
+                           SOME n => IntInf.>= (Weight.count xw, IntInf.fromInt n)
                          | NONE => false)
                      (* Variables with lots of uses are usually worse
                       * candidates than shorter lived variables used once or
