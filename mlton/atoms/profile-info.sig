@@ -21,8 +21,8 @@ signature PROFILE_INFO =
                 * names corresponding to the code pointer; only used with
                 * ProfileTimeLabel.
                 *)
-               sourceLabels: {profileLabel: ProfileLabel.t,
-                              sourceSeqIndex: int} vector,
+               profileLabelInfos: {profileLabel: ProfileLabel.t,
+                                   sourceSeqIndex: int} vector,
                (* the collection of source names from the program.
                 *)
                sourceNames: string vector,

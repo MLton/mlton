@@ -50,8 +50,8 @@ PRIVATE Pointer gcStateAddress;
         gcState.saveGlobals = saveGlobals;                              \
         gcState.vectorInits = vectorInits;                              \
         gcState.vectorInitsLength = cardof(vectorInits);                \
-        gcState.sourceMaps.sourceLabels = sourceLabels;                 \
-        gcState.sourceMaps.sourceLabelsLength = cardof(sourceLabels);   \
+        gcState.sourceMaps.profileLabelInfos = profileLabelInfos;       \
+        gcState.sourceMaps.profileLabelInfosLength = cardof(profileLabelInfos);   \
         gcState.sourceMaps.sourceNames = sourceNames;                   \
         gcState.sourceMaps.sourceNamesLength = cardof(sourceNames);     \
         gcState.sourceMaps.sourceSeqs = sourceSeqs;                     \

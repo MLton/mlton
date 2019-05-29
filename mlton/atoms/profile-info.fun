@@ -12,29 +12,29 @@ struct
 open S
 
 datatype t =
-   T of {sourceLabels: {profileLabel: ProfileLabel.t,
-                        sourceSeqIndex: int} vector,
+   T of {profileLabelInfos: {profileLabel: ProfileLabel.t,
+                             sourceSeqIndex: int} vector,
          sourceNames: string vector,
          sourceSeqs: {sourceIndex: int} vector vector,
          sources: {sourceNameIndex: int,
                    successorSourceSeqIndex: int} vector}
 
-val empty = T {sourceLabels = Vector.new0 (),
+val empty = T {profileLabelInfos = Vector.new0 (),
                sourceNames = Vector.new0 (),
                sourceSeqs = Vector.new0 (),
                sources = Vector.new0 ()}
 
-fun clear (T {sourceLabels, ...}) =
-   Vector.foreach (sourceLabels, ProfileLabel.clear o #profileLabel)
+fun clear (T {profileLabelInfos, ...}) =
+   Vector.foreach (profileLabelInfos, ProfileLabel.clear o #profileLabel)
 
-fun layout (T {sourceLabels, sourceNames, sourceSeqs, sources}) =
+fun layout (T {profileLabelInfos, sourceNames, sourceSeqs, sources}) =
    Layout.record
-   [("sourceLabels",
+   [("profileLabelInfos",
      Vector.layout (fn {profileLabel, sourceSeqIndex} =>
                     Layout.record
                     [("profileLabel", ProfileLabel.layout profileLabel),
                      ("sourceSeqIndex", Int.layout sourceSeqIndex)])
-     sourceLabels),
+     profileLabelInfos),
     ("sourceNames", Vector.layout String.layout sourceNames),
     ("sourceSeqs",
      Vector.layout (Vector.layout (fn {sourceIndex} =>
@@ -49,7 +49,7 @@ fun layout (T {sourceLabels, sourceNames, sourceSeqs, sources}) =
 
 fun layouts (pi, output) = output (layout pi)
 
-fun isOK (T {sourceLabels, sourceNames, sourceSeqs, sources}): bool =
+fun isOK (T {profileLabelInfos, sourceNames, sourceSeqs, sources}): bool =
    let
       val sourceNamesLength = Vector.length sourceNames
       val sourceSeqsLength = Vector.length sourceSeqs
@@ -58,7 +58,7 @@ fun isOK (T {sourceLabels, sourceNames, sourceSeqs, sources}): bool =
       !Control.profile = Control.ProfileNone
       orelse
       ((Vector.forall
-        (sourceLabels, fn {sourceSeqIndex, ...} =>
+        (profileLabelInfos, fn {sourceSeqIndex, ...} =>
          0 <= sourceSeqIndex andalso sourceSeqIndex < sourceSeqsLength))
        andalso (Vector.forall
                 (sourceSeqs, fn v =>
@@ -73,7 +73,7 @@ fun isOK (T {sourceLabels, sourceNames, sourceSeqs, sources}): bool =
                  andalso successorSourceSeqIndex < sourceSeqsLength)))
    end
 
-fun modify (T {sourceLabels, sourceNames, sourceSeqs, sources})
+fun modify (T {profileLabelInfos, sourceNames, sourceSeqs, sources})
    : {newProfileLabel: ProfileLabel.t -> ProfileLabel.t,
       delProfileLabel: ProfileLabel.t -> unit,
       getProfileInfo: unit -> t} =
@@ -84,7 +84,7 @@ fun modify (T {sourceLabels, sourceNames, sourceSeqs, sources})
           Property.initRaise ("ProfileInfo.extend", ProfileLabel.layout))
       val _ =
          Vector.foreach
-         (sourceLabels, fn {profileLabel, sourceSeqIndex} =>
+         (profileLabelInfos, fn {profileLabel, sourceSeqIndex} =>
           set (profileLabel, sourceSeqIndex))
       val new = ref []
       fun newProfileLabel pl =
@@ -100,12 +100,12 @@ fun modify (T {sourceLabels, sourceNames, sourceSeqs, sources})
       fun delProfileLabel pl = set (pl, ~1)
       fun getProfileInfo () =
          let
-            val sourceLabels =
-               Vector.concat [sourceLabels, Vector.fromList (!new)]
-            val sourceLabels =
-               Vector.keepAll (sourceLabels, fn {profileLabel, ...} =>
+            val profileLabelInfos =
+               Vector.concat [profileLabelInfos, Vector.fromList (!new)]
+            val profileLabelInfos =
+               Vector.keepAll (profileLabelInfos, fn {profileLabel, ...} =>
                                get profileLabel <> ~1)
-            val pi = T {sourceLabels = sourceLabels,
+            val pi = T {profileLabelInfos = profileLabelInfos,
                         sourceNames = sourceNames,
                         sourceSeqs = sourceSeqs,
                         sources = sources}

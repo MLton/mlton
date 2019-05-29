@@ -441,12 +441,12 @@ fun outputDeclarations
          else ()
       fun declareProfileInfo () =
          let
-            fun doit (ProfileInfo.T {sourceLabels, sourceNames, sourceSeqs, sources}) =
-               (Vector.foreach (sourceLabels, fn {profileLabel, ...} =>
+            fun doit (ProfileInfo.T {profileLabelInfos, sourceNames, sourceSeqs, sources}) =
+               (Vector.foreach (profileLabelInfos, fn {profileLabel, ...} =>
                                 declareProfileLabel (profileLabel, print))
 
                 ; (declareArray
-                   ("struct GC_sourceLabel", "sourceLabels", sourceLabels,
+                   ("struct GC_profileLabelInfo", "profileLabelInfos", profileLabelInfos,
                     fn (_, {profileLabel, sourceSeqIndex}) =>
                     concat ["{(pointer)&", ProfileLabel.toString profileLabel, ", ",
                             C.int sourceSeqIndex, "}"]))

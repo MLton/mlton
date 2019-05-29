@@ -13,9 +13,12 @@ typedef uint32_t GC_sourceNameIndex;
 #define PRISNI PRIu32
 #define FMTSNI "%"PRISNI
 
-typedef uint32_t GC_sourceLabelIndex;
-#define PRISLI PRIu32
-#define FMTSLI "%"PRISLI
+typedef uint32_t GC_sourceSeqIndex;
+#define PRISSI PRIu32
+#define FMTSSI "%"PRISSI
+
+#define SOURCE_SEQ_UNKNOWN    0
+#define SOURCE_SEQ_GC         1
 
 typedef uint32_t GC_sourceIndex;
 #define PRISI PRIu32
@@ -24,33 +27,30 @@ typedef uint32_t GC_sourceIndex;
 #define SOURCES_INDEX_UNKNOWN 0
 #define SOURCES_INDEX_GC      1
 
-typedef uint32_t GC_sourceSeqIndex;
-#define PRISSI PRIu32
-#define FMTSSI "%"PRISSI
-
-#define SOURCE_SEQ_UNKNOWN    0
-#define SOURCE_SEQ_GC         1
-
 typedef struct GC_source {
   GC_sourceNameIndex sourceNameIndex;
   GC_sourceSeqIndex successorSourceSeqIndex;
 } *GC_source;
 
-typedef struct GC_sourceLabel {
+typedef struct GC_profileLabelInfo {
   code_pointer profileLabel;
   GC_sourceSeqIndex sourceSeqIndex;
-} *GC_sourceLabel;
+} *GC_profileLabelInfo;
+
+typedef uint32_t GC_profileLabelInfoIndex;
+#define PRISLI PRIu32
+#define FMTSLI "%"PRISLI
 
 struct GC_sourceMaps {
   volatile GC_sourceSeqIndex curSourceSeqIndex;
-  /* sourceLabels is an array of cardinality sourceLabelsLength;
+  /* profileLabelInfos is an array of cardinality profileLabelInfosLength;
    * the collection of profile labels embedded in output program
    * paired with an index into sourceSeqs of the sequence of source
    * names corresponding to the code pointer; only used with
    * ProfileTimeLabel.
    */
-  struct GC_sourceLabel *sourceLabels;
-  uint32_t sourceLabelsLength;
+  struct GC_profileLabelInfo *profileLabelInfos;
+  uint32_t profileLabelInfosLength;
   /* sourceNames is an array of cardinality sourceNamesLength;
    * the collection of source names from the program.
    */
@@ -80,10 +80,10 @@ static inline GC_sourceSeqIndex getCachedStackTopFrameSourceSeqIndex (GC_state s
 static inline char* getSourceName (GC_state s, GC_sourceIndex i);
 
 #if HAS_TIME_PROFILING
-static inline int compareSourceLabels (const void *v1, const void *v2);
-static void sortSourceLabels (GC_state s);
-static void compressSourceLabels (GC_state s);
-static void initSourceLabels (GC_state s);
+static inline int compareProfileLabelInfos (const void *v1, const void *v2);
+static void sortProfileLabelInfos (GC_state s);
+static void compressProfileLabelInfos (GC_state s);
+static void initProfileLabelInfos (GC_state s);
 #endif
 
 static void showSources (GC_state s);

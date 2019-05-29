@@ -311,11 +311,11 @@ fun transform program =
            set = setLabelInfo, ...} =
          Property.getSetOnce
          (Label.plist, Property.initRaise ("info", Label.layout))
-      val sourceLabels = ref []
+      val profileLabelInfos = ref []
       fun profileLabelFromIndex (sourceSeqIndex: int): Statement.t =
          let
             val pl = ProfileLabel.new ()
-            val _ = List.push (sourceLabels,
+            val _ = List.push (profileLabelInfos,
                                {profileLabel = pl,
                                 sourceSeqIndex = sourceSeqIndex})
          in
@@ -914,7 +914,7 @@ fun transform program =
          end
       val (main, functions) = (doFunction main, List.map (functions, doFunction))
       val _ = addFuncEdges ()
-      val sourceLabels = Vector.fromList (!sourceLabels)
+      val profileLabelInfos = Vector.fromList (!profileLabelInfos)
       val sourceNames = Vector.fromListRev (!sourceNames)
       val sources =
          Vector.map
@@ -929,7 +929,7 @@ fun transform program =
        *)
       val sourceSeqs = Vector.fromListRev (!sourceSeqs)
       val profileInfo =
-         ProfileInfo.T {sourceLabels = sourceLabels,
+         ProfileInfo.T {profileLabelInfos = profileLabelInfos,
                         sourceNames = sourceNames,
                         sourceSeqs = sourceSeqs,
                         sources = sources}

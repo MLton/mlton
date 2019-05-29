@@ -353,10 +353,10 @@ void GC_handleSigProf (code_pointer pc) {
         
         /* Binary search labels to find which method contains PC */
         start = 0;
-        end = s->sourceMaps.sourceLabelsLength;
+        end = s->sourceMaps.profileLabelInfosLength;
         while (end - start > 1) {
           i = (start+end)/2;
-          if ((uintptr_t)s->sourceMaps.sourceLabels[i].profileLabel <= (uintptr_t)pc)
+          if ((uintptr_t)s->sourceMaps.profileLabelInfos[i].profileLabel <= (uintptr_t)pc)
             start = i;
           else
             end = i;
@@ -366,14 +366,14 @@ void GC_handleSigProf (code_pointer pc) {
         /* The last label is dead code. Any address past it is thus unknown.
          * The first label is before all SML code. Before it is also unknown.
          */
-        if (i-1 == s->sourceMaps.sourceLabelsLength ||
+        if (i-1 == s->sourceMaps.profileLabelInfosLength ||
             (i == 0 && 
-             (uintptr_t)pc < (uintptr_t)s->sourceMaps.sourceLabels[i].profileLabel)) {
+             (uintptr_t)pc < (uintptr_t)s->sourceMaps.profileLabelInfos[i].profileLabel)) {
           if (DEBUG_PROFILE)
             fprintf (stderr, "pc out of bounds\n");
           sourceSeqIndex = SOURCE_SEQ_UNKNOWN;
         } else {
-          sourceSeqIndex = s->sourceMaps.sourceLabels[start].sourceSeqIndex;
+          sourceSeqIndex = s->sourceMaps.profileLabelInfos[start].sourceSeqIndex;
         }
       } else {
         sourceSeqIndex = s->sourceMaps.curSourceSeqIndex;
@@ -388,7 +388,7 @@ static void initProfilingTime (GC_state s) {
 
   s->profiling.data = profileMalloc (s);
   if (PROFILE_TIME_LABEL == s->profiling.kind) {
-    initSourceLabels (s);
+    initProfileLabelInfos (s);
   } else {
     s->sourceMaps.curSourceSeqIndex = SOURCE_SEQ_UNKNOWN;
   }

@@ -873,7 +873,7 @@ structure Program =
                         then fn _ => false
                      else Error.bug 
                           "Machine.Program.typeCheck.profileLabelIsOk: profileInfo = NONE"
-                | SOME (ProfileInfo.T {sourceLabels, ...}) =>
+                | SOME (ProfileInfo.T {profileLabelInfos, ...}) =>
                      if !Control.profile = Control.ProfileNone
                         then Error.bug 
                              "Machine.Program.typeCheck.profileLabelIsOk: profileInfo = SOME"
@@ -885,7 +885,7 @@ structure Program =
                                Property.initFun (fn _ => ref 0))
                            val _ =
                               Vector.foreach
-                              (sourceLabels, fn {profileLabel, ...} =>
+                              (profileLabelInfos, fn {profileLabel, ...} =>
                                let
                                   val r = profileLabelCount profileLabel
                                in
