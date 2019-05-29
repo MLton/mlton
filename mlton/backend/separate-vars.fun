@@ -52,29 +52,24 @@ fun shouldBounceAt (Block.T {kind, ...}) =
 
 structure Weight = struct
 
-   structure DefLoc = struct
-      datatype t
-         = FunArg
-         | Local
+   (* t is a positive rational weight: count/loopSize, and a definition location *)
+   type t = {count: int, size: int}
 
-      fun op < (t1, t2) =
-         case (t1, t2) of
-               (FunArg, Local) => true
-             | _ => false
-      val equals = op =
-   end
+   val op + =  fn ({count=count1, size=size1},
+                  {count=count2, size=size2}) =>
+      let
+         val l = Int.lcm (size1, size2)
+      in
+         {count= count1 * (l div size2) + count2 * (l div size1),
+          size=l}
+      end
 
-   type t = {count: int, localDef: DefLoc.t}
-   fun inc ({count, localDef}) =
-      {count=count + 1, localDef=localDef}
-   val new = {count=0, localDef=DefLoc.Local}
-   fun op < ({count=count1, localDef=localDef1},
-             {count=count2, localDef=localDef2}) =
-      (DefLoc.< (localDef1, localDef2)
-         orelse DefLoc.equals (localDef1, localDef2)
-            andalso (Int.< (count1, count2)))
-   fun setLocalDef ({count, localDef=_}, newLocalDef) =
-      {count=count, localDef=newLocalDef}
+   fun inc size t = t + {count=1, size=size}
+   val new = {count=0, size=1}
+   val op < = fn ({count=count1, size=size1},
+                  {count=count2, size=size2}) =>
+      count1 * size2 < count2 * size1
+
 end
 
 datatype varinfo
@@ -191,17 +186,15 @@ fun transformFunc func =
                   Vector.foreach (beginNoFormals label,
                   fn v => setVarInfo (v, Consider Weight.new))
             else ())
-      (* foreach arg, set Consider and FunArg *)
+      (* foreach arg, set Consider *)
       val _ = Vector.foreach (args,
          fn (x, _) =>
-            setVarInfo (x, Consider (Weight.setLocalDef
-                   (Weight.new, Weight.DefLoc.FunArg))))
-
+            setVarInfo (x, Consider Weight.new))
 
       (* Finally, vars with Consider are actually worth checking,
        * so set their weights accurately *)
       val _ = let
-         fun setVarWeights (block as Block.T {label, ...}) =
+         fun setVarWeights size (block as Block.T {label, ...}) =
            let
                fun modVarInfo (v, f) =
                   let
@@ -216,18 +209,14 @@ fun transformFunc func =
                      ()
                   end
               val _ = Block.foreachDef (block,
-                  fn (v, _) =>
-                     modVarInfo (v,
-                        fn w => Weight.inc
-                           (Weight.setLocalDef (w,
-                              Weight.DefLoc.Local))))
+                  fn (v, _) => modVarInfo (v, Weight.inc size))
 
               val _ = Block.foreachUse (block,
                   fn v =>
                      case n of
                           NONE => setRewrite (v, Weight.new)
                         | SOME _ => modVarInfo (v,
-                             fn w => Weight.inc w))
+                             Weight.inc size))
               val _ = (#inLoop o labelInfo) label :=
                 InLoop {header=false}
            in
@@ -242,7 +231,7 @@ fun transformFunc func =
                    * backed up by data showing no improvements at
                    * all over this size, so we'll save the overhead *)
                   if checkLoopSize size
-                  then loopForeach (loop, setVarWeights)
+                  then loopForeach (loop, setVarWeights (!size))
                   else ()
             in
                ()
