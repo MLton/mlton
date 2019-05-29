@@ -62,7 +62,7 @@ void compressProfileLabelInfos (GC_state s) {
   
   /* Eliminate duplicate profileLabelInfos */
   out = 0;
-  sourceSeqIndex = SOURCE_SEQ_UNKNOWN;
+  sourceSeqIndex = UNKNOWN_SOURCE_SEQ_INDEX;
   for (in = 0; in < s->sourceMaps.profileLabelInfosLength; ++in) {
     if (s->sourceMaps.profileLabelInfos[in].sourceSeqIndex != sourceSeqIndex) {
       s->sourceMaps.profileLabelInfos[out++] = s->sourceMaps.profileLabelInfos[in];

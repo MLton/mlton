@@ -17,15 +17,15 @@ typedef uint32_t GC_sourceSeqIndex;
 #define PRISSI PRIu32
 #define FMTSSI "%"PRISSI
 
-#define SOURCE_SEQ_UNKNOWN    0
-#define SOURCE_SEQ_GC         1
+#define UNKNOWN_SOURCE_SEQ_INDEX  0
+#define GC_SOURCE_SEQ_INDEX       1
 
 typedef uint32_t GC_sourceIndex;
 #define PRISI PRIu32
 #define FMTSI "%"PRISI
 
-#define SOURCES_INDEX_UNKNOWN 0
-#define SOURCES_INDEX_GC      1
+#define UNKNOWN_SOURCE_INDEX  0
+#define GC_SOURCE_INDEX       1
 
 typedef struct GC_source {
   GC_sourceNameIndex sourceNameIndex;

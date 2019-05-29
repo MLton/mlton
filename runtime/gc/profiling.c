@@ -169,7 +169,7 @@ void incForProfiling (GC_state s, size_t amount, GC_sourceSeqIndex sourceSeqInde
   topSourceIndex =
     sourceSeq[0] > 0
     ? sourceSeq[sourceSeq[0]]
-    : SOURCES_INDEX_UNKNOWN;
+    : UNKNOWN_SOURCE_INDEX;
   if (DEBUG_PROFILE) {
     profileIndent ();
     fprintf (stderr, "bumping %s by %"PRIuMAX"\n",
@@ -179,7 +179,7 @@ void incForProfiling (GC_state s, size_t amount, GC_sourceSeqIndex sourceSeqInde
   s->profiling.data->countTop[sourceIndexToProfileMasterIndex (s, topSourceIndex)] += amount;
   if (s->profiling.stack)
     enterForProfiling (s, sourceSeqIndex);
-  if (SOURCES_INDEX_GC == topSourceIndex)
+  if (GC_SOURCE_INDEX == topSourceIndex)
     s->profiling.data->totalGC += amount;
   else
     s->profiling.data->total += amount;
@@ -192,7 +192,7 @@ void GC_profileInc (GC_state s, size_t amount) {
     fprintf (stderr, "GC_profileInc (%"PRIuMAX")\n", (uintmax_t)amount);
   incForProfiling (s, amount,
                    s->amInGC
-                   ? SOURCE_SEQ_GC
+                   ? GC_SOURCE_SEQ_INDEX
                    : getCachedStackTopFrameSourceSeqIndex (s));
 }
 
@@ -342,7 +342,7 @@ void GC_handleSigProf (code_pointer pc) {
   if (DEBUG_PROFILE)
     fprintf (stderr, "GC_handleSigProf ("FMTPTR")\n", (uintptr_t)pc);
   if (s->amInGC)
-    sourceSeqIndex = SOURCE_SEQ_GC;
+    sourceSeqIndex = GC_SOURCE_SEQ_INDEX;
   else {
     frameIndex = getCachedStackTopFrameIndex (s);
     if (C_FRAME == s->frameInfos[frameIndex].kind)
@@ -371,7 +371,7 @@ void GC_handleSigProf (code_pointer pc) {
              (uintptr_t)pc < (uintptr_t)s->sourceMaps.profileLabelInfos[i].profileLabel)) {
           if (DEBUG_PROFILE)
             fprintf (stderr, "pc out of bounds\n");
-          sourceSeqIndex = SOURCE_SEQ_UNKNOWN;
+          sourceSeqIndex = UNKNOWN_SOURCE_SEQ_INDEX;
         } else {
           sourceSeqIndex = s->sourceMaps.profileLabelInfos[start].sourceSeqIndex;
         }
@@ -390,7 +390,7 @@ static void initProfilingTime (GC_state s) {
   if (PROFILE_TIME_LABEL == s->profiling.kind) {
     initProfileLabelInfos (s);
   } else {
-    s->sourceMaps.curSourceSeqIndex = SOURCE_SEQ_UNKNOWN;
+    s->sourceMaps.curSourceSeqIndex = UNKNOWN_SOURCE_SEQ_INDEX;
   }
   /*
    * Install catcher, which handles SIGPROF and calls MLton_Profile_inc.
