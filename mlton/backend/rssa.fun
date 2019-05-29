@@ -889,7 +889,7 @@ structure Program =
                handlesSignals: bool,
                main: Function.t,
                objectTypes: ObjectType.t vector,
-               profileInfo: (ProfileInfo.t * (Label.t -> int)) option}
+               profileInfo: (ProfileInfo.t * (Label.t -> int option)) option}
 
       fun clear (T {functions, main, ...}) =
          (List.foreach (functions, Function.clear)
@@ -1507,8 +1507,45 @@ structure Program =
          in ()
          end
 
-      fun typeCheck (p as T {functions, main, objectTypes, ...}) =
+      fun typeCheck (p as T {functions, main, objectTypes, profileInfo, ...}) =
          let
+            val (checkProfileLabel, finishCheckProfileLabel, checkFrameSourceSeqIndex) =
+               case profileInfo of
+                  NONE => (fn _ => false, fn () => (), fn _ => ())
+                | SOME (profileInfo, frameSourceSeqIndex) =>
+                  let
+                     val _ =
+                        Err.check
+                        ("profileInfo",
+                         fn () => ProfileInfo.check profileInfo,
+                         fn () => ProfileInfo.layout profileInfo)
+                     val (checkProfileLabel, finishCheckProfileLabel) =
+                        ProfileInfo.checkProfileLabel profileInfo
+                  in
+                     (checkProfileLabel,
+                      fn () => Err.check
+                               ("profileInfo (finishCheckProfileLabel)",
+                                finishCheckProfileLabel,
+                                fn () => ProfileInfo.layout profileInfo),
+                      fn (l, k) => let
+                                      fun chk b =
+                                         Err.check
+                                         ("frameSourceSeqIndex",
+                                          fn () => (case (b, frameSourceSeqIndex l) of
+                                                       (true, SOME ssi) =>
+                                                          ProfileInfo.checkSourceSeqIndex
+                                                          (profileInfo, ssi)
+                                                     | (false, NONE) => true
+                                                     | _ => false),
+                                          fn () => Label.layout l)
+                                   in
+                                      case k of
+                                         Kind.Cont _ => chk true
+                                       | Kind.CReturn _ => chk true
+                                       | Kind.Handler => chk true
+                                       | Kind.Jump => chk false
+                                   end)
+                  end
             val _ =
                Vector.foreach
                (objectTypes, fn ty =>
@@ -1614,7 +1651,7 @@ structure Program =
                              prim = prim,
                              result = Option.map (dst, #2)}))
                    | Profile _ => true
-                   | ProfileLabel _ => true
+                   | ProfileLabel pl => checkProfileLabel pl
                    | SetExnStackLocal => true
                    | SetExnStackSlot => true
                    | SetHandler l =>
@@ -1709,8 +1746,9 @@ structure Program =
                   val _ = Vector.foreach (args, setVarType)
                   val _ =
                      Vector.foreach
-                     (blocks, fn b as Block.T {args, label, statements, ...} =>
+                     (blocks, fn b as Block.T {args, kind, label, statements, ...} =>
                       (setLabelBlock (label, b)
+                       ; checkFrameSourceSeqIndex (label, kind)
                        ; Vector.foreach (args, setVarType)
                        ; Vector.foreach (statements, fn s =>
                                          Statement.foreachDef
@@ -1849,6 +1887,7 @@ structure Program =
                    Vector.isEmpty args
                 end,
                 Function.layout)
+            val _ = finishCheckProfileLabel ()
             val _ = clear p
          in
             ()

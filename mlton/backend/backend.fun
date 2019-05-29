@@ -269,7 +269,7 @@ let
       val (profileInfo, getFrameSourceSeqIndex) =
          case profileInfo of
             NONE => (NONE, fn _ => NONE)
-          | SOME (profileInfo, getFrameSourceSeqIndex) => (SOME profileInfo, SOME o getFrameSourceSeqIndex)
+          | SOME (profileInfo, getFrameSourceSeqIndex) => (SOME profileInfo, getFrameSourceSeqIndex)
       (* Frame info *)
       local
          val frameInfos: M.FrameInfo.t list ref = ref []

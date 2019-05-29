@@ -38,6 +38,9 @@ signature PROFILE_INFO =
                          successorSourceSeqIndex: int} vector}
 
       val empty: t
+      val check: t -> bool
+      val checkSourceSeqIndex: t * int -> bool
+      val checkProfileLabel: t -> (ProfileLabel.t -> bool) * (unit -> bool)
       val clear: t -> unit
       val layouts: t * (Layout.t -> unit) -> unit
       val layout: t -> Layout.t

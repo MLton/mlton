@@ -298,10 +298,8 @@ fun transform program =
             (ignore o HashTable.insertIfNew)
             (frameSourceSeqIndex, label, fn () => sourceSeqIndex, fn _ =>
              Error.bug ("ImplementProfiling.addFrameSourceSeqIndex: " ^ Label.toString label))
-         fun getFrameSourceSeqIndex (label: Label.t) : int =
-            case HashTable.peek (frameSourceSeqIndex, label) of
-               NONE => Error.bug "ImplementProfiling.getFrameSourceSeqIndex"
-             | SOME sourceSeqIndex => sourceSeqIndex
+         fun getFrameSourceSeqIndex (label: Label.t) : int option =
+            HashTable.peek (frameSourceSeqIndex, label)
       end
       fun addFramePushes (label: Label.t, pushes: Push.t list): unit =
          addFrameSourceSeqIndex (label, sourceSeqIndex (Push.toSourceSeq pushes))

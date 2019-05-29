@@ -848,6 +848,28 @@ structure Program =
                         maxFrameSize, objectTypes, profileInfo, reals,
                         vectors, ...}) =
          let
+            val (checkProfileLabel, finishCheckProfileLabel) =
+               Err.check'
+               ("profileInfo",
+                fn () =>
+                (case (!Control.profile, profileInfo) of
+                    (Control.ProfileNone, NONE) => SOME (fn _ => false, fn () => ())
+                  | (_, NONE) => NONE
+                  | (Control.ProfileNone, SOME _) => NONE
+                  | (_, SOME profileInfo) =>
+                       let
+                          val (checkProfileLabel, finishCheckProfileLabel) =
+                             ProfileInfo.checkProfileLabel profileInfo
+                       in
+                          if ProfileInfo.check profileInfo
+                             then SOME (checkProfileLabel,
+                                        fn () => Err.check
+                                                 ("profileInfo (finishCheckProfileLabel)",
+                                                  finishCheckProfileLabel,
+                                                  fn () => ProfileInfo.layout profileInfo))
+                             else NONE
+                       end),
+                fn () => Option.layout ProfileInfo.layout profileInfo)
             val _ =
                if !Control.profile = Control.ProfileTimeLabel
                   then
@@ -866,44 +888,6 @@ structure Program =
                        else print (concat ["missing profile info: ",
                                            Label.toString label, "\n"])))
                else ()
-            val profileLabelIsOk =
-               case profileInfo of
-                  NONE =>
-                     if !Control.profile = Control.ProfileNone
-                        then fn _ => false
-                     else Error.bug 
-                          "Machine.Program.typeCheck.profileLabelIsOk: profileInfo = NONE"
-                | SOME (ProfileInfo.T {profileLabelInfos, ...}) =>
-                     if !Control.profile = Control.ProfileNone
-                        then Error.bug 
-                             "Machine.Program.typeCheck.profileLabelIsOk: profileInfo = SOME"
-                     else
-                        let
-                           val {get = profileLabelCount, ...} =
-                              Property.get
-                              (ProfileLabel.plist,
-                               Property.initFun (fn _ => ref 0))
-                           val _ =
-                              Vector.foreach
-                              (profileLabelInfos, fn {profileLabel, ...} =>
-                               let
-                                  val r = profileLabelCount profileLabel
-                               in
-                                  if 0 = !r
-                                     then r := 1
-                                  else Error.bug 
-                                       "Machine.Program.typeCheck.profileLabelIsOk: duplicate profile label"
-                               end)
-                        in
-                           fn pl =>
-                           let
-                              val r = profileLabelCount pl
-                           in
-                              if 1 = !r 
-                                 then (r := 2; true)
-                              else false
-                           end
-                        end
             val _ =
                Vector.foreachi
                (frameOffsets, fn (i, fo) =>
@@ -1230,8 +1214,8 @@ structure Program =
                               then alloc
                               else NONE
                         end
-                   | ProfileLabel l =>
-                        if profileLabelIsOk l
+                   | ProfileLabel pl =>
+                        if checkProfileLabel pl
                            then SOME alloc
                         else NONE
                end
@@ -1476,6 +1460,7 @@ structure Program =
                    (blocks, fn b =>
                     check' (b, "block", blockOk, Block.layout))
                 end)
+            val _ = finishCheckProfileLabel ()
             val _ = clear program
          in
             ()

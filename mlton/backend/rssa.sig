@@ -202,7 +202,7 @@ signature RSSA =
                      handlesSignals: bool,
                      main: Function.t,
                      objectTypes: ObjectType.t vector,
-                     profileInfo: (ProfileInfo.t * (Label.t -> int)) option}
+                     profileInfo: (ProfileInfo.t * (Label.t -> int option)) option}
 
             val clear: t -> unit
             val checkHandlers: t -> unit
