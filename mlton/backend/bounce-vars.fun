@@ -52,7 +52,7 @@ fun shouldBounceAt (Block.T {kind, ...}) =
 
 structure Weight = struct
 
-   (* t is a positive rational weight: count/loopSize, and a definition location *)
+   (* t is a positive rational weight: count/loopSize *)
    datatype t = T of {count: IntInf.t, size: IntInf.t}
 
    val op + =  fn (T {count=count1, size=size1},
@@ -78,7 +78,7 @@ end
 
 datatype varinfo
    = Ignore (* No consideration *)
-   | ConsiderBounce (* Used in loop, haven't checked bouncing *)
+   | UsedInLoop (* Used in loop, haven't checked bouncing *)
    | Consider of Weight.t (* Should be considered for bouncing *)
    | Rewrite of Weight.t (* Will be bounced *)
 
@@ -118,7 +118,6 @@ fun transformFunc func =
             (fn _ => {inLoop=ref NotInLoop, block=ref NONE}))
 
       val numRewritten = ref 0
-
       fun setRewrite (v, weight) =
          (case varInfo v of
               Consider _ =>
@@ -127,19 +126,21 @@ fun transformFunc func =
                   else ())
             | _ => ())
 
-      val n = !Control.bounceRssaLimit
-
       fun checkLoopSize sizeref =
          case !Control.bounceRssaLoopCutoff of
               SOME n => !sizeref < n
             | NONE => true
 
+      (* For each loop, we'll set used variables in that loop
+       * to be considered for bouncing, so that we can eliminate some bounce
+       * points based on number of variables considered.
+       *
+       * We can also set some label info at this point *)
       val _ = let
-         (* now for each var in consideration, check if active in loop *)
          fun setConsiderVars (block as Block.T {label, ...}) =
            (let
               val _ = Block.foreachUse (block,
-                  fn v => setVarInfo (v, ConsiderBounce))
+                  fn v => setVarInfo (v, UsedInLoop))
               val _ = (#inLoop o labelInfo) label :=
                 InLoop {header=false}
            in
@@ -170,9 +171,9 @@ fun transformFunc func =
          Vector.foreach (loops, processLoop)
       end
 
-      (* Now check each bounce point, and set vars to consider,
-       * if there's not too many used here *)
-
+      (* Now check each bounce point,
+       * if it doesn't make the cutoff, set the vars
+       * to actually be considered for rewriting *)
       val cutoff =
          case !Control.bounceRssaLiveCutoff of
               SOME n => n
@@ -185,7 +186,7 @@ fun transformFunc func =
                (Vector.length
                   (Vector.keepAll
                   (beginNoFormals label,
-                   fn v => ConsiderBounce = varInfo v))))
+                   fn v => UsedInLoop = varInfo v)))
                then
                   Vector.foreach (beginNoFormals label,
                   fn v => setVarInfo (v, Consider Weight.new))
@@ -205,7 +206,7 @@ fun transformFunc func =
                      val newInfo =
                         case varInfo v of
                              Ignore => Ignore
-                           | ConsiderBounce => Consider (f Weight.new)
+                           | UsedInLoop => Consider (f Weight.new)
                            | Consider w => Consider (f w)
                            | Rewrite w => Rewrite (f w)
                      val _ = setVarInfo (v, newInfo)
@@ -217,7 +218,7 @@ fun transformFunc func =
 
               val _ = Block.foreachUse (block,
                   fn v =>
-                     case n of
+                     case !Control.bounceRssaLimit of
                           NONE => setRewrite (v, Weight.new)
                         | SOME _ => modVarInfo (v,
                              Weight.inc size))
@@ -295,7 +296,8 @@ fun transformFunc func =
          in
             ()
          end
-      val _ = case n of
+
+      val _ = case !Control.bounceRssaLimit of
            SOME n => Vector.foreach (loops, mkLoopPicker n)
          | NONE => ()
 
