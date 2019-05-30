@@ -356,7 +356,10 @@ fun transformFunc func =
                      val dst = (dst, ty)
                   in
                      Statement.Bind {dst=dst, src=src,
-                     (* temporary hack *)
+                     (* This is a bit of a hack, but makes it clear
+                      * to the shrinker that these variables should
+                      * block copy-propagation. It is preserved by
+                      * RestoreRssa *)
                      isMutable= true}
                   end)
             (* Due to the loop forest construction, (i.e. shouldAvoid)
