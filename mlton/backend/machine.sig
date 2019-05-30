@@ -261,8 +261,8 @@ signature MACHINE =
                             label: Label.t},
                      maxFrameSize: Bytes.t,
                      objectTypes: Type.ObjectType.t vector,
-                     profileInfo: ProfileInfo.t option,
                      reals: (Global.t * RealX.t) list,
+                     sourceMaps: SourceMaps.t option,
                      vectors: (Global.t * WordXVector.t) list}
 
             val clearLabelNames: t -> unit

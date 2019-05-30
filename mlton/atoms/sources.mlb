@@ -72,8 +72,8 @@ local
    profile-label.fun
    profile-exp.sig
    profile-exp.fun
-   profile-info.sig
-   profile-info.fun
+   source-maps.sig
+   source-maps.fun
    atoms.sig
    atoms.fun
    generic-scheme.sig

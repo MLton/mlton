@@ -251,7 +251,7 @@ fun outputDeclarations
     print: string -> unit,
     program = (Program.T
                {frameInfos, frameOffsets, maxFrameSize,
-                objectTypes, profileInfo, reals, vectors, ...}),
+                objectTypes, reals, sourceMaps, vectors, ...}),
     rest: unit -> unit
     }: unit =
    let
@@ -439,9 +439,9 @@ fun outputDeclarations
                    "return (MLton_main (argc, argv));",
                    "}"], fn s => (print s; print "\n"))
          else ()
-      fun declareProfileInfo () =
+      fun declareSourceMaps () =
          let
-            fun doit (ProfileInfo.T {profileLabelInfos, sourceNames, sourceSeqs, sources}) =
+            fun doit (SourceMaps.T {profileLabelInfos, sourceNames, sourceSeqs, sources}) =
                (Vector.foreach (profileLabelInfos, fn {profileLabel, ...} =>
                                 declareProfileLabel (profileLabel, print))
 
@@ -467,8 +467,8 @@ fun outputDeclarations
                                 concat ["{ ", Int.toString sourceNameIndex, ", ",
                                         Int.toString successorSourceSeqIndex, " }"]))
          in
-            case profileInfo of
-               NONE => doit ProfileInfo.empty
+            case sourceMaps of
+               NONE => doit SourceMaps.empty
              | SOME z => doit z
          end
    in
@@ -479,7 +479,7 @@ fun outputDeclarations
       ; declareReals (); print "\n"
       ; declareFrameOffsets (); declareFrameInfos (); print "\n"
       ; declareObjectTypes (); print "\n"
-      ; declareProfileInfo (); print "\n"
+      ; declareSourceMaps (); print "\n"
       ; declareAtMLtons (); print "\n"
       ; rest (); print "\n"
       ; declareMLtonMain (); declareMain (); print "\n"

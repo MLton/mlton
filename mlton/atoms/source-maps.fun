@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor ProfileInfo (S: PROFILE_INFO_STRUCTS): PROFILE_INFO =
+functor SourceMaps (S: SOURCE_MAPS_STRUCTS): SOURCE_MAPS =
 struct
 
 open S
@@ -112,12 +112,12 @@ fun checkProfileLabel (T {profileLabelInfos, ...}) =
 fun modify (T {profileLabelInfos, sourceNames, sourceSeqs, sources})
    : {newProfileLabel: ProfileLabel.t -> ProfileLabel.t,
       delProfileLabel: ProfileLabel.t -> unit,
-      getProfileInfo: unit -> t} =
+      getSourceMaps: unit -> t} =
    let
       val {get: ProfileLabel.t -> int, set, ...} =
          Property.getSet
          (ProfileLabel.plist,
-          Property.initRaise ("ProfileInfo.extend", ProfileLabel.layout))
+          Property.initRaise ("SourceMaps.extend", ProfileLabel.layout))
       val _ =
          Vector.foreach
          (profileLabelInfos, fn {profileLabel, sourceSeqIndex} =>
@@ -134,7 +134,7 @@ fun modify (T {profileLabelInfos, sourceNames, sourceSeqs, sources})
             pl'
          end
       fun delProfileLabel pl = set (pl, ~1)
-      fun getProfileInfo () =
+      fun getSourceMaps () =
          let
             val profileLabelInfos =
                Vector.concat [profileLabelInfos, Vector.fromList (!new)]
@@ -146,12 +146,12 @@ fun modify (T {profileLabelInfos, sourceNames, sourceSeqs, sources})
                         sourceSeqs = sourceSeqs,
                         sources = sources}
          in
-            Assert.assert ("ProfileInfo.getProfileInfo", fn () => check pi);
+            Assert.assert ("SourceMaps.getSourceMaps", fn () => check pi);
             pi
          end
    in
       {newProfileLabel = newProfileLabel,
        delProfileLabel = delProfileLabel,
-       getProfileInfo = getProfileInfo}
+       getSourceMaps = getSourceMaps}
    end
 end

@@ -71,9 +71,9 @@ structure Atoms =
                              structure WordSize = WordSize)
 
       structure SourceInfo = SourceInfo ()
-      structure ProfileLabel = ProfileLabel ()
       structure ProfileExp = ProfileExp (structure SourceInfo = SourceInfo)
-      structure ProfileInfo = ProfileInfo (structure ProfileLabel = ProfileLabel)
+      structure ProfileLabel = ProfileLabel ()
+      structure SourceMaps = SourceMaps (structure ProfileLabel = ProfileLabel)
    end
 
 open Atoms

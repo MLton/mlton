@@ -889,7 +889,8 @@ structure Program =
                handlesSignals: bool,
                main: Function.t,
                objectTypes: ObjectType.t vector,
-               profileInfo: (ProfileInfo.t * (Label.t -> int option)) option}
+               profileInfo: {sourceMaps: SourceMaps.t,
+                             getFrameSourceSeqIndex: Label.t -> int option} option}
 
       fun clear (T {functions, main, ...}) =
          (List.foreach (functions, Function.clear)
@@ -1512,29 +1513,29 @@ structure Program =
             val (checkProfileLabel, finishCheckProfileLabel, checkFrameSourceSeqIndex) =
                case profileInfo of
                   NONE => (fn _ => false, fn () => (), fn _ => ())
-                | SOME (profileInfo, frameSourceSeqIndex) =>
+                | SOME {sourceMaps, getFrameSourceSeqIndex} =>
                   let
                      val _ =
                         Err.check
-                        ("profileInfo",
-                         fn () => ProfileInfo.check profileInfo,
-                         fn () => ProfileInfo.layout profileInfo)
+                        ("sourceMaps",
+                         fn () => SourceMaps.check sourceMaps,
+                         fn () => SourceMaps.layout sourceMaps)
                      val (checkProfileLabel, finishCheckProfileLabel) =
-                        ProfileInfo.checkProfileLabel profileInfo
+                        SourceMaps.checkProfileLabel sourceMaps
                   in
                      (checkProfileLabel,
                       fn () => Err.check
-                               ("profileInfo (finishCheckProfileLabel)",
+                               ("finishCheckProfileLabel",
                                 finishCheckProfileLabel,
-                                fn () => ProfileInfo.layout profileInfo),
+                                fn () => SourceMaps.layout sourceMaps),
                       fn (l, k) => let
                                       fun chk b =
                                          Err.check
-                                         ("frameSourceSeqIndex",
-                                          fn () => (case (b, frameSourceSeqIndex l) of
+                                         ("getFrameSourceSeqIndex",
+                                          fn () => (case (b, getFrameSourceSeqIndex l) of
                                                        (true, SOME ssi) =>
-                                                          ProfileInfo.checkSourceSeqIndex
-                                                          (profileInfo, ssi)
+                                                          SourceMaps.checkSourceSeqIndex
+                                                          (sourceMaps, ssi)
                                                      | (false, NONE) => true
                                                      | _ => false),
                                           fn () => Label.layout l)

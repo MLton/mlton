@@ -6,14 +6,14 @@
  * See the file MLton-LICENSE for details.
  *)
 
-signature PROFILE_INFO_STRUCTS =
+signature SOURCE_MAPS_STRUCTS =
    sig
       structure ProfileLabel: PROFILE_LABEL
    end
 
-signature PROFILE_INFO =
+signature SOURCE_MAPS =
    sig
-      include PROFILE_INFO_STRUCTS
+      include SOURCE_MAPS_STRUCTS
 
       datatype t =
          T of {(* the collection of profile labels embedded in output program
@@ -46,5 +46,5 @@ signature PROFILE_INFO =
       val layout: t -> Layout.t
       val modify: t -> {newProfileLabel: ProfileLabel.t -> ProfileLabel.t,
                         delProfileLabel: ProfileLabel.t -> unit,
-                        getProfileInfo: unit -> t}
+                        getSourceMaps: unit -> t}
    end

@@ -926,17 +926,18 @@ fun transform program =
        * since making sources creates new sourceSeqs.
        *)
       val sourceSeqs = Vector.fromListRev (!sourceSeqs)
-      val profileInfo =
-         ProfileInfo.T {profileLabelInfos = profileLabelInfos,
-                        sourceNames = sourceNames,
-                        sourceSeqs = sourceSeqs,
-                        sources = sources}
+      val sourceMaps =
+         SourceMaps.T {profileLabelInfos = profileLabelInfos,
+                       sourceNames = sourceNames,
+                       sourceSeqs = sourceSeqs,
+                       sources = sources}
    in
       Program.T {functions = functions,
                  handlesSignals = handlesSignals,
                  main = main,
                  objectTypes = objectTypes,
-                 profileInfo = SOME (profileInfo, getFrameSourceSeqIndex)}
+                 profileInfo = SOME {sourceMaps = sourceMaps,
+                                     getFrameSourceSeqIndex = getFrameSourceSeqIndex}}
    end
 
 end

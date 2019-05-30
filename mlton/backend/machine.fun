@@ -776,17 +776,17 @@ structure Program =
                                 label: Label.t},
                          maxFrameSize: Bytes.t,
                          objectTypes: ObjectType.t vector,
-                         profileInfo: ProfileInfo.t option,
                          reals: (Global.t * RealX.t) list,
+                         sourceMaps: SourceMaps.t option,
                          vectors: (Global.t * WordXVector.t) list}
 
-      fun clear (T {chunks, profileInfo, ...}) =
+      fun clear (T {chunks, sourceMaps, ...}) =
          (List.foreach (chunks, Chunk.clear)
-          ; Option.app (profileInfo, ProfileInfo.clear))
+          ; Option.app (sourceMaps, SourceMaps.clear))
 
       fun layouts (T {chunks, frameInfos, frameOffsets, handlesSignals,
                       main = {label, ...},
-                      maxFrameSize, objectTypes, profileInfo, ...},
+                      maxFrameSize, objectTypes, sourceMaps, ...},
                    output': Layout.t -> unit) =
          let
             open Layout
@@ -798,9 +798,9 @@ structure Program =
                      ("maxFrameSize", Bytes.layout maxFrameSize),
                      ("frameOffsets", Vector.layout FrameOffsets.layout frameOffsets),
                      ("frameInfos", Vector.layout FrameInfo.layout frameInfos)])
-            ; Option.app (profileInfo, fn pi =>
-                          (output (str "\nProfileInfo:")
-                           ; ProfileInfo.layouts (pi, output)))
+            ; Option.app (sourceMaps, fn pi =>
+                          (output (str "\nSourceMaps:")
+                           ; SourceMaps.layouts (pi, output)))
             ; output (str "\nObjectTypes:")
             ; Vector.foreachi (objectTypes, fn (i, ty) =>
                                output (seq [str "opt_", Int.layout i,
@@ -845,31 +845,31 @@ structure Program =
 
       fun typeCheck (program as
                      T {chunks, frameInfos, frameOffsets,
-                        maxFrameSize, objectTypes, profileInfo, reals,
+                        maxFrameSize, objectTypes, sourceMaps, reals,
                         vectors, ...}) =
          let
             val (checkProfileLabel, finishCheckProfileLabel) =
                Err.check'
-               ("profileInfo",
+               ("sourceMaps",
                 fn () =>
-                (case (!Control.profile, profileInfo) of
+                (case (!Control.profile, sourceMaps) of
                     (Control.ProfileNone, NONE) => SOME (fn _ => false, fn () => ())
                   | (_, NONE) => NONE
                   | (Control.ProfileNone, SOME _) => NONE
-                  | (_, SOME profileInfo) =>
+                  | (_, SOME sourceMaps) =>
                        let
                           val (checkProfileLabel, finishCheckProfileLabel) =
-                             ProfileInfo.checkProfileLabel profileInfo
+                             SourceMaps.checkProfileLabel sourceMaps
                        in
-                          if ProfileInfo.check profileInfo
+                          if SourceMaps.check sourceMaps
                              then SOME (checkProfileLabel,
                                         fn () => Err.check
-                                                 ("profileInfo (finishCheckProfileLabel)",
+                                                 ("sourceMaps (finishCheckProfileLabel)",
                                                   finishCheckProfileLabel,
-                                                  fn () => ProfileInfo.layout profileInfo))
+                                                  fn () => SourceMaps.layout sourceMaps))
                              else NONE
                        end),
-                fn () => Option.layout ProfileInfo.layout profileInfo)
+                fn () => Option.layout SourceMaps.layout sourceMaps)
             val _ =
                if !Control.profile = Control.ProfileTimeLabel
                   then

@@ -266,10 +266,10 @@ let
              ()
           end)
       (* Profile info *)
-      val (profileInfo, getFrameSourceSeqIndex) =
+      val (sourceMaps, getFrameSourceSeqIndex) =
          case profileInfo of
             NONE => (NONE, fn _ => NONE)
-          | SOME (profileInfo, getFrameSourceSeqIndex) => (SOME profileInfo, getFrameSourceSeqIndex)
+          | SOME {sourceMaps, getFrameSourceSeqIndex} => (SOME sourceMaps, getFrameSourceSeqIndex)
       (* Frame info *)
       local
          val frameInfos: M.FrameInfo.t list ref = ref []
@@ -1221,8 +1221,8 @@ let
           main = main,
           maxFrameSize = maxFrameSize,
           objectTypes = objectTypes,
-          profileInfo = profileInfo,
           reals = allReals (),
+          sourceMaps = sourceMaps,
           vectors = allVectors ()}
 
       local
@@ -1272,8 +1272,7 @@ let
                val M.Program.T
                   {chunks, frameInfos, frameOffsets,
                    handlesSignals, main, maxFrameSize,
-                   objectTypes, profileInfo,
-                   reals, vectors} = p
+                   objectTypes, reals, sourceMaps, vectors} = p
                val chunks = Vector.fromList chunks
                val chunks = shuffle chunks
                val chunks =
@@ -1293,8 +1292,8 @@ let
                 main = main,
                 maxFrameSize = maxFrameSize,
                 objectTypes = objectTypes,
-                profileInfo = profileInfo,
                 reals = reals,
+                sourceMaps = sourceMaps,
                 vectors = vectors}
             end
       in
