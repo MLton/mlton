@@ -180,21 +180,26 @@ fun transformFunc func =
             | NONE => ~1
       val _ = Vector.foreach (blocks,
          fn b as Block.T {label, ...} =>
-            if shouldBounceAt b andalso
-               (cutoff < 0 orelse
-               (Vector.length
-                  (Vector.keepAll
-                  (beginNoFormals label,
-                   fn v => UsedInLoop = varInfo v)))
-               < cutoff)
-               then
-                  Vector.foreach (beginNoFormals label,
-                  fn v => setVarInfo (v, Consider Weight.new))
-            else ())
-      (* foreach arg, set Consider *)
+            let
+               val live = beginNoFormals label
+            in
+               if shouldBounceAt b andalso
+                  (cutoff < 0 orelse
+                  (Vector.length
+                     (Vector.keepAll
+                     (live, fn v => UsedInLoop = varInfo v)))
+                  < cutoff)
+                  then
+                     Vector.foreach (live,
+                        fn v => setVarInfo (v, Consider Weight.new))
+               else ()
+            end)
+      (* foreach arg, set Consider, since they may need *)
       val _ = Vector.foreach (args,
          fn (x, _) =>
-            setVarInfo (x, Consider Weight.new))
+            case varInfo x of
+                 UsedInLoop => setVarInfo (x, Consider Weight.new)
+               | _ => ())
 
       (* Finally, vars with Consider are actually worth checking,
        * so set their weights accurately *)
@@ -245,16 +250,13 @@ fun transformFunc func =
          Vector.foreach (loops, processLoop)
       end
 
-
-
-
-      (* Process variables in two passes so that
-       * the choices are consistent amongst different loops;
-       * combined weights are taken into account and every variable
-       * is either rewritten or ignored *)
-      fun mkLoopPicker n loop =
+      (* Process the choices for each loop in a separate pass,
+       * each loop chooses independently which variables to bounce,
+       * then those variables are bounced over all loops they're
+       * a part of, so they're not inadvertently stack allocated. *)
+      fun chooseBouncedVariables n loop =
          let
-            (* assume n is small, else we should use a proper heap *)
+            (* assume n is small *)
             val heap = Array.new (n, (NONE, Weight.new))
             fun insert (i, x, xw) =
                if i >= n orelse
@@ -281,8 +283,7 @@ fun transformFunc func =
                case
                   varInfo x of
                     Consider w => insert (0, SOME x, w)
-                    (* Even if overlapped, we need to consider
-                     * the weights more consistently *)
+                    (* May overlap *)
                   | Rewrite w => insert (0, SOME x, w)
                   | _ => ()
             fun insertVars block =
@@ -296,14 +297,9 @@ fun transformFunc func =
          in
             ()
          end
-
       val _ = case !Control.bounceRssaLimit of
-           SOME n => Vector.foreach (loops, mkLoopPicker n)
-         | NONE => ()
-
-      val _ = Vector.foreach (blocks,
-         fn (b as Block.T {label, ...}) =>
-            (#block o labelInfo) label := SOME b)
+           SOME n => Vector.foreach (loops, chooseBouncedVariables n)
+         | NONE => () (* Already chosen when seen *)
 
       val _ = Control.diagnostics (fn show =>
          let
@@ -315,11 +311,16 @@ fun transformFunc func =
          end)
 
 
+
+
       datatype direction
          = EnterLoop
          | LeaveLoop
-
       val newBlocks = ref []
+
+      val _ = Vector.foreach (blocks,
+         fn (b as Block.T {label, ...}) =>
+            (#block o labelInfo) label := SOME b)
 
       fun insertRewriteBlock (destLabel, direction) =
          let
@@ -358,10 +359,10 @@ fun transformFunc func =
                      (* temporary hack *)
                      isMutable= true}
                   end)
-            (* we use our condition here, the kind of a block on the edge
-             * of a loop is never anything interesting, since calls are
-             * unconditional, there is always an intervening block
-             * that would not be in the loop *)
+            (* Due to the loop forest construction, (i.e. shouldAvoid)
+             * The kind of a block on the edge is always Kind.Jump
+             * since every non-Jump must be followed by a case
+             * transfer to exit the loop conditionally. *)
             val kind = Kind.Jump
             val label = Label.new destLabel
             val jumpArgs = Vector.map (args, fn (v, ty) => Operand.Var {var=v, ty=ty})
@@ -372,7 +373,7 @@ fun transformFunc func =
             label
          end
 
-      fun rewriteBlock (b as Block.T {args, kind, label, statements, transfer}) =
+      fun handleBlock (b as Block.T {args, kind, label, statements, transfer}) =
          let
             val {inLoop, ...} = labelInfo label
             val inLoop = !inLoop
@@ -394,15 +395,12 @@ fun transformFunc func =
                        ( needsRewrite := true ;
                          insertRewriteBlock (destLabel, dir))
             val newTransfer = Transfer.replaceLabels(transfer, rewrite)
-            val newBlock = Block.T {args=args, kind=kind, label=label, statements=statements, transfer=newTransfer}
          in
-            (* save some garbage if we don't need to change *)
             if !needsRewrite
-               then newBlock
+               then Block.T {args=args, kind=kind, label=label, statements=statements, transfer=newTransfer}
                else b
          end
-
-      val _ = Vector.foreach (blocks, fn b => List.push (newBlocks, rewriteBlock b))
+      val _ = Vector.foreach (blocks, fn b => List.push (newBlocks, handleBlock b))
       val newBlocks = Vector.fromListRev (!newBlocks)
    in
       Function.new
