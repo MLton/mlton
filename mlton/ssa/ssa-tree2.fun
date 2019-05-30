@@ -67,7 +67,7 @@ structure Prod =
                  (mayAlign o separateRight)
                  (Vector.toListMap (dest p, fn {elt, isMutable} =>
                                     if isMutable
-                                       then seq [layoutElt elt, str " ref"]
+                                       then seq [layoutElt elt, str " mut"]
                                        else layoutElt elt),
                   ","),
                  str ")"]
@@ -79,7 +79,7 @@ structure Prod =
          in
             make <$>
             vector (parseElt >>= (fn elt =>
-                    optional (kw "ref") >>= (fn isMutable =>
+                    optional (kw "mut") >>= (fn isMutable =>
                     pure {elt = elt, isMutable = Option.isSome isMutable})))
 
          end
