@@ -182,11 +182,11 @@ fun transformFunc func =
          fn b as Block.T {label, ...} =>
             if shouldBounceAt b andalso
                (cutoff < 0 orelse
-               cutoff <=
                (Vector.length
                   (Vector.keepAll
                   (beginNoFormals label,
                    fn v => UsedInLoop = varInfo v)))
+               < cutoff)
                then
                   Vector.foreach (beginNoFormals label,
                   fn v => setVarInfo (v, Consider Weight.new))
@@ -206,7 +206,7 @@ fun transformFunc func =
                      val newInfo =
                         case varInfo v of
                              Ignore => Ignore
-                           | UsedInLoop => Consider (f Weight.new)
+                           | UsedInLoop => UsedInLoop
                            | Consider w => Consider (f w)
                            | Rewrite w => Rewrite (f w)
                      val _ = setVarInfo (v, newInfo)
