@@ -448,10 +448,7 @@ fun outputDeclarations
          end
       fun declareMain () =
          if !Control.emitMain andalso !Control.format = Control.Executable
-            then List.foreach
-                 (["int main (int argc, char* argv[]) {",
-                   "return (MLton_main (argc, argv));",
-                   "}"], fn s => (print s; print "\n"))
+            then print "int main (int argc, char* argv[]) { return (MLton_main (argc, argv)); }\n"
          else ()
       fun declareSourceMaps () =
          let
