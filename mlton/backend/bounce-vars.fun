@@ -20,7 +20,7 @@
  * This must be run before implement-handlers, as it uses restore
  *)
 
-functor SeparateVars(S: RSSA_TRANSFORM_STRUCTS): RSSA_TRANSFORM = 
+functor BounceVars(S: RSSA_TRANSFORM_STRUCTS): RSSA_TRANSFORM = 
 struct
 
 open S

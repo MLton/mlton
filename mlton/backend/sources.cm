@@ -52,7 +52,7 @@ restore.sig
 restore.fun
 live.sig
 live.fun
-separate-vars.fun
+bounce-vars.fun
 allocate-registers.sig
 allocate-registers.fun
 equivalence-graph.sig
