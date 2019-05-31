@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor ImplementProfiling (S: IMPLEMENT_PROFILING_STRUCTS): IMPLEMENT_PROFILING = 
+functor ImplementProfiling (S: RSSA_TRANSFORM_STRUCTS): RSSA_TRANSFORM =
 struct
 
 open S
@@ -29,7 +29,8 @@ structure CFunction =
                kind = Kind.Runtime {bytesNeeded = NONE,
                                     ensuresBytesFree = NONE,
                                     mayGC = false,
-                                    maySwitchThreads = false,
+                                    maySwitchThreadsFrom = false,
+                                    maySwitchThreadsTo = false,
                                     modifiesFrontier = false,
                                     readsStackTop = true,
                                     writesStackTop = false},
@@ -53,20 +54,20 @@ structure CFunction =
       end
    end
 
-type sourceSeq = int list
+type sourceSeq = {sourceIndex: int} list
 
 structure InfoNode =
    struct
       datatype t = T of {info: SourceInfo.t,
-                         nameIndex: int,
-                         sourcesIndex: int,
+                         sourceNameIndex: int,
+                         sourceIndex: int,
                          successors: t list ref}
 
       local
          fun make f (T r) = f r
       in
          val info = make #info
-         val sourcesIndex = make #sourcesIndex
+         val sourceIndex = make #sourceIndex
       end
 
       fun layout (T {info, ...}) =
@@ -123,11 +124,11 @@ structure Push =
              | Skip i => seq [str "Skip ", SourceInfo.layout i]
          end
 
-      fun toSources (ps: t list): int list =
+      fun toSourceSeq (ps: t list): sourceSeq =
          List.fold (rev ps, [], fn (p, ac) =>
                     case p of
-                       Enter (InfoNode.T {sourcesIndex, ...}) =>
-                          sourcesIndex :: ac
+                       Enter (InfoNode.T {sourceIndex, ...}) =>
+                          {sourceIndex = sourceIndex} :: ac
                      | Skip _ => ac)
    end
 
@@ -137,12 +138,12 @@ val traceEnter =
                  SourceInfo.layout,
                  Layout.tuple2 (List.layout Push.layout, Bool.layout))
 
-fun doit program =
+fun transform program =
    if !Control.profile = Control.ProfileNone
-      then (program, fn _ => NONE)
+      then program
    else
    let
-      val Program.T {functions, handlesSignals, main, objectTypes} = program
+      val Program.T {functions, handlesSignals, main, objectTypes, ...} = program
       val debug = false
       datatype z = datatype Control.profile
       val profile = !Control.profile
@@ -151,29 +152,28 @@ fun doit program =
          profile = ProfileTimeLabel orelse profile = ProfileLabel
       val needCodeCoverage: bool =
          needProfileLabels orelse (profile = ProfileTimeField)
-      val frameProfileIndices: (Label.t * int) list ref = ref []
       val infoNodes: InfoNode.t list ref = ref []
-      val nameCounter = Counter.new 0
-      val names: string list ref = ref []
+      val sourceNames: string list ref = ref []
       local
-         val sourceCounter = Counter.new 0
+         val sourceNameCounter = Counter.new 0
          val sep =
             if profile = ProfileCallStack
                then " "
             else "\t"
-         val {get = nameIndex, ...} =
+         val {get = sourceNameIndex, ...} =
             Property.get (SourceInfo.plist,
                           Property.initFun
                           (fn si =>
-                           (List.push (names, SourceInfo.toString' (si, sep))
-                            ; Counter.next nameCounter)))
+                           (List.push (sourceNames, SourceInfo.toString' (si, sep))
+                            ; Counter.next sourceNameCounter)))
+         val sourceCounter = Counter.new 0
       in         
          fun sourceInfoNode (si: SourceInfo.t) =
             let
                val infoNode =
                   InfoNode.T {info = si,
-                              nameIndex = nameIndex si,
-                              sourcesIndex = Counter.next sourceCounter,
+                              sourceNameIndex = sourceNameIndex si,
+                              sourceIndex = Counter.next sourceCounter,
                               successors = ref []}
                val _ = List.push (infoNodes, infoNode)
             in
@@ -185,9 +185,9 @@ fun doit program =
                        case p of
                           Push.Enter n => SOME n
                         | _ => NONE)
-      (* unknown must be 0, which == SOURCES_INDEX_UNKNOWN from gc.h *)
+      (* unknown must be 0, which == SOURCES_INDEX_UNKNOWN from sources.h *)
       val unknownInfoNode = sourceInfoNode SourceInfo.unknown
-      (* gc must be 1 which == SOURCES_INDEX_GC from gc.h *)
+      (* gc must be 1 which == SOURCES_INDEX_GC from sources.h *)
       val gcInfoNode = sourceInfoNode SourceInfo.gc
       val mainInfoNode = sourceInfoNode SourceInfo.main
       fun wantedSource (si: SourceInfo.t): bool =
@@ -255,80 +255,89 @@ fun doit program =
       val sourceInfoNode =
          Trace.trace ("Profile.sourceInfoNode", SourceInfo.layout, InfoNode.layout)
          sourceInfoNode
+      val sourceSeqs: {sourceIndex: int} vector list ref = ref []
       local
-         val table: {hash: word,
-                     index: int,
-                     sourceSeq: int vector} HashSet.t =
-            HashSet.new {hash = #hash}
+         val table: ({sourceIndex: int} vector, int) HashTable.t =
+            let
+               fun equals (sourceSeq1, sourceSeq2) =
+                  Vector.equals (sourceSeq1, sourceSeq2,
+                                 fn ({sourceIndex = si1}, {sourceIndex = si2}) =>
+                                 si1 = si2)
+               fun hash sourceSeq =
+                  Hash.vectorMap (sourceSeq, fn {sourceIndex} =>
+                                  Word.fromInt sourceIndex)
+            in
+               HashTable.new
+               {equals = equals,
+                hash = hash}
+            end
          val c = Counter.new 0
-         val sourceSeqs: int vector list ref = ref []
       in
          fun sourceSeqIndex (s: sourceSeq): int =
             let
                val s = Vector.fromListRev s
-               val hash =
-                  Vector.fold (s, 0w0, fn (i, w) =>
-                               w * 0w31 + Word.fromInt i)
             in
-               #index
-               (HashSet.lookupOrInsert
-                (table, hash,
-                 fn {sourceSeq = s', ...} => s = s',
-                 fn () => let
-                             val _ = List.push (sourceSeqs, s)
-                          in
-                             {hash = hash,
-                              index = Counter.next c,
-                              sourceSeq = s}
-                          end))
+               HashTable.lookupOrInsert
+               (table, s, fn () =>
+                (List.push (sourceSeqs, s)
+                 ; Counter.next c))
             end
-         fun makeSourceSeqs () = Vector.fromListRev (!sourceSeqs)
       end
       (* Ensure that [SourceInfo.unknown] is index 0. *)
-      val _ = sourceSeqIndex [InfoNode.sourcesIndex unknownInfoNode]
+      val _ = sourceSeqIndex [{sourceIndex = InfoNode.sourceIndex unknownInfoNode}]
       (* Ensure that [SourceInfo.gc] is index 1. *)
-      val _ = sourceSeqIndex [InfoNode.sourcesIndex gcInfoNode]
-      fun addFrameProfileIndex (label: Label.t,
-                                index: int): unit =
-         List.push (frameProfileIndices, (label, index))
-      fun addFrameProfilePushes (label: Label.t,
-                                 pushes: Push.t list): unit =
-         addFrameProfileIndex (label,
-                               sourceSeqIndex (Push.toSources pushes))
+      val _ = sourceSeqIndex [{sourceIndex = InfoNode.sourceIndex gcInfoNode}]
+      local
+         (* Cannot use Label.plist, because RSSA Labels are cleared
+          * between ImplementProfiling and conversion to Machine.
+          *)
+         val frameSourceSeqIndex: (Label.t, int) HashTable.t =
+            HashTable.new {equals = Label.equals, hash = Label.hash}
+      in
+         fun addFrameSourceSeqIndex (label: Label.t, sourceSeqIndex: int): unit =
+            (ignore o HashTable.insertIfNew)
+            (frameSourceSeqIndex, label, fn () => sourceSeqIndex, fn _ =>
+             Error.bug ("ImplementProfiling.addFrameSourceSeqIndex: " ^ Label.toString label))
+         fun getFrameSourceSeqIndex (label: Label.t) : int option =
+            HashTable.peek (frameSourceSeqIndex, label)
+      end
+      fun addFramePushes (label: Label.t, pushes: Push.t list): unit =
+         addFrameSourceSeqIndex (label, sourceSeqIndex (Push.toSourceSeq pushes))
       val {get = labelInfo: Label.t -> {block: Block.t,
                                         visited1: bool ref,
                                         visited2: bool ref},
            set = setLabelInfo, ...} =
          Property.getSetOnce
          (Label.plist, Property.initRaise ("info", Label.layout))
-      val labels = ref []
-      fun profileLabelFromIndex (sourceSeqsIndex: int): Statement.t =
+      val profileLabelInfos = ref []
+      fun profileLabelFromIndex (sourceSeqIndex: int): Statement.t =
          let
-            val l = ProfileLabel.new ()
-            val _ = List.push (labels, {label = l,
-                                        sourceSeqsIndex = sourceSeqsIndex})
+            val pl = ProfileLabel.new ()
+            val _ = List.push (profileLabelInfos,
+                               {profileLabel = pl,
+                                sourceSeqIndex = sourceSeqIndex})
          in
-            Statement.ProfileLabel l
+            Statement.ProfileLabel pl
          end
-      fun setCurSourceSeqsIndexFromIndex (sourceSeqsIndex: int): Statement.t =
+      fun setCurSourceSeqIndexFromIndex (sourceSeqIndex: int): Statement.t =
          let
-            val curSourceSeqsIndex = 
-               Operand.Runtime Runtime.GCField.CurSourceSeqsIndex
+            val curSourceSeqIndex =
+               Operand.Runtime Runtime.GCField.CurSourceSeqIndex
          in
             Statement.Move
-            {dst = curSourceSeqsIndex,
+            {dst = curSourceSeqIndex,
              src = Operand.word (WordX.fromIntInf 
-                                 (IntInf.fromInt sourceSeqsIndex,
+                                 (IntInf.fromInt sourceSeqIndex,
                                   WordSize.word32))}
          end
-      fun codeCoverageStatementFromIndex (sourceSeqsIndex: int): Statement.t =
+      fun codeCoverageStatementFromSourceSeqIndex (sourceSeqIndex: int): Statement.t =
          if needProfileLabels
-            then profileLabelFromIndex sourceSeqsIndex
+            then profileLabelFromIndex sourceSeqIndex
          else if profile = ProfileTimeField
-            then setCurSourceSeqsIndexFromIndex sourceSeqsIndex
+            then setCurSourceSeqIndexFromIndex sourceSeqIndex
          else Error.bug "Profile.codeCoverageStatement"
-      fun codeCoverageStatement (sourceSeq: int list): Statement.t =
-         codeCoverageStatementFromIndex (sourceSeqIndex sourceSeq)
+      fun codeCoverageStatement (sourceSeq: sourceSeq): Statement.t =
+         codeCoverageStatementFromSourceSeqIndex (sourceSeqIndex sourceSeq)
       local
          val {get: Func.t -> FuncInfo.t, ...} =
             Property.get (Func.plist, Property.initFun (fn _ => FuncInfo.new ()))
@@ -459,7 +468,7 @@ fun doit program =
                           kind,
                           label,
                           leaves,
-                          sourceSeq: int list,
+                          sourceSeq: sourceSeq,
                           statements: Statement.t list,
                           transfer: Transfer.t}: unit =
                let
@@ -494,7 +503,7 @@ fun doit program =
                                                   "Profile.backward: missing Leave"
                                           | infoNode :: leaves =>
                                                (leaves,
-                                                InfoNode.sourcesIndex infoNode
+                                                {sourceIndex = InfoNode.sourceIndex infoNode}
                                                 :: sourceSeq))
                             in
                                (leaves, ncc, sourceSeq, ss)
@@ -515,7 +524,7 @@ fun doit program =
                               val func = CFunction.profileLeave ()
                               val newLabel = Label.newNoname ()
                               val _ =
-                                 addFrameProfileIndex
+                                 addFrameSourceSeqIndex
                                  (newLabel, sourceSeqIndex sourceSeq)
                               val statements =
                                  if needCodeCoverage
@@ -560,7 +569,10 @@ fun doit program =
                    open Layout
                 in
                    record [("leaves", List.layout InfoNode.layout leaves),
-                           ("sourceSeq", List.layout Int.layout sourceSeq),
+                           ("sourceSeq",
+                            List.layout (fn {sourceIndex} =>
+                                         record [("sourceIndex", Int.layout sourceIndex)])
+                                        sourceSeq),
                            ("statements",
                             List.layout Statement.layout statements)]
                 end,
@@ -571,11 +583,11 @@ fun doit program =
                let
                   val func = CFunction.profileEnter ()
                   val newLabel = Label.newNoname ()
-                  val index = sourceSeqIndex (Push.toSources pushes)
-                  val _ = addFrameProfileIndex (newLabel, index)
+                  val sourceSeqIndex = sourceSeqIndex (Push.toSourceSeq pushes)
+                  val _ = addFrameSourceSeqIndex (newLabel, sourceSeqIndex)
                   val statements =
                      if needCodeCoverage
-                        then Vector.new1 (codeCoverageStatementFromIndex index)
+                        then Vector.new1 (codeCoverageStatementFromSourceSeqIndex sourceSeqIndex)
                      else Vector.new0 ()
                   val _ =
                      List.push
@@ -634,8 +646,7 @@ fun doit program =
                                       else statements
                         val _ =
                            let
-                              fun add pushes =
-                                 addFrameProfilePushes (label, pushes)
+                              fun add pushes = addFramePushes (label, pushes)
                               datatype z = datatype Kind.t
                            in
                               case kind of
@@ -676,8 +687,7 @@ fun doit program =
                            else
                               let
                                  val newLabel = Label.newNoname ()
-                                 val _ =
-                                    addFrameProfilePushes (newLabel, pushes)
+                                 val _ = addFramePushes (newLabel, pushes)
                                  val func = CFunction.profileInc ()
                                  val amount =
                                     case profile of
@@ -694,7 +704,7 @@ fun doit program =
                                                 WordSize.csize ())))),
                                      func = func,
                                      return = SOME newLabel}
-                                 val sourceSeq = Push.toSources pushes
+                                 val sourceSeq = Push.toSourceSeq pushes
                                  val _ =
                                     backward {args = args,
                                               kind = kind,
@@ -885,7 +895,7 @@ fun doit program =
                                   kind = kind,
                                   label = label,
                                   leaves = leaves,
-                                  sourceSeq = Push.toSources pushes,
+                                  sourceSeq = Push.toSourceSeq pushes,
                                   statements = statements,
                                   transfer = transfer}
                      end
@@ -900,44 +910,34 @@ fun doit program =
                           returns = returns,
                           start = start}
          end
-      val program = Program.T {functions = List.revMap (functions, doFunction),
-                               handlesSignals = handlesSignals,
-                               main = doFunction main,
-                               objectTypes = objectTypes}
+      val (main, functions) = (doFunction main, List.map (functions, doFunction))
       val _ = addFuncEdges ()
-      val names = Vector.fromListRev (!names)
+      val profileLabelInfos = Vector.fromList (!profileLabelInfos)
+      val sourceNames = Vector.fromListRev (!sourceNames)
       val sources =
          Vector.map
          (Vector.fromListRev (!infoNodes),
-          fn InfoNode.T {nameIndex, successors, ...} =>
-          {nameIndex = nameIndex, 
-           successorsIndex = (sourceSeqIndex
-                              (List.revMap (!successors,
-                                            InfoNode.sourcesIndex)))})
-      (* makeSourceSeqs () must happen after making sources, since that creates
-       * new sourceSeqs.
+          fn InfoNode.T {sourceNameIndex, successors, ...} =>
+          {sourceNameIndex = sourceNameIndex,
+           successorSourceSeqIndex = (sourceSeqIndex
+                                      (List.revMap (!successors, fn infoNode =>
+                                                    {sourceIndex = InfoNode.sourceIndex infoNode})))})
+      (* Making sourceSeqs must happen after making sources,
+       * since making sources creates new sourceSeqs.
        *)
-      val sourceSeqs = makeSourceSeqs ()
-      fun makeProfileInfo {frames} =
-         let
-            val {get, set, ...} =
-               Property.getSetOnce
-               (Label.plist,
-                Property.initRaise ("frameProfileIndex", Label.layout))
-            val _ =
-               List.foreach (!frameProfileIndices, fn (l, i) =>
-                             set (l, i))
-            val frameSources = Vector.map (frames, get)
-         in
-            SOME (Machine.ProfileInfo.T
-                  {frameSources = frameSources,
-                   labels = Vector.fromList (!labels),
-                   names = names,
-                   sourceSeqs = sourceSeqs,
-                   sources = sources})
-         end
-   in 
-      (program, makeProfileInfo)
+      val sourceSeqs = Vector.fromListRev (!sourceSeqs)
+      val sourceMaps =
+         SourceMaps.T {profileLabelInfos = profileLabelInfos,
+                       sourceNames = sourceNames,
+                       sourceSeqs = sourceSeqs,
+                       sources = sources}
+   in
+      Program.T {functions = functions,
+                 handlesSignals = handlesSignals,
+                 main = main,
+                 objectTypes = objectTypes,
+                 profileInfo = SOME {sourceMaps = sourceMaps,
+                                     getFrameSourceSeqIndex = getFrameSourceSeqIndex}}
    end
 
 end

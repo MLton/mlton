@@ -321,8 +321,8 @@ fun restoreFunction {main: Function.t}
                            end
                       else ()
                   end
-              val _ = Transfer.foreachDefLabelUse (transfer,
-                      {def=addDef o #1, label=fn _ => (), use=addUse})
+              val _ = Transfer.foreachLabelUse (transfer,
+                      {label=fn _ => (), use=addUse})
               val _ = Vector.foreachr
                       (statements, fn s => Statement.foreachDefUse
                         (s, {def=addDef o #1, use=addUse}))
@@ -709,13 +709,14 @@ val restoreFunction
       fn f => traceRestoreFunction r f
    end
 
-fun restore (Program.T {functions, handlesSignals, main, objectTypes})
+fun restore (Program.T {functions, handlesSignals, main, objectTypes, profileInfo})
   = let
       val r = restoreFunction {main=main}
     in
       Program.T {handlesSignals = handlesSignals,
                  functions = List.map (functions, r),
                  main = main,
-                 objectTypes = objectTypes}
+                 objectTypes = objectTypes,
+                 profileInfo = profileInfo}
     end
 end

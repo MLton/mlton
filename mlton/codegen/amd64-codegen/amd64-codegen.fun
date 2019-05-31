@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2010,2014 Matthew Fluet.
+(* Copyright (C) 2009-2010,2014,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -62,8 +62,7 @@ struct
                             structure amd64MLton = amd64MLton)
 
   open amd64
-  fun output {program as Machine.Program.T {chunks, frameLayouts, handlesSignals,
-                                            main, ...},
+  fun output {program as Machine.Program.T {chunks, handlesSignals, main, ...},
               outputC: unit -> {file: File.t,
                                 print: string -> unit,
                                 done: unit -> unit},
@@ -81,13 +80,22 @@ struct
         val makeC = outputC
         val makeS = outputS
 
-        val Machine.Program.T {profileInfo, ...} = program
-        val profileInfo =
-           case profileInfo of
-              NONE => Machine.ProfileInfo.empty
-            | SOME pi => pi
-        val {newProfileLabel, delProfileLabel, getProfileInfo} = 
-          Machine.ProfileInfo.modify profileInfo
+        val (newProfileLabel, delProfileLabel, getSourceMaps) =
+           let
+              val Machine.Program.T {sourceMaps, ...} = program
+           in
+              case sourceMaps of
+                 NONE => (fn _ => Error.bug "amd64Codegen.newProfileLabel",
+                          fn _ => Error.bug "amd64Codegen.delProfileLabel",
+                          fn () => NONE)
+               | SOME sm =>
+                    let
+                       val {newProfileLabel, delProfileLabel, getSourceMaps} =
+                          Machine.SourceMaps.modify sm
+                    in
+                       (newProfileLabel, delProfileLabel, SOME o getSourceMaps)
+                    end
+           end
 
         (* C specific *)
         fun outputC ()
@@ -95,7 +103,7 @@ struct
               local
                 val Machine.Program.T 
                     {chunks, 
-                     frameLayouts, 
+                     frameInfos,
                      frameOffsets, 
                      handlesSignals, 
                      main, 
@@ -108,14 +116,14 @@ struct
                 val program =
                   Machine.Program.T 
                   {chunks = chunks, 
-                   frameLayouts = frameLayouts, 
+                   frameInfos = frameInfos,
                    frameOffsets = frameOffsets, 
                    handlesSignals = handlesSignals, 
                    main = main, 
                    maxFrameSize = maxFrameSize, 
                    objectTypes = objectTypes, 
-                   profileInfo = SOME (getProfileInfo ()),
                    reals = reals, 
+                   sourceMaps = getSourceMaps (),
                    vectors = vectors}
               end
               val {print, done, ...} = makeC ()
@@ -356,12 +364,6 @@ struct
         val liveInfo = amd64Liveness.LiveInfo.newLiveInfo ()
         val jumpInfo = amd64JumpInfo.newJumpInfo ()
 
-        fun frameInfoToAMD64 (Machine.FrameInfo.T {frameLayoutsIndex, ...}) =
-           amd64.FrameInfo.T
-           {frameLayoutsIndex = frameLayoutsIndex,
-            size = Bytes.toInt (#size (Vector.sub (frameLayouts,
-                                                   frameLayoutsIndex)))}
-
         fun outputChunk (chunk as Machine.Chunk.T {blocks, chunkLabel, ...},
                          print)
           = let
@@ -376,7 +378,6 @@ struct
               val {chunk}
                 = amd64Translate.translateChunk 
                   {chunk = chunk,
-                   frameInfoToAMD64 = frameInfoToAMD64,
                    liveInfo = liveInfo}
 
               val chunk : amd64.Chunk.t

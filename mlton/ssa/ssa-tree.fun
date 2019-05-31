@@ -777,7 +777,7 @@ structure Transfer =
        | Return of Var.t vector
        | Runtime of {prim: Type.t Prim.t,
                      args: Var.t vector,
-                     return: Label.t} (* Must be nullary. *)
+                     return: Label.t}
 
       (* Vals to determine the size for inline.fun and loop optimization*)
       val size =

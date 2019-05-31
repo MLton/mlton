@@ -88,8 +88,7 @@ structure SsaToSsa2 = SsaToSsa2 (structure Ssa = Ssa
 structure Backend = Backend (structure Ssa = Ssa2
                              structure Machine = Machine
                              fun funcToLabel f = f)
-structure CCodegen = CCodegen (structure Ffi = Ffi
-                               structure Machine = Machine)
+structure CCodegen = CCodegen (structure Machine = Machine)
 structure LLVMCodegen = LLVMCodegen (structure CCodegen = CCodegen
                                      structure Machine = Machine)
 structure x86Codegen = x86Codegen (structure CCodegen = CCodegen
@@ -687,7 +686,7 @@ fun setupConstants() : unit =
              atomicState = get "atomicState_Offset",
              cardMapAbsolute = get "generationalMaps.cardMapAbsolute_Offset",
              currentThread = get "currentThread_Offset",
-             curSourceSeqsIndex = get "sourceMaps.curSourceSeqsIndex_Offset",
+             curSourceSeqIndex = get "sourceMaps.curSourceSeqIndex_Offset",
              exnStack = get "exnStack_Offset",
              frontier = get "frontier_Offset",
              limit = get "limit_Offset",
@@ -703,7 +702,7 @@ fun setupConstants() : unit =
              atomicState = get "atomicState_Size",
              cardMapAbsolute = get "generationalMaps.cardMapAbsolute_Size",
              currentThread = get "currentThread_Size",
-             curSourceSeqsIndex = get "sourceMaps.curSourceSeqsIndex_Size",
+             curSourceSeqIndex = get "sourceMaps.curSourceSeqIndex_Size",
              exnStack = get "exnStack_Size",
              frontier = get "frontier_Size",
              limit = get "limit_Size",

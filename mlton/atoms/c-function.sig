@@ -48,7 +48,8 @@ signature C_FUNCTION =
                             *)
                            ensuresBytesFree: int option,
                            mayGC: bool,
-                           maySwitchThreads: bool,
+                           maySwitchThreadsFrom: bool,
+                           maySwitchThreadsTo: bool,
                            modifiesFrontier: bool,
                            readsStackTop: bool,
                            writesStackTop: bool}
@@ -64,7 +65,8 @@ signature C_FUNCTION =
             val bytesNeeded: t -> int option
             val ensuresBytesFree: t -> int option
             val mayGC: t -> bool
-            val maySwitchThreads: t -> bool
+            val maySwitchThreadsFrom: t -> bool
+            val maySwitchThreadsTo: t -> bool
             val modifiesFrontier: t -> bool
             val readsStackTop: t -> bool
             val writesStackTop: t -> bool
@@ -110,7 +112,8 @@ signature C_FUNCTION =
       val layout: 'a t * ('a -> Layout.t) -> Layout.t
       val map: 'a t * ('a -> 'b) -> 'b t
       val mayGC: 'a t -> bool
-      val maySwitchThreads: 'a t -> bool
+      val maySwitchThreadsFrom: 'a t -> bool
+      val maySwitchThreadsTo: 'a t -> bool
       val modifiesFrontier: 'a t -> bool
       val parse: 'a Parse.t -> 'a t Parse.t
       val prototype: 'a t -> CType.t vector * CType.t option

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 Matthew Fluet.
+/* Copyright (C) 2016,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -119,7 +119,7 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
     pointer top, bottom; 
     unsigned int i;
     GC_returnAddress returnAddress; 
-    GC_frameLayout frameLayout;
+    GC_frameInfo frameInfo;
     GC_frameOffsets frameOffsets;
 
     assert (STACK_TAG == tag);
@@ -138,9 +138,9 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
         fprintf (stderr, "  top = "FMTPTR"  return address = "FMTRA"\n",
                  (uintptr_t)top, returnAddress);
       }
-      frameLayout = getFrameLayoutFromReturnAddress (s, returnAddress);
-      frameOffsets = frameLayout->offsets;
-      top -= frameLayout->size;
+      frameInfo = getFrameInfoFromReturnAddress (s, returnAddress);
+      frameOffsets = frameInfo->offsets;
+      top -= frameInfo->size;
       for (i = 0 ; i < frameOffsets[0] ; ++i) {
         if (DEBUG)
           fprintf(stderr, "  offset %"PRIx16"  address "FMTOBJPTR"\n",
@@ -197,8 +197,8 @@ pointer foreachObjptrInRange (GC_state s, pointer front, pointer *back,
 /* Apply f to the frame index of each frame in the current thread's stack. */
 void foreachStackFrame (GC_state s, GC_foreachStackFrameFun f) {
   pointer bottom;
-  GC_frameIndex findex;
-  GC_frameLayout layout;
+  GC_frameIndex frameIndex;
+  GC_frameInfo frameInfo;
   GC_returnAddress returnAddress;
   pointer top;
 
@@ -208,18 +208,18 @@ void foreachStackFrame (GC_state s, GC_foreachStackFrameFun f) {
   if (DEBUG_PROFILE)
     fprintf (stderr, "  bottom = "FMTPTR"  top = "FMTPTR".\n",
              (uintptr_t)bottom, (uintptr_t)s->stackTop);
-  for (top = s->stackTop; top > bottom; top -= layout->size) {
+  for (top = s->stackTop; top > bottom; top -= frameInfo->size) {
     returnAddress = *((GC_returnAddress*)(top - GC_RETURNADDRESS_SIZE));
-    findex = getFrameIndexFromReturnAddress (s, returnAddress);
+    frameIndex = getFrameIndexFromReturnAddress (s, returnAddress);
     if (DEBUG_PROFILE)
-      fprintf (stderr, "top = "FMTPTR"  findex = "FMTFI"\n",
-               (uintptr_t)top, findex);
-    unless (findex < s->frameLayoutsLength)
-      die ("top = "FMTPTR"  returnAddress = "FMTRA"  findex = "FMTFI"\n",
-           (uintptr_t)top, (uintptr_t)returnAddress, findex);
-    f (s, findex);
-    layout = &(s->frameLayouts[findex]);
-    assert (layout->size > 0);
+      fprintf (stderr, "top = "FMTPTR"  frameIndex = "FMTFI"\n",
+               (uintptr_t)top, frameIndex);
+    unless (frameIndex < s->frameInfosLength)
+      die ("top = "FMTPTR"  returnAddress = "FMTRA"  frameIndex = "FMTFI"\n",
+           (uintptr_t)top, (uintptr_t)returnAddress, frameIndex);
+    f (s, frameIndex);
+    frameInfo = &(s->frameInfos[frameIndex]);
+    assert (frameInfo->size > 0);
   }
   if (DEBUG_PROFILE)
     fprintf (stderr, "done foreachStackFrame\n");

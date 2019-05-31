@@ -1,4 +1,4 @@
-(* Copyright (C) 2017 Matthew Fluet.
+(* Copyright (C) 2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -111,6 +111,8 @@ profile-label.sig
 profile-label.fun
 profile-exp.sig
 profile-exp.fun
+source-maps.sig
+source-maps.fun
 atoms.sig
 atoms.fun
 generic-scheme.sig

@@ -1,4 +1,4 @@
-(* Copyright (C) 2018 Jason Carr
+(* Copyright (C) 2018-2019 Jason Carr, Matthew Fluet.
  *
  * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
@@ -13,6 +13,9 @@ signature HASH =
 
       val list: word List.t -> word
       val listMap: ('a List.t * ('a -> word)) -> word
+
+      val option: word Option.t -> word
+      val optionMap: 'a Option.t * ('a -> word) -> word
 
       val permute: word -> word
 

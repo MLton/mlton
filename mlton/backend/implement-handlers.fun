@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -209,10 +210,11 @@ fun flow (f: Function.t): Function.t =
                     start = newStart}
    end
 
-fun transform (Program.T {functions, handlesSignals, main, objectTypes}) =
+fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileInfo}) =
    Program.T {functions = List.revMap (functions, flow),
               handlesSignals = handlesSignals,
               main = flow main,
-              objectTypes = objectTypes}
+              objectTypes = objectTypes,
+              profileInfo = profileInfo}
 
 end

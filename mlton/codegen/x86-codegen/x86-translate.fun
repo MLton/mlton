@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -297,9 +297,13 @@ struct
     struct
       structure Kind = Machine.Kind
 
+      fun frameInfoToX86 fi =
+         x86.FrameInfo.T
+         {frameInfosIndex = Machine.FrameInfo.index fi,
+          size = Bytes.toInt (Machine.FrameInfo.size fi)}
+
       fun toX86Blocks {label, kind, 
-                       transInfo as {frameInfoToX86, live, liveInfo,
-                                     ...}: transInfo}
+                       transInfo as {live, liveInfo, ...}: transInfo}
         = (
            x86Liveness.LiveInfo.setLiveOperands
            (liveInfo, label, live label);
@@ -313,7 +317,7 @@ struct
                      statements = [],
                      transfer = NONE})
                  end
-              | Kind.Func
+              | Kind.Func _
               => let
                    val args
                      = List.fold
@@ -596,10 +600,9 @@ struct
             else AppendList.empty
 
 
-      fun toX86Blocks {returns, transfer,
-                       transInfo as {frameInfoToX86, ...}: transInfo}
+      fun toX86Blocks {returns, transfer, transInfo: transInfo}
         = (case transfer
-             of CCall {args, frameInfo, func, return}
+             of CCall {args, func, return}
               => let
                    val args = (Vector.concatV o Vector.map)
                               (args, Operand.toX86Operand)
@@ -607,10 +610,10 @@ struct
                    AppendList.append
                    (comments transfer,  
                     x86MLton.ccall {args = args,
-                                    frameInfo = (Option.map
-                                                 (frameInfo, frameInfoToX86)),
                                     func = func,
-                                    return = return,
+                                    return = Option.map (return, fn {return, size} =>
+                                                         {return = return,
+                                                          size = Option.map (size, Bytes.toInt)}),
                                     transInfo = transInfo})
                  end
               | Return
@@ -756,7 +759,6 @@ struct
       open Machine.Chunk
 
       fun toX86Chunk {chunk = T {blocks, ...}, 
-                      frameInfoToX86,
                       liveInfo}
         = let
             val data = ref []
@@ -773,7 +775,6 @@ struct
                                Vector.concatV o Vector.map)
                               (live, Operand.toX86Operand o Live.toOperand)))
             val transInfo = {addData = addData,
-                             frameInfoToX86 = frameInfoToX86,
                              live = live,
                              liveInfo = liveInfo}
             val x86Blocks 
@@ -796,11 +797,9 @@ struct
     end
 
   fun translateChunk {chunk: x86MLton.Machine.Chunk.t,
-                      frameInfoToX86,
                       liveInfo: x86Liveness.LiveInfo.t}:
                      {chunk: x86.Chunk.t}
     = {chunk = Chunk.toX86Chunk {chunk = chunk,
-                                 frameInfoToX86 = frameInfoToX86,
                                  liveInfo = liveInfo}}
 
   val (translateChunk, translateChunk_msg)

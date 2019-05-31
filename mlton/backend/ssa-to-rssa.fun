@@ -62,7 +62,8 @@ structure CFunction =
             kind = Kind.Runtime {bytesNeeded = NONE,
                                  ensuresBytesFree = NONE,
                                  mayGC = true,
-                                 maySwitchThreads = false,
+                                 maySwitchThreadsFrom = false,
+                                 maySwitchThreadsTo = true,
                                  modifiesFrontier = true,
                                  readsStackTop = true,
                                  writesStackTop = true},
@@ -78,7 +79,8 @@ structure CFunction =
             kind = Kind.Runtime {bytesNeeded = NONE,
                                  ensuresBytesFree = NONE,
                                  mayGC = true,
-                                 maySwitchThreads = false,
+                                 maySwitchThreadsFrom = false,
+                                 maySwitchThreadsTo = false,
                                  modifiesFrontier = true,
                                  readsStackTop = true,
                                  writesStackTop = true},
@@ -96,8 +98,9 @@ structure CFunction =
             convention = Cdecl,
             kind = Kind.Runtime {bytesNeeded = NONE,
                                  ensuresBytesFree = NONE,
-                                 mayGC = false,
-                                 maySwitchThreads = false,
+                                 mayGC = true,
+                                 maySwitchThreadsFrom = false,
+                                 maySwitchThreadsTo = false,
                                  modifiesFrontier = true,
                                  readsStackTop = true,
                                  writesStackTop = true},
@@ -115,7 +118,8 @@ structure CFunction =
             kind = Kind.Runtime {bytesNeeded = NONE,
                                  ensuresBytesFree = SOME 1,
                                  mayGC = true,
-                                 maySwitchThreads = false,
+                                 maySwitchThreadsFrom = false,
+                                 maySwitchThreadsTo = false,
                                  modifiesFrontier = true,
                                  readsStackTop = true,
                                  writesStackTop = true},
@@ -139,7 +143,8 @@ structure CFunction =
             kind = Kind.Runtime {bytesNeeded = NONE,
                                  ensuresBytesFree = NONE,
                                  mayGC = false,
-                                 maySwitchThreads = false,
+                                 maySwitchThreadsFrom = false,
+                                 maySwitchThreadsTo = false,
                                  modifiesFrontier = false,
                                  readsStackTop = false,
                                  writesStackTop = false},
@@ -160,7 +165,8 @@ structure CFunction =
             kind = Kind.Runtime {bytesNeeded = NONE,
                                  ensuresBytesFree = NONE,
                                  mayGC = true,
-                                 maySwitchThreads = true,
+                                 maySwitchThreadsFrom = false,
+                                 maySwitchThreadsTo = true,
                                  modifiesFrontier = true,
                                  readsStackTop = true,
                                  writesStackTop = true},
@@ -176,7 +182,8 @@ structure CFunction =
             kind = Kind.Runtime {bytesNeeded = NONE,
                                  ensuresBytesFree = SOME 2,
                                  mayGC = true,
-                                 maySwitchThreads = true,
+                                 maySwitchThreadsFrom = true,
+                                 maySwitchThreadsTo = true,
                                  modifiesFrontier = true,
                                  readsStackTop = true,
                                  writesStackTop = true},
@@ -195,7 +202,8 @@ structure CFunction =
             kind = Kind.Runtime {bytesNeeded = NONE,
                                  ensuresBytesFree = NONE,
                                  mayGC = false,
-                                 maySwitchThreads = false,
+                                 maySwitchThreadsFrom = false,
+                                 maySwitchThreadsTo = false,
                                  modifiesFrontier = false,
                                  readsStackTop = false,
                                  writesStackTop = false},
@@ -212,7 +220,8 @@ structure CFunction =
             kind = Kind.Runtime {bytesNeeded = NONE,
                                  ensuresBytesFree = NONE,
                                  mayGC = false,
-                                 maySwitchThreads = false,
+                                 maySwitchThreadsFrom = false,
+                                 maySwitchThreadsTo = false,
                                  modifiesFrontier = false,
                                  readsStackTop = false,
                                  writesStackTop = false},
@@ -229,7 +238,8 @@ structure CFunction =
             kind = Kind.Runtime {bytesNeeded = NONE,
                                  ensuresBytesFree = NONE,
                                  mayGC = true,
-                                 maySwitchThreads = false,
+                                 maySwitchThreadsFrom = false,
+                                 maySwitchThreadsTo = false,
                                  modifiesFrontier = true,
                                  readsStackTop = true,
                                  writesStackTop = true},
@@ -247,7 +257,8 @@ structure CFunction =
             kind = Kind.Runtime {bytesNeeded = NONE,
                                  ensuresBytesFree = NONE,
                                  mayGC = true,
-                                 maySwitchThreads = false,
+                                 maySwitchThreadsFrom = false,
+                                 maySwitchThreadsTo = true,
                                  modifiesFrontier = true,
                                  readsStackTop = true,
                                  writesStackTop = true},
@@ -267,7 +278,8 @@ structure CFunction =
                                                 * because tracing might encounter the current
                                                 * stack in the heap.
                                                 *)
-                                 maySwitchThreads = false,
+                                 maySwitchThreadsFrom = false,
+                                 maySwitchThreadsTo = false,
                                  modifiesFrontier = true, (* actually, just readsFrontier *)
                                  readsStackTop = true,
                                  writesStackTop = true},
@@ -287,7 +299,8 @@ structure CFunction =
                                                 * because tracing might encounter the current
                                                 * stack in the heap.
                                                 *)
-                                 maySwitchThreads = false,
+                                 maySwitchThreadsFrom = false,
+                                 maySwitchThreadsTo = false,
                                  modifiesFrontier = true,
                                  readsStackTop = true,
                                  writesStackTop = true},
@@ -308,7 +321,8 @@ structure CFunction =
                       kind = CFunction.Kind.Runtime {bytesNeeded = SOME 3,
                                                      ensuresBytesFree = NONE,
                                                      mayGC = false,
-                                                     maySwitchThreads = false,
+                                                     maySwitchThreadsFrom = false,
+                                                     maySwitchThreadsTo = false,
                                                      modifiesFrontier = true,
                                                      readsStackTop = amAllocationProfiling (),
                                                      writesStackTop = false},
@@ -329,7 +343,8 @@ structure CFunction =
                       kind = CFunction.Kind.Runtime {bytesNeeded = NONE,
                                                      ensuresBytesFree = NONE,
                                                      mayGC = false,
-                                                     maySwitchThreads = false,
+                                                     maySwitchThreadsFrom = false,
+                                                     maySwitchThreadsTo = false,
                                                      modifiesFrontier = false,
                                                      readsStackTop = false,
                                                      writesStackTop = false},
@@ -349,7 +364,8 @@ structure CFunction =
                       kind = CFunction.Kind.Runtime {bytesNeeded = SOME 3,
                                                      ensuresBytesFree = NONE,
                                                      mayGC = false,
-                                                     maySwitchThreads = false,
+                                                     maySwitchThreadsFrom = false,
+                                                     maySwitchThreadsTo = false,
                                                      modifiesFrontier = true,
                                                      readsStackTop = amAllocationProfiling (),
                                                      writesStackTop = false},
@@ -371,7 +387,8 @@ structure CFunction =
                       kind = CFunction.Kind.Runtime {bytesNeeded = SOME 3,
                                                      ensuresBytesFree = NONE,
                                                      mayGC = false,
-                                                     maySwitchThreads = false,
+                                                     maySwitchThreadsFrom = false,
+                                                     maySwitchThreadsTo = false,
                                                      modifiesFrontier = true,
                                                      readsStackTop = amAllocationProfiling (),
                                                      writesStackTop = false},
@@ -391,7 +408,8 @@ structure CFunction =
                       kind = CFunction.Kind.Runtime {bytesNeeded = SOME 2,
                                                      ensuresBytesFree = NONE,
                                                      mayGC = false,
-                                                     maySwitchThreads = false,
+                                                     maySwitchThreadsFrom = false,
+                                                     maySwitchThreadsTo = false,
                                                      modifiesFrontier = true,
                                                      readsStackTop = amAllocationProfiling (),
                                                      writesStackTop = false},
@@ -504,8 +522,7 @@ structure Name =
                end
          in
             case n of
-               MLton_bug => CFunction.bug ()
-             | Real_Math_acos s => realUnary s
+               Real_Math_acos s => realUnary s
              | Real_Math_asin s => realUnary s
              | Real_Math_atan s => realUnary s
              | Real_Math_atan2 s => realBinary s
@@ -867,14 +884,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                   datatype z = datatype Prim.Name.t
                in
                   case Prim.name prim of
-                     MLton_halt =>
-                           ([],
-                            Transfer.CCall
-                            {args = Vector.concat [Vector.new1 GCState,
-                                                   vos args],
-                             func = CFunction.halt (),
-                             return = NONE})
-                   | Thread_copyCurrent =>
+                     Thread_copyCurrent =>
                         let
                            val func = CFunction.copyCurrentThread ()
                            val l =
@@ -1023,10 +1033,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                        Option.map (toRtype (varType x), fn t =>
                                                    (x, t))
                                   | NONE => NONE
-                              fun primApp prim =
+                              fun primApp (prim, args) =
                                  add (PrimApp {dst = dst (),
                                                prim = prim,
-                                               args = varOps args})
+                                               args = args})
                               datatype z = datatype Prim.Name.t
                               fun bumpAtomicState n =
                                  let
@@ -1104,19 +1114,21 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                             ty = ty},
                                       src = a 2})
                         end
-                     fun codegenOrC (p: Prim.t) =
+                     fun codegenOrC (p: Prim.t, args) =
                         let
                            val n = Prim.name p
                         in
                            if codegenImplementsPrim p
-                              then primApp p
+                              then primApp (p, args)
                            else (case Name.cFunction n of
                                     NONE =>
                                        Error.bug (concat ["SsaToRssa.codegenOrC: ",
                                                           "unimplemented prim:",
                                                           Name.toString n])
-                                  | SOME f => simpleCCall f)
+                                  | SOME func => ccall {args = args, func = func})
                         end
+                     fun simpleCodegenOrC (p: Prim.t) =
+                        codegenOrC (p, varOps args)
                      datatype z = datatype Prim.Name.t
                            in
                               case Prim.name prim of
@@ -1302,6 +1314,12 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                | IntInf_xorb =>
                                     simpleCCallWithGCState
                                     (CFunction.intInfBinary IntInf_xorb)
+                               | MLton_bug =>
+                                    loop
+                                    (i - 1, [],
+                                     Transfer.CCall {args = vos args,
+                                                     func = CFunction.bug (),
+                                                     return = NONE})
                                | MLton_bogus =>
                                     (case toRtype ty of
                                         NONE => none ()
@@ -1310,9 +1328,30 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                     (case toRtype (varType (arg 0)) of
                                         NONE => move (Operand.bool true)
                                       | SOME t =>
-                                           codegenOrC
-                                           (Prim.wordEqual
-                                            (WordSize.fromBits (Type.width t))))
+                                           let
+                                              val ws = WordSize.fromBits (Type.width t)
+                                              val wordEqual = Prim.wordEqual ws
+                                              val args = varOps args
+                                              val (prim, args) =
+                                                 case Type.toCType t of
+                                                    CType.CPointer =>
+                                                       (Prim.cpointerEqual, args)
+                                                  | CType.Objptr =>
+                                                       (wordEqual,
+                                                        Vector.map
+                                                        (args, fn arg =>
+                                                         Operand.cast (arg, Type.word ws)))
+                                                  | CType.Word8 => (wordEqual, args)
+                                                  | CType.Word16 => (wordEqual, args)
+                                                  | CType.Word32 => (wordEqual, args)
+                                                  | CType.Word64 => (wordEqual, args)
+                                                  | _ => Error.bug (concat ["SsaToRssa.translateStatementsTransfer: PrimApp,MLton_eq,", Layout.toString (Type.layout t)])
+                                           in
+                                              codegenOrC (prim, args)
+                                           end)
+                               | MLton_halt =>
+                                    simpleCCallWithGCState
+                                    (CFunction.halt ())
                                | MLton_installSignalHandler => none ()
                                | MLton_share =>
                                     (case toRtype (varType (arg 0)) of
@@ -1334,15 +1373,11 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                               (CFunction.size (Operand.ty (a 0))))
                                | MLton_touch =>
                                     let
-                                       val a = arg 0
-                                       val args =
-                                          if isSome (toRtype (varType a))
-                                             then Vector.new1 (varOp a)
-                                          else Vector.new0 ()
+                                       val a  = arg 0
                                     in
-                                       add (PrimApp {args = args,
-                                                     dst = NONE,
-                                                     prim = prim})
+                                       if isSome (toRtype (varType a))
+                                          then primApp (prim, Vector.new1 (varOp a))
+                                          else none ()
                                     end
                                | Thread_atomicBegin =>
                                     (* gcState.atomicState++;
@@ -1504,8 +1539,9 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                      end,
                                      none)
                                | Word_equal s =>
-                                    codegenOrC (Prim.wordEqual
-                                               (WordSize.roundUpToPrim s))
+                                    simpleCodegenOrC
+                                    (Prim.wordEqual
+                                     (WordSize.roundUpToPrim s))
                                | Word_toIntInf => cast ()
                                | Word_extdToWord (s1, s2, {signed}) =>
                                     if WordSize.equals (s1, s2)
@@ -1522,7 +1558,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                           if WordSize.equals (s1, s2)
                                              then cast ()
                                           else
-                                             codegenOrC
+                                             simpleCodegenOrC
                                              (Prim.wordExtdToWord
                                               (s1, s2, {signed = signed}))
                                        end
@@ -1546,7 +1582,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                | World_save =>
                                     simpleCCallWithGCState
                                     (CFunction.worldSave ())
-                               | _ => codegenOrC prim
+                               | _ => simpleCodegenOrC prim
                            end
                       | S.Exp.Select {base, offset} =>
                            (case var of
@@ -1644,7 +1680,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
       val p = Program.T {functions = functions,
                          handlesSignals = handlesSignals,
                          main = main,
-                         objectTypes = Vector.concat [objectTypes, Vector.fromListRev (!newObjectTypes)]}
+                         objectTypes = Vector.concat [objectTypes, Vector.fromListRev (!newObjectTypes)],
+                         profileInfo = NONE}
       val _ = Program.clear p
    in
       p

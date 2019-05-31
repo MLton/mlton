@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -282,7 +283,7 @@ struct
                       | Raise {...}
                       => ()
                       | CCall {return, ...}
-                      => Option.app (return, doit)
+                      => Option.app (return, doit o #return)
                  end)
 
         val _
@@ -439,7 +440,7 @@ struct
                                     | Return _ => (I.PosInfinity, NONE)
                                     | Raise _ => (I.PosInfinity, NONE)
                                     | CCall {func, ...}
-                                    => if CFunction.maySwitchThreads func
+                                    => if CFunction.maySwitchThreadsFrom func
                                           orelse Size.class (MemLoc.size temp) <> Size.INT
                                          then (I.PosInfinity, NONE)
                                          else default ()
@@ -514,7 +515,7 @@ struct
                              | Cont {...} => (I.PosInfinity, NONE)
                              | Handler {...} => (I.PosInfinity, NONE)
                              | CReturn {func, ...}
-                             => if (CFunction.maySwitchThreads func
+                             => if (CFunction.maySwitchThreadsTo func
                                     orelse Size.class (MemLoc.size temp) <> Size.INT)
                                   then (I.PosInfinity, NONE)
                                   else default ()
@@ -959,9 +960,9 @@ struct
                          | Raise {...}
                          => ()
                          | CCall {func, return, ...}
-                         => if CFunction.maySwitchThreads func
-                              then Option.app (return, doit'')
-                            else Option.app (return, doit''' func)
+                         => if CFunction.maySwitchThreadsFrom func
+                              then Option.app (return, doit'' o #return)
+                            else Option.app (return, doit''' func o #return)
                     end
             end
 
@@ -1076,9 +1077,9 @@ struct
                        | Raise {...}
                        => ()
                        | CCall {func, return, ...}
-                       => if CFunction.maySwitchThreads func
-                            then Option.app (return, doit'')
-                            else Option.app (return, doit')
+                       => if CFunction.maySwitchThreadsFrom func
+                            then Option.app (return, doit'' o #return)
+                            else Option.app (return, doit' o #return)
                   end
             in
               case !defed

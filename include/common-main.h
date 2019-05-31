@@ -1,4 +1,4 @@
-/* Copyright (C) 2014 Matthew Fluet.
+/* Copyright (C) 2014,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -36,8 +36,8 @@ PRIVATE Pointer gcStateAddress;
         gcState.alignment = al;                                         \
         gcState.atMLtons = atMLtons;                                    \
         gcState.atMLtonsLength = cardof(atMLtons);                      \
-        gcState.frameLayouts = frameLayouts;                            \
-        gcState.frameLayoutsLength = cardof(frameLayouts);              \
+        gcState.frameInfos = frameInfos;                                \
+        gcState.frameInfosLength = cardof(frameInfos);                  \
         gcState.globals = (objptr*)globalObjptr;                        \
         gcState.globalsLength = cardof(globalObjptr);                   \
         gcState.loadGlobals = loadGlobals;                              \
@@ -50,10 +50,8 @@ PRIVATE Pointer gcStateAddress;
         gcState.saveGlobals = saveGlobals;                              \
         gcState.vectorInits = vectorInits;                              \
         gcState.vectorInitsLength = cardof(vectorInits);                \
-        gcState.sourceMaps.frameSources = frameSources;                 \
-        gcState.sourceMaps.frameSourcesLength = cardof(frameSources);   \
-        gcState.sourceMaps.sourceLabels = sourceLabels;                 \
-        gcState.sourceMaps.sourceLabelsLength = cardof(sourceLabels);   \
+        gcState.sourceMaps.profileLabelInfos = profileLabelInfos;       \
+        gcState.sourceMaps.profileLabelInfosLength = cardof(profileLabelInfos);   \
         gcState.sourceMaps.sourceNames = sourceNames;                   \
         gcState.sourceMaps.sourceNamesLength = cardof(sourceNames);     \
         gcState.sourceMaps.sourceSeqs = sourceSeqs;                     \
@@ -67,7 +65,5 @@ PRIVATE Pointer gcStateAddress;
 #define LIB_PASTE(x,y) x ## y
 #define LIB_OPEN(x) LIB_PASTE(x, _open)
 #define LIB_CLOSE(x) LIB_PASTE(x, _close)
-
-static void MLton_callFromC ();
 
 #endif /* #ifndef _COMMON_MAIN_H_ */

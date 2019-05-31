@@ -1,4 +1,4 @@
-(* Copyright (C) 2018 Jason Carr
+(* Copyright (C) 2018-2019 Jason Carr, Matthew Fluet.
  * Copyright (C) 2009 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
@@ -10,6 +10,7 @@ signature HASH_TABLE =
    sig
       type ('a, 'b) t
 
+      val fold: ('a, 'b) t * 'c * (('a * 'b) * 'c -> 'c) -> 'c
       val insertIfNew: ('a, 'b) t * 'a * (unit -> 'b) * ('b -> unit) -> 'b
       val layout: ('a * 'b -> Layout.t) -> ('a, 'b) t -> Layout.t
       val lookupOrInsert: ('a, 'b) t * 'a * (unit -> 'b) -> 'b

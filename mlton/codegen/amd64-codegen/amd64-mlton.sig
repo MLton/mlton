@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -23,24 +24,21 @@ signature AMD64_MLTON =
     sharing Machine = amd64MLtonBasic.Machine
 
     type transInfo = {addData : amd64.Assembly.t list -> unit,
-                      frameInfoToAMD64: (amd64MLtonBasic.Machine.FrameInfo.t
-                                       -> amd64.FrameInfo.t),
                       live: amd64.Label.t -> amd64.Operand.t list,
                       liveInfo: amd64Liveness.LiveInfo.t}
 
     (* c call, and primitive assembly sequences. *)
     val ccall: {args: (amd64.Operand.t * amd64.Size.t) vector,
-                frameInfo: amd64.FrameInfo.t option,
                 func: RepType.t Machine.CFunction.t,
-                return: amd64.Label.t option,
+                return: {return: amd64.Label.t, size: int option} option,
                 transInfo: transInfo} -> amd64.Block.t' AppendList.t
     val creturn: {dsts: (amd64.Operand.t * amd64.Size.t) vector,
                   frameInfo: amd64.FrameInfo.t option,
                   func: RepType.t Machine.CFunction.t,
                   label: amd64.Label.t, 
                   transInfo: transInfo} -> amd64.Block.t' AppendList.t
-  val implementsPrim: RepType.t Machine.Prim.t -> bool
-  val prim: {prim: RepType.t Machine.Prim.t,
+    val implementsPrim: RepType.t Machine.Prim.t -> bool
+    val prim: {prim: RepType.t Machine.Prim.t,
                args: (amd64.Operand.t * amd64.Size.t) vector,
                dsts: (amd64.Operand.t * amd64.Size.t) vector,
                transInfo: transInfo} -> amd64.Block.t' AppendList.t

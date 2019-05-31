@@ -67,7 +67,7 @@ structure Prod =
                  (mayAlign o separateRight)
                  (Vector.toListMap (dest p, fn {elt, isMutable} =>
                                     if isMutable
-                                       then seq [layoutElt elt, str " ref"]
+                                       then seq [layoutElt elt, str " mut"]
                                        else layoutElt elt),
                   ","),
                  str ")"]
@@ -79,7 +79,7 @@ structure Prod =
          in
             make <$>
             vector (parseElt >>= (fn elt =>
-                    optional (kw "ref") >>= (fn isMutable =>
+                    optional (kw "mut") >>= (fn isMutable =>
                     pure {elt = elt, isMutable = Option.isSome isMutable})))
 
          end
@@ -1112,7 +1112,7 @@ structure Transfer =
        | Return of Var.t vector
        | Runtime of {prim: Type.t Prim.t,
                      args: Var.t vector,
-                     return: Label.t} (* Must be nullary. *)
+                     return: Label.t}
 
       fun foreachFuncLabelVar (t, func: Func.t -> unit, label: Label.t -> unit, var) =
          let

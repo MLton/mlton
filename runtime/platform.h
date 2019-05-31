@@ -91,9 +91,6 @@
 #ifndef MLTON_CODEGEN_STATIC_INLINE
 #define MLTON_CODEGEN_STATIC_INLINE PRIVATE
 #endif
-#ifndef MLTON_CODEGEN_MATHFN
-#define MLTON_CODEGEN_MATHFN(decl)
-#endif
 #include "basis-ffi.h"
 
 #include "gc.h"

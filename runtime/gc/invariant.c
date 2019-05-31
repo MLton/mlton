@@ -1,4 +1,4 @@
-/* Copyright (C) 2011-2012,2017 Matthew Fluet.
+/* Copyright (C) 2011-2012,2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -35,18 +35,18 @@ void assertIsObjptrInFromSpace (GC_state s, objptr *opp) {
 bool invariantForGC (GC_state s) {
   if (DEBUG)
     fprintf (stderr, "invariantForGC\n");
-  /* Frame layouts */
-  for (unsigned int i = 0; i < s->frameLayoutsLength; ++i) {
-    GC_frameLayout layout;
+  /* Frame sizes and offsets */
+  for (GC_frameIndex frameIndex = 0; frameIndex < s->frameInfosLength; ++frameIndex) {
+    GC_frameInfo frameInfo;
 
-    layout = &(s->frameLayouts[i]);
-    if (layout->size > 0) {
+    frameInfo = &(s->frameInfos[frameIndex]);
+    if (frameInfo->size > 0) {
       GC_frameOffsets offsets;
 
-      assert (layout->size <= s->maxFrameSize);
-      offsets = layout->offsets;
+      assert (frameInfo->size <= s->maxFrameSize);
+      offsets = frameInfo->offsets;
       for (unsigned int j = 0; j < offsets[0]; ++j)
-        assert (offsets[j + 1] < layout->size);
+        assert (offsets[j + 1] < frameInfo->size);
     }
   }
   /* Generational */

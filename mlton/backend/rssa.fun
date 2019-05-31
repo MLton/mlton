@@ -405,12 +405,10 @@ structure Transfer =
             Call {func, ...} => f func
           | _ => ()
 
-      fun 'a foldDefLabelUse (t, a: 'a,
-                              {def: Var.t * Type.t * 'a -> 'a,
-                               label: Label.t * 'a -> 'a,
-                               use: Var.t * 'a -> 'a}): 'a =
+      fun 'a foldLabelUse (t, a: 'a,
+                           {label: Label.t * 'a -> 'a,
+                            use: Var.t * 'a -> 'a}): 'a =
          let
-            val _ = def (* FIXME suppress unused warning *)
             fun useOperand (z, a) = Operand.foldVars (z, a, use)
             fun useOperands (zs: Operand.t vector, a) =
                Vector.fold (zs, a, useOperand)
@@ -430,32 +428,19 @@ structure Transfer =
                                                        use = useOperand})
          end
 
-      fun foreachDefLabelUse (t, {def, label, use}) =
-         foldDefLabelUse (t, (), {def = fn (x, t, ()) => def (x, t),
-                                  label = label o #1,
-                                  use = use o #1})
+      fun foreachLabelUse (t, {label, use}) =
+         foldLabelUse (t, (), {label = label o #1,
+                               use = use o #1})
 
-      fun foldLabel (t, a, f) = foldDefLabelUse (t, a, {def = #3,
-                                                        label = f,
-                                                        use = #2})
+      fun foldLabel (t, a, f) = foldLabelUse (t, a, {label = f,
+                                                     use = #2})
 
       fun foreachLabel (t, f) = foldLabel (t, (), f o #1)
 
-      fun foldDef (t, a, f) = foldDefLabelUse (t, a, {def = f,
-                                                      label = #2,
-                                                      use = #2})
-
-      fun foreachDef (t, f) =
-         foldDef (t, (), fn (x, t, ()) => f (x, t))
-
-      fun foldUse (t, a, f) = foldDefLabelUse (t, a, {def = #3,
-                                                      label = #2,
-                                                      use = f})
+      fun foldUse (t, a, f) = foldLabelUse (t, a, {label = #2,
+                                                   use = f})
 
       fun foreachUse (t, f) = foldUse (t, (), f o #1)
-
-      fun clear (t: t): unit =
-         foreachDef (t, Var.clear o #1)
 
       local
          fun make i = WordX.fromIntInf (i, WordSize.bool)
@@ -579,11 +564,10 @@ structure Block =
          val label = make #label
       end
 
-      fun clear (T {args, label, statements, transfer, ...}) =
+      fun clear (T {args, label, statements, ...}) =
          (Vector.foreach (args, Var.clear o #1)
           ; Label.clear label
-          ; Vector.foreach (statements, Statement.clear)
-          ; Transfer.clear transfer)
+          ; Vector.foreach (statements, Statement.clear))
 
       fun layout (T {args, kind, label, statements, transfer, ...}) =
          let
@@ -603,10 +587,9 @@ structure Block =
                            2)]
          end
 
-      fun foreachDef (T {args, statements, transfer, ...}, f) =
+      fun foreachDef (T {args, statements, ...}, f) =
          (Vector.foreach (args, f)
-          ; Vector.foreach (statements, fn s => Statement.foreachDef (s, f))
-          ; Transfer.foreachDef (transfer, f))
+          ; Vector.foreach (statements, fn s => Statement.foreachDef (s, f)))
 
       fun foreachUse (T {statements, transfer, ...}, f) =
          (Vector.foreach (statements, fn s => Statement.foreachUse (s, f))
@@ -894,6 +877,20 @@ structure Function =
                  returns = returns,
                  start = start}
          end
+
+      fun shuffle (f: t): t =
+         let
+            val {args, blocks, name, raises, returns, start} = dest f
+            val blocks = Array.fromVector blocks
+            val () = Array.shuffle blocks
+         in
+            new {args = args,
+                 blocks = Array.toVector blocks,
+                 name = name,
+                 raises = raises,
+                 returns = returns,
+                 start = start}
+         end
    end
 
 structure Program =
@@ -902,7 +899,9 @@ structure Program =
          T of {functions: Function.t list,
                handlesSignals: bool,
                main: Function.t,
-               objectTypes: ObjectType.t vector}
+               objectTypes: ObjectType.t vector,
+               profileInfo: {sourceMaps: SourceMaps.t,
+                             getFrameSourceSeqIndex: Label.t -> int option} option}
 
       fun clear (T {functions, main, ...}) =
          (List.foreach (functions, Function.clear)
@@ -950,12 +949,13 @@ structure Program =
              seq [str "num object types in program = ", Int.layout (numObjectTypes)]]
          end
 
-      fun dropProfile (T {functions, handlesSignals, main, objectTypes}) =
+      fun dropProfile (T {functions, handlesSignals, main, objectTypes, ...}) =
          (Control.profile := Control.ProfileNone
           ; T {functions = List.map (functions, Function.dropProfile),
                handlesSignals = handlesSignals,
                main = Function.dropProfile main,
-               objectTypes = objectTypes})
+               objectTypes = objectTypes,
+               profileInfo = NONE})
       (* quell unused warning *)
       val _ = dropProfile
 
@@ -996,7 +996,7 @@ structure Program =
             ()
          end
 
-      fun orderFunctions (p as T {handlesSignals, objectTypes, ...}) =
+      fun orderFunctions (p as T {handlesSignals, objectTypes, profileInfo, ...}) =
          let
             val functions = ref []
             val () =
@@ -1029,10 +1029,11 @@ structure Program =
             T {functions = functions,
                handlesSignals = handlesSignals,
                main = main,
-               objectTypes = objectTypes}
+               objectTypes = objectTypes,
+               profileInfo = profileInfo}
          end
 
-      fun copyProp (T {functions, handlesSignals, main, objectTypes, ...}): t =
+      fun copyProp (T {functions, handlesSignals, main, objectTypes, profileInfo, ...}): t =
          let
             val tracePrimApply =
                Trace.trace3
@@ -1125,8 +1126,7 @@ structure Program =
                 | _ => keep ()
                end
             fun loopTransfer t =
-               (Transfer.foreachDef (t, dontReplace)
-                ; Transfer.replaceUses (t, replaceVar))
+               Transfer.replaceUses (t, replaceVar)
             fun loopFormals args = Vector.foreach (args, dontReplace)
             fun loopFunction (f: Function.t): Function.t =
                let
@@ -1170,18 +1170,33 @@ structure Program =
             T {functions = functions,
                handlesSignals = handlesSignals,
                main = main,
-               objectTypes = objectTypes}
+               objectTypes = objectTypes,
+               profileInfo = profileInfo}
          end
 
-      fun shrink (T {functions, handlesSignals, main, objectTypes}) =
+      fun shrink (T {functions, handlesSignals, main, objectTypes, profileInfo}) =
          let
             val p = 
                T {functions = List.revMap (functions, Function.shrink),
                   handlesSignals = handlesSignals,
                   main = Function.shrink main,
-                  objectTypes = objectTypes}
+                  objectTypes = objectTypes,
+                  profileInfo = profileInfo}
             val p = copyProp p
             val () = clear p
+         in
+            p
+         end
+
+      fun shuffle (T {functions, handlesSignals, main, objectTypes, profileInfo}) =
+         let
+            val functions = Array.fromListMap (functions, Function.shuffle)
+            val () = Array.shuffle functions
+            val p = T {functions = Array.toList functions,
+                       handlesSignals = handlesSignals,
+                       main = Function.shuffle main,
+                       objectTypes = objectTypes,
+                       profileInfo = profileInfo}
          in
             p
          end
@@ -1477,7 +1492,6 @@ structure Program =
                              (Statement.foreachUse (s, getVar)
                               ; Statement.foreachDef (s, bindVar o #1)))
                          val _ = Transfer.foreachUse (transfer, getVar)
-                         val _ = Transfer.foreachDef (transfer, bindVar o #1)
                       in
                          fn () =>
                          if isMain
@@ -1488,8 +1502,6 @@ structure Program =
                                   Vector.foreach
                                   (statements, fn s =>
                                    Statement.foreachDef (s, unbindVar o #1))
-                               val _ =
-                                  Transfer.foreachDef (transfer, unbindVar o #1)
                                val _ = Vector.foreach (args, unbindVar o #1)
                             in
                                ()
@@ -1507,8 +1519,45 @@ structure Program =
          in ()
          end
 
-      fun typeCheck (p as T {functions, main, objectTypes, ...}) =
+      fun typeCheck (p as T {functions, main, objectTypes, profileInfo, ...}) =
          let
+            val (checkProfileLabel, finishCheckProfileLabel, checkFrameSourceSeqIndex) =
+               case profileInfo of
+                  NONE => (fn _ => false, fn () => (), fn _ => ())
+                | SOME {sourceMaps, getFrameSourceSeqIndex} =>
+                  let
+                     val _ =
+                        Err.check
+                        ("sourceMaps",
+                         fn () => SourceMaps.check sourceMaps,
+                         fn () => SourceMaps.layout sourceMaps)
+                     val (checkProfileLabel, finishCheckProfileLabel) =
+                        SourceMaps.checkProfileLabel sourceMaps
+                  in
+                     (checkProfileLabel,
+                      fn () => Err.check
+                               ("finishCheckProfileLabel",
+                                finishCheckProfileLabel,
+                                fn () => SourceMaps.layout sourceMaps),
+                      fn (l, k) => let
+                                      fun chk b =
+                                         Err.check
+                                         ("getFrameSourceSeqIndex",
+                                          fn () => (case (b, getFrameSourceSeqIndex l) of
+                                                       (true, SOME ssi) =>
+                                                          SourceMaps.checkSourceSeqIndex
+                                                          (sourceMaps, ssi)
+                                                     | (false, NONE) => true
+                                                     | _ => false),
+                                          fn () => Label.layout l)
+                                   in
+                                      case k of
+                                         Kind.Cont _ => chk true
+                                       | Kind.CReturn _ => chk true
+                                       | Kind.Handler => chk true
+                                       | Kind.Jump => chk false
+                                   end)
+                  end
             val _ =
                Vector.foreach
                (objectTypes, fn ty =>
@@ -1614,7 +1663,7 @@ structure Program =
                              prim = prim,
                              result = Option.map (dst, #2)}))
                    | Profile _ => true
-                   | ProfileLabel _ => true
+                   | ProfileLabel pl => checkProfileLabel pl
                    | SetExnStackLocal => true
                    | SetExnStackSlot => true
                    | SetHandler l =>
@@ -1709,14 +1758,13 @@ structure Program =
                   val _ = Vector.foreach (args, setVarType)
                   val _ =
                      Vector.foreach
-                     (blocks, fn b as Block.T {args, label, statements,
-                                               transfer, ...} =>
+                     (blocks, fn b as Block.T {args, kind, label, statements, ...} =>
                       (setLabelBlock (label, b)
+                       ; checkFrameSourceSeqIndex (label, kind)
                        ; Vector.foreach (args, setVarType)
                        ; Vector.foreach (statements, fn s =>
                                          Statement.foreachDef
-                                         (s, setVarType))
-                       ; Transfer.foreachDef (transfer, setVarType)))
+                                         (s, setVarType))))
                   val _ = labelIsNullaryJump start
                   fun transferOk (t: Transfer.t): bool =
                      let
@@ -1851,6 +1899,7 @@ structure Program =
                    Vector.isEmpty args
                 end,
                 Function.layout)
+            val _ = finishCheckProfileLabel ()
             val _ = clear p
          in
             ()

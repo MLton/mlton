@@ -1,45 +1,54 @@
+#define FNSUF32 f
+#define FNSUF64
 
-#define binary(size, name, op)                                          \
+#define naryNameFnSufResArgsCall_(size, name, f, suf, rty, args, call)  \
+  MLTON_CODEGEN_STATIC_INLINE                                           \
+  rty Real##size##_##name args {                                        \
+    return f##suf call;                                                 \
+  }
+#define naryNameFnSufResArgsCall(size, name, f, suf, rty, args, call)   \
+naryNameFnSufResArgsCall_(size, name, f, suf, rty, args, call)
+#define naryNameFnResArgsCall(size, name, f, rty, args, call)           \
+naryNameFnSufResArgsCall(size, name, f, FNSUF##size, rty, args, call)
+
+#define binaryOp(size, name, op)                                        \
   MLTON_CODEGEN_STATIC_INLINE                                           \
   Real##size##_t Real##size##_##name (Real##size##_t r1, Real##size##_t r2) { \
     return r1 op r2;                                                    \
   }
 
-#define compare(size, name, op)                                         \
+#define binaryNameFn(size, name, f)                                     \
+naryNameFnResArgsCall(size, name, f, Real##size##_t, (Real##size##_t r1, Real##size##_t r2), (r1, r2))
+
+#define binaryFn(size, f)                                               \
+binaryNameFn(size, f, f)
+
+#define binaryMathFn(size, f)                                           \
+binaryNameFn(size, Math_##f, f)
+
+#define compareOp(size, name, op)                                       \
   MLTON_CODEGEN_STATIC_INLINE                                           \
   Bool Real##size##_##name (Real##size##_t r1, Real##size##_t r2) {     \
     return r1 op r2;                                                    \
   }
 
-/* ternary fma{f} operations
- * These differ based on size and do not rely on a specific operation, so
- * the definitions must be made somewhat explicitly (is no explicit mul_sub)
- * 
- * Defs were designed to conform to the rest of the defs as much as possible
- * (so can be passed into all in the same way)
- */
-/* to differentiate between fma functions */
-#define FMA_FUNC_SUFFIX(size) FMA_FUNC_SUFFIX_##size
-#define FMA_FUNC_SUFFIX_32 f
-#define FMA_FUNC_SUFFIX_64
+#define fmaNameOp(size, name, op)                                       \
+naryNameFnResArgsCall(size, name, fma, Real##size##_t, (Real##size##_t r1, Real##size##_t r2, Real##size##_t r3), (r1, r2, op r3))
 
-#define ternary__(size, suff)                                           \
+#define unaryOp(size, name, op)                                         \
   MLTON_CODEGEN_STATIC_INLINE                                           \
-  Real##size##_t Real##size##_muladd (Real##size##_t r1, Real##size##_t r2, Real##size##_t r3) { \
-    return fma ##suff (r1, r2, r3);                                     \
-  }                                                                     \
-  MLTON_CODEGEN_STATIC_INLINE                                           \
-  Real##size##_t Real##size##_mulsub (Real##size##_t r1, Real##size##_t r2, Real##size##_t r3) { \
-    return fma ##suff (r1, r2, -r3);                                    \
+  Real##size##_t Real##size##_##name (Real##size##_t r) {               \
+    return op r;                                                        \
   }
-#define ternary_(size, suff) ternary__(size, suff)
-#define ternary(size) ternary_(size, FMA_FUNC_SUFFIX(size))
 
-#define unary(size, name, op)                                           \
-  MLTON_CODEGEN_STATIC_INLINE                                           \
-  Real##size##_t Real##size##_##name (Real##size##_t r1) {              \
-    return op r1;                                                       \
-  }
+#define unaryNameFn(size, name, f)                                      \
+naryNameFnResArgsCall(size, name, f, Real##size##_t, (Real##size##_t r), (r))
+
+#define unaryFn(size, f)                                                \
+unaryNameFn(size, f, f)
+
+#define unaryMathFn(size, f)                                            \
+unaryNameFn(size, Math_##f, f)
 
 #define misaligned(size)                                                \
   MLTON_CODEGEN_STATIC_INLINE                                           \
@@ -60,15 +69,39 @@
   }
 
 #define all(size)                               \
-binary(size, add, +)                            \
-binary(size, div, /)                            \
-binary(size, mul, *)                            \
-binary(size, sub, -)                            \
-compare(size, equal, ==)                        \
-compare(size, le, <=)                           \
-compare(size, lt, <)                            \
-ternary(size)                                   \
-unary(size, neg, -)                             \
+unaryNameFn(size, abs, fabs)                    \
+binaryOp(size, add, +)                          \
+binaryOp(size, div, /)                          \
+compareOp(size, equal, ==)                      \
+naryNameFnResArgsCall(size, frexp, frexp, Real##size##_t, (Real##size##_t r, Ref(C_Int_t) ip), (r, (int*)ip)) \
+naryNameFnResArgsCall(size, ldexp, ldexp, Real##size##_t, (Real##size##_t r, C_Int_t i), (r, i)) \
+compareOp(size, le, <=)                         \
+compareOp(size, lt, <)                          \
+naryNameFnResArgsCall(size, modf, modf, Real##size##_t, (Real##size##_t x, Ref(Real##size##_t) yp), (x, (Real##size##_t*)yp)) \
+binaryOp(size, mul, *)                          \
+fmaNameOp(size, muladd,  )                      \
+fmaNameOp(size, mulsub, -)                      \
+unaryOp(size, neg, -)                           \
+unaryNameFn(size, realCeil, ceil)               \
+unaryNameFn(size, realFloor, floor)             \
+unaryNameFn(size, realTrunc, trunc)             \
+unaryNameFn(size, round, rint)                  \
+binaryOp(size, sub, -)                          \
+unaryMathFn(size, acos)                         \
+unaryMathFn(size, asin)                         \
+unaryMathFn(size, atan)                         \
+binaryMathFn(size, atan2)                       \
+unaryMathFn(size, cos)                          \
+unaryMathFn(size, cosh)                         \
+unaryMathFn(size, exp)                          \
+unaryNameFn(size, Math_ln, log)                 \
+unaryMathFn(size, log10)                        \
+binaryMathFn(size, pow)                         \
+unaryMathFn(size, sin)                          \
+unaryMathFn(size, sinh)                         \
+unaryMathFn(size, sqrt)                         \
+unaryMathFn(size, tan)                          \
+unaryMathFn(size, tanh)                         \
 misaligned(size)
 
 all(32)
@@ -76,7 +109,18 @@ all(64)
 
 #undef all
 #undef misaligned
-#undef unary
-#undef ternary
-#undef compare
-#undef binary
+#undef unaryMathFn
+#undef unaryFn
+#undef unaryNameFn
+#undef unaryOp
+#undef fmaNameOp
+#undef compareOp
+#undef binaryMathFn
+#undef binaryFn
+#undef binaryNameFn
+#undef binaryOp
+#undef naryNameFnResArgsCall
+#undef naryNameFnSufResArgsCall
+#undef naryNameFnSufResArgsCall_
+#undef FNSUF64
+#undef FNSUF32

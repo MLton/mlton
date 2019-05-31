@@ -1,4 +1,4 @@
-(* Copyright (C) 2010-2011,2013-2014,2017 Matthew Fluet.
+(* Copyright (C) 2010-2011,2013-2014,2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -15,6 +15,7 @@ open Primitive
 
 structure MLton = struct
 
+val bug = _prim "MLton_bug": String8.string -> unit;
 val eq = _prim "MLton_eq": 'a * 'a -> bool;
 val equal = _prim "MLton_equal": 'a * 'a -> bool;
 (* val deserialize = _prim "MLton_deserialize": Word8Vector.vector -> 'a ref; *)
