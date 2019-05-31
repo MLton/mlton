@@ -181,6 +181,7 @@ signature MACHINE =
                sig
                   datatype t = C_FRAME | ML_FRAME
                   val equals: t * t -> bool
+                  val hash: t -> word
                   val layout: t -> Layout.t
                   val toString: t -> string
                end
@@ -195,10 +196,12 @@ signature MACHINE =
             val new: {frameOffsets: FrameOffsets.t,
                       index: int,
                       kind: Kind.t,
-                      size: Bytes.t} -> t
+                      size: Bytes.t,
+                      sourceSeqIndex: int option} -> t
             val offsets: t -> Bytes.t vector
             val setIndex: t * int -> unit
             val size: t -> Bytes.t
+            val sourceSeqIndex: t -> int option
          end
 
       structure Kind:
@@ -247,29 +250,6 @@ signature MACHINE =
             val chunkLabel: t -> ChunkLabel.t
          end
 
-      structure ProfileInfo:
-         sig
-            datatype t =
-               T of {(* For each frame, gives the index into sourceSeqs of the
-                      * source functions corresponding to the frame.
-                      *)
-                     frameSources: int vector,
-                     labels: {label: ProfileLabel.t,
-                              sourceSeqsIndex: int} vector,
-                     names: string vector,
-                     (* Each sourceSeq describes a sequence of source functions,
-                      * each given as an index into the source vector.
-                      *)
-                     sourceSeqs: int vector vector,
-                     sources: {nameIndex: int,
-                               successorsIndex: int} vector}
-
-            val empty: t
-            val modify: t -> {newProfileLabel: ProfileLabel.t -> ProfileLabel.t,
-                              delProfileLabel: ProfileLabel.t -> unit,
-                              getProfileInfo: unit -> t}
-         end
-
       structure Program:
          sig
             datatype t =
@@ -281,8 +261,8 @@ signature MACHINE =
                             label: Label.t},
                      maxFrameSize: Bytes.t,
                      objectTypes: Type.ObjectType.t vector,
-                     profileInfo: ProfileInfo.t option,
                      reals: (Global.t * RealX.t) list,
+                     sourceMaps: SourceMaps.t option,
                      vectors: (Global.t * WordXVector.t) list}
 
             val clearLabelNames: t -> unit

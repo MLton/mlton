@@ -366,7 +366,7 @@ signature AMD64_PSEUDO =
     structure FrameInfo:
        sig
           datatype t = T of {size: int, 
-                             frameLayoutsIndex: int}
+                             frameInfosIndex: int}
        end
 
     structure Entry:

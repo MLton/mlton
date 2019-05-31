@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -33,6 +34,7 @@ signature ATOMS' =
       structure Record: RECORD
       structure SortedRecord: RECORD
       structure SourceInfo: SOURCE_INFO
+      structure SourceMaps: SOURCE_MAPS
       structure Symbol: SYMBOL
       structure Tycon: TYCON
       structure TyconKind: TYCON_KIND
@@ -50,6 +52,7 @@ signature ATOMS' =
       sharing Const = Prim.Const
       sharing Field = Record.Field = SortedRecord.Field
       sharing IntSize = Tycon.IntSize
+      sharing ProfileLabel = SourceMaps.ProfileLabel
       sharing RealSize = CType.RealSize = Prim.RealSize = RealX.RealSize
          = Tycon.RealSize
       sharing RealX = Const.RealX
@@ -94,6 +97,7 @@ signature ATOMS =
       sharing Record = Atoms.Record
       sharing SortedRecord = Atoms.SortedRecord
       sharing SourceInfo = Atoms.SourceInfo
+      sharing SourceMaps = Atoms.SourceMaps
       sharing Symbol = Atoms.Symbol
       sharing Tycon = Atoms.Tycon
       sharing TyconKind = Atoms.TyconKind

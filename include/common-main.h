@@ -36,8 +36,8 @@ PRIVATE Pointer gcStateAddress;
         gcState.alignment = al;                                         \
         gcState.atMLtons = atMLtons;                                    \
         gcState.atMLtonsLength = cardof(atMLtons);                      \
-        gcState.frameLayouts = frameLayouts;                            \
-        gcState.frameLayoutsLength = cardof(frameLayouts);              \
+        gcState.frameInfos = frameInfos;                                \
+        gcState.frameInfosLength = cardof(frameInfos);                  \
         gcState.globals = (objptr*)globalObjptr;                        \
         gcState.globalsLength = cardof(globalObjptr);                   \
         gcState.loadGlobals = loadGlobals;                              \
@@ -50,10 +50,8 @@ PRIVATE Pointer gcStateAddress;
         gcState.saveGlobals = saveGlobals;                              \
         gcState.vectorInits = vectorInits;                              \
         gcState.vectorInitsLength = cardof(vectorInits);                \
-        gcState.sourceMaps.frameSources = frameSources;                 \
-        gcState.sourceMaps.frameSourcesLength = cardof(frameSources);   \
-        gcState.sourceMaps.sourceLabels = sourceLabels;                 \
-        gcState.sourceMaps.sourceLabelsLength = cardof(sourceLabels);   \
+        gcState.sourceMaps.profileLabelInfos = profileLabelInfos;       \
+        gcState.sourceMaps.profileLabelInfosLength = cardof(profileLabelInfos);   \
         gcState.sourceMaps.sourceNames = sourceNames;                   \
         gcState.sourceMaps.sourceNamesLength = cardof(sourceNames);     \
         gcState.sourceMaps.sourceSeqs = sourceSeqs;                     \

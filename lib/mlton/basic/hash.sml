@@ -1,4 +1,4 @@
-(* Copyright (C) 2018 Jason Carr
+(* Copyright (C) 2018-2019 Jason Carr, Matthew Fluet.
  *
  * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
@@ -19,10 +19,13 @@ struct
    fun combine4 (h1, h2, h3, h4) = combine (h1, combine3 (h2, h3, h4))
 
    fun combineNoOffset (h1, h2) = multPrime (Word.xorb (h1, h2))
-   fun vector vec = Vector.fold (vec, offset_basis, combineNoOffset)
-   fun vectorMap (vec, f) = Vector.fold (vec, offset_basis, fn (v, k) => combineNoOffset (f v, k))
+
    fun list hs = List.fold (hs, offset_basis, combineNoOffset)
    fun listMap (hs, f) = List.fold (hs, offset_basis, fn (v, k) => combineNoOffset (f v, k))
+   fun option opt = Option.fold (opt, offset_basis, combineNoOffset)
+   fun optionMap (opt, f) = Option.fold (opt, offset_basis, fn (v, k) => combineNoOffset (f v, k))
+   fun vector vec = Vector.fold (vec, offset_basis, combineNoOffset)
+   fun vectorMap (vec, f) = Vector.fold (vec, offset_basis, fn (v, k) => combineNoOffset (f v, k))
 
    fun permute h = offset_basis + multPrime h
 end

@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2016-2017 Matthew Fluet.
+(* Copyright (C) 2009,2016-2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -21,7 +21,7 @@ signature RUNTIME =
                AtomicState
              | CardMapAbsolute
              | CurrentThread
-             | CurSourceSeqsIndex
+             | CurSourceSeqIndex
              | ExnStack
              | Frontier (* The place where the next object is allocated. *)
              | Limit (* frontier + heapSize - LIMIT_SLOP *)
@@ -37,7 +37,7 @@ signature RUNTIME =
             val setOffsets: {atomicState: Bytes.t,
                              cardMapAbsolute: Bytes.t,
                              currentThread: Bytes.t,
-                             curSourceSeqsIndex: Bytes.t,
+                             curSourceSeqIndex: Bytes.t,
                              exnStack: Bytes.t,
                              frontier: Bytes.t,
                              limit: Bytes.t,
@@ -50,7 +50,7 @@ signature RUNTIME =
             val setSizes: {atomicState: Bytes.t,
                            cardMapAbsolute: Bytes.t,
                            currentThread: Bytes.t,
-                           curSourceSeqsIndex: Bytes.t,
+                           curSourceSeqIndex: Bytes.t,
                            exnStack: Bytes.t,
                            frontier: Bytes.t,
                            limit: Bytes.t,

@@ -53,8 +53,7 @@ structure AllocateRegisters = AllocateRegisters (structure Machine = Machine
                                                  structure Rssa = Rssa)
 structure Chunkify = Chunkify (Rssa)
 structure ImplementHandlers = ImplementHandlers (structure Rssa = Rssa)
-structure ImplementProfiling = ImplementProfiling (structure Machine = Machine
-                                                   structure Rssa = Rssa)
+structure ImplementProfiling = ImplementProfiling (structure Rssa = Rssa)
 structure LimitCheck = LimitCheck (structure Rssa = Rssa)
 structure ParallelMove = ParallelMove ()
 structure SignalCheck = SignalCheck(structure Rssa = Rssa)
@@ -199,10 +198,8 @@ fun toMachine (program: Ssa.Program.t, codegen) =
                                 doit = Program.shrink,
                                 execute = true}, p)
             val () = Program.checkHandlers p
-            val (p, makeProfileInfo) =
-               pass' ({name = "implementProfiling",
-                       doit = ImplementProfiling.doit},
-                      fn (p,_) => p, p)
+            val p = pass ({name = "implementProfiling",
+                           doit = ImplementProfiling.transform}, p)
             val p = maybePass ({name = "rssaOrderFunctions", 
                                 doit = Program.orderFunctions,
                                 execute = true}, p)
@@ -210,18 +207,17 @@ fun toMachine (program: Ssa.Program.t, codegen) =
                                 doit = Program.shuffle,
                                 execute = false}, p)
          in
-            (p, makeProfileInfo)
+            p
          end
-      val (program, makeProfileInfo) =
+      val program =
          Control.passTypeCheck
-         {display = Control.Layouts (fn ((program, _), output) =>
-                                     Rssa.Program.layouts (program, output)),
+         {display = Control.Layouts Rssa.Program.layouts,
           name = "rssaSimplify",
-          stats = fn (program,_) => Rssa.Program.layoutStats program,
+          stats = Rssa.Program.layoutStats,
           style = Control.ML,
           suffix = "rssa",
           thunk = fn () => rssaSimplify program,
-          typeCheck = R.Program.typeCheck o #1}
+          typeCheck = R.Program.typeCheck}
       val _ =
          let
             open Control
@@ -242,8 +238,8 @@ fun toMachine (program: Ssa.Program.t, codegen) =
           suffix = "machine",
           thunk = fn () =>
 let
-      val R.Program.T {functions, handlesSignals, main, objectTypes} = program
-      (* Chunk information *)
+      val R.Program.T {functions, handlesSignals, main, objectTypes, profileInfo} = program
+      (* Chunk info *)
       val {get = labelChunk, set = setLabelChunk, ...} =
          Property.getSetOnce (Label.plist,
                               Property.initRaise ("labelChunk", Label.layout))
@@ -269,20 +265,29 @@ let
           in
              ()
           end)
-      (* FrameInfo. *)
+      (* Profile info *)
+      val (sourceMaps, getFrameSourceSeqIndex) =
+         case profileInfo of
+            NONE => (NONE, fn _ => NONE)
+          | SOME {sourceMaps, getFrameSourceSeqIndex} => (SOME sourceMaps, getFrameSourceSeqIndex)
+      (* Frame info *)
       local
          val frameInfos: M.FrameInfo.t list ref = ref []
          val frameInfosCounter = Counter.new 0
          val _ = ByteSet.reset ()
          val table =
             let
-               fun equals ({kind = k1, frameOffsets = fo1, size = s1},
-                           {kind = k2, frameOffsets = fo2, size = s2}) =
+               fun equals ({kind = k1, frameOffsets = fo1, size = s1, sourceSeqIndex = ssi1},
+                           {kind = k2, frameOffsets = fo2, size = s2, sourceSeqIndex = ssi2}) =
                   M.FrameInfo.Kind.equals (k1, k2)
                   andalso M.FrameOffsets.equals (fo1, fo2)
                   andalso Bytes.equals (s1, s2)
-               fun hash {kind = _, frameOffsets, size} =
-                  Hash.combine (M.FrameOffsets.hash frameOffsets, Bytes.hash size)
+                  andalso Option.equals (ssi1, ssi2, Int.equals)
+               fun hash {kind, frameOffsets, size, sourceSeqIndex} =
+                  Hash.list [M.FrameInfo.Kind.hash kind,
+                             M.FrameOffsets.hash frameOffsets,
+                             Bytes.hash size,
+                             Hash.optionMap (sourceSeqIndex, Word.fromInt)]
             in
                HashTable.new {equals = equals,
                               hash = hash}
@@ -354,7 +359,8 @@ let
          fun getFrameInfo {entry: bool,
                            kind: M.FrameInfo.Kind.t,
                            offsets: Bytes.t list,
-                           size: Bytes.t}: M.FrameInfo.t =
+                           size: Bytes.t,
+                           sourceSeqIndex: int option}: M.FrameInfo.t =
             let
                val frameOffsets = getFrameOffsets (ByteSet.fromList offsets)
                fun new () =
@@ -365,37 +371,32 @@ let
                         {frameOffsets = frameOffsets,
                          index = index,
                          kind = kind,
-                         size = size}
+                         size = size,
+                         sourceSeqIndex = sourceSeqIndex}
                      val _ = List.push (frameInfos, frameInfo)
                   in
                      frameInfo
                   end
             in
-               (* We need to give a frame a unique layout index in two cases.
-                * 1. If we are using the C or LLVM codegens, then we
-                *    want each entry frame to have a different index,
-                *    because the index will be used for the trampoline
-                *    (nextChunks mapping and ChunkSwitch); moreover,
-                *    we want the indices of entry frames of a chunk to
-                *    be consecutive integers so that gcc will use a
-                *    jump table.
-                * 2. If we are profiling, we want every frame to have
-                *    a different index so that it can have its own
-                *    profiling info.  This will be created by the call
-                *    to makeProfileInfo at the end of the backend.
+               (* If we are using the C or LLVM codegens, then we want
+                * each entry frame to have a different index, because
+                * the index will be used for the trampoline
+                * (nextChunks mapping and ChunkSwitch); moreover, we
+                * want the indices of entry frames of a chunk to be
+                * consecutive integers so that gcc will use a jump
+                * table.
                 *)
-               if ((!Control.codegen = Control.CCodegen
-                    orelse !Control.codegen = Control.LLVMCodegen)
-                   andalso entry)
-                  orelse !Control.profile <> Control.ProfileNone
+               if entry
+                  andalso (!Control.codegen = Control.CCodegen
+                           orelse !Control.codegen = Control.LLVMCodegen)
                   then new ()
-               else
-               HashTable.lookupOrInsert
-               (table,
-                {frameOffsets = frameOffsets,
-                 kind = kind,
-                 size = size},
-                fn () => new ())
+                  else HashTable.lookupOrInsert
+                       (table,
+                        {frameOffsets = frameOffsets,
+                         kind = kind,
+                         size = size,
+                         sourceSeqIndex = sourceSeqIndex},
+                        fn () => new ())
             end
       end
       val {get = frameInfo: Label.t -> M.FrameInfo.t option,
@@ -864,7 +865,8 @@ let
                             getFrameInfo {entry = entry,
                                           kind = kind,
                                           offsets = offsets,
-                                          size = size}
+                                          size = size,
+                                          sourceSeqIndex = getFrameSourceSeqIndex label}
                       in
                          setFrameInfo (label, SOME frameInfo)
                       end
@@ -1007,7 +1009,8 @@ let
                                    getFrameInfo {entry = true,
                                                  kind = M.FrameInfo.Kind.ML_FRAME,
                                                  offsets = [],
-                                                 size = Bytes.zero}
+                                                 size = Bytes.zero,
+                                                 sourceSeqIndex = NONE}
                              in
                                 Chunk.newBlock
                                 (funcChunk name,
@@ -1213,21 +1216,6 @@ let
               max
            end))
       val maxFrameSize = Bytes.alignWord32 maxFrameSize
-      fun frameLabels () =
-         let
-            val frameLabels = ref []
-            val () =
-               List.foreach
-               (chunks, fn M.Chunk.T {blocks, ...} =>
-                Vector.foreach
-                (blocks, fn M.Block.T {label, kind, ...} =>
-                 case M.Kind.frameInfoOpt kind of
-                    NONE => ()
-                  | SOME fi => List.push (frameLabels, (label, M.FrameInfo.index fi))))
-         in
-            !frameLabels
-         end
-      val profileInfo = makeProfileInfo {frames = frameLabels}
       val program =
          M.Program.T
          {chunks = chunks,
@@ -1237,8 +1225,8 @@ let
           main = main,
           maxFrameSize = maxFrameSize,
           objectTypes = objectTypes,
-          profileInfo = profileInfo,
           reals = allReals (),
+          sourceMaps = sourceMaps,
           vectors = allVectors ()}
 
       local
@@ -1288,8 +1276,7 @@ let
                val M.Program.T
                   {chunks, frameInfos, frameOffsets,
                    handlesSignals, main, maxFrameSize,
-                   objectTypes, profileInfo,
-                   reals, vectors} = p
+                   objectTypes, reals, sourceMaps, vectors} = p
                val chunks = Vector.fromList chunks
                val chunks = shuffle chunks
                val chunks =
@@ -1309,8 +1296,8 @@ let
                 main = main,
                 maxFrameSize = maxFrameSize,
                 objectTypes = objectTypes,
-                profileInfo = profileInfo,
                 reals = reals,
+                sourceMaps = sourceMaps,
                 vectors = vectors}
             end
       in

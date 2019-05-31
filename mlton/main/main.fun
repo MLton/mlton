@@ -1049,6 +1049,14 @@ fun commandLine (args: string list): unit =
                          | _ => usage "can't use -profile with Exn.keepHistory"
                         ; profileRaise := true)
                else ()
+      val () = if !profileStack
+                  then (case !profile of
+                           ProfileAlloc => ()
+                         | ProfileCount => ()
+                         | ProfileTimeField => ()
+                         | ProfileTimeLabel => ()
+                         | _ => usage "can't use '-profile-stack true' without '-profile {alloc,count,time}'")
+                  else ()
 
       val () =
          Compile.setCommandLineConstant

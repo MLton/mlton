@@ -888,7 +888,9 @@ structure Program =
          T of {functions: Function.t list,
                handlesSignals: bool,
                main: Function.t,
-               objectTypes: ObjectType.t vector}
+               objectTypes: ObjectType.t vector,
+               profileInfo: {sourceMaps: SourceMaps.t,
+                             getFrameSourceSeqIndex: Label.t -> int option} option}
 
       fun clear (T {functions, main, ...}) =
          (List.foreach (functions, Function.clear)
@@ -936,12 +938,13 @@ structure Program =
              seq [str "num object types in program = ", Int.layout (numObjectTypes)]]
          end
 
-      fun dropProfile (T {functions, handlesSignals, main, objectTypes}) =
+      fun dropProfile (T {functions, handlesSignals, main, objectTypes, ...}) =
          (Control.profile := Control.ProfileNone
           ; T {functions = List.map (functions, Function.dropProfile),
                handlesSignals = handlesSignals,
                main = Function.dropProfile main,
-               objectTypes = objectTypes})
+               objectTypes = objectTypes,
+               profileInfo = NONE})
       (* quell unused warning *)
       val _ = dropProfile
 
@@ -982,7 +985,7 @@ structure Program =
             ()
          end
 
-      fun orderFunctions (p as T {handlesSignals, objectTypes, ...}) =
+      fun orderFunctions (p as T {handlesSignals, objectTypes, profileInfo, ...}) =
          let
             val functions = ref []
             val () =
@@ -1015,10 +1018,11 @@ structure Program =
             T {functions = functions,
                handlesSignals = handlesSignals,
                main = main,
-               objectTypes = objectTypes}
+               objectTypes = objectTypes,
+               profileInfo = profileInfo}
          end
 
-      fun copyProp (T {functions, handlesSignals, main, objectTypes, ...}): t =
+      fun copyProp (T {functions, handlesSignals, main, objectTypes, profileInfo, ...}): t =
          let
             val tracePrimApply =
                Trace.trace3
@@ -1155,30 +1159,33 @@ structure Program =
             T {functions = functions,
                handlesSignals = handlesSignals,
                main = main,
-               objectTypes = objectTypes}
+               objectTypes = objectTypes,
+               profileInfo = profileInfo}
          end
 
-      fun shrink (T {functions, handlesSignals, main, objectTypes}) =
+      fun shrink (T {functions, handlesSignals, main, objectTypes, profileInfo}) =
          let
             val p = 
                T {functions = List.revMap (functions, Function.shrink),
                   handlesSignals = handlesSignals,
                   main = Function.shrink main,
-                  objectTypes = objectTypes}
+                  objectTypes = objectTypes,
+                  profileInfo = profileInfo}
             val p = copyProp p
             val () = clear p
          in
             p
          end
 
-      fun shuffle (T {functions, handlesSignals, main, objectTypes}) =
+      fun shuffle (T {functions, handlesSignals, main, objectTypes, profileInfo}) =
          let
             val functions = Array.fromListMap (functions, Function.shuffle)
             val () = Array.shuffle functions
             val p = T {functions = Array.toList functions,
                        handlesSignals = handlesSignals,
                        main = Function.shuffle main,
-                       objectTypes = objectTypes}
+                       objectTypes = objectTypes,
+                       profileInfo = profileInfo}
          in
             p
          end
@@ -1501,8 +1508,45 @@ structure Program =
          in ()
          end
 
-      fun typeCheck (p as T {functions, main, objectTypes, ...}) =
+      fun typeCheck (p as T {functions, main, objectTypes, profileInfo, ...}) =
          let
+            val (checkProfileLabel, finishCheckProfileLabel, checkFrameSourceSeqIndex) =
+               case profileInfo of
+                  NONE => (fn _ => false, fn () => (), fn _ => ())
+                | SOME {sourceMaps, getFrameSourceSeqIndex} =>
+                  let
+                     val _ =
+                        Err.check
+                        ("sourceMaps",
+                         fn () => SourceMaps.check sourceMaps,
+                         fn () => SourceMaps.layout sourceMaps)
+                     val (checkProfileLabel, finishCheckProfileLabel) =
+                        SourceMaps.checkProfileLabel sourceMaps
+                  in
+                     (checkProfileLabel,
+                      fn () => Err.check
+                               ("finishCheckProfileLabel",
+                                finishCheckProfileLabel,
+                                fn () => SourceMaps.layout sourceMaps),
+                      fn (l, k) => let
+                                      fun chk b =
+                                         Err.check
+                                         ("getFrameSourceSeqIndex",
+                                          fn () => (case (b, getFrameSourceSeqIndex l) of
+                                                       (true, SOME ssi) =>
+                                                          SourceMaps.checkSourceSeqIndex
+                                                          (sourceMaps, ssi)
+                                                     | (false, NONE) => true
+                                                     | _ => false),
+                                          fn () => Label.layout l)
+                                   in
+                                      case k of
+                                         Kind.Cont _ => chk true
+                                       | Kind.CReturn _ => chk true
+                                       | Kind.Handler => chk true
+                                       | Kind.Jump => chk false
+                                   end)
+                  end
             val _ =
                Vector.foreach
                (objectTypes, fn ty =>
@@ -1608,7 +1652,7 @@ structure Program =
                              prim = prim,
                              result = Option.map (dst, #2)}))
                    | Profile _ => true
-                   | ProfileLabel _ => true
+                   | ProfileLabel pl => checkProfileLabel pl
                    | SetExnStackLocal => true
                    | SetExnStackSlot => true
                    | SetHandler l =>
@@ -1703,8 +1747,9 @@ structure Program =
                   val _ = Vector.foreach (args, setVarType)
                   val _ =
                      Vector.foreach
-                     (blocks, fn b as Block.T {args, label, statements, ...} =>
+                     (blocks, fn b as Block.T {args, kind, label, statements, ...} =>
                       (setLabelBlock (label, b)
+                       ; checkFrameSourceSeqIndex (label, kind)
                        ; Vector.foreach (args, setVarType)
                        ; Vector.foreach (statements, fn s =>
                                          Statement.foreachDef
@@ -1843,6 +1888,7 @@ structure Program =
                    Vector.isEmpty args
                 end,
                 Function.layout)
+            val _ = finishCheckProfileLabel ()
             val _ = clear p
          in
             ()

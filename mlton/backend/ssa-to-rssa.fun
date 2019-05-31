@@ -1373,15 +1373,11 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                               (CFunction.size (Operand.ty (a 0))))
                                | MLton_touch =>
                                     let
-                                       val a = arg 0
-                                       val args =
-                                          if isSome (toRtype (varType a))
-                                             then Vector.new1 (varOp a)
-                                          else Vector.new0 ()
+                                       val a  = arg 0
                                     in
-                                       add (PrimApp {args = args,
-                                                     dst = NONE,
-                                                     prim = prim})
+                                       if isSome (toRtype (varType a))
+                                          then primApp (prim, Vector.new1 (varOp a))
+                                          else none ()
                                     end
                                | Thread_atomicBegin =>
                                     (* gcState.atomicState++;
@@ -1684,7 +1680,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
       val p = Program.T {functions = functions,
                          handlesSignals = handlesSignals,
                          main = main,
-                         objectTypes = Vector.concat [objectTypes, Vector.fromListRev (!newObjectTypes)]}
+                         objectTypes = Vector.concat [objectTypes, Vector.fromListRev (!newObjectTypes)],
+                         profileInfo = NONE}
       val _ = Program.clear p
    in
       p

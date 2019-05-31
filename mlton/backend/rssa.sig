@@ -201,7 +201,9 @@ signature RSSA =
                T of {functions: Function.t list,
                      handlesSignals: bool,
                      main: Function.t,
-                     objectTypes: ObjectType.t vector}
+                     objectTypes: ObjectType.t vector,
+                     profileInfo: {sourceMaps: SourceMaps.t,
+                                   getFrameSourceSeqIndex: Label.t -> int option} option}
 
             val clear: t -> unit
             val checkHandlers: t -> unit

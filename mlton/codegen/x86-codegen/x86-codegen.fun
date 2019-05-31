@@ -82,13 +82,22 @@ struct
         val makeC = outputC
         val makeS = outputS
 
-        val Machine.Program.T {profileInfo, ...} = program
-        val profileInfo =
-           case profileInfo of
-              NONE => Machine.ProfileInfo.empty
-            | SOME pi => pi
-        val {newProfileLabel, delProfileLabel, getProfileInfo} = 
-          Machine.ProfileInfo.modify profileInfo
+        val (newProfileLabel, delProfileLabel, getSourceMaps) =
+           let
+              val Machine.Program.T {sourceMaps, ...} = program
+           in
+              case sourceMaps of
+                 NONE => (fn _ => Error.bug "x86Codegen.newProfileLabel",
+                          fn _ => Error.bug "x86Codegen.delProfileLabel",
+                          fn () => NONE)
+               | SOME sm =>
+                    let
+                       val {newProfileLabel, delProfileLabel, getSourceMaps} =
+                          Machine.SourceMaps.modify sm
+                    in
+                       (newProfileLabel, delProfileLabel, SOME o getSourceMaps)
+                    end
+           end
 
         (* C specific *)
         fun outputC ()
@@ -115,8 +124,8 @@ struct
                    main = main, 
                    maxFrameSize = maxFrameSize, 
                    objectTypes = objectTypes, 
-                   profileInfo = SOME (getProfileInfo ()),
                    reals = reals, 
+                   sourceMaps = getSourceMaps (),
                    vectors = vectors}
               end
               val {print, done, ...} = makeC ()
