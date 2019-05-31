@@ -162,6 +162,8 @@ signature RSSA =
                      transfer: Transfer.t}
 
             val clear: t -> unit
+            val foreachDef: t * (Var.t * Type.t -> unit) -> unit
+            val foreachUse: t * (Var.t -> unit) -> unit
             val kind: t -> Kind.t
             val label: t -> Label.t
             val layout: t -> Layout.t
@@ -184,8 +186,15 @@ signature RSSA =
              * then applying v' ().
              *)
             val dfs: t * (Block.t -> unit -> unit) -> unit
+            val dominatorTree: t -> Block.t Tree.t
             val foreachDef: t * (Var.t * Type.t -> unit) -> unit
             val foreachUse: t * (Var.t -> unit) -> unit
+            val layout: t -> Layout.t
+            val layoutHeader: t -> Layout.t
+            (* Produce a loop forest, with an optional predicate;
+             * the start node will be connected when
+             * the predicate fails, to maintain connectedness *)
+            val loopForest: t * (Block.t * Block.t -> bool) -> Block.t DirectedGraph.LoopForest.t
             val name: t -> Func.t
             val new: {args: (Var.t * Type.t) vector,
                       blocks: Block.t vector,

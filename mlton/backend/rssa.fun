@@ -694,7 +694,7 @@ structure Function =
       structure Graph = DirectedGraph
       structure Node = Graph.Node
 
-      fun dominatorTree (T {blocks, start, ...}): Block.t Tree.t =
+      fun overlayGraph (T {blocks, ...}) =
          let
             open Dot
             val g = Graph.new ()
@@ -702,30 +702,44 @@ structure Function =
             val {get = labelNode, ...} =
                Property.get
                (Label.plist, Property.initFun (fn _ => newNode ()))
-            val {get = nodeInfo: unit Node.t -> {block: Block.t},
+            val {get = nodeInfo: unit Node.t -> Block.t,
                  set = setNodeInfo, ...} =
                Property.getSetOnce
                (Node.plist, Property.initRaise ("info", Node.layout))
             val () =
                Vector.foreach
                (blocks, fn b as Block.T {label, ...}=>
-                setNodeInfo (labelNode label, {block = b}))
-            val () =
-               Vector.foreach
-               (blocks, fn Block.T {label, transfer, ...} =>
-                let
-                   val from = labelNode label
-                   val _ =
-                      Transfer.foreachLabel
-                      (transfer, fn to =>
-                       (ignore o Graph.addEdge) 
-                       (g, {from = from, to = labelNode to}))
-                in
-                   ()
-                end)
+                setNodeInfo (labelNode label, b))
          in
-            Graph.dominatorTree (g, {root = labelNode start,
-                                     nodeValue = #block o nodeInfo})
+            (g, labelNode, nodeInfo)
+         end
+
+      fun dominatorTree (t as T {blocks, start, ...}): Block.t Tree.t =
+         let
+            val (g, labelNode, nodeInfo) = overlayGraph t
+            val _ =
+               Vector.foreach
+               (blocks, fn Block.T {transfer, label = from, ...} =>
+                Transfer.foreachLabel
+                (transfer, fn to =>
+                 ignore (Graph.addEdge (g, {from = labelNode from, to = labelNode to}))))
+         in
+            Graph.dominatorTree (g, {root = labelNode start, nodeValue = nodeInfo})
+         end
+
+      fun loopForest (t as T {blocks, start, ...}, predicate) =
+         let
+            val (g, labelNode, nodeInfo) = overlayGraph t
+            val _ =
+               Vector.foreach
+               (blocks, fn from as Block.T {transfer, label, ...} =>
+                Transfer.foreachLabel
+                (transfer, fn to =>
+                 if predicate (from, (nodeInfo o labelNode) to)
+                    then ignore (Graph.addEdge (g, {from = labelNode label, to = labelNode to}))
+                    else ignore (Graph.addEdge (g, {from = labelNode start, to = labelNode to}))))
+         in
+            Graph.loopForestSteensgaard (g, {root = labelNode start, nodeValue = nodeInfo})
          end
 
       fun dropProfile (f: t): t =

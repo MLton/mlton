@@ -14,6 +14,7 @@ signature RETURN
 signature SSA
 signature SSA2
 
+functor ThreePointLattice
 functor FlatLattice
 functor Ssa
 functor Ssa2

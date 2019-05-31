@@ -48,8 +48,11 @@ implement-handlers.fun
 implement-profiling.fun
 limit-check.fun
 signal-check.fun
+restore.sig
+restore.fun
 live.sig
 live.fun
+bounce-vars.fun
 allocate-registers.sig
 allocate-registers.fun
 equivalence-graph.sig

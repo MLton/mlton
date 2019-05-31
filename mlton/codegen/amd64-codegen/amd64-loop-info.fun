@@ -115,14 +115,14 @@ struct
                  end)
         val _ = destInfo ()
 
-        val lf = Graph.loopForestSteensgaard (G, {root = root})
+        val lf = Graph.loopForestSteensgaard (G, {root = root, nodeValue = getNodeInfo})
 
-        fun doit (f: unit LoopForest.t,
+        fun doit (f: Label.t LoopForest.t,
                   headers,
                   path)
           = let
               val {loops, notInLoop} = LoopForest.dest f
-              val notInLoop = Vector.toListMap (notInLoop, getNodeInfo)
+              val notInLoop = Vector.toList notInLoop
               val path' = List.rev path
             in
               List.foreach
@@ -133,9 +133,7 @@ struct
                     loopPath = path'})) ;
               Vector.foreachi
               (loops, fn (i,{headers, child}) =>
-               doit (child, 
-                     Vector.map (headers, getNodeInfo),
-                     i::path))
+               doit (child, headers, i::path))
             end
         val _ = doit (lf, Vector.new0 (), [])
       in

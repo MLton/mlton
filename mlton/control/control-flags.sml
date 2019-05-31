@@ -44,6 +44,18 @@ val atMLtons = control {name = "atMLtons",
                         default = Vector.new0 (),
                         toString = fn v => Layout.toString (Vector.layout
                                                             String.layout v)}
+val bounceRssaLimit = control {name = "bounceRssaLimit",
+                               default = SOME 8,
+                               toString = Option.toString Int.toString}
+val bounceRssaLiveCutoff = control {name = "bounceRssaLiveCutoff",
+                               default = SOME 12,
+                               toString = Option.toString Int.toString}
+val bounceRssaLoopCutoff = control {name = "bounceRssaLoopCutoff",
+                               default = SOME 40,
+                               toString = Option.toString Int.toString}
+val bounceRssaUsageCutoff = control {name = "bounceRssaUsageCutoff",
+                               default = SOME 15,
+                               toString = Option.toString Int.toString}
 
 val chunkBatch = control {name = "chunkBatch",
                           default = Int.pow(2,15),

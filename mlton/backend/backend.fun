@@ -56,6 +56,7 @@ structure ImplementHandlers = ImplementHandlers (structure Rssa = Rssa)
 structure ImplementProfiling = ImplementProfiling (structure Rssa = Rssa)
 structure LimitCheck = LimitCheck (structure Rssa = Rssa)
 structure ParallelMove = ParallelMove ()
+structure BounceVars = BounceVars (structure Rssa = Rssa)
 structure SignalCheck = SignalCheck(structure Rssa = Rssa)
 structure SsaToRssa = SsaToRssa (structure Rssa = Rssa
                                  structure Ssa = Ssa)
@@ -192,6 +193,10 @@ fun toMachine (program: Ssa.Program.t, codegen) =
                            doit = LimitCheck.transform}, p)
             val p = pass ({name = "insertSignalChecks", 
                            doit = SignalCheck.transform}, p)
+            (* must be before implementHandlers *)
+            val p = maybePass ({name = "bounceVars",
+                                doit = BounceVars.transform,
+                                execute = true}, p)
             val p = pass ({name = "implementHandlers", 
                            doit = ImplementHandlers.transform}, p)
             val p = maybePass ({name = "rssaShrink2", 

@@ -759,8 +759,13 @@ structure Chunk =
          val chunkLabel = make #chunkLabel
       end
 
-      fun layouts (T {blocks, ...}, output : Layout.t -> unit) =
-         Vector.foreach (blocks, fn block => Block.layouts (block, output))
+      fun layouts (T {blocks, chunkLabel, ...}, output' : Layout.t -> unit) =
+         let
+            open Layout
+         in
+            ((output' o seq) [str "Chunk ", ChunkLabel.layout chunkLabel]) ;
+            Vector.foreach (blocks, fn block => Block.layouts (block, output'))
+         end
 
       fun clear (T {blocks, ...}) =
          Vector.foreach (blocks, Block.clear)

@@ -27,6 +27,11 @@ signature CONTROL_FLAGS =
 
       val atMLtons: string vector ref
 
+      val bounceRssaLimit: int option ref
+      val bounceRssaLiveCutoff: int option ref
+      val bounceRssaLoopCutoff: int option ref
+      val bounceRssaUsageCutoff: int option ref
+
       val chunkBatch: int ref
 
       structure Chunkify:

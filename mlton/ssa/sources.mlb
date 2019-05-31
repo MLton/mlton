@@ -104,6 +104,7 @@ in
    signature SSA2
 
    functor FlatLattice
+   functor ThreePointLattice
    functor Ssa
    functor Ssa2
    functor SsaToSsa2

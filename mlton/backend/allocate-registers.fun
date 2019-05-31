@@ -426,7 +426,20 @@ fun allocate {formalsStackOffsets,
                end
          else NONE
       fun getOperands (xs: Var.t vector): Operand.t vector =
-         Vector.map (xs, fn x => valOf (! (valOf (#operand (varInfo x)))))
+         Vector.map
+         (xs, fn x =>
+          let
+             open Layout
+          in
+             case (#operand (varInfo x)) of
+                NONE => (Error.bug o toString o seq)
+                        [str "AllocateRegisters.getOperands_1", Var.layout x]
+              | SOME r =>
+                   (case !r of
+                       NONE => (Error.bug o toString o seq)
+                               [str "AllocateRegisters.getOperands_2", Var.layout x]
+                     | SOME oper => oper)
+          end)
       val getOperands =
          Trace.trace 
          ("AllocateRegisters.getOperands",
