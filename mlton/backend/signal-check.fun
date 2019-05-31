@@ -160,8 +160,8 @@ fun insertInFunction (f: Function.t): Function.t =
                    statements = Vector.new0 (),
                    transfer = Transfer.Goto {args = Vector.new0 (),
                                              dst = start}})
-      val () = loop (Graph.loopForestSteensgaard (g,
-         {root = labelNode start, nodeValue = nodeIndex}))
+      val () = loop (Graph.loopForestSteensgaard
+                     (g, {root = labelNode start, nodeValue = nodeIndex}))
       val blocks =
          Vector.keepAllMap
          (blocks, fn b as Block.T {label, ...} =>

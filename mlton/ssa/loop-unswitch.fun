@@ -352,8 +352,7 @@ fun optimizeFunction(function: Function.t): Function.t =
       val () = logs (concat["Optimizing function: ", Func.toString name,
                             " of size ", Int.toString fsize])
       val root = labelNode start
-      val forest = Graph.loopForestSteensgaard(graph,
-        {root = root, nodeValue = fn x => x})
+      val forest = Graph.loopForestSteensgaard(graph, {root = root, nodeValue = fn x => x})
       val newBlocks = traverseForest((Forest.dest forest), blocks, labelNode, nodeBlock)
    in
       Function.new {args = args,

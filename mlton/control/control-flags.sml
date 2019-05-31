@@ -57,7 +57,6 @@ val bounceRssaUsageCutoff = control {name = "bounceRssaUsageCutoff",
                                default = SOME 15,
                                toString = Option.toString Int.toString}
 
-
 val chunkBatch = control {name = "chunkBatch",
                           default = Int.pow(2,15),
                           toString = Int.toString}

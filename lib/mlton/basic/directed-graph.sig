@@ -118,9 +118,9 @@ signature DIRECTED_GRAPH =
 
             val map: 'a t * ('a -> 'b) -> 'b t
          end
-      val loopForestSteensgaard: 'a t * {root: 'a Node.t,
-                                         nodeValue: 'a Node.t -> 'b}
-                                 -> 'b LoopForest.t
+      val loopForestSteensgaard:
+         'a t * {root: 'a Node.t, nodeValue: 'a Node.t -> 'b}
+         -> 'b LoopForest.t
       val new: unit -> 'a t
       val newNode: 'a t -> 'a Node.t
       val nodes: 'a t -> 'a Node.t list

@@ -551,7 +551,7 @@ structure LoopForest =
        * vector.
        *)
       datatype 'a t = T of {loops: {headers: 'a vector,
-                                 child: 'a t} vector,
+                                    child: 'a t} vector,
                          notInLoop: 'a vector}
 
       fun dest (T r) = r
@@ -562,15 +562,16 @@ structure LoopForest =
       fun map (T {loops, notInLoop}, f) =
          let
             val newNotInLoop = Vector.map(notInLoop, f)
-            val newLoops = Vector.map (loops, fn {headers, child} =>
-               let
-                  val newHeaders=Vector.map(headers, f)
-                  val newChild = map (child, f)
-               in
-                  {headers=newHeaders, child=newChild}
-               end)
+            val newLoops =
+               Vector.map (loops, fn {headers, child} =>
+                           let
+                              val newHeaders = Vector.map(headers, f)
+                              val newChild = map (child, f)
+                           in
+                              {headers = newHeaders, child = newChild}
+                           end)
          in
-            T {loops=newLoops, notInLoop=newNotInLoop}
+            T {loops = newLoops, notInLoop = newNotInLoop}
          end
 
       fun layoutDot (forest: 'a t,
@@ -647,7 +648,6 @@ structure LoopForest =
                         title = title}
          end
       val _ = layoutDot
-
    end
 
 (* Strongly connected components from Aho, Hopcroft, Ullman section 5.5. *)
@@ -771,8 +771,8 @@ val stronglyConnectedComponents =
 (* This code assumes everything is reachable from the root.
  * Otherwise it may loop forever.
  *)
-fun 'a loopForestSteensgaard (g: t,
-         {root: Node.t, nodeValue: Node.t -> 'a}): 'a LoopForest.t =
+fun 'a loopForestSteensgaard (g: t, {root: Node.t,
+                                     nodeValue: Node.t -> 'a}): 'a LoopForest.t =
    let
       val {get =
            nodeInfo:
@@ -842,11 +842,10 @@ fun 'a loopForestSteensgaard (g: t,
                       in
                          if List.exists (Node.successors n, fn e =>
                                          Node.equals (n, Edge.to e))
-                            then
-                               List.push (loops,
-                                          {headers = Vector.new1 value,
-                                           child = LoopForest.single value})
-                         else List.push (notInLoop, value)
+                            then List.push (loops,
+                                            {headers = Vector.new1 value,
+                                             child = LoopForest.single value})
+                            else List.push (notInLoop, value)
                       end
                  | _ =>
                       let

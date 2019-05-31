@@ -717,26 +717,29 @@ structure Function =
       fun dominatorTree (t as T {blocks, start, ...}): Block.t Tree.t =
          let
             val (g, labelNode, nodeInfo) = overlayGraph t
-            val _ = Vector.foreach (blocks, fn Block.T {transfer, label=from, ...} =>
-               Transfer.foreachLabel (transfer, fn to =>
-                  ignore (Graph.addEdge (g, {from=labelNode from, to=labelNode to}))))
+            val _ =
+               Vector.foreach
+               (blocks, fn Block.T {transfer, label = from, ...} =>
+                Transfer.foreachLabel
+                (transfer, fn to =>
+                 ignore (Graph.addEdge (g, {from = labelNode from, to = labelNode to}))))
          in
-            Graph.dominatorTree (g,
-               {root=labelNode start, nodeValue=nodeInfo})
+            Graph.dominatorTree (g, {root = labelNode start, nodeValue = nodeInfo})
          end
 
       fun loopForest (t as T {blocks, start, ...}, predicate) =
          let
             val (g, labelNode, nodeInfo) = overlayGraph t
-            val _ = Vector.foreach (blocks, fn from as Block.T {transfer, label, ...} =>
-               Transfer.foreachLabel (transfer, fn to =>
-                  if predicate (from, (nodeInfo o labelNode) to)
-                     then ignore (Graph.addEdge (g, {from=labelNode label, to=labelNode to}))
-                     else ignore (Graph.addEdge (g, {from=labelNode start,
-                        to=labelNode to}))))
+            val _ =
+               Vector.foreach
+               (blocks, fn from as Block.T {transfer, label, ...} =>
+                Transfer.foreachLabel
+                (transfer, fn to =>
+                 if predicate (from, (nodeInfo o labelNode) to)
+                    then ignore (Graph.addEdge (g, {from = labelNode label, to = labelNode to}))
+                    else ignore (Graph.addEdge (g, {from = labelNode start, to = labelNode to}))))
          in
-            Graph.loopForestSteensgaard (g,
-               {root=labelNode start, nodeValue=nodeInfo})
+            Graph.loopForestSteensgaard (g, {root = labelNode start, nodeValue = nodeInfo})
          end
 
       fun dropProfile (f: t): t =

@@ -115,8 +115,7 @@ struct
                  end)
         val _ = destInfo ()
 
-        val lf = Graph.loopForestSteensgaard (G, {root = root,
-                                                  nodeValue=getNodeInfo})
+        val lf = Graph.loopForestSteensgaard (G, {root = root, nodeValue = getNodeInfo})
 
         fun doit (f: Label.t LoopForest.t,
                   headers,

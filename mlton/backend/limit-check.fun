@@ -712,8 +712,8 @@ fun insertCoalesce (f: Function.t, handlesSignals) =
                in
                   ()
                end
-            val _ = setClass (Graph.loopForestSteensgaard (g,
-               {root = root, nodeValue = fn x => x}))
+            val _ = setClass (Graph.loopForestSteensgaard
+                              (g, {root = root, nodeValue = fn x => x}))
             val numClasses = Counter.value c
             datatype z = datatype Control.limitCheck
             val _ =
