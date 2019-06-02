@@ -1,4 +1,4 @@
-(* Copyright (C) 2014,2017 Matthew Fluet.
+(* Copyright (C) 2014,2017,2019 Matthew Fluet.
  * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -15,7 +15,6 @@ signature REP_TYPE_STRUCTS =
       structure Prim: PRIM
       structure RealSize: REAL_SIZE
       structure Runtime: RUNTIME
-      structure Scale: SCALE
       structure WordSize: WORD_SIZE
       structure WordX: WORD_X
       structure WordXVector: WORD_X_VECTOR

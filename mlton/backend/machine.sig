@@ -66,9 +66,6 @@ signature MACHINE =
             val ty: t -> Type.t
          end
 
-      structure Scale: SCALE
-      sharing Scale = Type.Scale
-
       structure Operand:
          sig
             datatype t =

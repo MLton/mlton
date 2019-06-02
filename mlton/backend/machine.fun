@@ -14,7 +14,6 @@ open S
 
 structure ObjptrTycon = ObjptrTycon ()
 structure Runtime = Runtime ()
-structure Scale = Scale ()
 structure RepType = RepType (structure CFunction = CFunction
                              structure CType = CType
                              structure Label = Label
@@ -22,7 +21,6 @@ structure RepType = RepType (structure CFunction = CFunction
                              structure Prim = Prim
                              structure RealSize = RealSize
                              structure Runtime = Runtime
-                             structure Scale = Scale
                              structure WordSize = WordSize
                              structure WordX = WordX
                              structure WordXVector = WordXVector)

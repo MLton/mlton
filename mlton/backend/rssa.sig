@@ -14,14 +14,12 @@ signature RSSA_STRUCTS =
       structure ObjectType: OBJECT_TYPE
       structure ObjptrTycon: OBJPTR_TYCON
       structure Runtime: RUNTIME
-      structure Scale: SCALE
       structure Type: REP_TYPE
 
       sharing Atoms = Type
       sharing ObjectType = Type.ObjectType
       sharing ObjptrTycon = ObjectType.ObjptrTycon = Type.ObjptrTycon
       sharing Runtime = Type.Runtime
-      sharing Scale = Type.Scale
    end
 
 signature RSSA = 
