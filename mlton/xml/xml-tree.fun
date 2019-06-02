@@ -132,42 +132,6 @@ structure Pat =
       end
    end
 
-structure Cases =
-   struct
-      datatype 'a t = 
-         Con of (Pat.t * 'a) vector
-       | Word of WordSize.t * (WordX.t * 'a) vector
-
-      fun fold (c: 'a t, b: 'b, f: 'a * 'b -> 'b): 'b =
-         let
-            fun doit l = Vector.fold (l, b, fn ((_, a), b) => f (a, b))
-         in
-            case c of
-               Con l => doit l
-             | Word (_, l) => doit l
-         end
-
-      fun map (c: 'a t, f: 'a -> 'b): 'b t =
-         let
-            fun doit l = Vector.map (l, fn (i, x) => (i, f x))
-         in
-            case c of
-               Con l => Con (doit l)
-             | Word (s, l) => Word (s, doit l)
-         end
-
-      fun foreach (c, f) = fold (c, (), fn (x, ()) => f x)
-
-      fun foreach' (c: 'a t, f: 'a -> unit, fc: Pat.t -> unit): unit =
-         let
-            fun doit l = Vector.foreach (l, fn (_, a) => f a)
-         in
-            case c of
-               Con l => Vector.foreach (l, fn (c, a) => (fc c; f a))
-             | Word (_, l) => doit l
-         end
-   end
-
 structure VarExp =
    struct
       datatype t = T of {targs: Type.t vector,
@@ -216,7 +180,7 @@ and primExp =
     App of {func: VarExp.t,
             arg: VarExp.t}
   | Case of {test: VarExp.t,
-             cases: exp Cases.t,
+             cases: (Pat.t, exp) Cases.t,
              default: exp option}
   | ConApp of {con: Con.t,
                targs: Type.t vector,

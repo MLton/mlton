@@ -64,6 +64,8 @@ local
    c-function.fun
    ffi.sig
    ffi.fun
+   cases.sig
+   cases.fun
    prim.sig
    prim.fun
    handler.sig

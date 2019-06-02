@@ -63,6 +63,9 @@ structure Atoms =
       structure Ffi = Ffi (structure CFunction = CFunction
                            structure CType = CType)
 
+      structure Cases = Cases (structure WordSize = WordSize
+                               structure WordX = WordX)
+
       structure Prim = Prim (structure CFunction = CFunction
                              structure CType = CType
                              structure Con = Con

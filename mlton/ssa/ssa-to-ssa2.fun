@@ -1,4 +1,4 @@
-(* Copyright (C) 2017 Matthew Fluet.
+(* Copyright (C) 2017,2019 Matthew Fluet.
  * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -220,7 +220,7 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
                                   handler = convertHandler handler}
           | S.Return.Tail => S2.Return.Tail
       val extraBlocks: S2.Block.t list ref = ref []
-      fun convertCases (cs: S.Cases.t): S2.Cases.t =
+      fun convertCases (cs: (Con.t, Label.t) S.Cases.t): (Con.t, Label.t) S2.Cases.t =
          case cs of
             S.Cases.Con v =>
                S2.Cases.Con

@@ -267,80 +267,6 @@ structure Type =
          end
    end
 
-structure Cases =
-   struct
-      datatype t =
-         Con of (Con.t * Label.t) vector
-       | Word of WordSize.t * (WordX.t * Label.t) vector
-
-      fun equals (c1: t, c2: t): bool =
-         let
-            fun doit (l1, l2, eq') = 
-               Vector.equals 
-               (l1, l2, fn ((x1, a1), (x2, a2)) =>
-                eq' (x1, x2) andalso Label.equals (a1, a2))
-         in
-            case (c1, c2) of
-               (Con l1, Con l2) => doit (l1, l2, Con.equals)
-             | (Word (_, l1), Word (_, l2)) => doit (l1, l2, WordX.equals)
-             | _ => false
-         end
-
-      fun hd (c: t): Label.t =
-         let
-            fun doit v =
-               if Vector.length v >= 1
-                  then let val (_, a) = Vector.first v
-                       in a
-                       end
-               else Error.bug "SsaTree.Cases.hd"
-         in
-            case c of
-               Con cs => doit cs
-             | Word (_, cs) => doit cs
-         end
-
-      fun isEmpty (c: t): bool =
-         let
-            fun doit v = Vector.isEmpty v
-         in
-            case c of
-               Con cs => doit cs
-             | Word (_, cs) => doit cs
-         end
-
-      fun fold (c: t, b, f) =
-         let
-            fun doit l = Vector.fold (l, b, fn ((_, a), b) => f (a, b))
-         in
-            case c of
-               Con l => doit l
-             | Word (_, l) => doit l
-         end
-
-      fun map (c: t, f): t =
-         let
-            fun doit l = Vector.map (l, fn (i, x) => (i, f x))
-         in
-            case c of
-               Con l => Con (doit l)
-             | Word (s, l) => Word (s, doit l)
-         end
-
-      fun forall (c: t, f: Label.t -> bool): bool =
-         let
-            fun doit l = Vector.forall (l, fn (_, x) => f x)
-         in
-            case c of
-               Con l => doit l
-             | Word (_, l) => doit l
-         end
-
-      fun length (c: t): int = fold (c, 0, fn (_, i) => i + 1)
-
-      fun foreach (c, f) = fold (c, (), fn (x, ()) => f x)
-   end
-
 structure Size =
    struct
       val check: int * int option -> int *bool =
@@ -628,7 +554,7 @@ structure Transfer =
                   func: Func.t,
                   return: Return.t}
        | Case of {test: Var.t,
-                  cases: Cases.t,
+                  cases: (Con.t, Label.t) Cases.t,
                   default: Label.t option} (* Must be nullary. *)
        | Goto of {dst: Label.t,
                   args: Var.t vector}
@@ -832,7 +758,7 @@ structure Transfer =
           | (Case {test, cases, default},
              Case {test = test', cases = cases', default = default'}) =>
                Var.equals (test, test')
-               andalso Cases.equals (cases, cases')
+               andalso Cases.equals (cases, cases', Con.equals, Label.equals)
                andalso Option.equals (default, default', Label.equals)
           | (Goto {dst, args}, Goto {dst = dst', args = args'}) =>
                Label.equals (dst, dst') andalso

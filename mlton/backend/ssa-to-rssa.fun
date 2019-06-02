@@ -722,7 +722,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
          Property.getSetOnce (Label.plist,
                               Property.initRaise ("label info", Label.layout))
       fun translateCase ({test: Var.t,
-                          cases: S.Cases.t,
+                          cases: (Con.t, Label.t) S.Cases.t,
                           default: Label.t option})
          : Statement.t list * Transfer.t =
          case cases of

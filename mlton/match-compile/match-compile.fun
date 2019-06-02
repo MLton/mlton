@@ -11,6 +11,7 @@ functor MatchCompile (S: MATCH_COMPILE_STRUCTS): MATCH_COMPILE =
 struct
 
 open S
+structure ExpPat = Pat
 
 structure Example =
   struct
@@ -867,7 +868,7 @@ fun matchCompile {caseType: Type.t,
                             (w, finish (rules, exampleConst const))
                          end)
                   in
-                     Exp.casee {cases = Cases.word (size, cases),
+                     Exp.casee {cases = Cases.Word (size, cases),
                                 default = default,
                                 test = test,
                                 ty = caseType}
@@ -955,10 +956,10 @@ fun matchCompile {caseType: Type.t,
                       (facts, var,
                        Fact.Con {arg = Option.map (arg, #1), con = con})
                 in
-                   {arg = arg,
-                    con = con,
-                    rhs = match (vars, rules, facts, es),
-                    targs = targs}
+                   (ExpPat.T {arg = arg,
+                              con = con,
+                              targs = targs},
+                    match (vars, rules, facts, es))
                 end)
             fun done (e, isOnlyExns) =
                SOME (match (Vector.dropNth (vars, i),
@@ -977,7 +978,7 @@ fun matchCompile {caseType: Type.t,
                      val unhandled =
                         List.keepAllMap
                         (Vector.toList cons, fn {con, hasArg, ...} =>
-                         if Vector.exists (cases, fn {con = con', ...} =>
+                         if Vector.exists (cases, fn (ExpPat.T {con = con', ...}, _) =>
                                            Con.equals (con, con'))
                             then NONE
                             else SOME (Example.ConApp
@@ -990,7 +991,7 @@ fun matchCompile {caseType: Type.t,
                      (Example.or unhandled, NONE, fn (e, _) => done (e, false))
                   end
             fun normal () =
-               Exp.casee {cases = Cases.con cases,
+               Exp.casee {cases = Cases.Con cases,
                           default = default,
                           test = test,
                           ty = caseType}
@@ -999,7 +1000,7 @@ fun matchCompile {caseType: Type.t,
                then normal ()
             else
                let
-                  val {arg, con, rhs, ...} = Vector.first cases
+                  val (ExpPat.T {arg, con, ...}, rhs) = Vector.first cases
                in
                   if not (Con.equals (con, Con.reff))
                      then normal ()
@@ -1163,7 +1164,7 @@ fun matchCompile {caseType: Type.t,
                 end)
          in
             Exp.casee
-            {cases = Cases.word (WordSize.seqIndex (), cases),
+            {cases = Cases.Word (WordSize.seqIndex (), cases),
              default = SOME default,
              test = Exp.vectorLength test,
              ty = caseType}
@@ -1234,5 +1235,7 @@ val matchCompile =
                    ("testType", Type.layout testType)],
     Exp.layout o #1)
    matchCompile
+
+structure Pat = ExpPat
 
 end

@@ -16,6 +16,7 @@ signature ATOMS' =
       include ATOMS_STRUCTS
 
       structure AdmitsEquality: ADMITS_EQUALITY
+      structure Cases: CASES
       structure CFunction: C_FUNCTION
       structure CType: C_TYPE
       structure CharSize: CHAR_SIZE
@@ -62,9 +63,9 @@ signature ATOMS' =
       sharing RealX = Const.RealX
       sharing SourceInfo = ProfileExp.SourceInfo
       sharing TyconKind = Tycon.Kind
-      sharing WordSize = CType.WordSize = Prim.WordSize = Tycon.WordSize
-         = WordX.WordSize
-      sharing WordX = Const.WordX = WordXVector.WordX
+      sharing WordSize = Cases.WordSize = CType.WordSize = Prim.WordSize
+         = Tycon.WordSize = WordX.WordSize
+      sharing WordX = Cases.WordX = Const.WordX = WordXVector.WordX
       sharing WordXVector = Const.WordXVector
    end
 
@@ -86,6 +87,7 @@ signature ATOMS =
       sharing CFunction = Atoms.CFunction
       sharing CType = Atoms.CType
       sharing CharSize = Atoms.CharSize
+      sharing Cases = Atoms.Cases
       sharing Con = Atoms.Con
       sharing Const = Atoms.Const
       sharing Ffi = Atoms.Ffi
