@@ -36,14 +36,6 @@ local
    shrink2.sig
    shrink.fun
    shrink2.fun
-   flat-lattice.sig
-   ann "forceUsed" in flat-lattice.fun end
-   n-point-lattice.sig
-   ann "forceUsed" in n-point-lattice.fun end
-   two-point-lattice.sig
-   two-point-lattice.fun
-   three-point-lattice.sig
-   ann "forceUsed" in three-point-lattice.fun end
    restore.sig
    restore.fun
 
@@ -101,8 +93,6 @@ in
    signature SSA
    signature SSA2
 
-   functor FlatLattice
-   functor ThreePointLattice
    functor Ssa
    functor Ssa2
    functor SsaToSsa2

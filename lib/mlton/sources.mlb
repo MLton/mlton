@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -11,6 +11,7 @@ ann "forceUsed" in
       basic/sources.mlb
       set/sources.mlb
       env/sources.mlb
+      lattice/sources.mlb
    in
       signature ARRAY
       signature ENV
@@ -132,17 +133,21 @@ ann "forceUsed" in
       functor Control
       functor Env
       functor EuclideanRing
+      functor FlatLattice
       functor IntUniqueId
       functor MakeMonoEnv
       functor MonoArray
       functor MonoEnv
       functor MonoVector
+      functor NPointLattice
       functor OrderedField
       functor OrderedUniqueSet
       functor PolyEnv
       functor Ring
       functor RingWithIdentity
+      functor ThreePointLattice
       functor Tree
+      functor TwoPointLattice
       functor UniqueId
       functor UniqueSet
       functor UnorderedSet
