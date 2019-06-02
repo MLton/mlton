@@ -24,6 +24,7 @@ signature ATOMS' =
       structure Ffi: FFI
       structure Field: FIELD
       structure Func: FUNC
+      structure Handler: HANDLER
       structure IntSize: INT_SIZE
       structure Label: LABEL
       structure Prim: PRIM
@@ -32,6 +33,7 @@ signature ATOMS' =
       structure RealSize: REAL_SIZE
       structure RealX: REAL_X
       structure Record: RECORD
+      structure Return: RETURN
       structure SortedRecord: RECORD
       structure SourceInfo: SOURCE_INFO
       structure SourceMaps: SOURCE_MAPS
@@ -51,7 +53,9 @@ signature ATOMS' =
       sharing Con = Prim.Con
       sharing Const = Prim.Const
       sharing Field = Record.Field = SortedRecord.Field
+      sharing Handler = Return.Handler
       sharing IntSize = Tycon.IntSize
+      sharing Label = Handler.Label = Return.Label
       sharing ProfileLabel = SourceMaps.ProfileLabel
       sharing RealSize = CType.RealSize = Prim.RealSize = RealX.RealSize
          = Tycon.RealSize
@@ -87,6 +91,7 @@ signature ATOMS =
       sharing Ffi = Atoms.Ffi
       sharing Field = Atoms.Field
       sharing Func = Atoms.Func
+      sharing Handler = Atoms.Handler
       sharing IntSize = Atoms.IntSize
       sharing Label = Atoms.Label
       sharing Prim = Atoms.Prim
@@ -95,6 +100,7 @@ signature ATOMS =
       sharing RealSize = Atoms.RealSize
       sharing RealX = Atoms.RealX
       sharing Record = Atoms.Record
+      sharing Return = Atoms.Return
       sharing SortedRecord = Atoms.SortedRecord
       sharing SourceInfo = Atoms.SourceInfo
       sharing SourceMaps = Atoms.SourceMaps

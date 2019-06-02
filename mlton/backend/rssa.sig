@@ -11,17 +11,13 @@ signature RSSA_STRUCTS =
    sig
       include ATOMS
 
-      structure Handler: HANDLER
       structure ObjectType: OBJECT_TYPE
       structure ObjptrTycon: OBJPTR_TYCON
-      structure Return: RETURN
       structure Runtime: RUNTIME
       structure Scale: SCALE
       structure Type: REP_TYPE
 
       sharing Atoms = Type
-      sharing Handler = Return.Handler
-      sharing Label = Handler.Label = Return.Label
       sharing ObjectType = Type.ObjectType
       sharing ObjptrTycon = ObjectType.ObjptrTycon = Type.ObjptrTycon
       sharing Runtime = Type.Runtime

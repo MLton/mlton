@@ -70,6 +70,10 @@ structure Atoms =
                              structure RealSize = RealSize
                              structure WordSize = WordSize)
 
+      structure Handler = Handler (structure Label = Label)
+      structure Return = Return (structure Label = Label
+                                 structure Handler = Handler)
+
       structure SourceInfo = SourceInfo ()
       structure ProfileExp = ProfileExp (structure SourceInfo = SourceInfo)
       structure ProfileLabel = ProfileLabel ()

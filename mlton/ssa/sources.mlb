@@ -98,8 +98,6 @@ local
    ssa-to-ssa2.sig
    ssa-to-ssa2.fun
 in
-   signature HANDLER
-   signature RETURN
    signature SSA
    signature SSA2
 

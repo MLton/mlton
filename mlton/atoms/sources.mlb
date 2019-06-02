@@ -66,6 +66,10 @@ local
    ffi.fun
    prim.sig
    prim.fun
+   handler.sig
+   handler.fun
+   return.sig
+   return.fun
    source-info.sig
    source-info.fun
    profile-label.sig

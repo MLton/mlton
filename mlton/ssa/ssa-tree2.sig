@@ -162,12 +162,6 @@ signature SSA_TREE2 =
             val map: t * (Label.t -> Label.t) -> t
          end
 
-      structure Handler: HANDLER
-      sharing Handler.Label = Label
-
-      structure Return: RETURN
-      sharing Return.Handler = Handler
-
       structure Transfer:
          sig
             datatype t =

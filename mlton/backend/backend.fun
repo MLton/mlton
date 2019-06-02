@@ -35,7 +35,7 @@ in
    structure GCField = GCField
 end
 
-structure Rssa = Rssa (open Ssa Machine)
+structure Rssa = Rssa (open Machine)
 structure R = Rssa
 local
    open Rssa

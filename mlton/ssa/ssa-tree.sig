@@ -12,43 +12,6 @@ signature SSA_TREE_STRUCTS =
       include ATOMS
    end
 
-signature HANDLER =
-   sig
-      structure Label: LABEL
-
-      datatype t =
-         Caller
-       | Dead
-       | Handle of Label.t
-
-      val equals: t * t -> bool
-      val foldLabel: t * 'a * (Label.t * 'a -> 'a) -> 'a
-      val foreachLabel: t * (Label.t -> unit) -> unit
-      val layout: t -> Layout.t
-      val map: t * (Label.t -> Label.t) -> t
-   end
-
-signature RETURN =
-   sig
-      structure Label: LABEL
-
-      structure Handler: HANDLER
-      sharing Label = Handler.Label
-
-      datatype t =
-         Dead
-       | NonTail of {cont: Label.t,
-                     handler: Handler.t}
-       | Tail
-
-      val compose: t * t -> t
-      val foldLabel: t * 'a * (Label.t * 'a -> 'a) -> 'a
-      val foreachHandler: t * (Label.t -> unit) -> unit
-      val foreachLabel: t * (Label.t -> unit) -> unit
-      val layout: t -> Layout.t
-      val map: t * (Label.t -> Label.t) -> t
-   end
-
 signature SSA_TREE = 
    sig
       include SSA_TREE_STRUCTS
@@ -157,12 +120,6 @@ signature SSA_TREE =
             val length: t -> int
             val map: t * (Label.t -> Label.t) -> t
          end
-
-      structure Handler: HANDLER
-      sharing Handler.Label = Label
-
-      structure Return: RETURN
-      sharing Return.Handler = Handler
 
       structure Transfer:
          sig
