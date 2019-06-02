@@ -63,12 +63,19 @@ structure Atoms =
       structure Ffi = Ffi (structure CFunction = CFunction
                            structure CType = CType)
 
+      structure Cases = Cases (structure WordSize = WordSize
+                               structure WordX = WordX)
+
       structure Prim = Prim (structure CFunction = CFunction
                              structure CType = CType
                              structure Con = Con
                              structure Const = Const
                              structure RealSize = RealSize
                              structure WordSize = WordSize)
+
+      structure Handler = Handler (structure Label = Label)
+      structure Return = Return (structure Label = Label
+                                 structure Handler = Handler)
 
       structure SourceInfo = SourceInfo ()
       structure ProfileExp = ProfileExp (structure SourceInfo = SourceInfo)

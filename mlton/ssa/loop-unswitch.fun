@@ -128,7 +128,7 @@ fun detectCases(block: Block.t, loopVars: Var.t list, depth: int) =
 fun findOpportunity(loopBody: Block.t vector,
                     loopHeaders: Block.t vector,
                     depth: int)
-                    : ((Cases.t * Var.t * Label.t option) * Block.t) option =
+                    : (((Con.t, Label.t) Cases.t * Var.t * Label.t option) * Block.t) option =
   let
     val vars = Vector.fold (loopBody, [], (fn (b, lst) => (blockVars b) @ lst))
     val canOptimize = Vector.keepAllMap (loopBody,

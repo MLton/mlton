@@ -503,78 +503,6 @@ structure Type =
          end
    end
 
-structure Cases =
-   struct
-      datatype t =
-         Con of (Con.t * Label.t) vector
-       | Word of WordSize.t * (WordX.t * Label.t) vector
-
-      fun equals (c1: t, c2: t): bool =
-         let
-            fun doit (l1, l2, eq') = 
-               Vector.equals 
-               (l1, l2, fn ((x1, a1), (x2, a2)) =>
-                eq' (x1, x2) andalso Label.equals (a1, a2))
-         in
-            case (c1, c2) of
-               (Con l1, Con l2) => doit (l1, l2, Con.equals)
-             | (Word (_, l1), Word (_, l2)) => doit (l1, l2, WordX.equals)
-             | _ => false
-         end
-
-      fun hd (c: t): Label.t =
-         let
-            fun doit v =
-               if Vector.length v >= 1
-                  then let val (_, a) = Vector.first v
-                       in a
-                       end
-               else Error.bug "SsaTree2.Cases.hd"
-         in
-            case c of
-               Con cs => doit cs
-             | Word (_, cs) => doit cs
-         end
-
-      fun isEmpty (c: t): bool =
-         let
-            fun doit v = Vector.isEmpty v
-         in
-            case c of
-               Con cs => doit cs
-             | Word (_, cs) => doit cs
-         end
-
-      fun fold (c: t, b, f) =
-         let
-            fun doit l = Vector.fold (l, b, fn ((_, a), b) => f (a, b))
-         in
-            case c of
-               Con l => doit l
-             | Word (_, l) => doit l
-         end
-
-      fun map (c: t, f): t =
-         let
-            fun doit l = Vector.map (l, fn (i, x) => (i, f x))
-         in
-            case c of
-               Con l => Con (doit l)
-             | Word (s, l) => Word (s, doit l)
-         end
-
-      fun forall (c: t, f: Label.t -> bool): bool =
-         let
-            fun doit l = Vector.forall (l, fn (_, x) => f x)
-         in
-            case c of
-               Con l => doit l
-             | Word (_, l) => doit l
-         end
-
-      fun foreach (c, f) = fold (c, (), fn (x, ()) => f x)
-   end
-
 structure Base =
    struct
       datatype 'a t =
@@ -953,149 +881,6 @@ structure Statement =
 
 datatype z = datatype Statement.t
 
-structure Handler =
-   struct
-      structure Label = Label
-
-      datatype t =
-         Caller
-       | Dead
-       | Handle of Label.t
-
-      fun layout (h: t): Layout.t =
-         let
-            open Layout
-         in
-            case h of
-               Caller => str "Caller"
-             | Dead => str "Dead"
-             | Handle l => seq [str "Handle ", Label.layout l]
-         end
-
-      val equals =
-         fn (Caller, Caller) => true
-          | (Dead, Dead) => true
-          | (Handle l, Handle l') => Label.equals (l, l')
-          | _ => false
-
-      fun foldLabel (h: t, a: 'a, f: Label.t * 'a -> 'a): 'a =
-         case h of
-            Caller => a
-          | Dead => a
-          | Handle l => f (l, a)
-
-      fun foreachLabel (h, f) = foldLabel (h, (), f o #1)
-
-      fun map (h, f) =
-         case h of
-            Caller => Caller
-          | Dead => Dead
-          | Handle l => Handle (f l)
-
-      local
-         val newHash = Random.word
-         val caller = newHash ()
-         val dead = newHash ()
-         val handlee = newHash ()
-      in
-         fun hash (h: t): word =
-            case h of
-               Caller => caller
-             | Dead => dead
-             | Handle l => Hash.combine (handlee, Label.hash l)
-      end
-   end
-
-structure Return =
-   struct
-      structure Label = Label
-      structure Handler = Handler
-
-      datatype t =
-         Dead
-       | NonTail of {cont: Label.t,
-                     handler: Handler.t}
-       | Tail
-
-      fun layout r =
-         let
-            open Layout
-         in
-            case r of
-               Dead => str "Dead"
-             | NonTail {cont, handler} =>
-                  seq [str "NonTail ",
-                       Layout.record
-                       [("cont", Label.layout cont),
-                        ("handler", Handler.layout handler)]]
-             | Tail => str "Tail"
-         end
-
-      fun equals (r, r'): bool =
-         case (r, r') of
-            (Dead, Dead) => true
-          | (NonTail {cont = c, handler = h},
-             NonTail {cont = c', handler = h'}) =>
-               Label.equals (c, c') andalso Handler.equals (h, h')
-           | (Tail, Tail) => true
-           | _ => false
-
-      fun foldLabel (r: t, a, f) =
-         case r of
-            Dead => a
-          | NonTail {cont, handler} =>
-               Handler.foldLabel (handler, f (cont, a), f)
-          | Tail => a
-
-      fun foreachLabel (r, f) = foldLabel (r, (), f o #1)
-
-      fun foreachHandler (r, f) =
-         case r of
-            Dead => ()
-          | NonTail {handler, ...} => Handler.foreachLabel (handler, f)
-          | Tail => ()
-
-      fun map (r, f) =
-         case r of
-            Dead => Dead
-          | NonTail {cont, handler} =>
-               NonTail {cont = f cont,
-                        handler = Handler.map (handler, f)}
-          | Tail => Tail
-
-      fun compose (r, r') =
-         case r' of
-            Dead => Dead
-          | NonTail {cont, handler} =>
-               NonTail
-               {cont = cont,
-                handler = (case handler of
-                              Handler.Caller =>
-                                 (case r of
-                                     Dead => Handler.Caller
-                                   | NonTail {handler, ...} => handler
-                                   | Tail => Handler.Caller)
-                            | Handler.Dead => handler
-                            | Handler.Handle _ => handler)}
-          | Tail => r
-      (* quell unused warning *)
-      val _ = compose
-
-      local
-         val newHash = Random.word
-         val dead = newHash ()
-         val nonTail = newHash ()
-         val tail = newHash ()
-      in
-         fun hash r =
-            case r of
-               Dead => dead
-             | NonTail {cont, handler} =>
-                  Hash.combine3 (nonTail, Label.hash cont, Handler.hash handler)
-             | Tail => tail
-      end
-   end
-
 structure Transfer =
    struct
       datatype t =
@@ -1104,7 +889,7 @@ structure Transfer =
                   func: Func.t,
                   return: Return.t}
        | Case of {test: Var.t,
-                  cases: Cases.t,
+                  cases: (Con.t, Label.t) Cases.t,
                   default: Label.t option} (* Must be nullary. *)
        | Goto of {dst: Label.t,
                   args: Var.t vector}
@@ -1303,7 +1088,7 @@ structure Transfer =
           | (Case {test, cases, default},
              Case {test = test', cases = cases', default = default'}) =>
                Var.equals (test, test')
-               andalso Cases.equals (cases, cases')
+               andalso Cases.equals (cases, cases', Con.equals, Label.equals)
                andalso Option.equals (default, default', Label.equals)
           | (Goto {dst, args}, Goto {dst = dst', args = args'}) =>
                Label.equals (dst, dst') andalso

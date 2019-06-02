@@ -16,6 +16,7 @@ signature ATOMS' =
       include ATOMS_STRUCTS
 
       structure AdmitsEquality: ADMITS_EQUALITY
+      structure Cases: CASES
       structure CFunction: C_FUNCTION
       structure CType: C_TYPE
       structure CharSize: CHAR_SIZE
@@ -24,6 +25,7 @@ signature ATOMS' =
       structure Ffi: FFI
       structure Field: FIELD
       structure Func: FUNC
+      structure Handler: HANDLER
       structure IntSize: INT_SIZE
       structure Label: LABEL
       structure Prim: PRIM
@@ -32,6 +34,7 @@ signature ATOMS' =
       structure RealSize: REAL_SIZE
       structure RealX: REAL_X
       structure Record: RECORD
+      structure Return: RETURN
       structure SortedRecord: RECORD
       structure SourceInfo: SOURCE_INFO
       structure SourceMaps: SOURCE_MAPS
@@ -51,16 +54,18 @@ signature ATOMS' =
       sharing Con = Prim.Con
       sharing Const = Prim.Const
       sharing Field = Record.Field = SortedRecord.Field
+      sharing Handler = Return.Handler
       sharing IntSize = Tycon.IntSize
+      sharing Label = Handler.Label = Return.Label
       sharing ProfileLabel = SourceMaps.ProfileLabel
       sharing RealSize = CType.RealSize = Prim.RealSize = RealX.RealSize
          = Tycon.RealSize
       sharing RealX = Const.RealX
       sharing SourceInfo = ProfileExp.SourceInfo
       sharing TyconKind = Tycon.Kind
-      sharing WordSize = CType.WordSize = Prim.WordSize = Tycon.WordSize
-         = WordX.WordSize
-      sharing WordX = Const.WordX = WordXVector.WordX
+      sharing WordSize = Cases.WordSize = CType.WordSize = Prim.WordSize
+         = Tycon.WordSize = WordX.WordSize
+      sharing WordX = Cases.WordX = Const.WordX = WordXVector.WordX
       sharing WordXVector = Const.WordXVector
    end
 
@@ -82,11 +87,13 @@ signature ATOMS =
       sharing CFunction = Atoms.CFunction
       sharing CType = Atoms.CType
       sharing CharSize = Atoms.CharSize
+      sharing Cases = Atoms.Cases
       sharing Con = Atoms.Con
       sharing Const = Atoms.Const
       sharing Ffi = Atoms.Ffi
       sharing Field = Atoms.Field
       sharing Func = Atoms.Func
+      sharing Handler = Atoms.Handler
       sharing IntSize = Atoms.IntSize
       sharing Label = Atoms.Label
       sharing Prim = Atoms.Prim
@@ -95,6 +102,7 @@ signature ATOMS =
       sharing RealSize = Atoms.RealSize
       sharing RealX = Atoms.RealX
       sharing Record = Atoms.Record
+      sharing Return = Atoms.Return
       sharing SortedRecord = Atoms.SortedRecord
       sharing SourceInfo = Atoms.SourceInfo
       sharing SourceMaps = Atoms.SourceMaps

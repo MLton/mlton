@@ -9,8 +9,6 @@
 
 Group
 
-signature HANDLER
-signature RETURN
 signature SSA
 signature SSA2
 

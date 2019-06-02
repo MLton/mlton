@@ -64,8 +64,14 @@ local
    c-function.fun
    ffi.sig
    ffi.fun
+   cases.sig
+   cases.fun
    prim.sig
    prim.fun
+   handler.sig
+   handler.fun
+   return.sig
+   return.fun
    source-info.sig
    source-info.fun
    profile-label.sig

@@ -1,5 +1,5 @@
-(* Copyright (C) 2009 Matthew Fluet.
- * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2009,2017,2019 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -7,32 +7,28 @@
  * See the file MLton-LICENSE for details.
  *)
 
-signature CASES_STRUCTS = 
+signature CASES_STRUCTS =
    sig
-      type con
-      type word
-
-      val conEquals: con * con -> bool
-      val wordEquals: word * word -> bool
+      structure WordSize: WORD_SIZE
+      structure WordX: WORD_X
+      sharing WordSize = WordX.WordSize
    end
 
-signature CASES = 
+signature CASES =
    sig
       include CASES_STRUCTS
 
-      datatype 'a t =
-         Char of (char * 'a) vector
-       | Con of (con * 'a) vector
-       | Int of (IntInf.t * 'a) vector
-       | Word of (word * 'a) vector
+      datatype ('con, 'a) t =
+         Con of ('con * 'a) vector
+       | Word of WordSize.t * (WordX.t * 'a) vector
 
-      val equals: 'a t * 'a t * ('a * 'a -> bool) -> bool
-      val fold: 'a t * 'b * ('a * 'b -> 'b) -> 'b
-      val forall: 'a t * ('a -> bool) -> bool
-      val foreach: 'a t * ('a -> unit) -> unit
-      val foreach': 'a t * ('a -> unit) * (con -> unit) -> unit
-      val hd: 'a t -> 'a
-      val isEmpty: 'a t -> bool
-      val length: 'a t -> int
-      val map: 'a t * ('a -> 'b) -> 'b t
+      val equals: ('con, 'a) t * ('con, 'a) t * ('con * 'con -> bool) * ('a * 'a -> bool) -> bool
+      val fold: ('con, 'a) t * 'b * ('a * 'b -> 'b) -> 'b
+      val forall: ('con, 'a) t * ('a -> bool) -> bool
+      val foreach': ('con, 'a) t * ('a -> unit) * ('con -> unit) -> unit
+      val foreach: ('con, 'a) t * ('a -> unit) -> unit
+      val hd: ('con, 'a) t -> 'a
+      val isEmpty: ('con, 'a) t -> bool
+      val length: ('con, 'a) t -> int
+      val map: ('con, 'a) t * ('a -> 'b) -> ('con, 'b) t
    end
