@@ -177,6 +177,8 @@ functor OrderedField
 functor OrderedUniqueSet
 functor Pair
 functor PolyEnv
+functor PowerSetLattice_ListSet
+functor PowerSetLattice_UniqueSet
 functor Ring
 functor RingWithIdentity
 (* functor SplayMonoEnv *)

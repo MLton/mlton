@@ -8,11 +8,14 @@ Library
 
 signature FLAT_LATTICE
 signature N_POINT_LATTICE
+signature POWERSET_LATTICE
 signature THREE_POINT_LATTICE
 signature TWO_POINT_LATTICE
 
 functor FlatLattice
 functor NPointLattice
+functor PowerSetLattice_ListSet
+functor PowerSetLattice_UniqueSet
 functor ThreePointLattice
 functor TwoPointLattice
 
@@ -25,6 +28,8 @@ flat-lattice.sig
 flat-lattice.fun
 n-point-lattice.sig
 n-point-lattice.fun
+powerset-lattice.sig
+powerset-lattice.fun
 two-point-lattice.sig
 two-point-lattice.fun
 three-point-lattice.sig
