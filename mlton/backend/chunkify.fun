@@ -55,34 +55,17 @@ fun blockSize (Block.T {statements, transfer, ...}): int =
    end
 
 (* Compute the list of functions that each function returns to *)
+structure Labels = PowerSetLattice_ListSet(structure Element = Label)
 fun returnsTo (Program.T {functions, main, ...}) =
    let
       val functions = main :: functions
-      val {get: Func.t -> {returnsTo: Label.t list ref,
-                           tailCalls: Func.t list ref},
+      val {get: Func.t -> {returnsTo: Labels.t},
            rem, ...} =
          Property.get (Func.plist,
                        Property.initFun (fn _ =>
-                                         {returnsTo = ref [],
-                                          tailCalls = ref []}))
-      fun returnTo (f: Func.t, j: Label.t): unit =
-         let
-            val {returnsTo, tailCalls} = get f
-         in
-            if List.exists (!returnsTo, fn j' => Label.equals (j, j'))
-               then ()
-            else (List.push (returnsTo, j)
-                  ; List.foreach (!tailCalls, fn f => returnTo (f, j)))
-         end
-      fun tailCall (from: Func.t, to: Func.t): unit =
-         let
-            val {returnsTo, tailCalls} = get from
-         in
-            if List.exists (!tailCalls, fn f => Func.equals (to, f))
-               then ()
-            else (List.push (tailCalls, to)
-                  ; List.foreach (!returnsTo, fn j => returnTo (to, j)))
-         end
+                                         {returnsTo = Labels.empty ()}))
+      val returnsTo = #returnsTo o get
+      val empty = Labels.empty ()
       val _ =
          List.foreach
          (functions, fn f =>
@@ -92,16 +75,21 @@ fun returnsTo (Program.T {functions, main, ...}) =
              Vector.foreach
              (blocks, fn Block.T {transfer, ...} =>
               case transfer of
-                 Call {func, return, ...} => (case return of
-                                                 Return.NonTail {cont, ...} =>
-                                                    returnTo (func, cont)
-                                               | _ => tailCall (name, func))
-
-               | _ => ())
+                 Call {func, return, ...} =>
+                    let
+                       val returns =
+                          case return of
+                             Return.Dead => empty
+                           | Return.NonTail {cont, ...} => Labels.singleton cont
+                           | Return.Tail => returnsTo name
+                    in
+                       Labels.<= (returns, returnsTo func)
+                    end
+                 | _ => ())
           end)
    in
       {rem = rem,
-       returnsTo = ! o #returnsTo o get}
+       returnsTo = Labels.getElements o returnsTo}
    end
 
 structure Graph = EquivalenceGraph
