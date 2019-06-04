@@ -152,55 +152,26 @@ fun toMachine (program: Ssa.Program.t, codegen) =
       fun rssaSimplify p = 
          let
             open Rssa
-            fun pass ({name, doit}, p) =
-               let
-                  val _ =
-                     Control.maybeSaveToFile
-                     {arg = p,
-                      name = (name, SOME "pre"),
-                      toFile = R.Program.toFile}
-                  val p =
-                     Control.passTypeCheck
-                     {name = (name, SOME "post"),
-                      stats = Program.layoutStats,
-                      thunk = fn () => doit p,
-                      toFile = Program.toFile,
-                      typeCheck = Program.typeCheck}
-               in
-                  p
-               end 
-            fun maybePass ({name, doit, execute}, p) =
-               if List.foldr (!Control.executePasses, execute, fn ((re, new), old) =>
-                  if Regexp.Compiled.matchesAll (re, name)
-                     then new
-                     else old)
-               then pass ({name = name, doit = doit}, p)
-               else (Control.messageStr (Control.Pass, name ^ " skipped"); p)
-            val p = maybePass ({name = "rssaShrink1",
-                                doit = Program.shrink,
-                                execute = true}, p)
-            val p = pass ({name = "insertLimitChecks", 
-                           doit = LimitCheck.transform}, p)
-            val p = pass ({name = "insertSignalChecks", 
-                           doit = SignalCheck.transform}, p)
-            (* must be before implementHandlers *)
-            val p = maybePass ({name = "bounceVars",
-                                doit = BounceVars.transform,
-                                execute = true}, p)
-            val p = pass ({name = "implementHandlers", 
-                           doit = ImplementHandlers.transform}, p)
-            val p = maybePass ({name = "rssaShrink2", 
-                                doit = Program.shrink,
-                                execute = true}, p)
-            val () = Program.checkHandlers p
-            val p = pass ({name = "implementProfiling",
-                           doit = ImplementProfiling.transform}, p)
-            val p = maybePass ({name = "rssaOrderFunctions", 
-                                doit = Program.orderFunctions,
-                                execute = true}, p)
-            val p = maybePass ({name = "rssaShuffle",
-                                doit = Program.shuffle,
-                                execute = false}, p)
+            val rssaPasses =
+               {name = "rssaShrink1", doit = Program.shrink, execute = true} ::
+               {name = "insertLimitChecks", doit = LimitCheck.transform, execute = true} ::
+               {name = "insertSignalChecks", doit = SignalCheck.transform, execute = true} ::
+               (* must be before implementHandlers *)
+               {name = "bounceVars", doit = BounceVars.transform, execute = true} ::
+               {name = "implementHandlers", doit = ImplementHandlers.transform, execute = true} ::
+               {name = "rssaShrink2", doit = Program.shrink, execute = true} ::
+               (* val () = Program.checkHandlers p *)
+               {name = "implementProfiling", doit = ImplementProfiling.transform, execute = true} ::
+               {name = "rssaOrderFunctions", doit = Program.orderFunctions, execute = true} ::
+               {name = "rssaShuffle", doit = Program.shuffle, execute = false} ::
+               nil
+            val p =
+               Control.simplePasses
+               {arg = p,
+                passes = rssaPasses,
+                stats = Program.layoutStats,
+                toFile = Program.toFile,
+                typeCheck = Program.typeCheck}
          in
             p
          end
