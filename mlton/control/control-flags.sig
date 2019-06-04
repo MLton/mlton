@@ -268,9 +268,6 @@ signature CONTROL_FLAGS =
       (* name of the output library *)
       val libname : string ref
 
-      (* Number of times to loop through optimization passes. *)
-      val loopSsa2Passes: int ref
-
       (* Limit the code growth loop unrolling/unswitching will allow. *)
       val loopUnrollLimit: int ref
       val loopUnswitchLimit: int ref
