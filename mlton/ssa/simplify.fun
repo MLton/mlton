@@ -291,20 +291,6 @@ fun simplify p =
       val _ = typeCheck p
       val ssaPasses = AppendList.fromList (!ssaPasses)
       val ssaPasses =
-         if !Control.loopSsaPasses > 1
-            then (AppendList.appends o List.tabulate)
-                 (!Control.loopSsaPasses, fn i =>
-                  let
-                     val namex = "." ^ Int.toString i
-                  in
-                     AppendList.map
-                     (ssaPasses, fn {name, doit, execute} =>
-                      {name = name ^ namex,
-                       doit = doit,
-                       execute = execute})
-                   end)
-            else ssaPasses
-      val ssaPasses =
          if !Control.profile <> Control.ProfileNone
             andalso !Control.profileIL = Control.ProfileSSA
             then AppendList.snoc (ssaPasses,

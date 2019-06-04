@@ -955,10 +955,6 @@ val libTargetDir = control {name = "lib target dir",
 
 val libname = ref ""
 
-val loopSsaPasses = control {name = "loop ssa passes",
-                             default = 1,
-                             toString = Int.toString}
-
 val loopSsa2Passes = control {name = "loop ssa2 passes",
                               default = 1,
                               toString = Int.toString}
