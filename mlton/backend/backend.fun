@@ -140,15 +140,15 @@ fun eliminateDeadCode (f: R.Function.t): R.Function.t =
                       start = start}
    end
 
-fun toMachine (program: Ssa.Program.t, codegen) =
+fun toMachine (ssa: Ssa.Program.t, codegen) =
    let
-      fun pass (name, doit, program) =
-         Control.passTypeCheck {name = (name, NONE),
-                                stats = R.Program.layoutStats,
-                                thunk = fn () => doit program,
-                                toFile = R.Program.toFile,
-                                typeCheck = R.Program.typeCheck}
-      val program = pass ("toRssa", SsaToRssa.convert, (program, codegen))
+      val rssa =
+         Control.passTypeCheck
+         {name = ("toRssa", NONE),
+          stats = R.Program.layoutStats,
+          thunk = fn () => SsaToRssa.convert (ssa, codegen),
+          toFile = R.Program.toFile,
+          typeCheck = R.Program.typeCheck}
       fun rssaSimplify p = 
          let
             open Rssa
@@ -175,19 +175,21 @@ fun toMachine (program: Ssa.Program.t, codegen) =
          in
             p
          end
-      val program =
-         Control.passTypeCheck
-         {name = ("rssaSimplify", NONE),
+      val rssa =
+         Control.simplePass
+         {arg = rssa,
+          doit = rssaSimplify,
+          execute = true,
+          name = "rssaSimplify",
           stats = Rssa.Program.layoutStats,
-          thunk = fn () => rssaSimplify program,
-          toFile = R.Program.toFile,
-          typeCheck = R.Program.typeCheck}
+          toFile = Rssa.Program.toFile,
+          typeCheck = Rssa.Program.typeCheck}
       val _ =
          let
             open Control
          in
             if !keepRSSA
-               then saveToFile {arg = program,
+               then saveToFile {arg = rssa,
                                 name = NONE,
                                 toFile = Rssa.Program.toFile}
             else ()
@@ -199,7 +201,7 @@ fun toMachine (program: Ssa.Program.t, codegen) =
           toFile = Machine.Program.toFile,
           thunk = fn () =>
 let
-      val R.Program.T {functions, handlesSignals, main, objectTypes, profileInfo} = program
+      val R.Program.T {functions, handlesSignals, main, objectTypes, profileInfo} = rssa
       (* Chunk info *)
       val {get = labelChunk, set = setLabelChunk, ...} =
          Property.getSetOnce (Label.plist,
@@ -218,7 +220,7 @@ let
       (* Set funcChunk and labelChunk. *)
       val _ =
          Vector.foreach
-         (Chunkify.chunkify program, fn {funcs, labels} =>
+         (Chunkify.chunkify rssa, fn {funcs, labels} =>
           let 
              val c = newChunk ()
              val _ = Vector.foreach (funcs, fn f => setFuncChunk (f, c))

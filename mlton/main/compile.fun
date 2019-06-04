@@ -516,13 +516,16 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
    end
 
 fun simplifyXml xml =
-   let val xml =
-      Control.passTypeCheck
-      {name = ("xmlSimplify", NONE),
-       stats = Xml.Program.layoutStats,
-       thunk = fn () => Xml.simplify xml,
-       toFile = Xml.Program.toFile,
-       typeCheck = Xml.typeCheck}
+   let
+      val xml =
+         Control.simplePass
+         {arg = xml,
+          doit = Xml.simplify,
+          execute = true,
+          name = "xmlSimplify",
+          stats = Xml.Program.layoutStats,
+          toFile = Xml.Program.toFile,
+          typeCheck = Xml.typeCheck}
       open Control
       val _ =
          if !keepXML
@@ -543,10 +546,12 @@ fun makeSxml xml =
 fun simplifySxml sxml =
    let
       val sxml =
-         Control.passTypeCheck
-         {name = ("sxmlSimplify", NONE),
+         Control.simplePass
+         {arg = sxml,
+          doit = Sxml.simplify,
+          execute = true,
+          name = "sxmlSimplify",
           stats = Sxml.Program.layoutStats,
-          thunk = fn () => Sxml.simplify sxml,
           toFile = Sxml.Program.toFile,
           typeCheck = Sxml.typeCheck}
       open Control
@@ -569,10 +574,12 @@ fun makeSsa sxml =
 fun simplifySsa ssa =
    let
       val ssa =
-         Control.passTypeCheck
-         {name = ("ssaSimplify", NONE),
+         Control.simplePass
+         {arg = ssa,
+          doit = Ssa.simplify,
+          execute = true,
+          name = "ssaSimplify",
           stats = Ssa.Program.layoutStats,
-          thunk = fn () => Ssa.simplify ssa,
           toFile = Ssa.Program.toFile,
           typeCheck = Ssa.typeCheck}
       open Control
@@ -595,10 +602,12 @@ fun makeSsa2 ssa =
 fun simplifySsa2 ssa2 =
    let
       val ssa2 =
-         Control.passTypeCheck
-         {name = ("ssa2Simplify", NONE),
+         Control.simplePass
+         {arg = ssa2,
+          doit = Ssa2.simplify,
+          execute = true,
+          name = "ssa2Simplify",
           stats = Ssa2.Program.layoutStats,
-          thunk = fn () => Ssa2.simplify ssa2,
           toFile = Ssa2.Program.toFile,
           typeCheck = Ssa2.typeCheck}
       open Control
