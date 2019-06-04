@@ -238,5 +238,6 @@ signature SSA_TREE =
             val layoutStats: t -> Layout.t
             val mainFunction: t -> Function.t
             val parse: unit -> t Parse.t
+            val toFile: {style: Control.style, suffix: string, display: t Control.display}
          end
    end

@@ -1100,6 +1100,8 @@ structure Program =
             ; output (Exp.layout body)
          end
 
+      val toFile = {display = Control.Layouts layouts, style = Control.ML, suffix = "xml"}
+
       fun parse () =
          let
             open Parse

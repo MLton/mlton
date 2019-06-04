@@ -1,4 +1,4 @@
-(* Copyright (C) 2015,2017 Matthew Fluet
+(* Copyright (C) 2015,2017,2019 Matthew Fluet
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -189,5 +189,6 @@ signature CORE_ML =
             datatype t = T of {decs: Dec.t vector}
 
             val layouts: t * (Layout.t -> unit) -> unit
+            val toFile: {display: t Control.display, style: Control.style, suffix: string}
          end
    end

@@ -926,6 +926,8 @@ structure Program =
             ; List.foreach (functions, fn f => Function.layouts (f, output))
          end
 
+      val toFile = {display = Control.Layouts layouts, style = Control.ML, suffix = "rssa"}
+
       fun layoutStats (T {functions, main, objectTypes, ...}) =
          let
             val numStatements = ref 0

@@ -812,6 +812,8 @@ structure Program =
             ; List.foreach (chunks, fn chunk => Chunk.layouts (chunk, output))
          end
 
+      val toFile = {display = Control.Layouts layouts, style = Control.ML, suffix = "machine"}
+
       structure Alloc =
          struct
             datatype t = T of Live.t list

@@ -237,5 +237,6 @@ signature XML_TREE =
             val layouts: t * (Layout.t -> unit) -> unit
             val layoutStats: t -> Layout.t
             val parse: unit -> t Parse.t
+            val toFile: {display: t Control.display, style: Control.style, suffix: string}
          end
    end

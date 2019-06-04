@@ -1765,6 +1765,8 @@ structure Program =
                  end
          end
 
+      val toFile = {display = Control.Layouts layouts, style = Control.ML, suffix = "ssa"}
+
       fun parse () =
          let
             open Parse

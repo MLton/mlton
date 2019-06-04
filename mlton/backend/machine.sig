@@ -264,6 +264,7 @@ signature MACHINE =
 
             val clearLabelNames: t -> unit
             val layouts: t * (Layout.t -> unit) -> unit
+            val toFile: {display: t Control.display, style: Control.style, suffix: string}
             val typeCheck: t -> unit
          end
    end

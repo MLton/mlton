@@ -1,4 +1,4 @@
-(* Copyright (C) 2015,2017 Matthew Fluet
+(* Copyright (C) 2015,2017,2019 Matthew Fluet
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -524,6 +524,8 @@ structure Program =
             output (Layout.str "\n\nDecs:")
             ; Vector.foreach (decs, output o Dec.layout)
          end
+
+      val toFile = {display = Control.Layouts layouts, style = Control.ML, suffix = "core-ml"}
 
 (*       fun typeCheck (T {decs, ...}) =
  *       let
