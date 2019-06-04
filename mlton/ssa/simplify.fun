@@ -283,72 +283,48 @@ val ssaPassesSet = fn s =>
 val _ = List.push (Control.optimizationPasses,
                    {il = "ssa", get = ssaPassesGet, set = ssaPassesSet})
 
-fun pass ({name, doit, midfix}, p) =
-   let
-      val _ =
-         Control.maybeSaveToFile
-         {arg = p,
-          name = (name, SOME (midfix ^ "pre")),
-          toFile = Program.toFile}
-      val p =
-         Control.passTypeCheck
-         {name = (name, SOME (midfix ^ "post")),
-          stats = Program.layoutStats,
-          thunk = fn () => doit p,
-          toFile = Program.toFile,
-          typeCheck = typeCheck}
-   in
-      p
-   end 
-fun maybePass ({name, doit, execute, midfix}, p) =
-   if List.foldr (!Control.executePasses, execute, fn ((re, new), old) =>
-                  if Regexp.Compiled.matchesAll (re, name)
-                     then new
-                     else old)
-      then pass ({name = name, doit = doit, midfix = midfix}, p)
-      else (Control.messageStr (Control.Pass, name ^ " skipped"); p)
-
 fun simplify p =
    let
-      fun simplify' n p =
-         let
-            val midfix = if !Control.loopSsaPasses = 1
-                            then ""
-                         else concat [Int.toString n, "."]
-         in
-            if n = !Control.loopSsaPasses
-               then p
-            else simplify' 
-                 (n + 1)
-                 (List.fold
-                  (!ssaPasses, p, fn ({name, doit, execute}, p) =>
-                   maybePass ({name = name, doit = doit, execute = execute, midfix = midfix}, p)))
-         end
-      val p = simplify' 0 p
+      (* Always want to type check the initial and final SSA programs,
+       * even if type checking is turned off, just to catch bugs.
+       *)
+      val _ = typeCheck p
+      val ssaPasses = AppendList.fromList (!ssaPasses)
+      val ssaPasses =
+         if !Control.loopSsaPasses > 1
+            then (AppendList.appends o List.tabulate)
+                 (!Control.loopSsaPasses, fn i =>
+                  let
+                     val namex = "." ^ Int.toString i
+                  in
+                     AppendList.map
+                     (ssaPasses, fn {name, doit, execute} =>
+                      {name = name ^ namex,
+                       doit = doit,
+                       execute = execute})
+                   end)
+            else ssaPasses
+      val ssaPasses =
+         if !Control.profile <> Control.ProfileNone
+            andalso !Control.profileIL = Control.ProfileSSA
+            then AppendList.snoc (ssaPasses,
+                                  {name = "ssaAddProfile",
+                                   doit = Profile.addProfile,
+                                   execute = true})
+            else ssaPasses
+      val ssaPasses =
+         AppendList.snoc (ssaPasses, {name = "ssaOrderFunctions",
+                                      doit = S.orderFunctions,
+                                      execute = true})
+      val p =
+         Control.simplePasses
+         {arg = p,
+          passes = AppendList.toList ssaPasses,
+          stats = Program.layoutStats,
+          toFile = Program.toFile,
+          typeCheck = typeCheck}
+      val _ = typeCheck p
    in
       p
    end
-
-val simplify = fn p => let
-                         (* Always want to type check the initial and final SSA 
-                          * programs, even if type checking is turned off, just
-                          * to catch bugs.
-                          *)
-                         val _ = typeCheck p
-                         val p = simplify p
-                         val p =
-                            if !Control.profile <> Control.ProfileNone
-                               andalso !Control.profileIL = Control.ProfileSSA
-                               then pass ({name = "ssaAddProfile",
-                                           doit = Profile.addProfile,
-                                           midfix = ""}, p)
-                            else p
-                         val p = maybePass ({name = "ssaOrderFunctions",
-                                             doit = S.orderFunctions,
-                                             execute = true,
-                                             midfix = ""}, p)
-                         val _ = typeCheck p
-                       in
-                         p
-                       end
 end
