@@ -328,6 +328,4 @@ fun typeCheck (program as Program.T {datatypes, body}): unit =
 val typeCheck = 
    Trace.trace ("Xml.TypeCheck.typeCheck", Program.layout, Unit.layout) typeCheck
 
-val typeCheck = Control.trace (Control.Pass, "typeCheck") typeCheck
-
 end

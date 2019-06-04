@@ -371,15 +371,15 @@ fun passTypeCheck {name: string * string option,
                    stats: 'a -> Layout.t,
                    thunk: unit -> 'a,
                    toFile: {display: 'a display, style: style, suffix: string},
-                   typeCheck = tc: 'a -> unit}: 'a =
+                   typeCheck: 'a -> unit}: 'a =
    let
       val result = pass {name = name,
                          stats = stats,
                          thunk = thunk,
                          toFile = toFile}
       val _ =
-         if !typeCheck
-            then trace (Pass, "typeCheck") tc result
+         if !ControlFlags.typeCheck
+            then trace (Pass, "typeCheck") typeCheck result
          else ()
    in
       result

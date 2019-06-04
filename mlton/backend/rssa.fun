@@ -1524,6 +1524,8 @@ structure Program =
          in ()
          end
 
+      val checkScopes = Control.trace (Control.Detail, "checkScopes") checkScopes
+
       fun typeCheck (p as T {functions, main, objectTypes, profileInfo, ...}) =
          let
             val (checkProfileLabel, finishCheckProfileLabel, checkFrameSourceSeqIndex) =

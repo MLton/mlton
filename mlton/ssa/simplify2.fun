@@ -93,10 +93,6 @@ val _ = List.push (Control.optimizationPasses,
 
 fun simplify p =
    let
-      (* Always want to type check the initial and final SSA2 programs,
-       * even if type checking is turned off, just to catch bugs.
-       *)
-      val _ = typeCheck p
       val ssa2Passes = AppendList.fromList (!ssa2Passes)
       val ssa2Passes =
          if !Control.profile <> Control.ProfileNone
@@ -110,14 +106,19 @@ fun simplify p =
          AppendList.snoc (ssa2Passes, {name = "ssa2OrderFunctions",
                                        doit = S.orderFunctions,
                                        execute = true})
+      val ssa2Passes = AppendList.toList ssa2Passes
+      (* Always want to type check the initial and final SSA2 programs,
+       * even if type checking is turned off, just to catch bugs.
+       *)
+      val () = Control.trace (Control.Pass, "typeCheck") typeCheck p
       val p =
          Control.simplePasses
          {arg = p,
-          passes = AppendList.toList ssa2Passes,
+          passes = ssa2Passes,
           stats = Program.layoutStats,
           toFile = Program.toFile,
           typeCheck = typeCheck}
-      val _ = typeCheck p
+      val () = Control.trace (Control.Pass, "typeCheck") typeCheck p
    in
       p
    end

@@ -79,11 +79,11 @@ val _ = List.push (Control.optimizationPasses,
 
 fun simplify p =
    let
+      val xmlPasses = !xmlPasses
       (* Always want to type check the initial and final XML programs,
        * even if type checking is turned off, just to catch bugs.
        *)
-      val _ = typeCheck p
-      val xmlPasses = !xmlPasses
+      val () = Control.trace (Control.Pass, "typeCheck") typeCheck p
       val p =
          Control.simplePasses
          {arg = p,
@@ -91,7 +91,7 @@ fun simplify p =
           stats = Program.layoutStats,
           toFile = Program.toFile,
           typeCheck = typeCheck}
-      val _ = typeCheck p
+      val () = Control.trace (Control.Pass, "typeCheck") typeCheck p
    in
       p
    end
