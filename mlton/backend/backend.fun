@@ -143,42 +143,32 @@ fun eliminateDeadCode (f: R.Function.t): R.Function.t =
 fun toMachine (program: Ssa.Program.t, codegen) =
    let
       fun pass (name, doit, program) =
-         Control.passTypeCheck {display = Control.Layouts Rssa.Program.layouts,
-                                name = name,
+         Control.passTypeCheck {name = (name, NONE),
                                 stats = R.Program.layoutStats,
-                                style = Control.ML,
-                                suffix = "rssa",
                                 thunk = fn () => doit program,
+                                toFile = R.Program.toFile,
                                 typeCheck = R.Program.typeCheck}
       val program = pass ("toRssa", SsaToRssa.convert, (program, codegen))
       fun rssaSimplify p = 
          let
             open Rssa
-            fun pass' ({name, doit}, sel, p) =
+            fun pass ({name, doit}, p) =
                let
                   val _ =
-                     let open Control
-                     in maybeSaveToFile
-                        ({name = name, 
-                          suffix = "pre.rssa"},
-                         Control.ML, p, Control.Layouts Program.layouts)
-                     end
+                     Control.maybeSaveToFile
+                     {arg = p,
+                      name = (name, SOME "pre"),
+                      toFile = R.Program.toFile}
                   val p =
                      Control.passTypeCheck
-                     {display = Control.Layouts
-                                (fn (r,output) =>
-                                 Program.layouts (sel r, output)),
-                      name = name,
-                      stats = Program.layoutStats o sel,
-                      style = Control.ML,
-                      suffix = "post.rssa",
+                     {name = (name, SOME "post"),
+                      stats = Program.layoutStats,
                       thunk = fn () => doit p,
-                      typeCheck = Program.typeCheck o sel}
+                      toFile = Program.toFile,
+                      typeCheck = Program.typeCheck}
                in
                   p
                end 
-            fun pass ({name, doit}, p) =
-               pass' ({name = name, doit = doit}, fn p => p, p)
             fun maybePass ({name, doit, execute}, p) =
                if List.foldr (!Control.executePasses, execute, fn ((re, new), old) =>
                   if Regexp.Compiled.matchesAll (re, name)
@@ -216,31 +206,26 @@ fun toMachine (program: Ssa.Program.t, codegen) =
          end
       val program =
          Control.passTypeCheck
-         {display = Control.Layouts Rssa.Program.layouts,
-          name = "rssaSimplify",
+         {name = ("rssaSimplify", NONE),
           stats = Rssa.Program.layoutStats,
-          style = Control.ML,
-          suffix = "rssa",
           thunk = fn () => rssaSimplify program,
+          toFile = R.Program.toFile,
           typeCheck = R.Program.typeCheck}
       val _ =
          let
             open Control
          in
             if !keepRSSA
-               then saveToFile ({suffix = "rssa"},
-                                Control.ML,
-                                program,
-                                Layouts Rssa.Program.layouts)
+               then saveToFile {arg = program,
+                                name = NONE,
+                                toFile = Rssa.Program.toFile}
             else ()
          end
       val program =
          Control.pass
-         {display = Control.Layouts M.Program.layouts,
-          name = "toMachine",
+         {name = ("toMachine", NONE),
           stats = fn _ => Layout.empty,
-          style = Control.No,
-          suffix = "machine",
+          toFile = Machine.Program.toFile,
           thunk = fn () =>
 let
       val R.Program.T {functions, handlesSignals, main, objectTypes, profileInfo} = program
@@ -1236,31 +1221,23 @@ let
 
       local
          open Machine
-         fun pass' ({name, doit}, sel, p) =
+         fun pass ({name, doit}, p) =
             let
                val _ =
-                  let open Control
-                  in maybeSaveToFile
-                     ({name = name,
-                       suffix = "pre.machine"},
-                      Control.No, p, Control.Layouts Program.layouts)
-                  end
+                  Control.maybeSaveToFile
+                  {arg = p,
+                   name = (name, SOME "pre"),
+                   toFile = Program.toFile}
                val p =
                   Control.passTypeCheck
-                  {display = Control.Layouts
-                             (fn (r,output) =>
-                              Program.layouts (sel r, output)),
-                   name = name,
+                  {name = (name, SOME "post"),
                    stats = fn _ => Layout.empty,
-                   style = Control.No,
-                   suffix = "post.machine",
                    thunk = fn () => doit p,
-                   typeCheck = Program.typeCheck o sel}
+                   toFile = Program.toFile,
+                   typeCheck = Program.typeCheck}
             in
                p
             end
-         fun pass ({name, doit}, p) =
-            pass' ({name = name, doit = doit}, fn p => p, p)
          fun maybePass ({name, doit, execute}, p) =
             if List.foldr (!Control.executePasses, execute, fn ((re, new), old) =>
                if Regexp.Compiled.matchesAll (re, name)

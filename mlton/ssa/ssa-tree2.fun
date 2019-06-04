@@ -1691,13 +1691,12 @@ structure Function =
                         layoutDot (f, layoutVar)
                      val name = Func.toString name
                      fun doit (s, g) =
-                        let
-                           open Control
-                        in
-                           saveToFile
-                           ({suffix = concat [name, ".", s, ".dot"]},
-                            Dot, (), Layout (fn () => g))
-                        end
+                        Control.saveToFile
+                        {arg = (),
+                         name = SOME (concat [name, ".", s]),
+                         toFile = {display = Control.Layout (fn () => g),
+                                   style = Control.Dot,
+                                   suffix = ".dot"}}
                      val _ = doit ("cfg", controlFlowGraph)
                         handle _ => Error.warning "SsaTree2.layouts: couldn't layout cfg"
                      val _ = doit ("dom", dominatorTree ())
@@ -2030,14 +2029,12 @@ structure Program =
             ; if not (!Control.keepDot)
                  then ()
               else
-                 let
-                    open Control
-                 in
-                    saveToFile
-                    ({suffix = "call-graph.dot"},
-                     Dot, (), Layout (fn () =>
-                                      layoutCallGraph (p, !Control.inputFile)))
-                 end
+                 Control.saveToFile
+                 {arg = (),
+                  name = SOME "call-graph",
+                  toFile = {display = Control.Layout (fn () => layoutCallGraph (p, !Control.inputFile)),
+                            style = Control.Dot,
+                            suffix = "dot"}}
          end
 
       val toFile = {display = Control.Layouts layouts, style = Control.ML, suffix = "ssa"}

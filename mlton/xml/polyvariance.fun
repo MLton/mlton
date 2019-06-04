@@ -434,11 +434,9 @@ val transform =
                else let
                        val p =
                           Control.pass
-                          {display = Control.Layouts Program.layouts,
-                           name = "duplicate" ^ (Int.toString (n + 1)),
+                          {name = ("duplicate", SOME (Int.toString (n + 1))),
                            stats = Program.layoutStats,
-                           style = Control.ML,
-                           suffix = "post.xml",
+                           toFile = Program.toFile,
                            thunk = fn () => shrink (transform (p, hofo, small, product))}
                     in
                        loop (p, n + 1)

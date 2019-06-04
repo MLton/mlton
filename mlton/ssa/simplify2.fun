@@ -94,20 +94,16 @@ val _ = List.push (Control.optimizationPasses,
 fun pass ({name, doit, midfix}, p) =
    let
       val _ =
-         let open Control
-         in maybeSaveToFile
-            ({name = name, 
-              suffix = midfix ^ "pre.ssa2"},
-             Control.ML, p, Control.Layouts Program.layouts)
-         end
+         Control.maybeSaveToFile
+         {arg = p,
+          name = (name, SOME (midfix ^ "pre")),
+          toFile = Program.toFile}
       val p =
          Control.passTypeCheck
-         {display = Control.Layouts Program.layouts,
-          name = name,
+         {name = (name, SOME (midfix ^ "post")),
           stats = Program.layoutStats,
-          style = Control.ML,
-          suffix = midfix ^ "post.ssa2",
           thunk = fn () => doit p,
+          toFile = Program.toFile,
           typeCheck = typeCheck}
    in
       p

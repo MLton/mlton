@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -55,24 +55,24 @@ signature CONTROL =
       val diagnostic: (unit -> Layout.t) -> unit
       val diagnostics: ((Layout.t -> unit) -> unit) -> unit
       val maybeSaveToFile:
-         {name: string, suffix: string} * style * 'a * 'a display -> unit
+         {arg: 'a,
+          name: (string * string option),
+          toFile: {display: 'a display, style: style, suffix: string}} -> unit
       val saveToFile:
-         {suffix: string} * style * 'a * 'a display -> unit
+         {arg: 'a,
+          name: string option,
+          toFile: {display: 'a display, style: style, suffix: string}} -> unit
       val outputHeader: style * (Layout.t -> unit) -> unit
       val outputHeader': style * Out.t -> unit
 
-      val pass: {display: 'a display,
-                 name: string,
+      val pass: {name: (string * string option),
                  stats: 'a -> Layout.t,
-                 style: style,
-                 suffix: string,
-                 thunk: unit -> 'a} -> 'a
+                 thunk: unit -> 'a,
+                 toFile: {display: 'a display, style: style, suffix: string}} -> 'a
 
-      val passTypeCheck: {display: 'a display,
-                          name: string,
+      val passTypeCheck: {name: (string * string option),
                           stats: 'a -> Layout.t,
-                          style: style,
-                          suffix: string,
                           thunk: unit -> 'a,
+                          toFile: {display: 'a display, style: style, suffix: string},
                           typeCheck: 'a -> unit} -> 'a
    end

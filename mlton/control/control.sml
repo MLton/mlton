@@ -12,19 +12,24 @@ struct
 
 open ControlFlags
 
-datatype style = No | Assembly | C | Dot | LLVM | ML
+structure CommentStyle =
+struct
+   datatype t = No | Assembly | C | Dot | LLVM | ML
 
-val preSuf =
-   fn No => ("", "")
-    | Assembly => ("/* ", " */")
-    | C => ("/* ", " */")
-    | Dot => ("// ", "")
-    | LLVM => ("; ", "")
-    | ML => ("(* ", " *)")
+   val preSuf =
+      fn No => ("", "")
+       | Assembly => ("/* ", " */")
+       | C => ("/* ", " */")
+       | Dot => ("// ", "")
+       | LLVM => ("; ", "")
+       | ML => ("(* ", " *)")
+
+end
+datatype style = datatype CommentStyle.t
 
 fun outputHeader (style: style, output: Layout.t -> unit) =
    let
-      val (pre, suf) = preSuf style
+      val (pre, suf) = CommentStyle.preSuf style
    in
       output (Layout.str (concat [pre, Version.banner, suf]));
       if Verbosity.< (!verbosity, Verbosity.Detail)
@@ -33,9 +38,7 @@ fun outputHeader (style: style, output: Layout.t -> unit) =
    end
 
 fun outputHeader' (style, out: Out.t) =
-   outputHeader (style, fn l =>
-                 (Layout.output (l, out);
-                  Out.newline out))
+   outputHeader (style, fn l => Layout.outputl (l, out))
 
 val depth: int ref = ref 0
 fun getDepth () = !depth
@@ -258,38 +261,45 @@ fun diagnostics f =
 
 fun diagnostic f = diagnostics (fn disp => disp (f ()))
 
-fun saveToFile ({suffix: string},
-                style,
-                a: 'a,
-                d: 'a display): unit =
+fun saveToFile {arg: 'a,
+                name: string option,
+                toFile = {display: 'a display, style: style, suffix: string}}: unit =
    let
+      val name =
+         case name of
+            NONE => concat [!inputFile, ".", suffix]
+          | SOME name => concat [!inputFile, ".", name, ".", suffix]
       fun doit f =
          trace (Pass, "display")
          Ref.fluidLet
-         (inputFile, concat [!inputFile, ".", suffix], fn () =>
+         (inputFile, name, fn () =>
           File.withOut (!inputFile, fn out =>
                         f (fn l => (Layout.outputl (l, out)))))
    in
-      case d of
+      case display of
          NoDisplay => ()
        | Layout layout =>
             doit (fn output =>
                   (outputHeader (style, output)
-                   ; output (layout a)))
+                   ; output (layout arg)))
        | Layouts layout =>
             doit (fn output =>
                   (outputHeader (style, output)
-                   ; layout (a, output)))
+                   ; layout (arg, output)))
    end
 
-fun maybeSaveToFile ({name: string, suffix: string},
-                     style: style,
-                     a: 'a,
-                     d: 'a display): unit =
+fun maybeSaveToFile {arg: 'a, name = (name: string, namex: string option), toFile}: unit =
    if not (List.exists (!keepPasses, fn re =>
                         Regexp.Compiled.matchesAll (re, name)))
       then ()
-   else saveToFile ({suffix = concat [name, ".", suffix]}, style, a, d)
+      else let
+              val name =
+                 case namex of
+                    NONE => name
+                  | SOME namex => concat [name, ".", namex]
+           in
+              saveToFile {arg = arg, name = SOME name, toFile = toFile}
+           end
 
 (* Code for diagnosing a pass. *)
 val wrapDiagnosing =
@@ -301,13 +311,16 @@ val wrapDiagnosing =
    else fn () =>
         let
            val result = ref NONE
+           val display =
+              Layouts (fn ((), output) =>
+                       (diagnosticWriter := SOME output
+                        ; result := SOME (thunk ())
+                        ; diagnosticWriter := NONE))
            val _ =
               saveToFile
-              ({suffix = concat [name, ".diagnostic"]}, No, (),
-               Layouts (fn ((), disp) =>
-                        (diagnosticWriter := SOME disp
-                         ; result := SOME (thunk ())
-                         ; diagnosticWriter := NONE)))
+              {arg = (),
+               name = SOME name,
+               toFile = {display = display, style = No, suffix = "diagnostic"}}
         in
            valOf (!result)
         end
@@ -332,12 +345,10 @@ val wrapProfiling =
                 end
    else thunk
 
-fun pass {display: 'a display,
-          name: string,
-          suffix: string,
+fun pass {name = (name: string, namex: string option),
           stats: 'a -> Layout.t,
-          style: style,
-          thunk: unit -> 'a}: 'a =
+          thunk: unit -> 'a,
+          toFile: {display: 'a display, style: style, suffix: string}}: 'a =
    let
       val thunk = wrapDiagnosing {name = name, thunk = thunk}
       val thunk = wrapProfiling {name = name, thunk = thunk}
@@ -345,32 +356,27 @@ fun pass {display: 'a display,
       val verb = Detail
       val _ = message (verb, fn () => Layout.str (concat [name, " stats"]))
       val _ = indent ()
-      val _ = message (verb, fn () => sizeMessage (suffix, result))
+      val _ = message (verb, fn () => sizeMessage (#suffix toFile, result))
       val _ = message (verb, fn () => stats result)
       val _ = message (verb, PropertyList.stats)
       val _ = message (verb, HashSet.stats)
       val _ = unindent ()
       val _ = checkForErrors name
-      val _ = maybeSaveToFile ({name = name, suffix = suffix},
-                               style, result, display)
+      val _ = maybeSaveToFile {arg = result, name = (name, namex), toFile = toFile}
    in
       result
    end
 
-fun passTypeCheck {display: 'a display,
-                   name: string,
+fun passTypeCheck {name: string * string option,
                    stats: 'a -> Layout.t,
-                   style: style,
-                   suffix: string,
                    thunk: unit -> 'a,
+                   toFile: {display: 'a display, style: style, suffix: string},
                    typeCheck = tc: 'a -> unit}: 'a =
    let
-      val result = pass {display = display,
-                         name = name,
+      val result = pass {name = name,
                          stats = stats,
-                         style = style,
-                         suffix = suffix,
-                         thunk = thunk}
+                         thunk = thunk,
+                         toFile = toFile}
       val _ =
          if !typeCheck
             then trace (Pass, "typeCheck") tc result

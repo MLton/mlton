@@ -352,17 +352,15 @@ val displayEnvDecs =
 fun parseAndElaborateMLB (input: MLBString.t)
    : Env.t * (CoreML.Dec.t list * bool) vector =
    Control.pass
-   {display = displayEnvDecs,
-    name = "parseAndElaborate",
+   {name = ("parseAndElaborate", NONE),
     stats = fn _ => Layout.empty,
-    style = Control.ML,
-    suffix = "core-ml",
     thunk = (fn () =>
              (if !Control.keepAST
                  then File.remove (concat [!Control.inputFile, ".ast"])
                  else ()
               ; Const.lookup := lookupConstant
-              ; elaborateMLB (lexAndParseMLB input, {addPrim = addPrim})))}
+              ; elaborateMLB (lexAndParseMLB input, {addPrim = addPrim}))),
+    toFile = {display = displayEnvDecs, style = Control.ML, suffix = "core-ml"}}
 
 (* ------------------------------------------------- *)
 (*                   Basis Library                   *)
@@ -479,21 +477,21 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
       val _ = if !Control.elaborateOnly then raise Done else ()
       val decs =
          Control.pass
-         {display = Control.Layouts (fn (decss,output) =>
-                                     (output (Layout.str "\n\n")
-                                      ; Vector.foreach (decss, fn decs =>
-                                        List.foreach (decs, fn dec =>
-                                        output (CoreML.Dec.layout dec))))),
-          name = "deadCode",
-          suffix = "core-ml",
-          style = Control.ML,
+         {name = ("deadCode", NONE),
           stats = fn _ => Layout.empty,
           thunk = fn () => let
                               val {prog = decs} =
                                  DeadCode.deadCode {prog = decs}
                            in
                               decs
-                           end}
+                           end,
+          toFile = {display = Control.Layouts (fn (decss,output) =>
+                                               (output (Layout.str "\n\n")
+                                                ; Vector.foreach (decss, fn decs =>
+                                                  List.foreach (decs, fn dec =>
+                                                  output (CoreML.Dec.layout dec))))),
+                    style = Control.ML,
+                    suffix = "core-ml"}}
       val decs = Vector.concatV (Vector.map (decs, Vector.fromList))
       val coreML = CoreML.Program.T {decs = decs}
       val _ =
@@ -501,20 +499,17 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
             open Control
          in
             if !keepCoreML
-               then saveToFile ({suffix = "core-ml"}, Control.ML, coreML,
-                                Layouts CoreML.Program.layouts)
+               then saveToFile {arg = coreML, name = NONE, toFile = CoreML.Program.toFile}
             else ()
          end
 
 
       val xml =
          Control.passTypeCheck
-         {display = Control.Layouts Xml.Program.layouts,
-          name = "defunctorize",
+         {name = ("defunctorize", NONE),
           stats = Xml.Program.layoutStats,
-          style = Control.ML,
-          suffix = "xml",
           thunk = fn () => Defunctorize.defunctorize coreML,
+          toFile = Xml.Program.toFile,
           typeCheck = Xml.typeCheck}
    in
       xml
@@ -523,18 +518,15 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
 fun simplifyXml xml =
    let val xml =
       Control.passTypeCheck
-      {display = Control.Layouts Xml.Program.layouts,
-       name = "xmlSimplify",
+      {name = ("xmlSimplify", NONE),
        stats = Xml.Program.layoutStats,
-       style = Control.ML,
-       suffix = "xml",
        thunk = fn () => Xml.simplify xml,
+       toFile = Xml.Program.toFile,
        typeCheck = Xml.typeCheck}
       open Control
       val _ =
          if !keepXML
-            then saveToFile ({suffix = "xml"}, Control.ML, xml,
-               Layouts Xml.Program.layouts)
+            then saveToFile {arg = xml, name = NONE, toFile = Xml.Program.toFile}
             else ()
    in
       xml
@@ -542,30 +534,25 @@ fun simplifyXml xml =
 
 fun makeSxml xml =
    Control.passTypeCheck
-   {display = Control.Layouts Sxml.Program.layouts,
-    name = "monomorphise",
+   {name = ("monomorphise", NONE),
     stats = Sxml.Program.layoutStats,
-    style = Control.ML,
-    suffix = "sxml",
     thunk = fn () => Monomorphise.monomorphise xml,
+    toFile = Sxml.Program.toFile,
     typeCheck = Sxml.typeCheck}
 
 fun simplifySxml sxml =
    let
       val sxml =
          Control.passTypeCheck
-         {display = Control.Layouts Sxml.Program.layouts,
-          name = "sxmlSimplify",
+         {name = ("sxmlSimplify", NONE),
           stats = Sxml.Program.layoutStats,
-          style = Control.ML,
-          suffix = "sxml",
           thunk = fn () => Sxml.simplify sxml,
+          toFile = Sxml.Program.toFile,
           typeCheck = Sxml.typeCheck}
       open Control
       val _ =
          if !keepSXML
-            then saveToFile ({suffix = "sxml"}, Control.ML, sxml,
-               Layouts Sxml.Program.layouts)
+            then saveToFile {arg = sxml, name = NONE, toFile = Sxml.Program.toFile}
             else ()
    in
       sxml
@@ -573,30 +560,25 @@ fun simplifySxml sxml =
 
 fun makeSsa sxml =
    Control.passTypeCheck
-   {display = Control.Layouts Ssa.Program.layouts,
-    name = "closureConvert",
+   {name = ("closureConvert", NONE),
     stats = Ssa.Program.layoutStats,
-    style = Control.ML,
-    suffix = "ssa",
     thunk = fn () => ClosureConvert.closureConvert sxml,
+    toFile = Ssa.Program.toFile,
     typeCheck = Ssa.typeCheck}
 
 fun simplifySsa ssa =
    let
       val ssa =
          Control.passTypeCheck
-         {display = Control.Layouts Ssa.Program.layouts,
-          name = "ssaSimplify",
+         {name = ("ssaSimplify", NONE),
           stats = Ssa.Program.layoutStats,
-          style = Control.ML,
-          suffix = "ssa",
           thunk = fn () => Ssa.simplify ssa,
+          toFile = Ssa.Program.toFile,
           typeCheck = Ssa.typeCheck}
       open Control
       val _ =
          if !keepSSA
-            then saveToFile ({suffix = "ssa"}, ML, ssa,
-               Layouts Ssa.Program.layouts)
+            then saveToFile {arg = ssa, name = NONE, toFile = Ssa.Program.toFile}
          else ()
    in
       ssa
@@ -604,30 +586,25 @@ fun simplifySsa ssa =
 
 fun makeSsa2 ssa =
    Control.passTypeCheck
-   {display = Control.Layouts Ssa2.Program.layouts,
-    name = "toSsa2",
+   {name = ("toSsa2", NONE),
     stats = Ssa2.Program.layoutStats,
-    style = Control.ML,
-    suffix = "ssa2",
     thunk = fn () => SsaToSsa2.convert ssa,
+    toFile = Ssa2.Program.toFile,
     typeCheck = Ssa2.typeCheck}
 
 fun simplifySsa2 ssa2 =
    let
       val ssa2 =
          Control.passTypeCheck
-         {display = Control.Layouts Ssa2.Program.layouts,
-          name = "ssa2Simplify",
+         {name = ("ssa2Simplify", NONE),
           stats = Ssa2.Program.layoutStats,
-          style = Control.ML,
-          suffix = "ssa2",
           thunk = fn () => Ssa2.simplify ssa2,
+          toFile = Ssa2.Program.toFile,
           typeCheck = Ssa2.typeCheck}
       open Control
       val _ =
          if !keepSSA2
-            then saveToFile ({suffix = "ssa2"}, ML, ssa2,
-               Layouts Ssa2.Program.layouts)
+            then saveToFile {arg = ssa2, name = NONE, toFile = Ssa2.Program.toFile}
          else ()
    in
       ssa2
@@ -643,15 +620,13 @@ fun makeMachine ssa2 =
           | Control.X86Codegen => x86Codegen.implementsPrim
       val machine =
          Control.passTypeCheck
-         {display = Control.Layouts Machine.Program.layouts,
-          name = "backend",
+         {name = ("backend", NONE),
           stats = fn _ => Layout.empty,
-          style = Control.No,
-          suffix = "machine",
           thunk = fn () =>
                   (Backend.toMachine
                    (ssa2,
                     {codegenImplementsPrim = codegenImplementsPrim})),
+          toFile = Machine.Program.toFile,
           typeCheck = fn machine =>
                       (* For now, machine type check is too slow to run. *)
                       (if !Control.typeCheck
@@ -662,8 +637,7 @@ fun makeMachine ssa2 =
             open Control
          in
             if !keepMachine
-               then saveToFile ({suffix = "machine"}, No, machine,
-                                Layouts Machine.Program.layouts)
+               then saveToFile {arg = machine, name = NONE, toFile = Machine.Program.toFile}
             else ()
          end
    in
@@ -834,11 +808,8 @@ fun genFromXML (input: File.t): Machine.Program.t =
       val _ = setupConstants()
       val xml =
          Control.passTypeCheck
-         {display = Control.Layouts Xml.Program.layouts,
-          name = "xmlParse",
+         {name = ("xmlParse", NONE),
           stats = Xml.Program.layoutStats,
-          style = Control.ML,
-          suffix = "xml",
           thunk = (fn () => case
                      Parse.parseFile(Xml.Program.parse (), input)
                         of Result.Yes x => x
@@ -848,6 +819,7 @@ fun genFromXML (input: File.t): Machine.Program.t =
                             (* can't be reached *)
                             raise Fail "parse")
                    ),
+          toFile = Xml.Program.toFile,
           typeCheck = Xml.typeCheck}
       val xml = simplifyXml xml
       val sxml = makeSxml xml
@@ -871,11 +843,8 @@ fun genFromSXML (input: File.t): Machine.Program.t =
       val _ = setupConstants()
       val sxml =
          Control.passTypeCheck
-         {display = Control.Layouts Sxml.Program.layouts,
-          name = "sxmlParse",
+         {name = ("sxmlParse", NONE),
           stats = Sxml.Program.layoutStats,
-          style = Control.ML,
-          suffix = "sxml",
           thunk = (fn () => case
                      Parse.parseFile(Sxml.Program.parse (), input)
                         of Result.Yes x => x
@@ -885,6 +854,7 @@ fun genFromSXML (input: File.t): Machine.Program.t =
                             (* can't be reached *)
                             raise Fail "parse")
                    ),
+          toFile = Sxml.Program.toFile,
           typeCheck = Sxml.typeCheck}
       val sxml = simplifySxml sxml
       val ssa = makeSsa sxml
@@ -906,11 +876,8 @@ fun genFromSsa (input: File.t): Machine.Program.t =
       val _ = setupConstants()
       val ssa =
          Control.passTypeCheck
-         {display = Control.Layouts Ssa.Program.layouts,
-          name = "ssaParse",
+         {name = ("ssaParse", NONE),
           stats = Ssa.Program.layoutStats,
-          style = Control.ML,
-          suffix = "ssa",
           thunk = (fn () => case
                      Parse.parseFile(Ssa.Program.parse (), input)
                         of Result.Yes x => x
@@ -920,6 +887,7 @@ fun genFromSsa (input: File.t): Machine.Program.t =
                             (* can't be reached *)
                             raise Fail "parse")
                    ),
+          toFile = Ssa.Program.toFile,
           typeCheck = Ssa.typeCheck}
       val ssa = simplifySsa ssa
       val ssa2 = makeSsa2 ssa
@@ -939,11 +907,8 @@ fun genFromSsa2 (input: File.t): Machine.Program.t =
                   val _ = setupConstants()
                   val ssa2 =
                      Control.passTypeCheck
-                     {display = Control.Layouts Ssa2.Program.layouts,
-                      name = "ssa2Parse",
+                     {name = ("ssa2Parse", NONE),
                       stats = Ssa2.Program.layoutStats,
-                      style = Control.ML,
-                      suffix = "ssa2",
                       thunk = (fn () => case
                                  Parse.parseFile(Ssa2.Program.parse (), input)
                                     of Result.Yes x => x
@@ -953,6 +918,7 @@ fun genFromSsa2 (input: File.t): Machine.Program.t =
                                         (* can't be reached *)
                                         raise Fail "parse")
                                ),
+                      toFile = Ssa2.Program.toFile,
                       typeCheck = Ssa2.typeCheck}
                   (*val ssa2 = makeSsa2 ssa*)
                   val ssa2 = simplifySsa2 ssa2
