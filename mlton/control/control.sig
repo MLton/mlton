@@ -75,4 +75,12 @@ signature CONTROL =
                           thunk: unit -> 'a,
                           toFile: {display: 'a display, style: style, suffix: string},
                           typeCheck: 'a -> unit} -> 'a
+
+      val simplePass: {arg: 'a,
+                       doit: 'a -> 'a,
+                       execute: bool,
+                       name: string,
+                       stats: 'a -> Layout.t,
+                       toFile: {display: 'a display, style: style, suffix: string},
+                       typeCheck: 'a -> unit} -> 'a
    end

@@ -385,4 +385,30 @@ fun passTypeCheck {name: string * string option,
       result
    end
 
+fun simplePass {arg: 'a,
+                doit: 'a -> 'a,
+                execute: bool,
+                name: string,
+                stats: 'a -> Layout.t,
+                toFile: {display: 'a display, style: style, suffix: string},
+                typeCheck: 'a -> unit}: 'a =
+   if List.foldr (!executePasses, execute, fn ((re, new), old) =>
+                  if Regexp.Compiled.matchesAll (re, name) then new else old)
+      then let
+              val _ =
+                 maybeSaveToFile
+                 {arg = arg,
+                  name = (name, SOME "pre"),
+                  toFile = toFile}
+              val r =
+                 passTypeCheck
+                 {name = (name, SOME "post"),
+                  stats = stats,
+                  thunk = fn () => doit arg,
+                  toFile = toFile,
+                  typeCheck = typeCheck}
+           in
+              r
+           end
+      else (messageStr (Pass, name ^ " skipped"); arg)
 end
