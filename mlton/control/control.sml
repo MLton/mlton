@@ -411,4 +411,15 @@ fun simplePass {arg: 'a,
               r
            end
       else (messageStr (Pass, name ^ " skipped"); arg)
+
+fun simplePasses {arg, passes, stats, toFile, typeCheck} =
+   List.fold
+   (passes, arg, fn ({doit, execute, name}, arg) =>
+    simplePass {arg = arg,
+                doit = doit,
+                execute = execute,
+                name = name,
+                stats = stats,
+                toFile = toFile,
+                typeCheck = typeCheck})
 end
