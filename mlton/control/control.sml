@@ -271,14 +271,15 @@ fun diagnostic f = diagnostics (fn disp => disp (f ()))
 
 fun saveToFile {arg: 'a,
                 name: string option,
-                toFile = {display: 'a display, style: style, suffix: string}}: unit =
+                toFile = {display: 'a display, style: style, suffix: string},
+                verb: Verbosity.t}: unit =
    let
       val name =
          case name of
             NONE => concat [!inputFile, ".", suffix]
           | SOME name => concat [!inputFile, ".", name, ".", suffix]
       fun doit f =
-         trace (Pass, concat ["save ", name])
+         trace (verb, concat ["save ", name])
          Ref.fluidLet
          (inputFile, name, fn () =>
           File.withOut (!inputFile, fn out =>
@@ -306,7 +307,7 @@ fun maybeSaveToFile {arg: 'a, name = (name: string, namex: string option), toFil
                     NONE => name
                   | SOME namex => concat [name, ".", namex]
            in
-              saveToFile {arg = arg, name = SOME name, toFile = toFile}
+              saveToFile {arg = arg, name = SOME name, toFile = toFile, verb = Pass}
            end
 
 (* Code for diagnosing a pass. *)
@@ -328,7 +329,8 @@ val wrapDiagnosing =
               saveToFile
               {arg = (),
                name = SOME name,
-               toFile = {display = display, style = No, suffix = "diagnostic"}}
+               toFile = {display = display, style = No, suffix = "diagnostic"},
+               verb = Pass}
         in
            valOf (!result)
         end

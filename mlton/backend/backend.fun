@@ -190,7 +190,8 @@ fun toMachine (ssa: Ssa.Program.t, codegen) =
             if !keepRSSA
                then saveToFile {arg = rssa,
                                 name = NONE,
-                                toFile = Rssa.Program.toFile}
+                                toFile = Rssa.Program.toFile,
+                                verb = Pass}
             else ()
          end
       val machine =

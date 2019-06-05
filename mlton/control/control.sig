@@ -61,7 +61,8 @@ signature CONTROL =
       val saveToFile:
          {arg: 'a,
           name: string option,
-          toFile: {display: 'a display, style: style, suffix: string}} -> unit
+          toFile: {display: 'a display, style: style, suffix: string},
+          verb: Verbosity.t} -> unit
       val outputHeader: style * (Layout.t -> unit) -> unit
       val outputHeader': style * Out.t -> unit
 

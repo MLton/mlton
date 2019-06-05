@@ -1696,7 +1696,8 @@ structure Function =
                          name = SOME (concat [name, ".", s]),
                          toFile = {display = Control.Layout (fn () => g),
                                    style = Control.Dot,
-                                   suffix = ".dot"}}
+                                   suffix = ".dot"},
+                         verb = Control.Detail}
                      val _ = doit ("cfg", controlFlowGraph)
                         handle _ => Error.warning "SsaTree2.layouts: couldn't layout cfg"
                      val _ = doit ("dom", dominatorTree ())
@@ -2034,7 +2035,8 @@ structure Program =
                   name = SOME "call-graph",
                   toFile = {display = Control.Layout (fn () => layoutCallGraph (p, !Control.inputFile)),
                             style = Control.Dot,
-                            suffix = "dot"}}
+                            suffix = "dot"},
+                  verb = Control.Detail}
          end
 
       val toFile = {display = Control.Layouts layouts, style = Control.ML, suffix = "ssa"}

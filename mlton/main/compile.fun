@@ -496,7 +496,7 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
             open Control
          in
             if !keepCoreML
-               then saveToFile {arg = coreML, name = NONE, toFile = CoreML.Program.toFile}
+               then saveToFile {arg = coreML, name = NONE, toFile = CoreML.Program.toFile, verb = Pass}
             else ()
          end
 
@@ -526,7 +526,7 @@ fun simplifyXml xml =
       open Control
       val _ =
          if !keepXML
-            then saveToFile {arg = xml, name = NONE, toFile = Xml.Program.toFile}
+            then saveToFile {arg = xml, name = NONE, toFile = Xml.Program.toFile, verb = Pass}
             else ()
    in
       xml
@@ -554,7 +554,7 @@ fun simplifySxml sxml =
       open Control
       val _ =
          if !keepSXML
-            then saveToFile {arg = sxml, name = NONE, toFile = Sxml.Program.toFile}
+            then saveToFile {arg = sxml, name = NONE, toFile = Sxml.Program.toFile, verb = Pass}
             else ()
    in
       sxml
@@ -582,7 +582,7 @@ fun simplifySsa ssa =
       open Control
       val _ =
          if !keepSSA
-            then saveToFile {arg = ssa, name = NONE, toFile = Ssa.Program.toFile}
+            then saveToFile {arg = ssa, name = NONE, toFile = Ssa.Program.toFile, verb = Pass}
          else ()
    in
       ssa
@@ -610,7 +610,7 @@ fun simplifySsa2 ssa2 =
       open Control
       val _ =
          if !keepSSA2
-            then saveToFile {arg = ssa2, name = NONE, toFile = Ssa2.Program.toFile}
+            then saveToFile {arg = ssa2, name = NONE, toFile = Ssa2.Program.toFile, verb = Pass}
          else ()
    in
       ssa2
@@ -643,7 +643,7 @@ fun makeMachine ssa2 =
             open Control
          in
             if !keepMachine
-               then saveToFile {arg = machine, name = NONE, toFile = Machine.Program.toFile}
+               then saveToFile {arg = machine, name = NONE, toFile = Machine.Program.toFile, verb = Pass}
             else ()
          end
    in
