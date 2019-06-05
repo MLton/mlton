@@ -1520,7 +1520,7 @@ fun simplify p =
          {name = "machineShuffle", doit = Program.shuffle, execute = false} ::
          nil
       val p =
-         Control.simplePasses
+         Control.simplifyPasses
          {arg = p,
           passes = machinePasses,
           stats = fn _ => Layout.empty,

@@ -165,7 +165,7 @@ fun toMachine (ssa: Ssa.Program.t, codegen) =
                {name = "rssaShuffle", doit = Program.shuffle, execute = false} ::
                nil
             val p =
-               Control.simplePasses
+               Control.simplifyPasses
                {arg = p,
                 passes = rssaPasses,
                 stats = Program.layoutStats,
@@ -175,7 +175,7 @@ fun toMachine (ssa: Ssa.Program.t, codegen) =
             p
          end
       val rssa =
-         Control.simplePass
+         Control.simplifyPass
          {arg = rssa,
           doit = rssaSimplify,
           execute = true,
@@ -1195,7 +1195,7 @@ in
 end}
 
       val machine =
-         Control.simplePass
+         Control.simplifyPass
          {arg = machine,
           doit = M.simplify,
           execute = true,

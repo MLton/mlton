@@ -515,7 +515,7 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
 fun simplifyXml xml =
    let
       val xml =
-         Control.simplePass
+         Control.simplifyPass
          {arg = xml,
           doit = Xml.simplify,
           execute = true,
@@ -543,7 +543,7 @@ fun makeSxml xml =
 fun simplifySxml sxml =
    let
       val sxml =
-         Control.simplePass
+         Control.simplifyPass
          {arg = sxml,
           doit = Sxml.simplify,
           execute = true,
@@ -571,7 +571,7 @@ fun makeSsa sxml =
 fun simplifySsa ssa =
    let
       val ssa =
-         Control.simplePass
+         Control.simplifyPass
          {arg = ssa,
           doit = Ssa.simplify,
           execute = true,
@@ -599,7 +599,7 @@ fun makeSsa2 ssa =
 fun simplifySsa2 ssa2 =
    let
       val ssa2 =
-         Control.simplePass
+         Control.simplifyPass
          {arg = ssa2,
           doit = Ssa2.simplify,
           execute = true,

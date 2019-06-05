@@ -76,16 +76,16 @@ signature CONTROL =
                           toFile: {display: 'a display, style: style, suffix: string},
                           typeCheck: 'a -> unit} -> 'a
 
-      val simplePass: {arg: 'a,
-                       doit: 'a -> 'a,
-                       execute: bool,
-                       name: string,
-                       stats: 'a -> Layout.t,
-                       toFile: {display: 'a display, style: style, suffix: string},
-                       typeCheck: 'a -> unit} -> 'a
-      val simplePasses: {arg: 'a,
-                         passes: {doit: 'a -> 'a, execute: bool, name: string} list,
+      val simplifyPass: {arg: 'a,
+                         doit: 'a -> 'a,
+                         execute: bool,
+                         name: string,
                          stats: 'a -> Layout.t,
                          toFile: {display: 'a display, style: style, suffix: string},
                          typeCheck: 'a -> unit} -> 'a
+      val simplifyPasses: {arg: 'a,
+                           passes: {doit: 'a -> 'a, execute: bool, name: string} list,
+                           stats: 'a -> Layout.t,
+                           toFile: {display: 'a display, style: style, suffix: string},
+                           typeCheck: 'a -> unit} -> 'a
    end

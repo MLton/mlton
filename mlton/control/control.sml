@@ -393,13 +393,13 @@ fun passTypeCheck {name: string * string option,
       result
    end
 
-fun simplePass {arg: 'a,
-                doit: 'a -> 'a,
-                execute: bool,
-                name: string,
-                stats: 'a -> Layout.t,
-                toFile: {display: 'a display, style: style, suffix: string},
-                typeCheck: 'a -> unit}: 'a =
+fun simplifyPass {arg: 'a,
+                  doit: 'a -> 'a,
+                  execute: bool,
+                  name: string,
+                  stats: 'a -> Layout.t,
+                  toFile: {display: 'a display, style: style, suffix: string},
+                  typeCheck: 'a -> unit}: 'a =
    if List.foldr (!executePasses, execute, fn ((re, new), old) =>
                   if Regexp.Compiled.matchesAll (re, name) then new else old)
       then let
@@ -420,14 +420,14 @@ fun simplePass {arg: 'a,
            end
       else (messageStr (Pass, name ^ " skipped"); arg)
 
-fun simplePasses {arg, passes, stats, toFile, typeCheck} =
+fun simplifyPasses {arg, passes, stats, toFile, typeCheck} =
    List.fold
    (passes, arg, fn ({doit, execute, name}, arg) =>
-    simplePass {arg = arg,
-                doit = doit,
-                execute = execute,
-                name = name,
-                stats = stats,
-                toFile = toFile,
-                typeCheck = typeCheck})
+    simplifyPass {arg = arg,
+                  doit = doit,
+                  execute = execute,
+                  name = name,
+                  stats = stats,
+                  toFile = toFile,
+                  typeCheck = typeCheck})
 end

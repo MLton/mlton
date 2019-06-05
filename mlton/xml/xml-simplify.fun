@@ -85,7 +85,7 @@ fun simplify p =
        *)
       val () = Control.trace (Control.Pass, "typeCheck") typeCheck p
       val p =
-         Control.simplePasses
+         Control.simplifyPasses
          {arg = p,
           passes = xmlPasses,
           stats = Program.layoutStats,
