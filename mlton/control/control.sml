@@ -278,7 +278,7 @@ fun saveToFile {arg: 'a,
             NONE => concat [!inputFile, ".", suffix]
           | SOME name => concat [!inputFile, ".", name, ".", suffix]
       fun doit f =
-         trace (Pass, "display")
+         trace (Pass, concat ["save ", name])
          Ref.fluidLet
          (inputFile, name, fn () =>
           File.withOut (!inputFile, fn out =>
@@ -401,20 +401,43 @@ fun translatePass {arg: 'a,
                    tgtToFile: {display: 'b display, style: style, suffix: string},
                    tgtTypeCheck: 'b -> unit}: 'b =
    let
-      val _ =
-         maybeSaveToFile
-         {arg = arg,
-          name = (name, SOME "pre"),
-          toFile = srcToFile}
-      val res =
-         passTypeCheck
-         {name = (name, SOME "post"),
-          stats = tgtStats,
-          thunk = fn () => doit arg,
-          toFile = tgtToFile,
-          typeCheck = tgtTypeCheck}
+      val thunk = fn () => doit arg
+      val thunk = wrapDiagnosing {name = name, thunk = thunk}
+      val thunk = wrapProfiling {name = name, thunk = thunk}
+      val thunk = fn () =>
+      let
+         val _ =
+            maybeSaveToFile
+            {arg = arg,
+             name = (name, SOME "pre"),
+             toFile = srcToFile}
+         val res = thunk ()
+         val _ = checkForErrors name
+         val _ =
+            maybeSaveToFile
+            {arg = res,
+             name = (name, SOME "post"),
+             toFile = tgtToFile}
+         val _ =
+            if !ControlFlags.typeCheck
+               then trace (Pass, concat ["typeCheck ", name, ".post"]) tgtTypeCheck res
+               else ()
+         local
+            val verb = Detail
+         in
+            val _ = message (verb, fn () => Layout.str (concat [name, ".post stats"]))
+            val _ = indent ()
+            val _ = message (verb, fn () => sizeMessage (#suffix tgtToFile, res))
+            val _ = message (verb, fn () => tgtStats res)
+            val _ = message (verb, PropertyList.stats)
+            val _ = message (verb, HashSet.stats)
+            val _ = unindent ()
+         end
+      in
+         res
+      end
    in
-      res
+      trace (Pass, name) thunk ()
    end
 
 fun simplifyPass {arg: 'a,
