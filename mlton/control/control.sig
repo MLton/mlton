@@ -95,5 +95,5 @@ signature CONTROL =
                           srcToFile: {display: 'a display, style: style, suffix: string},
                           tgtStats: 'b -> Layout.t,
                           tgtToFile: {display: 'b display, style: style, suffix: string},
-                          tgtTypeCheck: 'b -> unit} -> 'b
+                          tgtTypeCheck: ('b -> unit) option} -> 'b
    end

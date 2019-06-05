@@ -401,7 +401,7 @@ fun translatePass {arg: 'a,
                    srcToFile: {display: 'a display, style: style, suffix: string},
                    tgtStats: 'b -> Layout.t,
                    tgtToFile: {display: 'b display, style: style, suffix: string},
-                   tgtTypeCheck: 'b -> unit}: 'b =
+                   tgtTypeCheck: ('b -> unit) option}: 'b =
    let
       val thunk = fn () => doit arg
       val thunk = wrapDiagnosing {name = name, thunk = thunk}
@@ -422,7 +422,8 @@ fun translatePass {arg: 'a,
              toFile = tgtToFile}
          val _ =
             if !ControlFlags.typeCheck
-               then trace (Pass, concat ["typeCheck ", name, ".post"]) tgtTypeCheck res
+               then Option.app (tgtTypeCheck, fn tgtTypeCheck =>
+                                trace (Pass, concat ["typeCheck ", name, ".post"]) tgtTypeCheck res)
                else ()
          local
             val verb = Detail
@@ -457,7 +458,7 @@ fun simplifyPass {arg: 'a,
                           srcToFile = toFile,
                           tgtStats = stats,
                           tgtToFile = toFile,
-                          tgtTypeCheck = typeCheck}
+                          tgtTypeCheck = SOME typeCheck}
       else (messageStr (Pass, name ^ " skipped"); arg)
 
 fun simplifyPasses {arg, passes, stats, toFile, typeCheck} =
