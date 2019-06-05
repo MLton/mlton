@@ -194,7 +194,7 @@ fun toMachine (ssa: Ssa.Program.t, codegen) =
                                 toFile = Rssa.Program.toFile}
             else ()
          end
-      val program =
+      val machine =
          Control.pass
          {name = ("toMachine", NONE),
           stats = fn _ => Layout.empty,
@@ -1179,7 +1179,7 @@ let
               max
            end))
       val maxFrameSize = Bytes.alignWord32 maxFrameSize
-      val program =
+      val machine =
          M.Program.T
          {chunks = chunks,
           frameInfos = frameInfos,
@@ -1191,79 +1191,20 @@ let
           reals = allReals (),
           sourceMaps = sourceMaps,
           vectors = allVectors ()}
-
-      local
-         open Machine
-         fun pass ({name, doit}, p) =
-            let
-               val _ =
-                  Control.maybeSaveToFile
-                  {arg = p,
-                   name = (name, SOME "pre"),
-                   toFile = Program.toFile}
-               val p =
-                  Control.passTypeCheck
-                  {name = (name, SOME "post"),
-                   stats = fn _ => Layout.empty,
-                   thunk = fn () => doit p,
-                   toFile = Program.toFile,
-                   typeCheck = Program.typeCheck}
-            in
-               p
-            end
-         fun maybePass ({name, doit, execute}, p) =
-            if List.foldr (!Control.executePasses, execute, fn ((re, new), old) =>
-               if Regexp.Compiled.matchesAll (re, name)
-                  then new
-                  else old)
-               then pass ({name = name, doit = doit}, p)
-               else (Control.messageStr (Control.Pass, name ^ " skipped"); p)
-
-         fun shuffle p =
-            let
-               fun shuffle v =
-                  let
-                     val a = Array.fromVector v
-                     val () = Array.shuffle a
-                  in
-                     Array.toVector a
-                  end
-               val M.Program.T
-                  {chunks, frameInfos, frameOffsets,
-                   handlesSignals, main, maxFrameSize,
-                   objectTypes, reals, sourceMaps, vectors} = p
-               val chunks = Vector.fromList chunks
-               val chunks = shuffle chunks
-               val chunks =
-                  Vector.map
-                  (chunks, fn M.Chunk.T {blocks, chunkLabel, regMax} =>
-                   M.Chunk.T
-                   {blocks = shuffle blocks,
-                    chunkLabel = chunkLabel,
-                    regMax = regMax})
-               val chunks = Vector.toList chunks
-            in
-               M.Program.T
-               {chunks = chunks,
-                frameInfos = frameInfos,
-                frameOffsets = frameOffsets,
-                handlesSignals = handlesSignals,
-                main = main,
-                maxFrameSize = maxFrameSize,
-                objectTypes = objectTypes,
-                reals = reals,
-                sourceMaps = sourceMaps,
-                vectors = vectors}
-            end
-      in
-         val program = maybePass ({name = "machineShuffle",
-                                   doit = shuffle,
-                                   execute = false}, program)
-      end
 in
-   program
+   machine
 end}
+
+      val machine =
+         Control.simplePass
+         {arg = machine,
+          doit = M.simplify,
+          execute = true,
+          name = "machineSimplify",
+          stats = fn _ => Layout.empty,
+          toFile = M.Program.toFile,
+          typeCheck = M.Program.typeCheck}
    in
-      program
+      machine
    end
 end

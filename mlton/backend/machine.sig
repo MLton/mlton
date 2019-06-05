@@ -267,4 +267,6 @@ signature MACHINE =
             val toFile: {display: t Control.display, style: Control.style, suffix: string}
             val typeCheck: t -> unit
          end
+
+      val simplify: Program.t -> Program.t
    end

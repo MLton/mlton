@@ -814,6 +814,40 @@ structure Program =
 
       val toFile = {display = Control.Layouts layouts, style = Control.ML, suffix = "machine"}
 
+      fun shuffle (T {chunks, frameInfos, frameOffsets,
+                      handlesSignals, main, maxFrameSize,
+                      objectTypes, reals, sourceMaps, vectors}) =
+         let
+            fun shuffle v =
+               let
+                  val a = Array.fromVector v
+                  val () = Array.shuffle a
+               in
+                  Array.toVector a
+               end
+            val chunks = Vector.fromList chunks
+            val chunks = shuffle chunks
+            val chunks =
+               Vector.map
+               (chunks, fn Chunk.T {blocks, chunkLabel, regMax} =>
+                Chunk.T
+                {blocks = shuffle blocks,
+                 chunkLabel = chunkLabel,
+                 regMax = regMax})
+            val chunks = Vector.toList chunks
+         in
+            T {chunks = chunks,
+               frameInfos = frameInfos,
+               frameOffsets = frameOffsets,
+               handlesSignals = handlesSignals,
+               main = main,
+               maxFrameSize = maxFrameSize,
+               objectTypes = objectTypes,
+               reals = reals,
+               sourceMaps = sourceMaps,
+               vectors = vectors}
+         end
+
       structure Alloc =
          struct
             datatype t = T of Live.t list
@@ -1478,6 +1512,22 @@ structure Program =
           Vector.foreach
           (blocks, fn Block.T {label, ...} =>
            Label.clearPrintName label))
+   end
+
+fun simplify p =
+   let
+      val machinePasses =
+         {name = "machineShuffle", doit = Program.shuffle, execute = false} ::
+         nil
+      val p =
+         Control.simplePasses
+         {arg = p,
+          passes = machinePasses,
+          stats = fn _ => Layout.empty,
+          toFile = Program.toFile,
+          typeCheck = Program.typeCheck}
+   in
+      p
    end
 
 end
