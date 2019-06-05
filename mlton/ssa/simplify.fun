@@ -302,7 +302,7 @@ fun simplify p =
       (* Always want to type check the initial and final SSA programs,
        * even if type checking is turned off, just to catch bugs.
        *)
-      val () = Control.trace (Control.Pass, "typeCheck") typeCheck p
+      val () = Control.trace (Control.Pass, "ssaTypeCheck") typeCheck p
       val p =
          Control.simplifyPasses
          {arg = p,
@@ -310,7 +310,7 @@ fun simplify p =
           stats = Program.layoutStats,
           toFile = Program.toFile,
           typeCheck = typeCheck}
-      val () = Control.trace (Control.Pass, "typeCheck") typeCheck p
+      val () = Control.trace (Control.Pass, "ssaTypeCheck") typeCheck p
    in
       p
    end
