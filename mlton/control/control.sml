@@ -393,6 +393,30 @@ fun passTypeCheck {name: string * string option,
       result
    end
 
+fun translatePass {arg: 'a,
+                   doit: 'a -> 'b,
+                   name: string,
+                   srcToFile: {display: 'a display, style: style, suffix: string},
+                   tgtStats: 'b -> Layout.t,
+                   tgtToFile: {display: 'b display, style: style, suffix: string},
+                   tgtTypeCheck: 'b -> unit}: 'b =
+   let
+      val _ =
+         maybeSaveToFile
+         {arg = arg,
+          name = (name, SOME "pre"),
+          toFile = srcToFile}
+      val res =
+         passTypeCheck
+         {name = (name, SOME "post"),
+          stats = tgtStats,
+          thunk = fn () => doit arg,
+          toFile = tgtToFile,
+          typeCheck = tgtTypeCheck}
+   in
+      res
+   end
+
 fun simplifyPass {arg: 'a,
                   doit: 'a -> 'a,
                   execute: bool,
@@ -402,22 +426,13 @@ fun simplifyPass {arg: 'a,
                   typeCheck: 'a -> unit}: 'a =
    if List.foldr (!executePasses, execute, fn ((re, new), old) =>
                   if Regexp.Compiled.matchesAll (re, name) then new else old)
-      then let
-              val _ =
-                 maybeSaveToFile
-                 {arg = arg,
-                  name = (name, SOME "pre"),
-                  toFile = toFile}
-              val r =
-                 passTypeCheck
-                 {name = (name, SOME "post"),
-                  stats = stats,
-                  thunk = fn () => doit arg,
-                  toFile = toFile,
-                  typeCheck = typeCheck}
-           in
-              r
-           end
+      then translatePass {arg = arg,
+                          doit = doit,
+                          name = name,
+                          srcToFile = toFile,
+                          tgtStats = stats,
+                          tgtToFile = toFile,
+                          tgtTypeCheck = typeCheck}
       else (messageStr (Pass, name ^ " skipped"); arg)
 
 fun simplifyPasses {arg, passes, stats, toFile, typeCheck} =

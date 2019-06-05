@@ -88,4 +88,11 @@ signature CONTROL =
                            stats: 'a -> Layout.t,
                            toFile: {display: 'a display, style: style, suffix: string},
                            typeCheck: 'a -> unit} -> 'a
+      val translatePass: {arg: 'a,
+                          doit: 'a -> 'b,
+                          name: string,
+                          srcToFile: {display: 'a display, style: style, suffix: string},
+                          tgtStats: 'b -> Layout.t,
+                          tgtToFile: {display: 'b display, style: style, suffix: string},
+                          tgtTypeCheck: 'b -> unit} -> 'b
    end
