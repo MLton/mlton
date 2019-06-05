@@ -160,7 +160,6 @@ fun toMachine (ssa: Ssa.Program.t, codegen) =
                {name = "bounceVars", doit = BounceVars.transform, execute = true} ::
                {name = "implementHandlers", doit = ImplementHandlers.transform, execute = true} ::
                {name = "rssaShrink2", doit = Program.shrink, execute = true} ::
-               (* val () = Program.checkHandlers p *)
                {name = "implementProfiling", doit = ImplementProfiling.transform, execute = true} ::
                {name = "rssaOrderFunctions", doit = Program.orderFunctions, execute = true} ::
                {name = "rssaShuffle", doit = Program.shuffle, execute = false} ::

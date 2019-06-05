@@ -1528,6 +1528,15 @@ structure Program =
 
       fun typeCheck (p as T {functions, main, objectTypes, profileInfo, ...}) =
          let
+            val _ =
+               Vector.foreach
+               (objectTypes, fn ty =>
+                Err.check ("objectType",
+                           fn () => ObjectType.isOk ty,
+                           fn () => ObjectType.layout ty))
+            fun tyconTy (opt: ObjptrTycon.t): ObjectType.t =
+               Vector.sub (objectTypes, ObjptrTycon.index opt)
+            val () = checkScopes p
             val (checkProfileLabel, finishCheckProfileLabel, checkFrameSourceSeqIndex) =
                case profileInfo of
                   NONE => (fn _ => false, fn () => (), fn _ => ())
@@ -1565,15 +1574,6 @@ structure Program =
                                        | Kind.Jump => chk false
                                    end)
                   end
-            val _ =
-               Vector.foreach
-               (objectTypes, fn ty =>
-                Err.check ("objectType",
-                           fn () => ObjectType.isOk ty,
-                           fn () => ObjectType.layout ty))
-            fun tyconTy (opt: ObjptrTycon.t): ObjectType.t =
-               Vector.sub (objectTypes, ObjptrTycon.index opt)
-            val () = checkScopes p
             val {get = labelBlock: Label.t -> Block.t,
                  set = setLabelBlock, ...} =
                Property.getSetOnce (Label.plist,
@@ -1626,6 +1626,7 @@ structure Program =
             fun checkOperands v = Vector.foreach (v, checkOperand)
             fun check' (x, name, isOk, layout) =
                Err.check (name, fn () => isOk x, fn () => layout x)
+            val handlersImplemented = ref false
             val labelKind = Block.kind o labelBlock
             fun statementOk (s: Statement.t): bool =
                let
@@ -1671,13 +1672,14 @@ structure Program =
                              result = Option.map (dst, #2)}))
                    | Profile _ => true
                    | ProfileLabel pl => checkProfileLabel pl
-                   | SetExnStackLocal => true
-                   | SetExnStackSlot => true
+                   | SetExnStackLocal => (handlersImplemented := true; true)
+                   | SetExnStackSlot => (handlersImplemented := true; true)
                    | SetHandler l =>
-                        (case labelKind l of
+                        (handlersImplemented := true;
+                         case labelKind l of
                             Kind.Handler => true
                           | _ => false)
-                   | SetSlotExnStack => true
+                   | SetSlotExnStack => (handlersImplemented := true; true)
                end
             val statementOk = 
                Trace.trace ("Rssa.statementOk",
@@ -1906,8 +1908,11 @@ structure Program =
                    Vector.isEmpty args
                 end,
                 Function.layout)
-            val _ = finishCheckProfileLabel ()
             val _ = clear p
+            val _ = finishCheckProfileLabel ()
+            val _ = if !handlersImplemented
+                       then checkHandlers p
+                       else ()
          in
             ()
          end handle Err.E e => (Layout.outputl (Err.layout e, Out.error)
