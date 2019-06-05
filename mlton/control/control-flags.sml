@@ -767,11 +767,6 @@ structure Elaborate =
 
    end
 
-val elaborateOnly =
-   control {name = "elaborate only",
-            default = false,
-            toString = Bool.toString}
-
 val emitMain =
    control {name = "emit main",
             default = true,

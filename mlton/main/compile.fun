@@ -383,8 +383,6 @@ fun outputBasisConstants (out: Out.t): unit =
 (*                      compile                      *)
 (* ------------------------------------------------- *)
 
-exception Done
-
 fun elaborate {input: MLBString.t}: Xml.Program.t =
    let
       val (E, decs) = parseAndElaborateMLB input
@@ -474,7 +472,6 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
                 in
                    ()
                 end)
-      val _ = if !Control.elaborateOnly then raise Done else ()
       val decs =
          Control.pass
          {name = ("deadCode", NONE),
@@ -765,7 +762,7 @@ fun compile {input: 'a, resolve: 'a -> Machine.Program.t, outputC, outputLL, out
       val _ = Control.message (Control.Detail, HashSet.stats)
    in
       ()
-   end handle Done => ()
+   end
 
 fun compileMLB {input: File.t, outputC, outputLL, outputS}: unit =
    compile {input = MLBString.fromFile input,
@@ -777,7 +774,6 @@ fun compileMLB {input: File.t, outputC, outputLL, outputS}: unit =
 val elaborateMLB =
    fn {input: File.t} =>
    (ignore (elaborate {input = MLBString.fromFile input}))
-   handle Done => ()
 
 local
    fun genMLB {input: File.t list}: MLBString.t =
@@ -809,7 +805,6 @@ in
    val elaborateSML =
       fn {input: File.t list} =>
       (ignore (elaborate {input = genMLB {input = input}}))
-      handle Done => ()
 end
 
 fun genFromXML (input: File.t): Machine.Program.t =

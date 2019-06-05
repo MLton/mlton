@@ -174,11 +174,6 @@ signature CONTROL_FLAGS =
             val snapshot: unit -> (unit -> 'a) -> 'a
          end
 
-      (* stop after elaboration.  So, no need for the elaborator to generate
-       * valid CoreML.
-       *)
-      val elaborateOnly: bool ref
-
       val emitMain: bool ref
 
       val exportHeader: File.t option ref

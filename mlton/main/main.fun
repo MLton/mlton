@@ -1205,16 +1205,6 @@ fun commandLine (args: string list): unit =
          := (isSome (!showDefUse)
              orelse (Control.Elaborate.enabled Control.Elaborate.warnUnused)
              orelse (Control.Elaborate.default Control.Elaborate.warnUnused))
-      val warnMatch =
-          (Control.Elaborate.enabled Control.Elaborate.nonexhaustiveMatch)
-          orelse (Control.Elaborate.enabled Control.Elaborate.redundantMatch)
-          orelse (Control.Elaborate.default Control.Elaborate.nonexhaustiveMatch <>
-                  Control.Elaborate.DiagEIW.Ignore)
-          orelse (Control.Elaborate.default Control.Elaborate.redundantMatch <>
-                  Control.Elaborate.DiagEIW.Ignore)
-      val _ = elaborateOnly := (stop = Place.TypeCheck
-                                andalso not (warnMatch)
-                                andalso not (!keepDefUse))
       val _ =
          case targetOS of
             Darwin => ()
