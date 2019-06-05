@@ -1633,12 +1633,16 @@ fun commandLine (args: string list): unit =
                       | Place.SSA => compileSSA input
                       | Place.SSA2 => compileSSA2 input
                       | _ => Error.bug "invalid start"
-                  val doit
-                    = trace (Top, Version.banner)
-                      (fn () =>
-                       Exn.finally
-                       (compile, fn () =>
-                        List.foreach (!tempFiles, File.remove)))
+                  val doit =
+                     trace (Top, Version.banner)
+                     (fn () =>
+                      Exn.finally
+                      (compile, fn () =>
+                       List.foreach (!tempFiles, File.remove)))
+                  val doit = fn () =>
+                     if !verbosity <> Silent
+                        then doit () handle _ => OS.Process.exit OS.Process.failure
+                        else doit ()
                in
                   doit ()
                end

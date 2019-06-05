@@ -83,39 +83,46 @@ fun timeToString {total, gc} =
    in concat [t2s (Time.- (total, gc)), " + ", t2s gc, " (", per, "% GC)"]
    end
 
+val traceRaising = ref false
+
 fun trace (verb, name: string) (f: 'a -> 'b) (a: 'a): 'b =
    if Verbosity.<= (verb, !verbosity)
-      then
-         let
-            val _ = messageStr (verb, concat [name, " starting"])
-            val (t, gc) = time ()
-            val _ = indent ()
-            fun done () =
-               let
-                  val _ = unindent ()
-                  val (t', gc') = time ()
-               in
-                  timeToString {total = Time.- (t', t),
-                                gc = Time.- (gc', gc)}
-               end
-         in (f a
-             before messageStr (verb, concat [name, " finished in ", done ()]))
-            handle e =>
-               (messageStr (verb, concat [name, " raised in ", done ()])
-                ; messageStr (verb, concat [name, " raised: ", Exn.toString e])
-                ; (case Exn.history e of
-                      [] => ()
-                    | history =>
-                         (messageStr (verb, concat [name, " raised with history: "])
-                          ; indent ()
-                          ; (List.foreach
-                             (history, fn s =>
-                              messageStr (verb, s)))
-                          ; unindent ()))
-                ; raise e)
-         end
-   else
-      f a
+      then let
+              val _ = messageStr (verb, concat [name, " starting"])
+              val (t, gc) = time ()
+              val _ = indent ()
+              fun done () =
+                 let
+                    val _ = unindent ()
+                    val (t', gc') = time ()
+                 in
+                    timeToString {total = Time.- (t', t),
+                                  gc = Time.- (gc', gc)}
+                 end
+           in (f a
+               before messageStr (verb, concat [name, " finished in ", done ()]))
+              handle exn =>
+                 let
+                    val done = done ()
+                 in
+                    if !traceRaising
+                       then ()
+                       else (messageStr (verb, concat [name, " raised: ", Exn.toString exn])
+                             ; (case Exn.history exn of
+                                   [] => ()
+                                 | history =>
+                                      (messageStr (verb, concat [name, " raised with history: "])
+                                       ; indent ()
+                                       ; (List.foreach
+                                          (history, fn s =>
+                                           messageStr (verb, s)))
+                                       ; unindent ()))
+                             ; traceRaising := true)
+                          ; messageStr (verb, concat [name, " raised in ", done])
+                          ; raise exn
+                 end
+           end
+      else f a
 
 type traceAccum = {verb: verbosity, 
                    total: Time.t ref, 
@@ -138,35 +145,36 @@ val traceAccum: (verbosity * string) -> (traceAccum * (unit -> unit)) =
 
 val ('a, 'b) traceAdd: (traceAccum * string) -> ('a -> 'b) -> 'a -> 'b =
    fn ({verb, total, totalGC}, name) =>
-   fn f =>
-   fn a =>
+   fn f => fn a =>
    if Verbosity.<= (verb, !verbosity)
-     then let
-            val (t, gc) = time ()
-            fun done () 
-              = let
-                  val (t', gc') = time ()
-                in
-                  total := Time.+ (!total, Time.- (t', t))
-                  ; totalGC := Time.+ (!totalGC, Time.- (gc', gc))
-                end
-          in
-            (f a
-             before done ())
-            handle e => 
-               (messageStr (verb, concat [name, " raised"])
-                ; (case Exn.history e of
-                      [] => ()
-                    | history =>
-                         (messageStr (verb, concat [name, " raised with history: "])
-                          ; indent ()
-                          ; (List.foreach
-                             (history, fn s =>
-                              messageStr (verb, s)))
-                          ; unindent ()))
-                ; raise e)
-          end
-     else f a
+      then let
+              val (t, gc) = time ()
+              fun done () =
+                 let
+                    val (t', gc') = time ()
+                 in
+                    total := Time.+ (!total, Time.- (t', t))
+                    ; totalGC := Time.+ (!totalGC, Time.- (gc', gc))
+                 end
+           in (f a
+               before done ())
+              handle exn =>
+                 (if !traceRaising
+                     then ()
+                     else (messageStr (verb, concat [name, " raised: ", Exn.toString exn])
+                           ; (case Exn.history exn of
+                                 [] => ()
+                               | history =>
+                                    (messageStr (verb, concat [name, " raised with history: "])
+                                     ; indent ()
+                                     ; (List.foreach
+                                        (history, fn s =>
+                                         messageStr (verb, s)))
+                                     ; unindent ()))
+                           ; traceRaising := true)
+                  ; raise exn)
+           end
+      else f a
 
 val ('a, 'b) traceBatch: (verbosity * string) -> ('a -> 'b) ->
                          (('a -> 'b) * (unit -> unit)) =
