@@ -143,12 +143,14 @@ fun eliminateDeadCode (f: R.Function.t): R.Function.t =
 fun toMachine (ssa: Ssa.Program.t, codegen) =
    let
       val rssa =
-         Control.passTypeCheck
-         {name = ("toRssa", NONE),
-          stats = R.Program.layoutStats,
-          thunk = fn () => SsaToRssa.convert (ssa, codegen),
-          toFile = R.Program.toFile,
-          typeCheck = R.Program.typeCheck}
+         Control.translatePass
+         {arg = (ssa, codegen),
+          doit = SsaToRssa.convert,
+          name = "toRssa",
+          srcToFile = Control.composeToFile (Ssa.Program.toFile, #1),
+          tgtStats = R.Program.layoutStats,
+          tgtToFile = R.Program.toFile,
+          tgtTypeCheck = SOME R.Program.typeCheck}
       fun rssaSimplify p = 
          let
             open Rssa
@@ -195,11 +197,14 @@ fun toMachine (ssa: Ssa.Program.t, codegen) =
             else ()
          end
       val machine =
-         Control.pass
-         {name = ("toMachine", NONE),
-          stats = fn _ => Layout.empty,
-          toFile = Machine.Program.toFile,
-          thunk = fn () =>
+         Control.translatePass
+         {arg = rssa,
+          name = "toMachine",
+          srcToFile = R.Program.toFile,
+          tgtStats = fn _ => Layout.empty,
+          tgtToFile = Machine.Program.toFile,
+          tgtTypeCheck = SOME Machine.Program.typeCheck,
+          doit = fn rssa =>
 let
       val R.Program.T {functions, handlesSignals, main, objectTypes, profileInfo} = rssa
       (* Chunk info *)

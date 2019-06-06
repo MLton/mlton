@@ -311,10 +311,13 @@ structure MLBString:>
 
       val fromFile: File.t -> t
       val fromString: string -> t
+      val layout: t -> Layout.t
       val lexAndParseMLB: t -> Ast.Basdec.t
    end =
    struct
       type t = string
+
+      val layout = String.layout
 
       val fromFile = quoteFile
 
@@ -339,28 +342,34 @@ fun sourceFilesMLB {input} =
 
 val elaborateMLB = Elaborate.elaborateMLB
 
-val displayEnvDecs =
-   Control.Layouts
-   (fn ((_, decs),output) =>
-    (output (Layout.str "\n\n")
-     ; Vector.foreach
-       (decs, fn (dec, dc) =>
-        (output o Layout.record)
-        [("deadCode", Bool.layout dc),
-         ("decs", List.layout CoreML.Dec.layout dec)])))
-
 fun parseAndElaborateMLB (input: MLBString.t)
    : Env.t * (CoreML.Dec.t list * bool) vector =
-   Control.pass
-   {name = ("parseAndElaborate", NONE),
-    stats = fn _ => Layout.empty,
-    thunk = (fn () =>
-             (if !Control.keepAST
-                 then File.remove (concat [!Control.inputFile, ".ast"])
-                 else ()
-              ; Const.lookup := lookupConstant
-              ; elaborateMLB (lexAndParseMLB input, {addPrim = addPrim}))),
-    toFile = {display = displayEnvDecs, style = Control.ML, suffix = "core-ml"}}
+   Control.translatePass
+   {arg = input,
+    doit = fn input =>
+           (if !Control.keepAST
+               then File.remove (concat [!Control.inputFile, ".ast"])
+               else ()
+            ; Const.lookup := lookupConstant
+            ; elaborateMLB (lexAndParseMLB input, {addPrim = addPrim})),
+    name = "parseAndElaborate",
+    srcToFile = {display = Control.Layout MLBString.layout,
+                 style = Control.ML,
+                 suffix = "mlb"},
+    tgtStats = fn _ => Layout.empty,
+    tgtToFile = {display = (Control.Layouts
+                            (fn ((_, decss), output) =>
+                             (output (Layout.str "\n");
+                              Vector.foreach
+                              (decss, fn (decs, dc) =>
+                               (output (Layout.seq [Layout.str "(* deadCode: ",
+                                                    Bool.layout dc,
+                                                    Layout.str " *)"]);
+                                List.foreach
+                                (decs, output o CoreML.Dec.layout)))))),
+                 style = #style CoreML.Program.toFile,
+                 suffix = #suffix CoreML.Program.toFile},
+    tgtTypeCheck = NONE}
 
 (* ------------------------------------------------- *)
 (*                   Basis Library                   *)
@@ -473,22 +482,38 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
                    ()
                 end)
       val decs =
-         Control.pass
-         {name = ("deadCode", NONE),
-          stats = fn _ => Layout.empty,
-          thunk = fn () => let
-                              val {prog = decs} =
-                                 DeadCode.deadCode {prog = decs}
-                           in
-                              decs
-                           end,
-          toFile = {display = Control.Layouts (fn (decss,output) =>
-                                               (output (Layout.str "\n\n")
-                                                ; Vector.foreach (decss, fn decs =>
-                                                  List.foreach (decs, fn dec =>
-                                                  output (CoreML.Dec.layout dec))))),
-                    style = Control.ML,
-                    suffix = "core-ml"}}
+         Control.translatePass
+         {arg = decs,
+          doit = fn decs => let
+                               val {prog = decs} =
+                                  DeadCode.deadCode {prog = decs}
+                            in
+                               decs
+                            end,
+          name = "deadCode",
+          srcToFile = {display = (Control.Layouts
+                                  (fn (decss, output) =>
+                                   (output (Layout.str "\n");
+                                    Vector.foreach
+                                    (decss, fn (decs, dc) =>
+                                     (output (Layout.seq [Layout.str "(* deadCode: ",
+                                                          Bool.layout dc,
+                                                          Layout.str " *)"]);
+                                      List.foreach
+                                      (decs, output o CoreML.Dec.layout)))))),
+                       style = #style CoreML.Program.toFile,
+                       suffix = #suffix CoreML.Program.toFile},
+          tgtStats = fn _ => Layout.empty,
+          tgtToFile = {display = (Control.Layouts
+                                  (fn (decss, output) =>
+                                   (output (Layout.str "\n");
+                                    Vector.foreach
+                                    (decss, fn decs =>
+                                     List.foreach
+                                     (decs, output o CoreML.Dec.layout))))),
+                       style = #style CoreML.Program.toFile,
+                       suffix = #suffix CoreML.Program.toFile},
+          tgtTypeCheck = NONE}
       val decs = Vector.concatV (Vector.map (decs, Vector.fromList))
       val coreML = CoreML.Program.T {decs = decs}
       val _ =
@@ -500,14 +525,15 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
             else ()
          end
 
-
       val xml =
-         Control.passTypeCheck
-         {name = ("defunctorize", NONE),
-          stats = Xml.Program.layoutStats,
-          thunk = fn () => Defunctorize.defunctorize coreML,
-          toFile = Xml.Program.toFile,
-          typeCheck = Xml.typeCheck}
+         Control.translatePass
+         {arg = coreML,
+          doit = Defunctorize.defunctorize,
+          name = "defunctorize",
+          srcToFile = CoreML.Program.toFile,
+          tgtStats = Xml.Program.layoutStats,
+          tgtToFile = Xml.Program.toFile,
+          tgtTypeCheck = SOME Xml.typeCheck}
    in
       xml
    end
@@ -533,12 +559,14 @@ fun simplifyXml xml =
    end
 
 fun makeSxml xml =
-   Control.passTypeCheck
-   {name = ("monomorphise", NONE),
-    stats = Sxml.Program.layoutStats,
-    thunk = fn () => Monomorphise.monomorphise xml,
-    toFile = Sxml.Program.toFile,
-    typeCheck = Sxml.typeCheck}
+   Control.translatePass
+   {arg = xml,
+    doit = Monomorphise.monomorphise,
+    name = "monomorphise",
+    srcToFile = Xml.Program.toFile,
+    tgtStats = Sxml.Program.layoutStats,
+    tgtToFile = Sxml.Program.toFile,
+    tgtTypeCheck = SOME Sxml.typeCheck}
 
 fun simplifySxml sxml =
    let
@@ -561,12 +589,14 @@ fun simplifySxml sxml =
    end
 
 fun makeSsa sxml =
-   Control.passTypeCheck
-   {name = ("closureConvert", NONE),
-    stats = Ssa.Program.layoutStats,
-    thunk = fn () => ClosureConvert.closureConvert sxml,
-    toFile = Ssa.Program.toFile,
-    typeCheck = Ssa.typeCheck}
+   Control.translatePass
+   {arg = sxml,
+    doit = ClosureConvert.closureConvert,
+    name = "closureConvert",
+    srcToFile = Sxml.Program.toFile,
+    tgtStats = Ssa.Program.layoutStats,
+    tgtToFile = Ssa.Program.toFile,
+    tgtTypeCheck = SOME Ssa.typeCheck}
 
 fun simplifySsa ssa =
    let
@@ -589,12 +619,14 @@ fun simplifySsa ssa =
    end
 
 fun makeSsa2 ssa =
-   Control.passTypeCheck
-   {name = ("toSsa2", NONE),
-    stats = Ssa2.Program.layoutStats,
-    thunk = fn () => SsaToSsa2.convert ssa,
-    toFile = Ssa2.Program.toFile,
-    typeCheck = Ssa2.typeCheck}
+   Control.translatePass
+   {arg = ssa,
+    doit = SsaToSsa2.convert,
+    name = "toSsa2",
+    srcToFile = Ssa.Program.toFile,
+    tgtStats = Ssa2.Program.layoutStats,
+    tgtToFile = Ssa2.Program.toFile,
+    tgtTypeCheck = SOME Ssa2.typeCheck}
 
 fun simplifySsa2 ssa2 =
    let
@@ -625,19 +657,17 @@ fun makeMachine ssa2 =
           | Control.LLVMCodegen => LLVMCodegen.implementsPrim
           | Control.X86Codegen => x86Codegen.implementsPrim
       val machine =
-         Control.passTypeCheck
-         {name = ("backend", NONE),
-          stats = fn _ => Layout.empty,
-          thunk = fn () =>
-                  (Backend.toMachine
-                   (ssa2,
-                    {codegenImplementsPrim = codegenImplementsPrim})),
-          toFile = Machine.Program.toFile,
-          typeCheck = fn machine =>
-                      (* For now, machine type check is too slow to run. *)
-                      (if !Control.typeCheck
-                          then Machine.Program.typeCheck machine
-                       else ())}
+         Control.translatePass
+         {arg = (ssa2, {codegenImplementsPrim = codegenImplementsPrim}),
+          doit = Backend.toMachine,
+          name = "backend",
+          srcToFile = {display = Control.Layouts (fn ((ssa2, _), output) =>
+                                                  Ssa2.Program.layouts (ssa2, output)),
+                       style = #style Ssa2.Program.toFile,
+                       suffix = #suffix Ssa2.Program.toFile},
+          tgtStats = fn _ => Layout.empty,
+          tgtToFile = Machine.Program.toFile,
+          tgtTypeCheck = SOME Machine.Program.typeCheck}
       val _ =
          let
             open Control
