@@ -228,6 +228,12 @@ structure Type =
                else NONE
           | _ => NONE
 
+      val deObjptrs: t -> ObjptrTycon.t vector option =
+         fn t => 
+         case node t of
+            Objptr opts => SOME opts
+          | _ => NONE
+
       val deReal: t -> RealSize.t option =
          fn t =>
          case node t of
