@@ -1492,12 +1492,13 @@ fun outputChunk (cxt, outputLL, chunk) =
                          (objptrs, fn optr => (Metadata.str o Vector.sub) (
                            objectTypeMetadata,
                            optr)),
-                      "}\t; ",
-                         (Layout.toString o Layout.tuple o List.map)
-                         (objptrs, (ObjptrTycon.layout o ObjptrTycon.fromIndex)),
-                      "\n"])
-                  val () = printList (pos,
-                     Vector.toListMap (objptrs, ObjptrTycon.index))
+                      "}"])
+                  val indices = Vector.toListMap (objptrs, ObjptrTycon.index)
+                  val () = printList (pos, indices)
+                  val objptrsString =
+                      (Layout.toString o Layout.tuple o List.map)
+                      (indices, (ObjptrTycon.layout o ObjptrTycon.fromIndex))
+                  val () = print (concat ["\t; ", objptrsString, "\n"])
                   val noalias = Vector.toListKeepAllMapi (objectTypes,
                      fn (i, a) =>
                         if Vector.exists (objptrs, fn optr =>
@@ -1505,6 +1506,7 @@ fun outputChunk (cxt, outputLL, chunk) =
                         then NONE
                         else SOME i)
                   val () = printList (neg, noalias)
+                  val () = print (concat ["\t; not ", objptrsString, "\n"])
                in
                   ()
                end)
