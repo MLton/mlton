@@ -433,11 +433,14 @@ val transform =
                   then p
                else let
                        val p =
-                          Control.pass
-                          {name = ("duplicate", SOME (Int.toString (n + 1))),
+                          Control.simplifyPass
+                          {arg = p,
+                           doit = fn p => shrink (transform (p, hofo, small, product)),
+                           execute = true,
+                           name = concat ["duplicate", Int.toString (n + 1)],
                            stats = Program.layoutStats,
                            toFile = Program.toFile,
-                           thunk = fn () => shrink (transform (p, hofo, small, product))}
+                           typeCheck = typeCheck}
                     in
                        loop (p, n + 1)
                     end
