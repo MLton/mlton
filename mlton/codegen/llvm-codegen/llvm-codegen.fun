@@ -309,17 +309,26 @@ fun mkgep (lhs, ty, arg, idcs) =
     end
 
 
-(* metadata must be given a unique index *)
-val metaDataCounter = ref 0
-fun newMetadata () =
-   let
-      val i = !metaDataCounter
-      val _ = Int.inc metaDataCounter
-   in
-      i
-   end
 
-val typeScopes : (ObjptrTycon.t vector, int * int) HashTable.t =
+structure Metadata = struct
+   datatype t =
+      Unnamed of int
+   fun str (Unnamed i) = "!" ^ (Int.toString i)
+   fun int (Unnamed i) = i
+
+   val metaDataCounter = ref 0
+   fun new () =
+      let
+         val i = !metaDataCounter
+         val () = Int.inc metaDataCounter
+      in
+         Unnamed i
+      end
+   fun reset () =
+      metaDataCounter := 0
+end
+
+val typeScopes : (ObjptrTycon.t vector, Metadata.t * Metadata.t) HashTable.t =
    HashTable.new
       {hash = fn os =>
          Hash.vectorMap (os, ObjptrTycon.hash),
@@ -329,11 +338,11 @@ val typeScopes : (ObjptrTycon.t vector, int * int) HashTable.t =
 fun getTypeScopes t =
    Option.map (Type.deObjptrs t, fn os =>
       HashTable.lookupOrInsert (typeScopes, os,
-         fn () => (newMetadata (), newMetadata ())))
+         fn () => (Metadata.new (), Metadata.new ())))
 
 fun scopeString (scope, noalias) =
-   concat [", !alias.scope !", Int.toString scope,
-           ", !noalias !", Int.toString noalias]
+   concat [", !alias.scope ", Metadata.str scope,
+           ", !noalias ", Metadata.str noalias]
 (* Generates the string for alias.scope and noalias metadata *)
 fun mkTyScope t =
    case getTypeScopes t of
@@ -1382,6 +1391,8 @@ fun outputChunk (cxt, outputLL, chunk) =
     let
         val () = cFunctions := []
         val () = ffiSymbols := []
+        val () = HashTable.removeAll (typeScopes, fn _ => true)
+        val () = Metadata.reset ()
         val Context { labelToStringIndex, chunkLabelIndex, labelChunk,
                       chunkLabelToString, entryLabels, printblock, ... } = cxt
         val Chunk.T {blocks, chunkLabel, regMax} = chunk
@@ -1451,6 +1462,53 @@ fun outputChunk (cxt, outputLL, chunk) =
         val () = (print (mkload (leaveRet, "%struct.cont*", "%cont", ""))
                  ; print (concat ["\tret %struct.cont ", leaveRet, "\n"])
                  ; print "}\n\n")
+        val Context { program = Program.T {objectTypes, ...}, ...} = cxt
+        val typeDomain = Metadata.new ()
+        val () = print (concat
+               [Metadata.str typeDomain, " = !{", Metadata.str typeDomain, "}",
+                "\t; ", "Type domain", "\n"])
+        val objectTypeMetadata = Vector.map (objectTypes,
+            (fn objTy =>
+               let
+                  val m = Metadata.new ()
+                  val () = print (concat
+                     [Metadata.str m, " = !{",
+                      Metadata.str m, ", ", Metadata.str typeDomain, "}",
+                      "\t; ", Layout.toString (ObjectType.layout objTy), "\n"])
+               in
+                  m
+               end))
+        val () = List.foreach (HashTable.toList typeScopes,
+            fn (objptrs, (pos, neg)) =>
+               let
+                  val rec addSep =
+                     fn [] => ""
+                      | [s] => s
+                      | s :: ss' => concat [s, ", ", addSep ss']
+                  fun printList (m, objptrs) = print (concat
+                     [Metadata.str m,
+                      " = !{",
+                         (addSep o List.map)
+                         (objptrs, fn optr => (Metadata.str o Vector.sub) (
+                           objectTypeMetadata,
+                           optr)),
+                      "}\t; ",
+                         (Layout.toString o Layout.tuple o List.map)
+                         (objptrs, (ObjptrTycon.layout o ObjptrTycon.fromIndex)),
+                      "\n"])
+                  val () = printList (pos,
+                     Vector.toListMap (objptrs, ObjptrTycon.index))
+                  val noalias = Vector.toListKeepAllMapi (objectTypes,
+                     fn (i, a) =>
+                        if Vector.exists (objptrs, fn optr =>
+                           ObjptrTycon.index optr = i)
+                        then NONE
+                        else SOME i)
+                  val () = printList (neg, noalias)
+               in
+                  ()
+               end)
+
         val () = List.foreach (!cFunctions, fn f =>
                      print (concat ["declare ", f, "\n"]))
         val () = List.foreach (!ffiSymbols, fn {name, cty, symbolScope} =>
