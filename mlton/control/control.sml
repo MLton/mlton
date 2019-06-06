@@ -250,9 +250,20 @@ fun checkFile (f: File.t, {fail: string -> 'a, name, ok: unit -> 'a}): 'a = let
 (*---------------------------------------------------*)
 
 datatype 'a display =
-   NoDisplay
+    NoDisplay
   | Layout of 'a -> Layout.t
   | Layouts of 'a * (Layout.t -> unit) -> unit
+
+fun composeDisplay (display: 'b display, f: 'a -> 'b): 'a display =
+   case display of
+      NoDisplay => NoDisplay
+    | Layout lay => Layout (lay o f)
+    | Layouts lays => Layouts (fn (x, output) => lays (f x, output))
+
+fun composeToFile ({display: 'b display, style: style, suffix: string}, f: 'a -> 'b) =
+   {display = composeDisplay (display, f),
+    style = style,
+    suffix = suffix}
 
 fun 'a sizeMessage (name: string, a: 'a): Layout.t =
    let open Layout
