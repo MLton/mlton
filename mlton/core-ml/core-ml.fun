@@ -521,7 +521,7 @@ structure Program =
              *)
             val output = output'
          in
-            output (Layout.str "\n\nDecs:")
+            output (Layout.str "\n")
             ; Vector.foreach (decs, output o Dec.layout)
          end
 
