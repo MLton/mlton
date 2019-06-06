@@ -83,7 +83,9 @@ fun timeToString {total, gc} =
    in concat [t2s (Time.- (total, gc)), " + ", t2s gc, " (", per, "% GC)"]
    end
 
-val traceRaising = ref false
+exception CompileError
+exception Stopped
+exception Raised
 
 fun trace (verb, name: string) (f: 'a -> 'b) (a: 'a): 'b =
    if Verbosity.<= (verb, !verbosity)
@@ -102,27 +104,44 @@ fun trace (verb, name: string) (f: 'a -> 'b) (a: 'a): 'b =
            in (f a
                before messageStr (verb, concat [name, " finished in ", done ()]))
               handle exn =>
-                 let
-                    val done = done ()
-                 in
-                    if !traceRaising
-                       then ()
-                       else (messageStr (verb, concat [name, " raised: ", Exn.toString exn])
-                             ; (case Exn.history exn of
-                                   [] => ()
-                                 | history =>
-                                      (messageStr (verb, concat [name, " raised with history: "])
-                                       ; indent ()
-                                       ; (List.foreach
-                                          (history, fn s =>
-                                           messageStr (verb, s)))
-                                       ; unindent ()))
-                             ; traceRaising := true)
-                          ; messageStr (verb, concat [name, " raised in ", done])
-                          ; raise exn
-                 end
+                 (case exn of
+                     CompileError =>
+                        (messageStr (verb, concat [name, " reported errors in ", done ()])
+                         ; raise exn)
+                   | Stopped =>
+                        (messageStr (verb, concat [name, " finished in ", done ()])
+                         ; raise exn)
+                   | Raised =>
+                        (messageStr (verb, concat [name, " raised in ", done ()])
+                         ; raise exn)
+                   | _ =>
+                        (messageStr (verb, concat [name, " raised: ", Exn.toString exn])
+                         ; (case Exn.history exn of
+                               [] => ()
+                             | history =>
+                                  (indent ()
+                                   ; List.foreach (history, fn s => messageStr (verb, s))
+                                   ; unindent ()))
+                         ; messageStr (verb, concat [name, " raised in ", done ()])
+                         ; raise Raised))
            end
       else f a
+
+fun traceTop (name: string) (f: 'a -> unit) (a: 'a) =
+   trace (Top, name) f a
+   handle CompileError => OS.Process.exit OS.Process.failure
+        | Stopped => ()
+        | Raised => OS.Process.exit OS.Process.failure
+        | exn =>
+            (verbosity := Top
+             ; messageStr (Top, concat [name, " raised: ", Exn.toString exn])
+             ; (case Exn.history exn of
+                   [] => ()
+                 | history =>
+                      (indent ()
+                       ; List.foreach (history, fn s => messageStr (Top, s))
+                       ; unindent ()))
+             ; OS.Process.exit OS.Process.failure)
 
 type traceAccum = {verb: verbosity, 
                    total: Time.t ref, 
@@ -159,20 +178,19 @@ val ('a, 'b) traceAdd: (traceAccum * string) -> ('a -> 'b) -> 'a -> 'b =
            in (f a
                before done ())
               handle exn =>
-                 (if !traceRaising
-                     then ()
-                     else (messageStr (verb, concat [name, " raised: ", Exn.toString exn])
-                           ; (case Exn.history exn of
-                                 [] => ()
-                               | history =>
-                                    (messageStr (verb, concat [name, " raised with history: "])
-                                     ; indent ()
-                                     ; (List.foreach
-                                        (history, fn s =>
-                                         messageStr (verb, s)))
-                                     ; unindent ()))
-                           ; traceRaising := true)
-                  ; raise exn)
+                 (case exn of
+                     CompileError => raise exn
+                   | Stopped => raise exn
+                   | Raised => raise exn
+                   | _ =>
+                        (messageStr (verb, concat [name, " raised: ", Exn.toString exn])
+                         ; (case Exn.history exn of
+                               [] => ()
+                             | history =>
+                                  (indent ()
+                                   ; List.foreach (history, fn s => messageStr (verb, s))
+                                   ; unindent ()))
+                         ; raise Raised))
            end
       else f a
 
@@ -193,8 +211,6 @@ val ('a, 'b) traceBatch: (verbosity * string) -> ('a -> 'b) ->
 val numErrors: int ref = ref 0
 
 val errorThreshhold: int ref = ref 20
-
-val die = Process.fail
 
 local
    fun msg (kind: string, r: Region.t, msg: Layout.t, extra: Layout.t): unit =
@@ -222,16 +238,16 @@ in
          val _ = msg ("Error", r, m, e)
       in
          if !numErrors = !errorThreshhold
-            then die "compilation aborted: too many errors"
+            then raise CompileError
          else ()
       end
 end
 
 fun errorStr (r, msg) = error (r, Layout.str msg, Layout.empty)
 
-fun checkForErrors (name: string) =
+fun checkForErrors () =
    if !numErrors > 0
-      then die (concat ["compilation aborted: ", name, " reported errors"])
+      then raise CompileError
    else ()
 
 fun checkFile (f: File.t, {fail: string -> 'a, name, ok: unit -> 'a}): 'a = let
@@ -382,8 +398,8 @@ fun pass {name = (name: string, namex: string option),
       val _ = message (verb, PropertyList.stats)
       val _ = message (verb, HashSet.stats)
       val _ = unindent ()
-      val _ = checkForErrors name
       val _ = maybeSaveToFile {arg = result, name = (name, namex), toFile = toFile}
+      val _ = checkForErrors ()
    in
       result
    end
@@ -425,7 +441,7 @@ fun translatePass {arg: 'a,
              name = (name, SOME "pre"),
              toFile = srcToFile}
          val res = thunk ()
-         val _ = checkForErrors name
+         val _ = checkForErrors ()
          val _ =
             maybeSaveToFile
             {arg = res,
@@ -450,8 +466,9 @@ fun translatePass {arg: 'a,
       in
          res
       end
+      val res = trace (Pass, name) thunk ()
    in
-      trace (Pass, name) thunk ()
+      res
    end
 
 fun simplifyPass {arg: 'a,

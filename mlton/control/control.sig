@@ -24,6 +24,7 @@ signature CONTROL =
       val traceAdd: traceAccum * string -> ('a -> 'b) -> 'a -> 'b
       val traceBatch: verbosity * string -> ('a -> 'b) -> 
                       (('a -> 'b) * (unit -> unit))
+      val traceTop: string -> ('a -> unit) -> 'a -> unit
       val indent: unit -> unit
       val unindent: unit -> unit
       val getDepth: unit -> int
@@ -34,7 +35,7 @@ signature CONTROL =
       val checkFile: File.t * {fail: string -> 'a,
                                name: string,
                                ok: unit -> 'a} -> 'a
-      val checkForErrors: string -> unit
+      val checkForErrors: unit -> unit
       val error: Region.t * Layout.t * Layout.t -> unit
       val errorStr: Region.t * string -> unit
       (* abort compilation once this many errors reached *)

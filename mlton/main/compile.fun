@@ -332,7 +332,7 @@ val lexAndParseMLB: MLBString.t -> Ast.Basdec.t =
    fn input =>
    let
       val ast = lexAndParseMLB input
-      val _ = Control.checkForErrors "parse"
+      val _ = Control.checkForErrors ()
    in
       ast
    end
@@ -849,7 +849,7 @@ fun genFromXML (input: File.t): Machine.Program.t =
                         of Result.Yes x => x
                          | Result.No msg => (Control.error
                            (Region.bogus, Layout.str "Xml Parse failed", Layout.str msg);
-                            Control.checkForErrors("parse");
+                            Control.checkForErrors();
                             (* can't be reached *)
                             raise Fail "parse")
                    ),
@@ -884,7 +884,7 @@ fun genFromSXML (input: File.t): Machine.Program.t =
                         of Result.Yes x => x
                          | Result.No msg => (Control.error 
                            (Region.bogus, Layout.str "Sxml Parse failed", Layout.str msg);
-                            Control.checkForErrors("parse");
+                            Control.checkForErrors();
                             (* can't be reached *)
                             raise Fail "parse")
                    ),
@@ -917,7 +917,7 @@ fun genFromSsa (input: File.t): Machine.Program.t =
                         of Result.Yes x => x
                          | Result.No msg => (Control.error 
                            (Region.bogus, Layout.str "Ssa Parse failed", Layout.str msg);
-                            Control.checkForErrors("parse");
+                            Control.checkForErrors();
                             (* can't be reached *)
                             raise Fail "parse")
                    ),
@@ -948,7 +948,7 @@ fun genFromSsa2 (input: File.t): Machine.Program.t =
                                     of Result.Yes x => x
                                      | Result.No msg => (Control.error
                                        (Region.bogus, Layout.str "Ssa2 Parse failed", Layout.str msg);
-                                        Control.checkForErrors("parse");
+                                        Control.checkForErrors();
                                         (* can't be reached *)
                                         raise Fail "parse")
                                ),
