@@ -11,7 +11,6 @@ functor SignalCheck (S: RSSA_TRANSFORM_STRUCTS): RSSA_TRANSFORM =
 struct
 
 open S
-open Rssa
 
 structure CFunction =
    struct

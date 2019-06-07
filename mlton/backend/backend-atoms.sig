@@ -18,10 +18,28 @@ signature BACKEND_ATOMS' =
       structure Runtime: RUNTIME
       structure Type: REP_TYPE
 
-      sharing Atoms = Type
       sharing ObjectType = Type.ObjectType
       sharing ObjptrTycon = ObjectType.ObjptrTycon = Type.ObjptrTycon
       sharing Runtime = ObjectType.Runtime = Type.Runtime
+
+      (* SML/NJ bug:
+       *
+       * `sharing Atoms = Type`
+       *
+       * should suffice, instead of the following enumeration,
+       * but leads to `implied type sharing violation` errors;
+       * the sharing of `Atoms` and `Type` seems to "forget"
+       * the components of `Atoms` not present in `Type`.
+       *)
+      (* sharing Atoms = Type *)
+      sharing CFunction = Type.CFunction
+      sharing CType = Type.CType
+      sharing Label = Type.Label
+      sharing Prim = Type.Prim
+      sharing RealSize = Type.RealSize
+      sharing WordSize = Type.WordSize
+      sharing WordX = Type.WordX
+      sharing WordXVector = Type.WordXVector
    end
 
 signature BACKEND_ATOMS =
@@ -30,6 +48,7 @@ signature BACKEND_ATOMS =
 
       include BACKEND_ATOMS'
 
+      (* sharing Atoms = BackendAtoms.Atoms *)
       sharing ObjectType = BackendAtoms.ObjectType
       sharing ObjptrTycon = BackendAtoms.ObjptrTycon
       sharing Runtime = BackendAtoms.Runtime

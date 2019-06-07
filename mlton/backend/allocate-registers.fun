@@ -21,6 +21,7 @@ in
    structure Function = Function
    structure Kind = Kind
    structure Label = Label
+   structure Live = Live
    structure Type = Type
    structure Var = Var
 end
@@ -34,8 +35,6 @@ in
    structure Runtime = Runtime
    structure StackOffset = StackOffset
 end
-
-structure Live = Live (Rssa)
 
 structure Allocation:
    sig

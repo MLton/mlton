@@ -18,7 +18,7 @@ signature MACHINE =
 
       structure Switch: SWITCH
 
-      sharing BackendAtoms = Switch
+      sharing Atoms = Switch
 
       structure ChunkLabel: ID
 

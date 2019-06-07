@@ -24,9 +24,6 @@ functor BounceVars(S: RSSA_TRANSFORM_STRUCTS): RSSA_TRANSFORM =
 struct
 
 open S
-open Rssa
-structure Live = Live (Rssa)
-structure Restore = RestoreRssa (Rssa)
 
 fun shouldAvoid (Block.T {kind, ...}) =
    (* this definition is important;
@@ -416,7 +413,7 @@ fun transformFunc func =
 fun transform p =
    let
       val Program.T {functions, handlesSignals, main, objectTypes, profileInfo} = p
-      val restore = Restore.restoreFunction {main=main}
+      val restore = restoreFunction {main=main}
       val newFunctions = List.map(functions, restore o transformFunc)
    in
       Program.T {functions=newFunctions, handlesSignals=handlesSignals,

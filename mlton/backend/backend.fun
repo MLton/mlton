@@ -52,12 +52,7 @@ end
 structure AllocateRegisters = AllocateRegisters (structure Machine = Machine
                                                  structure Rssa = Rssa)
 structure Chunkify = Chunkify (Rssa)
-structure ImplementHandlers = ImplementHandlers (structure Rssa = Rssa)
-structure ImplementProfiling = ImplementProfiling (structure Rssa = Rssa)
-structure LimitCheck = LimitCheck (structure Rssa = Rssa)
 structure ParallelMove = ParallelMove ()
-structure BounceVars = BounceVars (structure Rssa = Rssa)
-structure SignalCheck = SignalCheck(structure Rssa = Rssa)
 structure SsaToRssa = SsaToRssa (structure Rssa = Rssa
                                  structure Ssa = Ssa)
 
@@ -152,35 +147,10 @@ fun toMachine (ssa: Ssa.Program.t, codegen) =
           tgtStats = SOME R.Program.layoutStats,
           tgtToFile = SOME R.Program.toFile,
           tgtTypeCheck = SOME R.Program.typeCheck}
-      fun rssaSimplify p = 
-         let
-            open Rssa
-            val rssaPasses =
-               {name = "rssaShrink1", doit = Program.shrink, execute = true} ::
-               {name = "insertLimitChecks", doit = LimitCheck.transform, execute = true} ::
-               {name = "insertSignalChecks", doit = SignalCheck.transform, execute = true} ::
-               (* must be before implementHandlers *)
-               {name = "bounceVars", doit = BounceVars.transform, execute = true} ::
-               {name = "implementHandlers", doit = ImplementHandlers.transform, execute = true} ::
-               {name = "rssaShrink2", doit = Program.shrink, execute = true} ::
-               {name = "implementProfiling", doit = ImplementProfiling.transform, execute = true} ::
-               {name = "rssaOrderFunctions", doit = Program.orderFunctions, execute = true} ::
-               {name = "rssaShuffle", doit = Program.shuffle, execute = false} ::
-               nil
-            val p =
-               Control.simplifyPasses
-               {arg = p,
-                passes = rssaPasses,
-                stats = Program.layoutStats,
-                toFile = Program.toFile,
-                typeCheck = Program.typeCheck}
-         in
-            p
-         end
       val rssa =
          Control.simplifyPass
          {arg = rssa,
-          doit = rssaSimplify,
+          doit = Rssa.simplify,
           execute = true,
           keepIL = !Control.keepRSSA,
           name = "rssaSimplify",
