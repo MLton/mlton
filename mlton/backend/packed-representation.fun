@@ -37,9 +37,9 @@ in
    structure WordSize = WordSize
    structure WordX = WordX
 end
-structure S = Ssa
+structure S = Ssa2
 local
-   open Ssa
+   open Ssa2
 in
    structure Base = Base
    structure Con = Con
@@ -2426,7 +2426,7 @@ structure Value:
       val fixedPoint = Dep.fixedPoint
    end
 
-fun compute (program as Ssa.Program.T {datatypes, ...}) =
+fun compute (program as Ssa2.Program.T {datatypes, ...}) =
    let
       type tyconRepAndCons =
          (TyconRep.t * {con: Con.t, rep: ConRep.t} vector) Value.t

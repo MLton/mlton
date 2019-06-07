@@ -87,8 +87,8 @@ structure ClosureConvert = ClosureConvert (structure Ssa = Ssa
                                            structure Sxml = Sxml)
 structure SsaToSsa2 = SsaToSsa2 (structure Ssa = Ssa
                                  structure Ssa2 = Ssa2)
-structure Ssa2ToRssa = SsaToRssa (structure Rssa = Rssa
-                                  structure Ssa = Ssa2)
+structure Ssa2ToRssa = Ssa2ToRssa (structure Rssa = Rssa
+                                   structure Ssa2 = Ssa2)
 structure Backend = Backend (structure Machine = Machine
                              structure Rssa = Rssa
                              fun funcToLabel f = f)

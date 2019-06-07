@@ -17,7 +17,7 @@ functor Backend
 functor BackendAtoms
 functor Machine
 functor Rssa
-functor SsaToRssa
+functor Ssa2ToRssa
 
 is
 
@@ -61,8 +61,8 @@ rssa.fun
 
 representation.sig
 packed-representation.fun
-ssa-to-rssa.sig
-ssa-to-rssa.fun
+ssa2-to-rssa.sig
+ssa2-to-rssa.fun
 
 machine.sig
 machine.fun

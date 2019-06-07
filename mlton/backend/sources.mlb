@@ -48,8 +48,8 @@ local
 
    representation.sig
    packed-representation.fun
-   ssa-to-rssa.sig
-   ssa-to-rssa.fun
+   ssa2-to-rssa.sig
+   ssa2-to-rssa.fun
 
    machine.sig
    machine.fun
@@ -73,5 +73,5 @@ in
    functor BackendAtoms
    functor Machine
    functor Rssa
-   functor SsaToRssa
+   functor Ssa2ToRssa
 end
