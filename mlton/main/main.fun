@@ -1252,10 +1252,7 @@ fun commandLine (args: string list): unit =
       Result.No msg => usage msg
     | Result.Yes [] =>
          (inputFile := "<none>"
-          ; if isSome (!showBasis)
-               then (trace (Top, "Type Check SML")
-                     Compile.elaborateSML {input = []})
-            else if !buildConstants
+          ; if !buildConstants
                then Compile.outputBasisConstants Out.standard
             else (Out.outputl (Out.standard, Version.banner)
                   ; if Verbosity.< (!verbosity, Detail)
