@@ -154,6 +154,65 @@ val lookupConstant =
       fn z => f () z
    end
 
+fun setupRuntimeConstants() : unit =
+   (* Set GC_state offsets and sizes. *)
+   let
+      val _ =
+         let
+            fun get (name: string): Bytes.t =
+               case lookupConstant ({default = NONE, name = name},
+                                    ConstType.Word WordSize.word32) of
+                  Const.Word w => Bytes.fromInt (WordX.toInt w)
+                | _ => Error.bug "Compile.setupRuntimeConstants: GC_state offset must be an int"
+         in
+            Runtime.GCField.setOffsets
+            {
+             atomicState = get "atomicState_Offset",
+             cardMapAbsolute = get "generationalMaps.cardMapAbsolute_Offset",
+             currentThread = get "currentThread_Offset",
+             curSourceSeqIndex = get "sourceMaps.curSourceSeqIndex_Offset",
+             exnStack = get "exnStack_Offset",
+             frontier = get "frontier_Offset",
+             limit = get "limit_Offset",
+             limitPlusSlop = get "limitPlusSlop_Offset",
+             maxFrameSize = get "maxFrameSize_Offset",
+             signalIsPending = get "signalsInfo.signalIsPending_Offset",
+             stackBottom = get "stackBottom_Offset",
+             stackLimit = get "stackLimit_Offset",
+             stackTop = get "stackTop_Offset"
+             };
+            Runtime.GCField.setSizes
+            {
+             atomicState = get "atomicState_Size",
+             cardMapAbsolute = get "generationalMaps.cardMapAbsolute_Size",
+             currentThread = get "currentThread_Size",
+             curSourceSeqIndex = get "sourceMaps.curSourceSeqIndex_Size",
+             exnStack = get "exnStack_Size",
+             frontier = get "frontier_Size",
+             limit = get "limit_Size",
+             limitPlusSlop = get "limitPlusSlop_Size",
+             maxFrameSize = get "maxFrameSize_Size",
+             signalIsPending = get "signalsInfo.signalIsPending_Size",
+             stackBottom = get "stackBottom_Size",
+             stackLimit = get "stackLimit_Size",
+             stackTop = get "stackTop_Size"
+             }
+         end
+      (* Setup endianness *)
+      val _ =
+         let
+            fun get (name:string): bool =
+                case lookupConstant ({default = NONE, name = name},
+                                     ConstType.Bool) of
+                   Const.Word w => 1 = WordX.toInt w
+                 | _ => Error.bug "Compile.setupRuntimeConstants: endian unknown"
+         in
+            Control.Target.setBigEndian (get "MLton_Platform_Arch_bigendian")
+         end
+   in
+      ()
+   end
+
 (* ------------------------------------------------- *)   
 (*                   Primitive Env                   *)
 (* ------------------------------------------------- *)
@@ -587,6 +646,7 @@ fun simplifySsa2 ssa2 =
 
 fun makeMachine ssa2 =
    let
+      val _ = setupRuntimeConstants ()
       val codegenImplementsPrim =
          case !Control.codegen of
             Control.AMD64Codegen => amd64Codegen.implementsPrim
@@ -617,70 +677,11 @@ fun makeMachine ssa2 =
       machine
    end
 
-fun setupConstants() : unit = 
-   (* Set GC_state offsets and sizes. *)
-   let
-      val _ =
-         let
-            fun get (name: string): Bytes.t =
-               case lookupConstant ({default = NONE, name = name},
-                                    ConstType.Word WordSize.word32) of
-                  Const.Word w => Bytes.fromInt (WordX.toInt w)
-                | _ => Error.bug "Compile.setupConstants: GC_state offset must be an int"
-         in
-            Runtime.GCField.setOffsets
-            {
-             atomicState = get "atomicState_Offset",
-             cardMapAbsolute = get "generationalMaps.cardMapAbsolute_Offset",
-             currentThread = get "currentThread_Offset",
-             curSourceSeqIndex = get "sourceMaps.curSourceSeqIndex_Offset",
-             exnStack = get "exnStack_Offset",
-             frontier = get "frontier_Offset",
-             limit = get "limit_Offset",
-             limitPlusSlop = get "limitPlusSlop_Offset",
-             maxFrameSize = get "maxFrameSize_Offset",
-             signalIsPending = get "signalsInfo.signalIsPending_Offset",
-             stackBottom = get "stackBottom_Offset",
-             stackLimit = get "stackLimit_Offset",
-             stackTop = get "stackTop_Offset"
-             };
-            Runtime.GCField.setSizes
-            {
-             atomicState = get "atomicState_Size",
-             cardMapAbsolute = get "generationalMaps.cardMapAbsolute_Size",
-             currentThread = get "currentThread_Size",
-             curSourceSeqIndex = get "sourceMaps.curSourceSeqIndex_Size",
-             exnStack = get "exnStack_Size",
-             frontier = get "frontier_Size",
-             limit = get "limit_Size",
-             limitPlusSlop = get "limitPlusSlop_Size",
-             maxFrameSize = get "maxFrameSize_Size",
-             signalIsPending = get "signalsInfo.signalIsPending_Size",
-             stackBottom = get "stackBottom_Size",
-             stackLimit = get "stackLimit_Size",
-             stackTop = get "stackTop_Size"
-             }
-         end
-      (* Setup endianness *)
-      val _ =
-         let
-            fun get (name:string): bool =
-                case lookupConstant ({default = NONE, name = name},
-                                     ConstType.Bool) of
-                   Const.Word w => 1 = WordX.toInt w
-                 | _ => Error.bug "Compile.setupConstants: endian unknown"
-         in
-            Control.Target.setBigEndian (get "MLton_Platform_Arch_bigendian")
-         end
-   in
-      ()
-   end
 
 
 fun preCodegen (input: MLBString.t): Machine.Program.t =
    let
       val xml = elaborate {input = input}
-      val _ = setupConstants ()
       val xml = simplifyXml xml
       val sxml = makeSxml xml
       val sxml = simplifySxml sxml
@@ -754,7 +755,6 @@ val elaborateSML =
 
 fun genFromXML (input: File.t): Machine.Program.t =
    let
-      val _ = setupConstants()
       val xml =
          Control.passTypeCheck
          {name = ("xmlParse", NONE),
@@ -789,7 +789,6 @@ fun compileXML {input: File.t, outputC, outputLL, outputS}: unit =
 
 fun genFromSXML (input: File.t): Machine.Program.t =
    let
-      val _ = setupConstants()
       val sxml =
          Control.passTypeCheck
          {name = ("sxmlParse", NONE),
@@ -822,7 +821,6 @@ fun compileSXML {input: File.t, outputC, outputLL, outputS}: unit =
 
 fun genFromSsa (input: File.t): Machine.Program.t =
    let
-      val _ = setupConstants()
       val ssa =
          Control.passTypeCheck
          {name = ("ssaParse", NONE),
@@ -853,7 +851,6 @@ fun compileSSA {input: File.t, outputC, outputLL, outputS}: unit =
 
 fun genFromSsa2 (input: File.t): Machine.Program.t =
                let
-                  val _ = setupConstants()
                   val ssa2 =
                      Control.passTypeCheck
                      {name = ("ssa2Parse", NONE),
