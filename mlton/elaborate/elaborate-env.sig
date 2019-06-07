@@ -1,4 +1,4 @@
-(* Copyright (C) 2017 Matthew Fluet.
+(* Copyright (C) 2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -213,6 +213,18 @@ signature ELABORATE_ENV =
       val lookupStrid: t * Ast.Strid.t -> Structure.t option
       val makeBasis: t * (unit -> 'a) -> 'a * Basis.t
       val makeInterfaceEnv: t -> InterfaceEnv.t
+      val makeLayoutPrettyTycon:
+         t * {prefixUnset: bool}
+         -> {destroy: unit -> unit,
+             layoutPrettyTycon: Tycon.t -> Layout.t,
+             setLayoutPrettyTycon: Tycon.t * Layout.t -> unit,
+             loopStr: Structure.t * int * Ast.Strid.t list -> unit}
+      val makeLayoutPrettyTyconAndFlexTycon:
+         t * InterfaceEnv.t * Interface.t option * {prefixUnset: bool}
+         -> {destroy: unit -> unit,
+             layoutPrettyTycon: Tycon.t -> Layout.t,
+             layoutPrettyFlexTycon: Interface.FlexibleTycon.t -> Layout.t,
+             setLayoutPrettyTycon: Tycon.t * Layout.t -> unit}
       val makeStructure: t * (unit -> 'a) -> 'a * Structure.t
       val newCons:
          t * {con: CoreML.Con.t,
@@ -234,18 +246,6 @@ signature ELABORATE_ENV =
       val scope: t * (unit -> 'a) -> 'a
       (* like scope, but works for bases, signatures and functors as well *)
       val scopeAll: t * (unit -> 'a) -> 'a
-      val makeLayoutPrettyTycon:
-         t * {prefixUnset: bool}
-         -> {destroy: unit -> unit,
-             layoutPrettyTycon: Tycon.t -> Layout.t,
-             setLayoutPrettyTycon: Tycon.t * Layout.t -> unit,
-             loopStr: Structure.t * int * Ast.Strid.t list -> unit}
-      val makeLayoutPrettyTyconAndFlexTycon:
-         t * InterfaceEnv.t * Interface.t option * {prefixUnset: bool}
-         -> {destroy: unit -> unit,
-             layoutPrettyTycon: Tycon.t -> Layout.t,
-             layoutPrettyFlexTycon: Interface.FlexibleTycon.t -> Layout.t,
-             setLayoutPrettyTycon: Tycon.t * Layout.t -> unit}
       val sizeMessage: t -> Layout.t
       val snapshot: t -> (unit -> 'a) -> 'a
    end
