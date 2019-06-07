@@ -12,22 +12,6 @@ struct
 
 open S
 
-structure ObjptrTycon = ObjptrTycon ()
-structure Runtime = Runtime ()
-structure RepType = RepType (structure CFunction = CFunction
-                             structure CType = CType
-                             structure Label = Label
-                             structure ObjptrTycon = ObjptrTycon
-                             structure Prim = Prim
-                             structure RealSize = RealSize
-                             structure Runtime = Runtime
-                             structure WordSize = WordSize
-                             structure WordX = WordX
-                             structure WordXVector = WordXVector)
-structure ObjectType = RepType.ObjectType
-
-structure Type = RepType
-
 structure ChunkLabel = Id (val noname = "ChunkLabel")
 
 structure Register =

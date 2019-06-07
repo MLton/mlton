@@ -50,7 +50,8 @@ structure Xml = Xml (open Atoms)
 structure Sxml = Sxml (open Xml)
 structure Ssa = Ssa (open Atoms)
 structure Ssa2 = Ssa2 (open Atoms)
-structure Machine = Machine (open Atoms)
+structure BackendAtoms = BackendAtoms (open Atoms)
+structure Machine = Machine (open BackendAtoms)
 
 local
    open Machine

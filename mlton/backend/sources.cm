@@ -13,6 +13,7 @@ signature MACHINE
 signature REP_TYPE
 signature RUNTIME
 
+functor BackendAtoms
 functor Backend
 functor Machine
 
@@ -30,6 +31,10 @@ objptr-tycon.fun
 object-type.sig
 rep-type.sig
 rep-type.fun
+
+backend-atoms.sig
+backend-atoms.fun
+
 switch.sig
 switch.fun
 err.sml
