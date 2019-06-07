@@ -52,10 +52,6 @@ signature CONTROL =
          Layout of 'a -> Layout.t
        | Layouts of 'a * (Layout.t -> unit) -> unit
 
-      val composeToFile:
-         {display: 'b display, style: style, suffix: string} * ('a -> 'b) ->
-         {display: 'a display, style: style, suffix: string}
-
       val diagnostic: (unit -> Layout.t) -> unit
       val diagnostics: ((Layout.t -> unit) -> unit) -> unit
       val maybeSaveToFile:
