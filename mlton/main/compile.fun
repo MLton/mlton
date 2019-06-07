@@ -465,6 +465,13 @@ fun outputBasisConstants (out: Out.t): unit =
 
 fun mkCompile {outputC, outputLL, outputS} =
    let
+      local
+         val sourceFiles = Ast.Basdec.sourceFiles o lexAndParseMLB
+      in
+         val mlbSourceFiles = sourceFiles o MLBString.fromMLBFile
+         val smlSourceFiles = sourceFiles o MLBString.fromSMLFile
+      end
+
       fun deadCode decs =
          let
             fun deadCode decs =
@@ -748,16 +755,17 @@ fun mkCompile {outputC, outputLL, outputS} =
       val goToSxml = goSxmlSimplify o toSxml
       val goXmlSimplify = goToSxml o xmlSimplify
 
-      fun mk (il, frontend, compile) =
-         {frontend = Control.trace (Control.Top, "Type Check " ^ il) (ignore o frontend),
+      fun mk (il, sourceFiles, frontend, compile) =
+         {sourceFiles = sourceFiles,
+          frontend = Control.trace (Control.Top, "Type Check " ^ il) (ignore o frontend),
           compile = Control.trace (Control.Top, "Compile " ^ il) (compile o frontend)}
    in
-      {mlb = mk ("SML", mlbFrontend, goXmlSimplify),
-       sml = mk ("SML", smlFrontend, goXmlSimplify),
-       xml = mk ("XML", xmlFrontend, goXmlSimplify),
-       sxml = mk ("SXML", sxmlFrontend, goSxmlSimplify),
-       ssa = mk ("SSA", ssaFrontend, goSsaSimplify),
-       ssa2 = mk ("SSA2", ssa2Frontend, goSsa2Simplify)}
+      {mlb = mk ("SML", mlbSourceFiles, mlbFrontend, goXmlSimplify),
+       sml = mk ("SML", smlSourceFiles, smlFrontend, goXmlSimplify),
+       xml = mk ("XML", Vector.new1, xmlFrontend, goXmlSimplify),
+       sxml = mk ("SXML", Vector.new1, sxmlFrontend, goSxmlSimplify),
+       ssa = mk ("SSA", Vector.new1, ssaFrontend, goSsaSimplify),
+       ssa2 = mk ("SSA2", Vector.new1, ssa2Frontend, goSsa2Simplify)}
    end
 
 fun elaborate {input: MLBString.t}: Xml.Program.t =
