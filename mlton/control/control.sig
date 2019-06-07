@@ -54,10 +54,6 @@ signature CONTROL =
 
       val diagnostic: (unit -> Layout.t) -> unit
       val diagnostics: ((Layout.t -> unit) -> unit) -> unit
-      val maybeSaveToFile:
-         {arg: 'a,
-          name: (string * string option),
-          toFile: {display: 'a display, style: style, suffix: string}} -> unit
       val saveToFile:
          {arg: 'a,
           name: string option,

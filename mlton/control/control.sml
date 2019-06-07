@@ -311,15 +311,12 @@ fun saveToFile {arg: 'a,
                    ; layout (arg, output)))
    end
 
-fun maybeSaveToFile {arg: 'a, name = (name: string, namex: string option), toFile}: unit =
+fun maybeSaveToFile {arg: 'a, name: string, suffix: string, toFile}: unit =
    if not (List.exists (!keepPasses, fn re =>
                         Regexp.Compiled.matchesAll (re, name)))
       then ()
       else let
-              val name =
-                 case namex of
-                    NONE => name
-                  | SOME namex => concat [name, ".", namex]
+              val name = concat [name, ".", suffix]
            in
               saveToFile {arg = arg, name = SOME name, toFile = toFile, verb = Pass}
            end
@@ -388,7 +385,8 @@ fun translatePass {arg: 'a,
             (srcToFile, fn srcToFile =>
              maybeSaveToFile
              {arg = arg,
-              name = (name, SOME "pre"),
+              name = name,
+              suffix = "pre",
               toFile = srcToFile})
          val res = thunk ()
          val () =
@@ -396,7 +394,8 @@ fun translatePass {arg: 'a,
             (tgtToFile, fn tgtToFile =>
              maybeSaveToFile
              {arg = res,
-              name = (name, SOME "post"),
+              name = name,
+              suffix = "post",
               toFile = tgtToFile})
          val () =
             if !ControlFlags.typeCheck
