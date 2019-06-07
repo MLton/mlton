@@ -3641,6 +3641,9 @@ fun processDefUse (E as T f) =
       ()
    end
 
+val processDefUse =
+   Control.trace (Control.Detail, "processDefUse") processDefUse
+
 (* ------------------------------------------------- *)
 (*                      newCons                      *)
 (* ------------------------------------------------- *)
