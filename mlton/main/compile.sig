@@ -26,7 +26,7 @@ signature COMPILE =
                             print: string -> unit,
                             done: unit -> unit}} ->
          {mlb: {frontend: File.t -> unit, compile: File.t -> unit},
-          sml: {frontend: File.t list -> unit, compile: File.t list -> unit},
+          sml: {frontend: File.t -> unit, compile: File.t -> unit},
           xml: {frontend: File.t -> unit, compile: File.t -> unit},
           sxml: {frontend: File.t -> unit, compile: File.t -> unit},
           ssa: {frontend: File.t -> unit, compile: File.t -> unit},
@@ -42,7 +42,7 @@ signature COMPILE =
                        outputS: unit -> {file: File.t,
                                          print: string -> unit,
                                          done: unit -> unit}} -> unit
-      val compileSML: {input: File.t list,
+      val compileSML: {input: File.t,
                        outputC: unit -> {file: File.t,
                                          print: string -> unit,
                                          done: unit -> unit},
@@ -94,7 +94,7 @@ signature COMPILE =
                                           done: unit -> unit}} -> unit
 
       val elaborateMLB: {input: File.t} -> unit
-      val elaborateSML: {input: File.t list} -> unit
+      val elaborateSML: {input: File.t} -> unit
       val setCommandLineConstant: {name: string, value: string} -> unit
       val sourceFilesMLB: {input: File.t} -> File.t vector
       (* output a C file to print out the basis constants. *)

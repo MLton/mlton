@@ -1602,7 +1602,7 @@ fun commandLine (args: string list): unit =
                                ; compileCSO (List.concat [!outputs, csoFiles]))
                      end
                   val compileSML =
-                     mkCompileSrc {listFiles = fn {input} => Vector.fromList input,
+                     mkCompileSrc {listFiles = fn {input} => Vector.new1 input,
                                    elaborate = Compile.elaborateSML,
                                    compile = Compile.compileSML}
                   val compileMLB =
@@ -1628,7 +1628,7 @@ fun commandLine (args: string list): unit =
 
                   fun compile () =
                      case start of
-                        Place.SML => compileSML [input]
+                        Place.SML => compileSML input
                       | Place.MLB => compileMLB input
                       | Place.Generated => compileCSO (input :: csoFiles)
                       | Place.O => compileCSO (input :: csoFiles)
