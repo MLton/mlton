@@ -527,6 +527,14 @@ structure Program =
 
       val toFile = {display = Control.Layouts layouts, style = Control.ML, suffix = "core-ml"}
 
+      fun layoutStats (program as T {...}) =
+         let
+            open Layout
+         in
+            align
+            [Control.sizeMessage ("coreML program", program)]
+         end
+
 (*       fun typeCheck (T {decs, ...}) =
  *       let
  *          fun checkExp (e: Exp.t): Ty.t =

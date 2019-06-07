@@ -2065,7 +2065,7 @@ structure Program =
             compose (skipCommentsML, parseProgram <* (spaces *> (failing next <|> failCut "end of file")))
          end
 
-      fun layoutStats (T {datatypes, globals, functions, main, ...}) =
+      fun layoutStats (program as T {datatypes, globals, functions, main, ...}) =
          let
             val (mainNumVars, mainNumBlocks) =
                case List.peek (functions, fn f =>
@@ -2107,7 +2107,8 @@ structure Program =
                (datatypes, fn Datatype.T {cons, ...} =>
                 Vector.foreach (cons, fn {args, ...} =>
                                 Prod.foreach (args, countType)))
-            val numStatements = ref (Vector.length globals)
+            val numGlobals = Vector.length globals
+            val numStatements = ref numGlobals
             val numBlocks = ref 0
             val _ =
                List.foreach
@@ -2139,7 +2140,8 @@ structure Program =
             open Layout
          in
             align
-            [seq [str "num globals = ", Int.layout (Vector.length globals)],
+            [Control.sizeMessage ("ssa2 program", program),
+             seq [str "num globals = ", Int.layout (Vector.length globals)],
              seq [str "num vars in main = ", Int.layout mainNumVars],
              seq [str "num blocks in main = ", Int.layout mainNumBlocks],
              seq [str "num functions in program = ", Int.layout numFunctions],

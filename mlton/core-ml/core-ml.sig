@@ -189,6 +189,7 @@ signature CORE_ML =
             datatype t = T of {decs: Dec.t vector}
 
             val layouts: t * (Layout.t -> unit) -> unit
+            val layoutStats: t -> Layout.t
             val toFile: {display: t Control.display, style: Control.style, suffix: string}
          end
    end

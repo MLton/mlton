@@ -147,9 +147,9 @@ fun toMachine (ssa: Ssa.Program.t, codegen) =
          {arg = (ssa, codegen),
           doit = SsaToRssa.convert,
           name = "toRssa",
-          srcToFile = Control.composeToFile (Ssa.Program.toFile, #1),
-          tgtStats = R.Program.layoutStats,
-          tgtToFile = R.Program.toFile,
+          srcToFile = SOME (Control.composeToFile (Ssa.Program.toFile, #1)),
+          tgtStats = SOME R.Program.layoutStats,
+          tgtToFile = SOME R.Program.toFile,
           tgtTypeCheck = SOME R.Program.typeCheck}
       fun rssaSimplify p = 
          let
@@ -200,9 +200,9 @@ fun toMachine (ssa: Ssa.Program.t, codegen) =
          Control.translatePass
          {arg = rssa,
           name = "toMachine",
-          srcToFile = R.Program.toFile,
-          tgtStats = fn _ => Layout.empty,
-          tgtToFile = Machine.Program.toFile,
+          srcToFile = SOME R.Program.toFile,
+          tgtStats = SOME Machine.Program.layoutStats,
+          tgtToFile = SOME Machine.Program.toFile,
           tgtTypeCheck = SOME Machine.Program.typeCheck,
           doit = fn rssa =>
 let
@@ -1206,7 +1206,7 @@ end}
           doit = M.simplify,
           execute = true,
           name = "machineSimplify",
-          stats = fn _ => Layout.empty,
+          stats = M.Program.layoutStats,
           toFile = M.Program.toFile,
           typeCheck = M.Program.typeCheck}
    in

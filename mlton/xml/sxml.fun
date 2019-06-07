@@ -13,6 +13,8 @@ functor Sxml (S: SXML_STRUCTS): SXML =
                    structure Program =
                       struct
                          open Program
+                         val layoutStats =
+                            mkLayoutStats "sxml"
                          val toFile =
                             {display = #display toFile,
                              style = #style toFile,

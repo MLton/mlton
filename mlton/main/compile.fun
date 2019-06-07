@@ -369,7 +369,6 @@ structure MLBString:>
       val fromMLBFile: File.t -> t
       val fromSMLFiles: File.t list -> t
       val lexAndParseMLB: t -> Ast.Basdec.t
-      val toFile: {display: t Control.display, style: Control.style, suffix: string}
    end =
    struct
       type t = string
@@ -398,11 +397,6 @@ structure MLBString:>
          end
 
       val lexAndParseMLB = MLBFrontEnd.lexAndParseString
-
-      val toFile =
-         {display = Control.NoDisplay,
-          style = Control.No,
-          suffix = "mlb"}
    end
 
 val lexAndParseMLB: MLBString.t -> Ast.Basdec.t = 
@@ -438,20 +432,20 @@ fun parseAndElaborateMLB (input: MLBString.t): (CoreML.Dec.t list * bool) vector
       {arg = input,
        doit = parseAndElaborateMLB,
        name = "parseAndElaborate",
-       srcToFile = MLBString.toFile,
-       tgtStats = fn _ => Layout.empty,
-       tgtToFile = {display = (Control.Layouts
-                            (fn (decss, output) =>
-                             (output (Layout.str "\n");
-                              Vector.foreach
-                              (decss, fn (decs, dc) =>
-                               (output (Layout.seq [Layout.str "(* deadCode: ",
-                                                    Bool.layout dc,
-                                                    Layout.str " *)"]);
-                                List.foreach
-                                (decs, output o CoreML.Dec.layout)))))),
-                    style = #style CoreML.Program.toFile,
-                    suffix = #suffix CoreML.Program.toFile},
+       srcToFile = NONE,
+       tgtStats = SOME (fn coreML => Control.sizeMessage ("coreML program", coreML)),
+       tgtToFile = SOME {display = (Control.Layouts
+                                    (fn (decss, output) =>
+                                     (output (Layout.str "\n");
+                                      Vector.foreach
+                                      (decss, fn (decs, dc) =>
+                                       (output (Layout.seq [Layout.str "(* deadCode: ",
+                                                            Bool.layout dc,
+                                                            Layout.str " *)"]);
+                                        List.foreach
+                                        (decs, output o CoreML.Dec.layout)))))),
+                         style = #style CoreML.Program.toFile,
+                         suffix = #suffix CoreML.Program.toFile},
        tgtTypeCheck = NONE}
    end
 
@@ -495,20 +489,20 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
                {arg = decs,
                 doit = deadCode,
                 name = "deadCode",
-                srcToFile = {display = (Control.Layouts
-                                        (fn (decss, output) =>
-                                         (output (Layout.str "\n");
-                                          Vector.foreach
-                                          (decss, fn (decs, dc) =>
-                                           (output (Layout.seq [Layout.str "(* deadCode: ",
-                                                                Bool.layout dc,
-                                                                Layout.str " *)"]);
-                                            List.foreach
-                                            (decs, output o CoreML.Dec.layout)))))),
-                             style = #style CoreML.Program.toFile,
-                             suffix = #suffix CoreML.Program.toFile},
-                tgtStats = fn _ => Layout.empty,
-                tgtToFile = CoreML.Program.toFile,
+                srcToFile = SOME {display = (Control.Layouts
+                                             (fn (decss, output) =>
+                                              (output (Layout.str "\n");
+                                               Vector.foreach
+                                               (decss, fn (decs, dc) =>
+                                                (output (Layout.seq [Layout.str "(* deadCode: ",
+                                                                     Bool.layout dc,
+                                                                     Layout.str " *)"]);
+                                                 List.foreach
+                                                 (decs, output o CoreML.Dec.layout)))))),
+                                  style = #style CoreML.Program.toFile,
+                                  suffix = #suffix CoreML.Program.toFile},
+                tgtStats = NONE,
+                tgtToFile = SOME CoreML.Program.toFile,
                 tgtTypeCheck = NONE}
          in
             coreML
@@ -526,9 +520,9 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
          {arg = coreML,
           doit = Defunctorize.defunctorize,
           name = "defunctorize",
-          srcToFile = CoreML.Program.toFile,
-          tgtStats = Xml.Program.layoutStats,
-          tgtToFile = Xml.Program.toFile,
+          srcToFile = SOME CoreML.Program.toFile,
+          tgtStats = SOME Xml.Program.layoutStats,
+          tgtToFile = SOME Xml.Program.toFile,
           tgtTypeCheck = SOME Xml.typeCheck}
    in
       xml
@@ -559,9 +553,9 @@ fun makeSxml xml =
    {arg = xml,
     doit = Monomorphise.monomorphise,
     name = "monomorphise",
-    srcToFile = Xml.Program.toFile,
-    tgtStats = Sxml.Program.layoutStats,
-    tgtToFile = Sxml.Program.toFile,
+    srcToFile = SOME Xml.Program.toFile,
+    tgtStats = SOME Sxml.Program.layoutStats,
+    tgtToFile = SOME Sxml.Program.toFile,
     tgtTypeCheck = SOME Sxml.typeCheck}
 
 fun simplifySxml sxml =
@@ -589,9 +583,9 @@ fun makeSsa sxml =
    {arg = sxml,
     doit = ClosureConvert.closureConvert,
     name = "closureConvert",
-    srcToFile = Sxml.Program.toFile,
-    tgtStats = Ssa.Program.layoutStats,
-    tgtToFile = Ssa.Program.toFile,
+    srcToFile = SOME Sxml.Program.toFile,
+    tgtStats = SOME Ssa.Program.layoutStats,
+    tgtToFile = SOME Ssa.Program.toFile,
     tgtTypeCheck = SOME Ssa.typeCheck}
 
 fun simplifySsa ssa =
@@ -619,9 +613,9 @@ fun makeSsa2 ssa =
    {arg = ssa,
     doit = SsaToSsa2.convert,
     name = "toSsa2",
-    srcToFile = Ssa.Program.toFile,
-    tgtStats = Ssa2.Program.layoutStats,
-    tgtToFile = Ssa2.Program.toFile,
+    srcToFile = SOME Ssa.Program.toFile,
+    tgtStats = SOME Ssa2.Program.layoutStats,
+    tgtToFile = SOME Ssa2.Program.toFile,
     tgtTypeCheck = SOME Ssa2.typeCheck}
 
 fun simplifySsa2 ssa2 =
@@ -658,12 +652,9 @@ fun makeMachine ssa2 =
          {arg = (ssa2, {codegenImplementsPrim = codegenImplementsPrim}),
           doit = Backend.toMachine,
           name = "backend",
-          srcToFile = {display = Control.Layouts (fn ((ssa2, _), output) =>
-                                                  Ssa2.Program.layouts (ssa2, output)),
-                       style = #style Ssa2.Program.toFile,
-                       suffix = #suffix Ssa2.Program.toFile},
-          tgtStats = fn _ => Layout.empty,
-          tgtToFile = Machine.Program.toFile,
+          srcToFile = SOME (Control.composeToFile (Ssa2.Program.toFile, #1)),
+          tgtStats = SOME Machine.Program.layoutStats,
+          tgtToFile = SOME Machine.Program.toFile,
           tgtTypeCheck = SOME Machine.Program.typeCheck}
       val _ =
          let

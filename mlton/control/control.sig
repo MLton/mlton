@@ -97,8 +97,8 @@ signature CONTROL =
       val translatePass: {arg: 'a,
                           doit: 'a -> 'b,
                           name: string,
-                          srcToFile: {display: 'a display, style: style, suffix: string},
-                          tgtStats: 'b -> Layout.t,
-                          tgtToFile: {display: 'b display, style: style, suffix: string},
+                          srcToFile: {display: 'a display, style: style, suffix: string} option,
+                          tgtStats: ('b -> Layout.t) option,
+                          tgtToFile: {display: 'b display, style: style, suffix: string} option,
                           tgtTypeCheck: ('b -> unit) option} -> 'b
    end

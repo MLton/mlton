@@ -425,9 +425,9 @@ fun passTypeCheck {name: string * string option,
 fun translatePass {arg: 'a,
                    doit: 'a -> 'b,
                    name: string,
-                   srcToFile: {display: 'a display, style: style, suffix: string},
-                   tgtStats: 'b -> Layout.t,
-                   tgtToFile: {display: 'b display, style: style, suffix: string},
+                   srcToFile: {display: 'a display, style: style, suffix: string} option,
+                   tgtStats: ('b -> Layout.t) option,
+                   tgtToFile: {display: 'b display, style: style, suffix: string} option,
                    tgtTypeCheck: ('b -> unit) option}: 'b =
    let
       val thunk = fn () => doit arg
@@ -436,17 +436,20 @@ fun translatePass {arg: 'a,
       val thunk = fn () =>
       let
          val _ =
-            maybeSaveToFile
-            {arg = arg,
-             name = (name, SOME "pre"),
-             toFile = srcToFile}
+            Option.app
+            (srcToFile, fn srcToFile =>
+             maybeSaveToFile
+             {arg = arg,
+              name = (name, SOME "pre"),
+              toFile = srcToFile})
          val res = thunk ()
-         val _ = checkForErrors ()
          val _ =
-            maybeSaveToFile
-            {arg = res,
-             name = (name, SOME "post"),
-             toFile = tgtToFile}
+            Option.app
+            (tgtToFile, fn tgtToFile =>
+             maybeSaveToFile
+             {arg = res,
+              name = (name, SOME "post"),
+              toFile = tgtToFile})
          val _ =
             if !ControlFlags.typeCheck
                then Option.app (tgtTypeCheck, fn tgtTypeCheck =>
@@ -457,8 +460,7 @@ fun translatePass {arg: 'a,
          in
             val _ = message (verb, fn () => Layout.str (concat [name, ".post stats"]))
             val _ = indent ()
-            val _ = message (verb, fn () => sizeMessage (#suffix tgtToFile, res))
-            val _ = message (verb, fn () => tgtStats res)
+            val _ = Option.app (tgtStats, fn tgtStats => message (verb, fn () => tgtStats res))
             val _ = message (verb, PropertyList.stats)
             val _ = message (verb, HashSet.stats)
             val _ = unindent ()
@@ -488,9 +490,9 @@ fun simplifyPass {arg: 'a,
       then translatePass {arg = arg,
                           doit = doit,
                           name = name,
-                          srcToFile = toFile,
-                          tgtStats = stats,
-                          tgtToFile = toFile,
+                          srcToFile = SOME toFile,
+                          tgtStats = SOME stats,
+                          tgtToFile = SOME toFile,
                           tgtTypeCheck = SOME typeCheck}
       else (messageStr (Pass, name ^ " skipped"); arg)
 

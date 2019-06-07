@@ -814,6 +814,30 @@ structure Program =
 
       val toFile = {display = Control.Layouts layouts, style = Control.ML, suffix = "machine"}
 
+      fun layoutStats (program as T {chunks, objectTypes, ...}) =
+         let
+            val numChunks = ref 0
+            val numBlocks = ref 0
+            val numStatements = ref 0
+            val _ =
+               List.foreach
+               (chunks, fn Chunk.T {blocks, ...} =>
+                (Int.inc numChunks
+                 ; Vector.foreach
+                   (blocks, fn Block.T {statements, ...} =>
+                    (Int.inc numBlocks
+                     ; numStatements := !numStatements + Vector.length statements))))
+            val numObjectTypes = Vector.length objectTypes
+            open Layout
+         in
+            align
+            [seq [Control.sizeMessage ("machine program", program)],
+             seq [str "num chunks in program = ", Int.layout (!numChunks)],
+             seq [str "num blocks in program = ", Int.layout (!numBlocks)],
+             seq [str "num statements in program = ", Int.layout (!numStatements)],
+             seq [str "num object types in program = ", Int.layout (numObjectTypes)]]
+         end
+
       fun shuffle (T {chunks, frameInfos, frameOffsets,
                       handlesSignals, main, maxFrameSize,
                       objectTypes, reals, sourceMaps, vectors}) =
@@ -1523,7 +1547,7 @@ fun simplify p =
          Control.simplifyPasses
          {arg = p,
           passes = machinePasses,
-          stats = fn _ => Layout.empty,
+          stats = Program.layoutStats,
           toFile = Program.toFile,
           typeCheck = Program.typeCheck}
    in

@@ -1128,30 +1128,38 @@ structure Program =
                            ; Vector.foreach (cons, Con.clear o #con)))
           ; Exp.clear body)
 
-      fun layoutStats (T {datatypes, body, ...}) =
+      fun mkLayoutStats il (program as T {datatypes, body, ...}) =
          let
             val numTypes = ref 0
             fun inc _ = numTypes := 1 + !numTypes
             val {hom, destroy} = Type.makeHom {var = inc, con = inc}
             val numPrimExps = ref 0
-            open Layout
-         in
-            Vector.foreach (datatypes, fn {cons, ...} =>
-                            Vector.foreach (cons, fn {arg, ...} =>
-                                            case arg of
-                                               NONE => ()
-                                             | SOME t => hom t))
-            ; (Exp.foreach
+            val _ =
+               Vector.foreach
+               (datatypes, fn {cons, ...} =>
+                Vector.foreach (cons, fn {arg, ...} =>
+                                case arg of
+                                   NONE => ()
+                                 | SOME t => hom t))
+            val _ =
+               Exp.foreach
                {exp = body,
                 handlePrimExp = fn _ => numPrimExps := 1 + !numPrimExps,
                 handleVarExp = fn _ => (),
                 handleBoundVar = hom o #3,
-                handleExp = fn _ => ()})
-            ; destroy ()
-            ; align [seq [str "num primexps in program = ", Int.layout (!numPrimExps)],
-                     seq [str "num types in program = ", Int.layout (!numTypes)],
-                     Type.stats ()]
+                handleExp = fn _ => ()}
+            val _ = destroy ()
+
+            open Layout
+         in
+            align
+            [Control.sizeMessage (il ^ " program", program),
+             seq [str "num primexps in program = ", Int.layout (!numPrimExps)],
+             seq [str "num types in program = ", Int.layout (!numTypes)],
+             Type.stats ()]
          end
+
+      val layoutStats = mkLayoutStats "xml"
    end
 
 end

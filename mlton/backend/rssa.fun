@@ -928,7 +928,7 @@ structure Program =
 
       val toFile = {display = Control.Layouts layouts, style = Control.ML, suffix = "rssa"}
 
-      fun layoutStats (T {functions, main, objectTypes, ...}) =
+      fun layoutStats (program as T {functions, main, objectTypes, ...}) =
          let
             val numStatements = ref 0
             val numBlocks = ref 0
@@ -948,7 +948,8 @@ structure Program =
             open Layout
          in
             align
-            [seq [str "num functions in program = ", Int.layout numFunctions],
+            [seq [Control.sizeMessage ("rssa program", program)],
+             seq [str "num functions in program = ", Int.layout numFunctions],
              seq [str "num blocks in program = ", Int.layout (!numBlocks)],
              seq [str "num statements in program = ", Int.layout (!numStatements)],
              seq [str "num object types in program = ", Int.layout (numObjectTypes)]]
