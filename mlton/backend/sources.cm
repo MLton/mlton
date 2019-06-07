@@ -13,9 +13,11 @@ signature MACHINE
 signature REP_TYPE
 signature RUNTIME
 
-functor BackendAtoms
 functor Backend
+functor BackendAtoms
 functor Machine
+functor Rssa
+functor SsaToRssa
 
 is
 

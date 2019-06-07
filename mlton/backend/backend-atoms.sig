@@ -48,7 +48,7 @@ signature BACKEND_ATOMS =
 
       include BACKEND_ATOMS'
 
-      (* sharing Atoms = BackendAtoms.Atoms *)
+      sharing Atoms = BackendAtoms.Atoms
       sharing ObjectType = BackendAtoms.ObjectType
       sharing ObjptrTycon = BackendAtoms.ObjptrTycon
       sharing Runtime = BackendAtoms.Runtime

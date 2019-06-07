@@ -65,12 +65,13 @@ local
    backend.sig
    backend.fun
 in
-   functor BackendAtoms
-
    signature MACHINE
    signature REP_TYPE
    signature RUNTIME
 
    functor Backend
+   functor BackendAtoms
    functor Machine
+   functor Rssa
+   functor SsaToRssa
 end

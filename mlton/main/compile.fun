@@ -51,6 +51,7 @@ structure Sxml = Sxml (open Xml)
 structure Ssa = Ssa (open Atoms)
 structure Ssa2 = Ssa2 (open Atoms)
 structure BackendAtoms = BackendAtoms (open Atoms)
+structure Rssa = Rssa (open BackendAtoms)
 structure Machine = Machine (open BackendAtoms)
 
 local
@@ -86,8 +87,10 @@ structure ClosureConvert = ClosureConvert (structure Ssa = Ssa
                                            structure Sxml = Sxml)
 structure SsaToSsa2 = SsaToSsa2 (structure Ssa = Ssa
                                  structure Ssa2 = Ssa2)
-structure Backend = Backend (structure Ssa = Ssa2
-                             structure Machine = Machine
+structure Ssa2ToRssa = SsaToRssa (structure Rssa = Rssa
+                                  structure Ssa = Ssa2)
+structure Backend = Backend (structure Machine = Machine
+                             structure Rssa = Rssa
                              fun funcToLabel f = f)
 structure CCodegen = CCodegen (structure Machine = Machine)
 structure LLVMCodegen = LLVMCodegen (structure CCodegen = CCodegen
@@ -672,7 +675,7 @@ fun mkCompile {outputC, outputLL, outputS} =
          in
             ssa2
          end
-      fun toMachine ssa2 =
+      fun toRssa ssa2 =
          let
             val _ = setupRuntimeConstants ()
             val codegenImplementsPrim =
@@ -681,19 +684,57 @@ fun mkCompile {outputC, outputLL, outputS} =
                 | Control.CCodegen => CCodegen.implementsPrim
                 | Control.LLVMCodegen => LLVMCodegen.implementsPrim
                 | Control.X86Codegen => x86Codegen.implementsPrim
+            fun toRssa ssa2 =
+               Ssa2ToRssa.convert
+               (ssa2, {codegenImplementsPrim = codegenImplementsPrim})
+            val rssa =
+               Control.translatePass
+               {arg = ssa2,
+                doit = toRssa,
+                keepIL = false,
+                name = "toRssa",
+                srcToFile = SOME Ssa2.Program.toFile,
+                tgtStats = SOME Rssa.Program.layoutStats,
+                tgtToFile = SOME Rssa.Program.toFile,
+                tgtTypeCheck = SOME Rssa.Program.typeCheck}
+         in
+            rssa
+         end
+      fun rssaSimplify rssa =
+         Control.simplifyPass
+         {arg = rssa,
+          doit = Rssa.simplify,
+          execute = true,
+          keepIL = !Control.keepRSSA,
+          name = "rssaSimplify",
+          stats = Rssa.Program.layoutStats,
+          toFile = Rssa.Program.toFile,
+          typeCheck = Rssa.Program.typeCheck}
+      fun toMachine rssa =
+         let
             val machine =
                Control.translatePass
-               {arg = (ssa2, {codegenImplementsPrim = codegenImplementsPrim}),
+               {arg = rssa,
                 doit = Backend.toMachine,
-                keepIL = !Control.keepMachine,
+                keepIL = false,
                 name = "backend",
-                srcToFile = SOME (Control.composeToFile (Ssa2.Program.toFile, #1)),
+                srcToFile = SOME Rssa.Program.toFile,
                 tgtStats = SOME Machine.Program.layoutStats,
                 tgtToFile = SOME Machine.Program.toFile,
                 tgtTypeCheck = SOME Machine.Program.typeCheck}
          in
             machine
          end
+      fun machineSimplify machine =
+         Control.simplifyPass
+         {arg = machine,
+          doit = Machine.simplify,
+          execute = true,
+          keepIL = !Control.keepMachine,
+          name = "machineSimplify",
+          stats = Machine.Program.layoutStats,
+          toFile = Machine.Program.toFile,
+          typeCheck = Machine.Program.typeCheck}
       fun codegen machine =
          let
             val _ = Machine.Program.clearLabelNames machine
@@ -728,8 +769,11 @@ fun mkCompile {outputC, outputLL, outputS} =
          end
 
       val goCodegen = codegen
-      val goToMachine = goCodegen o toMachine
-      val goSsa2Simplify = goToMachine o ssa2Simplify
+      val goMachineSimplify = goCodegen o machineSimplify
+      val goToMachine = goMachineSimplify o toMachine
+      val goRssaSimplify = goToMachine o rssaSimplify
+      val goToRssa = goRssaSimplify o toRssa
+      val goSsa2Simplify = goToRssa o ssa2Simplify
       val goToSsa2 = goSsa2Simplify o toSsa2
       val goSsaSimplify = goToSsa2 o ssaSimplify
       val goToSsa = goSsaSimplify o toSsa

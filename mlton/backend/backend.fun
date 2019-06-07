@@ -35,7 +35,6 @@ in
    structure GCField = GCField
 end
 
-structure Rssa = Rssa (open Machine)
 structure R = Rssa
 local
    open Rssa
@@ -53,8 +52,6 @@ structure AllocateRegisters = AllocateRegisters (structure Machine = Machine
                                                  structure Rssa = Rssa)
 structure Chunkify = Chunkify (Rssa)
 structure ParallelMove = ParallelMove ()
-structure SsaToRssa = SsaToRssa (structure Rssa = Rssa
-                                 structure Ssa = Ssa)
 
 structure VarOperand =
    struct
@@ -135,39 +132,8 @@ fun eliminateDeadCode (f: R.Function.t): R.Function.t =
                       start = start}
    end
 
-fun toMachine (ssa: Ssa.Program.t, codegen) =
+fun toMachine (rssa: Rssa.Program.t) =
    let
-      val rssa =
-         Control.translatePass
-         {arg = (ssa, codegen),
-          doit = SsaToRssa.convert,
-          keepIL = false,
-          name = "toRssa",
-          srcToFile = SOME (Control.composeToFile (Ssa.Program.toFile, #1)),
-          tgtStats = SOME R.Program.layoutStats,
-          tgtToFile = SOME R.Program.toFile,
-          tgtTypeCheck = SOME R.Program.typeCheck}
-      val rssa =
-         Control.simplifyPass
-         {arg = rssa,
-          doit = Rssa.simplify,
-          execute = true,
-          keepIL = !Control.keepRSSA,
-          name = "rssaSimplify",
-          stats = Rssa.Program.layoutStats,
-          toFile = Rssa.Program.toFile,
-          typeCheck = Rssa.Program.typeCheck}
-      val machine =
-         Control.translatePass
-         {arg = rssa,
-          keepIL = false,
-          name = "toMachine",
-          srcToFile = SOME R.Program.toFile,
-          tgtStats = SOME Machine.Program.layoutStats,
-          tgtToFile = SOME Machine.Program.toFile,
-          tgtTypeCheck = SOME Machine.Program.typeCheck,
-          doit = fn rssa =>
-let
       val R.Program.T {functions, handlesSignals, main, objectTypes, profileInfo} = rssa
       (* Chunk info *)
       val {get = labelChunk, set = setLabelChunk, ...} =
@@ -1158,20 +1124,6 @@ let
           reals = allReals (),
           sourceMaps = sourceMaps,
           vectors = allVectors ()}
-in
-   machine
-end}
-
-      val machine =
-         Control.simplifyPass
-         {arg = machine,
-          doit = M.simplify,
-          execute = true,
-          keepIL = false,
-          name = "machineSimplify",
-          stats = M.Program.layoutStats,
-          toFile = M.Program.toFile,
-          typeCheck = M.Program.typeCheck}
    in
       machine
    end
