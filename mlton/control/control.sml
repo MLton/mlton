@@ -454,7 +454,21 @@ fun simplifyPass {arg: 'a,
                           tgtStats = SOME stats,
                           tgtToFile = SOME toFile,
                           tgtTypeCheck = SOME typeCheck}
-      else (messageStr (Pass, name ^ " skipped"); arg)
+      else let
+              val _ = messageStr (Pass, name ^ " skipped")
+              val () =
+                 if keepIL
+                    then saveToFile {arg = arg, name = NONE,
+                                     toFile = toFile, verb = Pass}
+                    else ()
+              val () =
+                 if List.exists (!stopPasses, fn re =>
+                                 Regexp.Compiled.matchesAll (re, name))
+                    then raise Stopped
+                    else ()
+           in
+              arg
+           end
 
 fun simplifyPasses {arg, passes, stats, toFile, typeCheck} =
    List.fold
