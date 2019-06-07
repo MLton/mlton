@@ -311,8 +311,8 @@ structure MLBString:>
 
       val fromFile: File.t -> t
       val fromString: string -> t
-      val layout: t -> Layout.t
       val lexAndParseMLB: t -> Ast.Basdec.t
+      val toFile: {display: t Control.display, style: Control.style, suffix: string}
    end =
    struct
       type t = string
@@ -324,14 +324,17 @@ structure MLBString:>
       val fromString = fn s => s
 
       val lexAndParseMLB = MLBFrontEnd.lexAndParseString
-   end
 
-val lexAndParseMLB = MLBString.lexAndParseMLB
+      val toFile =
+         {display = Control.NoDisplay,
+          style = Control.No,
+          suffix = "mlb"}
+   end
 
 val lexAndParseMLB: MLBString.t -> Ast.Basdec.t = 
    fn input =>
    let
-      val ast = lexAndParseMLB input
+      val ast = MLBString.lexAndParseMLB input
       val _ = Control.checkForErrors ()
    in
       ast
@@ -340,25 +343,30 @@ val lexAndParseMLB: MLBString.t -> Ast.Basdec.t =
 fun sourceFilesMLB {input} =
    Ast.Basdec.sourceFiles (lexAndParseMLB (MLBString.fromFile input))
 
-val elaborateMLB = Elaborate.elaborateMLB
-
-fun parseAndElaborateMLB (input: MLBString.t)
-   : Env.t * (CoreML.Dec.t list * bool) vector =
-   Control.translatePass
-   {arg = input,
-    doit = fn input =>
-           (if !Control.keepAST
-               then File.remove (concat [!Control.inputFile, ".ast"])
-               else ()
-            ; Const.lookup := lookupConstant
-            ; elaborateMLB (lexAndParseMLB input, {addPrim = addPrim})),
-    name = "parseAndElaborate",
-    srcToFile = {display = Control.Layout MLBString.layout,
-                 style = Control.ML,
-                 suffix = "mlb"},
-    tgtStats = fn _ => Layout.empty,
-    tgtToFile = {display = (Control.Layouts
-                            (fn ((_, decss), output) =>
+fun parseAndElaborateMLB (input: MLBString.t): (CoreML.Dec.t list * bool) vector =
+   let
+      fun parseAndElaborateMLB input =
+         let
+            val _ = if !Control.keepAST
+                       then File.remove (concat [!Control.inputFile, ".ast"])
+                       else ()
+            val _ = Const.lookup := lookupConstant
+            val (E, decs) = Elaborate.elaborateMLB (lexAndParseMLB input, {addPrim = addPrim})
+            val _ = Control.checkForErrors ()
+            val _ = Option.map (!Control.showBasis, fn f => Env.showBasis (E, f))
+            val _ = Env.processDefUse E
+         in
+            decs
+         end
+   in
+      Control.translatePass
+      {arg = input,
+       doit = parseAndElaborateMLB,
+       name = "parseAndElaborate",
+       srcToFile = MLBString.toFile,
+       tgtStats = fn _ => Layout.empty,
+       tgtToFile = {display = (Control.Layouts
+                            (fn (decss, output) =>
                              (output (Layout.str "\n");
                               Vector.foreach
                               (decss, fn (decs, dc) =>
@@ -367,9 +375,10 @@ fun parseAndElaborateMLB (input: MLBString.t)
                                                     Layout.str " *)"]);
                                 List.foreach
                                 (decs, output o CoreML.Dec.layout)))))),
-                 style = #style CoreML.Program.toFile,
-                 suffix = #suffix CoreML.Program.toFile},
-    tgtTypeCheck = NONE}
+                    style = #style CoreML.Program.toFile,
+                    suffix = #suffix CoreML.Program.toFile},
+       tgtTypeCheck = NONE}
+   end
 
 (* ------------------------------------------------- *)
 (*                   Basis Library                   *)
@@ -378,7 +387,7 @@ fun parseAndElaborateMLB (input: MLBString.t)
 fun outputBasisConstants (out: Out.t): unit =
    let
       val _ = amBuildingConstants := true
-      val (_, decs) =
+      val decs =
          parseAndElaborateMLB (MLBString.fromFile "$(SML_LIB)/basis/primitive/primitive.mlb")
       val decs = Vector.concatV (Vector.map (decs, Vector.fromList o #1))
       (* Need to defunctorize so the constants are forced. *)
@@ -394,12 +403,7 @@ fun outputBasisConstants (out: Out.t): unit =
 
 fun elaborate {input: MLBString.t}: Xml.Program.t =
    let
-      val (E, decs) = parseAndElaborateMLB input
-      val _ =
-         case !Control.showBasis of
-            NONE => ()
-          | SOME f => Env.showBasis (E, f)
-      val _ = Env.processDefUse E
+      val decs = parseAndElaborateMLB input
       val _ =
          case !Control.exportHeader of
             NONE => ()
