@@ -317,8 +317,6 @@ structure MLBString:>
    struct
       type t = string
 
-      val layout = String.layout
-
       val fromFile = quoteFile
 
       val fromString = fn s => s
@@ -355,6 +353,7 @@ fun parseAndElaborateMLB (input: MLBString.t): (CoreML.Dec.t list * bool) vector
             val _ = Control.checkForErrors ()
             val _ = Option.map (!Control.showBasis, fn f => Env.showBasis (E, f))
             val _ = Env.processDefUse E
+            val _ = Option.app (!Control.exportHeader, Ffi.exportHeader)
          in
             decs
          end
@@ -404,78 +403,6 @@ fun outputBasisConstants (out: Out.t): unit =
 fun elaborate {input: MLBString.t}: Xml.Program.t =
    let
       val decs = parseAndElaborateMLB input
-      val _ =
-         case !Control.exportHeader of
-            NONE => ()
-          | SOME f => 
-               File.withOut
-               (f, fn out =>
-                let
-                   fun print s = Out.output (out, s)
-                   val libname = !Control.libname
-                   val libcap = CharVector.map Char.toUpper libname
-                   val _ = print ("#ifndef __" ^ libcap ^ "_ML_H__\n")
-                   val _ = print ("#define __" ^ libcap ^ "_ML_H__\n")
-                   val _ = print "\n"
-                   val _ =
-                      File.outputContents
-                      (concat [!Control.libDir, "/include/ml-types.h"], out)
-                   val _ = print "\n"
-                   val _ =
-                      File.outputContents
-                      (concat [!Control.libDir, "/include/export.h"], out)
-                   val _ = print "\n"
-                   (* How do programs link against this library by default *)
-                   val defaultLinkage =
-                      case !Control.format of
-                         Control.Archive    => "STATIC_LINK"
-                       | Control.Executable => "PART_OF"
-                       | Control.LibArchive => "NO_DEFAULT_LINK"
-                       | Control.Library    => "DYNAMIC_LINK"
-                   val _ = 
-                      print ("#if !defined(PART_OF_"      ^ libcap ^ ") && \\\n\
-                             \    !defined(STATIC_LINK_"  ^ libcap ^ ") && \\\n\
-                             \    !defined(DYNAMIC_LINK_" ^ libcap ^ ")\n")
-                   val _ = 
-                      print ("#define " ^ defaultLinkage ^ "_" ^ libcap ^ "\n")
-                   val _ = print "#endif\n"
-                   val _ = print "\n"
-                   val _ = print ("#if defined(PART_OF_" ^ libcap ^ ")\n")
-                   val _ = print "#define MLLIB_PRIVATE(x) PRIVATE x\n"
-                   val _ = print "#define MLLIB_PUBLIC(x) PUBLIC x\n"
-                   val _ = print ("#elif defined(STATIC_LINK_" ^ libcap ^ ")\n")
-                   val _ = print "#define MLLIB_PRIVATE(x)\n"
-                   val _ = print "#define MLLIB_PUBLIC(x) PUBLIC x\n"
-                   val _ = print ("#elif defined(DYNAMIC_LINK_" ^ libcap ^ ")\n")
-                   val _ = print "#define MLLIB_PRIVATE(x)\n"
-                   val _ = print "#define MLLIB_PUBLIC(x) EXTERNAL x\n"
-                   val _ = print "#else\n"
-                   val _ = print ("#error Must specify linkage for " ^ libname ^ "\n")
-                   val _ = print "#define MLLIB_PRIVATE(x)\n"
-                   val _ = print "#define MLLIB_PUBLIC(x)\n"
-                   val _ = print "#endif\n"
-                   val _ = print "\n"
-                   val _ = print "#ifdef __cplusplus\n"
-                   val _ = print "extern \"C\" {\n"
-                   val _ = print "#endif\n"
-                   val _ = print "\n"
-                   val _ = 
-                      if !Control.format = Control.Executable then () else
-                          (print ("MLLIB_PUBLIC(void " ^ libname ^ "_open(int argc, const char** argv);)\n")
-                          ;print ("MLLIB_PUBLIC(void " ^ libname ^ "_close();)\n"))
-                   val _ = Ffi.declareHeaders {print = print} 
-                   val _ = print "\n"
-                   val _ = print "#undef MLLIB_PRIVATE\n"
-                   val _ = print "#undef MLLIB_PUBLIC\n"
-                   val _ = print "\n"
-                   val _ = print "#ifdef __cplusplus\n"
-                   val _ = print "}\n"
-                   val _ = print "#endif\n"
-                   val _ = print "\n"
-                   val _ = print ("#endif /* __" ^ libcap ^ "_ML_H__ */\n")
-                in
-                   ()
-                end)
       val decs =
          Control.translatePass
          {arg = decs,

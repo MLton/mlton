@@ -149,8 +149,78 @@ fun declareExports {print} =
         ; print "}\n"
      end))
 
-fun declareHeaders {print} =
-   (declareExports {print = fn _ => ()}
-    ; List.foreach (!headers, fn s => (print s; print "\n")))
+fun exportHeader f =
+   File.withOut
+   (f, fn out =>
+    let
+       fun print s = Out.output (out, s)
+       val libname = !Control.libname
+       val libcap = CharVector.map Char.toUpper libname
+       val _ = print ("#ifndef __" ^ libcap ^ "_ML_H__\n")
+       val _ = print ("#define __" ^ libcap ^ "_ML_H__\n")
+       val _ = print "\n"
+       val _ =
+          File.outputContents
+          (concat [!Control.libDir, "/include/ml-types.h"], out)
+       val _ = print "\n"
+       val _ =
+          File.outputContents
+          (concat [!Control.libDir, "/include/export.h"], out)
+       val _ = print "\n"
+       (* How do programs link against this library by default *)
+       val defaultLinkage =
+          case !Control.format of
+             Control.Archive    => "STATIC_LINK"
+           | Control.Executable => "PART_OF"
+           | Control.LibArchive => "NO_DEFAULT_LINK"
+           | Control.Library    => "DYNAMIC_LINK"
+       val _ =
+          print ("#if !defined(PART_OF_"      ^ libcap ^ ") && \\\n\
+                 \    !defined(STATIC_LINK_"  ^ libcap ^ ") && \\\n\
+                 \    !defined(DYNAMIC_LINK_" ^ libcap ^ ")\n")
+       val _ =
+          print ("#define " ^ defaultLinkage ^ "_" ^ libcap ^ "\n")
+       val _ = print "#endif\n"
+       val _ = print "\n"
+       val _ = print ("#if defined(PART_OF_" ^ libcap ^ ")\n")
+       val _ = print "#define MLLIB_PRIVATE(x) PRIVATE x\n"
+       val _ = print "#define MLLIB_PUBLIC(x) PUBLIC x\n"
+       val _ = print ("#elif defined(STATIC_LINK_" ^ libcap ^ ")\n")
+       val _ = print "#define MLLIB_PRIVATE(x)\n"
+       val _ = print "#define MLLIB_PUBLIC(x) PUBLIC x\n"
+       val _ = print ("#elif defined(DYNAMIC_LINK_" ^ libcap ^ ")\n")
+       val _ = print "#define MLLIB_PRIVATE(x)\n"
+       val _ = print "#define MLLIB_PUBLIC(x) EXTERNAL x\n"
+       val _ = print "#else\n"
+       val _ = print ("#error Must specify linkage for " ^ libname ^ "\n")
+       val _ = print "#define MLLIB_PRIVATE(x)\n"
+       val _ = print "#define MLLIB_PUBLIC(x)\n"
+       val _ = print "#endif\n"
+       val _ = print "\n"
+       val _ = print "#ifdef __cplusplus\n"
+       val _ = print "extern \"C\" {\n"
+       val _ = print "#endif\n"
+       val _ = print "\n"
+       val _ =
+          if !Control.format = Control.Executable then () else
+              (print ("MLLIB_PUBLIC(void " ^ libname ^ "_open(int argc, const char** argv);)\n")
+              ;print ("MLLIB_PUBLIC(void " ^ libname ^ "_close();)\n"))
+       val _ = declareExports {print = fn _ => ()}
+       val _ = List.foreach (!headers, fn s => (print s; print "\n"))
+       val _ = print "\n"
+       val _ = print "#undef MLLIB_PRIVATE\n"
+       val _ = print "#undef MLLIB_PUBLIC\n"
+       val _ = print "\n"
+       val _ = print "#ifdef __cplusplus\n"
+       val _ = print "}\n"
+       val _ = print "#endif\n"
+       val _ = print "\n"
+       val _ = print ("#endif /* __" ^ libcap ^ "_ML_H__ */\n")
+    in
+       ()
+    end)
+
+val exportHeader =
+   Control.trace (Control.Detail, "exportHeader") exportHeader
 
 end
