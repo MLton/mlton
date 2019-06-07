@@ -266,14 +266,12 @@ fun checkFile (f: File.t, {fail: string -> 'a, name, ok: unit -> 'a}): 'a = let
 (*---------------------------------------------------*)
 
 datatype 'a display =
-    NoDisplay
-  | Layout of 'a -> Layout.t
+    Layout of 'a -> Layout.t
   | Layouts of 'a * (Layout.t -> unit) -> unit
 
 fun composeDisplay (display: 'b display, f: 'a -> 'b): 'a display =
    case display of
-      NoDisplay => NoDisplay
-    | Layout lay => Layout (lay o f)
+      Layout lay => Layout (lay o f)
     | Layouts lays => Layouts (fn (x, output) => lays (f x, output))
 
 fun composeToFile ({display: 'b display, style: style, suffix: string}, f: 'a -> 'b) =
@@ -313,8 +311,7 @@ fun saveToFile {arg: 'a,
                         f (fn l => (Layout.outputl (l, out)))))
    in
       case display of
-         NoDisplay => ()
-       | Layout layout =>
+         Layout layout =>
             doit (fn output =>
                   (outputHeader (style, output)
                    ; output (layout arg)))

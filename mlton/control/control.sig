@@ -49,8 +49,7 @@ signature CONTROL =
       datatype style = No | Assembly | C | Dot | LLVM | ML
 
       datatype 'a display =
-         NoDisplay
-       | Layout of 'a -> Layout.t
+         Layout of 'a -> Layout.t
        | Layouts of 'a * (Layout.t -> unit) -> unit
 
       val composeToFile:
