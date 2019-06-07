@@ -312,14 +312,20 @@ fun saveToFile {arg: 'a,
    end
 
 fun maybeSaveToFile {arg: 'a, name: string, suffix: string, toFile}: unit =
-   if not (List.exists (!keepPasses, fn re =>
-                        Regexp.Compiled.matchesAll (re, name)))
-      then ()
-      else let
-              val name = concat [name, ".", suffix]
-           in
-              saveToFile {arg = arg, name = SOME name, toFile = toFile, verb = Pass}
-           end
+   let
+      val fullName = concat [name, ".", suffix]
+      val keep =
+         List.exists
+         ([name, fullName], fn name =>
+          (List.exists
+           (!keepPasses, fn re =>
+            Regexp.Compiled.matchesAll (re, name))))
+   in
+      if keep
+         then saveToFile {arg = arg, name = SOME fullName,
+                          toFile = toFile, verb = Pass}
+         else ()
+   end
 
 (* Code for diagnosing a pass. *)
 val wrapDiagnosing =
