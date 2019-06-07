@@ -705,24 +705,24 @@ fun compile {input: 'a, resolve: 'a -> Machine.Program.t, outputC, outputLL, out
          case !Control.codegen of
             Control.AMD64Codegen =>
                (clearNames ()
-                ; (Control.trace (Control.Top, "amd64 code gen")
+                ; (Control.trace (Control.Top, "amd64 codegen")
                    amd64Codegen.output {program = machine,
                                         outputC = outputC,
                                         outputS = outputS}))
           | Control.CCodegen =>
                (clearNames ()
-                ; (Control.trace (Control.Top, "C code gen")
+                ; (Control.trace (Control.Top, "C codegen")
                    CCodegen.output {program = machine,
                                     outputC = outputC}))
           | Control.LLVMCodegen =>
                (clearNames ()
-                ; (Control.trace (Control.Top, "llvm code gen")
+                ; (Control.trace (Control.Top, "llvm codegen")
                    LLVMCodegen.output {program = machine,
                                        outputC = outputC,
-                                      outputLL = outputLL}))
+                                       outputLL = outputLL}))
           | Control.X86Codegen =>
                (clearNames ()
-                ; (Control.trace (Control.Top, "x86 code gen")
+                ; (Control.trace (Control.Top, "x86 codegen")
                    x86Codegen.output {program = machine,
                                       outputC = outputC,
                                       outputS = outputS}))
