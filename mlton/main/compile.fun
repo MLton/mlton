@@ -303,23 +303,40 @@ end
 (*                 parseAndElaborateMLB              *)
 (* ------------------------------------------------- *)
 
-fun quoteFile s = concat ["\"", String.escapeSML s, "\""]
-
 structure MLBString:>
    sig
       type t
 
-      val fromFile: File.t -> t
-      val fromString: string -> t
+      val fromMLBFile: File.t -> t
+      val fromSMLFiles: File.t list -> t
       val lexAndParseMLB: t -> Ast.Basdec.t
       val toFile: {display: t Control.display, style: Control.style, suffix: string}
    end =
    struct
       type t = string
 
-      val fromFile = quoteFile
+      fun quoteFile s = concat ["\"", String.escapeSML s, "\""]
 
-      val fromString = fn s => s
+      val fromMLBFile = quoteFile
+
+      fun fromSMLFiles inputs =
+         let
+            val basis = "$(SML_LIB)/basis/default.mlb"
+         in
+            if List.isEmpty inputs
+               then basis
+               else let
+                       val inputs = List.map (inputs, quoteFile)
+                    in
+                       String.concat
+                       ["local\n",
+                        basis, "\n",
+                        "in\n",
+                        String.concat
+                        (List.separate(inputs, "\n")), "\n",
+                        "end\n"]
+                    end
+         end
 
       val lexAndParseMLB = MLBFrontEnd.lexAndParseString
 
@@ -339,7 +356,7 @@ val lexAndParseMLB: MLBString.t -> Ast.Basdec.t =
    end
 
 fun sourceFilesMLB {input} =
-   Ast.Basdec.sourceFiles (lexAndParseMLB (MLBString.fromFile input))
+   Ast.Basdec.sourceFiles (lexAndParseMLB (MLBString.fromMLBFile input))
 
 fun parseAndElaborateMLB (input: MLBString.t): (CoreML.Dec.t list * bool) vector =
    let
@@ -387,7 +404,7 @@ fun outputBasisConstants (out: Out.t): unit =
    let
       val _ = amBuildingConstants := true
       val decs =
-         parseAndElaborateMLB (MLBString.fromFile "$(SML_LIB)/basis/primitive/primitive.mlb")
+         parseAndElaborateMLB (MLBString.fromMLBFile "$(SML_LIB)/basis/primitive/primitive.mlb")
       val decs = Vector.concatV (Vector.map (decs, Vector.fromList o #1))
       (* Need to defunctorize so the constants are forced. *)
       val _ = Defunctorize.defunctorize (CoreML.Program.T {decs = decs})
@@ -715,7 +732,7 @@ fun compile {input: 'a, resolve: 'a -> Machine.Program.t, outputC, outputLL, out
    end
 
 fun compileMLB {input: File.t, outputC, outputLL, outputS}: unit =
-   compile {input = MLBString.fromFile input,
+   compile {input = MLBString.fromMLBFile input,
             resolve = preCodegen,
             outputC = outputC,
             outputLL = outputLL,
@@ -723,39 +740,17 @@ fun compileMLB {input: File.t, outputC, outputLL, outputS}: unit =
 
 val elaborateMLB =
    fn {input: File.t} =>
-   (ignore (elaborate {input = MLBString.fromFile input}))
+   (ignore (elaborate {input = MLBString.fromMLBFile input}))
 
-local
-   fun genMLB {input: File.t list}: MLBString.t =
-      let
-         val basis = "$(SML_LIB)/basis/default.mlb"
-      in
-         MLBString.fromString
-         (case input of
-             [] => basis
-           | _ =>
-                let
-                   val input = List.map (input, quoteFile)
-                in
-                   String.concat
-                   ["local\n",
-                    basis, "\n",
-                    "in\n",
-                    String.concat (List.separate (input, "\n")), "\n",
-                    "end\n"]
-                end)
-      end
-in
-   fun compileSML {input: File.t list, outputC, outputLL, outputS}: unit =
-      compile {input = genMLB {input = input},
-               resolve = preCodegen,
-               outputC = outputC,
-               outputLL = outputLL,
-               outputS = outputS}
-   val elaborateSML =
-      fn {input: File.t list} =>
-      (ignore (elaborate {input = genMLB {input = input}}))
-end
+fun compileSML {input: File.t list, outputC, outputLL, outputS}: unit =
+   compile {input = MLBString.fromSMLFiles input,
+            resolve = preCodegen,
+            outputC = outputC,
+            outputLL = outputLL,
+            outputS = outputS}
+val elaborateSML =
+   fn {input: File.t list} =>
+   (ignore (elaborate {input = MLBString.fromSMLFiles input}))
 
 fun genFromXML (input: File.t): Machine.Program.t =
    let
