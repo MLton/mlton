@@ -403,41 +403,40 @@ fun outputBasisConstants (out: Out.t): unit =
 fun elaborate {input: MLBString.t}: Xml.Program.t =
    let
       val decs = parseAndElaborateMLB input
-      val decs =
-         Control.translatePass
-         {arg = decs,
-          doit = fn decs => let
-                               val {prog = decs} =
-                                  DeadCode.deadCode {prog = decs}
-                            in
-                               decs
-                            end,
-          name = "deadCode",
-          srcToFile = {display = (Control.Layouts
-                                  (fn (decss, output) =>
-                                   (output (Layout.str "\n");
-                                    Vector.foreach
-                                    (decss, fn (decs, dc) =>
-                                     (output (Layout.seq [Layout.str "(* deadCode: ",
-                                                          Bool.layout dc,
-                                                          Layout.str " *)"]);
-                                      List.foreach
-                                      (decs, output o CoreML.Dec.layout)))))),
-                       style = #style CoreML.Program.toFile,
-                       suffix = #suffix CoreML.Program.toFile},
-          tgtStats = fn _ => Layout.empty,
-          tgtToFile = {display = (Control.Layouts
-                                  (fn (decss, output) =>
-                                   (output (Layout.str "\n");
-                                    Vector.foreach
-                                    (decss, fn decs =>
-                                     List.foreach
-                                     (decs, output o CoreML.Dec.layout))))),
-                       style = #style CoreML.Program.toFile,
-                       suffix = #suffix CoreML.Program.toFile},
-          tgtTypeCheck = NONE}
-      val decs = Vector.concatV (Vector.map (decs, Vector.fromList))
-      val coreML = CoreML.Program.T {decs = decs}
+      val coreML =
+         let
+            fun deadCode decs =
+               let
+                  val {prog = decs} =
+                     DeadCode.deadCode {prog = decs}
+                  val decs = Vector.concatV (Vector.map (decs, Vector.fromList))
+                  val coreML = CoreML.Program.T {decs = decs}
+               in
+                  coreML
+               end
+            val coreML =
+               Control.translatePass
+               {arg = decs,
+                doit = deadCode,
+                name = "deadCode",
+                srcToFile = {display = (Control.Layouts
+                                        (fn (decss, output) =>
+                                         (output (Layout.str "\n");
+                                          Vector.foreach
+                                          (decss, fn (decs, dc) =>
+                                           (output (Layout.seq [Layout.str "(* deadCode: ",
+                                                                Bool.layout dc,
+                                                                Layout.str " *)"]);
+                                            List.foreach
+                                            (decs, output o CoreML.Dec.layout)))))),
+                             style = #style CoreML.Program.toFile,
+                             suffix = #suffix CoreML.Program.toFile},
+                tgtStats = fn _ => Layout.empty,
+                tgtToFile = CoreML.Program.toFile,
+                tgtTypeCheck = NONE}
+         in
+            coreML
+         end
       val _ =
          let
             open Control
@@ -446,7 +445,6 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
                then saveToFile {arg = coreML, name = NONE, toFile = CoreML.Program.toFile, verb = Pass}
             else ()
          end
-
       val xml =
          Control.translatePass
          {arg = coreML,
