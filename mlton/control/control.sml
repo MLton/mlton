@@ -406,14 +406,17 @@ fun translatePass {arg: 'a,
          val () =
             if !ControlFlags.typeCheck
                then Option.app (tgtTypeCheck, fn tgtTypeCheck =>
-                                trace (Pass, concat ["typeCheck ", name, ".post"]) tgtTypeCheck res)
+                                trace (Pass, concat ["typeCheck ", name, ".post"])
+                                tgtTypeCheck res)
                else ()
          local
             val verb = Detail
          in
-            val _ = message (verb, fn () => Layout.str (concat [name, ".post stats"]))
+            val _ = message (verb, fn () =>
+                             Layout.str (concat [name, ".post stats"]))
             val _ = indent ()
-            val _ = Option.app (tgtStats, fn tgtStats => message (verb, fn () => tgtStats res))
+            val _ = Option.app (tgtStats, fn tgtStats =>
+                                message (verb, fn () => tgtStats res))
             val _ = message (verb, PropertyList.stats)
             val _ = message (verb, HashSet.stats)
             val _ = unindent ()
@@ -425,7 +428,8 @@ fun translatePass {arg: 'a,
       val () =
          if keepIL
             then Option.app (tgtToFile, fn tgtToFile =>
-                             saveToFile {arg = res, name = NONE, toFile = tgtToFile, verb = Pass})
+                             saveToFile {arg = res, name = NONE,
+                                         toFile = tgtToFile, verb = Pass})
             else ()
       val () =
          if List.exists (!stopPasses, fn re =>
