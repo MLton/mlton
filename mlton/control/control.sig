@@ -70,17 +70,6 @@ signature CONTROL =
       val outputHeader: style * (Layout.t -> unit) -> unit
       val outputHeader': style * Out.t -> unit
 
-      val pass: {name: (string * string option),
-                 stats: 'a -> Layout.t,
-                 thunk: unit -> 'a,
-                 toFile: {display: 'a display, style: style, suffix: string}} -> 'a
-
-      val passTypeCheck: {name: (string * string option),
-                          stats: 'a -> Layout.t,
-                          thunk: unit -> 'a,
-                          toFile: {display: 'a display, style: style, suffix: string},
-                          typeCheck: 'a -> unit} -> 'a
-
       val simplifyPass: {arg: 'a,
                          doit: 'a -> 'a,
                          execute: bool,

@@ -379,46 +379,6 @@ val wrapProfiling =
                 end
    else thunk
 
-fun pass {name = (name: string, namex: string option),
-          stats: 'a -> Layout.t,
-          thunk: unit -> 'a,
-          toFile: {display: 'a display, style: style, suffix: string}}: 'a =
-   let
-      val thunk = wrapDiagnosing {name = name, thunk = thunk}
-      val thunk = wrapProfiling {name = name, thunk = thunk}
-      val result = trace (Pass, name) thunk ()
-      val verb = Detail
-      val _ = message (verb, fn () => Layout.str (concat [name, " stats"]))
-      val _ = indent ()
-      val _ = message (verb, fn () => sizeMessage (#suffix toFile, result))
-      val _ = message (verb, fn () => stats result)
-      val _ = message (verb, PropertyList.stats)
-      val _ = message (verb, HashSet.stats)
-      val _ = unindent ()
-      val _ = maybeSaveToFile {arg = result, name = (name, namex), toFile = toFile}
-      val _ = checkForErrors ()
-   in
-      result
-   end
-
-fun passTypeCheck {name: string * string option,
-                   stats: 'a -> Layout.t,
-                   thunk: unit -> 'a,
-                   toFile: {display: 'a display, style: style, suffix: string},
-                   typeCheck: 'a -> unit}: 'a =
-   let
-      val result = pass {name = name,
-                         stats = stats,
-                         thunk = thunk,
-                         toFile = toFile}
-      val _ =
-         if !ControlFlags.typeCheck
-            then trace (Pass, "typeCheck") typeCheck result
-         else ()
-   in
-      result
-   end
-
 fun translatePass {arg: 'a,
                    doit: 'a -> 'b,
                    name: string,
