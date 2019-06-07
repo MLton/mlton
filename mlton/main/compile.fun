@@ -398,16 +398,7 @@ fun elaborate {input: MLBString.t}: Xml.Program.t =
       val _ =
          case !Control.showBasis of
             NONE => ()
-          | SOME f =>
-               File.withOut
-               (f, fn out =>
-                Env.output
-                (E, out,
-                 {compact = !Control.showBasisCompact,
-                  def = !Control.showBasisDef,
-                  flat = !Control.showBasisFlat,
-                  onlyCurrent = false,
-                  prefixUnset = true}))
+          | SOME f => Env.showBasis (E, f)
       val _ = Env.processDefUse E
       val _ =
          case !Control.exportHeader of

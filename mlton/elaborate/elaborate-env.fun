@@ -3481,6 +3481,20 @@ fun output (E: t, out, {compact, def, flat, onlyCurrent, prefixUnset}): unit =
       ()
    end
 
+fun showBasis (E, f) =
+   File.withOut
+   (f, fn out =>
+    output
+    (E, out,
+     {compact = !Control.showBasisCompact,
+      def = !Control.showBasisDef,
+      flat = !Control.showBasisFlat,
+      onlyCurrent = false,
+      prefixUnset = true}))
+
+val showBasis =
+   Control.trace (Control.Detail, "showBasis") showBasis
+
 (* ------------------------------------------------- *)
 (*                   processDefUse                   *)
 (* ------------------------------------------------- *)

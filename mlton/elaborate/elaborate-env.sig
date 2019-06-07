@@ -235,7 +235,6 @@ signature ELABORATE_ENV =
       val openStructure: t * Structure.t -> unit
       (* openBasis (E, B) opens B in the environment E. *) 
       val openBasis: t * Basis.t -> unit
-      val output: t * Out.t * {compact: bool, def: bool, flat: bool, onlyCurrent: bool, prefixUnset: bool} -> unit
       val peekFix: t * Ast.Vid.t -> Ast.Fixity.t option
       val peekLongcon: t * Ast.Longcon.t -> (CoreML.Con.t * Scheme.t) option
       val processDefUse: t -> unit
@@ -246,6 +245,7 @@ signature ELABORATE_ENV =
       val scope: t * (unit -> 'a) -> 'a
       (* like scope, but works for bases, signatures and functors as well *)
       val scopeAll: t * (unit -> 'a) -> 'a
+      val showBasis: t * File.t -> unit
       val sizeMessage: t -> Layout.t
       val snapshot: t -> (unit -> 'a) -> 'a
    end
