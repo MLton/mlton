@@ -146,6 +146,7 @@ fun toMachine (ssa: Ssa.Program.t, codegen) =
          Control.translatePass
          {arg = (ssa, codegen),
           doit = SsaToRssa.convert,
+          keepIL = false,
           name = "toRssa",
           srcToFile = SOME (Control.composeToFile (Ssa.Program.toFile, #1)),
           tgtStats = SOME R.Program.layoutStats,
@@ -181,24 +182,15 @@ fun toMachine (ssa: Ssa.Program.t, codegen) =
          {arg = rssa,
           doit = rssaSimplify,
           execute = true,
+          keepIL = !Control.keepRSSA,
           name = "rssaSimplify",
           stats = Rssa.Program.layoutStats,
           toFile = Rssa.Program.toFile,
           typeCheck = Rssa.Program.typeCheck}
-      val _ =
-         let
-            open Control
-         in
-            if !keepRSSA
-               then saveToFile {arg = rssa,
-                                name = NONE,
-                                toFile = Rssa.Program.toFile,
-                                verb = Pass}
-            else ()
-         end
       val machine =
          Control.translatePass
          {arg = rssa,
+          keepIL = false,
           name = "toMachine",
           srcToFile = SOME R.Program.toFile,
           tgtStats = SOME Machine.Program.layoutStats,
@@ -1205,6 +1197,7 @@ end}
          {arg = machine,
           doit = M.simplify,
           execute = true,
+          keepIL = false,
           name = "machineSimplify",
           stats = M.Program.layoutStats,
           toFile = M.Program.toFile,

@@ -421,6 +421,7 @@ fun parseAndElaborateMLB (input: MLBString.t): (CoreML.Dec.t list * bool) vector
       Control.translatePass
       {arg = input,
        doit = parseAndElaborateMLB,
+       keepIL = false,
        name = "parseAndElaborate",
        srcToFile = NONE,
        tgtStats = SOME (fn coreML => Control.sizeMessage ("coreML program", coreML)),
@@ -484,6 +485,7 @@ fun mkCompile {outputC, outputLL, outputS} =
                Control.translatePass
                {arg = decs,
                 doit = deadCode,
+                keepIL = !Control.keepCoreML,
                 name = "deadCode",
                 srcToFile = SOME {display = (Control.Layouts
                                              (fn (decss, output) =>
@@ -500,11 +502,6 @@ fun mkCompile {outputC, outputLL, outputS} =
                 tgtStats = SOME CoreML.Program.layoutStats,
                 tgtToFile = SOME CoreML.Program.toFile,
                 tgtTypeCheck = NONE}
-            open Control
-            val _ =
-               if !keepCoreML
-                  then saveToFile {arg = coreML, name = NONE, toFile = CoreML.Program.toFile, verb = Pass}
-                  else ()
          in
             coreML
          end
@@ -514,6 +511,7 @@ fun mkCompile {outputC, outputLL, outputS} =
           doit = (fn coreML =>
                   Defunctorize.defunctorize coreML
                   before Control.checkForErrors ()),
+          keepIL = false,
           name = "defunctorize",
           srcToFile = SOME CoreML.Program.toFile,
           tgtStats = SOME Xml.Program.layoutStats,
@@ -523,6 +521,7 @@ fun mkCompile {outputC, outputLL, outputS} =
          Control.translatePass
          {arg = input,
           doit = defunctorize o deadCode o parseAndElaborateMLB,
+          keepIL = false,
           name = "frontend",
           srcToFile = NONE,
           tgtStats = SOME Xml.Program.layoutStats,
@@ -550,6 +549,7 @@ fun mkCompile {outputC, outputLL, outputS} =
                               Layout.str msg)
                              ; Control.checkForErrors ()
                              ; Error.bug "unreachable")),
+              keepIL = false,
               name = concat [name, "Parse"],
               srcToFile = NONE,
               tgtStats = SOME stats,
@@ -588,15 +588,11 @@ fun mkCompile {outputC, outputLL, outputS} =
                {arg = xml,
                 doit = Xml.simplify,
                 execute = true,
+                keepIL = !Control.keepXML,
                 name = "xmlSimplify",
                 stats = Xml.Program.layoutStats,
                 toFile = Xml.Program.toFile,
                 typeCheck = Xml.typeCheck}
-            open Control
-            val _ =
-               if !keepXML
-                  then saveToFile {arg = xml, name = NONE, toFile = Xml.Program.toFile, verb = Pass}
-                  else ()
          in
             xml
          end
@@ -604,6 +600,7 @@ fun mkCompile {outputC, outputLL, outputS} =
          Control.translatePass
          {arg = xml,
           doit = Monomorphise.monomorphise,
+          keepIL = false,
           name = "monomorphise",
           srcToFile = SOME Xml.Program.toFile,
           tgtStats = SOME Sxml.Program.layoutStats,
@@ -616,15 +613,11 @@ fun mkCompile {outputC, outputLL, outputS} =
                {arg = sxml,
                 doit = Sxml.simplify,
                 execute = true,
+                keepIL = !Control.keepSXML,
                 name = "sxmlSimplify",
                 stats = Sxml.Program.layoutStats,
                 toFile = Sxml.Program.toFile,
                 typeCheck = Sxml.typeCheck}
-            open Control
-            val _ =
-               if !keepSXML
-                  then saveToFile {arg = sxml, name = NONE, toFile = Sxml.Program.toFile, verb = Pass}
-                  else ()
          in
             sxml
          end
@@ -632,6 +625,7 @@ fun mkCompile {outputC, outputLL, outputS} =
          Control.translatePass
          {arg = sxml,
           doit = ClosureConvert.closureConvert,
+          keepIL = false,
           name = "closureConvert",
           srcToFile = SOME Sxml.Program.toFile,
           tgtStats = SOME Ssa.Program.layoutStats,
@@ -644,15 +638,11 @@ fun mkCompile {outputC, outputLL, outputS} =
                {arg = ssa,
                 doit = Ssa.simplify,
                 execute = true,
+                keepIL = !Control.keepSSA,
                 name = "ssaSimplify",
                 stats = Ssa.Program.layoutStats,
                 toFile = Ssa.Program.toFile,
                 typeCheck = Ssa.typeCheck}
-            open Control
-            val _ =
-               if !keepSSA
-                  then saveToFile {arg = ssa, name = NONE, toFile = Ssa.Program.toFile, verb = Pass}
-                  else ()
          in
             ssa
          end
@@ -660,6 +650,7 @@ fun mkCompile {outputC, outputLL, outputS} =
          Control.translatePass
          {arg = ssa,
           doit = SsaToSsa2.convert,
+          keepIL = false,
           name = "toSsa2",
           srcToFile = SOME Ssa.Program.toFile,
           tgtStats = SOME Ssa2.Program.layoutStats,
@@ -672,15 +663,11 @@ fun mkCompile {outputC, outputLL, outputS} =
                {arg = ssa2,
                 doit = Ssa2.simplify,
                 execute = true,
+                keepIL = !Control.keepSSA2,
                 name = "ssa2Simplify",
                 stats = Ssa2.Program.layoutStats,
                 toFile = Ssa2.Program.toFile,
                 typeCheck = Ssa2.typeCheck}
-            open Control
-            val _ =
-               if !keepSSA2
-                  then saveToFile {arg = ssa2, name = NONE, toFile = Ssa2.Program.toFile, verb = Pass}
-                  else ()
          in
             ssa2
          end
@@ -697,16 +684,12 @@ fun mkCompile {outputC, outputLL, outputS} =
                Control.translatePass
                {arg = (ssa2, {codegenImplementsPrim = codegenImplementsPrim}),
                 doit = Backend.toMachine,
+                keepIL = !Control.keepMachine,
                 name = "backend",
                 srcToFile = SOME (Control.composeToFile (Ssa2.Program.toFile, #1)),
                 tgtStats = SOME Machine.Program.layoutStats,
                 tgtToFile = SOME Machine.Program.toFile,
                 tgtTypeCheck = SOME Machine.Program.typeCheck}
-            open Control
-            val _ =
-               if !keepMachine
-                  then saveToFile {arg = machine, name = NONE, toFile = Machine.Program.toFile, verb = Pass}
-                  else ()
          in
             machine
          end
@@ -735,6 +718,7 @@ fun mkCompile {outputC, outputLL, outputS} =
             Control.translatePass
             {arg = machine,
              doit = codegen,
+             keepIL = false,
              name = concat [Control.Codegen.toString (!Control.codegen), "Codegen"],
              srcToFile = SOME Machine.Program.toFile,
              tgtStats = NONE,

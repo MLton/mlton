@@ -437,6 +437,7 @@ val transform =
                           {arg = p,
                            doit = fn p => shrink (transform (p, hofo, small, product)),
                            execute = true,
+                           keepIL = false,
                            name = concat ["duplicate", Int.toString (n + 1)],
                            stats = Program.layoutStats,
                            toFile = Program.toFile,

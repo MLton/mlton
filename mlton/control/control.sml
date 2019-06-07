@@ -381,6 +381,7 @@ val wrapProfiling =
 
 fun translatePass {arg: 'a,
                    doit: 'a -> 'b,
+                   keepIL: bool,
                    name: string,
                    srcToFile: {display: 'a display, style: style, suffix: string} option,
                    tgtStats: ('b -> Layout.t) option,
@@ -392,7 +393,7 @@ fun translatePass {arg: 'a,
       val thunk = wrapProfiling {name = name, thunk = thunk}
       val thunk = fn () =>
       let
-         val _ =
+         val () =
             Option.app
             (srcToFile, fn srcToFile =>
              maybeSaveToFile
@@ -400,14 +401,14 @@ fun translatePass {arg: 'a,
               name = (name, SOME "pre"),
               toFile = srcToFile})
          val res = thunk ()
-         val _ =
+         val () =
             Option.app
             (tgtToFile, fn tgtToFile =>
              maybeSaveToFile
              {arg = res,
               name = (name, SOME "post"),
               toFile = tgtToFile})
-         val _ =
+         val () =
             if !ControlFlags.typeCheck
                then Option.app (tgtTypeCheck, fn tgtTypeCheck =>
                                 trace (Pass, concat ["typeCheck ", name, ".post"]) tgtTypeCheck res)
@@ -427,6 +428,11 @@ fun translatePass {arg: 'a,
       end
       val res = trace (Pass, name) thunk ()
       val () =
+         if keepIL
+            then Option.app (tgtToFile, fn tgtToFile =>
+                             saveToFile {arg = res, name = NONE, toFile = tgtToFile, verb = Pass})
+            else ()
+      val () =
          if List.exists (!stopPasses, fn re =>
                          Regexp.Compiled.matchesAll (re, name))
             then raise Stopped
@@ -438,6 +444,7 @@ fun translatePass {arg: 'a,
 fun simplifyPass {arg: 'a,
                   doit: 'a -> 'a,
                   execute: bool,
+                  keepIL: bool,
                   name: string,
                   stats: 'a -> Layout.t,
                   toFile: {display: 'a display, style: style, suffix: string},
@@ -446,6 +453,7 @@ fun simplifyPass {arg: 'a,
                   if Regexp.Compiled.matchesAll (re, name) then new else old)
       then translatePass {arg = arg,
                           doit = doit,
+                          keepIL = keepIL,
                           name = name,
                           srcToFile = SOME toFile,
                           tgtStats = SOME stats,
@@ -459,6 +467,7 @@ fun simplifyPasses {arg, passes, stats, toFile, typeCheck} =
     simplifyPass {arg = arg,
                   doit = doit,
                   execute = execute,
+                  keepIL = false,
                   name = name,
                   stats = stats,
                   toFile = toFile,

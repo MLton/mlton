@@ -73,6 +73,7 @@ signature CONTROL =
       val simplifyPass: {arg: 'a,
                          doit: 'a -> 'a,
                          execute: bool,
+                         keepIL: bool,
                          name: string,
                          stats: 'a -> Layout.t,
                          toFile: {display: 'a display, style: style, suffix: string},
@@ -84,6 +85,7 @@ signature CONTROL =
                            typeCheck: 'a -> unit} -> 'a
       val translatePass: {arg: 'a,
                           doit: 'a -> 'b,
+                          keepIL: bool,
                           name: string,
                           srcToFile: {display: 'a display, style: style, suffix: string} option,
                           tgtStats: ('b -> Layout.t) option,
