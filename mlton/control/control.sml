@@ -467,6 +467,11 @@ fun translatePass {arg: 'a,
          res
       end
       val res = trace (Pass, name) thunk ()
+      val () =
+         if List.exists (!stopPasses, fn re =>
+                         Regexp.Compiled.matchesAll (re, name))
+            then raise Stopped
+            else ()
    in
       res
    end

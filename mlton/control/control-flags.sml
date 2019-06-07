@@ -1194,6 +1194,11 @@ val splitTypesBool = control {name = "bool type splitting method",
                               default = Smart,
                               toString = SplitTypesBool.toString}
 
+val stopPasses = control {name = "stop passes",
+                          default = [],
+                          toString = List.toString
+                                     (Layout.toString o
+                                      Regexp.Compiled.layout)}
 structure Target =
    struct
       datatype t =

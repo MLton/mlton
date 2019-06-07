@@ -845,6 +845,13 @@ fun makeOptions {usage} =
                    | "o" => Place.O
                    | "tc" => Place.TypeCheck
                    | _ => usage (concat ["invalid -stop arg: ", s])))),
+       (Expert, "stop-pass", " <pass>", "stop compilation after pass",
+        SpaceString
+        (fn s => (case Regexp.fromString s of
+                     SOME (re,_) => let val re = Regexp.compileDFA re
+                                    in List.push (stopPasses, re)
+                                    end
+                   | NONE => usage (concat ["invalid -stop-pass flag: ", s])))),
        (Expert, "sxml-passes", " <passes>", "sxml optimization passes",
         SpaceString
         (fn s =>
