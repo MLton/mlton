@@ -15,6 +15,23 @@ signature COMPILE =
    sig
       include COMPILE_STRUCTS
 
+      val mkCompile:
+         {outputC: unit -> {file: File.t,
+                            print: string -> unit,
+                            done: unit -> unit},
+          outputLL: unit -> {file: File.t,
+                             print: string -> unit,
+                             done: unit -> unit},
+          outputS: unit -> {file: File.t,
+                            print: string -> unit,
+                            done: unit -> unit}} ->
+         {mlb: {frontend: File.t -> unit, compile: File.t -> unit},
+          sml: {frontend: File.t list -> unit, compile: File.t list -> unit},
+          xml: {frontend: File.t -> unit, compile: File.t -> unit},
+          sxml: {frontend: File.t -> unit, compile: File.t -> unit},
+          ssa: {frontend: File.t -> unit, compile: File.t -> unit},
+          ssa2: {frontend: File.t -> unit, compile: File.t -> unit}}
+
       val compileMLB: {input: File.t,
                        outputC: unit -> {file: File.t,
                                          print: string -> unit,
