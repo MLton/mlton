@@ -1549,7 +1549,7 @@ fun commandLine (args: string list): unit =
                            Place.O => ()
                          | _ => compileO (rev oFiles)
                      end
-                  fun mkCompileSrc {listFiles, elaborate, compile} input =
+                  fun compileSrc sel =
                      let
                         val outputs: File.t list ref = ref []
                         val r = ref 0
@@ -1572,25 +1572,21 @@ fun commandLine (args: string list): unit =
                                done = done}
                            end
                         val _ = Control.message (Verbosity.Detail, Control.layout)
+                        val {sourceFiles, frontend, compile} =
+                           (sel o Compile.mkCompile)
+                           {outputC = make (Control.C, ".c"),
+                            outputLL = make (Control.LLVM, ".ll"),
+                            outputS = make (Control.Assembly, ".s")}
                         val _ =
                            case stop of
                               Place.Files =>
                                  Vector.foreach
-                                 (listFiles {input = input}, fn f =>
+                                 (sourceFiles input, fn f =>
                                   (print (String.translate
                                           (f, fn #"\\" => "/" | c => str c))
                                    ; print "\n"))
-                            | Place.TypeCheck =>
-                                 trace (Top, "Type Check SML")
-                                 elaborate
-                                 {input = input}
-                            | _ =>
-                                 trace (Top, "Compile SML")
-                                 compile
-                                 {input = input,
-                                  outputC = make (Control.C, ".c"),
-                                  outputLL = make (Control.LLVM, ".ll"),
-                                  outputS = make (Control.Assembly, ".s")}
+                            | Place.TypeCheck => frontend input
+                            | _ => compile input
                      in
                         case stop of
                            Place.Files => ()
@@ -1601,41 +1597,16 @@ fun commandLine (args: string list): unit =
                               (MLton.GC.pack ()
                                ; compileCSO (List.concat [!outputs, csoFiles]))
                      end
-                  val compileSML =
-                     mkCompileSrc {listFiles = fn {input} => Vector.new1 input,
-                                   elaborate = Compile.elaborateSML,
-                                   compile = Compile.compileSML}
-                  val compileMLB =
-                     mkCompileSrc {listFiles = Compile.sourceFilesMLB,
-                                   elaborate = Compile.elaborateMLB,
-                                   compile = Compile.compileMLB}
-                  val compileXML =
-                     mkCompileSrc {listFiles = fn {input} => Vector.new1 input,
-                                   elaborate = fn _ => raise Fail "Unimplemented",
-                                   compile = Compile.compileXML}
-                  val compileSXML =
-                     mkCompileSrc {listFiles = fn {input} => Vector.new1 input,
-                                   elaborate = fn _ => raise Fail "Unimplemented",
-                                   compile = Compile.compileSXML}
-                  val compileSSA =
-                     mkCompileSrc {listFiles = fn {input} => Vector.new1 input,
-                                   elaborate = fn _ => raise Fail "Unimplemented",
-                                   compile = Compile.compileSSA}
-                  val compileSSA2 =
-                      mkCompileSrc {listFiles = fn {input} => Vector.new1 input,
-                                    elaborate = fn _ => raise Fail "Unimplemented",
-                                    compile = Compile.compileSSA2}
-
                   fun compile () =
                      case start of
-                        Place.SML => compileSML input
-                      | Place.MLB => compileMLB input
+                        Place.SML => compileSrc #sml
+                      | Place.MLB => compileSrc #mlb
                       | Place.Generated => compileCSO (input :: csoFiles)
                       | Place.O => compileCSO (input :: csoFiles)
-                      | Place.XML => compileXML input
-                      | Place.SXML => compileSXML input
-                      | Place.SSA => compileSSA input
-                      | Place.SSA2 => compileSSA2 input
+                      | Place.XML => compileSrc #xml
+                      | Place.SXML => compileSrc #xml
+                      | Place.SSA => compileSrc #ssa
+                      | Place.SSA2 => compileSrc #ssa2
                       | _ => Error.bug "invalid start"
                   val doit =
                      traceTop Version.banner
