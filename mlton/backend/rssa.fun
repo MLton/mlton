@@ -5,13 +5,4 @@
  *)
 
 functor Rssa (S: RSSA_STRUCTS): RSSA =
-(*
    RssaSimplify (RssaRestore (RssaLive (RssaTree (S))))
-*)
-   struct
-      structure S = RssaTree (S)
-      structure S = RssaLive (S)
-      structure S = RssaRestore (S)
-      structure S = RssaSimplify (S)
-      open S
-   end
