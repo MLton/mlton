@@ -592,18 +592,6 @@ fun makeOptions {usage} =
        (Expert, "llvm-opt-opt-quote", " <opt>", "pass (quoted) option to llvm optimizer",
         SpaceString
         (fn s => List.push (llvm_optOpts, {opt = s, pred = OptPred.Yes}))),
-       (Expert, "loop-ssa-passes", " <n>", "loop ssa optimization passes (1)",
-        Int
-        (fn i =>
-         if i >= 1
-            then loopSsaPasses := i
-            else usage (concat ["invalid -loop-ssa-passes arg: ", Int.toString i]))),
-       (Expert, "loop-ssa2-passes", " <n>", "loop ssa2 optimization passes (1)",
-        Int
-        (fn i =>
-         if i >= 1
-            then loopSsa2Passes := i
-            else usage (concat ["invalid -loop-ssa2-passes arg: ", Int.toString i]))),
        (Expert, "loop-unroll-limit", " <n>", "limit code growth by loop unrolling",
         Int
         (fn i =>
@@ -857,6 +845,13 @@ fun makeOptions {usage} =
                    | "o" => Place.O
                    | "tc" => Place.TypeCheck
                    | _ => usage (concat ["invalid -stop arg: ", s])))),
+       (Expert, "stop-pass", " <pass>", "stop compilation after pass",
+        SpaceString
+        (fn s => (case Regexp.fromString s of
+                     SOME (re,_) => let val re = Regexp.compileDFA re
+                                    in List.push (stopPasses, re)
+                                    end
+                   | NONE => usage (concat ["invalid -stop-pass flag: ", s])))),
        (Expert, "sxml-passes", " <passes>", "sxml optimization passes",
         SpaceString
         (fn s =>
@@ -1217,16 +1212,6 @@ fun commandLine (args: string list): unit =
          := (isSome (!showDefUse)
              orelse (Control.Elaborate.enabled Control.Elaborate.warnUnused)
              orelse (Control.Elaborate.default Control.Elaborate.warnUnused))
-      val warnMatch =
-          (Control.Elaborate.enabled Control.Elaborate.nonexhaustiveMatch)
-          orelse (Control.Elaborate.enabled Control.Elaborate.redundantMatch)
-          orelse (Control.Elaborate.default Control.Elaborate.nonexhaustiveMatch <>
-                  Control.Elaborate.DiagEIW.Ignore)
-          orelse (Control.Elaborate.default Control.Elaborate.redundantMatch <>
-                  Control.Elaborate.DiagEIW.Ignore)
-      val _ = elaborateOnly := (stop = Place.TypeCheck
-                                andalso not (warnMatch)
-                                andalso not (!keepDefUse))
       val _ =
          case targetOS of
             Darwin => ()
@@ -1267,10 +1252,7 @@ fun commandLine (args: string list): unit =
       Result.No msg => usage msg
     | Result.Yes [] =>
          (inputFile := "<none>"
-          ; if isSome (!showBasis)
-               then (trace (Top, "Type Check SML")
-                     Compile.elaborateSML {input = []})
-            else if !buildConstants
+          ; if !buildConstants
                then Compile.outputBasisConstants Out.standard
             else (Out.outputl (Out.standard, Version.banner)
                   ; if Verbosity.< (!verbosity, Detail)
@@ -1567,7 +1549,7 @@ fun commandLine (args: string list): unit =
                            Place.O => ()
                          | _ => compileO (rev oFiles)
                      end
-                  fun mkCompileSrc {listFiles, elaborate, compile} input =
+                  fun compileSrc sel =
                      let
                         val outputs: File.t list ref = ref []
                         val r = ref 0
@@ -1590,25 +1572,21 @@ fun commandLine (args: string list): unit =
                                done = done}
                            end
                         val _ = Control.message (Verbosity.Detail, Control.layout)
+                        val {sourceFiles, frontend, compile} =
+                           (sel o Compile.mkCompile)
+                           {outputC = make (Control.C, ".c"),
+                            outputLL = make (Control.LLVM, ".ll"),
+                            outputS = make (Control.Assembly, ".s")}
                         val _ =
                            case stop of
                               Place.Files =>
                                  Vector.foreach
-                                 (listFiles {input = input}, fn f =>
+                                 (sourceFiles input, fn f =>
                                   (print (String.translate
                                           (f, fn #"\\" => "/" | c => str c))
                                    ; print "\n"))
-                            | Place.TypeCheck =>
-                                 trace (Top, "Type Check SML")
-                                 elaborate
-                                 {input = input}
-                            | _ =>
-                                 trace (Top, "Compile SML")
-                                 compile
-                                 {input = input,
-                                  outputC = make (Control.C, ".c"),
-                                  outputLL = make (Control.LLVM, ".ll"),
-                                  outputS = make (Control.Assembly, ".s")}
+                            | Place.TypeCheck => frontend input
+                            | _ => compile input
                      in
                         case stop of
                            Place.Files => ()
@@ -1619,48 +1597,23 @@ fun commandLine (args: string list): unit =
                               (MLton.GC.pack ()
                                ; compileCSO (List.concat [!outputs, csoFiles]))
                      end
-                  val compileSML =
-                     mkCompileSrc {listFiles = fn {input} => Vector.fromList input,
-                                   elaborate = Compile.elaborateSML,
-                                   compile = Compile.compileSML}
-                  val compileMLB =
-                     mkCompileSrc {listFiles = Compile.sourceFilesMLB,
-                                   elaborate = Compile.elaborateMLB,
-                                   compile = Compile.compileMLB}
-                  val compileXML =
-                     mkCompileSrc {listFiles = fn {input} => Vector.new1 input,
-                                   elaborate = fn _ => raise Fail "Unimplemented",
-                                   compile = Compile.compileXML}
-                  val compileSXML =
-                     mkCompileSrc {listFiles = fn {input} => Vector.new1 input,
-                                   elaborate = fn _ => raise Fail "Unimplemented",
-                                   compile = Compile.compileSXML}
-                  val compileSSA =
-                     mkCompileSrc {listFiles = fn {input} => Vector.new1 input,
-                                   elaborate = fn _ => raise Fail "Unimplemented",
-                                   compile = Compile.compileSSA}
-                  val compileSSA2 =
-                      mkCompileSrc {listFiles = fn {input} => Vector.new1 input,
-                                    elaborate = fn _ => raise Fail "Unimplemented",
-                                    compile = Compile.compileSSA2}
-
                   fun compile () =
                      case start of
-                        Place.SML => compileSML [input]
-                      | Place.MLB => compileMLB input
+                        Place.SML => compileSrc #sml
+                      | Place.MLB => compileSrc #mlb
                       | Place.Generated => compileCSO (input :: csoFiles)
                       | Place.O => compileCSO (input :: csoFiles)
-                      | Place.XML => compileXML input
-                      | Place.SXML => compileSXML input
-                      | Place.SSA => compileSSA input
-                      | Place.SSA2 => compileSSA2 input
+                      | Place.XML => compileSrc #xml
+                      | Place.SXML => compileSrc #xml
+                      | Place.SSA => compileSrc #ssa
+                      | Place.SSA2 => compileSrc #ssa2
                       | _ => Error.bug "invalid start"
-                  val doit
-                    = trace (Top, Version.banner)
-                      (fn () =>
-                       Exn.finally
-                       (compile, fn () =>
-                        List.foreach (!tempFiles, File.remove)))
+                  val doit =
+                     traceTop Version.banner
+                     (fn () =>
+                      Exn.finally
+                      (compile, fn () =>
+                       List.foreach (!tempFiles, File.remove)))
                in
                   doit ()
                end

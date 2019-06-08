@@ -91,76 +91,35 @@ val ssa2PassesSet = fn s =>
 val _ = List.push (Control.optimizationPasses,
                    {il = "ssa2", get = ssa2PassesGet, set = ssa2PassesSet})
 
-fun pass ({name, doit, midfix}, p) =
-   let
-      val _ =
-         let open Control
-         in maybeSaveToFile
-            ({name = name, 
-              suffix = midfix ^ "pre.ssa2"},
-             Control.ML, p, Control.Layouts Program.layouts)
-         end
-      val p =
-         Control.passTypeCheck
-         {display = Control.Layouts Program.layouts,
-          name = name,
-          stats = Program.layoutStats,
-          style = Control.ML,
-          suffix = midfix ^ "post.ssa2",
-          thunk = fn () => doit p,
-          typeCheck = typeCheck}
-   in
-      p
-   end 
-fun maybePass ({name, doit, execute, midfix}, p) =
-   if List.foldr (!Control.executePasses, execute, fn ((re, new), old) =>
-                  if Regexp.Compiled.matchesAll (re, name)
-                     then new
-                     else old)
-      then pass ({name = name, doit = doit, midfix = midfix}, p)
-      else (Control.messageStr (Control.Pass, name ^ " skipped"); p)
-
 fun simplify p =
    let
-      fun simplify' n p =
-         let
-            val midfix = if !Control.loopSsa2Passes = 1
-                            then ""
-                         else concat [Int.toString n, "."]
-         in
-            if n = !Control.loopSsa2Passes
-               then p
-            else simplify' 
-                 (n + 1)
-                 (List.fold
-                  (!ssa2Passes, p, fn ({name, doit, execute}, p) =>
-                   maybePass ({name = name, doit = doit, execute = execute, midfix = midfix}, p)))
-         end
-      val p = simplify' 0 p
+      val ssa2Passes = AppendList.fromList (!ssa2Passes)
+      val ssa2Passes =
+         if !Control.profile <> Control.ProfileNone
+            andalso !Control.profileIL = Control.ProfileSSA2
+            then AppendList.snoc (ssa2Passes,
+                                  {name = "ssa2AddProfile",
+                                   doit = Profile2.addProfile,
+                                   execute = true})
+            else ssa2Passes
+      val ssa2Passes =
+         AppendList.snoc (ssa2Passes, {name = "ssa2OrderFunctions",
+                                       doit = S.orderFunctions,
+                                       execute = true})
+      val ssa2Passes = AppendList.toList ssa2Passes
+      (* Always want to type check the initial and final SSA2 programs,
+       * even if type checking is turned off, just to catch bugs.
+       *)
+      val () = Control.trace (Control.Pass, "ssa2TypeCheck") typeCheck p
+      val p =
+         Control.simplifyPasses
+         {arg = p,
+          passes = ssa2Passes,
+          stats = Program.layoutStats,
+          toFile = Program.toFile,
+          typeCheck = typeCheck}
+      val () = Control.trace (Control.Pass, "ssa2TypeCheck") typeCheck p
    in
       p
    end
-
-val simplify = fn p => let
-                         (* Always want to type check the initial and final SSA 
-                          * programs, even if type checking is turned off, just
-                          * to catch bugs.
-                          *)
-                         val _ = typeCheck p
-                         val p = simplify p
-                         val p =
-                            if !Control.profile <> Control.ProfileNone
-                               andalso !Control.profileIL = Control.ProfileSSA2
-                               then pass ({name = "ssa2AddProfile",
-                                           doit = Profile2.addProfile,
-                                           midfix = ""}, p)
-                            else p
-                         val p = maybePass ({name = "ssa2OrderFunctions",
-                                             doit = S.orderFunctions,
-                                             execute = true,
-                                             midfix = ""}, p)
-                         val _ = typeCheck p
-                       in
-                         p
-                       end
 end

@@ -30,7 +30,7 @@
  * list for a particular block is constant time -- the variable is either at the
  * head of the list or it's not there.
  *)
-functor Live (S: LIVE_STRUCTS): LIVE = 
+functor RssaLive (S: RSSA_LIVE_STRUCTS): RSSA_LIVE =
 struct
 
 open S
@@ -359,5 +359,10 @@ val live =
    Trace.trace2 ("Live.live", Func.layout o Function.name, Layout.ignore,
                  Layout.ignore)
    live
+
+structure Live =
+   struct
+      val live = live
+   end
 
 end

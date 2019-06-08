@@ -1,4 +1,4 @@
-(* Copyright (C) 2015,2017 Matthew Fluet
+(* Copyright (C) 2015,2017,2019 Matthew Fluet
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -521,8 +521,18 @@ structure Program =
              *)
             val output = output'
          in
-            output (Layout.str "\n\nDecs:")
+            output (Layout.str "\n")
             ; Vector.foreach (decs, output o Dec.layout)
+         end
+
+      val toFile = {display = Control.Layouts layouts, style = Control.ML, suffix = "core-ml"}
+
+      fun layoutStats (program as T {...}) =
+         let
+            open Layout
+         in
+            align
+            [Control.sizeMessage ("coreML program", program)]
          end
 
 (*       fun typeCheck (T {decs, ...}) =

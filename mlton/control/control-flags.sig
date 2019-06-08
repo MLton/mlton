@@ -174,11 +174,6 @@ signature CONTROL_FLAGS =
             val snapshot: unit -> (unit -> 'a) -> 'a
          end
 
-      (* stop after elaboration.  So, no need for the elaborator to generate
-       * valid CoreML.
-       *)
-      val elaborateOnly: bool ref
-
       val emitMain: bool ref
 
       val exportHeader: File.t option ref
@@ -267,10 +262,6 @@ signature CONTROL_FLAGS =
       
       (* name of the output library *)
       val libname : string ref
-
-      (* Number of times to loop through optimization passes. *)
-      val loopSsaPasses: int ref
-      val loopSsa2Passes: int ref
 
       (* Limit the code growth loop unrolling/unswitching will allow. *)
       val loopUnrollLimit: int ref
@@ -395,6 +386,9 @@ signature CONTROL_FLAGS =
        | Smart (* split only when smaller than two, default *)
        | Always
       val splitTypesBool: splitTypesBool ref
+
+      (* List of pass names to stop at. *)
+      val stopPasses: Regexp.Compiled.t list ref
 
       datatype target =
          Cross of string

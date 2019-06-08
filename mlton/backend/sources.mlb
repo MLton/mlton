@@ -20,27 +20,40 @@ local
    object-type.sig
    rep-type.sig
    rep-type.fun
+
+   backend-atoms.sig
+   backend-atoms.fun
+
    switch.sig
    switch.fun
    err.sml
-   rssa.sig
-   rssa.fun
-   machine.sig
-   machine.fun
-   representation.sig
-   packed-representation.fun
-   ssa-to-rssa.sig
-   ssa-to-rssa.fun
+
+   rssa-tree.sig
+   rssa-tree.fun
+   rssa-live.sig
+   rssa-live.fun
+   rssa-restore.sig
+   rssa-restore.fun
+
    rssa-transform.sig
+   bounce-vars.fun
    implement-handlers.fun
    implement-profiling.fun
    limit-check.fun
    signal-check.fun
-   restore.sig
-   restore.fun
-   live.sig
-   live.fun
-   bounce-vars.fun
+   rssa-simplify.sig
+   rssa-simplify.fun
+   rssa.sig
+   rssa.fun
+
+   representation.sig
+   packed-representation.fun
+   ssa2-to-rssa.sig
+   ssa2-to-rssa.fun
+
+   machine.sig
+   machine.fun
+
    allocate-registers.sig
    allocate-registers.fun
    equivalence-graph.sig
@@ -57,5 +70,8 @@ in
    signature RUNTIME
 
    functor Backend
+   functor BackendAtoms
    functor Machine
+   functor Rssa
+   functor Ssa2ToRssa
 end

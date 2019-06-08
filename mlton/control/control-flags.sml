@@ -767,11 +767,6 @@ structure Elaborate =
 
    end
 
-val elaborateOnly =
-   control {name = "elaborate only",
-            default = false,
-            toString = Bool.toString}
-
 val emitMain =
    control {name = "emit main",
             default = true,
@@ -954,14 +949,6 @@ val libTargetDir = control {name = "lib target dir",
                             toString = fn s => s} 
 
 val libname = ref ""
-
-val loopSsaPasses = control {name = "loop ssa passes",
-                             default = 1,
-                             toString = Int.toString}
-
-val loopSsa2Passes = control {name = "loop ssa2 passes",
-                              default = 1,
-                              toString = Int.toString}
 
 val loopUnrollLimit = control {name = "loop unrolling limit",
                                 default = 150,
@@ -1207,6 +1194,11 @@ val splitTypesBool = control {name = "bool type splitting method",
                               default = Smart,
                               toString = SplitTypesBool.toString}
 
+val stopPasses = control {name = "stop passes",
+                          default = [],
+                          toString = List.toString
+                                     (Layout.toString o
+                                      Regexp.Compiled.layout)}
 structure Target =
    struct
       datatype t =

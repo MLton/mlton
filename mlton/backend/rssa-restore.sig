@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Jason Carr, Matthew Fluet.
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -6,17 +7,16 @@
  * See the file MLton-LICENSE for details.
  *)
 
-signature RESTORE_RSSA_STRUCTS =
+signature RSSA_RESTORE_STRUCTS =
    sig
-      include RSSA
+      include RSSA_LIVE
    end
 
-signature RESTORE_RSSA =
+signature RSSA_RESTORE =
    sig
-      include RESTORE_RSSA_STRUCTS
+      include RSSA_RESTORE_STRUCTS
 
       val restoreFunction:
          {main: Function.t} -> Function.t -> Function.t
       val restore: Program.t -> Program.t
    end
-

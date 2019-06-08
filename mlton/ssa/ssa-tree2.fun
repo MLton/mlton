@@ -1691,13 +1691,13 @@ structure Function =
                         layoutDot (f, layoutVar)
                      val name = Func.toString name
                      fun doit (s, g) =
-                        let
-                           open Control
-                        in
-                           saveToFile
-                           ({suffix = concat [name, ".", s, ".dot"]},
-                            Dot, (), Layout (fn () => g))
-                        end
+                        Control.saveToFile
+                        {arg = (),
+                         name = SOME (concat [name, ".", s]),
+                         toFile = {display = Control.Layout (fn () => g),
+                                   style = Control.Dot,
+                                   suffix = ".dot"},
+                         verb = Control.Detail}
                      val _ = doit ("cfg", controlFlowGraph)
                         handle _ => Error.warning "SsaTree2.layouts: couldn't layout cfg"
                      val _ = doit ("dom", dominatorTree ())
@@ -2030,15 +2030,16 @@ structure Program =
             ; if not (!Control.keepDot)
                  then ()
               else
-                 let
-                    open Control
-                 in
-                    saveToFile
-                    ({suffix = "call-graph.dot"},
-                     Dot, (), Layout (fn () =>
-                                      layoutCallGraph (p, !Control.inputFile)))
-                 end
+                 Control.saveToFile
+                 {arg = (),
+                  name = SOME "call-graph",
+                  toFile = {display = Control.Layout (fn () => layoutCallGraph (p, !Control.inputFile)),
+                            style = Control.Dot,
+                            suffix = "dot"},
+                  verb = Control.Detail}
          end
+
+      val toFile = {display = Control.Layouts layouts, style = Control.ML, suffix = "ssa"}
 
       fun parse () =
          let
@@ -2064,7 +2065,7 @@ structure Program =
             compose (skipCommentsML, parseProgram <* (spaces *> (failing next <|> failCut "end of file")))
          end
 
-      fun layoutStats (T {datatypes, globals, functions, main, ...}) =
+      fun layoutStats (program as T {datatypes, globals, functions, main, ...}) =
          let
             val (mainNumVars, mainNumBlocks) =
                case List.peek (functions, fn f =>
@@ -2106,7 +2107,8 @@ structure Program =
                (datatypes, fn Datatype.T {cons, ...} =>
                 Vector.foreach (cons, fn {args, ...} =>
                                 Prod.foreach (args, countType)))
-            val numStatements = ref (Vector.length globals)
+            val numGlobals = Vector.length globals
+            val numStatements = ref numGlobals
             val numBlocks = ref 0
             val _ =
                List.foreach
@@ -2138,7 +2140,8 @@ structure Program =
             open Layout
          in
             align
-            [seq [str "num globals = ", Int.layout (Vector.length globals)],
+            [Control.sizeMessage ("ssa2 program", program),
+             seq [str "num globals = ", Int.layout (Vector.length globals)],
              seq [str "num vars in main = ", Int.layout mainNumVars],
              seq [str "num blocks in main = ", Int.layout mainNumBlocks],
              seq [str "num functions in program = ", Int.layout numFunctions],

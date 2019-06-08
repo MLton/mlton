@@ -11,7 +11,6 @@ functor ImplementHandlers (S: RSSA_TRANSFORM_STRUCTS): RSSA_TRANSFORM =
 struct
 
 open S
-open Rssa
 datatype z = datatype Statement.t
 datatype z = datatype Transfer.t
 

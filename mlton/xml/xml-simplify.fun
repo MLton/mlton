@@ -77,55 +77,22 @@ val xmlPassesSet = fn s =>
 val _ = List.push (Control.optimizationPasses,
                    {il = "xml", get = xmlPassesGet, set = xmlPassesSet})
 
-fun pass ({name, doit}, p) =
-   let
-      val _ =
-         let open Control
-         in maybeSaveToFile
-            ({name = name,
-              suffix = "pre.xml"},
-             Control.ML, p, Control.Layouts Program.layouts)
-         end
-      val p =
-         Control.passTypeCheck
-         {display = Control.Layouts Program.layouts,
-          name = name,
-          stats = Program.layoutStats,
-          style = Control.ML,
-          suffix = "post.xml",
-          thunk = fn () => doit p,
-          typeCheck = typeCheck}
-   in
-      p
-   end
-fun maybePass ({name, doit, execute}, p) =
-   if List.foldr (!Control.executePasses, execute, fn ((re, new), old) =>
-                  if Regexp.Compiled.matchesAll (re, name)
-                     then new
-                     else old)
-      then pass ({name = name, doit = doit}, p)
-      else (Control.messageStr (Control.Pass, name ^ " skipped"); p)
 fun simplify p =
    let
-      fun simplify' p =
-         List.fold
-         (!xmlPasses, p, fn ({name, doit, execute}, p) =>
-          maybePass ({name = name, doit = doit, execute = execute}, p))
-      val p = simplify' p
+      val xmlPasses = !xmlPasses
+      (* Always want to type check the initial and final XML programs,
+       * even if type checking is turned off, just to catch bugs.
+       *)
+      val () = Control.trace (Control.Pass, "xmlTypeCheck") typeCheck p
+      val p =
+         Control.simplifyPasses
+         {arg = p,
+          passes = xmlPasses,
+          stats = Program.layoutStats,
+          toFile = Program.toFile,
+          typeCheck = typeCheck}
+      val () = Control.trace (Control.Pass, "xmlTypeCheck") typeCheck p
    in
       p
    end
-
-val simplify = fn p => let
-                         (* Always want to type check the initial and final XML
-                          * programs, even if type checking is turned off, just
-                          * to catch bugs.
-                          *)
-                         val _ = typeCheck p
-                         val p' = simplify p
-                         val _ = typeCheck p'
-                       in
-                         p'
-                       end
-
 end

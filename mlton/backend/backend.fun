@@ -35,7 +35,6 @@ in
    structure GCField = GCField
 end
 
-structure Rssa = Rssa (open Machine)
 structure R = Rssa
 local
    open Rssa
@@ -52,14 +51,7 @@ end
 structure AllocateRegisters = AllocateRegisters (structure Machine = Machine
                                                  structure Rssa = Rssa)
 structure Chunkify = Chunkify (Rssa)
-structure ImplementHandlers = ImplementHandlers (structure Rssa = Rssa)
-structure ImplementProfiling = ImplementProfiling (structure Rssa = Rssa)
-structure LimitCheck = LimitCheck (structure Rssa = Rssa)
 structure ParallelMove = ParallelMove ()
-structure BounceVars = BounceVars (structure Rssa = Rssa)
-structure SignalCheck = SignalCheck(structure Rssa = Rssa)
-structure SsaToRssa = SsaToRssa (structure Rssa = Rssa
-                                 structure Ssa = Ssa)
 
 structure VarOperand =
    struct
@@ -140,110 +132,9 @@ fun eliminateDeadCode (f: R.Function.t): R.Function.t =
                       start = start}
    end
 
-fun toMachine (program: Ssa.Program.t, codegen) =
+fun toMachine (rssa: Rssa.Program.t) =
    let
-      fun pass (name, doit, program) =
-         Control.passTypeCheck {display = Control.Layouts Rssa.Program.layouts,
-                                name = name,
-                                stats = R.Program.layoutStats,
-                                style = Control.ML,
-                                suffix = "rssa",
-                                thunk = fn () => doit program,
-                                typeCheck = R.Program.typeCheck}
-      val program = pass ("toRssa", SsaToRssa.convert, (program, codegen))
-      fun rssaSimplify p = 
-         let
-            open Rssa
-            fun pass' ({name, doit}, sel, p) =
-               let
-                  val _ =
-                     let open Control
-                     in maybeSaveToFile
-                        ({name = name, 
-                          suffix = "pre.rssa"},
-                         Control.ML, p, Control.Layouts Program.layouts)
-                     end
-                  val p =
-                     Control.passTypeCheck
-                     {display = Control.Layouts
-                                (fn (r,output) =>
-                                 Program.layouts (sel r, output)),
-                      name = name,
-                      stats = Program.layoutStats o sel,
-                      style = Control.ML,
-                      suffix = "post.rssa",
-                      thunk = fn () => doit p,
-                      typeCheck = Program.typeCheck o sel}
-               in
-                  p
-               end 
-            fun pass ({name, doit}, p) =
-               pass' ({name = name, doit = doit}, fn p => p, p)
-            fun maybePass ({name, doit, execute}, p) =
-               if List.foldr (!Control.executePasses, execute, fn ((re, new), old) =>
-                  if Regexp.Compiled.matchesAll (re, name)
-                     then new
-                     else old)
-               then pass ({name = name, doit = doit}, p)
-               else (Control.messageStr (Control.Pass, name ^ " skipped"); p)
-            val p = maybePass ({name = "rssaShrink1",
-                                doit = Program.shrink,
-                                execute = true}, p)
-            val p = pass ({name = "insertLimitChecks", 
-                           doit = LimitCheck.transform}, p)
-            val p = pass ({name = "insertSignalChecks", 
-                           doit = SignalCheck.transform}, p)
-            (* must be before implementHandlers *)
-            val p = maybePass ({name = "bounceVars",
-                                doit = BounceVars.transform,
-                                execute = true}, p)
-            val p = pass ({name = "implementHandlers", 
-                           doit = ImplementHandlers.transform}, p)
-            val p = maybePass ({name = "rssaShrink2", 
-                                doit = Program.shrink,
-                                execute = true}, p)
-            val () = Program.checkHandlers p
-            val p = pass ({name = "implementProfiling",
-                           doit = ImplementProfiling.transform}, p)
-            val p = maybePass ({name = "rssaOrderFunctions", 
-                                doit = Program.orderFunctions,
-                                execute = true}, p)
-            val p = maybePass ({name = "rssaShuffle",
-                                doit = Program.shuffle,
-                                execute = false}, p)
-         in
-            p
-         end
-      val program =
-         Control.passTypeCheck
-         {display = Control.Layouts Rssa.Program.layouts,
-          name = "rssaSimplify",
-          stats = Rssa.Program.layoutStats,
-          style = Control.ML,
-          suffix = "rssa",
-          thunk = fn () => rssaSimplify program,
-          typeCheck = R.Program.typeCheck}
-      val _ =
-         let
-            open Control
-         in
-            if !keepRSSA
-               then saveToFile ({suffix = "rssa"},
-                                Control.ML,
-                                program,
-                                Layouts Rssa.Program.layouts)
-            else ()
-         end
-      val program =
-         Control.pass
-         {display = Control.Layouts M.Program.layouts,
-          name = "toMachine",
-          stats = fn _ => Layout.empty,
-          style = Control.No,
-          suffix = "machine",
-          thunk = fn () =>
-let
-      val R.Program.T {functions, handlesSignals, main, objectTypes, profileInfo} = program
+      val R.Program.T {functions, handlesSignals, main, objectTypes, profileInfo} = rssa
       (* Chunk info *)
       val {get = labelChunk, set = setLabelChunk, ...} =
          Property.getSetOnce (Label.plist,
@@ -262,7 +153,7 @@ let
       (* Set funcChunk and labelChunk. *)
       val _ =
          Vector.foreach
-         (Chunkify.chunkify program, fn {funcs, labels} =>
+         (Chunkify.chunkify rssa, fn {funcs, labels} =>
           let 
              val c = newChunk ()
              val _ = Vector.foreach (funcs, fn f => setFuncChunk (f, c))
@@ -1221,7 +1112,7 @@ let
               max
            end))
       val maxFrameSize = Bytes.alignWord32 maxFrameSize
-      val program =
+      val machine =
          M.Program.T
          {chunks = chunks,
           frameInfos = frameInfos,
@@ -1233,87 +1124,7 @@ let
           reals = allReals (),
           sourceMaps = sourceMaps,
           vectors = allVectors ()}
-
-      local
-         open Machine
-         fun pass' ({name, doit}, sel, p) =
-            let
-               val _ =
-                  let open Control
-                  in maybeSaveToFile
-                     ({name = name,
-                       suffix = "pre.machine"},
-                      Control.No, p, Control.Layouts Program.layouts)
-                  end
-               val p =
-                  Control.passTypeCheck
-                  {display = Control.Layouts
-                             (fn (r,output) =>
-                              Program.layouts (sel r, output)),
-                   name = name,
-                   stats = fn _ => Layout.empty,
-                   style = Control.No,
-                   suffix = "post.machine",
-                   thunk = fn () => doit p,
-                   typeCheck = Program.typeCheck o sel}
-            in
-               p
-            end
-         fun pass ({name, doit}, p) =
-            pass' ({name = name, doit = doit}, fn p => p, p)
-         fun maybePass ({name, doit, execute}, p) =
-            if List.foldr (!Control.executePasses, execute, fn ((re, new), old) =>
-               if Regexp.Compiled.matchesAll (re, name)
-                  then new
-                  else old)
-               then pass ({name = name, doit = doit}, p)
-               else (Control.messageStr (Control.Pass, name ^ " skipped"); p)
-
-         fun shuffle p =
-            let
-               fun shuffle v =
-                  let
-                     val a = Array.fromVector v
-                     val () = Array.shuffle a
-                  in
-                     Array.toVector a
-                  end
-               val M.Program.T
-                  {chunks, frameInfos, frameOffsets,
-                   handlesSignals, main, maxFrameSize,
-                   objectTypes, reals, sourceMaps, vectors} = p
-               val chunks = Vector.fromList chunks
-               val chunks = shuffle chunks
-               val chunks =
-                  Vector.map
-                  (chunks, fn M.Chunk.T {blocks, chunkLabel, regMax} =>
-                   M.Chunk.T
-                   {blocks = shuffle blocks,
-                    chunkLabel = chunkLabel,
-                    regMax = regMax})
-               val chunks = Vector.toList chunks
-            in
-               M.Program.T
-               {chunks = chunks,
-                frameInfos = frameInfos,
-                frameOffsets = frameOffsets,
-                handlesSignals = handlesSignals,
-                main = main,
-                maxFrameSize = maxFrameSize,
-                objectTypes = objectTypes,
-                reals = reals,
-                sourceMaps = sourceMaps,
-                vectors = vectors}
-            end
-      in
-         val program = maybePass ({name = "machineShuffle",
-                                   doit = shuffle,
-                                   execute = false}, program)
-      end
-in
-   program
-end}
    in
-      program
+      machine
    end
 end

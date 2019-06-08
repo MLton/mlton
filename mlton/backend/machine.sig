@@ -9,24 +9,16 @@
 
 signature MACHINE_STRUCTS = 
    sig
-      include ATOMS
+      include BACKEND_ATOMS
    end
 
 signature MACHINE = 
    sig
       include MACHINE_STRUCTS
 
-      structure ObjectType: OBJECT_TYPE
-      structure ObjptrTycon: OBJPTR_TYCON
-      structure Runtime: RUNTIME
       structure Switch: SWITCH
-      structure Type: REP_TYPE
 
-      sharing Atoms = Type
       sharing Atoms = Switch
-      sharing ObjectType = Type.ObjectType
-      sharing ObjptrTycon = ObjectType.ObjptrTycon = Type.ObjptrTycon
-      sharing Runtime = ObjectType.Runtime = Type.Runtime
 
       structure ChunkLabel: ID
 
@@ -264,6 +256,10 @@ signature MACHINE =
 
             val clearLabelNames: t -> unit
             val layouts: t * (Layout.t -> unit) -> unit
+            val layoutStats: t -> Layout.t
+            val toFile: {display: t Control.display, style: Control.style, suffix: string}
             val typeCheck: t -> unit
          end
+
+      val simplify: Program.t -> Program.t
    end

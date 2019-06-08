@@ -1,4 +1,4 @@
-(* Copyright (C) 2019 Jason Carr.
+(* Copyright (C) 2019 Jason Carr, Matthew Fluet.
  * Copyright (C) 2009,2017 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
@@ -27,7 +27,7 @@
  * different places, but SetHandler statements may be missing if they were deemed unnecessary.
  *)
 
-functor RestoreRssa (S: RESTORE_RSSA_STRUCTS): RESTORE_RSSA =
+functor RssaRestore (S: RSSA_RESTORE_STRUCTS): RSSA_RESTORE =
 struct
 
 structure Control =

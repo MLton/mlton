@@ -66,7 +66,6 @@ functor LimitCheck (S: RSSA_TRANSFORM_STRUCTS): RSSA_TRANSFORM =
 struct
 
 open S
-open Rssa
 
 structure LimitCheck =
    struct

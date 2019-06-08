@@ -7,7 +7,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor SsaToRssa (S: SSA_TO_RSSA_STRUCTS): SSA_TO_RSSA =
+functor Ssa2ToRssa (S: SSA2_TO_RSSA_STRUCTS): SSA2_TO_RSSA =
 struct
 
 open S
@@ -15,10 +15,10 @@ open Rssa
 
 datatype z = datatype WordSize.prim
 
-structure S = Ssa
+structure S = Ssa2
 
 local
-   open Ssa
+   open Ssa2
 in
    structure Base = Base
 end
@@ -606,7 +606,7 @@ datatype z = datatype Statement.t
 datatype z = datatype Transfer.t
 
 structure PackedRepresentation = PackedRepresentation (structure Rssa = Rssa
-                                                       structure Ssa = Ssa)
+                                                       structure Ssa2 = Ssa2)
 
 structure Type =
    struct

@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2010,2015,2017 Matthew Fluet.
+(* Copyright (C) 2009-2010,2015,2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -3481,6 +3481,20 @@ fun output (E: t, out, {compact, def, flat, onlyCurrent, prefixUnset}): unit =
       ()
    end
 
+fun showBasis (E, f) =
+   File.withOut
+   (f, fn out =>
+    output
+    (E, out,
+     {compact = !Control.showBasisCompact,
+      def = !Control.showBasisDef,
+      flat = !Control.showBasisFlat,
+      onlyCurrent = false,
+      prefixUnset = true}))
+
+val showBasis =
+   Control.trace (Control.Detail, "showBasis") showBasis
+
 (* ------------------------------------------------- *)
 (*                   processDefUse                   *)
 (* ------------------------------------------------- *)
@@ -3640,6 +3654,9 @@ fun processDefUse (E as T f) =
    in
       ()
    end
+
+val processDefUse =
+   Control.trace (Control.Detail, "processDefUse") processDefUse
 
 (* ------------------------------------------------- *)
 (*                      newCons                      *)
@@ -4562,14 +4579,12 @@ fun functorClosure
           end)
       val _ = insideFunctor := false
       val restore =
-         if !Control.elaborateOnly
-            then fn f => f ()
-         else let 
-                 val withSaved = Control.Elaborate.snapshot ()
-                 val snapshot = snapshot E
-              in 
-                 fn f => snapshot (fn () => withSaved f)
-              end
+         let
+            val withSaved = Control.Elaborate.snapshot ()
+            val snapshot = snapshot E
+         in
+            fn f => snapshot (fn () => withSaved f)
+         end
       fun summary actual =
          let
             val _ = Structure.forceUsed actual
@@ -4697,7 +4712,6 @@ fun functorClosure
          summary
       fun apply (actual, nest) =
          if not (!insideFunctor)
-            andalso not (!Control.elaborateOnly)
             andalso !Control.numErrors = 0
             then restore (fn () => makeBody (actual, nest))
          else (Decs.empty, summary actual)

@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -24,6 +24,7 @@ signature CONTROL =
       val traceAdd: traceAccum * string -> ('a -> 'b) -> 'a -> 'b
       val traceBatch: verbosity * string -> ('a -> 'b) -> 
                       (('a -> 'b) * (unit -> unit))
+      val traceTop: string -> ('a -> unit) -> 'a -> unit
       val indent: unit -> unit
       val unindent: unit -> unit
       val getDepth: unit -> int
@@ -34,7 +35,7 @@ signature CONTROL =
       val checkFile: File.t * {fail: string -> 'a,
                                name: string,
                                ok: unit -> 'a} -> 'a
-      val checkForErrors: string -> unit
+      val checkForErrors: unit -> unit
       val error: Region.t * Layout.t * Layout.t -> unit
       val errorStr: Region.t * string -> unit
       (* abort compilation once this many errors reached *)
@@ -48,31 +49,38 @@ signature CONTROL =
       datatype style = No | Assembly | C | Dot | LLVM | ML
 
       datatype 'a display =
-         NoDisplay
-       | Layout of 'a -> Layout.t
+         Layout of 'a -> Layout.t
        | Layouts of 'a * (Layout.t -> unit) -> unit
 
       val diagnostic: (unit -> Layout.t) -> unit
       val diagnostics: ((Layout.t -> unit) -> unit) -> unit
-      val maybeSaveToFile:
-         {name: string, suffix: string} * style * 'a * 'a display -> unit
       val saveToFile:
-         {suffix: string} * style * 'a * 'a display -> unit
+         {arg: 'a,
+          name: string option,
+          toFile: {display: 'a display, style: style, suffix: string},
+          verb: Verbosity.t} -> unit
       val outputHeader: style * (Layout.t -> unit) -> unit
       val outputHeader': style * Out.t -> unit
 
-      val pass: {display: 'a display,
-                 name: string,
-                 stats: 'a -> Layout.t,
-                 style: style,
-                 suffix: string,
-                 thunk: unit -> 'a} -> 'a
-
-      val passTypeCheck: {display: 'a display,
+      val simplifyPass: {arg: 'a,
+                         doit: 'a -> 'a,
+                         execute: bool,
+                         keepIL: bool,
+                         name: string,
+                         stats: 'a -> Layout.t,
+                         toFile: {display: 'a display, style: style, suffix: string},
+                         typeCheck: 'a -> unit} -> 'a
+      val simplifyPasses: {arg: 'a,
+                           passes: {doit: 'a -> 'a, execute: bool, name: string} list,
+                           stats: 'a -> Layout.t,
+                           toFile: {display: 'a display, style: style, suffix: string},
+                           typeCheck: 'a -> unit} -> 'a
+      val translatePass: {arg: 'a,
+                          doit: 'a -> 'b,
+                          keepIL: bool,
                           name: string,
-                          stats: 'a -> Layout.t,
-                          style: style,
-                          suffix: string,
-                          thunk: unit -> 'a,
-                          typeCheck: 'a -> unit} -> 'a
+                          srcToFile: {display: 'a display, style: style, suffix: string} option,
+                          tgtStats: ('b -> Layout.t) option,
+                          tgtToFile: {display: 'b display, style: style, suffix: string} option,
+                          tgtTypeCheck: ('b -> unit) option} -> 'b
    end

@@ -12,22 +12,6 @@ struct
 
 open S
 
-structure ObjptrTycon = ObjptrTycon ()
-structure Runtime = Runtime ()
-structure RepType = RepType (structure CFunction = CFunction
-                             structure CType = CType
-                             structure Label = Label
-                             structure ObjptrTycon = ObjptrTycon
-                             structure Prim = Prim
-                             structure RealSize = RealSize
-                             structure Runtime = Runtime
-                             structure WordSize = WordSize
-                             structure WordX = WordX
-                             structure WordXVector = WordXVector)
-structure ObjectType = RepType.ObjectType
-
-structure Type = RepType
-
 structure ChunkLabel = Id (val noname = "ChunkLabel")
 
 structure Register =
@@ -812,6 +796,66 @@ structure Program =
             ; List.foreach (chunks, fn chunk => Chunk.layouts (chunk, output))
          end
 
+      val toFile = {display = Control.Layouts layouts, style = Control.ML, suffix = "machine"}
+
+      fun layoutStats (program as T {chunks, objectTypes, ...}) =
+         let
+            val numChunks = ref 0
+            val numBlocks = ref 0
+            val numStatements = ref 0
+            val _ =
+               List.foreach
+               (chunks, fn Chunk.T {blocks, ...} =>
+                (Int.inc numChunks
+                 ; Vector.foreach
+                   (blocks, fn Block.T {statements, ...} =>
+                    (Int.inc numBlocks
+                     ; numStatements := !numStatements + Vector.length statements))))
+            val numObjectTypes = Vector.length objectTypes
+            open Layout
+         in
+            align
+            [seq [Control.sizeMessage ("machine program", program)],
+             seq [str "num chunks in program = ", Int.layout (!numChunks)],
+             seq [str "num blocks in program = ", Int.layout (!numBlocks)],
+             seq [str "num statements in program = ", Int.layout (!numStatements)],
+             seq [str "num object types in program = ", Int.layout (numObjectTypes)]]
+         end
+
+      fun shuffle (T {chunks, frameInfos, frameOffsets,
+                      handlesSignals, main, maxFrameSize,
+                      objectTypes, reals, sourceMaps, vectors}) =
+         let
+            fun shuffle v =
+               let
+                  val a = Array.fromVector v
+                  val () = Array.shuffle a
+               in
+                  Array.toVector a
+               end
+            val chunks = Vector.fromList chunks
+            val chunks = shuffle chunks
+            val chunks =
+               Vector.map
+               (chunks, fn Chunk.T {blocks, chunkLabel, regMax} =>
+                Chunk.T
+                {blocks = shuffle blocks,
+                 chunkLabel = chunkLabel,
+                 regMax = regMax})
+            val chunks = Vector.toList chunks
+         in
+            T {chunks = chunks,
+               frameInfos = frameInfos,
+               frameOffsets = frameOffsets,
+               handlesSignals = handlesSignals,
+               main = main,
+               maxFrameSize = maxFrameSize,
+               objectTypes = objectTypes,
+               reals = reals,
+               sourceMaps = sourceMaps,
+               vectors = vectors}
+         end
+
       structure Alloc =
          struct
             datatype t = T of Live.t list
@@ -1476,6 +1520,25 @@ structure Program =
           Vector.foreach
           (blocks, fn Block.T {label, ...} =>
            Label.clearPrintName label))
+   end
+
+fun simplify p =
+   let
+      val machinePasses =
+         {name = "machineShuffle", doit = Program.shuffle, execute = false} ::
+         nil
+      (* Machine type check is too slow to run by default. *)
+      (* val () = Control.trace (Control.Pass, "machineTypeCheck") Program.typeCheck p *)
+      val p =
+         Control.simplifyPasses
+         {arg = p,
+          passes = machinePasses,
+          stats = Program.layoutStats,
+          toFile = Program.toFile,
+          typeCheck = Program.typeCheck}
+      (* val () = Control.trace (Control.Pass, "machineTypeCheck") Program.typeCheck p *)
+   in
+      p
    end
 
 end

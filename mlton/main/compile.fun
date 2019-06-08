@@ -50,7 +50,9 @@ structure Xml = Xml (open Atoms)
 structure Sxml = Sxml (open Xml)
 structure Ssa = Ssa (open Atoms)
 structure Ssa2 = Ssa2 (open Atoms)
-structure Machine = Machine (open Atoms)
+structure BackendAtoms = BackendAtoms (open Atoms)
+structure Rssa = Rssa (open BackendAtoms)
+structure Machine = Machine (open BackendAtoms)
 
 local
    open Machine
@@ -85,8 +87,10 @@ structure ClosureConvert = ClosureConvert (structure Ssa = Ssa
                                            structure Sxml = Sxml)
 structure SsaToSsa2 = SsaToSsa2 (structure Ssa = Ssa
                                  structure Ssa2 = Ssa2)
-structure Backend = Backend (structure Ssa = Ssa2
-                             structure Machine = Machine
+structure Ssa2ToRssa = Ssa2ToRssa (structure Rssa = Rssa
+                                   structure Ssa2 = Ssa2)
+structure Backend = Backend (structure Machine = Machine
+                             structure Rssa = Rssa
                              fun funcToLabel f = f)
 structure CCodegen = CCodegen (structure Machine = Machine)
 structure LLVMCodegen = LLVMCodegen (structure CCodegen = CCodegen
@@ -152,6 +156,65 @@ val lookupConstant =
               LookupConstant.load (ins, !commandLineConstants)))
    in
       fn z => f () z
+   end
+
+fun setupRuntimeConstants() : unit =
+   (* Set GC_state offsets and sizes. *)
+   let
+      val _ =
+         let
+            fun get (name: string): Bytes.t =
+               case lookupConstant ({default = NONE, name = name},
+                                    ConstType.Word WordSize.word32) of
+                  Const.Word w => Bytes.fromInt (WordX.toInt w)
+                | _ => Error.bug "Compile.setupRuntimeConstants: GC_state offset must be an int"
+         in
+            Runtime.GCField.setOffsets
+            {
+             atomicState = get "atomicState_Offset",
+             cardMapAbsolute = get "generationalMaps.cardMapAbsolute_Offset",
+             currentThread = get "currentThread_Offset",
+             curSourceSeqIndex = get "sourceMaps.curSourceSeqIndex_Offset",
+             exnStack = get "exnStack_Offset",
+             frontier = get "frontier_Offset",
+             limit = get "limit_Offset",
+             limitPlusSlop = get "limitPlusSlop_Offset",
+             maxFrameSize = get "maxFrameSize_Offset",
+             signalIsPending = get "signalsInfo.signalIsPending_Offset",
+             stackBottom = get "stackBottom_Offset",
+             stackLimit = get "stackLimit_Offset",
+             stackTop = get "stackTop_Offset"
+             };
+            Runtime.GCField.setSizes
+            {
+             atomicState = get "atomicState_Size",
+             cardMapAbsolute = get "generationalMaps.cardMapAbsolute_Size",
+             currentThread = get "currentThread_Size",
+             curSourceSeqIndex = get "sourceMaps.curSourceSeqIndex_Size",
+             exnStack = get "exnStack_Size",
+             frontier = get "frontier_Size",
+             limit = get "limit_Size",
+             limitPlusSlop = get "limitPlusSlop_Size",
+             maxFrameSize = get "maxFrameSize_Size",
+             signalIsPending = get "signalsInfo.signalIsPending_Size",
+             stackBottom = get "stackBottom_Size",
+             stackLimit = get "stackLimit_Size",
+             stackTop = get "stackTop_Size"
+             }
+         end
+      (* Setup endianness *)
+      val _ =
+         let
+            fun get (name:string): bool =
+                case lookupConstant ({default = NONE, name = name},
+                                     ConstType.Bool) of
+                   Const.Word w => 1 = WordX.toInt w
+                 | _ => Error.bug "Compile.setupRuntimeConstants: endian unknown"
+         in
+            Control.Target.setBigEndian (get "MLton_Platform_Arch_bigendian")
+         end
+   in
+      ()
    end
 
 (* ------------------------------------------------- *)   
@@ -303,66 +366,83 @@ end
 (*                 parseAndElaborateMLB              *)
 (* ------------------------------------------------- *)
 
-fun quoteFile s = concat ["\"", String.escapeSML s, "\""]
-
 structure MLBString:>
    sig
       type t
 
-      val fromFile: File.t -> t
-      val fromString: string -> t
+      val fromMLBFile: File.t -> t
+      val fromSMLFile: File.t -> t
       val lexAndParseMLB: t -> Ast.Basdec.t
    end =
    struct
       type t = string
 
-      val fromFile = quoteFile
+      fun quoteFile s = concat ["\"", String.escapeSML s, "\""]
 
-      val fromString = fn s => s
+      val fromMLBFile = quoteFile
+
+      fun fromSMLFile input =
+         let
+            val basis = "$(SML_LIB)/basis/default.mlb"
+         in
+            String.concat
+            ["local\n",
+             basis, "\n",
+             "in\n",
+             quoteFile input, "\n",
+             "end\n"]
+         end
 
       val lexAndParseMLB = MLBFrontEnd.lexAndParseString
    end
 
-val lexAndParseMLB = MLBString.lexAndParseMLB
-
 val lexAndParseMLB: MLBString.t -> Ast.Basdec.t = 
    fn input =>
    let
-      val ast = lexAndParseMLB input
-      val _ = Control.checkForErrors "parse"
+      val ast = MLBString.lexAndParseMLB input
+      val _ = Control.checkForErrors ()
    in
       ast
    end
 
-fun sourceFilesMLB {input} =
-   Ast.Basdec.sourceFiles (lexAndParseMLB (MLBString.fromFile input))
-
-val elaborateMLB = Elaborate.elaborateMLB
-
-val displayEnvDecs =
-   Control.Layouts
-   (fn ((_, decs),output) =>
-    (output (Layout.str "\n\n")
-     ; Vector.foreach
-       (decs, fn (dec, dc) =>
-        (output o Layout.record)
-        [("deadCode", Bool.layout dc),
-         ("decs", List.layout CoreML.Dec.layout dec)])))
-
-fun parseAndElaborateMLB (input: MLBString.t)
-   : Env.t * (CoreML.Dec.t list * bool) vector =
-   Control.pass
-   {display = displayEnvDecs,
-    name = "parseAndElaborate",
-    stats = fn _ => Layout.empty,
-    style = Control.ML,
-    suffix = "core-ml",
-    thunk = (fn () =>
-             (if !Control.keepAST
-                 then File.remove (concat [!Control.inputFile, ".ast"])
-                 else ()
-              ; Const.lookup := lookupConstant
-              ; elaborateMLB (lexAndParseMLB input, {addPrim = addPrim})))}
+fun parseAndElaborateMLB (input: MLBString.t): (CoreML.Dec.t list * bool) vector =
+   let
+      fun parseAndElaborateMLB input =
+         let
+            val _ = if !Control.keepAST
+                       then File.remove (concat [!Control.inputFile, ".ast"])
+                       else ()
+            val _ = Const.lookup := lookupConstant
+            val (E, decs) = Elaborate.elaborateMLB (lexAndParseMLB input, {addPrim = addPrim})
+            val _ = Control.checkForErrors ()
+            val _ = Option.map (!Control.showBasis, fn f => Env.showBasis (E, f))
+            val _ = Env.processDefUse E
+            val _ = Option.app (!Control.exportHeader, Ffi.exportHeader)
+         in
+            decs
+         end
+   in
+      Control.translatePass
+      {arg = input,
+       doit = parseAndElaborateMLB,
+       keepIL = false,
+       name = "parseAndElaborate",
+       srcToFile = NONE,
+       tgtStats = SOME (fn coreML => Control.sizeMessage ("coreML program", coreML)),
+       tgtToFile = SOME {display = (Control.Layouts
+                                    (fn (decss, output) =>
+                                     (output (Layout.str "\n");
+                                      Vector.foreach
+                                      (decss, fn (decs, dc) =>
+                                       (output (Layout.seq [Layout.str "(* deadCode: ",
+                                                            Bool.layout dc,
+                                                            Layout.str " *)"]);
+                                        List.foreach
+                                        (decs, output o CoreML.Dec.layout)))))),
+                         style = #style CoreML.Program.toFile,
+                         suffix = #suffix CoreML.Program.toFile},
+       tgtTypeCheck = NONE}
+   end
 
 (* ------------------------------------------------- *)
 (*                   Basis Library                   *)
@@ -371,8 +451,8 @@ fun parseAndElaborateMLB (input: MLBString.t)
 fun outputBasisConstants (out: Out.t): unit =
    let
       val _ = amBuildingConstants := true
-      val (_, decs) =
-         parseAndElaborateMLB (MLBString.fromFile "$(SML_LIB)/basis/primitive/primitive.mlb")
+      val decs =
+         parseAndElaborateMLB (MLBString.fromMLBFile "$(SML_LIB)/basis/primitive/primitive.mlb")
       val decs = Vector.concatV (Vector.map (decs, Vector.fromList o #1))
       (* Need to defunctorize so the constants are forced. *)
       val _ = Defunctorize.defunctorize (CoreML.Program.T {decs = decs})
@@ -385,587 +465,332 @@ fun outputBasisConstants (out: Out.t): unit =
 (*                      compile                      *)
 (* ------------------------------------------------- *)
 
-exception Done
-
-fun elaborate {input: MLBString.t}: Xml.Program.t =
+fun mkCompile {outputC, outputLL, outputS} =
    let
-      val (E, decs) = parseAndElaborateMLB input
-      val _ =
-         case !Control.showBasis of
-            NONE => ()
-          | SOME f =>
-               File.withOut
-               (f, fn out =>
-                Env.output
-                (E, out,
-                 {compact = !Control.showBasisCompact,
-                  def = !Control.showBasisDef,
-                  flat = !Control.showBasisFlat,
-                  onlyCurrent = false,
-                  prefixUnset = true}))
-      val _ = Env.processDefUse E
-      val _ =
-         case !Control.exportHeader of
-            NONE => ()
-          | SOME f => 
-               File.withOut
-               (f, fn out =>
-                let
-                   fun print s = Out.output (out, s)
-                   val libname = !Control.libname
-                   val libcap = CharVector.map Char.toUpper libname
-                   val _ = print ("#ifndef __" ^ libcap ^ "_ML_H__\n")
-                   val _ = print ("#define __" ^ libcap ^ "_ML_H__\n")
-                   val _ = print "\n"
-                   val _ =
-                      File.outputContents
-                      (concat [!Control.libDir, "/include/ml-types.h"], out)
-                   val _ = print "\n"
-                   val _ =
-                      File.outputContents
-                      (concat [!Control.libDir, "/include/export.h"], out)
-                   val _ = print "\n"
-                   (* How do programs link against this library by default *)
-                   val defaultLinkage =
-                      case !Control.format of
-                         Control.Archive    => "STATIC_LINK"
-                       | Control.Executable => "PART_OF"
-                       | Control.LibArchive => "NO_DEFAULT_LINK"
-                       | Control.Library    => "DYNAMIC_LINK"
-                   val _ = 
-                      print ("#if !defined(PART_OF_"      ^ libcap ^ ") && \\\n\
-                             \    !defined(STATIC_LINK_"  ^ libcap ^ ") && \\\n\
-                             \    !defined(DYNAMIC_LINK_" ^ libcap ^ ")\n")
-                   val _ = 
-                      print ("#define " ^ defaultLinkage ^ "_" ^ libcap ^ "\n")
-                   val _ = print "#endif\n"
-                   val _ = print "\n"
-                   val _ = print ("#if defined(PART_OF_" ^ libcap ^ ")\n")
-                   val _ = print "#define MLLIB_PRIVATE(x) PRIVATE x\n"
-                   val _ = print "#define MLLIB_PUBLIC(x) PUBLIC x\n"
-                   val _ = print ("#elif defined(STATIC_LINK_" ^ libcap ^ ")\n")
-                   val _ = print "#define MLLIB_PRIVATE(x)\n"
-                   val _ = print "#define MLLIB_PUBLIC(x) PUBLIC x\n"
-                   val _ = print ("#elif defined(DYNAMIC_LINK_" ^ libcap ^ ")\n")
-                   val _ = print "#define MLLIB_PRIVATE(x)\n"
-                   val _ = print "#define MLLIB_PUBLIC(x) EXTERNAL x\n"
-                   val _ = print "#else\n"
-                   val _ = print ("#error Must specify linkage for " ^ libname ^ "\n")
-                   val _ = print "#define MLLIB_PRIVATE(x)\n"
-                   val _ = print "#define MLLIB_PUBLIC(x)\n"
-                   val _ = print "#endif\n"
-                   val _ = print "\n"
-                   val _ = print "#ifdef __cplusplus\n"
-                   val _ = print "extern \"C\" {\n"
-                   val _ = print "#endif\n"
-                   val _ = print "\n"
-                   val _ = 
-                      if !Control.format = Control.Executable then () else
-                          (print ("MLLIB_PUBLIC(void " ^ libname ^ "_open(int argc, const char** argv);)\n")
-                          ;print ("MLLIB_PUBLIC(void " ^ libname ^ "_close();)\n"))
-                   val _ = Ffi.declareHeaders {print = print} 
-                   val _ = print "\n"
-                   val _ = print "#undef MLLIB_PRIVATE\n"
-                   val _ = print "#undef MLLIB_PUBLIC\n"
-                   val _ = print "\n"
-                   val _ = print "#ifdef __cplusplus\n"
-                   val _ = print "}\n"
-                   val _ = print "#endif\n"
-                   val _ = print "\n"
-                   val _ = print ("#endif /* __" ^ libcap ^ "_ML_H__ */\n")
-                in
-                   ()
-                end)
-      val _ = if !Control.elaborateOnly then raise Done else ()
-      val decs =
-         Control.pass
-         {display = Control.Layouts (fn (decss,output) =>
-                                     (output (Layout.str "\n\n")
-                                      ; Vector.foreach (decss, fn decs =>
-                                        List.foreach (decs, fn dec =>
-                                        output (CoreML.Dec.layout dec))))),
-          name = "deadCode",
-          suffix = "core-ml",
-          style = Control.ML,
-          stats = fn _ => Layout.empty,
-          thunk = fn () => let
-                              val {prog = decs} =
-                                 DeadCode.deadCode {prog = decs}
-                           in
-                              decs
-                           end}
-      val decs = Vector.concatV (Vector.map (decs, Vector.fromList))
-      val coreML = CoreML.Program.T {decs = decs}
-      val _ =
-         let
-            open Control
-         in
-            if !keepCoreML
-               then saveToFile ({suffix = "core-ml"}, Control.ML, coreML,
-                                Layouts CoreML.Program.layouts)
-            else ()
-         end
-
-
-      val xml =
-         Control.passTypeCheck
-         {display = Control.Layouts Xml.Program.layouts,
-          name = "defunctorize",
-          stats = Xml.Program.layoutStats,
-          style = Control.ML,
-          suffix = "xml",
-          thunk = fn () => Defunctorize.defunctorize coreML,
-          typeCheck = Xml.typeCheck}
-   in
-      xml
-   end
-
-fun simplifyXml xml =
-   let val xml =
-      Control.passTypeCheck
-      {display = Control.Layouts Xml.Program.layouts,
-       name = "xmlSimplify",
-       stats = Xml.Program.layoutStats,
-       style = Control.ML,
-       suffix = "xml",
-       thunk = fn () => Xml.simplify xml,
-       typeCheck = Xml.typeCheck}
-      open Control
-      val _ =
-         if !keepXML
-            then saveToFile ({suffix = "xml"}, Control.ML, xml,
-               Layouts Xml.Program.layouts)
-            else ()
-   in
-      xml
-   end
-
-fun makeSxml xml =
-   Control.passTypeCheck
-   {display = Control.Layouts Sxml.Program.layouts,
-    name = "monomorphise",
-    stats = Sxml.Program.layoutStats,
-    style = Control.ML,
-    suffix = "sxml",
-    thunk = fn () => Monomorphise.monomorphise xml,
-    typeCheck = Sxml.typeCheck}
-
-fun simplifySxml sxml =
-   let
-      val sxml =
-         Control.passTypeCheck
-         {display = Control.Layouts Sxml.Program.layouts,
-          name = "sxmlSimplify",
-          stats = Sxml.Program.layoutStats,
-          style = Control.ML,
-          suffix = "sxml",
-          thunk = fn () => Sxml.simplify sxml,
-          typeCheck = Sxml.typeCheck}
-      open Control
-      val _ =
-         if !keepSXML
-            then saveToFile ({suffix = "sxml"}, Control.ML, sxml,
-               Layouts Sxml.Program.layouts)
-            else ()
-   in
-      sxml
-   end
-
-fun makeSsa sxml =
-   Control.passTypeCheck
-   {display = Control.Layouts Ssa.Program.layouts,
-    name = "closureConvert",
-    stats = Ssa.Program.layoutStats,
-    style = Control.ML,
-    suffix = "ssa",
-    thunk = fn () => ClosureConvert.closureConvert sxml,
-    typeCheck = Ssa.typeCheck}
-
-fun simplifySsa ssa =
-   let
-      val ssa =
-         Control.passTypeCheck
-         {display = Control.Layouts Ssa.Program.layouts,
-          name = "ssaSimplify",
-          stats = Ssa.Program.layoutStats,
-          style = Control.ML,
-          suffix = "ssa",
-          thunk = fn () => Ssa.simplify ssa,
-          typeCheck = Ssa.typeCheck}
-      open Control
-      val _ =
-         if !keepSSA
-            then saveToFile ({suffix = "ssa"}, ML, ssa,
-               Layouts Ssa.Program.layouts)
-         else ()
-   in
-      ssa
-   end
-
-fun makeSsa2 ssa =
-   Control.passTypeCheck
-   {display = Control.Layouts Ssa2.Program.layouts,
-    name = "toSsa2",
-    stats = Ssa2.Program.layoutStats,
-    style = Control.ML,
-    suffix = "ssa2",
-    thunk = fn () => SsaToSsa2.convert ssa,
-    typeCheck = Ssa2.typeCheck}
-
-fun simplifySsa2 ssa2 =
-   let
-      val ssa2 =
-         Control.passTypeCheck
-         {display = Control.Layouts Ssa2.Program.layouts,
-          name = "ssa2Simplify",
-          stats = Ssa2.Program.layoutStats,
-          style = Control.ML,
-          suffix = "ssa2",
-          thunk = fn () => Ssa2.simplify ssa2,
-          typeCheck = Ssa2.typeCheck}
-      open Control
-      val _ =
-         if !keepSSA2
-            then saveToFile ({suffix = "ssa2"}, ML, ssa2,
-               Layouts Ssa2.Program.layouts)
-         else ()
-   in
-      ssa2
-   end
-
-fun makeMachine ssa2 =
-   let
-      val codegenImplementsPrim =
-         case !Control.codegen of
-            Control.AMD64Codegen => amd64Codegen.implementsPrim
-          | Control.CCodegen => CCodegen.implementsPrim
-          | Control.LLVMCodegen => LLVMCodegen.implementsPrim
-          | Control.X86Codegen => x86Codegen.implementsPrim
-      val machine =
-         Control.passTypeCheck
-         {display = Control.Layouts Machine.Program.layouts,
-          name = "backend",
-          stats = fn _ => Layout.empty,
-          style = Control.No,
-          suffix = "machine",
-          thunk = fn () =>
-                  (Backend.toMachine
-                   (ssa2,
-                    {codegenImplementsPrim = codegenImplementsPrim})),
-          typeCheck = fn machine =>
-                      (* For now, machine type check is too slow to run. *)
-                      (if !Control.typeCheck
-                          then Machine.Program.typeCheck machine
-                       else ())}
-      val _ =
-         let
-            open Control
-         in
-            if !keepMachine
-               then saveToFile ({suffix = "machine"}, No, machine,
-                                Layouts Machine.Program.layouts)
-            else ()
-         end
-   in
-      machine
-   end
-
-fun setupConstants() : unit = 
-   (* Set GC_state offsets and sizes. *)
-   let
-      val _ =
-         let
-            fun get (name: string): Bytes.t =
-               case lookupConstant ({default = NONE, name = name},
-                                    ConstType.Word WordSize.word32) of
-                  Const.Word w => Bytes.fromInt (WordX.toInt w)
-                | _ => Error.bug "Compile.setupConstants: GC_state offset must be an int"
-         in
-            Runtime.GCField.setOffsets
-            {
-             atomicState = get "atomicState_Offset",
-             cardMapAbsolute = get "generationalMaps.cardMapAbsolute_Offset",
-             currentThread = get "currentThread_Offset",
-             curSourceSeqIndex = get "sourceMaps.curSourceSeqIndex_Offset",
-             exnStack = get "exnStack_Offset",
-             frontier = get "frontier_Offset",
-             limit = get "limit_Offset",
-             limitPlusSlop = get "limitPlusSlop_Offset",
-             maxFrameSize = get "maxFrameSize_Offset",
-             signalIsPending = get "signalsInfo.signalIsPending_Offset",
-             stackBottom = get "stackBottom_Offset",
-             stackLimit = get "stackLimit_Offset",
-             stackTop = get "stackTop_Offset"
-             };
-            Runtime.GCField.setSizes
-            {
-             atomicState = get "atomicState_Size",
-             cardMapAbsolute = get "generationalMaps.cardMapAbsolute_Size",
-             currentThread = get "currentThread_Size",
-             curSourceSeqIndex = get "sourceMaps.curSourceSeqIndex_Size",
-             exnStack = get "exnStack_Size",
-             frontier = get "frontier_Size",
-             limit = get "limit_Size",
-             limitPlusSlop = get "limitPlusSlop_Size",
-             maxFrameSize = get "maxFrameSize_Size",
-             signalIsPending = get "signalsInfo.signalIsPending_Size",
-             stackBottom = get "stackBottom_Size",
-             stackLimit = get "stackLimit_Size",
-             stackTop = get "stackTop_Size"
-             }
-         end
-      (* Setup endianness *)
-      val _ =
-         let
-            fun get (name:string): bool =
-                case lookupConstant ({default = NONE, name = name},
-                                     ConstType.Bool) of
-                   Const.Word w => 1 = WordX.toInt w
-                 | _ => Error.bug "Compile.setupConstants: endian unknown"
-         in
-            Control.Target.setBigEndian (get "MLton_Platform_Arch_bigendian")
-         end
-   in
-      ()
-   end
-
-
-fun preCodegen (input: MLBString.t): Machine.Program.t =
-   let
-      val xml = elaborate {input = input}
-      val _ = setupConstants ()
-      val xml = simplifyXml xml
-      val sxml = makeSxml xml
-      val sxml = simplifySxml sxml
-      val ssa = makeSsa sxml
-      val ssa = simplifySsa ssa
-      val ssa2 = makeSsa2 ssa
-      val ssa2 = simplifySsa2 ssa2
-   in
-      makeMachine ssa2
-   end
-
-fun compile {input: 'a, resolve: 'a -> Machine.Program.t, outputC, outputLL, outputS}: unit =
-   let
-      val machine =
-         Control.trace (Control.Top, "pre codegen")
-         resolve input
-      fun clearNames () =
-         (Machine.Program.clearLabelNames machine
-          ; Machine.Label.printNameAlphaNumeric := true)
-      val () =
-         case !Control.codegen of
-            Control.AMD64Codegen =>
-               (clearNames ()
-                ; (Control.trace (Control.Top, "amd64 code gen")
-                   amd64Codegen.output {program = machine,
-                                        outputC = outputC,
-                                        outputS = outputS}))
-          | Control.CCodegen =>
-               (clearNames ()
-                ; (Control.trace (Control.Top, "C code gen")
-                   CCodegen.output {program = machine,
-                                    outputC = outputC}))
-          | Control.LLVMCodegen =>
-               (clearNames ()
-                ; (Control.trace (Control.Top, "llvm code gen")
-                   LLVMCodegen.output {program = machine,
-                                       outputC = outputC,
-                                      outputLL = outputLL}))
-          | Control.X86Codegen =>
-               (clearNames ()
-                ; (Control.trace (Control.Top, "x86 code gen")
-                   x86Codegen.output {program = machine,
-                                      outputC = outputC,
-                                      outputS = outputS}))
-      val _ = Control.message (Control.Detail, PropertyList.stats)
-      val _ = Control.message (Control.Detail, HashSet.stats)
-   in
-      ()
-   end handle Done => ()
-
-fun compileMLB {input: File.t, outputC, outputLL, outputS}: unit =
-   compile {input = MLBString.fromFile input,
-            resolve = preCodegen,
-            outputC = outputC,
-            outputLL = outputLL,
-            outputS = outputS}
-
-val elaborateMLB =
-   fn {input: File.t} =>
-   (ignore (elaborate {input = MLBString.fromFile input}))
-   handle Done => ()
-
-local
-   fun genMLB {input: File.t list}: MLBString.t =
-      let
-         val basis = "$(SML_LIB)/basis/default.mlb"
+      local
+         val sourceFiles = Ast.Basdec.sourceFiles o lexAndParseMLB
       in
-         MLBString.fromString
-         (case input of
-             [] => basis
-           | _ =>
-                let
-                   val input = List.map (input, quoteFile)
-                in
-                   String.concat
-                   ["local\n",
-                    basis, "\n",
-                    "in\n",
-                    String.concat (List.separate (input, "\n")), "\n",
-                    "end\n"]
-                end)
+         val mlbSourceFiles = sourceFiles o MLBString.fromMLBFile
+         val smlSourceFiles = sourceFiles o MLBString.fromSMLFile
       end
-in
-   fun compileSML {input: File.t list, outputC, outputLL, outputS}: unit =
-      compile {input = genMLB {input = input},
-               resolve = preCodegen,
-               outputC = outputC,
-               outputLL = outputLL,
-               outputS = outputS}
-   val elaborateSML =
-      fn {input: File.t list} =>
-      (ignore (elaborate {input = genMLB {input = input}}))
-      handle Done => ()
-end
 
-fun genFromXML (input: File.t): Machine.Program.t =
-   let
-      val _ = setupConstants()
-      val xml =
-         Control.passTypeCheck
-         {display = Control.Layouts Xml.Program.layouts,
-          name = "xmlParse",
-          stats = Xml.Program.layoutStats,
-          style = Control.ML,
-          suffix = "xml",
-          thunk = (fn () => case
-                     Parse.parseFile(Xml.Program.parse (), input)
-                        of Result.Yes x => x
-                         | Result.No msg => (Control.error
-                           (Region.bogus, Layout.str "Xml Parse failed", Layout.str msg);
-                            Control.checkForErrors("parse");
-                            (* can't be reached *)
-                            raise Fail "parse")
-                   ),
-          typeCheck = Xml.typeCheck}
-      val xml = simplifyXml xml
-      val sxml = makeSxml xml
-      val sxml = simplifySxml sxml
-      val ssa = makeSsa sxml
-      val ssa = simplifySsa ssa
-      val ssa2 = makeSsa2 ssa
-      val ssa2 = simplifySsa2 ssa2
-   in
-      makeMachine ssa2
-   end
-fun compileXML {input: File.t, outputC, outputLL, outputS}: unit =
-   compile {input = input,
-            resolve = genFromXML,
-            outputC = outputC,
-            outputLL = outputLL,
-            outputS = outputS}
-
-fun genFromSXML (input: File.t): Machine.Program.t =
-   let
-      val _ = setupConstants()
-      val sxml =
-         Control.passTypeCheck
-         {display = Control.Layouts Sxml.Program.layouts,
-          name = "sxmlParse",
-          stats = Sxml.Program.layoutStats,
-          style = Control.ML,
-          suffix = "sxml",
-          thunk = (fn () => case
-                     Parse.parseFile(Sxml.Program.parse (), input)
-                        of Result.Yes x => x
-                         | Result.No msg => (Control.error 
-                           (Region.bogus, Layout.str "Sxml Parse failed", Layout.str msg);
-                            Control.checkForErrors("parse");
-                            (* can't be reached *)
-                            raise Fail "parse")
-                   ),
-          typeCheck = Sxml.typeCheck}
-      val sxml = simplifySxml sxml
-      val ssa = makeSsa sxml
-      val ssa = simplifySsa ssa
-      val ssa2 = makeSsa2 ssa
-      val ssa2 = simplifySsa2 ssa2
-   in
-      makeMachine ssa2
-   end
-fun compileSXML {input: File.t, outputC, outputLL, outputS}: unit =
-   compile {input = input,
-            resolve = genFromSXML,
-            outputC = outputC,
-            outputLL = outputLL,
-            outputS = outputS}
-
-fun genFromSsa (input: File.t): Machine.Program.t =
-   let
-      val _ = setupConstants()
-      val ssa =
-         Control.passTypeCheck
-         {display = Control.Layouts Ssa.Program.layouts,
-          name = "ssaParse",
-          stats = Ssa.Program.layoutStats,
-          style = Control.ML,
-          suffix = "ssa",
-          thunk = (fn () => case
-                     Parse.parseFile(Ssa.Program.parse (), input)
-                        of Result.Yes x => x
-                         | Result.No msg => (Control.error 
-                           (Region.bogus, Layout.str "Ssa Parse failed", Layout.str msg);
-                            Control.checkForErrors("parse");
-                            (* can't be reached *)
-                            raise Fail "parse")
-                   ),
-          typeCheck = Ssa.typeCheck}
-      val ssa = simplifySsa ssa
-      val ssa2 = makeSsa2 ssa
-      val ssa2 = simplifySsa2 ssa2
-   in
-      makeMachine ssa2
-   end
-fun compileSSA {input: File.t, outputC, outputLL, outputS}: unit =
-   compile {input = input,
-            resolve = genFromSsa,
-            outputC = outputC,
-            outputLL = outputLL,
-            outputS = outputS}
-
-fun genFromSsa2 (input: File.t): Machine.Program.t =
+      fun deadCode decs =
+         let
+            fun deadCode decs =
                let
-                  val _ = setupConstants()
-                  val ssa2 =
-                     Control.passTypeCheck
-                     {display = Control.Layouts Ssa2.Program.layouts,
-                      name = "ssa2Parse",
-                      stats = Ssa2.Program.layoutStats,
-                      style = Control.ML,
-                      suffix = "ssa2",
-                      thunk = (fn () => case
-                                 Parse.parseFile(Ssa2.Program.parse (), input)
-                                    of Result.Yes x => x
-                                     | Result.No msg => (Control.error
-                                       (Region.bogus, Layout.str "Ssa2 Parse failed", Layout.str msg);
-                                        Control.checkForErrors("parse");
-                                        (* can't be reached *)
-                                        raise Fail "parse")
-                               ),
-                      typeCheck = Ssa2.typeCheck}
-                  (*val ssa2 = makeSsa2 ssa*)
-                  val ssa2 = simplifySsa2 ssa2
+                  val {prog = decs} =
+                     DeadCode.deadCode {prog = decs}
+                  val decs = Vector.concatV (Vector.map (decs, Vector.fromList))
+                  val coreML = CoreML.Program.T {decs = decs}
                in
-                  makeMachine ssa2
+                  coreML
                end
+            val coreML =
+               Control.translatePass
+               {arg = decs,
+                doit = deadCode,
+                keepIL = !Control.keepCoreML,
+                name = "deadCode",
+                srcToFile = SOME {display = (Control.Layouts
+                                             (fn (decss, output) =>
+                                              (output (Layout.str "\n");
+                                               Vector.foreach
+                                               (decss, fn (decs, dc) =>
+                                                (output (Layout.seq [Layout.str "(* deadCode: ",
+                                                                     Bool.layout dc,
+                                                                     Layout.str " *)"]);
+                                                 List.foreach
+                                                 (decs, output o CoreML.Dec.layout)))))),
+                                  style = #style CoreML.Program.toFile,
+                                  suffix = #suffix CoreML.Program.toFile},
+                tgtStats = SOME CoreML.Program.layoutStats,
+                tgtToFile = SOME CoreML.Program.toFile,
+                tgtTypeCheck = NONE}
+         in
+            coreML
+         end
+      fun defunctorize coreML =
+         Control.translatePass
+         {arg = coreML,
+          doit = (fn coreML =>
+                  Defunctorize.defunctorize coreML
+                  before Control.checkForErrors ()),
+          keepIL = false,
+          name = "defunctorize",
+          srcToFile = SOME CoreML.Program.toFile,
+          tgtStats = SOME Xml.Program.layoutStats,
+          tgtToFile = SOME Xml.Program.toFile,
+          tgtTypeCheck = SOME Xml.typeCheck}
+      fun frontend input =
+         Control.translatePass
+         {arg = input,
+          doit = defunctorize o deadCode o parseAndElaborateMLB,
+          keepIL = false,
+          name = "frontend",
+          srcToFile = NONE,
+          tgtStats = SOME Xml.Program.layoutStats,
+          tgtToFile = SOME Xml.Program.toFile,
+          tgtTypeCheck = SOME Xml.typeCheck}
+      val mlbFrontend = frontend o MLBString.fromMLBFile
+      val smlFrontend = frontend o MLBString.fromSMLFile
 
- fun compileSSA2 {input: File.t, outputC, outputLL, outputS}: unit =
-               compile {input = input,
-                        resolve = genFromSsa2,
-                        outputC = outputC,
-                        outputLL = outputLL,
-                        outputS = outputS}
+      fun mkFrontend {parse, stats, toFile, typeCheck} =
+         let
+            val name = #suffix toFile
+         in
+            fn input =>
+            Ref.fluidLet
+            (Control.typeCheck, true, fn () =>
+             Control.translatePass
+             {arg = input,
+              doit = (fn input =>
+                      case Parse.parseFile (parse (), input) of
+                         Result.Yes program => program
+                       | Result.No msg =>
+                            (Control.error
+                             (Region.bogus,
+                              Layout.str (concat [name, "Parse failed"]),
+                              Layout.str msg)
+                             ; Control.checkForErrors ()
+                             ; Error.bug "unreachable")),
+              keepIL = false,
+              name = concat [name, "Parse"],
+              srcToFile = NONE,
+              tgtStats = SOME stats,
+              tgtToFile = SOME toFile,
+              tgtTypeCheck = SOME typeCheck})
+         end
+      val xmlFrontend =
+         mkFrontend
+         {parse = Xml.Program.parse,
+          stats = Xml.Program.layoutStats,
+          toFile = Xml.Program.toFile,
+          typeCheck = Xml.typeCheck}
+      val sxmlFrontend =
+         mkFrontend
+         {parse = Sxml.Program.parse,
+          stats = Sxml.Program.layoutStats,
+          toFile = Sxml.Program.toFile,
+          typeCheck = Sxml.typeCheck}
+      val ssaFrontend =
+         mkFrontend
+         {parse = Ssa.Program.parse,
+          stats = Ssa.Program.layoutStats,
+          toFile = Ssa.Program.toFile,
+          typeCheck = Ssa.typeCheck}
+      val ssa2Frontend =
+         mkFrontend
+         {parse = Ssa2.Program.parse,
+          stats = Ssa2.Program.layoutStats,
+          toFile = Ssa2.Program.toFile,
+          typeCheck = Ssa2.typeCheck}
 
+      fun xmlSimplify xml =
+         let
+            val xml =
+               Control.simplifyPass
+               {arg = xml,
+                doit = Xml.simplify,
+                execute = true,
+                keepIL = !Control.keepXML,
+                name = "xmlSimplify",
+                stats = Xml.Program.layoutStats,
+                toFile = Xml.Program.toFile,
+                typeCheck = Xml.typeCheck}
+         in
+            xml
+         end
+      fun toSxml xml =
+         Control.translatePass
+         {arg = xml,
+          doit = Monomorphise.monomorphise,
+          keepIL = false,
+          name = "monomorphise",
+          srcToFile = SOME Xml.Program.toFile,
+          tgtStats = SOME Sxml.Program.layoutStats,
+          tgtToFile = SOME Sxml.Program.toFile,
+          tgtTypeCheck = SOME Sxml.typeCheck}
+      fun sxmlSimplify sxml =
+         let
+            val sxml =
+               Control.simplifyPass
+               {arg = sxml,
+                doit = Sxml.simplify,
+                execute = true,
+                keepIL = !Control.keepSXML,
+                name = "sxmlSimplify",
+                stats = Sxml.Program.layoutStats,
+                toFile = Sxml.Program.toFile,
+                typeCheck = Sxml.typeCheck}
+         in
+            sxml
+         end
+      fun toSsa sxml =
+         Control.translatePass
+         {arg = sxml,
+          doit = ClosureConvert.closureConvert,
+          keepIL = false,
+          name = "closureConvert",
+          srcToFile = SOME Sxml.Program.toFile,
+          tgtStats = SOME Ssa.Program.layoutStats,
+          tgtToFile = SOME Ssa.Program.toFile,
+          tgtTypeCheck = SOME Ssa.typeCheck}
+      fun ssaSimplify ssa =
+         let
+            val ssa =
+               Control.simplifyPass
+               {arg = ssa,
+                doit = Ssa.simplify,
+                execute = true,
+                keepIL = !Control.keepSSA,
+                name = "ssaSimplify",
+                stats = Ssa.Program.layoutStats,
+                toFile = Ssa.Program.toFile,
+                typeCheck = Ssa.typeCheck}
+         in
+            ssa
+         end
+      fun toSsa2 ssa =
+         Control.translatePass
+         {arg = ssa,
+          doit = SsaToSsa2.convert,
+          keepIL = false,
+          name = "toSsa2",
+          srcToFile = SOME Ssa.Program.toFile,
+          tgtStats = SOME Ssa2.Program.layoutStats,
+          tgtToFile = SOME Ssa2.Program.toFile,
+          tgtTypeCheck = SOME Ssa2.typeCheck}
+      fun ssa2Simplify ssa2 =
+         let
+            val ssa2 =
+               Control.simplifyPass
+               {arg = ssa2,
+                doit = Ssa2.simplify,
+                execute = true,
+                keepIL = !Control.keepSSA2,
+                name = "ssa2Simplify",
+                stats = Ssa2.Program.layoutStats,
+                toFile = Ssa2.Program.toFile,
+                typeCheck = Ssa2.typeCheck}
+         in
+            ssa2
+         end
+      fun toRssa ssa2 =
+         let
+            val _ = setupRuntimeConstants ()
+            val codegenImplementsPrim =
+               case !Control.codegen of
+                  Control.AMD64Codegen => amd64Codegen.implementsPrim
+                | Control.CCodegen => CCodegen.implementsPrim
+                | Control.LLVMCodegen => LLVMCodegen.implementsPrim
+                | Control.X86Codegen => x86Codegen.implementsPrim
+            fun toRssa ssa2 =
+               Ssa2ToRssa.convert
+               (ssa2, {codegenImplementsPrim = codegenImplementsPrim})
+            val rssa =
+               Control.translatePass
+               {arg = ssa2,
+                doit = toRssa,
+                keepIL = false,
+                name = "toRssa",
+                srcToFile = SOME Ssa2.Program.toFile,
+                tgtStats = SOME Rssa.Program.layoutStats,
+                tgtToFile = SOME Rssa.Program.toFile,
+                tgtTypeCheck = SOME Rssa.Program.typeCheck}
+         in
+            rssa
+         end
+      fun rssaSimplify rssa =
+         Control.simplifyPass
+         {arg = rssa,
+          doit = Rssa.simplify,
+          execute = true,
+          keepIL = !Control.keepRSSA,
+          name = "rssaSimplify",
+          stats = Rssa.Program.layoutStats,
+          toFile = Rssa.Program.toFile,
+          typeCheck = Rssa.Program.typeCheck}
+      fun toMachine rssa =
+         let
+            val machine =
+               Control.translatePass
+               {arg = rssa,
+                doit = Backend.toMachine,
+                keepIL = false,
+                name = "backend",
+                srcToFile = SOME Rssa.Program.toFile,
+                tgtStats = SOME Machine.Program.layoutStats,
+                tgtToFile = SOME Machine.Program.toFile,
+                tgtTypeCheck = SOME Machine.Program.typeCheck}
+         in
+            machine
+         end
+      fun machineSimplify machine =
+         Control.simplifyPass
+         {arg = machine,
+          doit = Machine.simplify,
+          execute = true,
+          keepIL = !Control.keepMachine,
+          name = "machineSimplify",
+          stats = Machine.Program.layoutStats,
+          toFile = Machine.Program.toFile,
+          typeCheck = Machine.Program.typeCheck}
+      fun codegen machine =
+         let
+            val _ = Machine.Program.clearLabelNames machine
+            val _ = Machine.Label.printNameAlphaNumeric := true
+            fun codegen machine =
+               case !Control.codegen of
+                  Control.AMD64Codegen =>
+                     amd64Codegen.output {program = machine,
+                                          outputC = outputC,
+                                          outputS = outputS}
+                | Control.CCodegen =>
+                     CCodegen.output {program = machine,
+                                      outputC = outputC}
+                | Control.LLVMCodegen =>
+                     LLVMCodegen.output {program = machine,
+                                         outputC = outputC,
+                                         outputLL = outputLL}
+                | Control.X86Codegen =>
+                     x86Codegen.output {program = machine,
+                                        outputC = outputC,
+                                        outputS = outputS}
+         in
+            Control.translatePass
+            {arg = machine,
+             doit = codegen,
+             keepIL = false,
+             name = concat [Control.Codegen.toString (!Control.codegen), "Codegen"],
+             srcToFile = SOME Machine.Program.toFile,
+             tgtStats = NONE,
+             tgtToFile = NONE,
+             tgtTypeCheck = NONE}
+         end
 
+      val goCodegen = codegen
+      val goMachineSimplify = goCodegen o machineSimplify
+      val goToMachine = goMachineSimplify o toMachine
+      val goRssaSimplify = goToMachine o rssaSimplify
+      val goToRssa = goRssaSimplify o toRssa
+      val goSsa2Simplify = goToRssa o ssa2Simplify
+      val goToSsa2 = goSsa2Simplify o toSsa2
+      val goSsaSimplify = goToSsa2 o ssaSimplify
+      val goToSsa = goSsaSimplify o toSsa
+      val goSxmlSimplify = goToSsa o sxmlSimplify
+      val goToSxml = goSxmlSimplify o toSxml
+      val goXmlSimplify = goToSxml o xmlSimplify
+
+      fun mk (il, sourceFiles, frontend, compile) =
+         {sourceFiles = sourceFiles,
+          frontend = Control.trace (Control.Top, "Type Check " ^ il) (ignore o frontend),
+          compile = Control.trace (Control.Top, "Compile " ^ il) (compile o frontend)}
+   in
+      {mlb = mk ("SML", mlbSourceFiles, mlbFrontend, goXmlSimplify),
+       sml = mk ("SML", smlSourceFiles, smlFrontend, goXmlSimplify),
+       xml = mk ("XML", Vector.new1, xmlFrontend, goXmlSimplify),
+       sxml = mk ("SXML", Vector.new1, sxmlFrontend, goSxmlSimplify),
+       ssa = mk ("SSA", Vector.new1, ssaFrontend, goSsaSimplify),
+       ssa2 = mk ("SSA2", Vector.new1, ssa2Frontend, goSsa2Simplify)}
+   end
 end
