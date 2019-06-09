@@ -2039,7 +2039,7 @@ structure Program =
                   verb = Control.Detail}
          end
 
-      val toFile = {display = Control.Layouts layouts, style = Control.ML, suffix = "ssa"}
+      val toFile = {display = Control.Layouts layouts, style = Control.ML, suffix = "ssa2"}
 
       fun parse () =
          let
