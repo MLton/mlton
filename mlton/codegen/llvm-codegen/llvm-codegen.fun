@@ -326,9 +326,28 @@ structure Metadata = struct
       end
    fun reset () =
       metaDataCounter := 0
+
+   val rec addSep =
+      fn [] => ""
+       | [s] => s
+       | s :: ss' => concat [s, ", ", addSep ss']
+
+   fun defineNode (t, ts) =
+      concat
+         [str t,
+          " = !{",
+          (addSep o List.map) (ts, str)
+          "}"]
+   (* Does no escaping *)
+   fun defineString (t, str) =
+      concat
+         [str t,
+          " = !\"",
+          str,
+          "\""]
 end
 
-val typeScopes : (ObjptrTycon.t vector, Metadata.t * Metadata.t) HashTable.t =
+val typeScopes : (ObjptrTycon.t vector, Metadata.t) HashTable.t =
    HashTable.new
       {hash = fn os =>
          Hash.vectorMap (os, ObjptrTycon.hash),
@@ -1387,6 +1406,25 @@ fun outputLLVMDeclarations (cxt, print, chunk) =
                        labelStrings, "\n"])
     end
 
+fun outputTbaa (cxt, print) =
+   let
+      val Context { program = Program.T {objectTypes, ...}, ...} = cxt
+      val () = print (concat
+            [Metadata.str typeDomain, " = !{", Metadata.str typeDomain, "}",
+             "\t; ", "Type domain", "\n"])
+      val objectTypeMetadata = Vector.map (objectTypes,
+         (fn _ => Metadata.new ()))
+      val root = Metadata.new ()
+      val _ = print o (Metadata.defineString (root, "TBAA Root"))
+      val _ = print "\n"
+
+      val objPtrRoot = Metadata.new ()
+      val _ = print o (Metadata.defineNode )
+      val _ = print "\t; Objptr \n"
+
+        val () = List.foreach (HashTable.toList typeScopes,
+
+
 fun outputChunk (cxt, outputLL, chunk) =
     let
         val () = cFunctions := []
@@ -1467,32 +1505,26 @@ fun outputChunk (cxt, outputLL, chunk) =
         val () = print (concat
                [Metadata.str typeDomain, " = !{", Metadata.str typeDomain, "}",
                 "\t; ", "Type domain", "\n"])
+        val () = (print o concat)
         val objectTypeMetadata = Vector.map (objectTypes,
             (fn objTy =>
                let
                   val m = Metadata.new ()
-                  val () = print (concat
-                     [Metadata.str m, " = !{",
-                      Metadata.str m, ", ", Metadata.str typeDomain, "}",
-                      "\t; ", Layout.toString (ObjectType.layout objTy), "\n"])
+                  val () = (print o concat)
+                     [Metadata.defineNode (m, [m, typeDomain])
+                      "\t; ", Layout.toString (ObjectType.layout objTy), "\n"]
                in
                   m
                end))
         val () = List.foreach (HashTable.toList typeScopes,
-            fn (objptrs, (pos, neg)) =>
+            fn (objptrs, pos) =>
                let
-                  val rec addSep =
-                     fn [] => ""
-                      | [s] => s
-                      | s :: ss' => concat [s, ", ", addSep ss']
-                  fun printList (m, objptrs) = print (concat
-                     [Metadata.str m,
-                      " = !{",
-                         (addSep o List.map)
+                  fun printList (m, objptrs) = print (
+                     Metadata.defineNode (m,
+                         List.map
                          (objptrs, fn optr => (Metadata.str o Vector.sub) (
                            objectTypeMetadata,
-                           optr)),
-                      "}"])
+                           optr)))
                   val indices = Vector.toListMap (objptrs, ObjptrTycon.index)
                   val () = printList (pos, indices)
                   val objptrsString =
