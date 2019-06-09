@@ -17,35 +17,41 @@ structure Location =
    end
 structure State =
    struct
-      (* this is our state representation for readers *)
-      type t = (char * Location.t) Stream.t
+      (* The state primarily consists of the stream of future
+       * characters. We keep a buffer of the last string read
+       * annotated with the appropriate locations. Hopefully, 
+       * it should be created only when needed, if the functions
+       * are sufficiently inlined *)
+      type t = T of {
+         buffer: string,
+         (* Invariant: must be same length as buffer *)
+         locations: Location.t vector,
+         position: int,
+         stream: StreamIO.instream}
+
+      val lastLocation (T {locations, ...}) =
+         if Vector.isEmpty locations
+         then NONE
+         else SOME (Vector.last locations)
    end
 
 
-datatype 'a result = Success of 'a * (char * Location.t) Stream.t
-                   | Failure of string list (* expected options *)
-                   | FailCut of string list (* as failure, but the
-                   closest upstream choice point won't try other options, and
-                   their errors will be silenced *)
+datatype ('a, 'b) result = Success of 'a * 'b
+                         | Expected of string list
+
 type 'a t =
-   State.t -> 'a result
+   {mayBeEmpty: bool,
+    firstChars: char list option,
+    run: (State.t -> (State.t, 'a) result)}
 
+fun indexBuf ({line, column}, s) =
+   Vector.tabulate (String.length s,
+      fn i =>
+         if String.sub (s, i) = #"\n"
+         then {line=line+1, column=0}
+         else {line=line, column=column+1})
 
-fun indexStream({line, column}, s) =
-   case Stream.force s of
-      NONE => Stream.empty ()
-    | SOME(h, r) =>
-         Stream.cons((h, {line=line, column=column}),
-            Stream.delay(fn () =>
-               if h = #"\n"
-               then
-                  indexStream({line=line+1, column=0}, r)
-               else
-                  indexStream({line=line, column=column+1}, r)
-            )
-         )
-
-fun doFail([]) = Result.No ("Parse error")
+fun doFail []  = Result.No ("Parse error")
   | doFail([msg]) = Result.No ("Parse error: Expected " ^ msg)
   | doFail(msgs) = Result.No ("Parse error: Expected one of \n" ^
        (String.concat(List.map(msgs, fn x => x ^ "\n"))))
