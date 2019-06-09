@@ -35,21 +35,55 @@ structure State =
          else SOME (Vector.last locations)
    end
 
-
 datatype ('a, 'b) result = Success of 'a * 'b
                          | Expected of string list
 
-type 'a t =
+type 'a t = T of
    {mayBeEmpty: bool,
     firstChars: char list option,
     run: (State.t -> (State.t, 'a) result)}
 
-fun indexBuf ({line, column}, s) =
+fun indexLocations ({line, column}, s) =
    Vector.tabulate (String.length s,
       fn i =>
          if String.sub (s, i) = #"\n"
          then {line=line+1, column=0}
          else {line=line, column=column+1})
+
+fun getNext (State.T {buffer, locations, position, stream}):
+      (char * Location.t * State.T) option =
+   let
+      fun fillNext () =
+         let
+            val lastLocation = Vector.last locations
+            val (buffer, stream) = StreamIO.input stream
+            val locations = indexLocations (buffer, lastLocation)
+         in
+            State.T {buffer=buffer, locations=locations,
+                     position=0, stream=stream}
+         end
+   in
+      case Int.compare (position, String.length buffer - 1) of
+           LESS =>
+               SOME (String.sub (buffer, i),
+                     Vector.sub (locations, i),
+                State.T {buffer=buffer, locations=locations,
+                         position=position+1, stream=stream})
+         | EQ =>
+               SOME (String.sub (buffer, i), Vector.sub (locations, i), fillNext ())
+         | GREATER =>
+              let
+                 state as State.T {buffer, locations, position, stream} = fillNext ()
+              in
+                 if String.length buffer = 0
+                 then NONE
+                 else SOME
+                  (Vector.first buffer,
+                   Vector.first locations,
+                   State.T {buffer=buffer, locations=locations,
+                            position=position+1, stream=stream})
+   end
+
 
 fun doFail []  = Result.No ("Parse error")
   | doFail([msg]) = Result.No ("Parse error: Expected " ^ msg)
@@ -76,26 +110,39 @@ fun parseFile(p : 'a t, file) : 'a Result.t =
     end)
 
 
+fun unionFirstChars (c1, c2) =
+   case (c1, c2) of
+        (SOME cs1, SOME cs2) => SOME (List.union (cs1, cs2, op =))
+       _ => NONE
 
-fun tf <*> tx = fn (s : State.t) =>
-   case tf s
-      of Success (f, s') =>
-          (case tx s'
-             of Success (b, s'') =>
-                   Success (f b, s'')
-              (* constructors have to be explict to typecheck *)
-              | Failure err => Failure err
-              | FailCut err => FailCut err)
-       | Failure err => Failure err
-       | FailCut err => FailCut err
+fun (T {mayBeEmpty=empty1, firstChars=chars1, run=run1})
+     <*>
+    (T {mayBeEmpty=empty2, firstChars=chars2, run=run2}) =
+   T {mayBeEmpty=empty1 and empty2,
+      firstChars=
+         if empty1
+         then unionFirstChars (chars1, chars2)
+         else firstChars1,
+      run=fn s =>
+          case run1 s of
+              Success (f, s') =>
+                  (case run2 s' of
+                       Success (b, s'') =>
+                        Success (f b, s'')
+                     | Failure err => Failure err)
+            | Failure err => Failure err)}
 
-fun ta >>= f = fn (s : State.t) =>
-   case ta s
-      of Success (a, s') =>
-         f a s'
-       | Failure err => Failure err
-       | FailCut err => FailCut err
-
+fun (T {mayBeEmpty, firstChars, run}) >>= f =
+   T {mayBeEmpty=mayBeEmpty,
+      firstChars=
+         if mayBeEmpty
+         then NONE
+         else firstChars,
+      run=fn s =>
+         case run s of
+              Success (a, s') =>
+                 #run f a s'
+            | Failure err => Failure err}
 
 fun fst a _ = a
 fun snd _ b = b
@@ -104,8 +151,10 @@ fun curry f a b = f (a, b)
 fun curry3 f a b c = f (a, b, c)
 fun curry4 f a b c d = f (a, b, c, d)
 
-fun pure a (s : State.t)  =
-  Success (a, s)
+fun pure a =
+   T {mayBeEmpty=true,
+      firstChars=NONE,
+      run=fn s => (a, s)}
 
 fun f <$> p = (pure f) <*> p
 fun f <$$> (p1, p2) = curry <$> (pure f) <*> p1 <*> p2
@@ -121,8 +170,6 @@ fun a <|> b = fn s => case (a s)
     | Failure err1 => (case (b s) of
         Success r => Success r
       | Failure err2 => Failure (List.append(err1, err2))
-      | FailCut err2 => Failure (err2))
-    | FailCut err1 => Failure err1
 
 structure Ops = struct
    val (op >>=) = (op >>=)
@@ -148,20 +195,6 @@ fun failString (m, p : Location.t, s : (char * Location.t) Stream.t) =
 fun fail m (s : State.t) = case Stream.force (s)
    of NONE => Failure []
     | SOME((_, p : Location.t), _) => Failure [failString (m, p, s)]
-
-fun failCut m (s : State.t) = case Stream.force (s)
-   of NONE => FailCut []
-    | SOME((_, p : Location.t), _) => FailCut [failString (m, p, s)]
-
-fun cut p s = case p s
-   of Success x => Success x
-    | Failure m => FailCut m
-    | FailCut m => FailCut m
-
-fun uncut p s = case p s of
-    Success x => Success x
-  | Failure m => Failure m
-  | FailCut m => Failure m
 
 fun delay p = fn s => p () s
 
