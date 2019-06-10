@@ -118,12 +118,13 @@ fun pure a =
       names=[],
       run=fn s => Success (a, s)}
 
-fun fail m =
+fun fails ms =
    T {mayBeEmpty=false,
       firstChars=SOME [],
-      names=[m],
+      names=ms,
       run=fn (State.T {location, ...}) =>
-         Failure {expected=[m], location=location, stack=[]}}
+         Failure {expected=ms, location=location, stack=[]}}
+fun fail m = fails [m]
 
 fun expected (names, location) =
    Failure {expected=names, location=location, stack=[]}
@@ -312,13 +313,20 @@ fun notFollowedBy(p, c) =
 
 
 fun many p = (pure []) <|> ((op ::) <$$> (p, delay (fn () => many p)))
-fun many1 p = (op ::) <$$> (p, many1 p)
+fun many1 p = (op ::) <$$> (p, delay (fn () => many1 p))
 
-fun manyFailing(p, f) = many (failing f *> p)
+fun manyFailing (p, f) = many (failing f *> p)
 fun manyCharsFailing f = many (failing f *> next)
 
-fun sepBy1(t, sep) = (op ::) <$$> (t, many (sep *> t))
-fun sepBy(t, sep) = (op ::) <$$> (t, many (sep *> t)) <|> pure []
+fun sepBy1 (t, sep) = (op ::) <$$> (t, many (sep *> t))
+fun sepBy (t, sep) = (op ::) <$$> (t, many (sep *> t)) <|> pure []
+
+fun any ps =
+   let
+      val names = List.concatMap (ps, fn T {names, ...} => names)
+   in
+      List.fold (ps, fails names, op <|>)
+   end
 
 fun optional t = SOME <$> t <|> pure NONE
 

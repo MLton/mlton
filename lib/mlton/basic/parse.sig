@@ -63,16 +63,12 @@ signature PARSE =
       (* composes two parsers in turn, the characters used for the second come
        * from the first *)
       val compose : char list t * 'a t -> 'a t
-      (* if the parser fails, it will fail as a cut *)
-      val cut: 'a t -> 'a t
       (* delays a stream lazily, for recursive combinations *)
       val delay: (unit -> 'a t) -> 'a t
       (* succeeds if all of the parsers succeed and combines their results *)
       val each: 'a t list -> 'a list t
       (* fail with a specified error message *)
       val fail: string -> 'a t
-      (* as fail, but also cuts at the next choice point *)
-      val failCut: string -> 'a t
       (* succeeds if and only if its argument fails to parse *)
       val failing: 'a t -> unit t
       (* return the parser representation of a given reader *)
