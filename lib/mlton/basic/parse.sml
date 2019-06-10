@@ -14,6 +14,11 @@ infixr 4 <$> <$$> <$$$> <$$$$> <$ <$?>
 structure Location =
    struct
       type t = {line: int, column: int}
+
+      fun {line=line1, column=col1} <
+          {line=line2, column=col2} =
+          Int.< (line1, line2) orelse
+          Int.< (col1, col2)
    end
 structure State =
    struct
@@ -42,12 +47,12 @@ datatype 'a t = T of
    {(* True if this can succeed and consume no input *)
     mayBeEmpty: bool,
     (* Potentially, a limited list of possible chars *)
-    firstChars: char vector option,
+    firstChars: char list option,
     (* These are used to report errors,
      * 1. If this parser is pruned by its first set
      * 2. To record the parser stack *)
     names: string list,
-    run: (State.t -> (State.t * 'a) result)}
+    run: (State.t -> ('a * State.t) result)}
 
 fun indexLocations ({line, column}, s) =
    Vector.tabulate (String.length s,
@@ -57,7 +62,7 @@ fun indexLocations ({line, column}, s) =
          else {line=line, column=column+1})
 
 fun getNext (State.T {buffer, location, locations, position=i, stream}):
-      (char * Location.t * State.T) option =
+      (char * Location.t * State.t) option =
    let
       fun fillNext () =
          let
@@ -78,21 +83,22 @@ fun getNext (State.T {buffer, location, locations, position=i, stream}):
            LESS =>
                SOME (String.sub (buffer, i),
                      Vector.sub (locations, i),
-                State.T {buffer=buffer, location=location
+                State.T {buffer=buffer, location=location,
                          locations=locations,
-                         position=position+1, stream=stream})
+                         position=i+1, stream=stream})
          | EQ =>
                SOME (String.sub (buffer, i), Vector.sub (locations, i), fillNext ())
          | GREATER =>
               let
-                 val state as State.T {buffer, locations, position, stream} = fillNext ()
+                 val state as State.T {buffer, location, locations, position, stream} = fillNext ()
               in
                  if String.length buffer = 0
                  then NONE
                  else SOME
                   (Vector.first buffer,
                    Vector.first locations,
-                   State.T {buffer=buffer, locations=locations,
+                   State.T {buffer=buffer, location=location,
+                            locations=locations,
                             position=position+1, stream=stream})
               end
    end
@@ -103,14 +109,14 @@ fun unionFirstChars (c1, c2) =
       | _ => NONE
 fun checkFirstChars (cs, c) =
    case cs of
-        SOME cs' => Vector.contains (cs', op =)
+        SOME cs' => List.contains (cs', c, op =)
       | NONE => true
 
 fun pure a =
    T {mayBeEmpty=true,
       firstChars=NONE,
       names=[],
-      run=fn s => (a, s)}
+      run=fn s => Success (a, s)}
 
 fun fail m =
    T {mayBeEmpty=false,
@@ -120,7 +126,7 @@ fun fail m =
          Failure {expected=[m], location=location, stack=[]}}
 
 fun expected (names, location) =
-   Failure {expected=expected, location=location, stack=[]}
+   Failure {expected=names, location=location, stack=[]}
 
 fun named (name, T {firstChars, mayBeEmpty, run, ...}) =
     T {firstChars=firstChars,
@@ -160,7 +166,9 @@ fun (T {firstChars, mayBeEmpty, names, run}) >>= f =
       names=names,
       run=fn s =>
          case run s of
-              Success (a, s') => #run (f a) s'
+              Success (a, s') =>
+                  (case f a of
+                       T {run, ...} => run s')
             | Failure err => Failure err}
 
 fun fst a _ = a
@@ -181,25 +189,69 @@ fun a *> b = snd <$> a <*> b
 fun v <$ p = (fn _ => v) <$> p
 
 
-fun (T {firstChars=chars1, mayBeEmpty=empty1, names=names1, run=run1})
-     <|>
-    (T {firstChars=chars2, mayBeEmpty=empty2, names=names2, run=run2}) =
-   T {firstChars=unionFirstChars (chars1, chars2),
-      mayBeEmpty=empty1 orelse empty2,
-      names=List.concat [names1, names2],
-      run=fn s =>
-        let
-           val (c, _, _) = getNext ()
-        in
-           if checkFirstChars (chars1, c)
-           then case run1 s of
-                     Success a => Success a
-                   | Failure err1 =>
-                        (case run2 s of
-                              Success a => Success a
-                            | Failure err2 => Failure (err1 ++ err2))
-           else expected names1
-        end}
+local
+   (* Attempt to select the most specific error,
+    * first prioritize by farthest location,
+    * else concatenate based on the stack *)
+   fun selectError
+      (location,
+       f1 as {expected=exp1, stack=stack1, location=loc1},
+       f2 as {expected=exp2, stack=stack2, location=loc2}) =
+         if Location.< (loc1, loc2)
+            then Failure f2
+         else if Location.< (loc2, loc1)
+            then Failure f1
+         else Failure {expected=List.concat [
+                  (* if there's a stack, we'll use
+                   * that as the best estimate *)
+                  (case stack1 of
+                       [] => exp1
+                     | s :: _ => [s]),
+                  (case stack2 of
+                       [] => exp2
+                     | s :: _ => [s])],
+                  location=location,
+                  stack=[]}
+   fun selectRun (p1, p2, run1, run2, fail, location) =
+      case (p1, p2) of
+           (true, true) =>
+               (fn s =>
+                 (case run1 s of
+                        Success a => Success a
+                      | Failure f1 =>
+                           (case run2 s of
+                                 Success a => Success a
+                               | Failure f2 => selectError (location, f1, f2))))
+          | (true, false) => run1
+          | (false, true) => run2
+          | _ => fn _ => fail
+
+
+in
+   fun (T {firstChars=chars1, mayBeEmpty=empty1, names=names1, run=run1})
+        <|>
+       (T {firstChars=chars2, mayBeEmpty=empty2, names=names2, run=run2}) =
+       let
+          val names = List.concat [names1, names2]
+          fun failure location =
+             Failure {expected=names,
+                      location=location,
+                      stack=[]}
+       in
+          T {firstChars=unionFirstChars (chars1, chars2),
+             mayBeEmpty=empty1 orelse empty2,
+             names=names,
+             run=fn (s as State.T {location, ...}) =>
+                case getNext s of
+                     SOME (c, location, _) =>
+                         selectRun (empty1 orelse checkFirstChars (chars1, c),
+                                    empty2 orelse checkFirstChars (chars2, c),
+                                    run1, run2, failure location, location) s
+                   | NONE =>
+                         selectRun (empty1, empty2,
+                                    run1, run2, failure location, location) s}
+       end
+end
 
 structure Ops = struct
    val (op >>=) = (op >>=)
@@ -217,7 +269,7 @@ end
 
 fun delay p = pure () >>= p
 
-fun next (s : State.t) =
+val next =
    T {mayBeEmpty=false,
       firstChars=NONE,
       names=["char"],
@@ -238,12 +290,12 @@ fun peek (p as T {mayBeEmpty, firstChars, names, run}) =
       names=names,
       run=fn s =>
         case run s of
-             Success (a, _) => (a, s)
+             Success (a, _) => Success (a, s)
            | Failure err => Failure err}
 
 fun failing (p as T {names, run, ...}) =
    let
-      val notNames = Vector.map (names, fn n => "not " ^ n)
+      val notNames = List.map (names, fn n => "not " ^ n)
    in
       T {mayBeEmpty=true,
          firstChars=NONE,
@@ -260,41 +312,35 @@ fun notFollowedBy(p, c) =
    p <* failing c
 
 
-
-fun many p = ((op ::) <$$> (p, fn s => many p s))
-fun many1 p = ((op ::) <$$> (p, many' p))
+fun many p = (pure []) <|> ((op ::) <$$> (p, delay (fn () => many p)))
+fun many1 p = (op ::) <$$> (p, many1 p)
 
 fun manyFailing(p, f) = many (failing f *> p)
 fun manyCharsFailing f = many (failing f *> next)
 
-fun sepBy1(t, sep) = uncut ((op ::) <$$> (t, many' (sep *> t)))
-fun sepBy(t, sep) = uncut ((op ::) <$$> (t, many' (sep *> t)) <|> pure [])
+fun sepBy1(t, sep) = (op ::) <$$> (t, many (sep *> t))
+fun sepBy(t, sep) = (op ::) <$$> (t, many (sep *> t)) <|> pure []
 
 fun optional t = SOME <$> t <|> pure NONE
 
 fun char c s =
    let
-      val name = "#\"" ^ String.fromChar ^ "\""
+      val name = "#\"" ^ (String.fromChar c) ^ "\""
    in
       T {mayBeEmpty=false,
          firstChars=SOME [c],
          names=[name],
-         run=fn s =>
+         run=fn s as State.T {location, ...} =>
             case getNext s of
                  (c', _, s') =>
                   if c = c'
                   then Success (c, s')
-                  else expected [name]}
+                  else expected ([name], location)}
    end
 
-fun each([]) = pure []
-  | each(p::ps) = (curry (op ::)) <$> p <*> (each ps)
-
-fun matchList s1 l2 = case (Stream.force s1, l2)
-   of (_, []) => Success ((), s1)
-    | (NONE, (_::_)) => Failure []
-    | (SOME ((h, _), r), (x :: xs)) => if h = x then matchList r xs else Failure []
-
+fun each ps = List.fold
+   (ps, pure [],
+    fn (p, x) => (op ::) <$$> (p, x))
 
 fun str str =
    let
@@ -316,33 +362,14 @@ fun fromReader (r : State.t -> ('a * State.t) option) =
    T {firstChars=NONE,
       mayBeEmpty=true,
       names=["fromReader"],
-      run=fn s =>
+      run=fn s as State.T {location, ...} =>
          case r s of
             SOME (b, s') => Success (b, s')
-          | NONE => expected ["fromReader"]}
+          | NONE => expected (["fromReader"], location)}
 
 fun fromScan scan = fromReader (scan (toReader next))
 
 val int = fromScan (Function.curry Int.scan StringCvt.DEC)
-
-fun compose (p1 : char list t, p2 : 'a t) (s : State.t) =
-   let
-      exception ComposeFail of string list
-      fun makeStr s' () = case Stream.force s' of
-         NONE => Stream.empty ()
-       | SOME ((_, pos), r) =>
-            (case p1 s' of
-                Success (b, r) => (case b of
-                    (* equivalent, but avoids the jumping from append of fromList *)
-                    c::[] => Stream.cons((c, pos), Stream.delay (makeStr r))
-                  | _  => Stream.append
-                        (indexStream(pos, Stream.fromList b),
-                         Stream.delay (makeStr r)))
-              | Failure m => raise ComposeFail m
-              | FailCut m => raise ComposeFail m)
-   in
-      p2 (makeStr (s) () ) handle ComposeFail m => Failure m
-   end
 
 val space = nextSat Char.isSpace
 val spaces = many space
