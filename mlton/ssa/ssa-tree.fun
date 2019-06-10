@@ -750,7 +750,8 @@ structure Transfer =
 
       fun equals (e: t, e': t): bool =
          case (e, e') of
-            (Call {func, args, return}, 
+            (Bug, Bug) => true
+          | (Call {func, args, return}, 
              Call {func = func', args = args', return = return'}) =>
                Func.equals (func, func') andalso
                varsEquals (args, args') andalso
