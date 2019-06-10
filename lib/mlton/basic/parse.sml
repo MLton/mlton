@@ -201,30 +201,27 @@ local
             then Failure f2
          else if Location.< (loc2, loc1)
             then Failure f1
-         else Failure {expected=List.concat [
-                  (* if there's a stack, we'll use
-                   * that as the best estimate *)
-                  (case stack1 of
-                       [] => exp1
-                     | s :: _ => [s]),
-                  (case stack2 of
-                       [] => exp2
-                     | s :: _ => [s])],
-                  location=location,
-                  stack=[]}
-   fun selectRun (p1, p2, run1, run2, fail, location) =
+         else expected (List.concat [
+                     (* if there's a stack, we'll use
+                      * that as the best estimate *)
+                     (case stack1 of
+                          [] => exp1
+                        | s :: _ => [s]),
+                     (case stack2 of
+                          [] => exp2
+                        | s :: _ => [s])], location)
+   fun selectRun (p1, p2, run1, run2, fail, location, s) =
       case (p1, p2) of
            (true, true) =>
-               (fn s =>
-                 (case run1 s of
-                        Success a => Success a
-                      | Failure f1 =>
-                           (case run2 s of
-                                 Success a => Success a
-                               | Failure f2 => selectError (location, f1, f2))))
-          | (true, false) => run1
-          | (false, true) => run2
-          | _ => fn _ => fail
+              (case run1 s of
+                     Success a => Success a
+                   | Failure f1 =>
+                        (case run2 s of
+                              Success a => Success a
+                            | Failure f2 => selectError (location, f1, f2)))
+          | (true, false) => run1 s
+          | (false, true) => run2 s
+          | _ => fail
 
 
 in
@@ -246,10 +243,12 @@ in
                      SOME (c, location, _) =>
                          selectRun (empty1 orelse checkFirstChars (chars1, c),
                                     empty2 orelse checkFirstChars (chars2, c),
-                                    run1, run2, failure location, location) s
+                                    run1, run2,
+                                    expected (names, location), location, s)
                    | NONE =>
                          selectRun (empty1, empty2,
-                                    run1, run2, failure location, location) s}
+                                    run1, run2,
+                                    expected (names, location), location, s)}
        end
 end
 
@@ -323,7 +322,7 @@ fun sepBy(t, sep) = (op ::) <$$> (t, many (sep *> t)) <|> pure []
 
 fun optional t = SOME <$> t <|> pure NONE
 
-fun char c s =
+fun char c =
    let
       val name = "#\"" ^ (String.fromChar c) ^ "\""
    in
@@ -332,10 +331,12 @@ fun char c s =
          names=[name],
          run=fn s as State.T {location, ...} =>
             case getNext s of
-                 (c', _, s') =>
+                 SOME (c', _, s') =>
                   if c = c'
                   then Success (c, s')
-                  else expected ([name], location)}
+                  else expected ([name], location)
+               | NONE =>
+                    expected ([name], location)}
    end
 
 fun each ps = List.fold
