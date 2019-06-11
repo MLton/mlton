@@ -117,7 +117,10 @@ fun getNext (State.T {buffer, location, locations, position=i, stream}):
    let
       fun fillNext () =
          let
-            val lastLocation = Vector.last locations
+            val lastLocation =
+               if Vector.isEmpty locations
+               then location
+               else Vector.last locations
             val (buffer, stream) =
                case Stream.force stream of
                     SOME res => res
@@ -332,7 +335,20 @@ val next =
                        location=location,
                        stack=[]}}
 
-fun sat (t, _) = (* FIXME *) t
+fun sat (T {firstChars, mayBeEmpty, names, run}, p) =
+   T {firstChars=firstChars,
+      mayBeEmpty=mayBeEmpty,
+      names=names,
+      run=fn s as State.T {location, ...} =>
+         case run s of
+              x as Success (a, _) =>
+                  if p a
+                     then x
+                  else Failure {expected=["satisfying"],
+                                location=location,
+                                stack=[]}
+            | x => x}
+
 fun nextSat p = sat (next, p)
 
 fun peek (p as T {mayBeEmpty, firstChars, names, run}) =
@@ -363,8 +379,7 @@ fun failing (p as T {names, run, ...}) =
 fun notFollowedBy(p, c) =
    p <* failing c
 
-
-fun many p = (pure []) <|> ((op ::) <$$> (p, delay (fn () => many p)))
+fun many p = ((op ::) <$$> (p, delay (fn () => many p))) <|> pure []
 fun many1 p = (op ::) <$$> (p, delay (fn () => many1 p))
 
 fun manyFailing (p, f) = many (failing f *> p)
@@ -406,13 +421,42 @@ fun each ps = List.fold
 fun str str =
    let
       val name = "\"" ^ str ^ "\""
+      datatype 'a Status = Yes | More of 'a | No
+
+      fun run (s as State.T {location, ...}) =
+         String.fold (str, Success (str, s),
+            fn (c, progress) =>
+               case progress of
+                    Success (_, s) =>
+                     (case getNext s of
+                       SOME (c', l, s') =>
+                           if c = c'
+                           then Success (str, s')
+                           else Failure
+                           {expected=[String.fromChar c],
+                            location=l,
+                            stack=[]}
+                     | NONE => Failure
+                           {expected=[str],
+                            location=location,
+                            stack=[]})
+                  | _ => progress)
    in
       if String.isEmpty str
       then named (name, pure String.empty)
-      else fail "TODO str"
+      else
+         T {firstChars=SOME [String.sub(str, 0)],
+            mayBeEmpty=false,
+            names=[name],
+            run=run}
    end
 
-val location = fail "TODO location"
+val location =
+   T {firstChars=NONE,
+      mayBeEmpty=true,
+      names=[],
+      run=fn s as State.T {location, ...} =>
+         Success (location, s)}
 
 fun toReader (T {run, ...}) (s : State.t) : ('a * State.t) option =
    case run s of
