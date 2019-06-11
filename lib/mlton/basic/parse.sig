@@ -28,7 +28,7 @@ signature PARSE =
       val >>= : 'a t * ('a -> 'b t) -> 'b t
       val <*> : ('a -> 'b) t * 'a t -> 'b t
       val <$> : ('a -> 'b) * 'a t -> 'b t
-      (* replace the result of a parser witih a constant *)
+      (* replace the result of a parser with a constant *)
       val <$ : 'b * 'a t -> 'b t
       (* map over pairs of parsers, joining their results together *)
       val <$$> : ('a * 'b -> 'c) * ('a t * 'b t) -> 'c t
@@ -119,6 +119,10 @@ signature PARSE =
       (* parse `List.layout` (not `Layout.list`) *)
       val list: 'a t -> 'a list t
       val listOpt: 'a t -> 'a list t
+      (* a Standard ML comment, with support for nesting *)
+      val mlComment: char t
+      (* may contain any number of spaces or comments *)
+      val mlSpaces: char list t
       (* parse next field of a record (preceded by `,`) *)
       val nfield: string * 'a t -> 'a t
       (* parse `Option.layout` *)
@@ -129,6 +133,4 @@ signature PARSE =
       (* parse `Vector.layout` (not `Layout.vector`) *)
       val vector: 'a t -> 'a vector t
       val vectorOpt: 'a t -> 'a vector t
-
-      val skipCommentsML: char list t
    end

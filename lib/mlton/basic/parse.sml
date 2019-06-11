@@ -383,17 +383,29 @@ val int = fromScan (Function.curry Int.scan StringCvt.DEC)
 val space = nextSat Char.isSpace
 val spaces = many space
 
+
+local
+   fun finishComment n () =
+      any
+      [str "(*" *> delay (finishComment (n + 1)),
+       str "*)" *> (if n = 1 then pure (Char.space) else delay (finishComment (n - 1))),
+       next *> delay (finishComment n)]
+in
+   val mlComment = str "(*" *> finishComment 1 ()
+end
+val mlSpaces = many (any [space, mlComment])
+
 (* The following parsers always (and only) consume spaces before
  * performing a `char` or `str`.
  *)
 
 (* parse SML-style keyword (not followed by alphanum id character) *)
 fun kw s =
-   spaces *> str s *>
+   mlSpaces *> str s *>
    failing (nextSat (fn c => Char.isAlphaNum c orelse c = #"_" orelse c = #"'"))
 (* parse SML-style symbol (not followed by symbolic id character) *)
 fun sym s =
-   spaces *> str s *>
+   mlSpaces *> str s *>
    failing (nextSat (fn c => String.contains ("!%&$#+-/:<=>?@\\~`^|*", c)))
 
 (* parse `Bool.layout` *)
@@ -406,7 +418,7 @@ fun option (p: 'a t): 'a option t =
 
 local
    fun between (l, p: 'a t, r): 'a t =
-      spaces *> char l *> p <* spaces <* char r
+      mlSpaces *> char l *> p <* mlSpaces <* char r
 in
    fun paren p = between (#"(", p, #")")
    fun cbrack p = between (#"{", p, #"}")
@@ -414,12 +426,12 @@ in
 end
 (* parse `List.layout` (not, `Layout.list`) *)
 fun list (p: 'a t): 'a list t =
-   sbrack (sepBy (p, spaces *> char #","))
+   sbrack (sepBy (p, mlSpaces *> char #","))
 fun listOpt (p: 'a t): 'a list t =
    list p <|> pure []
 (* parse `Vector.layout` (not, `Layout.vector`) *)
 fun vector (p: 'a t): 'a vector t =
-   Vector.fromList <$> paren (sepBy (p, spaces *> char #","))
+   Vector.fromList <$> paren (sepBy (p, mlSpaces *> char #","))
 fun vectorOpt (p: 'a t): 'a vector t =
    vector p <|> pure (Vector.new0 ())
 
@@ -429,30 +441,7 @@ in
    (* parse first field of a record (not preceded by `,`) *)
    val ffield = field
    (* parse next field of a record (preceded by `,`) *)
-   fun nfield (s, p) = spaces *> char #"," *> field (s, p)
-end
-
-local
-   fun finiComment n () =
-      any
-      [str "(*" *> delay (finiComment (n + 1)),
-       str "*)" *> (if n = 1 then pure [Char.space] else delay (finiComment (n - 1))),
-       next *> delay (finiComment n)]
-
-   val skipComments =
-      any
-      [str "(*" *> finiComment 1 (),
-       (fn cs =>
-        Char.dquote ::
-        (List.foldr
-         (cs, [Char.dquote], fn (c, cs) =>
-          String.explode (Char.escapeSML c) @ cs))) <$>
-       (char Char.dquote *>
-        many (fromScan Char.scan) <*
-        char Char.dquote),
-       each [next]]
-in
-   val skipCommentsML = skipComments
+   fun nfield (s, p) = mlSpaces *> char #"," *> field (s, p)
 end
 
 end
