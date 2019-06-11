@@ -19,6 +19,12 @@ structure Location =
           {line=line2, column=col2} =
           Int.< (line1, line2) orelse
           Int.< (col1, col2)
+
+      val new = {line=0, column=0}
+
+      fun toString {line, column} =
+         concat [Int.toString line, ".", Int.toString column]
+
    end
 structure State =
    struct
@@ -35,6 +41,13 @@ structure State =
          locations: Location.t vector,
          position: int,
          stream: char vector Stream.t}
+
+      fun fromStream s =
+         T {buffer=String.empty,
+            location=Location.new,
+            locations=Vector.new0 (),
+            position=0,
+            stream=s}
    end
 
 datatype 'a result = Success of 'a
@@ -53,6 +66,44 @@ datatype 'a t = T of
      * 2. To record the parser stack *)
     names: string list,
     run: (State.t -> ('a * State.t) result)}
+
+local
+   fun failureString (filename, {expected, location, stack}) =
+      let open String in
+      concat
+         ["Parse error\n",
+          "at ", filename, " ", Location.toString location, "\n",
+          case expected of
+               [] => ""
+             | _ => concat ["Expected one of: ", concatWith (expected, ", "), "."],
+          if List.isEmpty stack
+             then ""
+          else concat ["\nin the context ", concatWith (stack, "/"), "\n\n"]]
+      end
+
+   fun toResult (filename, r) =
+      case r of
+           Success (a, _) => Result.Yes a
+         | Failure err => Result.No (failureString (filename, err))
+
+   fun inToStream i =
+      Stream.cons (In.input i,
+         Stream.delay (fn () =>
+            inToStream i))
+in
+   fun parseStream (T {run, ...}, stream) =
+      toResult ("<string>",
+      run (State.fromStream
+         (Stream.map (stream, Vector.new1))))
+   fun parseString (T {run, ...}, str) =
+      toResult ("<string>",
+      run (State.fromStream (Stream.single str)))
+
+   fun parseFile (T {run, ...}, file) =
+      toResult (File.toString file,
+      File.withIn (file, fn i =>
+         (run o State.fromStream o inToStream) i))
+end
 
 fun indexLocations ({line, column}, s) =
    Vector.tabulate (String.length s,
