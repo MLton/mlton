@@ -40,7 +40,7 @@ structure State =
          (* Invariant: must be same length as buffer *)
          locations: Location.t vector,
          position: int,
-         stream: char vector Stream.t}
+         stream: string Stream.t}
 
       fun fromStream s =
          T {buffer=String.empty,
@@ -94,7 +94,7 @@ in
    fun parseStream (T {run, ...}, stream) =
       toResult ("<string>",
       run (State.fromStream
-         (Stream.map (stream, Vector.new1))))
+         (Stream.map (stream, String.fromChar))))
    fun parseString (T {run, ...}, str) =
       toResult ("<string>",
       run (State.fromStream (Stream.single str)))
@@ -121,7 +121,7 @@ fun getNext (State.T {buffer, location, locations, position=i, stream}):
             val (buffer, stream) =
                case Stream.force stream of
                     SOME res => res
-                  | NONE => (Vector.new0 (), Stream.empty ())
+                  | NONE => (String.empty, Stream.empty ())
             val locations = indexLocations (lastLocation, buffer)
          in
             State.T {buffer=buffer,
@@ -146,7 +146,7 @@ fun getNext (State.T {buffer, location, locations, position=i, stream}):
                  if String.length buffer = 0
                  then NONE
                  else SOME
-                  (Vector.first buffer,
+                  (String.sub (buffer, 0),
                    Vector.first locations,
                    State.T {buffer=buffer, location=location,
                             locations=locations,
