@@ -131,15 +131,15 @@ fun getNext (State.T {buffer, location, locations, position=i, stream}):
          end
    in
       case Int.compare (i, String.length buffer - 1) of
-           LESS =>
+           Relation.LESS =>
                SOME (String.sub (buffer, i),
                      Vector.sub (locations, i),
                 State.T {buffer=buffer, location=location,
                          locations=locations,
                          position=i+1, stream=stream})
-         | EQ =>
+         | Relation.EQUAL =>
                SOME (String.sub (buffer, i), Vector.sub (locations, i), fillNext ())
-         | GREATER =>
+         | Relation.GREATER =>
               let
                  val state as State.T {buffer, location, locations, position, stream} = fillNext ()
               in
@@ -356,7 +356,8 @@ fun failing (p as T {names, run, ...}) =
                  Success _ => Failure
                     {expected=notNames,
                      location=location,
-                     stack=[]}}
+                     stack=[]}
+               | Failure _ => Success ((), s)}
    end
 
 fun notFollowedBy(p, c) =
