@@ -60,9 +60,6 @@ signature PARSE =
       val any: 'a t list -> 'a t
       (* matches the given character *)
       val char: char -> char t
-      (* composes two parsers in turn, the characters used for the second come
-       * from the first *)
-      val compose : char list t * 'a t -> 'a t
       (* delays a stream lazily, for recursive combinations *)
       val delay: (unit -> 'a t) -> 'a t
       (* succeeds if all of the parsers succeed and combines their results *)
