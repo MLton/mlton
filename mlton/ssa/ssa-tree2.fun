@@ -597,11 +597,11 @@ structure Base =
             open Parse
          in
             SequenceSub <$>
-            (spaces *> str "$(" *>
+            (mlSpaces *> str "$(" *>
              parseX >>= (fn sequence =>
-             spaces *> str "," *>
+             mlSpaces *> str "," *>
              parseX >>= (fn index =>
-             spaces *> str ")" *>
+             mlSpaces *> str ")" *>
              pure {index = index, sequence = sequence})))
             <|>
             (Object <$> parseX)
@@ -619,7 +619,7 @@ structure Base =
          let
             open Parse
          in
-            spaces *> char #"#" *>
+            mlSpaces *> char #"#" *>
             (peek (nextSat Char.isDigit) *>
              fromScan (Function.curry Int.scan StringCvt.DEC)) >>= (fn offset =>
             parse parseX >>= (fn base =>
@@ -2275,7 +2275,7 @@ structure Program =
                       functions = functions,
                       main = main})))))
          in
-            compose (skipCommentsML, parseProgram <* (spaces *> (failing next <|> failCut "end of file")))
+            parseProgram <* (mlSpaces *> (failing next <|> fail "end of file"))
          end
 
       fun layoutStats (T {datatypes, globals, functions, main, ...}) =

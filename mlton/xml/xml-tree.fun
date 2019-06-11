@@ -472,7 +472,7 @@ in
         VarExp.parse >>= (fn exn =>
         pure {extend = Option.isSome extend, exn = exn}))),
        Select <$>
-       (spaces *> char #"#" *>
+       (mlSpaces *> char #"#" *>
         (peek (nextSat Char.isDigit) *>
          fromScan (Function.curry Int.scan StringCvt.DEC)) >>= (fn offset =>
         VarExp.parse >>= (fn tuple =>
@@ -1152,7 +1152,7 @@ structure Program =
                 pure {datatypes = Vector.fromList datatypes,
                       body = body})))
          in
-            compose (skipCommentsML, parseProgram <* (spaces *> (failing next <|> failCut "end of file")))
+            parseProgram <* (mlSpaces *> (failing next <|> fail "end of file"))
          end
 
       fun clear (T {datatypes, body, ...}) =

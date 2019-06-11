@@ -456,7 +456,7 @@ structure Exp =
               parseArgs >>= (fn args =>
               pure {prim = prim, targs = Vector.fromList targs, args = args})))),
              Select <$>
-             (spaces *> char #"#" *>
+             (mlSpaces *> char #"#" *>
               (peek (nextSat Char.isDigit) *>
                fromScan (Function.curry Int.scan StringCvt.DEC)) >>= (fn offset =>
               paren Var.parse >>= (fn tuple =>
@@ -2000,7 +2000,7 @@ structure Program =
                       functions = functions,
                       main = main})))))
          in
-            compose (skipCommentsML, parseProgram <* (spaces *> (failing next <|> failCut "end of file")))
+            parseProgram <* (mlSpaces *> (failing next <|> fail "end of file"))
          end
 
       fun layoutStats (T {datatypes, globals, functions, main, ...}) =
