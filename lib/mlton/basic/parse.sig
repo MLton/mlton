@@ -82,6 +82,8 @@ signature PARSE =
       val manyFailing: ('a t * 'b t) -> 'a list t
       (* manyFailing, specialized to the case that p is "next" *)
       val manyCharsFailing: 'a t -> char list t
+      (* sets the parser name, to build better error messages *)
+      val named: string * 'a t -> 'a t
       (* gets the next char of input *)
       val next: char t
       (* as sat, specialized to "next" *)

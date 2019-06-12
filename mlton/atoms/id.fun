@@ -147,7 +147,7 @@ local
       (op ::) <$$> (nextSat (fn c => c = #"'"), many alphanum)
 
    fun parseGen (alts: (string * 'a Parse.t) vector, fromId: id -> 'a Parse.t) : 'a Parse.t =
-      spaces *>
+      mlSpaces *>
       (String.implode <$>
        (if String.sub (noname, 0) = #"'"
            then tyvarId

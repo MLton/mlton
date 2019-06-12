@@ -20,7 +20,7 @@ structure Location =
           Int.< (line1, line2) orelse
           Int.< (col1, col2)
 
-      val new = {line=0, column=0}
+      val new = {line=1, column=1}
 
       fun toString {line, column} =
          concat [Int.toString line, ".", Int.toString column]
@@ -105,12 +105,17 @@ in
          (run o State.fromStream o inToStream) i))
 end
 
-fun indexLocations ({line, column}, s) =
-   Vector.tabulate (String.length s,
-      fn i =>
-         if String.sub (s, i) = #"\n"
-         then {line=line+1, column=0}
-         else {line=line, column=column+1})
+fun indexLocations (loc, s) =
+   Vector.unfoldi (String.length s, loc,
+      fn (i, {line, column}) =>
+         let
+            val loc =
+               if String.sub (s, i) = #"\n"
+               then {line=line+1, column=0}
+               else {line=line, column=column+1}
+         in
+            (loc, loc)
+         end)
 
 fun getNext (State.T {buffer, location, locations, position=i, stream}):
       (char * Location.t * State.t) option =
@@ -125,7 +130,7 @@ fun getNext (State.T {buffer, location, locations, position=i, stream}):
                case Stream.force stream of
                     SOME res => res
                   | NONE => (String.empty, Stream.empty ())
-            val locations = indexLocations (lastLocation, buffer)
+            val (locations, _) = indexLocations (lastLocation, buffer)
          in
             State.T {buffer=buffer,
                      location=lastLocation,
@@ -476,7 +481,7 @@ fun fromScan scan = fromReader (scan (toReader next))
 
 val int = fromScan (Function.curry Int.scan StringCvt.DEC)
 
-val space = nextSat Char.isSpace
+val space = named ("space", nextSat Char.isSpace)
 val spaces = many space
 
 
@@ -487,7 +492,7 @@ local
        str "*)" *> (if n = 1 then pure (Char.space) else delay (finishComment (n - 1))),
        next *> delay (finishComment n)]
 in
-   val mlComment = str "(*" *> finishComment 1 ()
+   val mlComment = named ("comment", str "(*" *> finishComment 1 ())
 end
 val mlSpaces = many (any [space, mlComment])
 
