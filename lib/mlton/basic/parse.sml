@@ -384,20 +384,32 @@ fun failing (p as T {names, run, ...}) =
 fun notFollowedBy(p, c) =
    p <* failing c
 
-fun many p = ((op ::) <$$> (p, delay (fn () => many p))) <|> pure []
-fun many1 p = (op ::) <$$> (p, delay (fn () => many1 p))
+fun many (T {firstChars, mayBeEmpty, names, run}) =
+   let
+      fun run' (s, k) =
+         case run s of
+              Success (a, s') => run' (s', a :: k)
+            | Failure err => Success (List.rev k, s)
+   in
+      T {firstChars=firstChars,
+         mayBeEmpty=true,
+         names=names,
+         run=fn s => run' (s, [])}
+   end
+
+fun many1 p = (op ::) <$$> (p, many p)
 
 fun manyFailing (p, f) = many (failing f *> p)
 fun manyCharsFailing f = many (failing f *> next)
 
 fun sepBy1 (t, sep) = (op ::) <$$> (t, many (sep *> t))
-fun sepBy (t, sep) = (op ::) <$$> (t, many (sep *> t)) <|> pure []
+fun sepBy (t, sep) = sepBy1 (t, sep) <|> pure []
 
 fun any ps =
    let
       val names = List.concatMap (ps, fn T {names, ...} => names)
    in
-      List.fold (ps, fails names, op <|>)
+      List.foldr (ps, fails names, op <|>)
    end
 
 fun optional t = SOME <$> t <|> pure NONE
@@ -494,7 +506,7 @@ local
 in
    val mlComment = named ("comment", str "(*" *> finishComment 1 ())
 end
-val mlSpaces = many (any [space, mlComment])
+val mlSpaces = many (any [mlComment, space])
 
 (* The following parsers always (and only) consume spaces before
  * performing a `char` or `str`.

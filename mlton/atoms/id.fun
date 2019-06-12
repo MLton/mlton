@@ -132,12 +132,12 @@ local
       (cache, toString id, fn () => id)
 
    val alphanum =
-      nextSat (fn c => Char.isAlphaNum c orelse c = #"_" orelse c = #"'")
+      named ("alphanum", nextSat (fn c => Char.isAlphaNum c orelse c = #"_" orelse c = #"'"))
    val sym =
-      nextSat (fn c => String.contains ("!%&$#+-/:<=>?@\\~`^|*", c))
+      named ("sym", nextSat (fn c => String.contains ("!%&$#+-/:<=>?@\\~`^|*", c)))
 
    val alphanumId =
-      (op ::) <$$> (nextSat Char.isAlpha, many alphanum)
+      (op ::) <$$> (named ("alpha", nextSat Char.isAlpha), many alphanum)
    val symId =
       (fn (c,cs,suf) => (c::(cs@suf))) <$$$>
       (sym, many sym,
