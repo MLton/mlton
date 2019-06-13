@@ -198,7 +198,11 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Word_orb _ => true
        | Word_quot _ => true
        | Word_rem _ => true
-       | Word_rndToReal _ => true
+       | Word_rndToReal _ =>
+            (* Real coercions depend on rounding mode and can't be
+             * inlined where gcc might constant-fold them.
+             *)
+            false
        | Word_rol _ => true
        | Word_ror _ => true
        | Word_rshift _ => true
