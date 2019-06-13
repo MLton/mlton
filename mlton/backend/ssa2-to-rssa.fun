@@ -1267,6 +1267,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                               Operand.bool true)),
                                      func = (CFunction.gc
                                              {maySwitchThreads = handlesSignals})}
+                               | GC_state => move GCState
                                | IntInf_add =>
                                     simpleCCallWithGCState
                                     (CFunction.intInfBinary IntInf_add)

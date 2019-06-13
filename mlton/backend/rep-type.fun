@@ -20,8 +20,6 @@ structure Type =
       and node =
           Bits
         | CPointer
-        | ExnStack
-        | GCState
         | Label of Label.t
         | Objptr of ObjptrTycon.t vector
         | Real of RealSize.t
@@ -44,8 +42,6 @@ structure Type =
             case node t of
                Bits => str (concat ["Bits", Bits.toString (width t)])
              | CPointer => str "CPointer"
-             | ExnStack => str "ExnStack"
-             | GCState => str "GCState"
              | Label l => seq [str "Label ", Label.layout l]
              | Objptr opts =>
                   seq [str "Objptr ",
@@ -62,8 +58,6 @@ structure Type =
          (case (node t, node t') of
              (Bits, Bits) => true 
            | (CPointer, CPointer) => true
-           | (ExnStack, ExnStack) => true
-           | (GCState, GCState) => true
            | (Label l, Label l') => Label.equals (l, l')
            | (Objptr opts, Objptr opts') =>
                 Vector.equals (opts, opts', ObjptrTycon.equals)
@@ -76,23 +70,8 @@ structure Type =
          fn (t, t') => Bits.equals (width t, width t')
 
 
-      val bits: Bits.t -> t = fn width => T {node = Bits, width = width}
-
-      val cpointer: unit -> t = fn () =>
-         T {node = CPointer, width = WordSize.bits (WordSize.cpointer ())}
-
-      val exnStack: unit -> t = fn () => 
-         T {node = ExnStack, width = WordSize.bits (WordSize.csize ())}
-
-      val gcState: unit -> t = fn () => 
-         T {node = GCState, width = WordSize.bits (WordSize.cpointer ())}
-
-      val label: Label.t -> t =
-         fn l => T {node = Label l, width = WordSize.bits (WordSize.cpointer ())}
-
-      val objptr: ObjptrTycon.t -> t =
-         fn opt => T {node = Objptr (Vector.new1 opt),
-                      width = WordSize.bits (WordSize.objptr ())}
+      val bits: Bits.t -> t =
+         fn width => T {node = Bits, width = width}
 
       val real: RealSize.t -> t =
          fn s => T {node = Real s, width = RealSize.bits s}
@@ -103,11 +82,25 @@ structure Type =
 
       val bool: t = word WordSize.bool
 
-      val csize: unit -> t = word o WordSize.csize
-
       val cint: unit -> t = word o WordSize.cint
 
       val compareRes = word WordSize.compareRes
+
+      val cpointer: unit -> t = fn () =>
+         T {node = CPointer, width = WordSize.bits (WordSize.cpointer ())}
+
+      val csize: unit -> t = word o WordSize.csize
+
+      val exnStack: unit -> t = csize
+
+      val gcState: unit -> t = cpointer
+
+      val label: Label.t -> t =
+         fn l => T {node = Label l, width = WordSize.bits (WordSize.cpointer ())}
+
+      val objptr: ObjptrTycon.t -> t =
+         fn opt => T {node = Objptr (Vector.new1 opt),
+                      width = WordSize.bits (WordSize.objptr ())}
 
       val objptrHeader: unit -> t = word o WordSize.objptrHeader
 
@@ -328,7 +321,6 @@ structure Type =
             else 
                case node t of
                   CPointer => C.CPointer
-                | GCState => C.CPointer
                 | Label _ =>
                      (case !Control.codegen of
                          Control.Codegen.AMD64Codegen => C.CPointer
