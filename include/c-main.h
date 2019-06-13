@@ -13,9 +13,8 @@
 #include "common-main.h"
 #include "c-common.h"
 
-PRIVATE struct GC_state gcState;
-
 PRIVATE GC_state MLton_gcState() {
+  static struct GC_state gcState;
   return &gcState;
 }
 
