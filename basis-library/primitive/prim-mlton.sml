@@ -32,7 +32,7 @@ structure GCState =
    struct
       type t = Pointer.t
 
-      val gcState = #1 _symbol "gcStateAddress" private: t GetSet.t; ()
+      val gcState = _prim "GC_state": unit -> t;
    end
 
 structure Align =
