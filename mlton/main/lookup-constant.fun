@@ -52,7 +52,6 @@ datatype z = datatype ConstType.t
 val gcFields =
    [
     "atomicState",
-    "currentThread",
     "sourceMaps.curSourceSeqIndex",
     "exnStack",
     "frontier",

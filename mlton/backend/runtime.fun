@@ -16,7 +16,6 @@ structure GCField =
       datatype t =
          AtomicState
        | CardMapAbsolute
-       | CurrentThread
        | CurSourceSeqIndex
        | ExnStack
        | Frontier
@@ -29,7 +28,6 @@ structure GCField =
 
       val atomicStateOffset: Bytes.t ref = ref Bytes.zero
       val cardMapAbsoluteOffset: Bytes.t ref = ref Bytes.zero
-      val currentThreadOffset: Bytes.t ref = ref Bytes.zero
       val curSourceSeqIndexOffset: Bytes.t ref = ref Bytes.zero
       val exnStackOffset: Bytes.t ref = ref Bytes.zero
       val frontierOffset: Bytes.t ref = ref Bytes.zero
@@ -40,12 +38,11 @@ structure GCField =
       val stackLimitOffset: Bytes.t ref = ref Bytes.zero
       val stackTopOffset: Bytes.t ref = ref Bytes.zero
 
-      fun setOffsets {atomicState, cardMapAbsolute, currentThread, curSourceSeqIndex,
+      fun setOffsets {atomicState, cardMapAbsolute, curSourceSeqIndex,
                       exnStack, frontier, limit, limitPlusSlop,
                       signalIsPending, stackBottom, stackLimit, stackTop} =
          (atomicStateOffset := atomicState
           ; cardMapAbsoluteOffset := cardMapAbsolute
-          ; currentThreadOffset := currentThread
           ; curSourceSeqIndexOffset := curSourceSeqIndex
           ; exnStackOffset := exnStack
           ; frontierOffset := frontier
@@ -59,7 +56,6 @@ structure GCField =
       val offset =
          fn AtomicState => !atomicStateOffset
           | CardMapAbsolute => !cardMapAbsoluteOffset
-          | CurrentThread => !currentThreadOffset
           | CurSourceSeqIndex => !curSourceSeqIndexOffset
           | ExnStack => !exnStackOffset
           | Frontier => !frontierOffset
@@ -72,7 +68,6 @@ structure GCField =
 
       val atomicStateSize: Bytes.t ref = ref Bytes.zero
       val cardMapAbsoluteSize: Bytes.t ref = ref Bytes.zero
-      val currentThreadSize: Bytes.t ref = ref Bytes.zero
       val curSourceSeqIndexSize: Bytes.t ref = ref Bytes.zero
       val exnStackSize: Bytes.t ref = ref Bytes.zero
       val frontierSize: Bytes.t ref = ref Bytes.zero
@@ -83,12 +78,11 @@ structure GCField =
       val stackLimitSize: Bytes.t ref = ref Bytes.zero
       val stackTopSize: Bytes.t ref = ref Bytes.zero
 
-      fun setSizes {atomicState, cardMapAbsolute, currentThread, curSourceSeqIndex,
+      fun setSizes {atomicState, cardMapAbsolute, curSourceSeqIndex,
                     exnStack, frontier, limit, limitPlusSlop,
                     signalIsPending, stackBottom, stackLimit, stackTop} =
          (atomicStateSize := atomicState
           ; cardMapAbsoluteSize := cardMapAbsolute
-          ; currentThreadSize := currentThread
           ; curSourceSeqIndexSize := curSourceSeqIndex
           ; exnStackSize := exnStack
           ; frontierSize := frontier
@@ -102,7 +96,6 @@ structure GCField =
       val size =
          fn AtomicState => !atomicStateSize
           | CardMapAbsolute => !cardMapAbsoluteSize
-          | CurrentThread => !currentThreadSize
           | CurSourceSeqIndex => !curSourceSeqIndexSize
           | ExnStack => !exnStackSize
           | Frontier => !frontierSize
@@ -116,7 +109,6 @@ structure GCField =
       val toString =
          fn AtomicState => "AtomicState"
           | CardMapAbsolute => "CardMapAbsolute"
-          | CurrentThread => "CurrentThread"
           | CurSourceSeqIndex => "CurSourceSeqIndex"
           | ExnStack => "ExnStack"
           | Frontier => "Frontier"

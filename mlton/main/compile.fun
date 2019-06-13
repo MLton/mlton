@@ -173,7 +173,6 @@ fun setupRuntimeConstants() : unit =
             {
              atomicState = get "atomicState_Offset",
              cardMapAbsolute = get "generationalMaps.cardMapAbsolute_Offset",
-             currentThread = get "currentThread_Offset",
              curSourceSeqIndex = get "sourceMaps.curSourceSeqIndex_Offset",
              exnStack = get "exnStack_Offset",
              frontier = get "frontier_Offset",
@@ -188,7 +187,6 @@ fun setupRuntimeConstants() : unit =
             {
              atomicState = get "atomicState_Size",
              cardMapAbsolute = get "generationalMaps.cardMapAbsolute_Size",
-             currentThread = get "currentThread_Size",
              curSourceSeqIndex = get "sourceMaps.curSourceSeqIndex_Size",
              exnStack = get "exnStack_Size",
              frontier = get "frontier_Size",
