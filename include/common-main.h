@@ -29,10 +29,7 @@
 #define LoadArray(a, f) if (fread (a, sizeof(*a), cardof(a), f) != cardof(a)) return -1;
 #define SaveArray(a, f) if (fwrite(a, sizeof(*a), cardof(a), f) != cardof(a)) return -1;
 
-PRIVATE Pointer gcStateAddress;
-
 #define Initialize(al, mg, mfs, mmc, pk, ps)                            \
-        gcStateAddress = (pointer)&gcState;                             \
         gcState.alignment = al;                                         \
         gcState.atMLtons = atMLtons;                                    \
         gcState.atMLtonsLength = cardof(atMLtons);                      \
