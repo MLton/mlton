@@ -59,7 +59,6 @@ val gcFields =
     "generationalMaps.cardMapAbsolute",
     "limit",
     "limitPlusSlop",
-    "maxFrameSize",
     "signalsInfo.signalIsPending",
     "stackBottom",
     "stackLimit",

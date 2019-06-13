@@ -22,7 +22,6 @@ structure GCField =
        | Frontier
        | Limit
        | LimitPlusSlop
-       | MaxFrameSize
        | SignalIsPending
        | StackBottom
        | StackLimit
@@ -36,14 +35,13 @@ structure GCField =
       val frontierOffset: Bytes.t ref = ref Bytes.zero
       val limitOffset: Bytes.t ref = ref Bytes.zero
       val limitPlusSlopOffset: Bytes.t ref = ref Bytes.zero
-      val maxFrameSizeOffset: Bytes.t ref = ref Bytes.zero
       val signalIsPendingOffset: Bytes.t ref = ref Bytes.zero
       val stackBottomOffset: Bytes.t ref = ref Bytes.zero
       val stackLimitOffset: Bytes.t ref = ref Bytes.zero
       val stackTopOffset: Bytes.t ref = ref Bytes.zero
 
       fun setOffsets {atomicState, cardMapAbsolute, currentThread, curSourceSeqIndex,
-                      exnStack, frontier, limit, limitPlusSlop, maxFrameSize,
+                      exnStack, frontier, limit, limitPlusSlop,
                       signalIsPending, stackBottom, stackLimit, stackTop} =
          (atomicStateOffset := atomicState
           ; cardMapAbsoluteOffset := cardMapAbsolute
@@ -53,7 +51,6 @@ structure GCField =
           ; frontierOffset := frontier
           ; limitOffset := limit
           ; limitPlusSlopOffset := limitPlusSlop
-          ; maxFrameSizeOffset := maxFrameSize
           ; signalIsPendingOffset := signalIsPending
           ; stackBottomOffset := stackBottom
           ; stackLimitOffset := stackLimit
@@ -68,7 +65,6 @@ structure GCField =
           | Frontier => !frontierOffset
           | Limit => !limitOffset
           | LimitPlusSlop => !limitPlusSlopOffset
-          | MaxFrameSize => !maxFrameSizeOffset
           | SignalIsPending => !signalIsPendingOffset
           | StackBottom => !stackBottomOffset
           | StackLimit => !stackLimitOffset
@@ -82,14 +78,13 @@ structure GCField =
       val frontierSize: Bytes.t ref = ref Bytes.zero
       val limitSize: Bytes.t ref = ref Bytes.zero
       val limitPlusSlopSize: Bytes.t ref = ref Bytes.zero
-      val maxFrameSizeSize: Bytes.t ref = ref Bytes.zero
       val signalIsPendingSize: Bytes.t ref = ref Bytes.zero
       val stackBottomSize: Bytes.t ref = ref Bytes.zero
       val stackLimitSize: Bytes.t ref = ref Bytes.zero
       val stackTopSize: Bytes.t ref = ref Bytes.zero
 
       fun setSizes {atomicState, cardMapAbsolute, currentThread, curSourceSeqIndex,
-                    exnStack, frontier, limit, limitPlusSlop, maxFrameSize,
+                    exnStack, frontier, limit, limitPlusSlop,
                     signalIsPending, stackBottom, stackLimit, stackTop} =
          (atomicStateSize := atomicState
           ; cardMapAbsoluteSize := cardMapAbsolute
@@ -99,7 +94,6 @@ structure GCField =
           ; frontierSize := frontier
           ; limitSize := limit
           ; limitPlusSlopSize := limitPlusSlop
-          ; maxFrameSizeSize := maxFrameSize
           ; signalIsPendingSize := signalIsPending
           ; stackBottomSize := stackBottom
           ; stackLimitSize := stackLimit
@@ -114,7 +108,6 @@ structure GCField =
           | Frontier => !frontierSize
           | Limit => !limitSize
           | LimitPlusSlop => !limitPlusSlopSize
-          | MaxFrameSize => !maxFrameSizeSize
           | SignalIsPending => !signalIsPendingSize
           | StackBottom => !stackBottomSize
           | StackLimit => !stackLimitSize
@@ -129,7 +122,6 @@ structure GCField =
           | Frontier => "Frontier"
           | Limit => "Limit"
           | LimitPlusSlop => "LimitPlusSlop"
-          | MaxFrameSize => "MaxFrameSize"
           | SignalIsPending => "SignalIsPending"
           | StackBottom => "StackBottom"
           | StackLimit => "StackLimit"

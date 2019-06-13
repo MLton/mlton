@@ -526,7 +526,6 @@ fun ofGCField (f: GCField.t): t =
        | Frontier => cpointer ()
        | Limit => cpointer ()
        | LimitPlusSlop => cpointer ()
-       | MaxFrameSize => word32
        | SignalIsPending => word32
        | StackBottom => cpointer ()
        | StackLimit => cpointer ()

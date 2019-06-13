@@ -26,7 +26,6 @@ signature RUNTIME =
              | Frontier (* The place where the next object is allocated. *)
              | Limit (* frontier + heapSize - LIMIT_SLOP *)
              | LimitPlusSlop (* frontier + heapSize *)
-             | MaxFrameSize
              | SignalIsPending
              | StackBottom
              | StackLimit (* Must have StackTop <= StackLimit *)
@@ -42,7 +41,6 @@ signature RUNTIME =
                              frontier: Bytes.t,
                              limit: Bytes.t,
                              limitPlusSlop: Bytes.t,
-                             maxFrameSize: Bytes.t,
                              signalIsPending: Bytes.t,
                              stackBottom: Bytes.t,
                              stackLimit: Bytes.t,
@@ -55,7 +53,6 @@ signature RUNTIME =
                            frontier: Bytes.t,
                            limit: Bytes.t,
                            limitPlusSlop: Bytes.t,
-                           maxFrameSize: Bytes.t,
                            signalIsPending: Bytes.t,
                            stackBottom: Bytes.t,
                            stackLimit: Bytes.t,
