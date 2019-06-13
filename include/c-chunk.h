@@ -202,7 +202,6 @@
 #ifndef MLTON_CODEGEN_STATIC_INLINE
 #define MLTON_CODEGEN_STATIC_INLINE static inline
 #endif
-#include "basis-ffi.h"
 #include "basis/coerce.h"
 #include "basis/cpointer.h"
 #include "basis/Real/Real-ops.h"
