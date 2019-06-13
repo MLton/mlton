@@ -1,4 +1,4 @@
-/* Copyright (C) 2010,2016 Matthew Fluet.
+/* Copyright (C) 2010,2016,2019 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -9,19 +9,19 @@
 
 #if not HAS_SIGALTSTACK
 
-void initSignalStack (__attribute__ ((unused)) GC_state s) {
+void initSignalStack () {
 }
 
 #else
 
-void initSignalStack (GC_state s) {
+void initSignalStack () {
   static bool init = FALSE;
   static stack_t altstack;
 
   if (! init) {
     init = TRUE;
-    size_t ss_size = align (SIGSTKSZ, s->sysvals.pageSize);
-    size_t psize = s->sysvals.pageSize;
+    size_t psize = GC_pageSize ();
+    size_t ss_size = align (SIGSTKSZ, psize);
     int prot = PROT_READ | PROT_WRITE;
 #if NEEDS_SIGALTSTACK_EXEC
     prot = prot | PROT_EXEC;
@@ -36,6 +36,6 @@ void initSignalStack (GC_state s) {
 
 #endif
 
-void GC_initSignalStack (GC_state s) {
-  initSignalStack (s);
+void GC_initSignalStack () {
+  initSignalStack ();
 }

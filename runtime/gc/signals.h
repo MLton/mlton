@@ -1,4 +1,4 @@
-/* Copyright (C) 2010 Matthew Fluet.
+/* Copyright (C) 2010,2019 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -32,8 +32,8 @@ struct GC_signalsInfo {
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-static void initSignalStack (GC_state s);
+static void initSignalStack ();
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
 
-void GC_initSignalStack (GC_state s);
+void GC_initSignalStack ();
