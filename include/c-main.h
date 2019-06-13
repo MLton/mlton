@@ -13,6 +13,8 @@
 #include "common-main.h"
 #include "c-common.h"
 
+PRIVATE struct GC_state gcState;
+
 static GC_frameIndex returnAddressToFrameIndex (GC_returnAddress ra) {
         return (GC_frameIndex)ra;
 }
@@ -47,7 +49,7 @@ static void MLton_callFromC () {                                        \
 PUBLIC int MLton_main (int argc, char* argv[]) {                        \
         uintptr_t nextBlock;                                            \
         GC_state s = &gcState;                                          \
-        Initialize (al, mg, mfs, mmc, pk, ps);                          \
+        Initialize (s, al, mg, mfs, mmc, pk, ps);                       \
         if (s->amOriginal) {                                            \
                 real_Init();                                            \
                 nextBlock = ml;                                         \
@@ -66,7 +68,7 @@ PUBLIC int MLton_main (int argc, char* argv[]) {                        \
 PUBLIC void LIB_OPEN(LIBNAME) (int argc, char* argv[]) {                \
         uintptr_t nextBlock;                                            \
         GC_state s = &gcState;                                          \
-        Initialize (al, mg, mfs, mmc, pk, ps);                          \
+        Initialize (s, al, mg, mfs, mmc, pk, ps);                       \
         if (s->amOriginal) {                                            \
                 real_Init();                                            \
                 nextBlock = ml;                                         \
@@ -86,7 +88,7 @@ PUBLIC void LIB_CLOSE(LIBNAME) () {                                     \
         do {                                                            \
                 nextBlock = (*(nextChunks[nextBlock]))(s, s->stackTop, s->frontier, nextBlock); \
         } while (nextBlock != (uintptr_t)-1);                           \
-        GC_done(&gcState);                                              \
+        GC_done(s);                                                     \
 }
 
 #endif /* #ifndef _C_MAIN_H */
