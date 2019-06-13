@@ -384,4 +384,6 @@ structure World =
 
 end
 
+structure GCState = MLton.GCState
+
 end
