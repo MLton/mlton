@@ -113,3 +113,5 @@ PRIVATE sigset_t* GC_getSignalsPendingAddr (GC_state s);
 PRIVATE void GC_setGCSignalHandled (GC_state s, bool b);
 PRIVATE bool GC_getGCSignalPending (GC_state s);
 PRIVATE void GC_setGCSignalPending (GC_state s, bool b);
+
+PRIVATE GC_state MLton_gcState ();
