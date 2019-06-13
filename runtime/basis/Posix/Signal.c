@@ -1,11 +1,5 @@
 #include "platform.h"
 
-extern struct GC_state gcState;
-
-static void handler (int signum) {
-  GC_handler (&gcState, signum);
-}
-
 C_Errno_t(C_Int_t) Posix_Signal_default (GCState_t s, C_Signal_t signum) {
   struct sigaction sa;
 
@@ -56,7 +50,7 @@ C_Errno_t(C_Int_t) Posix_Signal_handlee (GCState_t s, C_Int_t signum) {
 #if HAS_SIGALTSTACK
   sa.sa_flags = SA_ONSTACK;
 #endif
-  sa.sa_handler = handler;
+  sa.sa_handler = GC_handler;
   return sigaction (signum, &sa, NULL);
 }
 
