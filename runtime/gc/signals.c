@@ -15,11 +15,9 @@ void initSignalStack () {
 #else
 
 void initSignalStack () {
-  static bool init = FALSE;
-  static stack_t altstack;
+  static stack_t altstack = { .ss_sp = NULL, .ss_size = 0, .ss_flags = 0 };
 
-  if (! init) {
-    init = TRUE;
+  if (! altstack.ss_sp) {
     size_t psize = GC_pageSize ();
     size_t ss_size = align (SIGSTKSZ, psize);
     int prot = PROT_READ | PROT_WRITE;
@@ -29,7 +27,6 @@ void initSignalStack () {
     void *ss_sp = GC_mmapAnonStack (NULL, 2 * ss_size, prot, psize, psize);
     altstack.ss_sp = (void*)((pointer)ss_sp + ss_size);
     altstack.ss_size = ss_size;
-    altstack.ss_flags = 0;
   }
   sigaltstack (&altstack, NULL);
 }
