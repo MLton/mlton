@@ -410,8 +410,41 @@ fun any ps =
    let
       val {unions, ...} = List.set {equals=String.equals, layout=Layout.str}
       val names = unions (List.map (ps, fn T {names, ...} => names))
+      val {unions, ...} = List.set {equals=Char.equals, layout=fn _ => Layout.empty}
+      val firstChars =
+         Option.map (List.fold (ps, SOME [],
+            fn (T {firstChars, ...}, k) =>
+               case (k, firstChars) of
+                    (SOME xs, SOME x) => SOME (x :: xs)
+                  | _ => NONE),
+            unions)
+
+      fun tryAll (s as State.T {location, ...}, runs) =
+         case runs of
+              (* TODO Fix the error messages to make the best pick *)
+              [] => expected (names, location)
+            | r :: rs =>
+                 (case r s of
+                      Success a => Success a
+                    | Failure _ => tryAll (s, rs))
    in
-      List.foldr (ps, fails names, op <|>)
+      T {firstChars=firstChars,
+         mayBeEmpty=List.forall (ps, fn T {mayBeEmpty, ...} => mayBeEmpty),
+         names=names,
+         run=fn (s as State.T {location, ...}) =>
+            case getNext s of
+                 SOME (c, location, _) =>
+                     tryAll (s, List.keepAllMap(ps,
+                        fn T {mayBeEmpty, firstChars, run, ...} =>
+                           if mayBeEmpty orelse checkFirstChars (firstChars, c)
+                           then SOME run
+                           else NONE))
+               | NONE =>
+                     tryAll (s, List.keepAllMap(ps,
+                        fn T {mayBeEmpty, firstChars, run, ...} =>
+                           if mayBeEmpty
+                           then SOME run
+                           else NONE))}
    end
 
 fun optional t = SOME <$> t <|> pure NONE
