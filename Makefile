@@ -1,4 +1,4 @@
-## Copyright (C) 2009,2011,2013,2017-2018 Matthew Fluet.
+## Copyright (C) 2009,2011,2013,2017-2019 Matthew Fluet.
  # Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -103,14 +103,12 @@ all:
 	$(MAKE) script basis-no-check constants basis-check libraries
 	$(MAKE) tools    CHECK_FIXPOINT=false  # tools0 + mlton1 -> tools1
 ifeq (true, $(findstring true,$(BOOTSTRAP) $(CHECK_FIXPOINT)))
-	$(RM) "$(SRC)/mlton/mlton-compile$(EXE)"
-	$(MAKE) -C "$(SRC)/mlton/front-end" clean
+	$(MAKE) compiler-clean
 	$(MAKE) compiler CHECK_FIXPOINT=false  # tools1 + mlton1 -> mlton2
 ifeq (true, $(CHECK_FIXPOINT))
 	$(MAKE) tools-clean
 	$(MAKE) tools    CHECK_FIXPOINT=true   # tools1 + mlton1 -> tools2; tools2 == tools1
-	$(RM) "$(SRC)/mlton/mlton-compile$(EXE)"
-	$(MAKE) -C "$(SRC)/mlton/front-end" clean
+	$(MAKE) compiler-clean
 	$(MAKE) compiler CHECK_FIXPOINT=true   # tools2 + mlton2 -> mlton3; mlton3 == mlton2
 endif
 endif
@@ -168,6 +166,10 @@ ifeq (true, $(CHECK_FIXPOINT))
 	$(DIFF) -b "$(SRC)/mlton/mlton-compile$(EXE)" "$(LIB)/mlton-compile$(EXE)"
 endif
 	$(CP) "$(SRC)/mlton/mlton-compile$(EXE)" "$(LIB)/"
+
+.PHONY: compiler-clean
+compiler-clean:
+	$(MAKE) -C "$(SRC)/mlton" clean
 
 .PHONY: constants
 constants:
