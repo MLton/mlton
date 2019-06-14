@@ -27,6 +27,7 @@ struct GC_state {
   int atMLtonsLength;
   uint32_t atomicState;
   objptr callFromCHandlerThread; /* Handler for exported C calls (in heap). */
+  pointer callFromCOpArgsResPtr; /* Pass op, args, and res from exported C call */
   struct GC_callStackState callStackState;
   bool canMinor; /* TRUE iff there is space for a minor gc. */
   struct GC_controls controls;
@@ -99,6 +100,8 @@ PRIVATE size_t GC_getLastMajorStatisticsBytesLive (GC_state s);
 
 PRIVATE pointer GC_getCallFromCHandlerThread (GC_state s);
 PRIVATE void GC_setCallFromCHandlerThread (GC_state s, pointer p);
+PRIVATE pointer GC_getCallFromCOpArgsResPtr (GC_state s);
+
 PRIVATE pointer GC_getCurrentThread (GC_state s);
 PRIVATE pointer GC_getSavedThread (GC_state s);
 PRIVATE void GC_setSavedThread (GC_state s, pointer p);

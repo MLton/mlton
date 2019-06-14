@@ -236,7 +236,7 @@ in
                fun workerLoop () =
                   let
                      (* Atomic 1 *)
-                     val p = Primitive.MLton.FFI.getOpArgsResPtr ()
+                     val p = Primitive.MLton.FFI.getOpArgsResPtr (gcState ())
                      val _ = atomicEnd ()
                      (* Atomic 0 *)
                      val i = MLtonPointer.getInt32 (MLtonPointer.getPointer (p, 0), 0)

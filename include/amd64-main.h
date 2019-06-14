@@ -46,12 +46,13 @@ static GC_frameIndex returnAddressToFrameIndex (GC_returnAddress ra) {
 PRIVATE void MLton_jumpToSML (pointer jump);
 
 #define MLtonCallFromC()                                                \
-static void MLton_callFromC () {                                        \
+static void MLton_callFromC (CPointer localOpArgsResPtr) {              \
         pointer jump;                                                   \
         GC_state s = MLton_gcState();                                   \
                                                                         \
         if (DEBUG_AMD64CODEGEN)                                         \
                 fprintf (stderr, "MLton_callFromC() starting\n");       \
+        s->callFromCOpArgsResPtr = localOpArgsResPtr;                   \
         GC_setSavedThread (s, GC_getCurrentThread (s));                 \
         s->atomicState += 3;                                            \
         if (s->signalsInfo.signalIsPending)                             \
