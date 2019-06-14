@@ -1,4 +1,4 @@
-## Copyright (C) 2010,2013,2016-2017 Matthew Fluet.
+## Copyright (C) 2010,2013,2016-2017,2019 Matthew Fluet.
  # Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -7,11 +7,10 @@
  # See the file MLton-LICENSE for details.
  ##
 
-SRC = $(shell cd .. && pwd)
-BUILD = $(SRC)/build
-BIN = $(BUILD)/bin
-MLTON = mlton
-PATH = $(BIN):$(shell echo $$PATH)
+ROOT := ..
+include $(ROOT)/Makefile.config
+
+######################################################################
 
 all:
 

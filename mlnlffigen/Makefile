@@ -1,4 +1,4 @@
-## Copyright (C) 2018 Matthew Fluet
+## Copyright (C) 2018-2019 Matthew Fluet
  # Copyright (C) 2005-2009 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  #
@@ -6,23 +6,11 @@
  # See the file MLton-LICENSE for details.
  ##
 
-MLTON_RUNTIME_ARGS :=
-MLTON_COMPILE_ARGS :=
-
-######################################################################
-######################################################################
-
-SRC := $(shell cd .. && pwd)
-BUILD := $(SRC)/build
-BIN := $(BUILD)/bin
-
-PATH := $(BIN):$(shell echo $$PATH)
-
-TARGET := self
+ROOT := ..
+include $(ROOT)/Makefile.config
 
 ######################################################################
 
-MLTON := mlton
 NAME := mlnlffigen
 
 all:	$(NAME)

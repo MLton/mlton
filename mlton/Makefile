@@ -7,35 +7,8 @@
  # See the file MLton-LICENSE for details.
  ##
 
-MLTON_RUNTIME_ARGS :=
-MLTON_COMPILE_ARGS :=
-
-BOOTSTRAP_MLTON_RUNTIME_ARGS :=
-BOOTSTRAP_MLTON_COMPILE_ARGS :=
-
-GIT := git
-GREP := grep
-SED := sed
-
-######################################################################
-######################################################################
-
-SRC := $(shell cd .. && pwd)
-BUILD := $(SRC)/build
-BIN := $(BUILD)/bin
-
-PATH := $(BIN):$(shell echo $$PATH)
-
-MLTON := mlton
-MLTON_NAME := $(shell echo $(MLTON) | sed 's/mlton/MLton/')
-MLTON_OUTPUT := $(MLTON)-compile
-MLTON_VERSION := $(shell TZ=UTC $(GIT) log -n1 --date=format-local:"%Y%m%d.%H%M%S" --pretty=format:"%cd-g%h$$([ "$$($(GIT) status --porcelain 2> /dev/null)" ] && echo '-dirty')" 2> /dev/null || echo '????????')
-
-HOST_ARCH := $(shell ../bin/host-arch)
-HOST_OS := $(shell ../bin/host-os)
-TARGET := self
-TARGET_ARCH := $(HOST_ARCH)
-TARGET_OS := $(HOST_OS)
+ROOT := ..
+include $(ROOT)/Makefile.config
 
 ######################################################################
 
