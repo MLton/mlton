@@ -1,4 +1,4 @@
-## Copyright (C) 2010,2013,2016,2018 Matthew Fluet.
+## Copyright (C) 2010,2013,2016,2018-2019 Matthew Fluet.
  # Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -26,6 +26,9 @@ BIN := $(BUILD)/bin
 
 PATH := $(BIN):$(shell echo $$PATH)
 
+MLTON := mlton
+MLTON_NAME := $(shell echo $(MLTON) | sed 's/mlton/MLton/')
+MLTON_OUTPUT := $(MLTON)-compile
 MLTON_VERSION := $(shell TZ=UTC $(GIT) log -n1 --date=format-local:"%Y%m%d.%H%M%S" --pretty=format:"%cd-g%h$$([ "$$($(GIT) status --porcelain 2> /dev/null)" ] && echo '-dirty')" 2> /dev/null || echo '????????')
 
 HOST_ARCH := $(shell ../bin/host-arch)
@@ -36,13 +39,12 @@ TARGET_OS := $(HOST_OS)
 
 ######################################################################
 
-ifeq (other, $(shell if [ ! -x "$(BIN)/mlton" ]; then echo other; fi))
+ifeq (other, $(shell if [ ! -x "$(BIN)/$(MLTON)" ]; then echo other; fi))
 BOOTSTRAP:=true
 else
 BOOTSTRAP:=false
 endif
 
-MLTON := mlton
 BOOTSTRAP_MLTON := mlton
 
 MLTON_COMPILE_TYPECHECK_ARGS :=
@@ -94,7 +96,9 @@ SOURCES :=			\
 all: $(MLTON_OUTPUT)
 
 control/version.sml: control/version_sml.src
-	$(SED) "s/MLTON_VERSION/$(MLTON_VERSION)/" \
+	$(SED) \
+		-e "s/MLTON_NAME/$(MLTON_NAME)/" \
+		-e "s/MLTON_VERSION/$(MLTON_VERSION)/" \
 		< control/version_sml.src \
 		> control/version.sml
 
@@ -120,7 +124,6 @@ mlton-stubs.mlb: $(shell mlton -stop f ../lib/stubs/mlton-stubs/sources.mlb) $(s
 			$(GREP) -v 'mlyacc';					\
 	) > mlton-stubs.mlb
 
-MLTON_OUTPUT := mlton
 $(MLTON_OUTPUT): $(SOURCES)
 	rm -f control/version.sml
 	$(MAKE) control/version.sml
@@ -165,7 +168,7 @@ smlnj-mlton: $(FRONT_END_SOURCES)
 		echo 'if (CM.make "mlton-smlnj.cm") handle _ => false';		\
 		echo '   then ()';						\
 		echo '   else OS.Process.exit OS.Process.failure;'; 		\
-		echo 'SMLofNJ.exportFn("mlton-smlnj",Main.main);'		\
+		echo 'SMLofNJ.exportFn("$(MLTON_OUTPUT)-smlnj",Main.main);'	\
 	) | "$(SMLNJ)"
 
 #
@@ -180,10 +183,10 @@ polyml-mlton: mlton-polyml.use $(FRONT_END_SOURCES)
 	$(MAKE) control/version.sml
 	(									\
 		echo 'use "mlton-polyml.use";';					\
-		echo 'PolyML.export("mlton-polyml", Main.mainWrapped);';	\
+		echo 'PolyML.export("$(MLTON_OUTPUT)-polyml", Main.mainWrapped);'; \
 	) | "$(POLYML)"
-	$(CC) -o mlton-polyml mlton-polyml.o -lpolymain -lpolyml
-	rm -f mlton-polyml.o
+	$(CC) -o $(MLTON_OUTPUT)-polyml $(MLTON_OUTPUT)-polyml.o -lpolymain -lpolyml
+	rm -f $(MLTON_OUTPUT)-polyml.o
 
 mlton-polyml.use: ../lib/stubs/basis-stubs-for-polyml/sources.use ../lib/stubs/mlton-stubs-for-polyml/sources.use $(shell mlton -stop f ../lib/stubs/mlton-stubs/sources.mlb) $(filter-out control/version.sml,$(shell mlton -stop f mlton.mlb))
 	(									\

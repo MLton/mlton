@@ -66,6 +66,8 @@ LIB_REL_BIN := $(shell $(call TGT_REL_SRC,$(LIB),$(BIN)))
 
 PATH := $(BIN):$(shell echo $$PATH)
 
+MLTON := mlton
+MLTON_OUTPUT := $(MLTON)-compile
 MLTON_VERSION := $(shell TZ=UTC $(GIT) log -n1 --date=format-local:"%Y%m%d.%H%M%S" --pretty=format:"%cd-g%h$$([ "$$($(GIT) status --porcelain 2> /dev/null)" ] && echo '-dirty')" 2> /dev/null || echo '????????')
 
 HOST_ARCH := $(shell ./bin/host-arch)
@@ -89,7 +91,7 @@ RM := rm -rf
 
 # If we're compiling with another version of MLton, then we want to do another
 # round of compilation so that we get a MLton built without stubs.
-ifeq (other, $(shell if [ ! -x "$(BIN)/mlton" ]; then echo other; fi))
+ifeq (other, $(shell if [ ! -x "$(BIN)/$(MLTON)" ]; then echo other; fi))
 BOOTSTRAP:=true
 else
 BOOTSTRAP:=false
@@ -128,7 +130,7 @@ basis-no-check:
 .PHONY: basis-check
 basis-check:
 	@echo 'Type checking basis.'
-	"$(BIN)/mlton" -disable-ann deadCode -stop tc '$$(SML_LIB)/basis/libs/all.mlb' >/dev/null
+	"$(BIN)/$(MLTON)" -disable-ann deadCode -stop tc '$$(SML_LIB)/basis/libs/all.mlb' >/dev/null
 
 .PHONY: basis
 basis:
@@ -138,18 +140,18 @@ basis:
 .PHONY: bootstrap-smlnj
 bootstrap-smlnj:
 	$(MAKE) smlnj-mlton
-	$(RM) "$(BIN)/mlton"
-	$(MAKE) BOOTSTRAP_MLTON=mlton.smlnj all
-	smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | sml 2>&1 1> /dev/null` && $(RM) "$(LIB)/mlton/mlton-smlnj.$$smlnj_heap_suffix"
-	$(RM) "$(BIN)/mlton.smlnj"
+	$(RM) "$(BIN)/$(MLTON)"
+	$(MAKE) BOOTSTRAP_MLTON=$(MLTON).smlnj all
+	smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | sml 2>&1 1> /dev/null` && $(RM) "$(LIB)/$(MLTON_OUTPUT)-smlnj.$$smlnj_heap_suffix"
+	$(RM) "$(BIN)/$(MLTON).smlnj"
 
 .PHONY: bootstrap-polyml
 bootstrap-polyml:
 	$(MAKE) polyml-mlton
-	$(RM) "$(BIN)/mlton"
-	$(MAKE) BOOTSTRAP_MLTON=mlton.polyml all
-	$(RM) "$(LIB)/mlton-polyml$(EXE)"
-	$(RM) "$(BIN)/mlton.polyml"
+	$(RM) "$(BIN)/$(MLTON)"
+	$(MAKE) BOOTSTRAP_MLTON=$(MLTON).polyml all
+	$(RM) "$(LIB)/$(MLTON)-polyml$(EXE)"
+	$(RM) "$(BIN)/$(MLTON).polyml"
 
 .PHONY: clean
 clean:
@@ -161,11 +163,11 @@ clean-git:
 
 .PHONY: compiler
 compiler:
-	$(MAKE) -C "$(SRC)/mlton" MLTON_OUTPUT=mlton-compile
+	$(MAKE) -C "$(SRC)/mlton"
 ifeq (true, $(CHECK_FIXPOINT))
-	$(DIFF) -b "$(SRC)/mlton/mlton-compile$(EXE)" "$(LIB)/mlton-compile$(EXE)"
+	$(DIFF) -b "$(SRC)/mlton/$(MLTON_OUTPUT)$(EXE)" "$(LIB)/$(MLTON_OUTPUT)$(EXE)"
 endif
-	$(CP) "$(SRC)/mlton/mlton-compile$(EXE)" "$(LIB)/"
+	$(CP) "$(SRC)/mlton/$(MLTON_OUTPUT)$(EXE)" "$(LIB)/"
 
 .PHONY: compiler-clean
 compiler-clean:
@@ -174,20 +176,20 @@ compiler-clean:
 .PHONY: constants
 constants:
 	@echo 'Creating constants file.'
-	"$(BIN)/mlton" -target "$(TARGET)" -build-constants true > build-constants.c
-	"$(BIN)/mlton" -target "$(TARGET)" -output build-constants build-constants.c
+	"$(BIN)/$(MLTON)" -target "$(TARGET)" -build-constants true > build-constants.c
+	"$(BIN)/$(MLTON)" -target "$(TARGET)" -output build-constants build-constants.c
 	./build-constants$(EXE) >"$(LIB)/targets/$(TARGET)/constants"
 	$(RM) build-constants$(EXE) build-constants.c
 
 .PHONY: debugged
 debugged:
-	$(MAKE) -C "$(SRC)/mlton" MLTON_OUTPUT=mlton-compile.debug \
+	$(MAKE) -C "$(SRC)/mlton" MLTON_OUTPUT=$(MLTON_OUTPUT).debug \
 		MLTON_COMPILE_ARGS="$(MLTON_COMPILE_ARGS) -debug true -const 'Exn.keepHistory true' -profile-val true -const 'MLton.debug true' -disable-pass 'deepFlatten'"
-	$(CP) "$(SRC)/mlton/mlton-compile.debug$(EXE)" "$(LIB)/"
-	$(SED) -e 's/mlton-compile/mlton-compile.debug/' \
-		< "$(BIN)/mlton" \
-		> "$(BIN)/mlton.debug"
-	chmod u+x "$(BIN)/mlton.debug"
+	$(CP) "$(SRC)/mlton/$(MLTON_OUTPUT).debug$(EXE)" "$(LIB)/"
+	$(SED) -e 's/$(MLTON_OUTPUT)/$(MLTON_OUTPUT).debug/' \
+		< "$(BIN)/$(MLTON)" \
+		> "$(BIN)/$(MLTON).debug"
+	chmod u+x "$(BIN)/$(MLTON).debug"
 
 .PHONY: dirs
 dirs:
@@ -230,7 +232,7 @@ libraries-no-check:
 
 define LIBRARIES_CHECK_TEMPLATE
 	@echo "Type checking $(1) library."
-	"$(BIN)/mlton" -disable-ann deadCode -stop tc '$$(SML_LIB)/$(1)/$(1).mlb' >/dev/null
+	"$(BIN)/$(MLTON)" -disable-ann deadCode -stop tc '$$(SML_LIB)/$(1)/$(1).mlb' >/dev/null
 endef
 
 .PHONY: libraries-check
@@ -257,19 +259,19 @@ polyml-mlton:
 	$(SED) \
 		-e 's;doitMLton "$$@";# doitMLton "$$@";' \
 		-e 's;doitSMLNJ "$$@";# doitSMLNJ "$$@";' \
-		< "$(BIN)/mlton" \
-		> "$(BIN)/mlton.polyml"
-	chmod u+x "$(BIN)/mlton.polyml"
+		< "$(BIN)/$(MLTON)" \
+		> "$(BIN)/$(MLTON).polyml"
+	chmod u+x "$(BIN)/$(MLTON).polyml"
 	@echo 'Build of MLton (with Poly/ML) succeeded.'
 
 define PROFILED_TEMPLATE
-	$(MAKE) -C "$(SRC)/mlton" MLTON_OUTPUT=mlton-compile.$(1) \
+	$(MAKE) -C "$(SRC)/mlton" MLTON_OUTPUT=$(MLTON_OUTPUT).$(1) \
 		MLTON_COMPILE_ARGS="$(MLTON_COMPILE_ARGS) -profile $(1)"
-	$(CP) "$(SRC)/mlton/mlton-compile.$(1)$(EXE)" "$(LIB)/"
-	$(SED) -e "s/mlton-compile/mlton-compile.$(1)/" \
-		< "$(BIN)/mlton" \
-		>"$(BIN)/mlton.$(1)"
-	chmod u+x "$(BIN)/mlton.$(1)"
+	$(CP) "$(SRC)/mlton/$(MLTON_OUTPUT).$(1)$(EXE)" "$(LIB)/"
+	$(SED) -e "s/$(MLTON_OUTPUT)/$(MLTON_OUTPUT).$(1)/" \
+		< "$(BIN)/$(MLTON)" \
+		>"$(BIN)/$(MLTON).$(1)"
+	chmod u+x "$(BIN)/$(MLTON).$(1)"
 endef
 
 .PHONY: profiled-alloc
@@ -316,8 +318,9 @@ script:
 		-e "s;^CC=.*;CC=\"$(CC)\";" \
 		-e "s;^GMP_INC_DIR=.*;GMP_INC_DIR=\"$(WITH_GMP_INC_DIR)\";" \
 		-e "s;^GMP_LIB_DIR=.*;GMP_LIB_DIR=\"$(WITH_GMP_LIB_DIR)\";" \
-		< "$(SRC)/bin/mlton-script" > "$(BIN)/mlton"
-	chmod a+x "$(BIN)/mlton"
+		-e 's/mlton-compile/$(MLTON_OUTPUT)/' \
+		< "$(SRC)/bin/mlton-script" > "$(BIN)/$(MLTON)"
+	chmod a+x "$(BIN)/$(MLTON)"
 	$(CP) "$(SRC)/bin/static-library" "$(LIB)"
 ifeq (mingw, $(TARGET_OS))
 	$(CP) "$(SRC)/bin/static-library.bat" "$(LIB)"
@@ -327,14 +330,14 @@ endif
 smlnj-mlton:
 	$(MAKE) dirs runtime
 	$(MAKE) -C "$(SRC)/mlton" smlnj-mlton
-	smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | sml 2>&1 1> /dev/null` && $(CP) "$(SRC)/mlton/mlton-smlnj.$$smlnj_heap_suffix" "$(LIB)/"
+	smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | sml 2>&1 1> /dev/null` && $(CP) "$(SRC)/mlton/$(MLTON_OUTPUT)-smlnj.$$smlnj_heap_suffix" "$(LIB)/"
 	$(MAKE) script basis-no-check constants libraries-no-check
 	$(SED) \
 		-e 's;doitMLton "$$@";# doitMLton "$$@";' \
 		-e 's;doitPolyML "$$@";# doitPolyML "$$@";' \
-		< "$(BIN)/mlton" \
-		> "$(BIN)/mlton.smlnj"
-	chmod u+x "$(BIN)/mlton.smlnj"
+		< "$(BIN)/$(MLTON)" \
+		> "$(BIN)/$(MLTON).smlnj"
+	chmod u+x "$(BIN)/$(MLTON).smlnj"
 	@echo 'Build of MLton (with SML/NJ) succeeded.'
 
 .PHONY: smlnj-mlton-x2
@@ -355,13 +358,13 @@ smlnj-mlton-x16:
 
 .PHONY: traced
 traced:
-	$(MAKE) -C "$(SRC)/mlton" MLTON_OUTPUT=mlton-compile.trace \
+	$(MAKE) -C "$(SRC)/mlton" MLTON_OUTPUT=$(MLTON_OUTPUT).trace \
 		MLTON_COMPILE_ARGS="$(MLTON_COMPILE_ARGS) -const 'Exn.keepHistory true' -profile-val true -const 'MLton.debug true' -disable-pass 'deepFlatten'"
-	$(CP) "$(SRC)/mlton/mlton-compile.trace$(EXE)" "$(LIB)/"
-	$(SED) -e 's/mlton-compile/mlton-compile.trace/' \
-		< "$(BIN)/mlton" \
-		> "$(BIN)/mlton.trace"
-	chmod u+x "$(BIN)/mlton.trace"
+	$(CP) "$(SRC)/mlton/$(MLTON_OUTPUT).trace$(EXE)" "$(LIB)/"
+	$(SED) -e 's/$(MLTON_OUTPUT)/$(MLTON_OUTPUT).trace/' \
+		< "$(BIN)/$(MLTON)" \
+		> "$(BIN)/$(MLTON).trace"
+	chmod u+x "$(BIN)/$(MLTON).trace"
 
 ifeq (true, $(CHECK_FIXPOINT))
 define TOOLS_TEMPLATE_CHECK_FIXPOINT
@@ -448,8 +451,8 @@ install-no-strip:
 	$(CP) "$(BIN)/." "$(TBIN)/"
 	$(SED) \
 		-e "s;^LIB_REL_BIN=.*;LIB_REL_BIN=\"$(TLIB_REL_TBIN)\";" \
-		< "$(BIN)/mlton" > "$(TBIN)/mlton"
-	chmod a+x "$(TBIN)/mlton"
+		< "$(BIN)/$(MLTON)" > "$(TBIN)/$(MLTON)"
+	chmod a+x "$(TBIN)/$(MLTON)"
 	$(CP) "$(LIB)/." "$(TLIB)/"
 	cd "$(SRC)/man" && $(CP) $(MAN_PAGES) "$(TMAN)/"
 ifeq (true, $(GZIP_MAN))
@@ -458,7 +461,7 @@ endif
 
 .PHONY: install-strip
 install-strip: install-no-strip
-	for f in "$(TLIB)/mlton-compile$(EXE)" 			\
+	for f in "$(TLIB)/$(MLTON_OUTPUT)$(EXE)" 		\
 		"$(TBIN)/mllex$(EXE)"				\
 		"$(TBIN)/mlyacc$(EXE)"				\
 		"$(TBIN)/mlprof$(EXE)" 				\

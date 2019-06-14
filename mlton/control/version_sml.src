@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2013,2016,2018 Matthew Fluet.
+(* Copyright (C) 2009,2013,2016,2018-2019 Matthew Fluet.
  *
  * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
@@ -6,7 +6,8 @@
 
 structure Version =
    struct
+      val name = "MLTON_NAME"
       val version = "MLTON_VERSION"
 
-      val banner = concat ["MLton ", version]
+      val banner = concat [name, " ", version]
    end

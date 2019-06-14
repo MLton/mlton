@@ -47,14 +47,14 @@ doitSMLNJ () {
     smlnj='sml'
     if $smlnj -h >/dev/null 2>&1; then
         smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | $smlnj 2>&1 1> /dev/null`
-        mlton_smlnj_heap="$lib/mlton-smlnj.$smlnj_heap_suffix"
+        mlton_smlnj_heap="$lib/mlton-compile-smlnj.$smlnj_heap_suffix"
         if [ -s "$mlton_smlnj_heap" ]; then
             exec "$smlnj" @SMLload="$mlton_smlnj_heap" "$@"
         fi
     fi
 }
 doitPolyML () {
-    mlton_polyml="$lib/mlton-polyml$EXE"
+    mlton_polyml="$lib/mlton-compile-polyml$EXE"
     if [ -x "$mlton_polyml" ]; then
         exec "$mlton_polyml" "$@"
     fi
