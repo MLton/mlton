@@ -29,38 +29,35 @@
 #define LoadArray(a, f) if (fread (a, sizeof(*a), cardof(a), f) != cardof(a)) return -1;
 #define SaveArray(a, f) if (fwrite(a, sizeof(*a), cardof(a), f) != cardof(a)) return -1;
 
-PRIVATE Pointer gcStateAddress;
-
-#define Initialize(al, mg, mfs, mmc, pk, ps)                            \
-        gcStateAddress = (pointer)&gcState;                             \
-        gcState.alignment = al;                                         \
-        gcState.atMLtons = atMLtons;                                    \
-        gcState.atMLtonsLength = cardof(atMLtons);                      \
-        gcState.frameInfos = frameInfos;                                \
-        gcState.frameInfosLength = cardof(frameInfos);                  \
-        gcState.globals = (objptr*)globalObjptr;                        \
-        gcState.globalsLength = cardof(globalObjptr);                   \
-        gcState.loadGlobals = loadGlobals;                              \
-        gcState.magic = mg;                                             \
-        gcState.maxFrameSize = mfs;                                     \
-        gcState.mutatorMarksCards = mmc;                                \
-        gcState.objectTypes = objectTypes;                              \
-        gcState.objectTypesLength = cardof(objectTypes);                \
-        gcState.returnAddressToFrameIndex = returnAddressToFrameIndex;  \
-        gcState.saveGlobals = saveGlobals;                              \
-        gcState.vectorInits = vectorInits;                              \
-        gcState.vectorInitsLength = cardof(vectorInits);                \
-        gcState.sourceMaps.profileLabelInfos = profileLabelInfos;       \
-        gcState.sourceMaps.profileLabelInfosLength = cardof(profileLabelInfos);   \
-        gcState.sourceMaps.sourceNames = sourceNames;                   \
-        gcState.sourceMaps.sourceNamesLength = cardof(sourceNames);     \
-        gcState.sourceMaps.sourceSeqs = sourceSeqs;                     \
-        gcState.sourceMaps.sourceSeqsLength = cardof(sourceSeqs);       \
-        gcState.sourceMaps.sources = sources;                           \
-        gcState.sourceMaps.sourcesLength = cardof(sources);             \
-        gcState.profiling.kind = pk;                                    \
-        gcState.profiling.stack = ps;                                   \
-        MLton_init (argc, argv, &gcState);                              \
+#define Initialize(s, al, mg, mfs, mmc, pk, ps)                         \
+        s->alignment = al;                                              \
+        s->atMLtons = atMLtons;                                         \
+        s->atMLtonsLength = cardof(atMLtons);                           \
+        s->frameInfos = frameInfos;                                     \
+        s->frameInfosLength = cardof(frameInfos);                       \
+        s->globals = (objptr*)globalObjptr;                             \
+        s->globalsLength = cardof(globalObjptr);                        \
+        s->loadGlobals = loadGlobals;                                   \
+        s->magic = mg;                                                  \
+        s->maxFrameSize = mfs;                                          \
+        s->mutatorMarksCards = mmc;                                     \
+        s->objectTypes = objectTypes;                                   \
+        s->objectTypesLength = cardof(objectTypes);                     \
+        s->returnAddressToFrameIndex = returnAddressToFrameIndex;       \
+        s->saveGlobals = saveGlobals;                                   \
+        s->vectorInits = vectorInits;                                   \
+        s->vectorInitsLength = cardof(vectorInits);                     \
+        s->sourceMaps.profileLabelInfos = profileLabelInfos;            \
+        s->sourceMaps.profileLabelInfosLength = cardof(profileLabelInfos);   \
+        s->sourceMaps.sourceNames = sourceNames;                        \
+        s->sourceMaps.sourceNamesLength = cardof(sourceNames);          \
+        s->sourceMaps.sourceSeqs = sourceSeqs;                          \
+        s->sourceMaps.sourceSeqsLength = cardof(sourceSeqs);            \
+        s->sourceMaps.sources = sources;                                \
+        s->sourceMaps.sourcesLength = cardof(sources);                  \
+        s->profiling.kind = pk;                                         \
+        s->profiling.stack = ps;                                        \
+        MLton_init (argc, argv, s);
 
 #define LIB_PASTE(x,y) x ## y
 #define LIB_OPEN(x) LIB_PASTE(x, _open)

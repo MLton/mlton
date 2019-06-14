@@ -1,4 +1,4 @@
-(* Copyright (C) 2015 Matthew Fluet.
+(* Copyright (C) 2015,2019 Matthew Fluet.
  * Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -12,6 +12,7 @@ struct
 
 open Posix.Signal
 structure Prim = PrimitiveFFI.Posix.Signal
+structure GCState = Primitive.MLton.GCState
 structure Error = PosixError
 structure SysCall = Error.SysCall
 val restart = SysCall.restartFlag
@@ -171,7 +172,7 @@ structure Handler =
                    val () = Mask.block (handled ())
                    val fs = 
                       case !gcHandler of
-                         Handler f => if Prim.isPendingGC () <> C_Int.zero 
+                         Handler f => if Prim.isPendingGC (GCState.gcState ()) <> C_Int.zero
                                          then [f] 
                                          else []
                        | _ => []
@@ -180,11 +181,11 @@ structure Handler =
                       (fn (s, h, fs) =>
                        case h of
                           Handler f =>
-                             if Prim.isPending (repFromInt s) <> C_Int.zero
+                             if Prim.isPending (GCState.gcState (), repFromInt s) <> C_Int.zero
                                 then f::fs 
                                 else fs
                         | _ => fs) fs handlers
-                   val () = Prim.resetPending ()
+                   val () = Prim.resetPending (GCState.gcState ())
                    val () = Mask.setBlocked mask
                 in
                    List.foldl (fn (f, t) => f t) t fs
@@ -203,23 +204,23 @@ val setHandler = fn (s, h) =>
     | (Default, Default) => ()
     | (_, Default) => 
          (setHandler (s, Default)
-          ; SysCall.simpleRestart (fn () => Prim.default (toRep s)))
+          ; SysCall.simpleRestart (fn () => Prim.default (GCState.gcState (), toRep s)))
     | (Handler _, Handler _) =>
          setHandler (s, h)
     | (_, Handler _) =>
          (setHandler (s, h)
-          ; SysCall.simpleRestart (fn () => Prim.handlee (toRep s)))
+          ; SysCall.simpleRestart (fn () => Prim.handlee (GCState.gcState (), toRep s)))
     | (Ignore, Ignore) => ()
     | (_, Ignore) => 
          (setHandler (s, Ignore)
-          ; SysCall.simpleRestart (fn () => Prim.ignore (toRep s)))
+          ; SysCall.simpleRestart (fn () => Prim.ignore (GCState.gcState (), toRep s)))
 
 fun suspend m =
    (Prim.sigsuspend m
     ; MLtonThread.switchToSignalHandler ())
 
 fun handleGC f =
-   (Prim.handleGC ()
+   (Prim.handleGC (GCState.gcState ())
     ; gcHandler := Handler.simple f)
 
 end

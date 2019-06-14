@@ -1,4 +1,5 @@
-(* Copyright (C) 2003-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 2003-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a HPND-style license.
@@ -45,7 +46,7 @@ structure Data =
                                         if equals (d, d')
                                            then ac
                                         else d' :: ac) [] (!all)
-                     ; P.Data.free (gcState, raw)
+                     ; P.Data.free (gcState (), raw)
                      ; isFreed := true)
 
       fun make (raw: P.Data.t): t =
@@ -57,7 +58,7 @@ structure Data =
          let
             val array =
                if isOn
-                  then P.Data.malloc gcState
+                  then P.Data.malloc (gcState ())
                else P.Data.dummy
             val d = make array
             val _ = all := d :: !all
@@ -71,7 +72,7 @@ structure Data =
          else if !isFreed then
             raise Fail "write of freed profile data"
          else
-            P.Data.write (gcState, raw,
+            P.Data.write (gcState (), raw,
                           Primitive.NullString8.fromString
                           (String.nullTerm file))
    end
@@ -92,7 +93,7 @@ fun setCurrent (d as Data.T {isCurrent, isFreed, raw, ...}) =
             val _ = ic := false
             val _ = isCurrent := true
             val _ = r := d
-            val _ = P.setCurrent (gcState, raw)
+            val _ = P.setCurrent (gcState (), raw)
          in
             ()
          end
@@ -105,7 +106,7 @@ fun withData (d: Data.t, f: unit -> 'a): 'a =
       DynamicWind.wind (f, fn () => setCurrent old)
    end
 
-fun init () = setCurrent (Data.make (P.getCurrent gcState))
+fun init () = setCurrent (Data.make (P.getCurrent (gcState ())))
 
 val _ =
    if not isOn
@@ -115,9 +116,9 @@ val _ =
          val _ =
             Cleaner.addNew
             (Cleaner.atExit, fn () =>
-             (P.done gcState
+             (P.done (gcState ())
               ; Data.write (current (), "mlmon.out")
-              ; List.app (fn d => P.Data.free (gcState, Data.raw d)) 
+              ; List.app (fn d => P.Data.free (gcState (), Data.raw d))
                          (!Data.all)))
          val _ =
             Cleaner.addNew

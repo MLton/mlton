@@ -198,7 +198,11 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Word_orb _ => true
        | Word_quot _ => true
        | Word_rem _ => true
-       | Word_rndToReal _ => true
+       | Word_rndToReal _ =>
+            (* Real coercions depend on rounding mode and can't be
+             * inlined where gcc might constant-fold them.
+             *)
+            false
        | Word_rol _ => true
        | Word_ror _ => true
        | Word_rshift _ => true
@@ -218,10 +222,6 @@ fun declareProfileLabel (l, print) =
 
 fun declareGlobals (prefix: string, print) =
    let
-      (* gcState can't be static because stuff in mlton-lib.c refers to
-       * it.
-       *)
-      val _ = print (concat [prefix, "struct GC_state gcState;\n"])
       val _ =
          List.foreach
          (CType.all, fn t =>

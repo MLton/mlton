@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -26,11 +27,11 @@ structure MLtonWorld: MLTON_WORLD =
                SysCall.simple' 
                ({errVal = false}, 
                 fn () => (Prim.save (NullString.nullTerm file)
-                          ; Prim.getSaveStatus (gcState)))
+                          ; Prim.getSaveStatus (gcState ())))
          in
-            if Prim.getAmOriginal gcState
+            if Prim.getAmOriginal (gcState ())
                then Original
-            else (Prim.setAmOriginal (gcState, true)
+            else (Prim.setAmOriginal (gcState (), true)
                   ; Cleaner.clean Cleaner.atLoadWorld
                   ; Clone)
          end

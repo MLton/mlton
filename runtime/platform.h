@@ -88,12 +88,12 @@
 #define FE_TOWARDZERO 3
 #endif
 
+#include "gc.h"
+
 #ifndef MLTON_CODEGEN_STATIC_INLINE
 #define MLTON_CODEGEN_STATIC_INLINE PRIVATE
 #endif
 #include "basis-ffi.h"
-
-#include "gc.h"
 
 /* ---------------------------------------------------------------- */
 /*                        Runtime Init/Exit/Alloc                   */

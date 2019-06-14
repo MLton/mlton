@@ -13,6 +13,11 @@
 #include "common-main.h"
 #include "c-common.h"
 
+PRIVATE GC_state MLton_gcState() {
+  static struct GC_state gcState;
+  return &gcState;
+}
+
 static GC_frameIndex returnAddressToFrameIndex (GC_returnAddress ra) {
         return (GC_frameIndex)ra;
 }
@@ -20,7 +25,7 @@ static GC_frameIndex returnAddressToFrameIndex (GC_returnAddress ra) {
 #define MLtonCallFromC()                                                \
 static void MLton_callFromC () {                                        \
         uintptr_t nextBlock;                                            \
-        GC_state s = &gcState;                                          \
+        GC_state s = MLton_gcState();                                   \
         if (DEBUG_CCODEGEN)                                             \
                 fprintf (stderr, "MLton_callFromC() starting\n");       \
         GC_setSavedThread (s, GC_getCurrentThread (s));                 \
@@ -46,8 +51,8 @@ static void MLton_callFromC () {                                        \
 #define MLtonMain(al, mg, mfs, mmc, pk, ps, ml)                         \
 PUBLIC int MLton_main (int argc, char* argv[]) {                        \
         uintptr_t nextBlock;                                            \
-        GC_state s = &gcState;                                          \
-        Initialize (al, mg, mfs, mmc, pk, ps);                          \
+        GC_state s = MLton_gcState();                                   \
+        Initialize (s, al, mg, mfs, mmc, pk, ps);                       \
         if (s->amOriginal) {                                            \
                 real_Init();                                            \
                 nextBlock = ml;                                         \
@@ -65,8 +70,8 @@ PUBLIC int MLton_main (int argc, char* argv[]) {                        \
 #define MLtonLibrary(al, mg, mfs, mmc, pk, ps, mc, ml)                  \
 PUBLIC void LIB_OPEN(LIBNAME) (int argc, char* argv[]) {                \
         uintptr_t nextBlock;                                            \
-        GC_state s = &gcState;                                          \
-        Initialize (al, mg, mfs, mmc, pk, ps);                          \
+        GC_state s = MLton_gcState();                                   \
+        Initialize (s, al, mg, mfs, mmc, pk, ps);                       \
         if (s->amOriginal) {                                            \
                 real_Init();                                            \
                 nextBlock = ml;                                         \
@@ -81,12 +86,12 @@ PUBLIC void LIB_OPEN(LIBNAME) (int argc, char* argv[]) {                \
 }                                                                       \
 PUBLIC void LIB_CLOSE(LIBNAME) () {                                     \
         uintptr_t nextBlock;                                            \
-        GC_state s = &gcState;                                          \
+        GC_state s = MLton_gcState();                                   \
         nextBlock = *(uintptr_t*)(s->stackTop - GC_RETURNADDRESS_SIZE); \
         do {                                                            \
                 nextBlock = (*(nextChunks[nextBlock]))(s, s->stackTop, s->frontier, nextBlock); \
         } while (nextBlock != (uintptr_t)-1);                           \
-        GC_done(&gcState);                                              \
+        GC_done(s);                                                     \
 }
 
 #endif /* #ifndef _C_MAIN_H */
