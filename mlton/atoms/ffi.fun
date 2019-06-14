@@ -91,8 +91,7 @@ fun declareExports {print} =
      end);
     if List.isEmpty (!exports)
        then ()
-       else (print "MLtonCallFromC ()\n";
-             print "PRIVATE Pointer MLton_FFI_opArgsResPtr;\n");
+       else print "MLtonCallFromC ()\n";
     List.foreach
     (!exports, fn {args, convention, id, name, res, symbolScope} =>
      let
@@ -105,7 +104,7 @@ fun declareExports {print} =
             in
                (concat [t, " ", x],
                 concat ["\tlocalOpArgsRes[", Int.toString (i + 1), "] = ",
-                        "(Pointer)(&", x, ");\n"])
+                        "(CPointer)(&", x, ");\n"])
             end)
         val (headerSymbolScope, symbolScope) =
            case symbolScope of
@@ -131,18 +130,17 @@ fun declareExports {print} =
      in
         List.push (headers, concat [headerSymbolScope, "(", prototype, ";)"])
         ; print (concat [symbolScope, " ", prototype, " {\n"])
-        ; print (concat ["\tPointer localOpArgsRes[", Int.toString n,"];\n"])
-        ; print (concat ["\tMLton_FFI_opArgsResPtr = (Pointer)(localOpArgsRes);\n"])
+        ; print (concat ["\tCPointer localOpArgsRes[", Int.toString n,"];\n"])
         ; print (concat ["\tInt32 localOp = ", Int.toString id, ";\n",
-                         "\tlocalOpArgsRes[0] = (Pointer)(&localOp);\n"])
+                         "\tlocalOpArgsRes[0] = (CPointer)(&localOp);\n"])
         ; Vector.foreach (args, fn (_, set) => print set)
         ; (case res of
               NONE => ()
             | SOME t =>
                  print (concat ["\t", CType.toString t, " localRes;\n",
                                 "\tlocalOpArgsRes[", Int.toString (Vector.length args + 1), "] = ",
-                                "(Pointer)(&localRes);\n"]))
-        ; print ("\tMLton_callFromC ();\n")
+                                "(CPointer)(&localRes);\n"]))
+        ; print ("\tMLton_callFromC (localOpArgsRes);\n")
         ; (case res of
               NONE => ()
             | SOME _ => print "\treturn localRes;\n")
