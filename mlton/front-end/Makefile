@@ -1,4 +1,4 @@
-## Copyright (C) 2009,2014-2015 Matthew Fluet.
+## Copyright (C) 2009,2014-2015,2019 Matthew Fluet.
  # Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -7,16 +7,8 @@
  # See the file MLton-LICENSE for details.
  ##
 
-SED := sed
-
-######################################################################
-######################################################################
-
-SRC := $(shell cd ../.. && pwd)
-BUILD := $(SRC)/build
-BIN := $(BUILD)/bin
-
-PATH := $(BIN):$(shell echo $$PATH)
+ROOT := ../..
+include $(ROOT)/Makefile.config
 
 ######################################################################
 
