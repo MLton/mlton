@@ -9,7 +9,7 @@ struct
 
 infix 1 <|> >>=
 infix  3 <*> <* *>
-infixr 4 <$> <$$> <$$$> <$$$$> <$ <$?> 
+infixr 4 <$> <$$> <$$$> <$$$$> <$ <$?>
 
 structure Location =
    struct
@@ -66,6 +66,7 @@ datatype 'a t = T of
      * 2. To record the parser stack *)
     names: string list,
     run: (State.t -> ('a * State.t) result)}
+
 
 local
    fun failureString (filename, {expected, location, stack}) =
@@ -208,7 +209,7 @@ fun (T {firstChars=chars1, mayBeEmpty=empty1, names=names1, run=run1})
          then unionFirstChars (chars1, chars2)
          else chars1),
       mayBeEmpty=empty1 andalso empty2,
-      names=List.concat [names1, names2],
+      names=List.union (names1, names2, String.equals),
       run=fn s =>
           case run1 s of
               Success (f, s') =>
@@ -289,7 +290,7 @@ in
         <|>
        (T {firstChars=chars2, mayBeEmpty=empty2, names=names2, run=run2}) =
        let
-          val names = List.concat [names1, names2]
+          val names = List.union (names1, names2, String.equals)
           fun failure location =
              Failure {expected=names,
                       location=location,
@@ -407,7 +408,8 @@ fun sepBy (t, sep) = sepBy1 (t, sep) <|> pure []
 
 fun any ps =
    let
-      val names = List.concatMap (ps, fn T {names, ...} => names)
+      val {unions, ...} = List.set {equals=String.equals, layout=Layout.str}
+      val names = unions (List.map (ps, fn T {names, ...} => names))
    in
       List.foldr (ps, fails names, op <|>)
    end
