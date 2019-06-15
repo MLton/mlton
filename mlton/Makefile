@@ -12,22 +12,17 @@ include $(ROOT)/Makefile.config
 
 ######################################################################
 
-MLTON_COMPILE_TYPECHECK_ARGS :=
+RUN_MLTON_RUNTIME_XARGS := ram-slop 0.7
+RUN_MLTON_COMPILE_XARGS :=
 
 ifeq (true, $(SELF_COMPILE))
 # Older versions of `mlton` may not support `sequenceNonUnit` or `warnUnused`.
-MLTON_COMPILE_TYPECHECK_ARGS += -default-ann 'sequenceNonUnit warn'
-MLTON_COMPILE_TYPECHECK_ARGS += -default-ann 'warnUnused true'
-# MLTON_COMPILE_TYPECHECK_ARGS += -type-check true
-MLTON_ACTUAL := $(BIN)/$(MLTON)
-MLTON_RUNTIME_ARGS_ACTUAL := ram-slop 0.7 $(MLTON_RUNTIME_ARGS)
-MLTON_COMPILE_ARGS_ACTUAL := $(MLTON_COMPILE_TYPECHECK_ARGS) $(MLTON_COMPILE_ARGS)
+RUN_MLTON_COMPILE_XARGS += -default-ann 'sequenceNonUnit warn'
+RUN_MLTON_COMPILE_XARGS += -default-ann 'warnUnused true'
+# RUN_MLTON_COMPILE_XARGS += -type-check true
 # We're self-compiling, so don't use any stubs.
 FILE := mlton.mlb
 else
-MLTON_ACTUAL := $(OLD_MLTON)
-MLTON_RUNTIME_ARGS_ACTUAL := ram-slop 0.7 $(OLD_MLTON_RUNTIME_ARGS)
-MLTON_COMPILE_ARGS_ACTUAL := $(MLTON_COMPILE_TYPECHECK_ARGS) $(OLD_MLTON_COMPILE_ARGS)
 ifneq (, $(findstring $(HOST_OS),cygwin mingw))
 # We're bootstrapping on Cygwin or MinGW; stubs define `spawn` in terms of
 # `fork` and `fork` doesn't work on Cygwin or MinGW, so don't use any stubs.
@@ -49,7 +44,7 @@ FRONT_END_SOURCES :=		\
 SOURCES :=			\
 	$(FILE)			\
 	$(FRONT_END_SOURCES)	\
-	$(filter-out control/version.sml,$(shell if [ -r $(FILE) ]; then "$(MLTON_ACTUAL)" -stop f $(FILE) | $(GREP) -v " "; fi))
+	$(filter-out control/version.sml,$(shell if [ -r $(FILE) ]; then "$(RUN_MLTON)" -stop f $(FILE) | $(GREP) -v " "; fi))
 
 .PHONY: all
 all: $(MLTON_OUTPUT)
@@ -66,7 +61,7 @@ front-end/%.lex.sml: front-end/%.lex
 front-end/%.grm.sig front-end/%.grm.sml: front-end/%.grm
 	$(MAKE) -C front-end $(<F).sig $(<F).sml
 
-mlton-stubs.mlb: $(shell "$(MLTON_ACTUAL)" -stop f ../lib/stubs/mlton-stubs/sources.mlb) $(shell "$(MLTON_ACTUAL)" -stop f mlton.mlb)
+mlton-stubs.mlb: $(shell "$(RUN_MLTON)" -stop f ../lib/stubs/mlton-stubs/sources.mlb) $(shell "$(RUN_MLTON)" -stop f mlton.mlb)
 	(									\
 		echo '$$(SML_LIB)/basis/unsafe.mlb';				\
 		echo '$$(SML_LIB)/basis/sml-nj.mlb';				\
@@ -87,16 +82,19 @@ $(MLTON_OUTPUT): $(SOURCES)
 	rm -f control/version.sml
 	$(MAKE) control/version.sml
 	@echo 'Compiling mlton'
-	"$(MLTON_ACTUAL)" @MLton gc-summary $(MLTON_RUNTIME_ARGS_ACTUAL) -- \
-		-verbose 2 $(MLTON_COMPILE_ARGS_ACTUAL) \
-		-target $(TARGET) -output $(MLTON_OUTPUT) $(FILE)
+	"$(RUN_MLTON)" \
+		@MLton $(RUN_MLTON_RUNTIME_ARGS) $(RUN_MLTON_RUNTIME_XARGS) gc-summary -- \
+		$(RUN_MLTON_COMPILE_ARGS) $(RUN_MLTON_COMPILE_XARGS) -verbose 2 \
+		-target $(TARGET) -output $(MLTON_OUTPUT) \
+		$(FILE)
 
 .PHONY: def-use
 def-use: mlton.def-use
 
 mlton.def-use: $(SOURCES)
-	"$(MLTON_ACTUAL)" @MLton $(MLTON_RUNTIME_ARGS_ACTUAL) -- \
-		-verbose 0 $(MLTON_COMPILE_ARGS_ACTUAL) \
+	"$(RUN_MLTON)" \
+		@MLton $(RUN_MLTON_RUNTIME_ARGS) $(RUN_MLTON_RUNTIME_XARGS) -- \
+		$(RUN_MLTON_COMPILE_ARGS) $(RUN_MLTON_COMPILE_XARGS) -verbose 0 \
 		-stop tc -prefer-abs-paths true -show-def-use mlton.def-use \
 		$(FILE)
 
@@ -147,17 +145,17 @@ polyml-mlton: mlton-polyml.use $(FRONT_END_SOURCES)
 	$(CC) -o $(MLTON_OUTPUT)-polyml $(MLTON_OUTPUT)-polyml.o -lpolymain -lpolyml
 	rm -f $(MLTON_OUTPUT)-polyml.o
 
-mlton-polyml.use: ../lib/stubs/basis-stubs-for-polyml/sources.use ../lib/stubs/mlton-stubs-for-polyml/sources.use $(shell "$(MLTON_ACTUAL)" -stop f ../lib/stubs/mlton-stubs/sources.mlb) $(filter-out control/version.sml,$(shell  "$(MLTON_ACTUAL)" -stop f mlton.mlb))
+mlton-polyml.use: ../lib/stubs/basis-stubs-for-polyml/sources.use ../lib/stubs/mlton-stubs-for-polyml/sources.use $(shell "$(RUN_MLTON)" -stop f ../lib/stubs/mlton-stubs/sources.mlb) $(filter-out control/version.sml,$(shell  "$(RUN_MLTON)" -stop f mlton.mlb))
 	(									\
 		cat ../lib/stubs/basis-stubs-for-polyml/sources.use |		\
 			$(SED) 's|use "\(.*\)";|../lib/stubs/basis-stubs-for-polyml/\1|'; \
-		"$(MLTON_ACTUAL)" -stop f mlton.mlb | $(GREP) -v 'mlb$$' | $(GREP) 'mlyacc'; \
+		"$(RUN_MLTON)" -stop f mlton.mlb | $(GREP) -v 'mlb$$' | $(GREP) 'mlyacc'; \
 		cat ../lib/stubs/mlton-stubs-for-polyml/sources.use |		\
 			$(SED) 's|use "\(.*\)";|../lib/stubs/mlton-stubs-for-polyml/\1|'; \
-		"$(MLTON_ACTUAL)" -stop f ../lib/stubs/mlton-stubs/sources.mlb | \
+		"$(RUN_MLTON)" -stop f ../lib/stubs/mlton-stubs/sources.mlb | \
 			$(GREP) -v 'mlb$$' | 					\
 			$(GREP) 'mlton-stubs';					\
-		"$(MLTON_ACTUAL)" -stop f mlton.mlb |				\
+		"$(RUN_MLTON)" -stop f mlton.mlb |				\
 			$(GREP) -v 'mlb$$' |					\
 			$(GREP) -v 'sml/basis' | 				\
 			$(GREP) -v 'targets' | 					\
