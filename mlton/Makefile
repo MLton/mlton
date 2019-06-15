@@ -25,9 +25,9 @@ MLTON_COMPILE_ARGS_ACTUAL := $(MLTON_COMPILE_TYPECHECK_ARGS) $(MLTON_COMPILE_ARG
 # We're self-compiling, so don't use any stubs.
 FILE := mlton.mlb
 else
-MLTON_ACTUAL := $(BOOTSTRAP_MLTON)
-MLTON_RUNTIME_ARGS_ACTUAL := ram-slop 0.7 $(BOOTSTRAP_MLTON_RUNTIME_ARGS)
-MLTON_COMPILE_ARGS_ACTUAL := $(MLTON_COMPILE_TYPECHECK_ARGS) $(BOOTSTRAP_MLTON_COMPILE_ARGS)
+MLTON_ACTUAL := $(OLD_MLTON)
+MLTON_RUNTIME_ARGS_ACTUAL := ram-slop 0.7 $(OLD_MLTON_RUNTIME_ARGS)
+MLTON_COMPILE_ARGS_ACTUAL := $(MLTON_COMPILE_TYPECHECK_ARGS) $(OLD_MLTON_COMPILE_ARGS)
 ifneq (, $(findstring $(HOST_OS),cygwin mingw))
 # We're bootstrapping on Cygwin or MinGW; stubs define `spawn` in terms of
 # `fork` and `fork` doesn't work on Cygwin or MinGW, so don't use any stubs.
