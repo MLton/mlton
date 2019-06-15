@@ -15,17 +15,17 @@ include $(ROOT)/Makefile.config
 .PHONY: all
 all:
 	$(MAKE) dirs runtime
-	$(MAKE) compiler CHECK_FIXPOINT=false  # tools0 + mlton0 -> mlton1
+	$(MAKE) compiler CHECK_FIXPOINT=false                     # tools0 + mlton0 -> mlton1
 	$(MAKE) script basis-no-check constants basis-check libraries
-	$(MAKE) tools    CHECK_FIXPOINT=false  # tools0 + mlton1 -> tools1
-ifeq (true, $(findstring true,$(BOOTSTRAP) $(CHECK_FIXPOINT)))
+	$(MAKE) tools    CHECK_FIXPOINT=false                     # tools0 + mlton1 -> tools1
+ifeq (2, $(firstword $(sort $(BOOTSTRAP_STYLE) 2)))
 	$(MAKE) compiler-clean
-	$(MAKE) compiler CHECK_FIXPOINT=false  # tools1 + mlton1 -> mlton2
-ifeq (true, $(CHECK_FIXPOINT))
+	$(MAKE) compiler SELF_COMPILE=true  CHECK_FIXPOINT=false  # tools1 + mlton1 -> mlton2
+ifeq (3, $(firstword $(sort $(BOOTSTRAP_STYLE) 3)))
 	$(MAKE) tools-clean
-	$(MAKE) tools    CHECK_FIXPOINT=true   # tools1 + mlton1 -> tools2; tools2 == tools1
+	$(MAKE) tools    CHECK_FIXPOINT=true                      # tools1 + mlton1 -> tools2; tools2 == tools1
 	$(MAKE) compiler-clean
-	$(MAKE) compiler CHECK_FIXPOINT=true   # tools2 + mlton2 -> mlton3; mlton3 == mlton2
+	$(MAKE) compiler SELF_COMPILE=true  CHECK_FIXPOINT=true   # tools2 + mlton2 -> mlton3; mlton3 == mlton2
 endif
 endif
 	@echo 'Build of MLton succeeded.'
