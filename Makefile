@@ -313,6 +313,13 @@ tools-clean:
 check:
 	./bin/regression $(CHECK_ARGS)
 
+define SHOW_VAR
+echo "$(1) = $($(1))";
+endef
+SHOW_VARS := BOOTSTRAP_STYLE MLTON_VERSION RUN_MLTON
+.PHONY: show-vars
+show-vars:
+	@$(foreach VAR, $(SHOW_VARS), $(call SHOW_VAR,$(VAR)))
 
 .PHONY: version
 version:
