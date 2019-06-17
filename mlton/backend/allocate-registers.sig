@@ -19,8 +19,8 @@ signature ALLOCATE_REGISTERS =
       include ALLOCATE_REGISTERS_STRUCTS
 
       val allocate:
-         {formalsStackOffsets: (Rssa.Var.t * Rssa.Type.t) vector -> Machine.StackOffset.t vector,
-          function: Rssa.Function.t,
+         {function: Rssa.Function.t,
+          paramOffsets: (Rssa.Var.t * Rssa.Type.t) vector -> {offset: Bytes.t, ty: Rssa.Type.t} vector,
           varInfo: Rssa.Var.t -> {
                                   (* If (isSome operand) then a stack slot or
                                    * register needs to be allocated for the

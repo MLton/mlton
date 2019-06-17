@@ -279,8 +279,8 @@ structure Info =
 (*                     allocate                      *)
 (* ------------------------------------------------- *)
 
-fun allocate {formalsStackOffsets,
-              function = f: Rssa.Function.t,
+fun allocate {function = f: Rssa.Function.t,
+              paramOffsets,
               varInfo: Var.t -> {operand: Machine.Operand.t option ref option,
                                  ty: Type.t}} =
    let
@@ -404,10 +404,14 @@ fun allocate {formalsStackOffsets,
       val stack =
          Allocation.Stack.new
          (Vector.foldr2
-          (args, formalsStackOffsets args, [],
+          (args, paramOffsets args, [],
            fn ((x, _), so, stack) =>
-           (valOf (#operand (varInfo x)) := SOME (Operand.StackOffset so)
-            ; so :: stack)))
+           let
+              val so = StackOffset.T so
+           in
+              valOf (#operand (varInfo x)) := SOME (Operand.StackOffset so)
+              ; so :: stack
+           end))
       (* Allocate stack slots for the link and handler, if necessary. *)
       val handlerLinkOffset =
          if !hasHandler

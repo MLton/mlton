@@ -725,11 +725,11 @@ fun toMachine (rssa: Rssa.Program.t) =
             in
                val {handlerLinkOffset, labelInfo = labelRegInfo, ...} =
                   let
-                     val formalsStackOffsets = fn args =>
-                        paramStackOffsets (args, fn (_, ty) => ty, Bytes.zero)
+                     val paramOffsets = fn args =>
+                        paramOffsets (args, fn (_, ty) => ty, fn so => so)
                   in
-                     AllocateRegisters.allocate {formalsStackOffsets = formalsStackOffsets,
-                                                 function = f,
+                     AllocateRegisters.allocate {function = f,
+                                                 paramOffsets = paramOffsets,
                                                  varInfo = varInfo}
                   end
             end
