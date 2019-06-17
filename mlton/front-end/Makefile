@@ -19,20 +19,9 @@ all: ml.lex.sml ml.grm.sig ml.grm.sml mlb.lex.sml mlb.grm.sig mlb.grm.sml
 clean:
 	../../bin/clean
 
-
-ifeq (mllex, $(shell if mllex >/dev/null 2>&1 || [ $$? != 127 ] ; then echo mllex; fi))
-MLLEX := mllex
-else
-ifeq (ml-lex, $(shell if ml-lex >/dev/null 2>&1 || [ $$? != 127 ] ; then echo ml-lex; fi))
-MLLEX := ml-lex
-else
-MLLEX := no-mllex
-endif
-endif
-
 %.lex.sml: %.lex
 	rm -f $<.*
-	$(MLLEX) $<
+	$(RUN_MLLEX) $<
 	mv $<.sml $<.sml.in
 	$(SED) -e 's/val s = List.map f (List.rev (tl (List.rev s)))/val s = Pervasive.List.map f (Pervasive.List.rev (tl (Pervasive.List.rev s)))/' $<.sml.in > $<.sml
 	mv $<.sml $<.sml.in
@@ -40,20 +29,9 @@ endif
 	rm -f $<.sml.in
 	chmod -w $<.*
 
-
-ifeq (mlyacc, $(shell if mlyacc >/dev/null 2>&1 || [ $$? != 127 ] ; then echo mlyacc; fi))
-MLYACC := mlyacc
-else
-ifeq (ml-yacc, $(shell if ml-lex >/dev/null 2>&1 || [ $$? != 127 ] ; then echo ml-yacc; fi))
-MLYACC := ml-yacc
-else
-MLYACC := no-mlyacc
-endif
-endif
-
 %.grm.sig %.grm.sml: %.grm
 	rm -f $<.*
-	$(MLYACC) $<
+	$(RUN_MLYACC) $<
 	mv $<.sml $<.sml.in
 	$(SED) -e 's/in f 0 handle General.Subscript => ()/in f 0 handle Pervasive.General.Subscript => ()/' $<.sml.in > $<.sml
 	mv $<.sml $<.sml.in

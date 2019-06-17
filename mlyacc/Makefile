@@ -24,36 +24,14 @@ $(NAME): $(NAME).mlb $(shell "$(RUN_MLTON)" -stop f $(NAME).mlb)
 clean:
 	../bin/clean
 
-
-ifeq (mllex, $(shell if mllex >/dev/null 2>&1 || [ $$? != 127 ] ; then echo mllex; fi))
-MLLEX := mllex
-else
-ifeq (ml-lex, $(shell if ml-lex >/dev/null 2>&1 || [ $$? != 127 ] ; then echo ml-lex; fi))
-MLLEX := ml-lex
-else
-MLLEX := no-mllex
-endif
-endif
-
-src/yacc.lex.sml: src/yacc.lex
-	rm -f src/yacc.lex.sml && \
-		$(MLLEX) src/yacc.lex && \
-		chmod -w src/yacc.lex.sml
-
-
-ifeq (mlyacc, $(shell if mlyacc >/dev/null 2>&1 || [ $$? != 127 ] ; then echo mlyacc; fi))
-MLYACC := mlyacc
-else
-ifeq (ml-yacc, $(shell if ml-lex >/dev/null 2>&1 || [ $$? != 127 ] ; then echo ml-yacc; fi))
-MLYACC := ml-yacc
-else
-MLYACC := no-mlyacc
-endif
-endif
+src/%.lex.sml: src/%.lex
+	rm -f $<.*
+	$(RUN_MLLEX) $<
+	chmod -w $<.*
 
 src/%.grm.sig src/%.grm.sml: src/%.grm
 	rm -f $<.* 
-	$(MLYACC) $<
+	$(RUN_MLYACC) $<
 	chmod -w $<.*
 
 
