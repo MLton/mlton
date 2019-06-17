@@ -582,9 +582,8 @@ fun toMachine (rssa: Rssa.Program.t) =
          Trace.trace2 ("Backend.setLabelInfo",
                        Label.layout, Layout.ignore, Unit.layout)
          setLabelInfo
-      fun callReturnStackOffsets (xs: 'a vector,
-                                  ty: 'a -> Type.t,
-                                  shift: Bytes.t): StackOffset.t vector =
+      fun paramOffsets (xs: 'a vector, ty: 'a -> Type.t,
+                        mk: {offset: Bytes.t, ty: Type.t} -> 'b): 'b vector =
          #1 (Vector.mapAndFold
              (xs, Bytes.zero,
               fn (x, offset) =>
@@ -592,9 +591,14 @@ fun toMachine (rssa: Rssa.Program.t) =
                  val ty = ty x
                  val offset = Type.align (ty, offset)
               in
-                 (StackOffset.T {offset = Bytes.+ (shift, offset), ty = ty},
+                 (mk {offset = offset, ty = ty},
                   Bytes.+ (offset, Type.bytes ty))
               end))
+      fun paramStackOffsets (xs: 'a vector, ty: 'a -> Type.t,
+                             shift: Bytes.t): StackOffset.t vector =
+         paramOffsets (xs, ty, fn {offset, ty} =>
+                       StackOffset.T {offset = Bytes.+ (offset, shift),
+                                      ty = ty})
       val operandLive: M.Operand.t -> M.Live.t =
          valOf o M.Live.fromOperand
       val operandsLive: M.Operand.t vector -> M.Live.t vector =
@@ -623,7 +627,7 @@ fun toMachine (rssa: Rssa.Program.t) =
             val raises = Option.map (raises, fn ts => raiseOperands ts)
             val returns =
                Option.map (returns, fn ts =>
-                           callReturnStackOffsets (ts, fn t => t, Bytes.zero))
+                           paramStackOffsets (ts, fn t => t, Bytes.zero))
             fun newVarInfo (x, ty: Type.t) =
                let
                   val operand =
@@ -721,8 +725,8 @@ fun toMachine (rssa: Rssa.Program.t) =
             in
                val {handlerLinkOffset, labelInfo = labelRegInfo, ...} =
                   let
-                     fun formalsStackOffsets args =
-                        callReturnStackOffsets (args, fn (_, ty) => ty, Bytes.zero)
+                     val formalsStackOffsets = fn args =>
+                        paramStackOffsets (args, fn (_, ty) => ty, Bytes.zero)
                   in
                      AllocateRegisters.allocate {formalsStackOffsets = formalsStackOffsets,
                                                  function = f,
@@ -825,7 +829,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                                               size = size})
                                     end
                            val dsts =
-                              callReturnStackOffsets
+                              paramStackOffsets
                               (args, R.Operand.ty, frameSize)
                            val setupArgs =
                               parallelMove
@@ -928,7 +932,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                      case kind of
                         R.Kind.Cont _ =>
                            let
-                              val srcs = callReturnStackOffsets (args, #2, size)
+                              val srcs = paramStackOffsets (args, #2, size)
                               val (dsts', srcs') =
                                  Vector.unzip
                                  (Vector.keepAllMap2
