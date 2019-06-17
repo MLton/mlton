@@ -86,8 +86,8 @@ $(MLTON_OUTPUT): $(SOURCES)
 	@echo 'Compiling mlton'
 	"$(RUN_MLTON)" \
 		@MLton $(RUN_MLTON_RUNTIME_ARGS) $(RUN_MLTON_RUNTIME_XARGS) gc-summary -- \
-		$(RUN_MLTON_COMPILE_ARGS) $(RUN_MLTON_COMPILE_XARGS) -verbose 2 \
-		-target $(TARGET) -output $(MLTON_OUTPUT) \
+		$(RUN_MLTON_COMPILE_ARGS) $(RUN_MLTON_COMPILE_XARGS) -verbose 2	\
+		-target $(TARGET) -output $(MLTON_OUTPUT)			\
 		$(FILE)
 
 .PHONY: def-use
@@ -95,9 +95,9 @@ def-use: mlton.def-use
 
 mlton.def-use: $(SOURCES)
 	"$(RUN_MLTON)" \
-		@MLton $(RUN_MLTON_RUNTIME_ARGS) $(RUN_MLTON_RUNTIME_XARGS) -- \
-		$(RUN_MLTON_COMPILE_ARGS) $(RUN_MLTON_COMPILE_XARGS) -verbose 0 \
-		-stop tc -prefer-abs-paths true -show-def-use mlton.def-use \
+		@MLton $(RUN_MLTON_RUNTIME_ARGS) $(RUN_MLTON_RUNTIME_XARGS) --	\
+		$(RUN_MLTON_COMPILE_ARGS) $(RUN_MLTON_COMPILE_XARGS) -verbose 0	\
+		-stop tc -prefer-abs-paths true -show-def-use mlton.def-use	\
 		$(FILE)
 
 .PHONY: clean
@@ -134,7 +134,7 @@ smlnj-mlton: $(FRONT_END_SOURCES)
 # The following rebuilds the executable file for the Poly/ML compiled version of
 # MLton.
 #
-POLYML	:= poly
+POLYML := poly
 
 .PHONY: polyml-mlton
 polyml-mlton: mlton-polyml.use $(FRONT_END_SOURCES)
@@ -154,13 +154,13 @@ mlton-polyml.use: ../lib/stubs/basis-stubs-for-polyml/sources.use ../lib/stubs/m
 		"$(RUN_MLTON)" -stop f mlton.mlb | $(GREP) -v 'mlb$$' | $(GREP) 'mlyacc'; \
 		cat ../lib/stubs/mlton-stubs-for-polyml/sources.use |		\
 			$(SED) 's|use "\(.*\)";|../lib/stubs/mlton-stubs-for-polyml/\1|'; \
-		"$(RUN_MLTON)" -stop f ../lib/stubs/mlton-stubs/sources.mlb | \
-			$(GREP) -v 'mlb$$' | 					\
+		"$(RUN_MLTON)" -stop f ../lib/stubs/mlton-stubs/sources.mlb |	\
+			$(GREP) -v 'mlb$$' |					\
 			$(GREP) 'mlton-stubs';					\
 		"$(RUN_MLTON)" -stop f mlton.mlb |				\
 			$(GREP) -v 'mlb$$' |					\
-			$(GREP) -v 'sml/basis' | 				\
-			$(GREP) -v 'targets' | 					\
+			$(GREP) -v 'sml/basis' |				\
+			$(GREP) -v 'targets' |					\
 			$(GREP) -v 'mlton-stubs' |				\
 			$(GREP) -v 'mlyacc' |					\
 			$(GREP) -v 'call-main.sml';				\
