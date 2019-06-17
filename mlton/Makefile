@@ -21,15 +21,15 @@ RUN_MLTON_COMPILE_XARGS += -default-ann 'sequenceNonUnit warn'
 RUN_MLTON_COMPILE_XARGS += -default-ann 'warnUnused true'
 # RUN_MLTON_COMPILE_XARGS += -type-check true
 # We're self-compiling, so don't use any stubs.
-FILE := mlton.mlb
+MLTON_MLB := mlton.mlb
 else
 ifneq (, $(findstring $(HOST_OS),cygwin mingw))
 # We're bootstrapping on Cygwin or MinGW; stubs define `spawn` in terms of
 # `fork` and `fork` doesn't work on Cygwin or MinGW, so don't use any stubs.
-FILE := mlton.mlb
+MLTON_MLB := mlton.mlb
 else
 # We're bootstrapping, so use stubs.
-FILE := mlton-stubs.mlb
+MLTON_MLB := mlton-stubs.mlb
 endif
 endif
 
@@ -42,12 +42,32 @@ FRONT_END_SOURCES :=		\
 	front-end/mlb.grm.sml
 
 SOURCES :=			\
-	$(FILE)			\
+	$(MLTON_MLB)		\
 	$(FRONT_END_SOURCES)	\
-	$(filter-out control/version.sml,$(shell if [ -r $(FILE) ]; then "$(RUN_MLTON)" -stop f $(FILE) | $(GREP) -v " "; fi))
+	$(filter-out control/version.sml,$(shell if [ -r $(MLTON_MLB) ]; then "$(RUN_MLTON)" -stop f $(MLTON_MLB); fi))
 
 .PHONY: all
 all: $(MLTON_OUTPUT)
+
+.PHONY: clean
+clean:
+	../bin/clean
+
+SHOW_VARS += MLTON_MLB
+$(eval $(MK_SHOW_CONFIG))
+
+######################################################################
+
+
+$(MLTON_OUTPUT): $(SOURCES)
+	rm -f control/version.sml
+	$(MAKE) control/version.sml
+	@echo 'Compiling mlton'
+	"$(RUN_MLTON)" \
+		@MLton $(RUN_MLTON_RUNTIME_ARGS) $(RUN_MLTON_RUNTIME_XARGS) gc-summary -- \
+		$(RUN_MLTON_COMPILE_ARGS) $(RUN_MLTON_COMPILE_XARGS) -verbose 2	\
+		-target $(TARGET) -output $(MLTON_OUTPUT)			\
+		$(MLTON_MLB)
 
 control/version.sml: control/version_sml.src
 	$(SED) \
@@ -57,9 +77,24 @@ control/version.sml: control/version_sml.src
 		> control/version.sml
 
 front-end/%.lex.sml: front-end/%.lex
-	$(MAKE) -C front-end $(<F).sml
+	rm -f $<.*
+	$(RUN_MLLEX) $<
+	mv $<.sml $<.sml.in
+	$(SED) -e 's/val s = List.map f (List.rev (tl (List.rev s)))/val s = Pervasive.List.map f (Pervasive.List.rev (tl (Pervasive.List.rev s)))/' $<.sml.in > $<.sml
+	mv $<.sml $<.sml.in
+	$(SED) -e 's/in Vector.fromList(List.map g/in Vector.fromList(Pervasive.List.map g/' $<.sml.in > $<.sml
+	rm -f $<.sml.in
+	chmod -w $<.*
+
 front-end/%.grm.sig front-end/%.grm.sml: front-end/%.grm
-	$(MAKE) -C front-end $(<F).sig $(<F).sml
+	rm -f $<.*
+	$(RUN_MLYACC) $<
+	mv $<.sml $<.sml.in
+	$(SED) -e 's/in f 0 handle General.Subscript => ()/in f 0 handle Pervasive.General.Subscript => ()/' $<.sml.in > $<.sml
+	mv $<.sml $<.sml.in
+	$(SED) -e 's/in Array.fromList(List.map actionRowLookUp actionRowNumbers)/in Array.fromList(Pervasive.List.map actionRowLookUp actionRowNumbers)/' $<.sml.in > $<.sml
+	rm -f $<.sml.in
+	chmod -w $<.*
 
 mlton-stubs.mlb: $(shell "$(RUN_MLTON)" -stop f ../lib/stubs/mlton-stubs/sources.mlb) $(shell "$(RUN_MLTON)" -stop f mlton.mlb)
 	(									\
@@ -80,15 +115,7 @@ mlton-stubs.mlb: $(shell "$(RUN_MLTON)" -stop f ../lib/stubs/mlton-stubs/sources
 			$(GREP) -v 'mlyacc';					\
 	) > mlton-stubs.mlb
 
-$(MLTON_OUTPUT): $(SOURCES)
-	rm -f control/version.sml
-	$(MAKE) control/version.sml
-	@echo 'Compiling mlton'
-	"$(RUN_MLTON)" \
-		@MLton $(RUN_MLTON_RUNTIME_ARGS) $(RUN_MLTON_RUNTIME_XARGS) gc-summary -- \
-		$(RUN_MLTON_COMPILE_ARGS) $(RUN_MLTON_COMPILE_XARGS) -verbose 2	\
-		-target $(TARGET) -output $(MLTON_OUTPUT)			\
-		$(FILE)
+######################################################################
 
 .PHONY: def-use
 def-use: mlton.def-use
@@ -98,11 +125,9 @@ mlton.def-use: $(SOURCES)
 		@MLton $(RUN_MLTON_RUNTIME_ARGS) $(RUN_MLTON_RUNTIME_XARGS) --	\
 		$(RUN_MLTON_COMPILE_ARGS) $(RUN_MLTON_COMPILE_XARGS) -verbose 0	\
 		-stop tc -prefer-abs-paths true -show-def-use mlton.def-use	\
-		$(FILE)
+		$(MLTON_MLB)
 
-.PHONY: clean
-clean:
-	../bin/clean
+######################################################################
 
 #
 # The following rebuilds the heap file for the SML/NJ compiled version of MLton.
@@ -129,6 +154,8 @@ smlnj-mlton: $(FRONT_END_SOURCES)
 		echo '   else OS.Process.exit OS.Process.failure;'; 		\
 		echo 'SMLofNJ.exportFn("$(MLTON_OUTPUT)-smlnj",Main.main);'	\
 	) | "$(SMLNJ)"
+
+######################################################################
 
 #
 # The following rebuilds the executable file for the Poly/ML compiled version of
