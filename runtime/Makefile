@@ -153,7 +153,7 @@ basis-ffi.h: gen/basis-ffi.h
 gen/basis-ffi.h gen/basis-ffi.sml: gen/gen-basis-ffi.stamp
 	@touch $@
 gen/gen-basis-ffi.stamp: gen/gen-basis-ffi.sml gen/basis-ffi.def
-	mlton -output gen/gen-basis-ffi gen/gen-basis-ffi.sml
+	$(RUN_MLTON) -output gen/gen-basis-ffi gen/gen-basis-ffi.sml
 	rm -f gen/basis-ffi.h gen/basis-ffi.sml gen/gen-basis-ffi.stamp
 	cd gen && ./gen-basis-ffi
 	rm -f gen/gen-basis-ffi
