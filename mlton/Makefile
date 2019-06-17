@@ -67,14 +67,16 @@ mlton-stubs.mlb: $(shell "$(RUN_MLTON)" -stop f ../lib/stubs/mlton-stubs/sources
 		echo '$$(SML_LIB)/basis/sml-nj.mlb';				\
 		echo '$$(SML_LIB)/basis/mlton.mlb';				\
 		echo '$$(SML_LIB)/basis/basis.mlb';				\
-		mlton -stop f mlton.mlb | $(GREP) -v 'mlb$$' | $(GREP) 'mlyacc'; \
-		mlton -stop f ../lib/stubs/mlton-stubs/sources.mlb |		\
-			$(GREP) -v 'mlb$$' | 					\
-			$(GREP) 'mlton-stubs';					\
-		mlton -stop f mlton.mlb |					\
+		$(RUN_MLTON) -stop f mlton.mlb |				\
 			$(GREP) -v 'mlb$$' |					\
-			$(GREP) -v 'sml/basis' | 				\
-			$(GREP) -v 'targets' | 					\
+			$(GREP) 'mlyacc';					\
+		$(RUN_MLTON) -stop f ../lib/stubs/mlton-stubs/sources.mlb |	\
+			$(GREP) -v 'mlb$$' |					\
+			$(GREP) 'mlton-stubs';					\
+		$(RUN_MLTON) -stop f mlton.mlb |				\
+			$(GREP) -v 'mlb$$' |					\
+			$(GREP) -v 'sml/basis' |				\
+			$(GREP) -v 'targets' |					\
 			$(GREP) -v 'mlyacc';					\
 	) > mlton-stubs.mlb
 
