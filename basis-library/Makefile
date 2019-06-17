@@ -31,13 +31,13 @@ DEFAULT_WORD = word32 word64
 
 .PHONY: def-use
 def-use:
-	"$(MLTON)" -disable-ann deadCode -stop tc -show-types true \
+	"$(BIN)/$(MLTON)" -disable-ann deadCode -stop tc -show-types true \
 		-prefer-abs-paths true -show-def-use basis-library.def-use \
 		libs/all.mlb
 
 .PHONY: type-check-def
 type-check-def:
-	"$(MLTON)" -disable-ann deadCode -stop tc -show-types true \
+	"$(BIN)/$(MLTON)" -disable-ann deadCode -stop tc -show-types true \
 		libs/all.mlb
 
 .PHONY: type-check-all
