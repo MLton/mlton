@@ -7,36 +7,8 @@
  # See the file MLton-LICENSE for details.
  ##
 
-CC := gcc
-AR := ar
-RANLIB := ranlib
-
-WITH_GMP_DIR :=
-ifneq ($(WITH_GMP_DIR),)
-WITH_GMP_INC_DIR := $(WITH_GMP_DIR)/include
-endif
-
-FIND := find
-GREP := grep
-GZIP := gzip
-PATCH := patch
-SED := sed
-TAR := tar
-
-######################################################################
-######################################################################
-
-SRC := $(shell cd .. && pwd)
-BUILD := $(SRC)/build
-BIN := $(BUILD)/bin
-
-PATH := $(BIN):$(shell echo $$PATH)
-
-HOST_ARCH := $(shell ../bin/host-arch)
-HOST_OS := $(shell ../bin/host-os)
-TARGET := self
-TARGET_ARCH := $(HOST_ARCH)
-TARGET_OS := $(HOST_OS)
+ROOT := ..
+include $(ROOT)/Makefile.config
 
 ######################################################################
 
@@ -181,7 +153,7 @@ basis-ffi.h: gen/basis-ffi.h
 gen/basis-ffi.h gen/basis-ffi.sml: gen/gen-basis-ffi.stamp
 	@touch $@
 gen/gen-basis-ffi.stamp: gen/gen-basis-ffi.sml gen/basis-ffi.def
-	mlton -output gen/gen-basis-ffi gen/gen-basis-ffi.sml
+	$(RUN_MLTON) -output gen/gen-basis-ffi gen/gen-basis-ffi.sml
 	rm -f gen/basis-ffi.h gen/basis-ffi.sml gen/gen-basis-ffi.stamp
 	cd gen && ./gen-basis-ffi
 	rm -f gen/gen-basis-ffi

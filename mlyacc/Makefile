@@ -1,4 +1,4 @@
-## Copyright (C) 2009,2013,2018 Matthew Fluet.
+## Copyright (C) 2009,2013,2018-2019 Matthew Fluet.
  # Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -7,67 +7,31 @@
  # See the file MLton-LICENSE for details.
  ##
 
-MLTON_RUNTIME_ARGS :=
-MLTON_COMPILE_ARGS :=
-
-DIFF := diff
-
-######################################################################
-######################################################################
-
-SRC := $(shell cd .. && pwd)
-BUILD := $(SRC)/build
-BIN := $(BUILD)/bin
-
-PATH := $(BIN):$(shell echo $$PATH)
-
-TARGET := self
+ROOT := ..
+include $(ROOT)/Makefile.config
 
 ######################################################################
 
-MLTON := mlton
 NAME := mlyacc
 
 all:	$(NAME)
 
-$(NAME): $(NAME).mlb $(shell PATH="$(BIN):$$PATH" && "$(MLTON)" -stop f $(NAME).mlb)
+$(NAME): $(NAME).mlb $(shell "$(RUN_MLTON)" -stop f $(NAME).mlb)
 	@echo 'Compiling $(NAME)'
-	"$(MLTON)" @MLton $(MLTON_RUNTIME_ARGS) -- $(MLTON_COMPILE_ARGS) -target $(TARGET) $(NAME).mlb
+	"$(RUN_MLTON)" @MLton $(RUN_MLTON_RUNTIME_ARGS) -- $(RUN_MLTON_COMPILE_ARGS) -target $(TARGET) $(NAME).mlb
 
 .PHONY: clean
 clean:
-	../bin/clean
+	$(SRC)/bin/clean
 
-
-ifeq (mllex, $(shell if mllex >/dev/null 2>&1 || [ $$? != 127 ] ; then echo mllex; fi))
-MLLEX := mllex
-else
-ifeq (ml-lex, $(shell if ml-lex >/dev/null 2>&1 || [ $$? != 127 ] ; then echo ml-lex; fi))
-MLLEX := ml-lex
-else
-MLLEX := no-mllex
-endif
-endif
-
-src/yacc.lex.sml: src/yacc.lex
-	rm -f src/yacc.lex.sml && \
-		$(MLLEX) src/yacc.lex && \
-		chmod -w src/yacc.lex.sml
-
-
-ifeq (mlyacc, $(shell if mlyacc >/dev/null 2>&1 || [ $$? != 127 ] ; then echo mlyacc; fi))
-MLYACC := mlyacc
-else
-ifeq (ml-yacc, $(shell if ml-lex >/dev/null 2>&1 || [ $$? != 127 ] ; then echo ml-yacc; fi))
-MLYACC := ml-yacc
-else
-MLYACC := no-mlyacc
-endif
-endif
+src/%.lex.sml: src/%.lex
+	rm -f $<.*
+	$(RUN_MLLEX) $<
+	chmod -w $<.*
 
 src/%.grm.sig src/%.grm.sml: src/%.grm
 	rm -f $<.* 
-	$(MLYACC) $<
+	$(RUN_MLYACC) $<
 	chmod -w $<.*
 
 
