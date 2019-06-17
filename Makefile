@@ -32,7 +32,7 @@ endif
 
 .PHONY: clean
 clean:
-	./bin/clean --exclude package
+	$(SRC)/bin/clean --exclude package
 
 .PHONY: clean-git
 clean-git:

@@ -51,7 +51,7 @@ all: $(MLTON_OUTPUT)
 
 .PHONY: clean
 clean:
-	../bin/clean
+	$(SRC)/bin/clean
 
 SHOW_VARS += MLTON_MLB
 $(eval $(MK_SHOW_CONFIG))

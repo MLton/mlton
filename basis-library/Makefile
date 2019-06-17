@@ -16,7 +16,7 @@ all:
 
 .PHONY: clean
 clean:
-	../bin/clean
+	$(SRC)/bin/clean
 
 
 RESOLVE_SCOPES = program topdec strdec dec

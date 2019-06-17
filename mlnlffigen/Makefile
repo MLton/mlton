@@ -21,7 +21,7 @@ $(NAME): $(NAME).mlb $(shell "$(RUN_MLTON)" -stop f $(NAME).mlb)
 
 .PHONY: clean
 clean:
-	../bin/clean
+	$(SRC)/bin/clean
 
 
 cppcmd.sml : gen-cppcmd
