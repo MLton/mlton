@@ -11,41 +11,65 @@ infix 1 <|> >>=
 infix  3 <*> <* *>
 infixr 4 <$> <$$> <$$$> <$$$$> <$ <$?>
 
-structure Location =
-   struct
-      type t = {line: int, column: int}
+structure Location = struct
+   type t = {line: int, column: int}
 
-      fun {line=line1, column=col1} <
-          {line=line2, column=col2} =
-          Int.< (line1, line2) orelse
-          Int.< (col1, col2)
+   fun {line=line1, column=col1} <
+       {line=line2, column=col2} =
+       Int.< (line1, line2) orelse
+       Int.< (col1, col2)
 
-      val new = {line=1, column=1}
+   val new = {line=1, column=1}
 
-      fun toString {line, column} =
-         concat [Int.toString line, ".", Int.toString column]
+   fun toString {line, column} =
+      concat [Int.toString line, ".", Int.toString column]
 
-   end
-structure State =
-   struct
-      (* The state primarily consists of the stream of future
-       * characters. We keep a buffer of the last string read
-       * annotated with the appropriate locations. Hopefully, 
-       * it should be created only when needed, if the functions
-       * are sufficiently inlined *)
-      datatype t = T of {
-         stream: char Stream.t,
-         location: Location.t}
+end
 
-      fun fromStream s =
-         T {stream=s, location=Location.new}
-   end
+structure Error = struct
+   type t = {expected: string list,
+             location: Location.t,
+             stack: string list}
+
+   fun max
+      (f1 as {location=loc1, expected=_, stack=_},
+       f2 as {location=loc2, expected=_, stack=_}) =
+         if Location.< (loc1, loc2)
+            then f2
+         else f1
+
+   val optionMax =
+      fn (SOME f1, SOME f2) => SOME (max (f1, f2))
+       | (SOME f1, NONE) => SOME f1
+       | (NONE, SOME f2) => SOME f2
+       | (NONE, NONE) => NONE
+   val orElseMax =
+      fn (SOME f1, f2) => SOME (max (f1, f2))
+       | (NONE, f2) => SOME f2
+end
+
+structure State = struct
+   (* The state primarily consists of the stream of future
+    * characters. We keep a buffer of the last string read
+    * annotated with the appropriate locations. Hopefully, 
+    * it should be created only when needed, if the functions
+    * are sufficiently inlined *)
+   datatype t = T of {
+      stream: char Stream.t,
+      (* Whenever we take an alternative
+       * we'll record the furthest error seen, to better
+       * deal with cases like `many x *> y`
+       * giving very poor error messages. *)
+      lastError: Error.t option,
+      location: Location.t}
+
+   fun fromStream s =
+      T {lastError=NONE, location=Location.new, stream=s}
+end
 
 datatype 'a result = Success of 'a
-                   | Failure of
-                     {expected: string list,
-                      location: Location.t,
-                      stack: string list}
+                   | Failure of Error.t
+
 
 datatype 'a t = T of
    {(* True if this can succeed and consume no input *)
