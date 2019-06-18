@@ -327,8 +327,9 @@ structure Statement =
             open Layout
          in
             fn Move {dst, src} =>
-                  mayAlign [Operand.layout dst,
-                            seq [str " = ", Operand.layout src]]
+                  mayAlign
+                  [seq [Operand.layout dst, str " ="],
+                   indent (Operand.layout src, 2)]
              | Noop => str "Noop"
              | PrimApp {args, dst, prim, ...} =>
                   let
@@ -339,8 +340,9 @@ structure Statement =
                      case dst of
                         NONE => rest
                       | SOME z =>
-                           mayAlign [Operand.layout z,
-                                     seq [str " = ", rest]]
+                           mayAlign
+                           [seq [Operand.layout z, str " ="],
+                            indent (rest, 2)]
                   end
              | ProfileLabel l =>
                   seq [str "ProfileLabel ", ProfileLabel.layout l]
