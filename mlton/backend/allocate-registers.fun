@@ -318,6 +318,7 @@ fun allocate {function = f: Rssa.Function.t,
       val {labelLive, remLabelLive} =
          Live.live (f, {shouldConsider = isSome o #operand o varInfo})
       val {args, blocks, name, ...} = Function.dest f
+
       (*
        * Decide which variables will live in stack slots and which
        * will live in registers.
@@ -371,7 +372,8 @@ fun allocate {function = f: Rssa.Function.t,
           in
              ()
           end)
-      fun allocateVar (x: Var.t, a: Allocation.t): unit = 
+
+      fun allocateVar (x: Var.t, a: Allocation.t): unit =
          let
             val {operand, ty} = varInfo x
          in
@@ -403,6 +405,37 @@ fun allocate {function = f: Rssa.Function.t,
          Trace.trace2
          ("AllocateRegisters.allocateVar", Var.layout, Allocation.layout, Unit.layout)
          allocateVar
+      fun getOperand (x: Var.t): Operand.t =
+         case #operand (varInfo x) of
+            NONE => Error.bug (concat ["AllocatRegisters.getOperand: ",
+                                       "#operand (varInfo ",
+                                       Var.toString x, ") = NONE"])
+          | SOME r =>
+               (case !r of
+                   NONE => Error.bug (concat ["AllocatRegisters.getOperand: ",
+                                              "! (valOf (#operand (varInfo ",
+                                              Var.toString x, "))) = NONE"])
+                 | SOME oper => oper)
+      val getOperand =
+         Trace.trace
+         ("AllocateRegisters.getOperand", Var.layout, Operand.layout)
+         getOperand
+      fun getOperands (xs: Var.t vector): Operand.t vector =
+         Vector.map (xs, getOperand)
+      val getOperands =
+         Trace.trace
+         ("AllocateRegisters.getOperands",
+          Vector.layout Var.layout, Vector.layout Operand.layout)
+         getOperands
+      val {get = labelInfo: R.Label.t -> Info.t, set = setLabelInfo, ...} =
+         Property.getSetOnce (R.Label.plist,
+                              Property.initRaise ("labelInfo", R.Label.layout))
+      val setLabelInfo =
+         Trace.trace2
+         ("AllocateRegisters.setLabelInfo",
+          R.Label.layout, Info.layout, Unit.layout)
+         setLabelInfo
+
       (* Allocate stacks slots and/or registers for the formals.
        * Don't use `allocateVar`, because a stack formal
        * should use the stack slot of the incoming actual.
@@ -446,34 +479,7 @@ fun allocate {function = f: Rssa.Function.t,
                   SOME {handler = handler, link = link}
                end
          else NONE
-      fun getOperands (xs: Var.t vector): Operand.t vector =
-         Vector.map
-         (xs, fn x =>
-          let
-             open Layout
-          in
-             case (#operand (varInfo x)) of
-                NONE => (Error.bug o toString o seq)
-                        [str "AllocateRegisters.getOperands_1", Var.layout x]
-              | SOME r =>
-                   (case !r of
-                       NONE => (Error.bug o toString o seq)
-                               [str "AllocateRegisters.getOperands_2", Var.layout x]
-                     | SOME oper => oper)
-          end)
-      val getOperands =
-         Trace.trace 
-         ("AllocateRegisters.getOperands",
-          Vector.layout Var.layout, Vector.layout Operand.layout)
-         getOperands
-      val {get = labelInfo: R.Label.t -> Info.t, set = setLabelInfo, ...} =
-         Property.getSetOnce (R.Label.plist,
-                              Property.initRaise ("labelInfo", R.Label.layout))
-      val setLabelInfo =
-         Trace.trace2
-         ("AllocateRegisters.setLabelInfo", 
-          R.Label.layout, Info.layout, Unit.layout)
-         setLabelInfo
+
       (* Do a DFS of the control-flow graph. *)
       val () =
          Function.dfs
