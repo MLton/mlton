@@ -770,7 +770,8 @@ fun checkOffset {base, isVector, offset, result} =
 
 fun offsetIsOk {base, offset, tyconTy, result} = 
    case node base of
-      Objptr opts => 
+      CPointer => true
+    | Objptr opts =>
          if Bytes.equals (offset, Runtime.headerOffset ())
             then equals (result, objptrHeader ())
          else if Bytes.equals (offset, Runtime.sequenceLengthOffset ())

@@ -1076,13 +1076,10 @@ structure Program =
                            (checkOperand (base, alloc)
                             ; (Operand.isLocation base
                                andalso
-                               (case base of
-                                  Operand.GCState => true
-                                | _ => 
-                                     Type.offsetIsOk {base = Operand.ty base,
-                                                      offset = offset,
-                                                      tyconTy = tyconTy,
-                                                      result = ty})))
+                               (Type.offsetIsOk {base = Operand.ty base,
+                                                 offset = offset,
+                                                 tyconTy = tyconTy,
+                                                 result = ty})))
                       | Real _ => true
                       | Register r => Alloc.doesDefine (alloc, Live.Register r)
                       | StackOffset (so as StackOffset.T {offset, ty, ...}) =>
