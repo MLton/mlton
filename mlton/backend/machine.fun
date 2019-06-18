@@ -1381,10 +1381,12 @@ structure Program =
                                           if liveSubset (handlerLive, contLive)
                                              then
                                                 (case kind of
-                                                    Kind.Handler {args, ...} =>
-                                                       SOME (SOME args)
-                                                  | _ => NONE)
-                                          else NONE
+                                                    Kind.Handler {args, frameInfo, ...} =>
+                                                       if Bytes.< (FrameInfo.size frameInfo, size)
+                                                          then SOME (SOME args)
+                                                          else NONE
+                                                    | _ => NONE)
+                                             else NONE
                                        end
                               val raises =
                                  Err.check'
