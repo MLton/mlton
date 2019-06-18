@@ -1282,6 +1282,14 @@ structure Program =
             fun liveIsOk (live: Live.t vector,
                           a: Alloc.t): bool =
                Vector.forall (live, fn z => Alloc.doesDefine (a, z))
+            val liveIsOk =
+               Trace.trace
+               ("Machine.Program.typeCheck.liveIsOk",
+                fn (live, a) =>
+                Layout.tuple [Vector.layout Live.layout live,
+                              Alloc.layout a],
+                Bool.layout)
+               liveIsOk
             fun liveSubset (live: Live.t vector,
                             live': Live.t vector): bool =
                Vector.forall
@@ -1306,6 +1314,16 @@ structure Program =
                  | (SOME os, SOME os') =>
                       Vector.equals (os', os, Live.isSubtype)
                  | _ => false)
+            val goto =
+               Trace.trace
+               ("Machine.Program.typeCheck.goto",
+                fn (b, raises, returns, a) =>
+                Layout.tuple [Block.layoutHeader b,
+                              Option.layout (Vector.layout Live.layout) raises,
+                              Option.layout (Vector.layout Live.layout) returns,
+                              Alloc.layout a],
+                Bool.layout)
+               goto
             fun checkCont (cont: Label.t, size: Bytes.t, alloc: Alloc.t) =
                let
                   val Block.T {kind, live, ...} = labelBlock cont
