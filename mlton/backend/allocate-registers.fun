@@ -464,7 +464,7 @@ fun allocate {function = f: Rssa.Function.t,
       val stack =
          Allocation.Stack.new (Vector.toListMap (paramOffsets args, StackOffset.T))
       (* Allocate stack slots for the link and handler, if necessary. *)
-      val handlerLinkOffset =
+      val handlersInfo =
          if !hasHandler
             then
                let
@@ -483,7 +483,8 @@ fun allocate {function = f: Rssa.Function.t,
                                      | Control.Align8 => Bytes.inWord64)})
                   val handlerOffset = Bytes.- (handlerOffset, Runtime.labelSize ())
                in
-                  SOME {handler = handlerOffset, link = linkOffset}
+                  SOME {handlerOffset = handlerOffset,
+                        linkOffset = linkOffset}
                end
          else NONE
 
@@ -492,26 +493,27 @@ fun allocate {function = f: Rssa.Function.t,
          Function.dfs
          (f, fn R.Block.T {args, label, kind, statements, ...} =>
           let
-             val {begin, beginNoFormals, handler = handlerLive,
+             val {begin, beginNoFormals,
+                  handler = handlerLive,
                   link = linkLive} = labelLive label
              val () = remLabelLive label
              fun addHS (ops: Operand.t vector): Operand.t vector =
-                case handlerLinkOffset of
+                case handlersInfo of
                    NONE => ops
-                 | SOME {handler, link} =>
+                 | SOME {handlerOffset, linkOffset} =>
                       let
                          val extra = []
                          val extra =
                             case handlerLive of
                                NONE => extra
                              | SOME h => 
-                                  Operand.stackOffset {offset = handler,
+                                  Operand.stackOffset {offset = handlerOffset,
                                                        ty = Type.label h}
                                   :: extra
                          val extra =
                             if linkLive
                                then
-                                  Operand.stackOffset {offset = link,
+                                  Operand.stackOffset {offset = linkOffset,
                                                        ty = Type.exnStack ()}
                                   :: extra
                             else extra
@@ -527,22 +529,22 @@ fun allocate {function = f: Rssa.Function.t,
                   | Operand.Register r => (stack, r::registers)
                   | _ => (stack, registers))
              val stackInit =
-                case handlerLinkOffset of
+                case handlersInfo of
                    NONE => stackInit
-                 | SOME {handler, link} =>
-                      StackOffset.T {offset = handler,
+                 | SOME {handlerOffset, linkOffset} =>
+                      StackOffset.T {offset = handlerOffset,
                                      ty = Type.label (Label.newNoname ())}
-                      :: StackOffset.T {offset = link, 
+                      :: StackOffset.T {offset = linkOffset,
                                         ty = Type.exnStack ()}
                       :: stackInit
              val a = Allocation.new (stackInit, registersInit)
              val size =
                 case kind of
                    Kind.Handler =>
-                      (case handlerLinkOffset of
+                      (case handlersInfo of
                           NONE => Error.bug "AllocateRegisters.allocate: Handler with no handler offset"
-                        | SOME {handler, ...} =>
-                             Bytes.+ (Runtime.labelSize (), handler))
+                        | SOME {handlerOffset, ...} =>
+                             Bytes.+ (handlerOffset, Runtime.labelSize ()))
                  | _ =>
                       Bytes.align
                       (Bytes.+ (Allocation.stackSize a, Runtime.labelSize ()),
@@ -585,12 +587,12 @@ fun allocate {function = f: Rssa.Function.t,
              open Layout
              val _ =
                 display (seq [str "function ", Func.layout name,
-                              str " handlerLinkOffset ",
+                              str " handlersInfo ",
                               Option.layout
-                              (fn {handler, link} =>
-                               record [("handler", Bytes.layout handler),
-                                       ("link", Bytes.layout link)])
-                              handlerLinkOffset])
+                              (fn {handlerOffset, linkOffset} =>
+                               record [("handlerOffset", Bytes.layout handlerOffset),
+                                       ("linkOffset", Bytes.layout linkOffset)])
+                              handlersInfo])
              val _ = Vector.foreach (args, diagVar o #1)
              val _ =
                 Vector.foreach
@@ -609,7 +611,7 @@ fun allocate {function = f: Rssa.Function.t,
           in ()
           end)
    in
-      {handlerLinkOffset = handlerLinkOffset,
+      {handlersInfo = handlersInfo,
        labelInfo = labelInfo}
    end
 

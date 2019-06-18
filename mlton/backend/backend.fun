@@ -473,12 +473,12 @@ fun toMachine (rssa: Rssa.Program.t) =
          end
       fun translateOperands ops = Vector.map (ops, translateOperand)
       fun genStatement (s: R.Statement.t,
-                        handlerLinkOffset: {handler: Bytes.t,
-                                            link: Bytes.t} option)
+                        handlersInfo: {handlerOffset: Bytes.t,
+                                       linkOffset: Bytes.t} option)
          : M.Statement.t vector =
          let
-            fun handlerOffset () = #handler (valOf handlerLinkOffset)
-            fun linkOffset () = #link (valOf handlerLinkOffset)
+            fun handlerOffset () = #handlerOffset (valOf handlersInfo)
+            fun linkOffset () = #linkOffset (valOf handlersInfo)
             datatype z = datatype R.Statement.t
          in
             case s of
@@ -741,7 +741,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                       ty = ty}
                   end
             in
-               val {handlerLinkOffset, labelInfo = labelRegInfo, ...} =
+               val {handlersInfo, labelInfo = labelRegInfo, ...} =
                   let
                      val paramOffsets = fn args =>
                         paramOffsets (args, fn (_, ty) => ty, fn so => so)
@@ -917,7 +917,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                   val statements =
                      Vector.concatV
                      (Vector.map (statements, fn s =>
-                                  genStatement (s, handlerLinkOffset)))
+                                  genStatement (s, handlersInfo)))
                   val (preTransfer, transfer) = genTransfer transfer
                   val (kind, live, pre) =
                      case kind of
