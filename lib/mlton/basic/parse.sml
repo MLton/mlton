@@ -44,8 +44,8 @@ structure Error = struct
        | (NONE, SOME f2) => SOME f2
        | (NONE, NONE) => NONE
    val orElseMax =
-      fn (SOME f1, f2) => SOME (max (f1, f2))
-       | (NONE, f2) => SOME f2
+      fn (SOME f1, f2) => max (f1, f2)
+       | (NONE, f2) => f2
 end
 
 structure State = struct
@@ -80,7 +80,7 @@ datatype 'a t = T of
      * 1. If this parser is pruned by its first set
      * 2. To record the parser stack *)
     names: string list,
-    run: (State.t -> ('a * State.t) result)}
+    run: (State.t * string list -> ('a * State.t) result)}
 
 
 local
@@ -94,7 +94,7 @@ local
              | _ => concat ["Expected one of: ", concatWith (expected, ", "), "."],
           if List.isEmpty stack
              then ""
-          else concat ["\nin the context ", concatWith (stack, "/"), "\n\n"]]
+          else concat ["\nin the context ", concatWith (List.rev stack, "/"), "\n\n"]]
       end
 
    fun toResult (filename, r) =
@@ -116,15 +116,15 @@ local
 in
    fun parseStream (T {run, ...}, stream) =
       toResult ("<string>",
-      run (State.fromStream stream))
+      run (State.fromStream stream, []))
    fun parseString (T {run, ...}, str) =
       toResult ("<string>",
-      run ((State.fromStream o listToStream o String.explode) str))
+      run ((State.fromStream o listToStream o String.explode) str, []))
 
    fun parseFile (T {run, ...}, file) =
       toResult (File.toString file,
       File.withIn (file, fn i =>
-         (run o State.fromStream o inToStream) i))
+         run ((State.fromStream o inToStream) i, [])))
 end
 
 fun incLocation ({line, column}, chr) =
@@ -141,7 +141,7 @@ fun indexLocations (loc, s) =
             (loc, loc)
          end)
 
-fun getNext (State.T {location, stream}):
+fun getNext (State.T {lastError, location, stream}):
       (char * Location.t * State.t) option =
    let
    in
@@ -150,7 +150,7 @@ fun getNext (State.T {location, stream}):
             let
                val loc = incLocation (location, c)
             in
-               SOME (c, loc, State.T {location=loc, stream=rest})
+               SOME (c, loc, State.T {lastError=lastError, location=loc, stream=rest})
             end
          | NONE => NONE
    end
@@ -168,30 +168,25 @@ fun pure a =
    T {mayBeEmpty=true,
       firstChars=NONE,
       names=[],
-      run=fn s => Success (a, s)}
+      run=fn (s, _) => Success (a, s)}
 
 fun fails ms =
    T {mayBeEmpty=false,
       firstChars=SOME [],
       names=ms,
-      run=fn (State.T {location, ...}) =>
-         Failure {expected=ms, location=location, stack=[]}}
+      run=fn (State.T {location, ...}, stack) =>
+         Failure {expected=ms, location=location, stack=stack}}
 fun fail m = fails [m]
 
-fun expected (names, location) =
-   Failure {expected=names, location=location, stack=[]}
+fun expected (names, location, stack) =
+   Failure {expected=names, location=location, stack=stack}
 
 fun named (name, T {firstChars, mayBeEmpty, run, ...}) =
     T {firstChars=firstChars,
        mayBeEmpty=mayBeEmpty,
        names=[name],
-       run=fn s =>
-         case run s of
-              Success a => Success a
-            | Failure {expected, location, stack} =>
-                 Failure {expected=expected,
-                          location=location,
-                          stack=name :: stack}}
+       run=fn (s, stack) =>
+         run (s, name :: stack)}
 
 fun (T {firstChars=chars1, mayBeEmpty=empty1, names=names1, run=run1})
      <*>
@@ -202,12 +197,14 @@ fun (T {firstChars=chars1, mayBeEmpty=empty1, names=names1, run=run1})
          else chars1),
       mayBeEmpty=empty1 andalso empty2,
       names=List.union (names1, names2, String.equals),
-      run=fn s =>
-          case run1 s of
+      run=fn (s as State.T {lastError, ...}, stack) =>
+          case run1 (s, stack) of
               Success (f, s') =>
-                  (case run2 s' of
+                  (case run2 (s', stack) of
                        Success (b, s'') => Success (f b, s'')
-                     | Failure err => Failure err)
+                     | Failure err =>
+                          (* report the latest error *)
+                          Failure (Error.orElseMax (lastError, err)))
             | Failure err => Failure err}
 
 fun (T {firstChars, mayBeEmpty, names, run}) >>= f =
@@ -217,12 +214,13 @@ fun (T {firstChars, mayBeEmpty, names, run}) >>= f =
          else firstChars,
       mayBeEmpty=mayBeEmpty,
       names=names,
-      run=fn s =>
-         case run s of
+      run=fn (s as State.T {lastError, ...}, stack) =>
+         case run (s, stack) of
               Success (a, s') =>
                   (case f a of
-                       T {run, ...} => run s')
-            | Failure err => Failure err}
+                       T {run, ...} => run (s', stack))
+            | Failure err =>
+                 Failure (Error.orElseMax (lastError, err))}
 
 fun fst a _ = a
 fun snd _ b = b
@@ -252,17 +250,7 @@ local
        f2 as {expected=exp2, stack=stack2, location=loc2}) =
          if Location.< (loc1, loc2)
             then Failure f2
-         else if Location.< (loc2, loc1)
-            then Failure f1
-         else expected (List.concat [
-                     (* if there's a stack, we'll use
-                      * that as the best estimate *)
-                     (case stack1 of
-                          [] => exp1
-                        | s :: _ => [s]),
-                     (case stack2 of
-                          [] => exp2
-                        | s :: _ => [s])], location)
+         else Failure f1
    fun selectRun (p1, p2, run1, run2, fail, location, s) =
       case (p1, p2) of
            (true, true) =>
@@ -270,38 +258,39 @@ local
                      Success a => Success a
                    | Failure f1 =>
                         (case run2 s of
-                              Success a => Success a
+                              Success (a, State.T
+                              (* TODO  ???? *)
+                                 {lastError=f2, location, stream}) =>
+                                 Success (a, State.T
+                                    {lastError=Error.optionMax (f2, SOME f1),
+                                     location=location, stream=stream})
                             | Failure f2 => selectError (location, f1, f2)))
           | (true, false) => run1 s
           | (false, true) => run2 s
           | _ => fail
-
-
 in
    fun (T {firstChars=chars1, mayBeEmpty=empty1, names=names1, run=run1})
         <|>
        (T {firstChars=chars2, mayBeEmpty=empty2, names=names2, run=run2}) =
        let
           val names = List.union (names1, names2, String.equals)
-          fun failure location =
-             Failure {expected=names,
-                      location=location,
-                      stack=[]}
        in
           T {firstChars=unionFirstChars (chars1, chars2),
              mayBeEmpty=empty1 orelse empty2,
              names=names,
-             run=fn (s as State.T {location, ...}) =>
+             run=fn (s as State.T {location, ...}, stack) =>
                 case getNext s of
                      SOME (c, location, _) =>
                          selectRun (empty1 orelse checkFirstChars (chars1, c),
                                     empty2 orelse checkFirstChars (chars2, c),
                                     run1, run2,
-                                    expected (names, location), location, s)
+                                    expected (names, location, stack), location,
+                                    (s, stack))
                    | NONE =>
                          selectRun (empty1, empty2,
                                     run1, run2,
-                                    expected (names, location), location, s)}
+                                    expected (names, location, stack), location,
+                                    (s, stack))}
        end
 end
 
@@ -325,26 +314,23 @@ val next =
    T {mayBeEmpty=false,
       firstChars=NONE,
       names=["char"],
-      run=fn s as State.T {location, ...} =>
+      run=fn (s as State.T {location, ...}, stack) =>
         case getNext s of
              SOME (c, _, s') => Success (c, s')
-           | NONE =>
-              Failure {expected=["char"],
-                       location=location,
-                       stack=[]}}
+           | NONE => expected (["char"], location, stack)}
 
 fun sat (T {firstChars, mayBeEmpty, names, run}, p) =
    T {firstChars=firstChars,
       mayBeEmpty=mayBeEmpty,
       names=names,
-      run=fn s as State.T {location, ...} =>
-         case run s of
+      run=fn (s as State.T {location, ...}, stack) =>
+         case run (s, stack) of
               x as Success (a, _) =>
                   if p a
                      then x
                   else Failure {expected=["satisfying"],
                                 location=location,
-                                stack=[]}
+                                stack=stack}
             | x => x}
 
 fun nextSat p = sat (next, p)
@@ -353,8 +339,8 @@ fun peek (p as T {mayBeEmpty, firstChars, names, run}) =
    T {mayBeEmpty=true,
       firstChars=firstChars,
       names=names,
-      run=fn s =>
-        case run s of
+      run=fn (s, stack) =>
+        case run (s, stack) of
              Success (a, _) => Success (a, s)
            | Failure err => Failure err}
 
@@ -365,12 +351,12 @@ fun failing (p as T {names, run, ...}) =
       T {mayBeEmpty=true,
          firstChars=NONE,
          names=notNames,
-         run=fn s as State.T {location, ...} =>
-            case run s of
+         run=fn (s as State.T {location, ...}, stack) =>
+            case run (s, stack) of
                  Success _ => Failure
                     {expected=notNames,
                      location=location,
-                     stack=[]}
+                     stack=stack}
                | Failure _ => Success ((), s)}
    end
 
@@ -379,15 +365,15 @@ fun notFollowedBy(p, c) =
 
 fun many (T {firstChars, mayBeEmpty, names, run}) =
    let
-      fun run' (s, k) =
-         case run s of
-              Success (a, s') => run' (s', a :: k)
+      fun run' (s, stack, k) =
+         case run (s, stack) of
+              Success (a, s') => run' (s', stack, a :: k)
             | Failure err => Success (List.rev k, s)
    in
       T {firstChars=firstChars,
          mayBeEmpty=true,
          names=names,
-         run=fn s => run' (s, [])}
+         run=fn (s, stack) => run' (s, stack, [])}
    end
 
 fun many1 p = (op ::) <$$> (p, many p)
@@ -411,28 +397,28 @@ fun any ps =
                   | _ => NONE),
             unions)
 
-      fun tryAll (s as State.T {location, ...}, runs) =
+      fun tryAll (s as State.T {location, ...}, stack, runs) =
          case runs of
               (* TODO Fix the error messages to make the best pick *)
-              [] => expected (names, location)
+              [] => expected (names, location, stack)
             | r :: rs =>
-                 (case r s of
+                 (case r (s, stack) of
                       Success a => Success a
-                    | Failure _ => tryAll (s, rs))
+                    | Failure _ => tryAll (s, stack, rs))
    in
       T {firstChars=firstChars,
          mayBeEmpty=List.forall (ps, fn T {mayBeEmpty, ...} => mayBeEmpty),
          names=names,
-         run=fn (s as State.T {location, ...}) =>
+         run=fn (s as State.T {location, ...}, stack) =>
             case getNext s of
                  SOME (c, location, _) =>
-                     tryAll (s, List.keepAllMap(ps,
+                     tryAll (s, stack, List.keepAllMap(ps,
                         fn T {mayBeEmpty, firstChars, run, ...} =>
                            if mayBeEmpty orelse checkFirstChars (firstChars, c)
                            then SOME run
                            else NONE))
                | NONE =>
-                     tryAll (s, List.keepAllMap(ps,
+                     tryAll (s, stack, List.keepAllMap(ps,
                         fn T {mayBeEmpty, firstChars, run, ...} =>
                            if mayBeEmpty
                            then SOME run
@@ -448,14 +434,14 @@ fun char c =
       T {mayBeEmpty=false,
          firstChars=SOME [c],
          names=[name],
-         run=fn s as State.T {location, ...} =>
+         run=fn (s as State.T {location, ...}, stack) =>
             case getNext s of
                  SOME (c', _, s') =>
                   if c = c'
                   then Success (c, s')
-                  else expected ([name], location)
+                  else expected ([name], location, stack)
                | NONE =>
-                    expected ([name], location)}
+                    expected ([name], location, stack)}
    end
 
 fun each ps = List.fold
@@ -467,7 +453,7 @@ fun str str =
       val name = "\"" ^ str ^ "\""
       datatype 'a Status = Yes | More of 'a | No
 
-      fun run (s as State.T {location, ...}) =
+      fun run (s as State.T {location, ...}, stack) =
          String.fold (str, Success (str, s),
             fn (c, progress) =>
                case progress of
@@ -476,14 +462,8 @@ fun str str =
                        SOME (c', l, s') =>
                            if c = c'
                            then Success (str, s')
-                           else Failure
-                           {expected=[String.fromChar c],
-                            location=l,
-                            stack=[]}
-                     | NONE => Failure
-                           {expected=[str],
-                            location=location,
-                            stack=[]})
+                           else expected ([String.fromChar c], l, stack)
+                     | NONE => expected ([String.fromChar c], location, stack))
                   | _ => progress)
    in
       if String.isEmpty str
@@ -499,11 +479,11 @@ val location =
    T {firstChars=NONE,
       mayBeEmpty=true,
       names=[],
-      run=fn s as State.T {location, ...} =>
+      run=fn (s as State.T {location, ...}, _) =>
          Success (location, s)}
 
 fun toReader (T {run, ...}) (s : State.t) : ('a * State.t) option =
-   case run s of
+   case run (s, []) of
         Success (b, s') => SOME (b, s')
       | Failure _ => NONE
 
@@ -511,10 +491,10 @@ fun fromReader (r : State.t -> ('a * State.t) option) =
    T {firstChars=NONE,
       mayBeEmpty=true,
       names=["fromReader"],
-      run=fn s as State.T {location, ...} =>
+      run=fn (s as State.T {location, ...}, stack) =>
          case r s of
             SOME (b, s') => Success (b, s')
-          | NONE => expected (["fromReader"], location)}
+          | NONE => expected (["fromReader"], location, stack)}
 
 fun fromScan scan = fromReader (scan (toReader next))
 
