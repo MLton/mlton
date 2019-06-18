@@ -1162,7 +1162,7 @@ structure RaiseStyle =
           | ViaStack => "ViaStack"
    end
 val raiseStyle = control {name = "raise style",
-                          default = RaiseStyle.ViaGlobals,
+                          default = RaiseStyle.ViaStack,
                           toString = RaiseStyle.toString}
 
 val showBasis = control {name = "show basis",

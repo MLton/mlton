@@ -784,7 +784,7 @@ fun makeOptions {usage} =
        (Normal, "profile-val", " {false|true}",
         "profile val bindings in addition to functions",
         boolRef profileVal),
-       (Expert, "raise-style", " {globals|stack}", "style for passing raise arguments",
+       (Expert, "raise-style", " {stack|globals}", "style for passing raise arguments",
         SpaceString
         (fn s =>
          case s of
