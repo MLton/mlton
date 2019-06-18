@@ -1368,7 +1368,7 @@ local
    open Parse
 in
    val parseFormals =
-      named ("formals",
+      named ("Formals",
       vector (Var.parse >>= (fn x =>
               sym ":" *>
               Type.parse >>= (fn ty =>
@@ -2268,18 +2268,18 @@ structure Program =
             val () = Label.parseReset {prims = Vector.new0 ()}
             val () = Func.parseReset {prims = Vector.new0 ()}
 
-            val parseProgram = named ("ssa2",
+            val parseProgram = named ("SSA2",
                T <$>
-               (named ("dts", many Datatype.parse) >>= (fn datatypes =>
-                named ("sts", many Statement.parse) >>= (fn globals =>
-                named ("fs", many Function.parse) >>= (fn functions =>
-                named ("func", Func.parse) >>= (fn main =>
+               (named ("Datatypes", many Datatype.parse) >>= (fn datatypes =>
+                named ("Globals", many Statement.parse) >>= (fn globals =>
+                named ("Functions", many Function.parse) >>= (fn functions =>
+                named ("Main", Func.parse) >>= (fn main =>
                 pure {datatypes = Vector.fromList datatypes,
                       globals = Vector.fromList globals,
                       functions = functions,
                       main = main}))))))
          in
-            parseProgram <* mlSpaces
+            parseProgram <* (mlSpaces *> (failing next <|> fail "end of file"))
          end
 
       fun layoutStats (T {datatypes, globals, functions, main, ...}) =
