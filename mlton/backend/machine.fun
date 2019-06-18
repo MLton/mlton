@@ -1483,8 +1483,11 @@ structure Program =
             val transferOk =
                Trace.trace
                ("Machine.Program.typeCheck.transferOk",
-                fn (t, _, _, a) =>
-                Layout.tuple [Transfer.layout t, Alloc.layout a],
+                fn (t, raises, returns, a) =>
+                Layout.tuple [Transfer.layout t,
+                              Option.layout (Vector.layout Live.layout) raises,
+                              Option.layout (Vector.layout Live.layout) returns,
+                              Alloc.layout a],
                 Bool.layout)
                transferOk
             fun blockOk (Block.T {kind, live, raises, returns, statements,
