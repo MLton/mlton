@@ -1227,9 +1227,11 @@ structure Program =
                         if frame (frameInfo, false, FrameInfo.Kind.ML_FRAME)
                            then SOME alloc
                         else NONE
-                   | Handler {frameInfo, ...} =>
+                   | Handler {args, frameInfo} =>
                         if frame (frameInfo, false, FrameInfo.Kind.ML_FRAME)
-                           then SOME alloc
+                           then SOME (Vector.fold
+                                      (args, alloc, fn (z, alloc) =>
+                                       Alloc.defineLive (alloc, z)))
                         else NONE
                    | Jump => SOME alloc
                end
