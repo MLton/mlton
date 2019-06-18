@@ -1375,10 +1375,10 @@ structure Program =
                                     NONE => SOME raises
                                   | SOME h =>
                                        let
-                                          val Block.T {kind, live, ...} =
+                                          val Block.T {kind, live = handlerLive, ...} =
                                              labelBlock h
                                        in
-                                          if liveSubset (live, contLive)
+                                          if liveSubset (handlerLive, contLive)
                                              then
                                                 (case kind of
                                                     Kind.Handler {args, ...} =>
