@@ -38,6 +38,13 @@ end
 
 structure Allocation:
    sig
+      structure Registers:
+         sig
+            type t
+
+            val get: t * Type.t -> Register.t
+            val empty: unit -> t
+         end
       structure Stack:
          sig
             type t
@@ -217,6 +224,8 @@ structure Allocation:
                              Register.index r <= Register.index r')})))
              end
 
+          fun empty () = new []
+
           fun get (T f, ty: Type.t) =
              let
                 val t = Type.toCType ty
@@ -313,8 +322,7 @@ fun allocate {function = f: Rssa.Function.t,
        * Decide which variables will live in stack slots and which
        * will live in registers.
        * Initially,
-       *   - all formals are put in stack slots
-       *   - everything else is put in a register.
+       *   - all variables are put in a register.
        * Variables get moved to the stack if they are
        *   - live at the beginning of a Cont block; such variables are
        *     live while the frame is suspended during a non-tail call
@@ -323,8 +331,8 @@ fun allocate {function = f: Rssa.Function.t,
        *     variables are live while the frame is suspended during a
        *     C call and must be stack allocated to be traced during
        *     the potential GC
-       * Both of the above are indiced by Kind.frameStyle kind =
-       * Kind.OffsetsAndSize
+       * Both of the above are indiced by
+       * Kind.frameStyle kind = Kind.OffsetsAndSize
        *)
       datatype place = Stack | Register
       val {get = place: Var.t -> place ref, rem = removePlace, ...} =
@@ -332,7 +340,6 @@ fun allocate {function = f: Rssa.Function.t,
       (* !hasHandler = true iff handlers are installed in this function. *)
       val hasHandler: bool ref = ref false
       fun forceStack (x: Var.t): unit = place x := Stack
-      val _ = Vector.foreach (args, forceStack o #1)
       val _ =
          Vector.foreach
          (blocks,
@@ -396,29 +403,40 @@ fun allocate {function = f: Rssa.Function.t,
          Trace.trace2
          ("AllocateRegisters.allocateVar", Var.layout, Allocation.layout, Unit.layout)
          allocateVar
-      (* Set the stack slots for the formals.
-       * Also, create a stack allocation that includes all formals; if
-       * link and handler stack slots are required, then they will be
-       * allocated against this stack.
+      (* Allocate stacks slots and/or registers for the formals.
+       * Don't use `allocateVar`, because a stack formal
+       * should use the stack slot of the incoming actual.
+       *)
+      val () =
+         let
+            val regs = Allocation.Registers.empty ()
+         in
+            Vector.foreach2
+            (args, paramOffsets args, fn ((x, ty), so) =>
+             let
+                val oper =
+                   case ! (place x) of
+                      Stack => Operand.StackOffset (StackOffset.T so)
+                    | Register => Operand.Register (Allocation.Registers.get (regs, ty))
+                val () = removePlace x
+                val () = valOf (#operand (varInfo x)) := SOME oper
+             in
+                ()
+             end)
+         end
+      (* Also, create a stack allocation that includes all incoming actuals;
+       * if link and handler stack slots are required,
+       * then they will be allocated against this stack.
        *)
       val stack =
-         Allocation.Stack.new
-         (Vector.foldr2
-          (args, paramOffsets args, [],
-           fn ((x, _), so, stack) =>
-           let
-              val so = StackOffset.T so
-           in
-              valOf (#operand (varInfo x)) := SOME (Operand.StackOffset so)
-              ; so :: stack
-           end))
+         Allocation.Stack.new (Vector.toListMap (paramOffsets args, StackOffset.T))
       (* Allocate stack slots for the link and handler, if necessary. *)
       val handlerLinkOffset =
          if !hasHandler
             then
                let
-                  (* Choose fixed and permanently allocated stack
-                   * slots that do not conflict with formals.
+                  (* Choose fixed and permanently allocated stack slots
+                   * that do not conflict with incoming actuals.
                    *)
                   val (stack, {offset = handler, ...}) =
                      Allocation.Stack.get (stack, Type.label (Label.newNoname ()))

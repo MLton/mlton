@@ -898,31 +898,6 @@ fun toMachine (rssa: Rssa.Program.t) =
                                      ...}) : unit =
                let
                   val {live, liveNoFormals, size, ...} = labelRegInfo label
-                  val _ =
-                     if Label.equals (label, start)
-                        then let
-                                val returns =
-                                   Option.map
-                                   (returns, fn returns =>
-                                    Vector.map (returns, Live.StackOffset))
-                                val frameInfo =
-                                   getFrameInfo {entry = true,
-                                                 kind = M.FrameInfo.Kind.ML_FRAME,
-                                                 offsets = [],
-                                                 size = Bytes.zero,
-                                                 sourceSeqIndex = NONE}
-                             in
-                                Chunk.newBlock
-                                (funcChunk name,
-                                 {label = funcToLabel name,
-                                  kind = M.Kind.Func {frameInfo = frameInfo},
-                                  live = operandsLive liveNoFormals,
-                                  raises = raises,
-                                  returns = returns,
-                                  statements = Vector.new0 (),
-                                  transfer = M.Transfer.Goto start})
-                             end
-                     else ()
                   val statements =
                      Vector.concatV
                      (Vector.map (statements, fn s =>
@@ -1015,6 +990,38 @@ fun toMachine (rssa: Rssa.Program.t) =
                end
             val genBlock = traceGenBlock genBlock
             val _ = Vector.foreach (blocks, genBlock)
+            val _ =
+               let
+                  val returns =
+                     Option.map
+                     (returns, fn returns =>
+                      Vector.map (returns, Live.StackOffset))
+                  val frameInfo =
+                     getFrameInfo {entry = true,
+                                   kind = M.FrameInfo.Kind.ML_FRAME,
+                                   offsets = [],
+                                   size = Bytes.zero,
+                                   sourceSeqIndex = NONE}
+                  val srcs =
+                     paramStackOffsets
+                     (args, #2, Bytes.zero)
+                  val srcs =
+                     Vector.map (srcs, M.Operand.StackOffset)
+                  val statements =
+                     parallelMove
+                     {dsts = Vector.map (args, varOperand o #1),
+                      srcs = srcs}
+               in
+                  Chunk.newBlock
+                  (funcChunk name,
+                   {label = funcToLabel name,
+                    kind = M.Kind.Func {frameInfo = frameInfo},
+                    live = operandsLive srcs,
+                    raises = raises,
+                    returns = returns,
+                    statements = statements,
+                    transfer = M.Transfer.Goto start})
+               end
             val _ =
                if isMain
                   then ()
