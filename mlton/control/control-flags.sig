@@ -368,6 +368,13 @@ signature CONTROL_FLAGS =
 
       val profileVal: bool ref
 
+      structure RaiseStyle:
+         sig
+            datatype t = ViaGlobals
+            val toString: t -> string
+         end
+      val raiseStyle: RaiseStyle.t ref
+
       (* Show the basis library. *)
       val showBasis: File.t option ref
 
