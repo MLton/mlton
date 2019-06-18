@@ -338,13 +338,13 @@ fun allocate {function = f: Rssa.Function.t,
       datatype place = Stack | Register
       val {get = place: Var.t -> place ref, rem = removePlace, ...} =
          Property.get (Var.plist, Property.initFun (fn _ => ref Register))
-      (* !hasHandler = true iff handlers are installed in this function. *)
-      val hasHandler: bool ref = ref false
+      (* The arguments for each Handler block in the function. *)
+      val handlersArgs: (Var.t * Type.t) vector list ref = ref []
       fun forceStack (x: Var.t): unit = place x := Stack
       val _ =
          Vector.foreach
          (blocks,
-          fn R.Block.T {kind, label, statements, ...} =>
+          fn R.Block.T {args, kind, label, ...} =>
           let
              val {beginNoFormals, ...} = labelLive label
              val _ =
@@ -354,21 +354,9 @@ fun allocate {function = f: Rssa.Function.t,
                       Vector.foreach (beginNoFormals, forceStack)
                  | Kind.SizeOnly => ()
              val _ =
-                if not (!hasHandler)
-                   andalso (Vector.exists
-                            (statements, fn s =>
-                             let
-                                datatype z = datatype R.Statement.t
-                             in
-                                case s of
-                                   SetHandler _ => true
-                                 | SetExnStackLocal => true
-                                 | SetExnStackSlot => true
-                                 | SetSlotExnStack => true
-                                 | _ => false
-                             end))
-                   then hasHandler := true
-                else ()
+                case kind of
+                   Kind.Handler => List.push (handlersArgs, args)
+                 | _ => ()
           in
              ()
           end)
@@ -465,8 +453,9 @@ fun allocate {function = f: Rssa.Function.t,
          Allocation.Stack.new (Vector.toListMap (paramOffsets args, StackOffset.T))
       (* Allocate stack slots for the link and handler, if necessary. *)
       val handlersInfo =
-         if !hasHandler
-            then
+         case !handlersArgs of
+            [] => NONE
+          | handlersArgs =>
                let
                   (* Choose fixed and permanently allocated stack slots
                    * that do not conflict with incoming actuals.
@@ -475,18 +464,25 @@ fun allocate {function = f: Rssa.Function.t,
                      Allocation.Stack.get (stack, Type.exnStack ())
                   val (_, {offset = handlerOffset, ...}) =
                      Allocation.Stack.get (stack, Type.label (Label.newNoname ()))
-                  val handlerOffset =
+                  val handlerArgsOffset =
                      Bytes.align
                      (Bytes.+ (handlerOffset, Runtime.labelSize ()),
                       {alignment = (case !Control.align of
                                        Control.Align4 => Bytes.inWord32
                                      | Control.Align8 => Bytes.inWord64)})
-                  val handlerOffset = Bytes.- (handlerOffset, Runtime.labelSize ())
+                  val handlerArgsSize =
+                     List.fold
+                     (handlersArgs, Bytes.zero, fn (args, maxSize) =>
+                      Vector.fold
+                      (paramOffsets args, maxSize, fn ({offset, ty}, maxSize) =>
+                       Bytes.max (maxSize, Bytes.+ (offset, Type.bytes ty))))
+                  val handlerOffset = Bytes.- (handlerArgsOffset, Runtime.labelSize ())
                in
-                  SOME {handlerOffset = handlerOffset,
+                  SOME {handlerArgsOffset = handlerArgsOffset,
+                        handlerArgsSize = handlerArgsSize,
+                        handlerOffset = handlerOffset,
                         linkOffset = linkOffset}
                end
-         else NONE
 
       (* Do a DFS of the control-flow graph. *)
       val () =
@@ -500,7 +496,7 @@ fun allocate {function = f: Rssa.Function.t,
              fun addHS (ops: Operand.t vector): Operand.t vector =
                 case handlersInfo of
                    NONE => ops
-                 | SOME {handlerOffset, linkOffset} =>
+                 | SOME {handlerOffset, linkOffset, ...} =>
                       let
                          val extra = []
                          val extra =
@@ -531,12 +527,19 @@ fun allocate {function = f: Rssa.Function.t,
              val stackInit =
                 case handlersInfo of
                    NONE => stackInit
-                 | SOME {handlerOffset, linkOffset} =>
-                      StackOffset.T {offset = handlerOffset,
-                                     ty = Type.label (Label.newNoname ())}
-                      :: StackOffset.T {offset = linkOffset,
-                                        ty = Type.exnStack ()}
-                      :: stackInit
+                 | SOME {handlerArgsOffset, handlerArgsSize, handlerOffset, linkOffset, ...} =>
+                      StackOffset.T {offset = linkOffset,
+                                     ty = Type.exnStack ()}
+                      :: StackOffset.T {offset = handlerOffset,
+                                        ty = Type.label (Label.newNoname ())}
+                      :: (if (case !Control.raiseStyle of
+                                 Control.RaiseStyle.ViaGlobals => false
+                               | Control.RaiseStyle.ViaStack =>
+                                    Bytes.> (handlerArgsSize, Bytes.zero))
+                             then StackOffset.T {offset = handlerArgsOffset,
+                                                 ty = Type.bits (Bytes.toBits handlerArgsSize)}
+                                  :: stackInit
+                             else stackInit)
              val a = Allocation.new (stackInit, registersInit)
              val size =
                 case kind of
@@ -589,8 +592,11 @@ fun allocate {function = f: Rssa.Function.t,
                 display (seq [str "function ", Func.layout name,
                               str " handlersInfo ",
                               Option.layout
-                              (fn {handlerOffset, linkOffset} =>
-                               record [("handlerOffset", Bytes.layout handlerOffset),
+                              (fn {handlerArgsOffset, handlerArgsSize,
+                                   handlerOffset, linkOffset, ...} =>
+                               record [("handlerArgsOffset", Bytes.layout handlerArgsOffset),
+                                       ("handlerArgsSize", Bytes.layout handlerArgsSize),
+                                       ("handlerOffset", Bytes.layout handlerOffset),
                                        ("linkOffset", Bytes.layout linkOffset)])
                               handlersInfo])
              val _ = Vector.foreach (args, diagVar o #1)
@@ -611,7 +617,9 @@ fun allocate {function = f: Rssa.Function.t,
           in ()
           end)
    in
-      {handlersInfo = handlersInfo,
+      {handlersInfo = Option.map (handlersInfo, fn {handlerOffset, linkOffset, ...} =>
+                                  {handlerOffset = handlerOffset,
+                                   linkOffset = linkOffset}),
        labelInfo = labelInfo}
    end
 
