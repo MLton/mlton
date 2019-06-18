@@ -340,21 +340,31 @@ struct
                  in
                    AppendList.single
                    (amd64.Block.mkBlock'
-                    {entry = SOME (amd64.Entry.cont {label = label,
-                                                   live = args,
-                                                   frameInfo = frameInfo}),
+                    {entry = SOME (amd64.Entry.cont {frameInfo = frameInfo,
+                                                     label = label,
+                                                     live = args}),
                      statements = [],
                      transfer = NONE})
                  end
-              | Kind.Handler {frameInfo, ...}
+              | Kind.Handler {args, frameInfo, ...}
               => let
+                    val frameInfo = frameInfoToAMD64 frameInfo
+                    val args =
+                       Vector.fold
+                       (args, amd64.MemLocSet.empty,
+                        fn (operand,args) =>
+                        Vector.fold
+                        (Operand.toAMD64Operand (Live.toOperand operand), args,
+                         fn ((operand,_),args) =>
+                         case amd64.Operand.deMemloc operand of
+                            SOME memloc => amd64.MemLocSet.add(args, memloc)
+                          | NONE => args))
                  in 
                    AppendList.single
                    (amd64.Block.mkBlock'
-                    {entry = SOME (amd64.Entry.handler
-                                   {frameInfo = frameInfoToAMD64 frameInfo,
-                                    label = label,
-                                    live = amd64.MemLocSet.empty}),
+                    {entry = SOME (amd64.Entry.handler {frameInfo = frameInfo,
+                                                        label = label,
+                                                        live = args}),
                      statements = [],
                      transfer = NONE})
                  end
