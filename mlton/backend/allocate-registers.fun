@@ -471,12 +471,19 @@ fun allocate {function = f: Rssa.Function.t,
                   (* Choose fixed and permanently allocated stack slots
                    * that do not conflict with incoming actuals.
                    *)
-                  val (stack, {offset = handler, ...}) =
-                     Allocation.Stack.get (stack, Type.label (Label.newNoname ()))
-                  val (_, {offset = link, ...}) = 
+                  val (stack, {offset = linkOffset, ...}) =
                      Allocation.Stack.get (stack, Type.exnStack ())
+                  val (_, {offset = handlerOffset, ...}) =
+                     Allocation.Stack.get (stack, Type.label (Label.newNoname ()))
+                  val handlerOffset =
+                     Bytes.align
+                     (Bytes.+ (handlerOffset, Runtime.labelSize ()),
+                      {alignment = (case !Control.align of
+                                       Control.Align4 => Bytes.inWord32
+                                     | Control.Align8 => Bytes.inWord64)})
+                  val handlerOffset = Bytes.- (handlerOffset, Runtime.labelSize ())
                in
-                  SOME {handler = handler, link = link}
+                  SOME {handler = handlerOffset, link = linkOffset}
                end
          else NONE
 
