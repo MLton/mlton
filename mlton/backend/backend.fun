@@ -509,7 +509,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                   end
              | ProfileLabel s => Vector.new1 (M.Statement.ProfileLabel s)
              | SetExnStackLocal =>
-                  (* ExnStack = stackTop + (offset + LABEL_SIZE) - StackBottom; *)
+                  (* ExnStack = stackTop + (handlerOffset + LABEL_SIZE) - StackBottom; *)
                   let
                      val tmp1 =
                         M.Operand.Register
@@ -539,20 +539,21 @@ fun toMachine (rssa: Rssa.Program.t) =
                        src = M.Operand.Cast (tmp2, Type.exnStack ())})
                   end
              | SetExnStackSlot =>
-                  (* ExnStack = *(uint* )(stackTop + offset); *)
+                  (* ExnStack = *(size_t* )(stackTop + linkOffset); *)
                   Vector.new1
                   (M.Statement.move
                    {dst = exnStackOp,
                     src = M.Operand.stackOffset {offset = linkOffset (),
                                                  ty = Type.exnStack ()}})
              | SetHandler h =>
+                  (* *(uintptr_t)(stackTop + handlerOffset) = h; *)
                   Vector.new1
                   (M.Statement.move
                    {dst = M.Operand.stackOffset {offset = handlerOffset (),
                                                  ty = Type.label h},
                     src = M.Operand.Label h})
              | SetSlotExnStack =>
-                  (* *(uint* )(stackTop + offset) = ExnStack; *)
+                  (* *(size_t* )(stackTop + linkOffset) = ExnStack; *)
                   Vector.new1
                   (M.Statement.move
                    {dst = M.Operand.stackOffset {offset = linkOffset (),
