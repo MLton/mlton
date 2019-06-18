@@ -784,11 +784,12 @@ fun makeOptions {usage} =
        (Normal, "profile-val", " {false|true}",
         "profile val bindings in addition to functions",
         boolRef profileVal),
-       (Expert, "raise-style", " {globals}", "style for passing raise arguments",
+       (Expert, "raise-style", " {globals|stack}", "style for passing raise arguments",
         SpaceString
         (fn s =>
          case s of
             "globals" => raiseStyle := RaiseStyle.ViaGlobals
+          | "stack" => raiseStyle := RaiseStyle.ViaStack
           | _ => usage (concat ["invalid -raise-style flag: ", s]))),
        (Normal, "runtime", " <arg>", "pass arg to runtime via @MLton",
         SpaceString (fn s => List.push (runtimeArgs, s))),
