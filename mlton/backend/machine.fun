@@ -372,16 +372,20 @@ structure Statement =
             val temp = Register (Register.new (Type.cpointer (), NONE))
          in
             Vector.new4
-            (Move {dst = Contents {oper = Frontier,
+            ((* *((GC_header * )frontier) = header; *)
+             Move {dst = Contents {oper = Frontier,
                                    ty = Type.objptrHeader ()},
                    src = Word (WordX.fromIntInf (Word.toIntInf header,
                                                  WordSize.objptrHeader ()))},
+             (* tmp = frontier + NORMAL_METADATA_SIZE; *)
              PrimApp {args = Vector.new2 (Frontier,
                                           bytes (Runtime.normalMetaDataSize ())),
                       dst = SOME temp,
                       prim = Prim.cpointerAdd},
+             (* dst = tmp *)
              (* CHECK; if objptr <> cpointer, need non-trivial coercion here. *)
              Move {dst = dst, src = Cast (temp, Operand.ty dst)},
+             (* frontier += size; *)
              PrimApp {args = Vector.new2 (Frontier, bytes size),
                       dst = SOME Frontier,
                       prim = Prim.cpointerAdd})
