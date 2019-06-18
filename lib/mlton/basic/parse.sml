@@ -34,20 +34,11 @@ structure State =
        * it should be created only when needed, if the functions
        * are sufficiently inlined *)
       datatype t = T of {
-         buffer: string,
-         (* First location, even if buffer/locations is empty *)
-         location: Location.t,
-         (* Invariant: must be same length as buffer *)
-         locations: Location.t vector,
-         position: int,
-         stream: string Stream.t}
+         stream: char Stream.t,
+         location: Location.t}
 
       fun fromStream s =
-         T {buffer=String.empty,
-            location=Location.new,
-            locations=Vector.new0 (),
-            position=0,
-            stream=s}
+         T {stream=s, location=Location.new}
    end
 
 datatype 'a result = Success of 'a
@@ -88,17 +79,23 @@ local
          | Failure err => Result.No (failureString (filename, err))
 
    fun inToStream i =
-      Stream.cons (In.input i,
-         Stream.delay (fn () =>
-            inToStream i))
+      case In.inputChar i of
+           NONE => Stream.empty ()
+         | SOME c =>
+            Stream.cons (c,
+               Stream.delay (fn () =>
+                  inToStream i))
+   fun listToStream l =
+      case l of
+           [] => Stream.empty ()
+         | x :: xs => Stream.cons (x, listToStream xs)
 in
    fun parseStream (T {run, ...}, stream) =
       toResult ("<string>",
-      run (State.fromStream
-         (Stream.map (stream, String.fromChar))))
+      run (State.fromStream stream))
    fun parseString (T {run, ...}, str) =
       toResult ("<string>",
-      run (State.fromStream (Stream.single str)))
+      run ((State.fromStream o listToStream o String.explode) str))
 
    fun parseFile (T {run, ...}, file) =
       toResult (File.toString file,
@@ -106,61 +103,32 @@ in
          (run o State.fromStream o inToStream) i))
 end
 
+fun incLocation ({line, column}, chr) =
+   if chr = #"\n"
+   then {line=line+1, column=0}
+   else {line=line, column=column+1}
+
 fun indexLocations (loc, s) =
    Vector.unfoldi (String.length s, loc,
       fn (i, {line, column}) =>
          let
-            val loc =
-               if String.sub (s, i) = #"\n"
-               then {line=line+1, column=0}
-               else {line=line, column=column+1}
+            val loc = incLocation (loc, String.sub (s, i))
          in
             (loc, loc)
          end)
 
-fun getNext (State.T {buffer, location, locations, position=i, stream}):
+fun getNext (State.T {location, stream}):
       (char * Location.t * State.t) option =
    let
-      fun fillNext () =
-         let
-            val lastLocation =
-               if Vector.isEmpty locations
-               then location
-               else Vector.last locations
-            val (buffer, stream) =
-               case Stream.force stream of
-                    SOME res => res
-                  | NONE => (String.empty, Stream.empty ())
-            val (locations, _) = indexLocations (lastLocation, buffer)
-         in
-            State.T {buffer=buffer,
-                     location=lastLocation,
-                     locations=locations,
-                     position=0, stream=stream}
-         end
    in
-      case Int.compare (i, String.length buffer - 1) of
-           Relation.LESS =>
-               SOME (String.sub (buffer, i),
-                     Vector.sub (locations, i),
-                State.T {buffer=buffer, location=location,
-                         locations=locations,
-                         position=i+1, stream=stream})
-         | Relation.EQUAL =>
-               SOME (String.sub (buffer, i), Vector.sub (locations, i), fillNext ())
-         | Relation.GREATER =>
-              let
-                 val state as State.T {buffer, location, locations, position, stream} = fillNext ()
-              in
-                 if String.length buffer = 0
-                 then NONE
-                 else SOME
-                  (String.sub (buffer, 0),
-                   Vector.first locations,
-                   State.T {buffer=buffer, location=location,
-                            locations=locations,
-                            position=position+1, stream=stream})
-              end
+      case Stream.force stream of
+           SOME (c, rest) =>
+            let
+               val loc = incLocation (location, c)
+            in
+               SOME (c, loc, State.T {location=loc, stream=rest})
+            end
+         | NONE => NONE
    end
 
 fun unionFirstChars (c1, c2) =
