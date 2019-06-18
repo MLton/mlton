@@ -959,10 +959,10 @@ fun toMachine (rssa: Rssa.Program.t) =
                               val (dsts', srcs') =
                                  Vector.unzip
                                  (Vector.keepAllMap2
-                                  (args, srcs, fn ((dst, _), h) =>
+                                  (args, srcs, fn ((dst, _), src) =>
                                    case varOperandOpt dst of
                                       NONE => NONE
-                                    | SOME dst => SOME (dst, Live.toOperand h)))
+                                    | SOME dst => SOME (dst, Live.toOperand src)))
                            in
                               (M.Kind.Handler {args = srcs,
                                                frameInfo = valOf (frameInfo label)},
