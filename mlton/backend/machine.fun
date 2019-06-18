@@ -627,8 +627,8 @@ structure Kind =
                      frameInfo: FrameInfo.t option,
                      func: Type.t CFunction.t}
        | Func of {frameInfo: FrameInfo.t}
-       | Handler of {frameInfo: FrameInfo.t,
-                     handles: Live.t vector}
+       | Handler of {args: Live.t vector,
+                     frameInfo: FrameInfo.t}
        | Jump
 
       fun layout k =
@@ -650,11 +650,10 @@ structure Kind =
                   seq [str "Func ",
                        record
                        [("frameInfo", FrameInfo.layout frameInfo)]]
-             | Handler {frameInfo, handles} =>
+             | Handler {args, frameInfo} =>
                   seq [str "Handler ",
-                       record [("frameInfo", FrameInfo.layout frameInfo),
-                               ("handles",
-                                Vector.layout Live.layout handles)]]
+                       record [("args", Vector.layout Live.layout args),
+                               ("frameInfo", FrameInfo.layout frameInfo)]]
              | Jump => str "Jump"
          end
 
@@ -1353,8 +1352,8 @@ structure Program =
                                           if liveSubset (live, contLive)
                                              then
                                                 (case kind of
-                                                    Kind.Handler {handles, ...} =>
-                                                       SOME (SOME handles)
+                                                    Kind.Handler {args, ...} =>
+                                                       SOME (SOME args)
                                                   | _ => NONE)
                                           else NONE
                                        end

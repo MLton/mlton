@@ -202,8 +202,8 @@ signature MACHINE =
                            frameInfo: FrameInfo.t option,
                            func: Type.t CFunction.t}
              | Func of {frameInfo: FrameInfo.t}
-             | Handler of {frameInfo: FrameInfo.t,
-                           handles: Live.t vector}
+             | Handler of {args: Live.t vector,
+                           frameInfo: FrameInfo.t}
              | Jump
 
             val isEntry: t -> bool

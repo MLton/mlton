@@ -955,18 +955,17 @@ fun toMachine (rssa: Rssa.Program.t) =
                            end
                       | R.Kind.Handler =>
                            let
-                              val handles = getRaiseOperands (Vector.map (args, #2))
+                              val srcs = getRaiseOperands (Vector.map (args, #2))
                               val (dsts', srcs') =
                                  Vector.unzip
                                  (Vector.keepAllMap2
-                                  (args, handles, fn ((dst, _), h) =>
+                                  (args, srcs, fn ((dst, _), h) =>
                                    case varOperandOpt dst of
                                       NONE => NONE
                                     | SOME dst => SOME (dst, Live.toOperand h)))
                            in
-                              (M.Kind.Handler
-                               {frameInfo = valOf (frameInfo label),
-                                handles = handles},
+                              (M.Kind.Handler {args = srcs,
+                                               frameInfo = valOf (frameInfo label)},
                                liveNoFormals,
                                parallelMove {dsts = dsts', srcs = srcs'})
                            end
