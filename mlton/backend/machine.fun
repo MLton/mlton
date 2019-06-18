@@ -1334,8 +1334,7 @@ structure Program =
                      then
                         (case kind of
                             Kind.Cont {args, frameInfo, ...} =>
-                               (if Bytes.equals (size,
-                                                 FrameInfo.size frameInfo)
+                               (if Bytes.equals (FrameInfo.size frameInfo, size)
                                    then
                                       SOME
                                       (live,
@@ -1347,9 +1346,9 @@ structure Program =
                                                Live.StackOffset
                                                (StackOffset.shift (s, size))
                                           | _ => z)))
-                                else NONE)
+                                   else NONE)
                           | _ => NONE)
-                  else NONE
+                     else NONE
                end
             fun callIsOk {alloc: Alloc.t,
                           dst: Label.t,
