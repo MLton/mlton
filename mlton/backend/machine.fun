@@ -1291,12 +1291,12 @@ structure Program =
                  | (SOME gs, SOME gs') =>
                       Vector.equals (gs', gs, Live.isSubtype)
                  | _ => false)
-                   andalso
-                   (case (returns, returns') of
-                       (_, NONE) => true
-                     | (SOME os, SOME os') =>
-                          Vector.equals (os', os, Live.isSubtype)
-                     | _ => false)
+               andalso
+               (case (returns, returns') of
+                   (_, NONE) => true
+                 | (SOME os, SOME os') =>
+                      Vector.equals (os', os, Live.isSubtype)
+                 | _ => false)
             fun checkCont (cont: Label.t, size: Bytes.t, alloc: Alloc.t) =
                let
                   val Block.T {kind, live, ...} = labelBlock cont
