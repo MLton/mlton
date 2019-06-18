@@ -694,25 +694,32 @@ structure Block =
          val label = make #label
       end
 
-      fun layout (T {kind, label, live, raises, returns, statements, transfer}) =
+      fun layoutHeader (T {kind, label, live, raises, returns, ...}) =
          let
             open Layout
          in
-            align [seq [Label.layout label, 
-                        str ": ",
-                        record [("kind", Kind.layout kind),
-                                ("live", Vector.layout Live.layout live),
-                                ("raises",
-                                 Option.layout (Vector.layout Live.layout)
-                                 raises),
-                                ("returns",
-                                 Option.layout (Vector.layout Live.layout)
-                                 returns)]],
+            seq [Label.layout label,
+                 str ": ",
+                 record [("kind", Kind.layout kind),
+                         ("live", Vector.layout Live.layout live),
+                         ("raises",
+                          Option.layout (Vector.layout Live.layout)
+                          raises),
+                         ("returns",
+                          Option.layout (Vector.layout Live.layout)
+                          returns)]]
+         end
+
+      fun layout (b as T {statements, transfer, ...}) =
+         let
+            open Layout
+         in
+            align [layoutHeader b,
                    indent (align
-                           [align (Vector.toListMap
-                                   (statements, Statement.layout)),
+                           [align
+                            (Vector.toListMap (statements, Statement.layout)),
                             Transfer.layout transfer],
-                           4)]
+                           2)]
          end
 
       fun layouts (block, output' : Layout.t -> unit) = output' (layout block)
