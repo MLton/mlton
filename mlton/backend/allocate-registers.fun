@@ -531,18 +531,15 @@ fun allocate {function = f: Rssa.Function.t,
                         | SOME {handler, ...} =>
                              Bytes.+ (Runtime.labelSize (), handler))
                  | _ =>
-                      let
-                         val size =
-                            Bytes.+
-                            (Runtime.labelSize (),
-                             Bytes.alignWord32 (Allocation.stackSize a))
-                      in
-                         case !Control.align of
-                            Control.Align4 => size
-                          | Control.Align8 => Bytes.alignWord64 size
-                      end
+                      Bytes.align
+                      (Bytes.+ (Allocation.stackSize a, Runtime.labelSize ()),
+                       {alignment = (case !Control.align of
+                                        Control.Align4 => Bytes.inWord32
+                                      | Control.Align8 => Bytes.inWord64)})
              val _ =
-                if Bytes.isWord32Aligned size
+                if Bytes.isAligned (size, {alignment = (case !Control.align of
+                                                           Control.Align4 => Bytes.inWord32
+                                                         | Control.Align8 => Bytes.inWord64)})
                    then ()
                 else Error.bug (concat ["AllocateRegisters.allocate: ",
                                         "bad size ",

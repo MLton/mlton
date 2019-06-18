@@ -973,7 +973,11 @@ structure Program =
                               andalso checkFrameOffsets frameOffsets
                               andalso Bytes.<= (size, maxFrameSize)
                               andalso Bytes.<= (size, Runtime.maxFrameSize)
-                              andalso Bytes.isWord32Aligned size),
+                              andalso (Bytes.isAligned
+                                       (size,
+                                        {alignment = (case !Control.align of
+                                                         Control.Align4 => Bytes.inWord32
+                                                       | Control.Align8 => Bytes.inWord64)}))),
                     fn () => FrameInfo.layout fi)
                 end)
             fun checkFrameInfo fi =
