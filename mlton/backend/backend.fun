@@ -897,15 +897,17 @@ fun toMachine (rssa: Rssa.Program.t) =
                                                         offset = offset,
                                                         ty = ty})
                                in
-                                  (Vector.concat
-                                   [Vector.new1
-                                    (M.Statement.PrimApp
-                                     {args = Vector.new2 (stackBottomOp, exnStackOp),
-                                      dst = SOME handlerStackTop,
-                                      prim = Prim.cpointerAdd}),
-                                    parallelMove {dsts = dsts,
-                                                  srcs = translateOperands srcs}],
-                                   M.Transfer.Raise)
+                                  if Vector.isEmpty srcs
+                                     then (Vector.new0 (), M.Transfer.Raise)
+                                     else (Vector.concat
+                                           [Vector.new1
+                                            (M.Statement.PrimApp
+                                             {args = Vector.new2 (stackBottomOp, exnStackOp),
+                                              dst = SOME handlerStackTop,
+                                              prim = Prim.cpointerAdd}),
+                                            parallelMove {dsts = dsts,
+                                                          srcs = translateOperands srcs}],
+                                           M.Transfer.Raise)
                                end)
                    | R.Transfer.Return xs =>
                         (parallelMove {dsts = valOf returnOperands,
