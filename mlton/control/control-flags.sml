@@ -1154,16 +1154,6 @@ val profileVal = control {name = "profile val",
                           default = false,
                           toString = Bool.toString}
 
-structure RaiseStyle =
-   struct
-      datatype t = ViaStack
-      val toString =
-         fn ViaStack => "ViaStack"
-   end
-val raiseStyle = control {name = "raise style",
-                          default = RaiseStyle.ViaStack,
-                          toString = RaiseStyle.toString}
-
 val showBasis = control {name = "show basis",
                          default = NONE,
                          toString = Option.toString File.toString}

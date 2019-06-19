@@ -784,12 +784,6 @@ fun makeOptions {usage} =
        (Normal, "profile-val", " {false|true}",
         "profile val bindings in addition to functions",
         boolRef profileVal),
-       (Expert, "raise-style", " {stack}", "style for passing raise arguments",
-        SpaceString
-        (fn s =>
-         case s of
-            "stack" => raiseStyle := RaiseStyle.ViaStack
-          | _ => usage (concat ["invalid -raise-style flag: ", s]))),
        (Normal, "runtime", " <arg>", "pass arg to runtime via @MLton",
         SpaceString (fn s => List.push (runtimeArgs, s))),
        (Expert, "seed-rand", " <w>", "seed the pseudo-random number generator",
