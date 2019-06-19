@@ -78,15 +78,13 @@ structure Register =
 structure Global =
    struct
       datatype t = T of {index: int,
-                         isRoot: bool,
                          ty: Type.t}
 
-      fun layout (T {index, isRoot, ty, ...}) =
+      fun layout (T {index, ty, ...}) =
          let
             open Layout
          in
-            seq [str (concat ["G", Type.name ty,
-                              if isRoot then "" else "NR"]),
+            seq [str (concat ["G", Type.name ty]),
                  paren (Int.layout index),
                  str ": ",
                  Type.layout ty]
@@ -96,41 +94,25 @@ structure Global =
          fun make f (T r) = f r
       in
          val index = make #index
-         val isRoot = make #isRoot
          val ty = make #ty
       end
-
-      val nonRootCounter = Counter.new 0
-      fun numberOfNonRoot () = Counter.value nonRootCounter
 
       val memo = CType.memo (fn _ => Counter.new 0)
       fun numberOfType t = Counter.value (memo t)
 
-      fun new {isRoot, ty} =
-         let
-            val isRoot = isRoot orelse not (Type.isObjptr ty)
-            val counter =
-               if isRoot
-                  then memo (Type.toCType ty)
-               else nonRootCounter
-            val g = T {index = Counter.next counter,
-                       isRoot = isRoot,
-                       ty = ty}
-         in
-            g
-         end
+      fun new ty =
+         T {index = Counter.next (memo (Type.toCType ty)),
+            ty = ty}
 
-      fun equals (T {index = i, isRoot = r, ty},
-                  T {index = i', isRoot = r', ty = ty'}) =
+      fun equals (T {index = i, ty},
+                  T {index = i', ty = ty'}) =
          i = i'
-         andalso r = r'
          andalso Type.equals (ty, ty')
 
       val isSubtype: t * t -> bool =
-         fn (T {index = i, isRoot = r, ty},
-             T {index = i', isRoot = r', ty = ty'}) =>
+         fn (T {index = i, ty},
+             T {index = i', ty = ty'}) =>
          i = i'
-         andalso r = r'
          andalso Type.isSubtype (ty, ty')
          andalso CType.equals (Type.toCType ty, Type.toCType ty')
    end
@@ -327,8 +309,9 @@ structure Statement =
             open Layout
          in
             fn Move {dst, src} =>
-                  mayAlign [Operand.layout dst,
-                            seq [str " = ", Operand.layout src]]
+                  mayAlign
+                  [seq [Operand.layout dst, str " ="],
+                   indent (Operand.layout src, 2)]
              | Noop => str "Noop"
              | PrimApp {args, dst, prim, ...} =>
                   let
@@ -339,8 +322,9 @@ structure Statement =
                      case dst of
                         NONE => rest
                       | SOME z =>
-                           mayAlign [Operand.layout z,
-                                     seq [str " = ", rest]]
+                           mayAlign
+                           [seq [Operand.layout z, str " ="],
+                            indent (rest, 2)]
                   end
              | ProfileLabel l =>
                   seq [str "ProfileLabel ", ProfileLabel.layout l]
@@ -372,16 +356,20 @@ structure Statement =
             val temp = Register (Register.new (Type.cpointer (), NONE))
          in
             Vector.new4
-            (Move {dst = Contents {oper = Frontier,
+            ((* *((GC_header * )frontier) = header; *)
+             Move {dst = Contents {oper = Frontier,
                                    ty = Type.objptrHeader ()},
                    src = Word (WordX.fromIntInf (Word.toIntInf header,
                                                  WordSize.objptrHeader ()))},
+             (* tmp = frontier + NORMAL_METADATA_SIZE; *)
              PrimApp {args = Vector.new2 (Frontier,
                                           bytes (Runtime.normalMetaDataSize ())),
                       dst = SOME temp,
                       prim = Prim.cpointerAdd},
+             (* dst = tmp *)
              (* CHECK; if objptr <> cpointer, need non-trivial coercion here. *)
              Move {dst = dst, src = Cast (temp, Operand.ty dst)},
+             (* frontier += size; *)
              PrimApp {args = Vector.new2 (Frontier, bytes size),
                       dst = SOME Frontier,
                       prim = Prim.cpointerAdd})
@@ -623,8 +611,8 @@ structure Kind =
                      frameInfo: FrameInfo.t option,
                      func: Type.t CFunction.t}
        | Func of {frameInfo: FrameInfo.t}
-       | Handler of {frameInfo: FrameInfo.t,
-                     handles: Live.t vector}
+       | Handler of {args: Live.t vector,
+                     frameInfo: FrameInfo.t}
        | Jump
 
       fun layout k =
@@ -646,11 +634,10 @@ structure Kind =
                   seq [str "Func ",
                        record
                        [("frameInfo", FrameInfo.layout frameInfo)]]
-             | Handler {frameInfo, handles} =>
+             | Handler {args, frameInfo} =>
                   seq [str "Handler ",
-                       record [("frameInfo", FrameInfo.layout frameInfo),
-                               ("handles",
-                                Vector.layout Live.layout handles)]]
+                       record [("args", Vector.layout Live.layout args),
+                               ("frameInfo", FrameInfo.layout frameInfo)]]
              | Jump => str "Jump"
          end
 
@@ -689,25 +676,32 @@ structure Block =
          val label = make #label
       end
 
-      fun layout (T {kind, label, live, raises, returns, statements, transfer}) =
+      fun layoutHeader (T {kind, label, live, raises, returns, ...}) =
          let
             open Layout
          in
-            align [seq [Label.layout label, 
-                        str ": ",
-                        record [("kind", Kind.layout kind),
-                                ("live", Vector.layout Live.layout live),
-                                ("raises",
-                                 Option.layout (Vector.layout Live.layout)
-                                 raises),
-                                ("returns",
-                                 Option.layout (Vector.layout Live.layout)
-                                 returns)]],
+            seq [Label.layout label,
+                 str ": ",
+                 record [("kind", Kind.layout kind),
+                         ("live", Vector.layout Live.layout live),
+                         ("raises",
+                          Option.layout (Vector.layout Live.layout)
+                          raises),
+                         ("returns",
+                          Option.layout (Vector.layout Live.layout)
+                          returns)]]
+         end
+
+      fun layout (b as T {statements, transfer, ...}) =
+         let
+            open Layout
+         in
+            align [layoutHeader b,
                    indent (align
-                           [align (Vector.toListMap
-                                   (statements, Statement.layout)),
+                           [align
+                            (Vector.toListMap (statements, Statement.layout)),
                             Transfer.layout transfer],
-                           4)]
+                           2)]
          end
 
       fun layouts (block, output' : Layout.t -> unit) = output' (layout block)
@@ -970,7 +964,11 @@ structure Program =
                               andalso checkFrameOffsets frameOffsets
                               andalso Bytes.<= (size, maxFrameSize)
                               andalso Bytes.<= (size, Runtime.maxFrameSize)
-                              andalso Bytes.isWord32Aligned size),
+                              andalso (Bytes.isAligned
+                                       (size,
+                                        {alignment = (case !Control.align of
+                                                         Control.Align4 => Bytes.inWord32
+                                                       | Control.Align8 => Bytes.inWord64)}))),
                     fn () => FrameInfo.layout fi)
                 end)
             fun checkFrameInfo fi =
@@ -1069,13 +1067,10 @@ structure Program =
                            (checkOperand (base, alloc)
                             ; (Operand.isLocation base
                                andalso
-                               (case base of
-                                  Operand.GCState => true
-                                | _ => 
-                                     Type.offsetIsOk {base = Operand.ty base,
-                                                      offset = offset,
-                                                      tyconTy = tyconTy,
-                                                      result = ty})))
+                               (Type.offsetIsOk {base = Operand.ty base,
+                                                 offset = offset,
+                                                 tyconTy = tyconTy,
+                                                 result = ty})))
                       | Real _ => true
                       | Register r => Alloc.doesDefine (alloc, Live.Register r)
                       | StackOffset (so as StackOffset.T {offset, ty, ...}) =>
@@ -1214,9 +1209,11 @@ structure Program =
                         if frame (frameInfo, false, FrameInfo.Kind.ML_FRAME)
                            then SOME alloc
                         else NONE
-                   | Handler {frameInfo, ...} =>
+                   | Handler {args, frameInfo} =>
                         if frame (frameInfo, false, FrameInfo.Kind.ML_FRAME)
-                           then SOME alloc
+                           then SOME (Vector.fold
+                                      (args, alloc, fn (z, alloc) =>
+                                       Alloc.defineLive (alloc, z)))
                         else NONE
                    | Jump => SOME alloc
                end
@@ -1269,6 +1266,14 @@ structure Program =
             fun liveIsOk (live: Live.t vector,
                           a: Alloc.t): bool =
                Vector.forall (live, fn z => Alloc.doesDefine (a, z))
+            val liveIsOk =
+               Trace.trace
+               ("Machine.Program.typeCheck.liveIsOk",
+                fn (live, a) =>
+                Layout.tuple [Vector.layout Live.layout live,
+                              Alloc.layout a],
+                Bool.layout)
+               liveIsOk
             fun liveSubset (live: Live.t vector,
                             live': Live.t vector): bool =
                Vector.forall
@@ -1287,12 +1292,22 @@ structure Program =
                  | (SOME gs, SOME gs') =>
                       Vector.equals (gs', gs, Live.isSubtype)
                  | _ => false)
-                   andalso
-                   (case (returns, returns') of
-                       (_, NONE) => true
-                     | (SOME os, SOME os') =>
-                          Vector.equals (os', os, Live.isSubtype)
-                     | _ => false)
+               andalso
+               (case (returns, returns') of
+                   (_, NONE) => true
+                 | (SOME os, SOME os') =>
+                      Vector.equals (os', os, Live.isSubtype)
+                 | _ => false)
+            val goto =
+               Trace.trace
+               ("Machine.Program.typeCheck.goto",
+                fn (b, raises, returns, a) =>
+                Layout.tuple [Block.layoutHeader b,
+                              Option.layout (Vector.layout Live.layout) raises,
+                              Option.layout (Vector.layout Live.layout) returns,
+                              Alloc.layout a],
+                Bool.layout)
+               goto
             fun checkCont (cont: Label.t, size: Bytes.t, alloc: Alloc.t) =
                let
                   val Block.T {kind, live, ...} = labelBlock cont
@@ -1301,8 +1316,7 @@ structure Program =
                      then
                         (case kind of
                             Kind.Cont {args, frameInfo, ...} =>
-                               (if Bytes.equals (size,
-                                                 FrameInfo.size frameInfo)
+                               (if Bytes.equals (FrameInfo.size frameInfo, size)
                                    then
                                       SOME
                                       (live,
@@ -1314,9 +1328,9 @@ structure Program =
                                                Live.StackOffset
                                                (StackOffset.shift (s, size))
                                           | _ => z)))
-                                else NONE)
+                                   else NONE)
                           | _ => NONE)
-                  else NONE
+                     else NONE
                end
             fun callIsOk {alloc: Alloc.t,
                           dst: Label.t,
@@ -1343,16 +1357,18 @@ structure Program =
                                     NONE => SOME raises
                                   | SOME h =>
                                        let
-                                          val Block.T {kind, live, ...} =
+                                          val Block.T {kind, live = handlerLive, ...} =
                                              labelBlock h
                                        in
-                                          if liveSubset (live, contLive)
+                                          if liveSubset (handlerLive, contLive)
                                              then
                                                 (case kind of
-                                                    Kind.Handler {handles, ...} =>
-                                                       SOME (SOME handles)
-                                                  | _ => NONE)
-                                          else NONE
+                                                    Kind.Handler {frameInfo, ...} =>
+                                                       if Bytes.< (FrameInfo.size frameInfo, size)
+                                                          then SOME (SOME (Vector.new0 ()))
+                                                          else NONE
+                                                    | _ => NONE)
+                                             else NONE
                                        end
                               val raises =
                                  Err.check'
@@ -1452,8 +1468,11 @@ structure Program =
             val transferOk =
                Trace.trace
                ("Machine.Program.typeCheck.transferOk",
-                fn (t, _, _, a) =>
-                Layout.tuple [Transfer.layout t, Alloc.layout a],
+                fn (t, raises, returns, a) =>
+                Layout.tuple [Transfer.layout t,
+                              Option.layout (Vector.layout Live.layout) raises,
+                              Option.layout (Vector.layout Live.layout) returns,
+                              Alloc.layout a],
                 Bool.layout)
                transferOk
             fun blockOk (Block.T {kind, live, raises, returns, statements,

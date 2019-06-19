@@ -17,7 +17,6 @@ local
    open Machine
 in
    structure CFunction = CFunction
-   structure Global = Global
    structure Label = Label
    structure Live = Live
    structure ObjptrTycon = ObjptrTycon
@@ -304,26 +303,6 @@ fun toMachine (rssa: Rssa.Program.t) =
                        Label.layout, Option.layout M.FrameInfo.layout,
                        Unit.layout)
          setFrameInfo
-      (* The global raise operands. *)
-      local
-         val table: (Type.t vector * M.Live.t vector) list ref = ref []
-      in
-         fun raiseOperands (ts: Type.t vector): M.Live.t vector =
-            case List.peek (!table, fn (ts', _) =>
-                            Vector.equals (ts, ts', Type.equals)) of
-               NONE =>
-                  let
-                     val gs =
-                        Vector.map (ts, fn ty =>
-                                    M.Live.Global
-                                    (Global.new {isRoot = false,
-                                                 ty = ty}))
-                     val _ = List.push (table, (ts, gs))
-                  in
-                     gs
-                  end
-             | SOME (_, gs) => gs
-      end
       val {get = varInfo: Var.t -> {operand: VarOperand.t,
                                     ty: Type.t},
            set = setVarInfo, ...} =
@@ -359,8 +338,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                   M.Operand.Global
                   (HashTable.lookupOrInsert
                    (table, value, fn () =>
-                    M.Global.new {isRoot = true,
-                                  ty = ty value}))
+                    M.Global.new (ty value)))
                fun all () =
                   HashTable.fold
                   (table, [], fn ((value, global), ac) =>
@@ -473,12 +451,12 @@ fun toMachine (rssa: Rssa.Program.t) =
          end
       fun translateOperands ops = Vector.map (ops, translateOperand)
       fun genStatement (s: R.Statement.t,
-                        handlerLinkOffset: {handler: Bytes.t,
-                                            link: Bytes.t} option)
+                        handlersInfo: {handlerOffset: Bytes.t,
+                                       linkOffset: Bytes.t} option)
          : M.Statement.t vector =
          let
-            fun handlerOffset () = #handler (valOf handlerLinkOffset)
-            fun linkOffset () = #link (valOf handlerLinkOffset)
+            fun handlerOffset () = #handlerOffset (valOf handlersInfo)
+            fun linkOffset () = #linkOffset (valOf handlersInfo)
             datatype z = datatype R.Statement.t
          in
             case s of
@@ -509,7 +487,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                   end
              | ProfileLabel s => Vector.new1 (M.Statement.ProfileLabel s)
              | SetExnStackLocal =>
-                  (* ExnStack = stackTop + (offset + LABEL_SIZE) - StackBottom; *)
+                  (* ExnStack = stackTop + (handlerOffset + LABEL_SIZE) - StackBottom; *)
                   let
                      val tmp1 =
                         M.Operand.Register
@@ -539,20 +517,21 @@ fun toMachine (rssa: Rssa.Program.t) =
                        src = M.Operand.Cast (tmp2, Type.exnStack ())})
                   end
              | SetExnStackSlot =>
-                  (* ExnStack = *(uint* )(stackTop + offset); *)
+                  (* ExnStack = *(size_t* )(stackTop + linkOffset); *)
                   Vector.new1
                   (M.Statement.move
                    {dst = exnStackOp,
                     src = M.Operand.stackOffset {offset = linkOffset (),
                                                  ty = Type.exnStack ()}})
              | SetHandler h =>
+                  (* *(uintptr_t)(stackTop + handlerOffset) = h; *)
                   Vector.new1
                   (M.Statement.move
                    {dst = M.Operand.stackOffset {offset = handlerOffset (),
                                                  ty = Type.label h},
                     src = M.Operand.Label h})
              | SetSlotExnStack =>
-                  (* *(uint* )(stackTop + offset) = ExnStack; *)
+                  (* *(size_t* )(stackTop + linkOffset) = ExnStack; *)
                   Vector.new1
                   (M.Statement.move
                    {dst = M.Operand.stackOffset {offset = linkOffset (),
@@ -582,9 +561,8 @@ fun toMachine (rssa: Rssa.Program.t) =
          Trace.trace2 ("Backend.setLabelInfo",
                        Label.layout, Layout.ignore, Unit.layout)
          setLabelInfo
-      fun callReturnStackOffsets (xs: 'a vector,
-                                  ty: 'a -> Type.t,
-                                  shift: Bytes.t): StackOffset.t vector =
+      fun paramOffsets (xs: 'a vector, ty: 'a -> Type.t,
+                        mk: {offset: Bytes.t, ty: Type.t} -> 'b): 'b vector =
          #1 (Vector.mapAndFold
              (xs, Bytes.zero,
               fn (x, offset) =>
@@ -592,9 +570,14 @@ fun toMachine (rssa: Rssa.Program.t) =
                  val ty = ty x
                  val offset = Type.align (ty, offset)
               in
-                 (StackOffset.T {offset = Bytes.+ (shift, offset), ty = ty},
+                 (mk {offset = offset, ty = ty},
                   Bytes.+ (offset, Type.bytes ty))
               end))
+      fun paramStackOffsets (xs: 'a vector, ty: 'a -> Type.t,
+                             shift: Bytes.t): StackOffset.t vector =
+         paramOffsets (xs, ty, fn {offset, ty} =>
+                       StackOffset.T {offset = Bytes.+ (offset, shift),
+                                      ty = ty})
       val operandLive: M.Operand.t -> M.Live.t =
          valOf o M.Live.fromOperand
       val operandsLive: M.Operand.t vector -> M.Live.t vector =
@@ -620,10 +603,21 @@ fun toMachine (rssa: Rssa.Program.t) =
             val f = eliminateDeadCode f
             val {args, blocks, name, raises, returns, start, ...} =
                Function.dest f
-            val raises = Option.map (raises, fn ts => raiseOperands ts)
-            val returns =
-               Option.map (returns, fn ts =>
-                           callReturnStackOffsets (ts, fn t => t, Bytes.zero))
+            val (returnLives, returnOperands) =
+               case returns of
+                  NONE => (NONE, NONE)
+                | SOME returns =>
+                     let
+                        val returnStackOffsets =
+                           paramStackOffsets (returns, fn t => t, Bytes.zero)
+                     in
+                        (SOME (Vector.map (returnStackOffsets, M.Live.StackOffset)),
+                         SOME (Vector.map (returnStackOffsets, M.Operand.StackOffset)))
+                     end
+            val raiseLives =
+               case raises of
+                  NONE => NONE
+                | SOME _ => SOME (Vector.new0 ())
             fun newVarInfo (x, ty: Type.t) =
                let
                   val operand =
@@ -642,9 +636,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                                                  R.Type.layout ty])
                                     end)
                              in
-                                VarOperand.Const (M.Operand.Global
-                                                  (M.Global.new {isRoot = true,
-                                                                 ty = ty}))
+                                VarOperand.Const (M.Operand.Global (M.Global.new ty))
                              end
                      else VarOperand.Allocate {operand = ref NONE}
                in
@@ -719,13 +711,13 @@ fun toMachine (rssa: Rssa.Program.t) =
                       ty = ty}
                   end
             in
-               val {handlerLinkOffset, labelInfo = labelRegInfo, ...} =
+               val {handlersInfo, labelInfo = labelRegInfo, ...} =
                   let
-                     fun formalsStackOffsets args =
-                        callReturnStackOffsets (args, fn (_, ty) => ty, Bytes.zero)
+                     val paramOffsets = fn args =>
+                        paramOffsets (args, fn (_, ty) => ty, fn so => so)
                   in
-                     AllocateRegisters.allocate {formalsStackOffsets = formalsStackOffsets,
-                                                 function = f,
+                     AllocateRegisters.allocate {function = f,
+                                                 paramOffsets = paramOffsets,
                                                  varInfo = varInfo}
                   end
             end
@@ -825,7 +817,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                                               size = size})
                                     end
                            val dsts =
-                              callReturnStackOffsets
+                              paramStackOffsets
                               (args, R.Operand.ty, frameSize)
                            val setupArgs =
                               parallelMove
@@ -851,17 +843,35 @@ fun toMachine (rssa: Rssa.Program.t) =
                                    NONE => NONE
                                  | SOME dst => SOME (dst, translateOperand src)))
                         in
-                           (parallelMove {srcs = srcs', dsts = dsts'},
+                           (parallelMove {dsts = dsts', srcs = srcs'},
                             M.Transfer.Goto dst)
                         end
                    | R.Transfer.Raise srcs =>
-                        (M.Statement.moves {dsts = Vector.map (valOf raises,
-                                                               Live.toOperand),
-                                            srcs = translateOperands srcs},
-                         M.Transfer.Raise)
+                        let
+                           val handlerStackTop =
+                              M.Operand.Register
+                              (Register.new (Type.cpointer (), NONE))
+                           val dsts =
+                              paramOffsets
+                              (srcs, R.Operand.ty, fn {offset, ty} =>
+                               M.Operand.Offset {base = handlerStackTop,
+                                                 offset = offset,
+                                                 ty = ty})
+                        in
+                           if Vector.isEmpty srcs
+                              then (Vector.new0 (), M.Transfer.Raise)
+                              else (Vector.concat
+                                    [Vector.new1
+                                     (M.Statement.PrimApp
+                                      {args = Vector.new2 (stackBottomOp, exnStackOp),
+                                       dst = SOME handlerStackTop,
+                                       prim = Prim.cpointerAdd}),
+                                     parallelMove {dsts = dsts,
+                                                   srcs = translateOperands srcs}],
+                                    M.Transfer.Raise)
+                        end
                    | R.Transfer.Return xs =>
-                        (parallelMove {dsts = Vector.map (valOf returns,
-                                                          M.Operand.StackOffset),
+                        (parallelMove {dsts = valOf returnOperands,
                                        srcs = translateOperands xs},
                          M.Transfer.Return)
                    | R.Transfer.Switch switch =>
@@ -894,54 +904,30 @@ fun toMachine (rssa: Rssa.Program.t) =
                                      ...}) : unit =
                let
                   val {live, liveNoFormals, size, ...} = labelRegInfo label
-                  val _ =
-                     if Label.equals (label, start)
-                        then let
-                                val returns =
-                                   Option.map
-                                   (returns, fn returns =>
-                                    Vector.map (returns, Live.StackOffset))
-                                val frameInfo =
-                                   getFrameInfo {entry = true,
-                                                 kind = M.FrameInfo.Kind.ML_FRAME,
-                                                 offsets = [],
-                                                 size = Bytes.zero,
-                                                 sourceSeqIndex = NONE}
-                             in
-                                Chunk.newBlock
-                                (funcChunk name,
-                                 {label = funcToLabel name,
-                                  kind = M.Kind.Func {frameInfo = frameInfo},
-                                  live = operandsLive liveNoFormals,
-                                  raises = raises,
-                                  returns = returns,
-                                  statements = Vector.new0 (),
-                                  transfer = M.Transfer.Goto start})
-                             end
-                     else ()
                   val statements =
                      Vector.concatV
                      (Vector.map (statements, fn s =>
-                                  genStatement (s, handlerLinkOffset)))
+                                  genStatement (s, handlersInfo)))
                   val (preTransfer, transfer) = genTransfer transfer
+                  fun doContHandler mkMachineKind =
+                     let
+                        val srcs = paramStackOffsets (args, #2, size)
+                        val (dsts', srcs') =
+                           Vector.unzip
+                           (Vector.keepAllMap2
+                            (args, srcs, fn ((dst, _), src) =>
+                             case varOperandOpt dst of
+                                NONE => NONE
+                              | SOME dst => SOME (dst, M.Operand.StackOffset src)))
+                     in
+                        (mkMachineKind {args = Vector.map (srcs, Live.StackOffset),
+                                        frameInfo = valOf (frameInfo label)},
+                         liveNoFormals,
+                         parallelMove {dsts = dsts', srcs = srcs'})
+                     end
                   val (kind, live, pre) =
                      case kind of
-                        R.Kind.Cont _ =>
-                           let
-                              val srcs = callReturnStackOffsets (args, #2, size)
-                              val (dsts', srcs') =
-                                 Vector.unzip
-                                 (Vector.keepAllMap2
-                                  (args, srcs, fn ((dst, _), src) =>
-                                   case varOperandOpt dst of
-                                      NONE => NONE
-                                    | SOME dst => SOME (dst, M.Operand.StackOffset src)))
-                           in
-                              (M.Kind.Cont {args = Vector.map (srcs, Live.StackOffset),
-                                            frameInfo = valOf (frameInfo label)},
-                               liveNoFormals,
-                               parallelMove {dsts = dsts', srcs = srcs'})
-                           end
+                        R.Kind.Cont _ => doContHandler M.Kind.Cont
                       | R.Kind.CReturn {func, ...} =>
                            let
                               val dst =
@@ -958,23 +944,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                                liveNoFormals,
                                Vector.new0 ())
                            end
-                      | R.Kind.Handler =>
-                           let
-                              val handles = raiseOperands (Vector.map (args, #2))
-                              val (dsts', srcs') =
-                                 Vector.unzip
-                                 (Vector.keepAllMap2
-                                  (args, handles, fn ((dst, _), h) =>
-                                   case varOperandOpt dst of
-                                      NONE => NONE
-                                    | SOME dst =>SOME (dst, Live.toOperand h)))
-                           in
-                              (M.Kind.Handler
-                               {frameInfo = valOf (frameInfo label),
-                                handles = handles},
-                               liveNoFormals,
-                               M.Statement.moves {dsts = dsts', srcs = srcs'})
-                           end
+                      | R.Kind.Handler => doContHandler M.Kind.Handler
                       | R.Kind.Jump => (M.Kind.Jump, live, Vector.new0 ())
                   val (first, statements) =
                      if !Control.profile = Control.ProfileTimeLabel
@@ -996,21 +966,45 @@ fun toMachine (rssa: Rssa.Program.t) =
                      else (Vector.new0 (), statements)
                   val statements =
                      Vector.concat [first, pre, statements, preTransfer]
-                  val returns =
-                     Option.map (returns, fn returns =>
-                                 Vector.map (returns, Live.StackOffset))
                in
                   Chunk.newBlock (labelChunk label,
                                   {kind = kind,
                                    label = label,
                                    live = operandsLive live,
-                                   raises = raises,
-                                   returns = returns,
+                                   raises = raiseLives,
+                                   returns = returnLives,
                                    statements = statements,
                                    transfer = transfer})
                end
             val genBlock = traceGenBlock genBlock
             val _ = Vector.foreach (blocks, genBlock)
+            val _ =
+               let
+                  val frameInfo =
+                     getFrameInfo {entry = true,
+                                   kind = M.FrameInfo.Kind.ML_FRAME,
+                                   offsets = [],
+                                   size = Bytes.zero,
+                                   sourceSeqIndex = NONE}
+                  val srcs =
+                     paramStackOffsets (args, #2, Bytes.zero)
+                  val srcs =
+                     Vector.map (srcs, M.Operand.StackOffset)
+                  val statements =
+                     parallelMove
+                     {dsts = Vector.map (args, varOperand o #1),
+                      srcs = srcs}
+               in
+                  Chunk.newBlock
+                  (funcChunk name,
+                   {label = funcToLabel name,
+                    kind = M.Kind.Func {frameInfo = frameInfo},
+                    live = operandsLive srcs,
+                    raises = raiseLives,
+                    returns = returnLives,
+                    statements = statements,
+                    transfer = M.Transfer.Goto start})
+               end
             val _ =
                if isMain
                   then ()

@@ -43,10 +43,7 @@ struct
               val ty = Machine.Type.toCType (ty g)
               val index = index g
               val base =
-                 x86.Immediate.label
-                 (if isRoot g
-                     then x86MLton.global_base ty
-                  else x86MLton.globalObjptrNonRoot_base)
+                 x86.Immediate.label (x86MLton.global_base ty)
               val origin =
                  x86.MemLoc.imm
                  {base = base,
@@ -351,21 +348,31 @@ struct
                  in
                    AppendList.single
                    (x86.Block.mkBlock'
-                    {entry = SOME (x86.Entry.cont {label = label,
-                                                   live = args,
-                                                   frameInfo = frameInfo}),
+                    {entry = SOME (x86.Entry.cont {frameInfo = frameInfo,
+                                                   label = label,
+                                                   live = args}),
                      statements = [],
                      transfer = NONE})
                  end
-              | Kind.Handler {frameInfo, ...}
+              | Kind.Handler {args, frameInfo, ...}
               => let
+                    val frameInfo = frameInfoToX86 frameInfo
+                    val args =
+                       Vector.fold
+                       (args, x86.MemLocSet.empty,
+                        fn (operand,args) =>
+                        Vector.fold
+                        (Operand.toX86Operand (Live.toOperand operand), args,
+                         fn ((operand,_),args) =>
+                         case x86.Operand.deMemloc operand of
+                            SOME memloc => x86.MemLocSet.add(args, memloc)
+                          | NONE => args))
                  in 
                    AppendList.single
                    (x86.Block.mkBlock'
-                    {entry = SOME (x86.Entry.handler
-                                   {frameInfo = frameInfoToX86 frameInfo,
-                                    label = label,
-                                    live = x86.MemLocSet.empty}),
+                    {entry = SOME (x86.Entry.handler {frameInfo = frameInfo,
+                                                      label = label,
+                                                      live = args}),
                      statements = [],
                      transfer = NONE})
                  end

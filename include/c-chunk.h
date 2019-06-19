@@ -85,7 +85,6 @@
 
 #define C(ty, x) (*(ty*)(x))
 #define G(ty, i) (global##ty [i])
-#define GPNR(i) G(ObjptrNonRoot, i)
 #define O(ty, b, o) (*(ty*)((b) + (o)))
 #define X(ty, b, i, s, o) (*(ty*)((b) + ((i) * (s)) + (o)))
 #define S(ty, i) (*(ty*)(StackTop + (i)))

@@ -19,8 +19,8 @@ signature ALLOCATE_REGISTERS =
       include ALLOCATE_REGISTERS_STRUCTS
 
       val allocate:
-         {formalsStackOffsets: (Rssa.Var.t * Rssa.Type.t) vector -> Machine.StackOffset.t vector,
-          function: Rssa.Function.t,
+         {function: Rssa.Function.t,
+          paramOffsets: (Rssa.Var.t * Rssa.Type.t) vector -> {offset: Bytes.t, ty: Rssa.Type.t} vector,
           varInfo: Rssa.Var.t -> {
                                   (* If (isSome operand) then a stack slot or
                                    * register needs to be allocated for the
@@ -30,11 +30,11 @@ signature ALLOCATE_REGISTERS =
                                   ty: Machine.Type.t
                                   }
           }
-         -> {(* If handlers are used, handlerLinkOffset gives the stack offsets
+         -> {(* If handlers are used, handlersInfo gives the stack offsets
               * where the handler and link (old exnStack) should be stored.
               *)
-             handlerLinkOffset: {handler: Bytes.t,
-                                 link: Bytes.t} option,
+             handlersInfo: {handlerOffset: Bytes.t,
+                            linkOffset: Bytes.t} option,
              labelInfo:
              Rssa.Label.t -> {(* Live operands at the beginning of the block. *)
                               live: Machine.Operand.t vector,
