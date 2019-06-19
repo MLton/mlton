@@ -16,9 +16,12 @@ signature PARSE =
             type t = {line: int, column: int}
          end
 
-      val parseFile: 'a t * File.t -> 'a Result.t
-      val parseStream: 'a t * char Stream.t -> 'a Result.t
-      val parseString: 'a t * string -> 'a Result.t
+      datatype 'a parseResult = Yes of 'a
+                              | No of Layout.t * Location.t
+
+      val parseFile: 'a t * File.t -> 'a parseResult
+      val parseStream: 'a t * char Stream.t -> 'a parseResult
+      val parseString: 'a t * string -> 'a parseResult
 
       (*
        * infix 1 <|> >>=

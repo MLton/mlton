@@ -830,143 +830,159 @@ in
       handle Done => ()
 end
 
-fun genFromXML (input: File.t): Machine.Program.t =
-   let
-      val _ = setupConstants()
-      val xml =
-         Control.passTypeCheck
-         {display = Control.Layouts Xml.Program.layouts,
-          name = "xmlParse",
-          stats = Xml.Program.layoutStats,
-          style = Control.ML,
-          suffix = "xml",
-          thunk = (fn () => case
-                     Parse.parseFile(Xml.Program.parse (), input)
-                        of Result.Yes x => x
-                         | Result.No msg => (Control.error
-                           (Region.bogus, Layout.str "Xml Parse failed", Layout.str msg);
-                            Control.checkForErrors("parse");
-                            (* can't be reached *)
-                            raise Fail "parse")
-                   ),
-          typeCheck = Xml.typeCheck}
-      val xml = simplifyXml xml
-      val sxml = makeSxml xml
-      val sxml = simplifySxml sxml
-      val ssa = makeSsa sxml
-      val ssa = simplifySsa ssa
-      val ssa2 = makeSsa2 ssa
-      val ssa2 = simplifySsa2 ssa2
-   in
-      makeMachine ssa2
-   end
-fun compileXML {input: File.t, outputC, outputLL, outputS}: unit =
-   compile {input = input,
-            resolve = genFromXML,
-            outputC = outputC,
-            outputLL = outputLL,
-            outputS = outputS}
 
-fun genFromSXML (input: File.t): Machine.Program.t =
-   let
-      val _ = setupConstants()
-      val sxml =
-         Control.passTypeCheck
-         {display = Control.Layouts Sxml.Program.layouts,
-          name = "sxmlParse",
-          stats = Sxml.Program.layoutStats,
-          style = Control.ML,
-          suffix = "sxml",
-          thunk = (fn () => case
-                     Parse.parseFile(Sxml.Program.parse (), input)
-                        of Result.Yes x => x
-                         | Result.No msg => (Control.error 
-                           (Region.bogus, Layout.str "Sxml Parse failed", Layout.str msg);
-                            Control.checkForErrors("parse");
-                            (* can't be reached *)
-                            raise Fail "parse")
-                   ),
-          typeCheck = Sxml.typeCheck}
-      val sxml = simplifySxml sxml
-      val ssa = makeSsa sxml
-      val ssa = simplifySsa ssa
-      val ssa2 = makeSsa2 ssa
-      val ssa2 = simplifySsa2 ssa2
-   in
-      makeMachine ssa2
-   end
-fun compileSXML {input: File.t, outputC, outputLL, outputS}: unit =
-   compile {input = input,
-            resolve = genFromSXML,
-            outputC = outputC,
-            outputLL = outputLL,
-            outputS = outputS}
+local
+   fun regionFromLocation (file, {column, line}) =
+      let
+         val sourcePos = SourcePos.make
+            {column=column, file=file, line=line}
+      in
+         Region.make {left=sourcePos, right=sourcePos}
+      end
+in
+   fun genFromXML (input: File.t): Machine.Program.t =
+      let
+         val _ = setupConstants()
+         val xml =
+            Control.passTypeCheck
+            {display = Control.Layouts Xml.Program.layouts,
+             name = "xmlParse",
+             stats = Xml.Program.layoutStats,
+             style = Control.ML,
+             suffix = "xml",
+             thunk = (fn () => case
+                        Parse.parseFile(Xml.Program.parse (), input)
+                           of Parse.Yes x => x
+                            | Parse.No (msg, location) => (Control.error
+                              (regionFromLocation (input, location),
+                               Layout.str "Xml Parse failed", msg);
+                               Control.checkForErrors("parse");
+                               (* can't be reached *)
+                               raise Fail "parse")
+                      ),
+             typeCheck = Xml.typeCheck}
+         val xml = simplifyXml xml
+         val sxml = makeSxml xml
+         val sxml = simplifySxml sxml
+         val ssa = makeSsa sxml
+         val ssa = simplifySsa ssa
+         val ssa2 = makeSsa2 ssa
+         val ssa2 = simplifySsa2 ssa2
+      in
+         makeMachine ssa2
+      end
 
-fun genFromSsa (input: File.t): Machine.Program.t =
-   let
-      val _ = setupConstants()
-      val ssa =
-         Control.passTypeCheck
-         {display = Control.Layouts Ssa.Program.layouts,
-          name = "ssaParse",
-          stats = Ssa.Program.layoutStats,
-          style = Control.ML,
-          suffix = "ssa",
-          thunk = (fn () => case
-                     Parse.parseFile(Ssa.Program.parse (), input)
-                        of Result.Yes x => x
-                         | Result.No msg => (Control.error 
-                           (Region.bogus, Layout.str "Ssa Parse failed", Layout.str msg);
-                            Control.checkForErrors("parse");
-                            (* can't be reached *)
-                            raise Fail "parse")
-                   ),
-          typeCheck = Ssa.typeCheck}
-      val ssa = simplifySsa ssa
-      val ssa2 = makeSsa2 ssa
-      val ssa2 = simplifySsa2 ssa2
-   in
-      makeMachine ssa2
-   end
-fun compileSSA {input: File.t, outputC, outputLL, outputS}: unit =
-   compile {input = input,
-            resolve = genFromSsa,
-            outputC = outputC,
-            outputLL = outputLL,
-            outputS = outputS}
+   fun compileXML {input: File.t, outputC, outputLL, outputS}: unit =
+      compile {input = input,
+               resolve = genFromXML,
+               outputC = outputC,
+               outputLL = outputLL,
+               outputS = outputS}
 
-fun genFromSsa2 (input: File.t): Machine.Program.t =
-               let
-                  val _ = setupConstants()
-                  val ssa2 =
-                     Control.passTypeCheck
-                     {display = Control.Layouts Ssa2.Program.layouts,
-                      name = "ssa2Parse",
-                      stats = Ssa2.Program.layoutStats,
-                      style = Control.ML,
-                      suffix = "ssa2",
-                      thunk = (fn () => case
-                                 Parse.parseFile(Ssa2.Program.parse (), input)
-                                    of Result.Yes x => x
-                                     | Result.No msg => (Control.error
-                                       (Region.bogus, Layout.str "Ssa2 Parse failed", Layout.str msg);
-                                        Control.checkForErrors("parse");
-                                        (* can't be reached *)
-                                        raise Fail "parse")
-                               ),
-                      typeCheck = Ssa2.typeCheck}
-                  (*val ssa2 = makeSsa2 ssa*)
-                  val ssa2 = simplifySsa2 ssa2
-               in
-                  makeMachine ssa2
-               end
+   fun genFromSXML (input: File.t): Machine.Program.t =
+      let
+         val _ = setupConstants()
+         val sxml =
+            Control.passTypeCheck
+            {display = Control.Layouts Sxml.Program.layouts,
+             name = "sxmlParse",
+             stats = Sxml.Program.layoutStats,
+             style = Control.ML,
+             suffix = "sxml",
+             thunk = (fn () => case
+                        Parse.parseFile(Sxml.Program.parse (), input)
+                           of Parse.Yes x => x
+                            | Parse.No (msg, location) => (Control.error
+                              (regionFromLocation (input, location),
+                               Layout.str "Sxml Parse failed", msg);
+                               Control.checkForErrors("parse");
+                               (* can't be reached *)
+                               raise Fail "parse")
+                      ),
+             typeCheck = Sxml.typeCheck}
+         val sxml = simplifySxml sxml
+         val ssa = makeSsa sxml
+         val ssa = simplifySsa ssa
+         val ssa2 = makeSsa2 ssa
+         val ssa2 = simplifySsa2 ssa2
+      in
+         makeMachine ssa2
+      end
+   fun compileSXML {input: File.t, outputC, outputLL, outputS}: unit =
+      compile {input = input,
+               resolve = genFromSXML,
+               outputC = outputC,
+               outputLL = outputLL,
+               outputS = outputS}
 
- fun compileSSA2 {input: File.t, outputC, outputLL, outputS}: unit =
-               compile {input = input,
-                        resolve = genFromSsa2,
-                        outputC = outputC,
-                        outputLL = outputLL,
-                        outputS = outputS}
+   fun genFromSsa (input: File.t): Machine.Program.t =
+      let
+         val _ = setupConstants()
+         val ssa =
+            Control.passTypeCheck
+            {display = Control.Layouts Ssa.Program.layouts,
+             name = "ssaParse",
+             stats = Ssa.Program.layoutStats,
+             style = Control.ML,
+             suffix = "ssa",
+             thunk = (fn () => case
+                        Parse.parseFile(Ssa.Program.parse (), input)
+                           of Parse.Yes x => x
+                            | Parse.No (msg, location) => (Control.error
+                              (regionFromLocation (input, location),
+                               Layout.str "Ssa Parse failed", msg);
+                               Control.checkForErrors("parse");
+                               (* can't be reached *)
+                               raise Fail "parse")
+                      ),
+             typeCheck = Ssa.typeCheck}
+         val ssa = simplifySsa ssa
+         val ssa2 = makeSsa2 ssa
+         val ssa2 = simplifySsa2 ssa2
+      in
+         makeMachine ssa2
+      end
+   fun compileSSA {input: File.t, outputC, outputLL, outputS}: unit =
+      compile {input = input,
+               resolve = genFromSsa,
+               outputC = outputC,
+               outputLL = outputLL,
+               outputS = outputS}
+
+   fun genFromSsa2 (input: File.t): Machine.Program.t =
+      let
+         val _ = setupConstants()
+         val ssa2 =
+            Control.passTypeCheck
+            {display = Control.Layouts Ssa2.Program.layouts,
+             name = "ssa2Parse",
+             stats = Ssa2.Program.layoutStats,
+             style = Control.ML,
+             suffix = "ssa2",
+             thunk = (fn () => case
+                        Parse.parseFile(Ssa2.Program.parse (), input)
+                           of Parse.Yes x => x
+                            | Parse.No (msg, location) => (Control.error
+                              (regionFromLocation (input, location),
+                               Layout.str "Ssa2 Parse failed", msg);
+                               Control.checkForErrors("parse");
+                               (* can't be reached *)
+                               raise Fail "parse")
+                      ),
+             typeCheck = Ssa2.typeCheck}
+         (*val ssa2 = makeSsa2 ssa*)
+         val ssa2 = simplifySsa2 ssa2
+      in
+         makeMachine ssa2
+      end
+
+    fun compileSSA2 {input: File.t, outputC, outputLL, outputS}: unit =
+                  compile {input = input,
+                           resolve = genFromSsa2,
+                           outputC = outputC,
+                           outputLL = outputLL,
+                           outputS = outputS}
+end
 
 
 end

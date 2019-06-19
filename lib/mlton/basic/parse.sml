@@ -84,24 +84,30 @@ datatype 'a t = T of
     run: (State.t * string list -> ('a * State.t) result)}
 
 
+datatype 'a parseResult = Yes of 'a
+                        | No of Layout.t * Location.t
 local
    fun failureString (filename, {expected, location, stack}) =
-      let open String in
-      concat
-         ["Parse error\n",
-          "at ", filename, " ", Location.toString location, "\n",
+      let open Layout in
+      align
+         [str "Parse error",
           case expected of
-               [] => ""
-             | _ => concat ["Expected one of: ", concatWith (expected, ", "), "."],
+               [] => empty
+             | _ => mayAlign
+               [str "Expected one of:",
+                seq (separate (List.map (expected, str), ", ")),
+                str "."],
           if List.isEmpty stack
-             then ""
-          else concat ["\nin the context ", concatWith (List.rev stack, "/"), "\n\n"]]
+             then empty
+          else mayAlign
+            [str "in the context",
+             seq (separate (List.revMap (stack, str), "/"))]]
       end
 
    fun toResult (filename, r) =
       case r of
-           Success (a, _) => Result.Yes a
-         | Failure err => Result.No (failureString (filename, err))
+           Success (a, _) => Yes a
+         | Failure (err as {location, ...}) => No (failureString (filename, err), location)
 
    fun inToStream i =
       case In.inputChar i of
