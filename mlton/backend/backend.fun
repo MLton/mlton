@@ -912,24 +912,25 @@ fun toMachine (rssa: Rssa.Program.t) =
                      (Vector.map (statements, fn s =>
                                   genStatement (s, handlersInfo)))
                   val (preTransfer, transfer) = genTransfer transfer
+                  fun doContHandler mkMachineKind =
+                     let
+                        val srcs = paramStackOffsets (args, #2, size)
+                        val (dsts', srcs') =
+                           Vector.unzip
+                           (Vector.keepAllMap2
+                            (args, srcs, fn ((dst, _), src) =>
+                             case varOperandOpt dst of
+                                NONE => NONE
+                              | SOME dst => SOME (dst, M.Operand.StackOffset src)))
+                     in
+                        (mkMachineKind {args = Vector.map (srcs, Live.StackOffset),
+                                        frameInfo = valOf (frameInfo label)},
+                         liveNoFormals,
+                         parallelMove {dsts = dsts', srcs = srcs'})
+                     end
                   val (kind, live, pre) =
                      case kind of
-                        R.Kind.Cont _ =>
-                           let
-                              val srcs = paramStackOffsets (args, #2, size)
-                              val (dsts', srcs') =
-                                 Vector.unzip
-                                 (Vector.keepAllMap2
-                                  (args, srcs, fn ((dst, _), src) =>
-                                   case varOperandOpt dst of
-                                      NONE => NONE
-                                    | SOME dst => SOME (dst, M.Operand.StackOffset src)))
-                           in
-                              (M.Kind.Cont {args = Vector.map (srcs, Live.StackOffset),
-                                            frameInfo = valOf (frameInfo label)},
-                               liveNoFormals,
-                               parallelMove {dsts = dsts', srcs = srcs'})
-                           end
+                        R.Kind.Cont _ => doContHandler M.Kind.Cont
                       | R.Kind.CReturn {func, ...} =>
                            let
                               val dst =
@@ -946,24 +947,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                                liveNoFormals,
                                Vector.new0 ())
                            end
-                      | R.Kind.Handler =>
-                           let
-                              val srcs =
-                                 Vector.map (paramStackOffsets (args, #2, size),
-                                             Live.StackOffset)
-                              val (dsts', srcs') =
-                                 Vector.unzip
-                                 (Vector.keepAllMap2
-                                  (args, srcs, fn ((dst, _), src) =>
-                                   case varOperandOpt dst of
-                                      NONE => NONE
-                                    | SOME dst => SOME (dst, Live.toOperand src)))
-                           in
-                              (M.Kind.Handler {args = srcs,
-                                               frameInfo = valOf (frameInfo label)},
-                               liveNoFormals,
-                               parallelMove {dsts = dsts', srcs = srcs'})
-                           end
+                      | R.Kind.Handler => doContHandler M.Kind.Handler
                       | R.Kind.Jump => (M.Kind.Jump, live, Vector.new0 ())
                   val (first, statements) =
                      if !Control.profile = Control.ProfileTimeLabel
