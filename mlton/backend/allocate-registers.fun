@@ -446,12 +446,11 @@ fun allocate {function = f: Rssa.Function.t,
              end)
          end
       (* Also, create a stack allocation that includes all incoming actuals;
-       * if link and handler stack slots are required,
+       * if link, handler label, and handler args stack slots are required,
        * then they will be allocated against this stack.
        *)
       val stack =
          Allocation.Stack.new (Vector.toListMap (paramOffsets args, StackOffset.T))
-      (* Allocate stack slots for the link and handler, if necessary. *)
       val handlersInfo =
          case !handlersArgs of
             [] => NONE
