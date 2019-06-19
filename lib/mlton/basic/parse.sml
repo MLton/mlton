@@ -17,6 +17,7 @@ structure Location = struct
    fun {line=line1, column=col1} <
        {line=line2, column=col2} =
        Int.< (line1, line2) orelse
+       (line1 = line2) andalso
        Int.< (col1, col2)
 
    val new = {line=1, column=1}
@@ -197,9 +198,9 @@ fun (T {firstChars=chars1, mayBeEmpty=empty1, names=names1, run=run1})
          else chars1),
       mayBeEmpty=empty1 andalso empty2,
       names=List.union (names1, names2, String.equals),
-      run=fn (s as State.T {lastError, ...}, stack) =>
+      run=fn (s, stack) =>
           case run1 (s, stack) of
-              Success (f, s') =>
+              Success (f, s' as State.T {lastError, ...}) =>
                   (case run2 (s', stack) of
                        Success (b, s'') => Success (f b, s'')
                      | Failure err =>
@@ -258,9 +259,7 @@ local
                      Success a => Success a
                    | Failure f1 =>
                         (case run2 s of
-                              Success (a, State.T
-                              (* TODO  ???? *)
-                                 {lastError=f2, location, stream}) =>
+                              Success (a, State.T {lastError=f2, location, stream}) =>
                                  Success (a, State.T
                                     {lastError=Error.optionMax (f2, SOME f1),
                                      location=location, stream=stream})
@@ -365,10 +364,12 @@ fun notFollowedBy(p, c) =
 
 fun many (T {firstChars, mayBeEmpty, names, run}) =
    let
-      fun run' (s, stack, k) =
+      fun run' (s as State.T {lastError, location, stream}, stack, k) =
          case run (s, stack) of
               Success (a, s') => run' (s', stack, a :: k)
-            | Failure err => Success (List.rev k, s)
+            | Failure err => Success (List.rev k,
+                 State.T {lastError=Error.optionMax (lastError, SOME err),
+                          location=location, stream=stream})
    in
       T {firstChars=firstChars,
          mayBeEmpty=true,
@@ -397,14 +398,16 @@ fun any ps =
                   | _ => NONE),
             unions)
 
-      fun tryAll (s as State.T {location, ...}, stack, runs) =
+      fun tryAll (s as State.T {lastError, location, stream}, stack, runs) =
          case runs of
               (* TODO Fix the error messages to make the best pick *)
               [] => expected (names, location, stack)
             | r :: rs =>
                  (case r (s, stack) of
                       Success a => Success a
-                    | Failure _ => tryAll (s, stack, rs))
+                    | Failure err => tryAll
+                     (State.T {lastError=Error.optionMax (lastError, SOME err),
+                               location=location, stream=stream}, stack, rs))
    in
       T {firstChars=firstChars,
          mayBeEmpty=List.forall (ps, fn T {mayBeEmpty, ...} => mayBeEmpty),
