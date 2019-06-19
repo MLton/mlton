@@ -233,14 +233,6 @@ fun declareGlobals (prefix: string, print) =
                 then print (concat [prefix, s, " global", s, " [", C.int n, "];\n"])
                 else ()
           end)
-      val _ =
-         let
-            val n = Global.numberOfNonRoot ()
-         in
-            if n > 0
-               then print (concat [prefix, "Objptr globalObjptrNonRoot [", C.int n, "];\n"])
-               else ()
-         end
    in
       ()
    end
@@ -732,11 +724,8 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
              | Frontier => "Frontier"
              | GCState => "GCState"
              | Global g =>
-                  if Global.isRoot g
-                     then concat ["G",
-                                  C.args [Type.toC (Global.ty g),
-                                          Int.toString (Global.index g)]]
-                  else concat ["GPNR", C.args [Int.toString (Global.index g)]]
+                  concat ["G", C.args [Type.toC (Global.ty g),
+                                       Int.toString (Global.index g)]]
              | Label l => labelIndexAsString (l, {pretty = true})
              | Null => "NULL"
              | Offset {base, offset, ty} =>

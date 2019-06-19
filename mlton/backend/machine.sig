@@ -42,10 +42,8 @@ signature MACHINE =
 
             val equals: t * t -> bool
             val index: t -> int
-            val isRoot: t -> bool
             val layout: t -> Layout.t
-            val new: {isRoot: bool, ty: Type.t} -> t
-            val numberOfNonRoot: unit -> int
+            val new: Type.t -> t
             val numberOfType: CType.t -> int
             val ty: t -> Type.t
          end

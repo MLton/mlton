@@ -209,9 +209,7 @@ fun typeOfGlobal global =
     let
         val t = Type.toCType (Global.ty global)
         val s = CType.toString t
-        val number = llint (if Global.isRoot global
-                            then Global.numberOfType t
-                            else Global.numberOfNonRoot ())
+        val number = llint (Global.numberOfType t)
         val array = concat ["[", number, " x %", s, "]"]
     in
         array
@@ -436,13 +434,10 @@ fun getOperandAddr (cxt, operand) =
       | Operand.Global global =>
         let
             val globalType = Global.ty global
-            val globalIsRoot = Global.isRoot global
             val globalIndex = Global.index global
             val llvmTy = llty globalType
             val ty = typeOfGlobal global
-            val globalID = if globalIsRoot
-                           then "@global" ^ CType.toString (Type.toCType globalType)
-                           else "@globalObjptrNonRoot"
+            val globalID = "@global" ^ CType.toString (Type.toCType globalType)
             val ptr = nextLLVMReg ()
             val gep = mkgep (ptr, ty ^ "*", globalID, [("i32", "0"), ("i32", llint globalIndex)])
         in
@@ -1198,17 +1193,9 @@ fun outputLLVMDeclarations print =
                                               llint n, " x %", s, "]\n"]
                                  else ""
                           end))
-        val nonroot = let
-                         val n = Global.numberOfNonRoot ()
-                      in
-                         if n > 0
-                            then concat ["@globalObjptrNonRoot = external hidden global [",
-                                         llint n, " x %Objptr]\n"]
-                            else ""
-                      end
     in
         print (concat [llvmIntrinsics, "\n", mltypes, "\n", ctypes (),
-                       "\n", globals, nonroot, "\n"])
+                       "\n", globals, "\n"])
     end
 
 fun outputChunkFn (cxt, chunk, print) =

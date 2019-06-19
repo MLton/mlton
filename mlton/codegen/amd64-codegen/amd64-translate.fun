@@ -43,10 +43,7 @@ struct
               val ty = Machine.Type.toCType (ty g)
               val index = index g
               val base =
-                 amd64.Immediate.label
-                 (if isRoot g
-                     then amd64MLton.global_base ty
-                  else amd64MLton.globalObjptrNonRoot_base)
+                 amd64.Immediate.label (amd64MLton.global_base ty)
               val origin =
                  amd64.MemLoc.imm
                  {base = base,

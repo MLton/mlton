@@ -78,15 +78,13 @@ structure Register =
 structure Global =
    struct
       datatype t = T of {index: int,
-                         isRoot: bool,
                          ty: Type.t}
 
-      fun layout (T {index, isRoot, ty, ...}) =
+      fun layout (T {index, ty, ...}) =
          let
             open Layout
          in
-            seq [str (concat ["G", Type.name ty,
-                              if isRoot then "" else "NR"]),
+            seq [str (concat ["G", Type.name ty]),
                  paren (Int.layout index),
                  str ": ",
                  Type.layout ty]
@@ -96,41 +94,25 @@ structure Global =
          fun make f (T r) = f r
       in
          val index = make #index
-         val isRoot = make #isRoot
          val ty = make #ty
       end
-
-      val nonRootCounter = Counter.new 0
-      fun numberOfNonRoot () = Counter.value nonRootCounter
 
       val memo = CType.memo (fn _ => Counter.new 0)
       fun numberOfType t = Counter.value (memo t)
 
-      fun new {isRoot, ty} =
-         let
-            val isRoot = isRoot orelse not (Type.isObjptr ty)
-            val counter =
-               if isRoot
-                  then memo (Type.toCType ty)
-               else nonRootCounter
-            val g = T {index = Counter.next counter,
-                       isRoot = isRoot,
-                       ty = ty}
-         in
-            g
-         end
+      fun new ty =
+         T {index = Counter.next (memo (Type.toCType ty)),
+            ty = ty}
 
-      fun equals (T {index = i, isRoot = r, ty},
-                  T {index = i', isRoot = r', ty = ty'}) =
+      fun equals (T {index = i, ty},
+                  T {index = i', ty = ty'}) =
          i = i'
-         andalso r = r'
          andalso Type.equals (ty, ty')
 
       val isSubtype: t * t -> bool =
-         fn (T {index = i, isRoot = r, ty},
-             T {index = i', isRoot = r', ty = ty'}) =>
+         fn (T {index = i, ty},
+             T {index = i', ty = ty'}) =>
          i = i'
-         andalso r = r'
          andalso Type.isSubtype (ty, ty')
          andalso CType.equals (Type.toCType ty, Type.toCType ty')
    end

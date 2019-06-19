@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -99,7 +99,6 @@ signature X86_MLTON_BASIC =
     (* Static arrays defined in main.h and x86-main.h *)
     val local_base : x86.CType.t -> x86.Label.t
     val global_base : x86.CType.t -> x86.Label.t
-    val globalObjptrNonRoot_base : x86.Label.t
 
     (* gcState relative locations defined in gc.h *)
     val gcState_label: x86.Label.t

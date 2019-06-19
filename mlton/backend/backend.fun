@@ -338,8 +338,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                   M.Operand.Global
                   (HashTable.lookupOrInsert
                    (table, value, fn () =>
-                    M.Global.new {isRoot = true,
-                                  ty = ty value}))
+                    M.Global.new (ty value)))
                fun all () =
                   HashTable.fold
                   (table, [], fn ((value, global), ac) =>
@@ -637,9 +636,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                                                  R.Type.layout ty])
                                     end)
                              in
-                                VarOperand.Const (M.Operand.Global
-                                                  (M.Global.new {isRoot = true,
-                                                                 ty = ty}))
+                                VarOperand.Const (M.Operand.Global (M.Global.new ty))
                              end
                      else VarOperand.Allocate {operand = ref NONE}
                in
