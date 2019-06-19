@@ -17,7 +17,6 @@ local
    open Machine
 in
    structure CFunction = CFunction
-   structure Global = Global
    structure Label = Label
    structure Live = Live
    structure ObjptrTycon = ObjptrTycon
@@ -304,26 +303,6 @@ fun toMachine (rssa: Rssa.Program.t) =
                        Label.layout, Option.layout M.FrameInfo.layout,
                        Unit.layout)
          setFrameInfo
-      (* The global raise operands. *)
-      local
-         val table: (Type.t vector * M.Live.t vector) list ref = ref []
-      in
-         fun raiseViaGlobalsOperands (ts: Type.t vector): M.Live.t vector =
-            case List.peek (!table, fn (ts', _) =>
-                            Vector.equals (ts, ts', Type.equals)) of
-               NONE =>
-                  let
-                     val gs =
-                        Vector.map (ts, fn ty =>
-                                    M.Live.Global
-                                    (Global.new {isRoot = false,
-                                                 ty = ty}))
-                     val _ = List.push (table, (ts, gs))
-                  in
-                     gs
-                  end
-             | SOME (_, gs) => gs
-      end
       val {get = varInfo: Var.t -> {operand: VarOperand.t,
                                     ty: Type.t},
            set = setVarInfo, ...} =
@@ -636,10 +615,10 @@ fun toMachine (rssa: Rssa.Program.t) =
                         (SOME (Vector.map (returnStackOffsets, M.Live.StackOffset)),
                          SOME (Vector.map (returnStackOffsets, M.Operand.StackOffset)))
                      end
-            val (raiseLives, raiseOperands) =
+            val raiseLives =
                case raises of
-                  NONE => (NONE, NONE)
-                | SOME raises => (SOME (Vector.new0 ()), NONE)
+                  NONE => NONE
+                | SOME _ => SOME (Vector.new0 ())
             fun newVarInfo (x, ty: Type.t) =
                let
                   val operand =

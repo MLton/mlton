@@ -1381,7 +1381,7 @@ structure Program =
                                           if liveSubset (handlerLive, contLive)
                                              then
                                                 (case kind of
-                                                    Kind.Handler {args, frameInfo, ...} =>
+                                                    Kind.Handler {frameInfo, ...} =>
                                                        if Bytes.< (FrameInfo.size frameInfo, size)
                                                           then SOME (SOME (Vector.new0 ()))
                                                           else NONE
