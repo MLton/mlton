@@ -1383,9 +1383,7 @@ structure Program =
                                                 (case kind of
                                                     Kind.Handler {args, frameInfo, ...} =>
                                                        if Bytes.< (FrameInfo.size frameInfo, size)
-                                                          then SOME (case !Control.raiseStyle of
-                                                                        Control.RaiseStyle.ViaGlobals => SOME args
-                                                                      | Control.RaiseStyle.ViaStack => SOME (Vector.new0 ()))
+                                                          then SOME (SOME (Vector.new0 ()))
                                                           else NONE
                                                     | _ => NONE)
                                              else NONE

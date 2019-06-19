@@ -370,7 +370,7 @@ signature CONTROL_FLAGS =
 
       structure RaiseStyle:
          sig
-            datatype t = ViaGlobals | ViaStack
+            datatype t = ViaStack
             val toString: t -> string
          end
       val raiseStyle: RaiseStyle.t ref

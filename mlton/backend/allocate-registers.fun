@@ -531,10 +531,7 @@ fun allocate {function = f: Rssa.Function.t,
                                      ty = Type.exnStack ()}
                       :: StackOffset.T {offset = handlerOffset,
                                         ty = Type.label (Label.newNoname ())}
-                      :: (if (case !Control.raiseStyle of
-                                 Control.RaiseStyle.ViaGlobals => false
-                               | Control.RaiseStyle.ViaStack =>
-                                    Bytes.> (handlerArgsSize, Bytes.zero))
+                      :: (if (Bytes.> (handlerArgsSize, Bytes.zero))
                              then StackOffset.T {offset = handlerArgsOffset,
                                                  ty = Type.bits (Bytes.toBits handlerArgsSize)}
                                   :: stackInit

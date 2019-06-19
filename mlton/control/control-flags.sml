@@ -1156,10 +1156,9 @@ val profileVal = control {name = "profile val",
 
 structure RaiseStyle =
    struct
-      datatype t = ViaGlobals | ViaStack
+      datatype t = ViaStack
       val toString =
-         fn ViaGlobals => "ViaGlobals"
-          | ViaStack => "ViaStack"
+         fn ViaStack => "ViaStack"
    end
 val raiseStyle = control {name = "raise style",
                           default = RaiseStyle.ViaStack,

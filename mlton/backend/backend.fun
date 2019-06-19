@@ -639,16 +639,7 @@ fun toMachine (rssa: Rssa.Program.t) =
             val (raiseLives, raiseOperands) =
                case raises of
                   NONE => (NONE, NONE)
-                | SOME raises =>
-                     (case !Control.raiseStyle of
-                         Control.RaiseStyle.ViaGlobals =>
-                            let
-                               val raisesLive = raiseViaGlobalsOperands raises
-                            in
-                               (SOME raisesLive,
-                                SOME (Vector.map (raisesLive, M.Live.toOperand)))
-                            end
-                       | Control.RaiseStyle.ViaStack => (SOME (Vector.new0 ()), NONE))
+                | SOME raises => (SOME (Vector.new0 ()), NONE)
             fun newVarInfo (x, ty: Type.t) =
                let
                   val operand =
@@ -880,35 +871,29 @@ fun toMachine (rssa: Rssa.Program.t) =
                             M.Transfer.Goto dst)
                         end
                    | R.Transfer.Raise srcs =>
-                        (case !Control.raiseStyle of
-                            Control.RaiseStyle.ViaGlobals =>
-                               (parallelMove {dsts = valOf raiseOperands,
-                                              srcs = translateOperands srcs},
-                                M.Transfer.Raise)
-                          | Control.RaiseStyle.ViaStack =>
-                               let
-                                  val handlerStackTop =
-                                     M.Operand.Register
-                                     (Register.new (Type.cpointer (), NONE))
-                                  val dsts =
-                                     paramOffsets
-                                     (srcs, R.Operand.ty, fn {offset, ty} =>
-                                      M.Operand.Offset {base = handlerStackTop,
-                                                        offset = offset,
-                                                        ty = ty})
-                               in
-                                  if Vector.isEmpty srcs
-                                     then (Vector.new0 (), M.Transfer.Raise)
-                                     else (Vector.concat
-                                           [Vector.new1
-                                            (M.Statement.PrimApp
-                                             {args = Vector.new2 (stackBottomOp, exnStackOp),
-                                              dst = SOME handlerStackTop,
-                                              prim = Prim.cpointerAdd}),
-                                            parallelMove {dsts = dsts,
-                                                          srcs = translateOperands srcs}],
-                                           M.Transfer.Raise)
-                               end)
+                        let
+                           val handlerStackTop =
+                              M.Operand.Register
+                              (Register.new (Type.cpointer (), NONE))
+                           val dsts =
+                              paramOffsets
+                              (srcs, R.Operand.ty, fn {offset, ty} =>
+                               M.Operand.Offset {base = handlerStackTop,
+                                                 offset = offset,
+                                                 ty = ty})
+                        in
+                           if Vector.isEmpty srcs
+                              then (Vector.new0 (), M.Transfer.Raise)
+                              else (Vector.concat
+                                    [Vector.new1
+                                     (M.Statement.PrimApp
+                                      {args = Vector.new2 (stackBottomOp, exnStackOp),
+                                       dst = SOME handlerStackTop,
+                                       prim = Prim.cpointerAdd}),
+                                     parallelMove {dsts = dsts,
+                                                   srcs = translateOperands srcs}],
+                                    M.Transfer.Raise)
+                        end
                    | R.Transfer.Return xs =>
                         (parallelMove {dsts = valOf returnOperands,
                                        srcs = translateOperands xs},
@@ -985,12 +970,8 @@ fun toMachine (rssa: Rssa.Program.t) =
                       | R.Kind.Handler =>
                            let
                               val srcs =
-                                 case !Control.raiseStyle of
-                                    Control.RaiseStyle.ViaGlobals =>
-                                       raiseViaGlobalsOperands (Vector.map (args, #2))
-                                  | Control.RaiseStyle.ViaStack =>
-                                       Vector.map (paramStackOffsets (args, #2, size),
-                                                   Live.StackOffset)
+                                 Vector.map (paramStackOffsets (args, #2, size),
+                                             Live.StackOffset)
                               val (dsts', srcs') =
                                  Vector.unzip
                                  (Vector.keepAllMap2
