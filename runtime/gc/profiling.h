@@ -130,4 +130,3 @@ PRIVATE void GC_profileDone (GC_state s);
 #endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */
 
 PRIVATE void GC_handleSigProf (code_pointer pc);
-
