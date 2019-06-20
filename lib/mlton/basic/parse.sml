@@ -406,8 +406,15 @@ fun any ps =
 
       fun tryAll (s as State.T {lastError, location, stream}, stack, runs) =
          case runs of
-              (* TODO Fix the error messages to make the best pick *)
-              [] => expected (names, location, stack)
+              [] => Failure
+              (* Normally Error.orElseMax prefers the first argument,
+               * but we want the global error to be preferred *)
+               (case lastError of
+                    NONE => {expected=names, location=location, stack=stack}
+                  | SOME (e as {location=eloc, ...}) =>
+                       (if Location.< (location, eloc)
+                           then e
+                           else {expected=names, location=location, stack=stack}))
             | r :: rs =>
                  (case r (s, stack) of
                       Success a => Success a
