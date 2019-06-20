@@ -73,6 +73,16 @@ structure Type =
       val bits: Bits.t -> t =
          fn width => T {node = Bits, width = width}
 
+      val cpointer: unit -> t = fn () =>
+         T {node = CPointer, width = WordSize.bits (WordSize.cpointer ())}
+
+      val label: Label.t -> t =
+         fn l => T {node = Label l, width = WordSize.bits (WordSize.cpointer ())}
+
+      val objptr: ObjptrTycon.t -> t =
+         fn opt => T {node = Objptr (Vector.new1 opt),
+                      width = WordSize.bits (WordSize.objptr ())}
+
       val real: RealSize.t -> t =
          fn s => T {node = Real s, width = RealSize.bits s}
  
@@ -86,21 +96,11 @@ structure Type =
 
       val compareRes = word WordSize.compareRes
 
-      val cpointer: unit -> t = fn () =>
-         T {node = CPointer, width = WordSize.bits (WordSize.cpointer ())}
-
       val csize: unit -> t = word o WordSize.csize
 
       val exnStack: unit -> t = csize
 
       val gcState: unit -> t = cpointer
-
-      val label: Label.t -> t =
-         fn l => T {node = Label l, width = WordSize.bits (WordSize.cpointer ())}
-
-      val objptr: ObjptrTycon.t -> t =
-         fn opt => T {node = Objptr (Vector.new1 opt),
-                      width = WordSize.bits (WordSize.objptr ())}
 
       val objptrHeader: unit -> t = word o WordSize.objptrHeader
 
