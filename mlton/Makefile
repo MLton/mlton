@@ -96,7 +96,7 @@ front-end/%.grm.sig front-end/%.grm.sml: front-end/%.grm
 	rm -f $<.sml.in
 	chmod -w $<.*
 
-mlton-stubs.mlb: $(shell "$(RUN_MLTON)" -stop f ../lib/stubs/mlton-stubs/sources.mlb) $(shell "$(RUN_MLTON)" -stop f mlton.mlb)
+mlton-stubs.mlb: $(shell "$(RUN_MLTON)" -stop f ../lib/stubs/mlton-stubs/sources.mlb) $(filter-out control/version.sml,$(shell "$(RUN_MLTON)" -stop f mlton.mlb))
 	(									\
 		echo '$$(SML_LIB)/basis/unsafe.mlb';				\
 		echo '$$(SML_LIB)/basis/sml-nj.mlb';				\
