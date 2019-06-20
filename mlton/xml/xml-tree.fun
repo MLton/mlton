@@ -51,14 +51,13 @@ structure Type =
             open Parse
             val parse = delay parse
          in
-            named ("Type",
             (unit <$ kw "unit")
             <|>
             (var <$> Tyvar.parse)
             <|>
             (con <$> (vectorOpt parse >>= (fn args =>
                       Tycon.parse >>= (fn con =>
-                      pure (con, args))))))
+                      pure (con, args)))))
          end
       val parse = parse ()
    end
@@ -113,7 +112,6 @@ structure Pat =
       in
          val parse =
             T <$>
-            named ("Pat",
             (Con.parse >>= (fn con =>
              parseTargs >>= (fn targs =>
              optional (paren
@@ -121,7 +119,7 @@ structure Pat =
                         sym ":" *>
                         Type.parse >>= (fn ty =>
                         pure (var, ty))))) >>= (fn arg =>
-             pure {con = con, targs = targs, arg = arg})))))
+             pure {con = con, targs = targs, arg = arg}))))
       end
 
       fun con (T {con, ...}) = con
@@ -198,12 +196,12 @@ structure VarExp =
       val parse =
          let
             open Parse
-            val varExcepts = Vector.new3 ("exception", "val", "in")
+            val varExcepts = Vector.new4 ("exception", "val", "in", "fun")
          in
-            T <$> named ("VarExp",
+            T <$>
             (Var.parseExcept varExcepts >>= (fn var =>
              parseTargs >>= (fn targs =>
-             pure {var = var, targs = targs}))))
+             pure {var = var, targs = targs})))
          end
    end
 
@@ -275,7 +273,7 @@ in
                     let
                        val pre =
                           if i = 0
-                             then seq [str "val rec ", layoutTyvars tyvars]
+                             then seq [str "fun ", layoutTyvars tyvars]
                              else str "and "
                     in
                        mayAlign [maybeConstrain (pre, var, ty, str " ="),
@@ -377,14 +375,13 @@ in
       Con.parse >>= (fn con =>
       optional (kw "of" *> Type.parse) >>= (fn arg =>
       pure {con = con, arg = arg}))
-   val parseArgs = named ("Args", vector VarExp.parse)
+   val parseArgs = vector VarExp.parse
    fun parseDec () =
-      named ("Dec",
       any
       [Exception <$>
        (kw "exception" *> parseConArg),
        Fun <$>
-       (kw "val" *> kw "rec" *>
+       (kw "fun" *>
         parseTyvars >>= (fn tyvars =>
         sepBy (Var.parse >>= (fn var =>
                sym ":" *>
@@ -410,9 +407,9 @@ in
         Type.parse >>= (fn ty =>
         sym "=" *>
         delay parseExp >>= (fn exp =>
-        pure {tyvars = tyvars, var = var, ty = ty, exp = exp})))))])
+        pure {tyvars = tyvars, var = var, ty = ty, exp = exp})))))]
    and parseExp () =
-      named ("Exp", Exp <$>
+      Exp <$>
       ((kw "let" *>
         many (delay parseDec) >>= (fn decs =>
         kw "in" *>
@@ -421,9 +418,8 @@ in
         pure {decs = decs, result = result})))
        <|>
        (VarExp.parse >>= (fn result =>
-        pure {decs = [], result = result}))))
+        pure {decs = [], result = result})))
    and parsePrimExp () =
-      named ("PrimExp",
       any
       [Case <$>
        let
@@ -486,9 +482,9 @@ in
        (VarExp.parse >>= (fn func =>
         VarExp.parse >>= (fn arg =>
         pure {func = func, arg = arg}))),
-       Var <$> VarExp.parse])
+       Var <$> VarExp.parse]
    and parseLambda () =
-      Lam <$> named ("Lambda",
+      Lam <$>
       (kw "fn" *>
        optional (kw "noinline") >>= (fn noInline =>
        Var.parse >>= (fn arg =>
@@ -499,7 +495,7 @@ in
        pure {mayInline = Option.isNone noInline,
              arg = arg, argType = argType,
              body = body,
-             plist = PropertyList.new ()}))))))
+             plist = PropertyList.new ()})))))
 end
 
 structure Dec =
@@ -1098,13 +1094,12 @@ structure Datatype =
          let
             open Parse
          in
-            named ("Datatype",
             kw "datatype" *>
             parseTyvars >>= (fn tyvars =>
             Tycon.parse >>= (fn tycon =>
             sym "=" *>
             sepBy (parseConArg, sym "|") >>= (fn cons =>
-            pure {tyvars = tyvars, tycon = tycon, cons = Vector.fromList cons}))))
+            pure {tyvars = tyvars, tycon = tycon, cons = Vector.fromList cons})))
          end
    end
 
