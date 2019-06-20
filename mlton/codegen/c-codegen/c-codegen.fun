@@ -47,7 +47,7 @@ structure C =
       val bytes = int o Bytes.toInt
 
       fun string s =
-         let val quote = "\""
+         let val quote = "\"" (* " *)
          in concat [quote, String.escapeC s, quote]
          end
 
