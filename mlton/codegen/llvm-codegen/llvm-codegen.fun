@@ -1389,6 +1389,7 @@ fun outputChunks (cxt, chunks,
                                      done: unit -> unit}) =
    let
         val Context { chunkLabelIndexAsString, program, ... } = cxt
+        val () = HashTable.removeAll (operScopes, fn _ => true)
         val () = cFunctions := []
         val () = ffiSymbols := []
         val { done, print, file=_ } = outputLL ()
@@ -1409,6 +1410,34 @@ fun outputChunks (cxt, chunks,
                     ; print "\n\n"
                  end
         val () = List.foreach (chunks, fn chunk => outputChunkFn (cxt, chunk, print))
+
+        val operDomain = Metadata.new ()
+        val () = (print o concat)
+               [Metadata.defineNode (operDomain, [operDomain]),
+                "\t; ", "Operator domain", "\n"]
+        val operScopes = Vector.fromList (HashTable.toList operScopes)
+        val rawOperScopes = Vector.mapi (operScopes,
+            fn (i, (oper, _)) =>
+               let
+                  val m = Metadata.new ()
+                  val () = (print o concat)
+                     [Metadata.defineNode (m, [m, operDomain]),
+                      "\t; ", SimpleOper.toString oper, "\n"]
+               in
+                  m
+               end)
+        val () = Vector.foreachi (operScopes,
+            fn (i, (_, (pos, neg))) =>
+               let
+                  val () = (print o Metadata.defineNode) (pos, [Vector.sub (rawOperScopes, i)])
+                  val () = print "\n"
+                  val () = (print o Metadata.defineNode) (neg,
+                     Vector.toListKeepAllMapi (rawOperScopes,
+                        fn (j, m) => if i = j then NONE else SOME m))
+                  val () = print "\n"
+               in
+                  ()
+               end)
         val () = List.foreach (!cFunctions, fn f =>
                      print (concat ["declare ", f, "\n"]))
         val () = List.foreach (!ffiSymbols, fn {name, cty, symbolScope} =>
