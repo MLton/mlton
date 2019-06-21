@@ -48,7 +48,7 @@
         s->vectorInits = vectorInits;                                   \
         s->vectorInitsLength = cardof(vectorInits);                     \
         s->sourceMaps.profileLabelInfos = profileLabelInfos;            \
-        s->sourceMaps.profileLabelInfosLength = cardof(profileLabelInfos);   \
+        s->sourceMaps.profileLabelInfosLength = cardof(profileLabelInfos); \
         s->sourceMaps.sourceNames = sourceNames;                        \
         s->sourceMaps.sourceNamesLength = cardof(sourceNames);          \
         s->sourceMaps.sourceSeqs = sourceSeqs;                          \

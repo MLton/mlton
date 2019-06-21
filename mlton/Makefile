@@ -96,7 +96,7 @@ front-end/%.grm.sig front-end/%.grm.sml: front-end/%.grm
 	rm -f $<.sml.in
 	chmod -w $<.*
 
-mlton-stubs.mlb: $(shell "$(RUN_MLTON)" -stop f ../lib/stubs/mlton-stubs/sources.mlb) $(shell "$(RUN_MLTON)" -stop f mlton.mlb)
+mlton-stubs.mlb: $(shell "$(RUN_MLTON)" -stop f ../lib/stubs/mlton-stubs/sources.mlb | $(GREP) 'mlb$$') $(shell "$(RUN_MLTON)" -stop f mlton.mlb | $(GREP) 'mlb$$')
 	(									\
 		echo '$$(SML_LIB)/basis/unsafe.mlb';				\
 		echo '$$(SML_LIB)/basis/sml-nj.mlb';				\
@@ -174,7 +174,7 @@ polyml-mlton: mlton-polyml.use $(FRONT_END_SOURCES)
 	$(CC) -o $(MLTON_OUTPUT)-polyml $(MLTON_OUTPUT)-polyml.o -lpolymain -lpolyml
 	rm -f $(MLTON_OUTPUT)-polyml.o
 
-mlton-polyml.use: ../lib/stubs/basis-stubs-for-polyml/sources.use ../lib/stubs/mlton-stubs-for-polyml/sources.use $(shell "$(RUN_MLTON)" -stop f ../lib/stubs/mlton-stubs/sources.mlb) $(filter-out control/version.sml,$(shell  "$(RUN_MLTON)" -stop f mlton.mlb))
+mlton-polyml.use: ../lib/stubs/basis-stubs-for-polyml/sources.use ../lib/stubs/mlton-stubs-for-polyml/sources.use $(shell "$(RUN_MLTON)" -stop f ../lib/stubs/mlton-stubs/sources.mlb | $(GREP) 'mlb$$') $(shell "$(RUN_MLTON)" -stop f mlton.mlb | $(GREP) 'mlb$$')
 	(									\
 		cat ../lib/stubs/basis-stubs-for-polyml/sources.use |		\
 			$(SED) 's|use "\(.*\)";|../lib/stubs/basis-stubs-for-polyml/\1|'; \
