@@ -860,7 +860,7 @@ structure Statement =
          let
             open Parse
          in
-            named ("Statement", any
+            any
             [Bind <$>
              (kw "val" *>
               ((SOME <$> Var.parse) <|> (NONE <$ kw "_")) >>= (fn var =>
@@ -871,7 +871,7 @@ structure Statement =
              (kw "upd" *>
               Base.parseWithOffset Var.parse >>= (fn (base, offset) =>
               sym ":=" *> Var.parse >>= (fn value =>
-              pure {base = base, offset = offset, value = value})))])
+              pure {base = base, offset = offset, value = value})))]
          end
 
       val profile = Profile
@@ -1368,11 +1368,10 @@ local
    open Parse
 in
    val parseFormals =
-      named ("Formals",
       vector (Var.parse >>= (fn x =>
               sym ":" *>
               Type.parse >>= (fn ty =>
-              pure (x, ty)))))
+              pure (x, ty))))
 end
 
 structure Block =
@@ -1411,7 +1410,6 @@ structure Block =
          let
             open Parse
          in
-            named ("Block",
             T <$>
             (kw "block" *>
              Label.parse >>= (fn label =>
@@ -1421,7 +1419,7 @@ structure Block =
              pure {label = label,
                    args = args,
                    statements = Vector.fromList statements,
-                   transfer = transfer}))))))
+                   transfer = transfer})))))
          end
 
       fun clear (T {label, args, statements, ...}) =
@@ -1455,14 +1453,14 @@ structure Datatype =
          let
             open Parse
          in
-            named ("Datatype", T <$>
+            T <$>
             (kw "datatype" *> Tycon.parse >>= (fn tycon =>
              sym "=" *>
              sepBy (Prod.parse Type.parse >>= (fn args =>
                     Con.parse >>= (fn con =>
                     pure {con = con, args = args})),
                     sym "|") >>= (fn cons =>
-             pure {tycon = tycon, cons = Vector.fromList cons}))))
+             pure {tycon = tycon, cons = Vector.fromList cons})))
          end
 
       fun clear (T {cons, tycon}) =
@@ -1849,7 +1847,6 @@ structure Function =
          let
             open Parse
          in
-            named ("Function",
             kw "fun" *>
             optional (kw "noinline") >>= (fn noInline =>
             Func.parse >>= (fn name =>
@@ -1862,7 +1859,7 @@ structure Function =
             Label.parse >>= (fn start =>
             paren (pure ()) *>
             pure (Option.isNone noInline, name, args, returns, raises,
-            start)))))))
+            start))))))
          end
 
       fun layout' (f: t, layoutVar) =
@@ -2268,16 +2265,16 @@ structure Program =
             val () = Label.parseReset {prims = Vector.new0 ()}
             val () = Func.parseReset {prims = Vector.new0 ()}
 
-            val parseProgram = named ("SSA2",
+            val parseProgram =
                T <$>
-               (named ("Datatypes", many Datatype.parse) >>= (fn datatypes =>
-                named ("Globals", many Statement.parse) >>= (fn globals =>
-                named ("Functions", many Function.parse) >>= (fn functions =>
-                named ("Main", Func.parse) >>= (fn main =>
+               (many Datatype.parse >>= (fn datatypes =>
+                many Statement.parse >>= (fn globals =>
+                many Function.parse >>= (fn functions =>
+                Func.parse >>= (fn main =>
                 pure {datatypes = Vector.fromList datatypes,
                       globals = Vector.fromList globals,
                       functions = functions,
-                      main = main}))))))
+                      main = main})))))
          in
             parseProgram <* (mlSpaces *> (failing next <|> fail "end of file"))
          end

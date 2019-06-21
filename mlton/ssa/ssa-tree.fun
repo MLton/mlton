@@ -221,7 +221,6 @@ structure Type =
             let
                val parse = P.delay parse
             in
-               P.named ("Type",
                Tycon.parseAs (tyconAlts, datatypee)
                <|>
                (P.paren parse >>= (fn ty =>
@@ -230,7 +229,7 @@ structure Type =
                <|>
                (P.vector parse >>= (fn tys =>
                 P.kw "tuple" *>
-                P.pure (tuple tys))))
+                P.pure (tuple tys)))
             end
          val parse = parse ()
       end
@@ -443,7 +442,6 @@ structure Exp =
             val parseArgs = vector Var.parse
             val parseArgsOpt = vectorOpt Var.parse
          in
-            named ("Exp",
             any
             [ConApp <$>
              (kw "con" *>
@@ -464,7 +462,7 @@ structure Exp =
               paren Var.parse >>= (fn tuple =>
               pure {tuple = tuple, offset = offset}))),
              Tuple <$> parseArgs,
-             Var <$> Var.parse])
+             Var <$> Var.parse]
          end
 
       fun maySideEffect (e: t): bool =
@@ -560,12 +558,12 @@ structure Statement =
          let
             open Parse
          in
-             named ("Statement", T <$>
+             T <$>
             (kw "val" *>
              ((SOME <$> Var.parse) <|> (NONE <$ kw "_")) >>= (fn var =>
              sym ":" *> Type.parse >>= (fn ty =>
              sym "=" *> Exp.parse >>= (fn exp =>
-             pure {var = var, ty = ty, exp = exp})))))
+             pure {var = var, ty = ty, exp = exp}))))
          end
 
       local
@@ -930,7 +928,7 @@ structure Transfer =
                parseArgs >>= (fn args =>
                pure (fn return => pure {func = func, args = args, return = return})))
          in
-            named ("Transfer", any
+            mlSpaces *> any
             [Bug <$ kw "bug",
              Call <$>
              (kw "call" *>
@@ -960,7 +958,7 @@ structure Transfer =
               paren (Prim.parseFull Type.parse >>= (fn prim =>
                      parseArgs >>= (fn args =>
                      pure (prim, args)))) >>= (fn (prim, args) =>
-              pure {prim = prim, args = args, return = return})))])
+              pure {prim = prim, args = args, return = return})))]
          end
 
       fun varsEquals (xs, xs') = Vector.equals (xs, xs', Var.equals)
@@ -1039,11 +1037,10 @@ local
    open Parse
 in
    val parseFormals =
-      named ("Formals",
       vector (Var.parse >>= (fn x =>
               sym ":" *>
               Type.parse >>= (fn ty =>
-              pure (x, ty)))))
+              pure (x, ty))))
 end
 
 structure Block =
@@ -1106,7 +1103,7 @@ structure Block =
          let
             open Parse
          in
-            named ("Block", T <$>
+            T <$>
             (kw "block" *>
              Label.parse >>= (fn label =>
              parseFormals >>= (fn args =>
@@ -1115,7 +1112,7 @@ structure Block =
              pure {label = label,
                    args = args,
                    statements = Vector.fromList statements,
-                   transfer = transfer}))))))
+                   transfer = transfer})))))
          end
 
       fun clear (T {label, args, statements, ...}) =
@@ -1156,7 +1153,7 @@ structure Datatype =
             open Parse
             val conExcepts = Vector.new2 ("datatype", "val")
          in
-            named ("Datatype", T <$>
+            T <$>
             (kw "datatype" *>
              Tycon.parse >>= (fn tycon =>
              sym "=" *>
@@ -1164,7 +1161,7 @@ structure Datatype =
                     ((kw "of" *> vector Type.parse) <|> pure (Vector.new0 ())) >>= (fn args =>
                     pure {con = con, args = args})),
                     sym "|") >>= (fn cons =>
-             pure {tycon = tycon, cons = Vector.fromList cons}))))
+             pure {tycon = tycon, cons = Vector.fromList cons})))
          end
 
       fun clear (T {tycon, cons}) =
@@ -1567,7 +1564,6 @@ structure Function =
          let
             open Parse
          in
-            named ("Header",
             kw "fun" *>
             optional (kw "noinline") >>= (fn noInline =>
             Func.parse >>= (fn name =>
@@ -1579,7 +1575,7 @@ structure Function =
             sym "=" *>
             Label.parse >>= (fn start =>
             paren (pure ()) *>
-            pure (Option.isNone noInline, name, args, returns, raises, start)))))))
+            pure (Option.isNone noInline, name, args, returns, raises, start))))))
          end
 
       fun layout' (f: t, layoutVar) =
@@ -1597,7 +1593,7 @@ structure Function =
          let
             open Parse
          in
-            named ("Function", new <$>
+            new <$>
             (parseHeader >>= (fn (mayInline, name, args, returns, raises, start) =>
              many Block.parse >>= (fn blocks =>
              pure {mayInline = mayInline,
@@ -1606,7 +1602,7 @@ structure Function =
                    returns = returns,
                    raises = raises,
                    start = start,
-                   blocks = Vector.fromList blocks}))))
+                   blocks = Vector.fromList blocks})))
          end
 
       fun layouts (f: t, layoutVar, output: Layout.t -> unit): unit =
@@ -1995,10 +1991,10 @@ structure Program =
 
             val parseProgram =
                T <$>
-               (named ("Datatypes", many Datatype.parse) >>= (fn datatypes =>
-                named ("Globals", many Statement.parse) >>= (fn globals =>
-                named ("Functions", many Function.parse) >>= (fn functions =>
-                named ("Main", Func.parse) >>= (fn main =>
+               (many Datatype.parse >>= (fn datatypes =>
+                many Statement.parse >>= (fn globals =>
+                many Function.parse >>= (fn functions =>
+                Func.parse >>= (fn main =>
                 pure {datatypes = Vector.fromList datatypes,
                       globals = Vector.fromList globals,
                       functions = functions,
