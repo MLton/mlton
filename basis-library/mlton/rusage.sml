@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -9,6 +10,7 @@
 structure MLtonRusage: MLTON_RUSAGE =
    struct
       structure Prim = PrimitiveFFI.MLton.Rusage
+      structure GCState = Primitive.MLton.GCState
 
       type t = {utime: Time.time, stime: Time.time}
 
@@ -36,7 +38,7 @@ structure MLtonRusage: MLTON_RUSAGE =
          in
             fn () =>
             let
-               val () = Prim.getrusage ()
+               val () = Prim.getrusage (GCState.gcState ())
                open Prim
             in
                {children = collect (children_utime_sec, children_utime_usec,

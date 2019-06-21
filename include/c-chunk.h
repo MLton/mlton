@@ -1,4 +1,4 @@
-/* Copyright (C) 1999-2008,2019 Matthew Fluet.
+/* Copyright (C) 2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -11,6 +11,14 @@
 #define _C_CHUNK_H_
 
 #include <stdio.h>
+/* `memcpy` is used by coercion `<ty>_castTo<ty>` functions (`basis/coerce.h`)
+ * and by misaligned `<ty>_fetch`, `<ty>_store`, and `<ty>_move` functions
+ * (`basis/Real/Real-ops.h` and `basis/Word/Word-ops.h`)
+ */
+#include <string.h>
+/* Math functions used by `Real<n>_f` functions (`basis/Real/Real-ops.h`).
+ */
+#include <math.h>
 
 #include "ml-types.h"
 #include "c-types.h"
@@ -28,45 +36,80 @@
 #define DEBUG_CCODEGEN FALSE
 #endif
 
-#define GCState ((Pointer)&gcState)
-#define ExnStack *(size_t*)(GCState + ExnStackOffset)
-#define FrontierMem *(Pointer*)(GCState + FrontierOffset)
-#define Frontier frontier
-#define StackBottom *(Pointer*)(GCState + StackBottomOffset)
-#define StackTopMem *(Pointer*)(GCState + StackTopOffset)
-#define StackTop stackTop
+#define UNUSED __attribute__ ((unused))
+#define NORETURN __attribute__ ((noreturn))
+#define Unreachable() __builtin_unreachable()
 
 /* ------------------------------------------------- */
-/*                      Memory                       */
+/* Chunk                                             */
+/* ------------------------------------------------- */
+
+#define Chunk(n)                                \
+        DeclareChunk(n) {                       \
+                if (DEBUG_CCODEGEN)             \
+                        fprintf (stderr, "%s:%d: Chunk%d(nextBlock = %d)\n", \
+                                        __FILE__, __LINE__, n, (int)nextBlock);
+
+#define ChunkSwitch(n)                          \
+                goto doSwitchNextBlock;         \
+                doSwitchNextBlock:              \
+                if (DEBUG_CCODEGEN)             \
+                        fprintf (stderr, "%s:%d: ChunkSwitch%d(nextBlock = %d)\n", \
+                                        __FILE__, __LINE__, n, (int)nextBlock); \
+                switch (nextBlock) {
+
+#define EndChunkSwitch                          \
+                default:                        \
+                        goto doLeaveChunk;      \
+                } /* end switch (nextBlock) */
+
+#define EndChunk(n, tail)                       \
+                /* interchunk return */         \
+                doLeaveChunk:                   \
+                if (DEBUG_CCODEGEN)             \
+                        fprintf (stderr, "%s:%d: EndChunk%d(nextBlock = %d)\n", \
+                                        __FILE__, __LINE__, n, (int)nextBlock); \
+                if (tail) {                     \
+                        return (*(nextChunks[nextBlock]))(gcState, stackTop, frontier, nextBlock); \
+                } else {                        \
+                        FlushFrontier();        \
+                        FlushStackTop();        \
+                        return nextBlock;       \
+                }                               \
+        } /* end chunk */
+
+
+/* ------------------------------------------------- */
+/*  Operands                                         */
 /* ------------------------------------------------- */
 
 #define C(ty, x) (*(ty*)(x))
 #define G(ty, i) (global##ty [i])
-#define GPNR(i) G(ObjptrNonRoot, i)
 #define O(ty, b, o) (*(ty*)((b) + (o)))
 #define X(ty, b, i, s, o) (*(ty*)((b) + ((i) * (s)) + (o)))
-#define S(ty, i) *(ty*)(StackTop + (i))
+#define S(ty, i) (*(ty*)(StackTop + (i)))
+
+#define GCState gcState
+#define Frontier frontier
+#define StackTop stackTop
+
+#define ExnStack *(size_t*)(GCState + ExnStackOffset)
+#define FrontierMem *(Pointer*)(GCState + FrontierOffset)
+#define StackBottom *(Pointer*)(GCState + StackBottomOffset)
+#define StackTopMem *(Pointer*)(GCState + StackTopOffset)
 
 /* ------------------------------------------------- */
-/*                       Tests                       */
+/* Cache and Flush                                   */
 /* ------------------------------------------------- */
 
-#define IsInt(p) (0x3 & (int)(p))
-
-#define BZ(x, l)                                                        \
-        do {                                                            \
-                if (DEBUG_CCODEGEN)                                     \
-                        fprintf (stderr, "%s:%d: BZ(%d, %s)\n", \
-                                        __FILE__, __LINE__, (x), #l);   \
-                if (0 == (x)) goto l;                                   \
+#define CacheFrontier()                         \
+        do {                                    \
+                Frontier = FrontierMem;         \
         } while (0)
 
-#define BNZ(x, l)                                                       \
-        do {                                                            \
-                if (DEBUG_CCODEGEN)                                     \
-                        fprintf (stderr, "%s:%d: BNZ(%d, %s)\n",        \
-                                        __FILE__, __LINE__, (x), #l);   \
-                if (x) goto l;                                          \
+#define CacheStackTop()                         \
+        do {                                    \
+                StackTop = StackTopMem;         \
         } while (0)
 
 #define FlushFrontier()                         \
@@ -79,84 +122,8 @@
                 StackTopMem = StackTop;         \
         } while (0)
 
-#define CacheFrontier()                         \
-        do {                                    \
-                Frontier = FrontierMem;         \
-        } while (0)
-
-#define CacheStackTop()                         \
-        do {                                    \
-                StackTop = StackTopMem;         \
-        } while (0)
-
 /* ------------------------------------------------- */
-/*                       Chunk                       */
-/* ------------------------------------------------- */
-
-#if (defined (__sun__) && defined (REGISTER_FRONTIER_STACKTOP))
-#define Chunk(n)                                                \
-        DeclareChunk(n) {                                       \
-                struct cont cont;                               \
-                register unsigned int frontier asm("g5");       \
-                uintptr_t l_nextFun = nextFun;                  \
-                register unsigned int stackTop asm("g6");
-#else
-#define Chunk(n)                                \
-        DeclareChunk(n) {                       \
-                struct cont cont;               \
-                Pointer frontier;               \
-                uintptr_t l_nextFun = nextFun;  \
-                Pointer stackTop;
-#endif
-
-#define ChunkSwitch(n)                                                  \
-                if (DEBUG_CCODEGEN)                                     \
-                        fprintf (stderr, "%s:%d: entering chunk %d  l_nextFun = %d\n", \
-                                        __FILE__, __LINE__, n, (int)l_nextFun); \
-                CacheFrontier();                                        \
-                CacheStackTop();                                        \
-                while (1) {                                             \
-                top:                                                    \
-                switch (l_nextFun) {
-
-#define EndChunk                                                        \
-                default:                                                \
-                        /* interchunk return */                         \
-                        nextFun = l_nextFun;                            \
-                        cont.nextChunk = (void*)nextChunks[nextFun];    \
-                        leaveChunk:                                     \
-                                FlushFrontier();                        \
-                                FlushStackTop();                        \
-                                return cont;                            \
-                } /* end switch (l_nextFun) */                          \
-                } /* end while (1) */                                   \
-        } /* end chunk */
-
-/* ------------------------------------------------- */
-/*                Calling SML from C                 */
-/* ------------------------------------------------- */
-
-#define Thread_returnToC()                                              \
-        do {                                                            \
-                if (DEBUG_CCODEGEN)                                     \
-                        fprintf (stderr, "%s:%d: Thread_returnToC()\n", \
-                                        __FILE__, __LINE__);            \
-                returnToC = TRUE;                                       \
-                return cont;                                            \
-        } while (0)
-
-/* ------------------------------------------------- */
-/*                      farJump                      */
-/* ------------------------------------------------- */
-
-#define FarJump(n, l)                           \
-        do {                                    \
-                PrepFarJump(n, l);              \
-                goto leaveChunk;                \
-        } while (0)
-
-/* ------------------------------------------------- */
-/*                       Stack                       */
+/* Stack                                             */
 /* ------------------------------------------------- */
 
 #define Push(bytes)                                                     \
@@ -167,47 +134,76 @@
                 StackTop += (bytes);                                    \
         } while (0)
 
+/* ------------------------------------------------- */
+/* Transfers                                         */
+/* ------------------------------------------------- */
+
+#define BNZ(x, lnz, lz)                                                 \
+        do {                                                            \
+                if (DEBUG_CCODEGEN)                                     \
+                        fprintf (stderr, "%s:%d: BNZ(%llu, %s, %s)\n",  \
+                                        __FILE__, __LINE__, ((unsigned long long)x), #lnz, #lz); \
+                if (x) goto lnz; else goto lz;                          \
+        } while (0)
+
+#define NearCall(l)                             \
+        goto l
+
+#define FarCall(n, l, tail)                     \
+        do {                                    \
+                if (DEBUG_CCODEGEN)             \
+                        fprintf (stderr, "%s:%d: FarCall(%d, %s)\n", \
+                                        __FILE__, __LINE__, (int)n, #l); \
+                if (tail) {                     \
+                        return ChunkName(n)(gcState, stackTop, frontier, l); \
+                } else {                        \
+                        FlushFrontier();        \
+                        FlushStackTop();        \
+                        return l;               \
+                }                               \
+        } while (0)
+
 #define Return()                                                                \
         do {                                                                    \
-                l_nextFun = *(uintptr_t*)(StackTop - sizeof(void*));            \
+                nextBlock = *(uintptr_t*)(StackTop - sizeof(uintptr_t));        \
                 if (DEBUG_CCODEGEN)                                             \
-                        fprintf (stderr, "%s:%d: Return()  l_nextFun = %d\n",   \
-                                        __FILE__, __LINE__, (int)l_nextFun);    \
-                goto top;                                                       \
+                        fprintf (stderr, "%s:%d: Return()  nextBlock = %d\n",   \
+                                        __FILE__, __LINE__, (int)nextBlock);    \
+                goto doSwitchNextBlock;                                         \
         } while (0)
 
 #define Raise()                                                                 \
         do {                                                                    \
                 if (DEBUG_CCODEGEN)                                             \
-                        fprintf (stderr, "%s:%d: Raise\n",                      \
+                        fprintf (stderr, "%s:%d: Raise()\n",                    \
                                         __FILE__, __LINE__);                    \
                 StackTop = StackBottom + ExnStack;                              \
                 Return();                                                       \
         } while (0)                                                             \
 
+
 /* ------------------------------------------------- */
-/*                       Primitives                  */
+/* Calling SML from C                                */
+/* ------------------------------------------------- */
+
+#define Thread_returnToC()                                              \
+        do {                                                            \
+                if (DEBUG_CCODEGEN)                                     \
+                        fprintf (stderr, "%s:%d: Thread_returnToC()\n", \
+                                        __FILE__, __LINE__);            \
+                return (uintptr_t)-1;                                   \
+        } while (0)
+
+/* ------------------------------------------------- */
+/* Primitives                                        */
 /* ------------------------------------------------- */
 
 #ifndef MLTON_CODEGEN_STATIC_INLINE
 #define MLTON_CODEGEN_STATIC_INLINE static inline
 #endif
-/* Declare inlined math functions, since <math.h> isn't included.
- */
-#ifndef MLTON_CODEGEN_MATHFN
-#define MLTON_CODEGEN_MATHFN(decl) decl
-#endif
-/* Declare memcpy, since <string.h> isn't included.
- */
-#ifndef MLTON_CODEGEN_MEMCPY
-#define MLTON_CODEGEN_MEMCPY(decl)
-#endif
-MLTON_CODEGEN_MEMCPY(void * memcpy(void *, const void*, size_t);)
-#include "basis-ffi.h"
 #include "basis/coerce.h"
 #include "basis/cpointer.h"
 #include "basis/Real/Real-ops.h"
-#include "basis/Real/Math-fns.h"
 #include "basis/Word/Word-ops.h"
 
 #endif /* #ifndef _C_CHUNK_H_ */

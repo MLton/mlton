@@ -25,8 +25,6 @@ struct
   end
 
   type transInfo = {addData : x86.Assembly.t list -> unit,
-                    frameInfoToX86: (x86MLtonBasic.Machine.FrameInfo.t
-                                     -> x86.FrameInfo.t),
                     live: x86.Label.t -> x86.Operand.t list,
                     liveInfo: x86Liveness.LiveInfo.t}
 
@@ -1720,9 +1718,8 @@ struct
       end
 
   fun ccall {args: (x86.Operand.t * x86.Size.t) vector,
-             frameInfo,
              func,
-             return: x86.Label.t option,
+             return: {return: x86.Label.t, size: int option} option,
              transInfo = {...}: transInfo}
     = let
         val CFunction.T {convention, target, ...} = func
@@ -1749,7 +1746,6 @@ struct
            statements = [],
            transfer = SOME (Transfer.ccall 
                             {args = Vector.toList args,
-                             frameInfo = frameInfo,
                              func = func,
                              return = return})})]
       end

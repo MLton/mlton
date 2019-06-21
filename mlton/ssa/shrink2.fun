@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2011,2017 Matthew Fluet.
+(* Copyright (C) 2009,2011,2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -132,7 +132,7 @@ structure LabelMeaning =
          Block
        | Bug
        | Case of {canMove: Statement.t list,
-                  cases: Cases.t,
+                  cases: (Con.t, Label.t) Cases.t,
                   default: Label.t option}
        | Goto of {canMove: Statement.t list,
                   dst: t,

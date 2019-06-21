@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -13,24 +14,24 @@ structure MLtonGC =
       val gcState = Primitive.MLton.GCState.gcState
 
       val pack : unit -> unit =
-         fn () => pack gcState
+         fn () => pack (gcState ())
       val unpack : unit -> unit =
-         fn () => unpack gcState
+         fn () => unpack (gcState ())
 
       val setHashConsDuringGC : bool -> unit =
-         fn b => setHashConsDuringGC (gcState, b)
+         fn b => setHashConsDuringGC (gcState (), b)
       val setMessages : bool -> unit =
-         fn b => setMessages (gcState, b)
+         fn b => setMessages (gcState (), b)
       val setRusageMeasureGC : bool -> unit =
-         fn b => setRusageMeasureGC (gcState, b)
+         fn b => setRusageMeasureGC (gcState (), b)
       val setSummary : bool -> unit =
-         fn b => setSummary (gcState, b)
+         fn b => setSummary (gcState (), b)
 
       structure Statistics =
          struct
             local
                fun mk conv prim =
-                  fn () => conv (prim gcState)
+                  fn () => conv (prim (gcState ()))
                val mkSize = mk C_Size.toLargeInt
                val mkUIntmax = mk C_UIntmax.toLargeInt
             in

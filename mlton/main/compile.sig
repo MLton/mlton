@@ -15,71 +15,35 @@ signature COMPILE =
    sig
       include COMPILE_STRUCTS
 
-      val compileMLB: {input: File.t,
-                       outputC: unit -> {file: File.t,
-                                         print: string -> unit,
-                                         done: unit -> unit},
-                       outputLL: unit -> {file: File.t,
-                                          print: string -> unit,
-                                          done: unit -> unit},
-                       outputS: unit -> {file: File.t,
-                                         print: string -> unit,
-                                         done: unit -> unit}} -> unit
-      val compileSML: {input: File.t list,
-                       outputC: unit -> {file: File.t,
-                                         print: string -> unit,
-                                         done: unit -> unit},
-                       outputLL: unit -> {file: File.t,
-                                          print: string -> unit,
-                                          done: unit -> unit},
-                       outputS: unit -> {file: File.t,
-                                         print: string -> unit,
-                                         done: unit -> unit}} -> unit
-      val compileXML: {input: File.t,
-                       outputC: unit -> {file: File.t,
-                                         print: string -> unit,
-                                         done: unit -> unit},
-                       outputLL: unit -> {file: File.t,
-                                          print: string -> unit,
-                                          done: unit -> unit},
-                       outputS: unit -> {file: File.t,
-                                         print: string -> unit,
-                                         done: unit -> unit}} -> unit
-      val compileSXML: {input: File.t,
-                        outputC: unit -> {file: File.t,
-                                          print: string -> unit,
-                                          done: unit -> unit},
-                        outputLL: unit -> {file: File.t,
-                                           print: string -> unit,
-                                           done: unit -> unit},
-                        outputS: unit -> {file: File.t,
-                                          print: string -> unit,
-                                          done: unit -> unit}} -> unit
-      val compileSSA: {input: File.t,
-                       outputC: unit -> {file: File.t,
-                                         print: string -> unit,
-                                         done: unit -> unit},
-                       outputLL: unit -> {file: File.t,
-                                          print: string -> unit,
-                                          done: unit -> unit},
-                       outputS: unit -> {file: File.t,
-                                         print: string -> unit,
-                                         done: unit -> unit}} -> unit
-      val compileSSA2: {input: File.t,
-                        outputC: unit -> {file: File.t,
-                                          print: string -> unit,
-                                          done: unit -> unit},
-                        outputLL: unit -> {file: File.t,
-                                           print: string -> unit,
-                                           done: unit -> unit},
-                        outputS: unit -> {file: File.t,
-                                          print: string -> unit,
-                                          done: unit -> unit}} -> unit
-
-      val elaborateMLB: {input: File.t} -> unit
-      val elaborateSML: {input: File.t list} -> unit
+      val mkCompile:
+         {outputC: unit -> {file: File.t,
+                            print: string -> unit,
+                            done: unit -> unit},
+          outputLL: unit -> {file: File.t,
+                             print: string -> unit,
+                             done: unit -> unit},
+          outputS: unit -> {file: File.t,
+                            print: string -> unit,
+                            done: unit -> unit}} ->
+         {mlb: {compile: File.t -> unit,
+                frontend: File.t -> unit,
+                sourceFiles: File.t -> File.t vector},
+          sml: {compile: File.t -> unit,
+                frontend: File.t -> unit,
+                sourceFiles: File.t -> File.t vector},
+          xml: {compile: File.t -> unit,
+                frontend: File.t -> unit,
+                sourceFiles: File.t -> File.t vector},
+          sxml: {compile: File.t -> unit,
+                 frontend: File.t -> unit,
+                 sourceFiles: File.t -> File.t vector},
+          ssa: {compile: File.t -> unit,
+                frontend: File.t -> unit,
+                sourceFiles: File.t -> File.t vector},
+          ssa2: {compile: File.t -> unit,
+                 frontend: File.t -> unit,
+                 sourceFiles: File.t -> File.t vector}}
       val setCommandLineConstant: {name: string, value: string} -> unit
-      val sourceFilesMLB: {input: File.t} -> File.t vector
       (* output a C file to print out the basis constants. *)
       val outputBasisConstants: Out.t -> unit
    end

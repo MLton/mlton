@@ -66,7 +66,6 @@ functor LimitCheck (S: RSSA_TRANSFORM_STRUCTS): RSSA_TRANSFORM =
 struct
 
 open S
-open Rssa
 
 structure LimitCheck =
    struct
@@ -179,7 +178,8 @@ fun insertFunction (f: Function.t,
                                      kind = CFunction.Kind.Runtime {bytesNeeded = NONE,
                                                                     ensuresBytesFree = NONE,
                                                                     mayGC = false,
-                                                                    maySwitchThreads = false,
+                                                                    maySwitchThreadsFrom = false,
+                                                                    maySwitchThreadsTo = false,
                                                                     modifiesFrontier = false,
                                                                     readsStackTop = false,
                                                                     writesStackTop = false},
@@ -691,7 +691,7 @@ fun insertCoalesce (f: Function.t, handlesSignals) =
             val classes = Array.array (n, ~1)
             fun indexClass i = Array.sub (classes, i)
             val c = Counter.new 0
-            fun setClass (f: unit Forest.t) =
+            fun setClass (f: unit Node.t Forest.t) =
                let
                   val {loops, notInLoop} = Forest.dest f
                   val class = Counter.next c
@@ -711,7 +711,8 @@ fun insertCoalesce (f: Function.t, handlesSignals) =
                in
                   ()
                end
-            val _ = setClass (Graph.loopForestSteensgaard (g, {root = root}))
+            val _ = setClass (Graph.loopForestSteensgaard
+                              (g, {root = root, nodeValue = fn x => x}))
             val numClasses = Counter.value c
             datatype z = datatype Control.limitCheck
             val _ =
@@ -831,7 +832,7 @@ fun insertCoalesce (f: Function.t, handlesSignals) =
       f
    end
 
-fun transform (Program.T {functions, handlesSignals, main, objectTypes}) =
+fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileInfo}) =
    let
       val _ = Control.diagnostic (fn () => Layout.str "Limit Check maxPaths")
       datatype z = datatype Control.limitCheck
@@ -867,7 +868,8 @@ fun transform (Program.T {functions, handlesSignals, main, objectTypes}) =
       Program.T {functions = functions,
                  handlesSignals = handlesSignals,
                  main = main,
-                 objectTypes = objectTypes}
+                 objectTypes = objectTypes,
+                 profileInfo = profileInfo}
    end
 
 end

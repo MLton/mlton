@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -76,12 +76,13 @@ local
                val equals: t * t -> bool
                val fromInt: int -> t
                val fromIntInf: IntInf.t -> t
+               val hash: t -> word
                (* val inWord8: t *)
                (* val inWord16: t *)
                val inWord32: t
                val inWord64: t
-               (* val isAligned: t * {alignment: t} -> bool *)
-               val isWord32Aligned: t -> bool
+               val isAligned: t * {alignment: t} -> bool
+               (* val isWord32Aligned: t -> bool *)
                (* val isWord64Aligned: t -> bool *)
                val isZero: t -> bool
                val layout: t -> Layout.t
@@ -158,7 +159,7 @@ local
                fun isAligned (b, {alignment = a}) = 0 = rem (b, a)
                (* fun isWord8Aligned b = isAligned (b, {alignment = inWord8}) *)
                (* fun isWord16Aligned b = isAligned (b, {alignment = inWord16}) *)
-               fun isWord32Aligned b = isAligned (b, {alignment = inWord32})
+               (* fun isWord32Aligned b = isAligned (b, {alignment = inWord32}) *)
                (* fun isWord64Aligned b = isAligned (b, {alignment = inWord64}) *)
 
                fun toBits b = b * Bits.inByte

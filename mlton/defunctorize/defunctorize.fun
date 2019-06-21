@@ -52,45 +52,30 @@ end
 structure NestedPat = NestedPat (open Xml)
 
 structure MatchCompile =
-   MatchCompile (open CoreML
+   MatchCompile (open Xml
                  structure Type = Xtype
                  structure NestedPat = NestedPat
-                 structure Cases =
+                 structure Exp =
                     struct
-                       type exp = Xexp.t
+                       open Xexp
+                       val lett = let1
+                       val var = monoVar
 
-                       open Xcases
-                       type t = exp t
-                       val word = Word
-                       fun con v =
-                          Con (Vector.map
-                               (v, fn {con, targs, arg, rhs} =>
-                                (Xpat.T {con = con,
-                                         targs = targs,
-                                         arg = arg},
-                                 rhs)))
-                    end
-                structure Exp =
-                   struct
-                      open Xexp
-                      val lett = let1
-                      val var = monoVar
+                       fun detuple {tuple, body} =
+                          Xexp.detuple
+                          {tuple = tuple,
+                           body = fn xts => body (Vector.map
+                                                  (xts, fn (x, t) =>
+                                                   (XvarExp.var x, t)))}
 
-                      fun detuple {tuple, body} =
-                         Xexp.detuple
-                         {tuple = tuple,
-                          body = fn xts => body (Vector.map
-                                                 (xts, fn (x, t) =>
-                                                  (XvarExp.var x, t)))}
-
-                      fun devector {vector, length, body} =
-                         Xexp.devector
-                         {vector = vector,
-                          length = length,
-                          body = fn xts => body (Vector.map
-                                                 (xts, fn (x, t) =>
-                                                  (XvarExp.var x, t)))}
-                   end)
+                       fun devector {vector, length, body} =
+                          Xexp.devector
+                          {vector = vector,
+                           length = length,
+                           body = fn xts => body (Vector.map
+                                                  (xts, fn (x, t) =>
+                                                   (XvarExp.var x, t)))}
+                    end)
 
 structure Xexp =
    struct

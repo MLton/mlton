@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -12,34 +13,32 @@
 #include "common-main.h"
 #include "c-common.h"
 
+PRIVATE GC_state MLton_gcState() {
+  static struct GC_state gcState;
+  return &gcState;
+}
+
 static GC_frameIndex returnAddressToFrameIndex (GC_returnAddress ra) {
         return (GC_frameIndex)ra;
 }
 
-#define MLtonCallFromC                                                  \
-/* Globals */                                                           \
-PRIVATE uintptr_t nextFun;                                              \
-PRIVATE int returnToC;                                                  \
-static void MLton_callFromC () {                                        \
-        struct cont cont;                                               \
-        GC_state s;                                                     \
-                                                                        \
+#define MLtonCallFromC()                                                \
+static void MLton_callFromC (CPointer localOpArgsResPtr) {              \
+        uintptr_t nextBlock;                                            \
+        GC_state s = MLton_gcState();                                   \
         if (DEBUG_CCODEGEN)                                             \
                 fprintf (stderr, "MLton_callFromC() starting\n");       \
-        s = &gcState;                                                   \
+        s->callFromCOpArgsResPtr = localOpArgsResPtr;                   \
         GC_setSavedThread (s, GC_getCurrentThread (s));                 \
         s->atomicState += 3;                                            \
         if (s->signalsInfo.signalIsPending)                             \
                 s->limit = s->limitPlusSlop - GC_HEAP_LIMIT_SLOP;       \
         /* Switch to the C Handler thread. */                           \
         GC_switchToThread (s, GC_getCallFromCHandlerThread (s), 0);     \
-        nextFun = *(uintptr_t*)(s->stackTop - GC_RETURNADDRESS_SIZE);   \
-        cont.nextChunk = nextChunks[nextFun];                           \
-        returnToC = FALSE;                                              \
+        nextBlock = *(uintptr_t*)(s->stackTop - GC_RETURNADDRESS_SIZE); \
         do {                                                            \
-                cont=(*(struct cont(*)(void))cont.nextChunk)();         \
-        } while (not returnToC);                                        \
-        returnToC = FALSE;                                              \
+                nextBlock = (*(nextChunks[nextBlock]))(s, s->stackTop, s->frontier, nextBlock); \
+        } while (nextBlock != (uintptr_t)-1);                           \
         s->atomicState += 1;                                            \
         GC_switchToThread (s, GC_getSavedThread (s), 0);                \
         s->atomicState -= 1;                                            \
@@ -50,61 +49,50 @@ static void MLton_callFromC () {                                        \
                 fprintf (stderr, "MLton_callFromC done\n");             \
 }
 
-#define MLtonMain(al, mg, mfs, mmc, pk, ps, mc, ml)                     \
-MLtonCallFromC                                                          \
+#define MLtonMain(al, mg, mfs, mmc, pk, ps, ml)                         \
 PUBLIC int MLton_main (int argc, char* argv[]) {                        \
-        struct cont cont;                                               \
-        Initialize (al, mg, mfs, mmc, pk, ps);                          \
-        if (gcState.amOriginal) {                                       \
+        uintptr_t nextBlock;                                            \
+        GC_state s = MLton_gcState();                                   \
+        Initialize (s, al, mg, mfs, mmc, pk, ps);                       \
+        if (s->amOriginal) {                                            \
                 real_Init();                                            \
-                PrepFarJump(mc, ml);                                    \
+                nextBlock = ml;                                         \
         } else {                                                        \
                 /* Return to the saved world */                         \
-                nextFun = *(uintptr_t*)(gcState.stackTop - GC_RETURNADDRESS_SIZE); \
-                cont.nextChunk = nextChunks[nextFun];                   \
+                nextBlock = *(uintptr_t*)(s->stackTop - GC_RETURNADDRESS_SIZE); \
         }                                                               \
         /* Trampoline */                                                \
-        while (1) {                                                     \
-                cont=(*(struct cont(*)(void))cont.nextChunk)();         \
-                cont=(*(struct cont(*)(void))cont.nextChunk)();         \
-                cont=(*(struct cont(*)(void))cont.nextChunk)();         \
-                cont=(*(struct cont(*)(void))cont.nextChunk)();         \
-                cont=(*(struct cont(*)(void))cont.nextChunk)();         \
-                cont=(*(struct cont(*)(void))cont.nextChunk)();         \
-                cont=(*(struct cont(*)(void))cont.nextChunk)();         \
-                cont=(*(struct cont(*)(void))cont.nextChunk)();         \
-        }                                                               \
+        do {                                                            \
+                nextBlock = (*(nextChunks[nextBlock]))(s, s->stackTop, s->frontier, nextBlock); \
+        } while (1);                                                    \
         return 1;                                                       \
 }
 
 #define MLtonLibrary(al, mg, mfs, mmc, pk, ps, mc, ml)                  \
-MLtonCallFromC                                                          \
 PUBLIC void LIB_OPEN(LIBNAME) (int argc, char* argv[]) {                \
-        struct cont cont;                                               \
-        Initialize (al, mg, mfs, mmc, pk, ps);                          \
-        if (gcState.amOriginal) {                                       \
+        uintptr_t nextBlock;                                            \
+        GC_state s = MLton_gcState();                                   \
+        Initialize (s, al, mg, mfs, mmc, pk, ps);                       \
+        if (s->amOriginal) {                                            \
                 real_Init();                                            \
-                PrepFarJump(mc, ml);                                    \
+                nextBlock = ml;                                         \
         } else {                                                        \
                 /* Return to the saved world */                         \
-                nextFun = *(uintptr_t*)(gcState.stackTop - GC_RETURNADDRESS_SIZE); \
-                cont.nextChunk = nextChunks[nextFun];                   \
+                nextBlock = *(uintptr_t*)(s->stackTop - GC_RETURNADDRESS_SIZE); \
         }                                                               \
         /* Trampoline */                                                \
-        returnToC = FALSE;                                              \
         do {                                                            \
-                cont=(*(struct cont(*)(void))cont.nextChunk)();         \
-        } while (not returnToC);                                        \
+                nextBlock = (*(nextChunks[nextBlock]))(s, s->stackTop, s->frontier, nextBlock); \
+        } while (nextBlock != (uintptr_t)-1);                           \
 }                                                                       \
 PUBLIC void LIB_CLOSE(LIBNAME) () {                                     \
-        struct cont cont;                                               \
-        nextFun = *(uintptr_t*)(gcState.stackTop - GC_RETURNADDRESS_SIZE); \
-        cont.nextChunk = nextChunks[nextFun];                           \
-        returnToC = FALSE;                                              \
+        uintptr_t nextBlock;                                            \
+        GC_state s = MLton_gcState();                                   \
+        nextBlock = *(uintptr_t*)(s->stackTop - GC_RETURNADDRESS_SIZE); \
         do {                                                            \
-                cont=(*(struct cont(*)(void))cont.nextChunk)();         \
-        } while (not returnToC);                                        \
-        GC_done(&gcState);                                              \
+                nextBlock = (*(nextChunks[nextBlock]))(s, s->stackTop, s->frontier, nextBlock); \
+        } while (nextBlock != (uintptr_t)-1);                           \
+        GC_done(s);                                                     \
 }
 
 #endif /* #ifndef _C_MAIN_H */

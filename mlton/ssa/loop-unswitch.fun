@@ -128,7 +128,7 @@ fun detectCases(block: Block.t, loopVars: Var.t list, depth: int) =
 fun findOpportunity(loopBody: Block.t vector,
                     loopHeaders: Block.t vector,
                     depth: int)
-                    : ((Cases.t * Var.t * Label.t option) * Block.t) option =
+                    : (((Con.t, Label.t) Cases.t * Var.t * Label.t option) * Block.t) option =
   let
     val vars = Vector.fold (loopBody, [], (fn (b, lst) => (blockVars b) @ lst))
     val canOptimize = Vector.keepAllMap (loopBody,
@@ -352,7 +352,7 @@ fun optimizeFunction(function: Function.t): Function.t =
       val () = logs (concat["Optimizing function: ", Func.toString name,
                             " of size ", Int.toString fsize])
       val root = labelNode start
-      val forest = Graph.loopForestSteensgaard(graph, {root = root})
+      val forest = Graph.loopForestSteensgaard(graph, {root = root, nodeValue = fn x => x})
       val newBlocks = traverseForest((Forest.dest forest), blocks, labelNode, nodeBlock)
    in
       Function.new {args = args,

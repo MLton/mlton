@@ -1,4 +1,4 @@
-(* Copyright (C) 2012,2017 Matthew Fluet.
+(* Copyright (C) 2012,2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -120,15 +120,7 @@ fun elaborateTopdec (topdec, {env = E: Env.t}) =
                       let
                          open Layout
                          val () =
-                            File.withOut
-                            (file, fn out =>
-                             Env.output
-                             (E, out,
-                              {compact = !Control.showBasisCompact,
-                               def = !Control.showBasisDef,
-                               flat = !Control.showBasisFlat,
-                               onlyCurrent = false,
-                               prefixUnset = true}))
+                            Env.showBasis (E, file)
                             handle exn =>
                             Control.warning
                             (Strdec.region d,

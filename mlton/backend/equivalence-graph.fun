@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -64,7 +65,7 @@ fun addEdge (T {edges, ...}, c, c') =
 
 fun == (_, c, c') = Class.== (c, c')
 
-fun coarsen (T {classes, edges, ...}, {maxClassSize}) =
+fun coarsen (T {edges, ...}, {maxClassSize}) =
    let
       (* Combine classes with an edge between them where possible. *)
       val _ =
@@ -72,38 +73,6 @@ fun coarsen (T {classes, edges, ...}, {maxClassSize}) =
                        if Class.size c + Class.size c' <= maxClassSize
                           then Class.== (c, c')
                        else ())
-      (* Get a list of all classes without duplicates. *)
-      val {get, ...} =
-         Property.get (Class.plist, Property.initFun (fn _ => ref false))
-      val classes =
-         List.fold
-         (!classes, [], fn (class, ac) =>
-          let
-             val r = get class
-          in
-             if !r
-                then ac
-             else (r := true
-                   ; class :: ac)
-          end)
-      (* Sort classes in decreasing order of size. *)
-      val classes =
-         QuickSort.sortList (classes, fn (c, c') =>
-                             Class.size c >= Class.size c')
-      (* Combine classes where possible. *)
-      fun loop (cs: Class.t list): unit =
-         case cs of
-            [] => ()
-          | c :: cs =>
-               loop
-               (rev
-                (List.fold
-                 (cs, [], fn (c', ac) =>
-                  if Class.size c  + Class.size c' <= maxClassSize
-                     then (Class.== (c, c')
-                           ; ac)
-                  else c' :: ac)))
-      val _ = loop classes
    in
       ()
    end

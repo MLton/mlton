@@ -27,12 +27,22 @@ signature CONTROL_FLAGS =
 
       val atMLtons: string vector ref
 
-      datatype chunk =
-         OneChunk
-       | ChunkPerFunc
-       | Coalesce of {limit: int}
+      val bounceRssaLimit: int option ref
+      val bounceRssaLiveCutoff: int option ref
+      val bounceRssaLoopCutoff: int option ref
+      val bounceRssaUsageCutoff: int option ref
 
-      val chunk: chunk ref
+      val chunkBatch: int ref
+
+      structure Chunkify:
+         sig
+            datatype t = Coalesce of {limit: int}
+                       | One
+                       | PerFunc
+         end
+      val chunkify: Chunkify.t ref
+
+      val chunkTailCall: bool ref
 
       val closureConvertGlobalize: bool ref
       val closureConvertShrink: bool ref
@@ -164,11 +174,6 @@ signature CONTROL_FLAGS =
             val snapshot: unit -> (unit -> 'a) -> 'a
          end
 
-      (* stop after elaboration.  So, no need for the elaborator to generate
-       * valid CoreML.
-       *)
-      val elaborateOnly: bool ref
-
       val emitMain: bool ref
 
       val exportHeader: File.t option ref
@@ -257,10 +262,6 @@ signature CONTROL_FLAGS =
       
       (* name of the output library *)
       val libname : string ref
-
-      (* Number of times to loop through optimization passes. *)
-      val loopSsaPasses: int ref
-      val loopSsa2Passes: int ref
 
       (* Limit the code growth loop unrolling/unswitching will allow. *)
       val loopUnrollLimit: int ref
@@ -385,6 +386,9 @@ signature CONTROL_FLAGS =
        | Smart (* split only when smaller than two, default *)
        | Always
       val splitTypesBool: splitTypesBool ref
+
+      (* List of pass names to stop at. *)
+      val stopPasses: Regexp.Compiled.t list ref
 
       datatype target =
          Cross of string

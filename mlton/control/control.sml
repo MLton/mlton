@@ -12,19 +12,24 @@ struct
 
 open ControlFlags
 
-datatype style = No | Assembly | C | Dot | LLVM | ML
+structure CommentStyle =
+struct
+   datatype t = No | Assembly | C | Dot | LLVM | ML
 
-val preSuf =
-   fn No => ("", "")
-    | Assembly => ("/* ", " */")
-    | C => ("/* ", " */")
-    | Dot => ("// ", "")
-    | LLVM => ("; ", "")
-    | ML => ("(* ", " *)")
+   val preSuf =
+      fn No => ("", "")
+       | Assembly => ("/* ", " */")
+       | C => ("/* ", " */")
+       | Dot => ("// ", "")
+       | LLVM => ("; ", "")
+       | ML => ("(* ", " *)")
+
+end
+datatype style = datatype CommentStyle.t
 
 fun outputHeader (style: style, output: Layout.t -> unit) =
    let
-      val (pre, suf) = preSuf style
+      val (pre, suf) = CommentStyle.preSuf style
    in
       output (Layout.str (concat [pre, Version.banner, suf]));
       if Verbosity.< (!verbosity, Verbosity.Detail)
@@ -33,9 +38,7 @@ fun outputHeader (style: style, output: Layout.t -> unit) =
    end
 
 fun outputHeader' (style, out: Out.t) =
-   outputHeader (style, fn l =>
-                 (Layout.output (l, out);
-                  Out.newline out))
+   outputHeader (style, fn l => Layout.outputl (l, out))
 
 val depth: int ref = ref 0
 fun getDepth () = !depth
@@ -80,39 +83,65 @@ fun timeToString {total, gc} =
    in concat [t2s (Time.- (total, gc)), " + ", t2s gc, " (", per, "% GC)"]
    end
 
+exception CompileError
+exception Stopped
+exception Raised
+
 fun trace (verb, name: string) (f: 'a -> 'b) (a: 'a): 'b =
    if Verbosity.<= (verb, !verbosity)
-      then
-         let
-            val _ = messageStr (verb, concat [name, " starting"])
-            val (t, gc) = time ()
-            val _ = indent ()
-            fun done () =
-               let
-                  val _ = unindent ()
-                  val (t', gc') = time ()
-               in
-                  timeToString {total = Time.- (t', t),
-                                gc = Time.- (gc', gc)}
-               end
-         in (f a
-             before messageStr (verb, concat [name, " finished in ", done ()]))
-            handle e =>
-               (messageStr (verb, concat [name, " raised in ", done ()])
-                ; messageStr (verb, concat [name, " raised: ", Exn.toString e])
-                ; (case Exn.history e of
-                      [] => ()
-                    | history =>
-                         (messageStr (verb, concat [name, " raised with history: "])
-                          ; indent ()
-                          ; (List.foreach
-                             (history, fn s =>
-                              messageStr (verb, s)))
-                          ; unindent ()))
-                ; raise e)
-         end
-   else
-      f a
+      then let
+              val _ = messageStr (verb, concat [name, " starting"])
+              val (t, gc) = time ()
+              val _ = indent ()
+              fun done () =
+                 let
+                    val _ = unindent ()
+                    val (t', gc') = time ()
+                 in
+                    timeToString {total = Time.- (t', t),
+                                  gc = Time.- (gc', gc)}
+                 end
+           in (f a
+               before messageStr (verb, concat [name, " finished in ", done ()]))
+              handle exn =>
+                 (case exn of
+                     CompileError =>
+                        (messageStr (verb, concat [name, " reported errors in ", done ()])
+                         ; raise exn)
+                   | Stopped =>
+                        (messageStr (verb, concat [name, " finished in ", done ()])
+                         ; raise exn)
+                   | Raised =>
+                        (messageStr (verb, concat [name, " raised in ", done ()])
+                         ; raise exn)
+                   | _ =>
+                        (messageStr (verb, concat [name, " raised: ", Exn.toString exn])
+                         ; (case Exn.history exn of
+                               [] => ()
+                             | history =>
+                                  (indent ()
+                                   ; List.foreach (history, fn s => messageStr (verb, s))
+                                   ; unindent ()))
+                         ; messageStr (verb, concat [name, " raised in ", done ()])
+                         ; raise Raised))
+           end
+      else f a
+
+fun traceTop (name: string) (f: 'a -> unit) (a: 'a) =
+   trace (Top, name) f a
+   handle CompileError => OS.Process.exit OS.Process.failure
+        | Stopped => ()
+        | Raised => OS.Process.exit OS.Process.failure
+        | exn =>
+            (verbosity := Top
+             ; messageStr (Top, concat [name, " raised: ", Exn.toString exn])
+             ; (case Exn.history exn of
+                   [] => ()
+                 | history =>
+                      (indent ()
+                       ; List.foreach (history, fn s => messageStr (Top, s))
+                       ; unindent ()))
+             ; OS.Process.exit OS.Process.failure)
 
 type traceAccum = {verb: verbosity, 
                    total: Time.t ref, 
@@ -135,35 +164,35 @@ val traceAccum: (verbosity * string) -> (traceAccum * (unit -> unit)) =
 
 val ('a, 'b) traceAdd: (traceAccum * string) -> ('a -> 'b) -> 'a -> 'b =
    fn ({verb, total, totalGC}, name) =>
-   fn f =>
-   fn a =>
+   fn f => fn a =>
    if Verbosity.<= (verb, !verbosity)
-     then let
-            val (t, gc) = time ()
-            fun done () 
-              = let
-                  val (t', gc') = time ()
-                in
-                  total := Time.+ (!total, Time.- (t', t))
-                  ; totalGC := Time.+ (!totalGC, Time.- (gc', gc))
-                end
-          in
-            (f a
-             before done ())
-            handle e => 
-               (messageStr (verb, concat [name, " raised"])
-                ; (case Exn.history e of
-                      [] => ()
-                    | history =>
-                         (messageStr (verb, concat [name, " raised with history: "])
-                          ; indent ()
-                          ; (List.foreach
-                             (history, fn s =>
-                              messageStr (verb, s)))
-                          ; unindent ()))
-                ; raise e)
-          end
-     else f a
+      then let
+              val (t, gc) = time ()
+              fun done () =
+                 let
+                    val (t', gc') = time ()
+                 in
+                    total := Time.+ (!total, Time.- (t', t))
+                    ; totalGC := Time.+ (!totalGC, Time.- (gc', gc))
+                 end
+           in (f a
+               before done ())
+              handle exn =>
+                 (case exn of
+                     CompileError => raise exn
+                   | Stopped => raise exn
+                   | Raised => raise exn
+                   | _ =>
+                        (messageStr (verb, concat [name, " raised: ", Exn.toString exn])
+                         ; (case Exn.history exn of
+                               [] => ()
+                             | history =>
+                                  (indent ()
+                                   ; List.foreach (history, fn s => messageStr (verb, s))
+                                   ; unindent ()))
+                         ; raise Raised))
+           end
+      else f a
 
 val ('a, 'b) traceBatch: (verbosity * string) -> ('a -> 'b) ->
                          (('a -> 'b) * (unit -> unit)) =
@@ -182,8 +211,6 @@ val ('a, 'b) traceBatch: (verbosity * string) -> ('a -> 'b) ->
 val numErrors: int ref = ref 0
 
 val errorThreshhold: int ref = ref 20
-
-val die = Process.fail
 
 local
    fun msg (kind: string, r: Region.t, msg: Layout.t, extra: Layout.t): unit =
@@ -211,16 +238,16 @@ in
          val _ = msg ("Error", r, m, e)
       in
          if !numErrors = !errorThreshhold
-            then die "compilation aborted: too many errors"
+            then raise CompileError
          else ()
       end
 end
 
 fun errorStr (r, msg) = error (r, Layout.str msg, Layout.empty)
 
-fun checkForErrors (name: string) =
+fun checkForErrors () =
    if !numErrors > 0
-      then die (concat ["compilation aborted: ", name, " reported errors"])
+      then raise CompileError
    else ()
 
 fun checkFile (f: File.t, {fail: string -> 'a, name, ok: unit -> 'a}): 'a = let
@@ -239,8 +266,7 @@ fun checkFile (f: File.t, {fail: string -> 'a, name, ok: unit -> 'a}): 'a = let
 (*---------------------------------------------------*)
 
 datatype 'a display =
-   NoDisplay
-  | Layout of 'a -> Layout.t
+    Layout of 'a -> Layout.t
   | Layouts of 'a * (Layout.t -> unit) -> unit
 
 fun 'a sizeMessage (name: string, a: 'a): Layout.t =
@@ -258,38 +284,48 @@ fun diagnostics f =
 
 fun diagnostic f = diagnostics (fn disp => disp (f ()))
 
-fun saveToFile ({suffix: string},
-                style,
-                a: 'a,
-                d: 'a display): unit =
+fun saveToFile {arg: 'a,
+                name: string option,
+                toFile = {display: 'a display, style: style, suffix: string},
+                verb: Verbosity.t}: unit =
    let
+      val name =
+         case name of
+            NONE => concat [!inputFile, ".", suffix]
+          | SOME name => concat [!inputFile, ".", name, ".", suffix]
       fun doit f =
-         trace (Pass, "display")
+         trace (verb, concat ["save ", name])
          Ref.fluidLet
-         (inputFile, concat [!inputFile, ".", suffix], fn () =>
+         (inputFile, name, fn () =>
           File.withOut (!inputFile, fn out =>
                         f (fn l => (Layout.outputl (l, out)))))
    in
-      case d of
-         NoDisplay => ()
-       | Layout layout =>
+      case display of
+         Layout layout =>
             doit (fn output =>
                   (outputHeader (style, output)
-                   ; output (layout a)))
+                   ; output (layout arg)))
        | Layouts layout =>
             doit (fn output =>
                   (outputHeader (style, output)
-                   ; layout (a, output)))
+                   ; layout (arg, output)))
    end
 
-fun maybeSaveToFile ({name: string, suffix: string},
-                     style: style,
-                     a: 'a,
-                     d: 'a display): unit =
-   if not (List.exists (!keepPasses, fn re =>
-                        Regexp.Compiled.matchesAll (re, name)))
-      then ()
-   else saveToFile ({suffix = concat [name, ".", suffix]}, style, a, d)
+fun maybeSaveToFile {arg: 'a, name: string, suffix: string, toFile}: unit =
+   let
+      val fullName = concat [name, ".", suffix]
+      val keep =
+         List.exists
+         ([name, fullName], fn name =>
+          (List.exists
+           (!keepPasses, fn re =>
+            Regexp.Compiled.matchesAll (re, name))))
+   in
+      if keep
+         then saveToFile {arg = arg, name = SOME fullName,
+                          toFile = toFile, verb = Pass}
+         else ()
+   end
 
 (* Code for diagnosing a pass. *)
 val wrapDiagnosing =
@@ -301,13 +337,17 @@ val wrapDiagnosing =
    else fn () =>
         let
            val result = ref NONE
+           val display =
+              Layouts (fn ((), output) =>
+                       (diagnosticWriter := SOME output
+                        ; result := SOME (thunk ())
+                        ; diagnosticWriter := NONE))
            val _ =
               saveToFile
-              ({suffix = concat [name, ".diagnostic"]}, No, (),
-               Layouts (fn ((), disp) =>
-                        (diagnosticWriter := SOME disp
-                         ; result := SOME (thunk ())
-                         ; diagnosticWriter := NONE)))
+              {arg = (),
+               name = SOME name,
+               toFile = {display = display, style = No, suffix = "diagnostic"},
+               verb = Pass}
         in
            valOf (!result)
         end
@@ -332,51 +372,117 @@ val wrapProfiling =
                 end
    else thunk
 
-fun pass {display: 'a display,
-          name: string,
-          suffix: string,
-          stats: 'a -> Layout.t,
-          style: style,
-          thunk: unit -> 'a}: 'a =
+fun translatePass {arg: 'a,
+                   doit: 'a -> 'b,
+                   keepIL: bool,
+                   name: string,
+                   srcToFile: {display: 'a display, style: style, suffix: string} option,
+                   tgtStats: ('b -> Layout.t) option,
+                   tgtToFile: {display: 'b display, style: style, suffix: string} option,
+                   tgtTypeCheck: ('b -> unit) option}: 'b =
    let
+      val thunk = fn () => doit arg
       val thunk = wrapDiagnosing {name = name, thunk = thunk}
       val thunk = wrapProfiling {name = name, thunk = thunk}
-      val result = trace (Pass, name) thunk ()
-      val verb = Detail
-      val _ = message (verb, fn () => Layout.str (concat [name, " stats"]))
-      val _ = indent ()
-      val _ = message (verb, fn () => sizeMessage (suffix, result))
-      val _ = message (verb, fn () => stats result)
-      val _ = message (verb, PropertyList.stats)
-      val _ = message (verb, HashSet.stats)
-      val _ = unindent ()
-      val _ = checkForErrors name
-      val _ = maybeSaveToFile ({name = name, suffix = suffix},
-                               style, result, display)
+      val thunk = fn () =>
+      let
+         val () =
+            Option.app
+            (srcToFile, fn srcToFile =>
+             maybeSaveToFile
+             {arg = arg,
+              name = name,
+              suffix = "pre",
+              toFile = srcToFile})
+         val res = thunk ()
+         val () =
+            Option.app
+            (tgtToFile, fn tgtToFile =>
+             maybeSaveToFile
+             {arg = res,
+              name = name,
+              suffix = "post",
+              toFile = tgtToFile})
+         val () =
+            if !ControlFlags.typeCheck
+               then Option.app (tgtTypeCheck, fn tgtTypeCheck =>
+                                trace (Pass, concat ["typeCheck ", name, ".post"])
+                                tgtTypeCheck res)
+               else ()
+         local
+            val verb = Detail
+         in
+            val _ = message (verb, fn () =>
+                             Layout.str (concat [name, ".post stats"]))
+            val _ = indent ()
+            val _ = Option.app (tgtStats, fn tgtStats =>
+                                message (verb, fn () => tgtStats res))
+            val _ = message (verb, PropertyList.stats)
+            val _ = message (verb, HashSet.stats)
+            val _ = unindent ()
+         end
+      in
+         res
+      end
+      val res = trace (Pass, name) thunk ()
+      val () =
+         if keepIL
+            then Option.app (tgtToFile, fn tgtToFile =>
+                             saveToFile {arg = res, name = NONE,
+                                         toFile = tgtToFile, verb = Pass})
+            else ()
+      val () =
+         if List.exists (!stopPasses, fn re =>
+                         Regexp.Compiled.matchesAll (re, name))
+            then raise Stopped
+            else ()
    in
-      result
+      res
    end
 
-fun passTypeCheck {display: 'a display,
-                   name: string,
-                   stats: 'a -> Layout.t,
-                   style: style,
-                   suffix: string,
-                   thunk: unit -> 'a,
-                   typeCheck = tc: 'a -> unit}: 'a =
-   let
-      val result = pass {display = display,
-                         name = name,
-                         stats = stats,
-                         style = style,
-                         suffix = suffix,
-                         thunk = thunk}
-      val _ =
-         if !typeCheck
-            then trace (Pass, "typeCheck") tc result
-         else ()
-   in
-      result
-   end
+fun simplifyPass {arg: 'a,
+                  doit: 'a -> 'a,
+                  execute: bool,
+                  keepIL: bool,
+                  name: string,
+                  stats: 'a -> Layout.t,
+                  toFile: {display: 'a display, style: style, suffix: string},
+                  typeCheck: 'a -> unit}: 'a =
+   if List.foldr (!executePasses, execute, fn ((re, new), old) =>
+                  if Regexp.Compiled.matchesAll (re, name) then new else old)
+      then translatePass {arg = arg,
+                          doit = doit,
+                          keepIL = keepIL,
+                          name = name,
+                          srcToFile = SOME toFile,
+                          tgtStats = SOME stats,
+                          tgtToFile = SOME toFile,
+                          tgtTypeCheck = SOME typeCheck}
+      else let
+              val _ = messageStr (Pass, name ^ " skipped")
+              val () =
+                 if keepIL
+                    then saveToFile {arg = arg, name = NONE,
+                                     toFile = toFile, verb = Pass}
+                    else ()
+              val () =
+                 if List.exists (!stopPasses, fn re =>
+                                 Regexp.Compiled.matchesAll (re, name))
+                    then raise Stopped
+                    else ()
+           in
+              arg
+           end
 
+fun simplifyPasses {arg, passes, stats, toFile, typeCheck} =
+   List.fold
+   (passes, arg, fn ({doit, execute, name}, arg) =>
+    simplifyPass {arg = arg,
+                  doit = doit,
+                  execute = execute,
+                  keepIL = false,
+                  name = name,
+                  stats = stats,
+                  toFile = toFile,
+                  typeCheck = typeCheck})
 end

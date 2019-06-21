@@ -1,4 +1,4 @@
-/* Copyright (C) 2009,2012 Matthew Fluet.
+/* Copyright (C) 2009,2012,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -161,6 +161,10 @@ pointer GC_getCallFromCHandlerThread (GC_state s) {
 void GC_setCallFromCHandlerThread (GC_state s, pointer p) {
   objptr op = pointerToObjptr (p, s->heap.start);
   s->callFromCHandlerThread = op;
+}
+
+pointer GC_getCallFromCOpArgsResPtr (GC_state s) {
+  return s->callFromCOpArgsResPtr;
 }
 
 pointer GC_getCurrentThread (GC_state s) {

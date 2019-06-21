@@ -1,4 +1,4 @@
-(* Copyright (C) 2017 Matthew Fluet.
+(* Copyright (C) 2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -213,27 +213,6 @@ signature ELABORATE_ENV =
       val lookupStrid: t * Ast.Strid.t -> Structure.t option
       val makeBasis: t * (unit -> 'a) -> 'a * Basis.t
       val makeInterfaceEnv: t -> InterfaceEnv.t
-      val makeStructure: t * (unit -> 'a) -> 'a * Structure.t
-      val newCons:
-         t * {con: CoreML.Con.t,
-              name: Ast.Con.t,
-              scheme: Scheme.t} vector
-         -> TypeStr.Cons.t
-      (* openStructure (E, S) opens S in the environment E. *) 
-      val openStructure: t * Structure.t -> unit
-      (* openBasis (E, B) opens B in the environment E. *) 
-      val openBasis: t * Basis.t -> unit
-      val output: t * Out.t * {compact: bool, def: bool, flat: bool, onlyCurrent: bool, prefixUnset: bool} -> unit
-      val peekFix: t * Ast.Vid.t -> Ast.Fixity.t option
-      val peekLongcon: t * Ast.Longcon.t -> (CoreML.Con.t * Scheme.t) option
-      val processDefUse: t -> unit
-      (* scope f evaluates f () in a new scope so that extensions that occur
-       * during f () are forgotten afterwards.
-       * scope works for infixes, types, values, and structures
-       *)
-      val scope: t * (unit -> 'a) -> 'a
-      (* like scope, but works for bases, signatures and functors as well *)
-      val scopeAll: t * (unit -> 'a) -> 'a
       val makeLayoutPrettyTycon:
          t * {prefixUnset: bool}
          -> {destroy: unit -> unit,
@@ -246,6 +225,27 @@ signature ELABORATE_ENV =
              layoutPrettyTycon: Tycon.t -> Layout.t,
              layoutPrettyFlexTycon: Interface.FlexibleTycon.t -> Layout.t,
              setLayoutPrettyTycon: Tycon.t * Layout.t -> unit}
+      val makeStructure: t * (unit -> 'a) -> 'a * Structure.t
+      val newCons:
+         t * {con: CoreML.Con.t,
+              name: Ast.Con.t,
+              scheme: Scheme.t} vector
+         -> TypeStr.Cons.t
+      (* openStructure (E, S) opens S in the environment E. *) 
+      val openStructure: t * Structure.t -> unit
+      (* openBasis (E, B) opens B in the environment E. *) 
+      val openBasis: t * Basis.t -> unit
+      val peekFix: t * Ast.Vid.t -> Ast.Fixity.t option
+      val peekLongcon: t * Ast.Longcon.t -> (CoreML.Con.t * Scheme.t) option
+      val processDefUse: t -> unit
+      (* scope f evaluates f () in a new scope so that extensions that occur
+       * during f () are forgotten afterwards.
+       * scope works for infixes, types, values, and structures
+       *)
+      val scope: t * (unit -> 'a) -> 'a
+      (* like scope, but works for bases, signatures and functors as well *)
+      val scopeAll: t * (unit -> 'a) -> 'a
+      val showBasis: t * File.t -> unit
       val sizeMessage: t -> Layout.t
       val snapshot: t -> (unit -> 'a) -> 'a
    end

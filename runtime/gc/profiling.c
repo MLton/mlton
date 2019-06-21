@@ -1,4 +1,4 @@
-/* Copyright (C) 2011-2012 Matthew Fluet.
+/* Copyright (C) 2011-2012,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -97,7 +97,7 @@ void enterForProfiling (GC_state s, GC_sourceSeqIndex sourceSeqIndex) {
 }
 
 void enterFrameForProfiling (GC_state s, GC_frameIndex i) {
-  enterForProfiling (s, s->sourceMaps.frameSources[i]);
+  enterForProfiling (s, s->frameInfos[i].sourceSeqIndex);
 }
 
 void GC_profileEnter (GC_state s) {
@@ -169,7 +169,7 @@ void incForProfiling (GC_state s, size_t amount, GC_sourceSeqIndex sourceSeqInde
   topSourceIndex =
     sourceSeq[0] > 0
     ? sourceSeq[sourceSeq[0]]
-    : SOURCES_INDEX_UNKNOWN;
+    : UNKNOWN_SOURCE_INDEX;
   if (DEBUG_PROFILE) {
     profileIndent ();
     fprintf (stderr, "bumping %s by %"PRIuMAX"\n",
@@ -179,7 +179,7 @@ void incForProfiling (GC_state s, size_t amount, GC_sourceSeqIndex sourceSeqInde
   s->profiling.data->countTop[sourceIndexToProfileMasterIndex (s, topSourceIndex)] += amount;
   if (s->profiling.stack)
     enterForProfiling (s, sourceSeqIndex);
-  if (SOURCES_INDEX_GC == topSourceIndex)
+  if (GC_SOURCE_INDEX == topSourceIndex)
     s->profiling.data->totalGC += amount;
   else
     s->profiling.data->total += amount;
@@ -192,7 +192,7 @@ void GC_profileInc (GC_state s, size_t amount) {
     fprintf (stderr, "GC_profileInc (%"PRIuMAX")\n", (uintmax_t)amount);
   incForProfiling (s, amount,
                    s->amInGC
-                   ? SOURCE_SEQ_GC
+                   ? GC_SOURCE_SEQ_INDEX
                    : getCachedStackTopFrameSourceSeqIndex (s));
 }
 
@@ -336,27 +336,27 @@ static GC_state handleSigProfState;
 void GC_handleSigProf (code_pointer pc) {
   GC_frameIndex frameIndex;
   GC_state s;
-  GC_sourceSeqIndex sourceSeqsIndex;
+  GC_sourceSeqIndex sourceSeqIndex;
 
   s = handleSigProfState;
   if (DEBUG_PROFILE)
     fprintf (stderr, "GC_handleSigProf ("FMTPTR")\n", (uintptr_t)pc);
   if (s->amInGC)
-    sourceSeqsIndex = SOURCE_SEQ_GC;
+    sourceSeqIndex = GC_SOURCE_SEQ_INDEX;
   else {
     frameIndex = getCachedStackTopFrameIndex (s);
-    if (C_FRAME == s->frameLayouts[frameIndex].kind)
-      sourceSeqsIndex = s->sourceMaps.frameSources[frameIndex];
+    if (C_FRAME == s->frameInfos[frameIndex].kind)
+      sourceSeqIndex = s->frameInfos[frameIndex].sourceSeqIndex;
     else {
       if (PROFILE_TIME_LABEL == s->profiling.kind) {
         uint32_t start, end, i;
         
         /* Binary search labels to find which method contains PC */
         start = 0;
-        end = s->sourceMaps.sourceLabelsLength;
+        end = s->sourceMaps.profileLabelInfosLength;
         while (end - start > 1) {
           i = (start+end)/2;
-          if ((uintptr_t)s->sourceMaps.sourceLabels[i].label <= (uintptr_t)pc)
+          if ((uintptr_t)s->sourceMaps.profileLabelInfos[i].profileLabel <= (uintptr_t)pc)
             start = i;
           else
             end = i;
@@ -366,21 +366,21 @@ void GC_handleSigProf (code_pointer pc) {
         /* The last label is dead code. Any address past it is thus unknown.
          * The first label is before all SML code. Before it is also unknown.
          */
-        if (i-1 == s->sourceMaps.sourceLabelsLength ||
+        if (i-1 == s->sourceMaps.profileLabelInfosLength ||
             (i == 0 && 
-             (uintptr_t)pc < (uintptr_t)s->sourceMaps.sourceLabels[i].label)) {
+             (uintptr_t)pc < (uintptr_t)s->sourceMaps.profileLabelInfos[i].profileLabel)) {
           if (DEBUG_PROFILE)
             fprintf (stderr, "pc out of bounds\n");
-          sourceSeqsIndex = SOURCE_SEQ_UNKNOWN;
+          sourceSeqIndex = UNKNOWN_SOURCE_SEQ_INDEX;
         } else {
-          sourceSeqsIndex = s->sourceMaps.sourceLabels[start].sourceSeqIndex;
+          sourceSeqIndex = s->sourceMaps.profileLabelInfos[start].sourceSeqIndex;
         }
       } else {
-        sourceSeqsIndex = s->sourceMaps.curSourceSeqsIndex;
+        sourceSeqIndex = s->sourceMaps.curSourceSeqIndex;
       }
     }
   }
-  incForProfiling (s, 1, sourceSeqsIndex);
+  incForProfiling (s, 1, sourceSeqIndex);
 }
 
 static void initProfilingTime (GC_state s) {
@@ -388,9 +388,9 @@ static void initProfilingTime (GC_state s) {
 
   s->profiling.data = profileMalloc (s);
   if (PROFILE_TIME_LABEL == s->profiling.kind) {
-    initSourceLabels (s);
+    initProfileLabelInfos (s);
   } else {
-    s->sourceMaps.curSourceSeqsIndex = SOURCE_SEQ_UNKNOWN;
+    s->sourceMaps.curSourceSeqIndex = UNKNOWN_SOURCE_SEQ_INDEX;
   }
   /*
    * Install catcher, which handles SIGPROF and calls MLton_Profile_inc.
@@ -440,7 +440,6 @@ void initProfiling (GC_state s) {
     s->profiling.isOn = FALSE;
   else {
     s->profiling.isOn = TRUE;
-    assert (s->sourceMaps.frameSourcesLength == s->frameLayoutsLength);
     switch (s->profiling.kind) {
     case PROFILE_ALLOC:
     case PROFILE_COUNT:

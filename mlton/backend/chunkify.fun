@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -12,20 +13,8 @@ struct
 open S
 datatype z = datatype Transfer.t
 
-(* A chunkifier that puts each function in its own chunk. *)
-fun chunkPerFunc (Program.T {functions, main, ...}) =
-   Vector.fromListMap
-   (main :: functions, fn f =>
-    let
-       val {name, blocks, ...} = Function.dest f
-    in
-       {funcs = Vector.new1 name,
-        labels = Vector.map (blocks, Block.label)}
-    end)
-
-(* A simple chunkifier that puts all code in the same chunk.
- *)
-fun oneChunk (Program.T {functions, main, ...}) =
+(* A simple chunkifier that puts all code in the same chunk. *)
+fun one (Program.T {functions, main, ...}) =
    let
       val functions = main :: functions
    in
@@ -35,6 +24,18 @@ fun oneChunk (Program.T {functions, main, ...}) =
                                 (functions, fn f =>
                                  Vector.map (Function.blocks f, Block.label)))}
    end
+
+(* A chunkifier that puts each function in its own chunk. *)
+fun perFunc (Program.T {functions, main, ...}) =
+   Vector.fromListMap
+   (main :: functions, fn f =>
+    let
+       val {name, blocks, ...} = Function.dest f
+    in
+       {funcs = Vector.new1 name,
+        labels = Vector.map (blocks, Block.label)}
+    end)
+
 
 fun blockSize (Block.T {statements, transfer, ...}): int =
    let
@@ -54,34 +55,17 @@ fun blockSize (Block.T {statements, transfer, ...}): int =
    end
 
 (* Compute the list of functions that each function returns to *)
+structure Labels = PowerSetLattice_ListSet(structure Element = Label)
 fun returnsTo (Program.T {functions, main, ...}) =
    let
       val functions = main :: functions
-      val {get: Func.t -> {returnsTo: Label.t list ref,
-                           tailCalls: Func.t list ref},
+      val {get: Func.t -> {returnsTo: Labels.t},
            rem, ...} =
          Property.get (Func.plist,
                        Property.initFun (fn _ =>
-                                         {returnsTo = ref [],
-                                          tailCalls = ref []}))
-      fun returnTo (f: Func.t, j: Label.t): unit =
-         let
-            val {returnsTo, tailCalls} = get f
-         in
-            if List.exists (!returnsTo, fn j' => Label.equals (j, j'))
-               then ()
-            else (List.push (returnsTo, j)
-                  ; List.foreach (!tailCalls, fn f => returnTo (f, j)))
-         end
-      fun tailCall (from: Func.t, to: Func.t): unit =
-         let
-            val {returnsTo, tailCalls} = get from
-         in
-            if List.exists (!tailCalls, fn f => Func.equals (to, f))
-               then ()
-            else (List.push (tailCalls, to)
-                  ; List.foreach (!returnsTo, fn j => returnTo (to, j)))
-         end
+                                         {returnsTo = Labels.empty ()}))
+      val returnsTo = #returnsTo o get
+      val empty = Labels.empty ()
       val _ =
          List.foreach
          (functions, fn f =>
@@ -91,16 +75,21 @@ fun returnsTo (Program.T {functions, main, ...}) =
              Vector.foreach
              (blocks, fn Block.T {transfer, ...} =>
               case transfer of
-                 Call {func, return, ...} => (case return of
-                                                 Return.NonTail {cont, ...} =>
-                                                    returnTo (func, cont)
-                                               | _ => tailCall (name, func))
-
-               | _ => ())
+                 Call {func, return, ...} =>
+                    let
+                       val returns =
+                          case return of
+                             Return.Dead => empty
+                           | Return.NonTail {cont, ...} => Labels.singleton cont
+                           | Return.Tail => returnsTo name
+                    in
+                       Labels.<= (returns, returnsTo func)
+                    end
+                 | _ => ())
           end)
    in
       {rem = rem,
-       returnsTo = ! o #returnsTo o get}
+       returnsTo = Labels.getElements o returnsTo}
    end
 
 structure Graph = EquivalenceGraph
@@ -232,10 +221,10 @@ fun coalesce (program as Program.T {functions, main, ...}, limit) =
    end
 
 fun chunkify p =
-   case !Control.chunk of
-      Control.ChunkPerFunc => chunkPerFunc p
-    | Control.OneChunk => oneChunk p
-    | Control.Coalesce {limit} => coalesce (p, limit)
+   case !Control.chunkify of
+      Control.Chunkify.Coalesce {limit} => coalesce (p, limit)
+    | Control.Chunkify.One => one p
+    | Control.Chunkify.PerFunc => perFunc p
 
 val chunkify =
    fn p =>
@@ -252,7 +241,7 @@ val chunkify =
                 (chunks, fn {funcs, labels} =>
                  display
                  (record ([("funcs", Vector.layout Func.layout funcs),
-                           ("jumps", Vector.layout Label.layout labels)])))
+                           ("labels", Vector.layout Label.layout labels)])))
           in
              ()
           end)

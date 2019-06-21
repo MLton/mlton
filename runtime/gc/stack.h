@@ -1,4 +1,4 @@
-/* Copyright (C) 2012,2016 Matthew Fluet.
+/* Copyright (C) 2012,2016,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -70,7 +70,7 @@ static inline pointer getStackLimitPlusSlop (GC_state s, GC_stack stack);
 static inline pointer getStackLimit (GC_state s, GC_stack stack);
 static inline GC_frameIndex getCachedStackTopFrameIndex (GC_state s);
 static inline GC_frameIndex getStackTopFrameIndex (GC_state s, GC_stack stack);
-static inline GC_frameLayout getStackTopFrameLayout (GC_state s, GC_stack stack);
+static inline GC_frameInfo getStackTopFrameInfo (GC_state s, GC_stack stack);
 static inline uint16_t getStackTopFrameSize (GC_state s, GC_stack stack);
 
 static inline size_t alignStackReserved (GC_state s, size_t reserved);

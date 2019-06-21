@@ -1,4 +1,4 @@
-(* Copyright (C) 2014 Matthew Fluet.
+(* Copyright (C) 2014,2019 Matthew Fluet.
  * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -78,7 +78,7 @@ local
             val () = Prim.copyCurrent ()
          in
             case !func of
-               NONE => Prim.savedPre gcState
+               NONE => Prim.savedPre (gcState ())
              | SOME x =>
                   (* This branch never returns. *)
                   let
@@ -117,7 +117,7 @@ in
             val r : (unit -> 'a) ref = 
                ref (fn () => die "Thread.atomicSwitch didn't set r.\n")
             val t: 'a thread ref =
-               ref (Paused (fn x => r := x, Prim.current gcState))
+               ref (Paused (fn x => r := x, Prim.current (gcState ())))
             fun fail e = (t := Dead
                           ; switching := false
                           ; atomicEnd ()
@@ -180,9 +180,9 @@ in
             let
                (* Atomic 1 *)
                val _ = state := InHandler
-               val t = f (fromPrimitive (Prim.saved gcState))
+               val t = f (fromPrimitive (Prim.saved (gcState ())))
                val _ = state := Normal
-               val _ = Prim.finishSignalHandler gcState
+               val _ = Prim.finishSignalHandler (gcState ())
                val _ =
                   atomicSwitch
                   (fn (T r) =>
@@ -202,7 +202,7 @@ in
             (new (fn () => loop () handle e => MLtonExn.topLevelHandler e))
          val _ = signalHandler := SOME p
       in
-         Prim.setSignalHandler (gcState, p)
+         Prim.setSignalHandler (gcState (), p)
       end
 
    fun switchToSignalHandler () =
@@ -210,7 +210,7 @@ in
          (* Atomic 0 *)
          val () = atomicBegin ()
          (* Atomic 1 *)
-         val () = Prim.startSignalHandler gcState (* implicit atomicBegin () *)
+         val () = Prim.startSignalHandler (gcState ()) (* implicit atomicBegin () *)
          (* Atomic 2 *)
       in
          case !signalHandler of
@@ -236,7 +236,7 @@ in
                fun workerLoop () =
                   let
                      (* Atomic 1 *)
-                     val p = Primitive.MLton.FFI.getOpArgsResPtr ()
+                     val p = Primitive.MLton.FFI.getOpArgsResPtr (gcState ())
                      val _ = atomicEnd ()
                      (* Atomic 0 *)
                      val i = MLtonPointer.getInt32 (MLtonPointer.getPointer (p, 0), 0)
@@ -250,7 +250,7 @@ in
                      val _ = atomicBegin ()
                      (* Atomic 1 *)
                      val _ = worker := !thisWorker
-                     val _ = Prim.setSaved (gcState, valOf (!savedRef))
+                     val _ = Prim.setSaved (gcState (), valOf (!savedRef))
                      val _ = savedRef := NONE
                      val _ = Prim.returnToC () (* implicit atomicEnd() *)
                   in
@@ -264,7 +264,7 @@ in
          fun handlerLoop (): unit =
             let
                (* Atomic 2 *)
-               val saved = Prim.saved gcState
+               val saved = Prim.saved (gcState ())
                val (workerThread, savedRef) =
                   case !worker of
                      NONE => mkWorker ()
@@ -277,7 +277,7 @@ in
                handlerLoop ()
             end
          val handlerThread = toPrimitive (new handlerLoop)
-         val _ = Prim.setCallFromCHandler (gcState, handlerThread)
+         val _ = Prim.setCallFromCHandler (gcState (), handlerThread)
       in
          fn (i, f) => Array.update (exports, i, f)
       end

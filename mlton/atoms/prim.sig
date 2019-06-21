@@ -59,6 +59,7 @@ signature PRIM =
                               cty: CType.t option,
                               symbolScope: CFunction.SymbolScope.t } (* codegen *)
              | GC_collect (* to rssa (as runtime C fn) *)
+             | GC_state (* to rssa (as operand) *)
              | IntInf_add (* to rssa (as runtime C fn) *)
              | IntInf_andb (* to rssa (as runtime C fn) *)
              | IntInf_arshift (* to rssa (as runtime C fn) *)

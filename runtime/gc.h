@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -31,6 +32,7 @@ typedef GC_state GCState_t;
 #include "gc/objptr.h"
 #include "gc/object.h"
 #include "gc/sequence.h"
+#include "gc/sources.h"
 #include "gc/frame.h"
 #include "gc/stack.h"
 #include "gc/thread.h"
@@ -61,7 +63,6 @@ typedef GC_state GCState_t;
 #include "gc/garbage-collection.h"
 #include "gc/new-object.h"
 #include "gc/sequence-allocate.h"
-#include "gc/sources.h"
 #include "gc/call-stack.h"
 #include "gc/profiling.h"
 #include "gc/rusage.h"
