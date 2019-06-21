@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -11,6 +11,7 @@ local
    ../../lib/mlton/sources.mlb
 
    bits.sml
+   scale.sml
    control-flags.sig
    control-flags.sml
    source-pos.sig
@@ -33,6 +34,7 @@ in
    structure Control
    structure Pretty
    structure Region
+   structure Scale
    structure Source
    structure SourcePos
    structure System

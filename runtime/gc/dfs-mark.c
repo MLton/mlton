@@ -1,4 +1,4 @@
-/* Copyright (C) 2012,2016 Matthew Fluet.
+/* Copyright (C) 2012,2016,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -60,7 +60,7 @@ size_t dfsMarkByMode (GC_state s, pointer root,
   GC_sequenceCounter sequenceIndex;
   pointer top; /* The top of the next stack frame to mark. */
   GC_returnAddress returnAddress;
-  GC_frameLayout frameLayout;
+  GC_frameInfo frameInfo;
   GC_frameOffsets frameOffsets;
 
   if (isPointerMarkedByMode (root, mode))
@@ -263,15 +263,15 @@ markInStack:
       goto ret;
     objptrIndex = 0;
     returnAddress = *(GC_returnAddress*) (top - GC_RETURNADDRESS_SIZE);
-    frameLayout = getFrameLayoutFromReturnAddress (s, returnAddress);
-    frameOffsets = frameLayout->offsets;
+    frameInfo = getFrameInfoFromReturnAddress (s, returnAddress);
+    frameOffsets = frameInfo->offsets;
     ((GC_stack)cur)->markTop = top;
 markInFrame:
     if (objptrIndex == frameOffsets [0]) {
-      top -= frameLayout->size;
+      top -= frameInfo->size;
       goto markInStack;
     }
-    todo = top - frameLayout->size + frameOffsets [objptrIndex + 1];
+    todo = top - frameInfo->size + frameOffsets [objptrIndex + 1];
     // next = *(pointer*)todo;
     next = fetchObjptrToPointer (todo, s->heap.start);
     if (DEBUG_DFS_MARK)
@@ -344,9 +344,9 @@ ret:
     top = ((GC_stack)cur)->markTop;
     /* Invariant: top points just past a "return address". */
     returnAddress = *(GC_returnAddress*) (top - GC_RETURNADDRESS_SIZE);
-    frameLayout = getFrameLayoutFromReturnAddress (s, returnAddress);
-    frameOffsets = frameLayout->offsets;
-    todo = top - frameLayout->size + frameOffsets [objptrIndex + 1];
+    frameInfo = getFrameInfoFromReturnAddress (s, returnAddress);
+    frameOffsets = frameInfo->offsets;
+    todo = top - frameInfo->size + frameOffsets [objptrIndex + 1];
     // prev = *(pointer*)todo;
     prev = fetchObjptrToPointer (todo, s->heap.start);
     // *(pointer*)todo = next;

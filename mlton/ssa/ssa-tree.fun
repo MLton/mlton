@@ -267,80 +267,6 @@ structure Type =
          end
    end
 
-structure Cases =
-   struct
-      datatype t =
-         Con of (Con.t * Label.t) vector
-       | Word of WordSize.t * (WordX.t * Label.t) vector
-
-      fun equals (c1: t, c2: t): bool =
-         let
-            fun doit (l1, l2, eq') = 
-               Vector.equals 
-               (l1, l2, fn ((x1, a1), (x2, a2)) =>
-                eq' (x1, x2) andalso Label.equals (a1, a2))
-         in
-            case (c1, c2) of
-               (Con l1, Con l2) => doit (l1, l2, Con.equals)
-             | (Word (_, l1), Word (_, l2)) => doit (l1, l2, WordX.equals)
-             | _ => false
-         end
-
-      fun hd (c: t): Label.t =
-         let
-            fun doit v =
-               if Vector.length v >= 1
-                  then let val (_, a) = Vector.first v
-                       in a
-                       end
-               else Error.bug "SsaTree.Cases.hd"
-         in
-            case c of
-               Con cs => doit cs
-             | Word (_, cs) => doit cs
-         end
-
-      fun isEmpty (c: t): bool =
-         let
-            fun doit v = Vector.isEmpty v
-         in
-            case c of
-               Con cs => doit cs
-             | Word (_, cs) => doit cs
-         end
-
-      fun fold (c: t, b, f) =
-         let
-            fun doit l = Vector.fold (l, b, fn ((_, a), b) => f (a, b))
-         in
-            case c of
-               Con l => doit l
-             | Word (_, l) => doit l
-         end
-
-      fun map (c: t, f): t =
-         let
-            fun doit l = Vector.map (l, fn (i, x) => (i, f x))
-         in
-            case c of
-               Con l => Con (doit l)
-             | Word (s, l) => Word (s, doit l)
-         end
-
-      fun forall (c: t, f: Label.t -> bool): bool =
-         let
-            fun doit l = Vector.forall (l, fn (_, x) => f x)
-         in
-            case c of
-               Con l => doit l
-             | Word (_, l) => doit l
-         end
-
-      fun length (c: t): int = fold (c, 0, fn (_, i) => i + 1)
-
-      fun foreach (c, f) = fold (c, (), fn (x, ()) => f x)
-   end
-
 structure Size =
    struct
       val check: int * int option -> int *bool =
@@ -620,147 +546,6 @@ structure Statement =
          end
    end
 
-structure Handler =
-   struct
-      structure Label = Label
-
-      datatype t =
-         Caller
-       | Dead
-       | Handle of Label.t
-
-      fun layout (h: t): Layout.t =
-         let
-            open Layout
-         in
-            case h of
-               Caller => str "Caller"
-             | Dead => str "Dead"
-             | Handle l => seq [str "Handle ", Label.layout l]
-         end
-
-      val equals =
-         fn (Caller, Caller) => true
-          | (Dead, Dead) => true
-          | (Handle l, Handle l') => Label.equals (l, l')
-          | _ => false
-
-      fun foldLabel (h: t, a: 'a, f: Label.t * 'a -> 'a): 'a =
-         case h of
-            Caller => a
-          | Dead => a
-          | Handle l => f (l, a)
-
-      fun foreachLabel (h, f) = foldLabel (h, (), f o #1)
-
-      fun map (h, f) =
-         case h of
-            Caller => Caller
-          | Dead => Dead
-          | Handle l => Handle (f l)
-
-      local
-         val newHash = Random.word
-         val caller = newHash ()
-         val dead = newHash ()
-         val handlee = newHash ()
-      in
-         fun hash (h: t): word =
-            case h of
-               Caller => caller
-             | Dead => dead
-             | Handle l => Hash.combine (handlee, Label.hash l)
-      end
-   end
-
-structure Return =
-   struct
-      structure Label = Label
-      structure Handler = Handler
-
-      datatype t =
-         Dead
-       | NonTail of {cont: Label.t,
-                     handler: Handler.t}
-       | Tail
-
-      fun layout r =
-         let
-            open Layout
-         in
-            case r of
-               Dead => str "Dead"
-             | NonTail {cont, handler} =>
-                  seq [str "NonTail ",
-                       Layout.record
-                       [("cont", Label.layout cont),
-                        ("handler", Handler.layout handler)]]
-             | Tail => str "Tail"
-         end
-
-      fun equals (r, r'): bool =
-         case (r, r') of
-            (Dead, Dead) => true
-          | (NonTail {cont = c, handler = h},
-             NonTail {cont = c', handler = h'}) =>
-               Label.equals (c, c') andalso Handler.equals (h, h')
-           | (Tail, Tail) => true
-           | _ => false
-
-      fun foldLabel (r: t, a, f) =
-         case r of
-            Dead => a
-          | NonTail {cont, handler} =>
-               Handler.foldLabel (handler, f (cont, a), f)
-          | Tail => a
-
-      fun foreachLabel (r, f) = foldLabel (r, (), f o #1)
-
-      fun foreachHandler (r, f) =
-         case r of
-            Dead => ()
-          | NonTail {handler, ...} => Handler.foreachLabel (handler, f)
-          | Tail => ()
-
-      fun map (r, f) =
-         case r of
-            Dead => Dead
-          | NonTail {cont, handler} =>
-               NonTail {cont = f cont,
-                        handler = Handler.map (handler, f)}
-          | Tail => Tail
-
-      fun compose (r, r') =
-         case r' of
-            Dead => Dead
-          | NonTail {cont, handler} =>
-               NonTail
-               {cont = cont,
-                handler = (case handler of
-                              Handler.Caller =>
-                                 (case r of
-                                     Dead => Handler.Caller
-                                   | NonTail {handler, ...} => handler
-                                   | Tail => Handler.Caller)
-                            | Handler.Dead => handler
-                            | Handler.Handle _ => handler)}
-          | Tail => r
-
-      local
-         val newHash = Random.word
-         val dead = newHash ()
-         val nonTail = newHash ()
-         val tail = newHash ()
-      in
-         fun hash r =
-            case r of
-               Dead => dead
-             | NonTail {cont, handler} =>
-                  Hash.combine3 (nonTail, Label.hash cont, Handler.hash handler)
-             | Tail => tail
-      end
-   end
-
 structure Transfer =
    struct
       datatype t =
@@ -769,7 +554,7 @@ structure Transfer =
                   func: Func.t,
                   return: Return.t}
        | Case of {test: Var.t,
-                  cases: Cases.t,
+                  cases: (Con.t, Label.t) Cases.t,
                   default: Label.t option} (* Must be nullary. *)
        | Goto of {dst: Label.t,
                   args: Var.t vector}
@@ -777,7 +562,7 @@ structure Transfer =
        | Return of Var.t vector
        | Runtime of {prim: Type.t Prim.t,
                      args: Var.t vector,
-                     return: Label.t} (* Must be nullary. *)
+                     return: Label.t}
 
       (* Vals to determine the size for inline.fun and loop optimization*)
       val size =
@@ -965,7 +750,8 @@ structure Transfer =
 
       fun equals (e: t, e': t): bool =
          case (e, e') of
-            (Call {func, args, return}, 
+            (Bug, Bug) => true
+          | (Call {func, args, return}, 
              Call {func = func', args = args', return = return'}) =>
                Func.equals (func, func') andalso
                varsEquals (args, args') andalso
@@ -973,7 +759,7 @@ structure Transfer =
           | (Case {test, cases, default},
              Case {test = test', cases = cases', default = default'}) =>
                Var.equals (test, test')
-               andalso Cases.equals (cases, cases')
+               andalso Cases.equals (cases, cases', Con.equals, Label.equals)
                andalso Option.equals (default, default', Label.equals)
           | (Goto {dst, args}, Goto {dst = dst', args = args'}) =>
                Label.equals (dst, dst') andalso
@@ -1498,10 +1284,11 @@ structure Function =
                      val loopForestLayout =
                         Graph.LoopForest.layoutDot
                         (Graph.loopForestSteensgaard (graph,
-                                                      {root = startNode}),
+                                                      {root = startNode,
+                                                       nodeValue = fn x => x}),
                          {title = concat [Func.toString name, " loop forest"],
                           options = [],
-                          nodeName = nodeName})
+                          name = nodeName})
                   in
                      loopForestLayout
                   end
@@ -1622,13 +1409,13 @@ structure Function =
                         layoutDot (f, layoutVar)
                      val name = Func.toString name
                      fun doit (s, g) =
-                        let
-                           open Control
-                        in
-                           saveToFile
-                           ({suffix = concat [name, ".", s, ".dot"]},
-                            Dot, (), Layout (fn () => g))
-                        end
+                        Control.saveToFile
+                        {arg = (),
+                         name = SOME (concat [name, ".", s]),
+                         toFile = {display = Control.Layout (fn () => g),
+                                   style = Control.Dot,
+                                   suffix = "dot"},
+                         verb = Control.Detail}
                      val _ = doit ("cfg", controlFlowGraph)
                         handle _ => Error.warning "SsaTree.layouts: couldn't layout cfg"
                      val _ = doit ("dom", dominatorTree ())
@@ -1969,15 +1756,16 @@ structure Program =
             ; if not (!Control.keepDot)
                  then ()
               else
-                 let
-                    open Control
-                 in
-                    saveToFile
-                    ({suffix = "call-graph.dot"},
-                     Dot, (), Layout (fn () =>
-                                      layoutCallGraph (p, !Control.inputFile)))
-                 end
+                 Control.saveToFile
+                 {arg = (),
+                  name = NONE,
+                  toFile = {display = Control.Layout (fn () => layoutCallGraph (p, !Control.inputFile)),
+                            style = Control.Dot,
+                            suffix = "call-graph.dot"},
+                  verb = Control.Detail}
          end
+
+      val toFile = {display = Control.Layouts layouts, style = Control.ML, suffix = "ssa"}
 
       fun parse () =
          let
@@ -2003,7 +1791,7 @@ structure Program =
             compose (skipCommentsML, parseProgram <* (spaces *> (failing next <|> failCut "end of file")))
          end
 
-      fun layoutStats (T {datatypes, globals, functions, main, ...}) =
+      fun layoutStats (program as T {datatypes, globals, functions, main, ...}) =
          let
             val (mainNumVars, mainNumBlocks) =
                case List.peek (functions, fn f =>
@@ -2048,7 +1836,8 @@ structure Program =
                (datatypes, fn Datatype.T {cons, ...} =>
                 Vector.foreach (cons, fn {args, ...} =>
                                 Vector.foreach (args, countType)))
-            val numStatements = ref (Vector.length globals)
+            val numGlobals = Vector.length globals
+            val numStatements = ref numGlobals
             val numBlocks = ref 0
             val _ =
                List.foreach
@@ -2076,7 +1865,8 @@ structure Program =
             open Layout
          in
             align
-            [seq [str "num globals = ", Int.layout (Vector.length globals)],
+            [Control.sizeMessage ("ssa program", program),
+             seq [str "num globals = ", Int.layout numGlobals],
              seq [str "num vars in main = ", Int.layout mainNumVars],
              seq [str "num blocks in main = ", Int.layout mainNumBlocks],
              seq [str "num functions in program = ", Int.layout numFunctions],

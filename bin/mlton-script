@@ -47,14 +47,14 @@ doitSMLNJ () {
     smlnj='sml'
     if $smlnj -h >/dev/null 2>&1; then
         smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | $smlnj 2>&1 1> /dev/null`
-        mlton_smlnj_heap="$lib/mlton-smlnj.$smlnj_heap_suffix"
+        mlton_smlnj_heap="$lib/mlton-compile-smlnj.$smlnj_heap_suffix"
         if [ -s "$mlton_smlnj_heap" ]; then
             exec "$smlnj" @SMLload="$mlton_smlnj_heap" "$@"
         fi
     fi
 }
 doitPolyML () {
-    mlton_polyml="$lib/mlton-polyml$EXE"
+    mlton_polyml="$lib/mlton-compile-polyml$EXE"
     if [ -x "$mlton_polyml" ]; then
         exec "$mlton_polyml" "$@"
     fi
@@ -79,7 +79,8 @@ doit "$lib" \
         -ar-script "$lib/static-library"                         \
         -cc "$CC"                                                \
         -cc-opt '-std=gnu11 -fno-common'                         \
-        -cc-opt '-O1 -fomit-frame-pointer -fno-strict-aliasing'  \
+        -cc-opt '-O1 -fno-strict-aliasing'                       \
+        -cc-opt '-foptimize-sibling-calls'                       \
         -cc-opt '-w'                                             \
         -cc-opt-quote "-I$lib/include"                           \
         -link-opt '-lm -lgmp'                                    \
@@ -96,14 +97,7 @@ doit "$lib" \
         -target-cc-opt ia64-hpux "-mlp64"                        \
         -target-cc-opt ia64 "-mtune=itanium2"                    \
         -target-cc-opt sparc '-m32 -mcpu=v8 -Wa,-xarch=v8plusa'  \
-        -target-cc-opt x86                                       \
-                '-m32
-                -fno-strength-reduce
-                -fschedule-insns
-                -fschedule-insns2
-                -falign-functions=5
-                -falign-jumps=2
-                -falign-loops=2'                                 \
+        -target-cc-opt x86 '-m32'                                \
         -target-link-opt amd64 '-m64'                            \
         -target-link-opt alpha                                   \
                 '-mieee -mbwx -mtune=ev6 -mfp-rounding-mode=d'   \

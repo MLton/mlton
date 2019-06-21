@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -43,10 +43,7 @@ struct
               val ty = Machine.Type.toCType (ty g)
               val index = index g
               val base =
-                 amd64.Immediate.label
-                 (if isRoot g
-                     then amd64MLton.global_base ty
-                  else amd64MLton.globalObjptrNonRoot_base)
+                 amd64.Immediate.label (amd64MLton.global_base ty)
               val origin =
                  amd64.MemLoc.imm
                  {base = base,
@@ -286,9 +283,13 @@ struct
     struct
       structure Kind = Machine.Kind
 
+      fun frameInfoToAMD64 fi =
+         amd64.FrameInfo.T
+         {frameInfosIndex = Machine.FrameInfo.index fi,
+          size = Bytes.toInt (Machine.FrameInfo.size fi)}
+
       fun toAMD64Blocks {label, kind, 
-                       transInfo as {frameInfoToAMD64, live, liveInfo,
-                                     ...}: transInfo}
+                         transInfo as {live, liveInfo, ...}: transInfo}
         = (
            amd64Liveness.LiveInfo.setLiveOperands
            (liveInfo, label, live label);
@@ -302,7 +303,7 @@ struct
                      statements = [],
                      transfer = NONE})
                  end
-              | Kind.Func
+              | Kind.Func _
               => let
                    val args
                      = List.fold
@@ -336,21 +337,31 @@ struct
                  in
                    AppendList.single
                    (amd64.Block.mkBlock'
-                    {entry = SOME (amd64.Entry.cont {label = label,
-                                                   live = args,
-                                                   frameInfo = frameInfo}),
+                    {entry = SOME (amd64.Entry.cont {frameInfo = frameInfo,
+                                                     label = label,
+                                                     live = args}),
                      statements = [],
                      transfer = NONE})
                  end
-              | Kind.Handler {frameInfo, ...}
+              | Kind.Handler {args, frameInfo, ...}
               => let
+                    val frameInfo = frameInfoToAMD64 frameInfo
+                    val args =
+                       Vector.fold
+                       (args, amd64.MemLocSet.empty,
+                        fn (operand,args) =>
+                        Vector.fold
+                        (Operand.toAMD64Operand (Live.toOperand operand), args,
+                         fn ((operand,_),args) =>
+                         case amd64.Operand.deMemloc operand of
+                            SOME memloc => amd64.MemLocSet.add(args, memloc)
+                          | NONE => args))
                  in 
                    AppendList.single
                    (amd64.Block.mkBlock'
-                    {entry = SOME (amd64.Entry.handler
-                                   {frameInfo = frameInfoToAMD64 frameInfo,
-                                    label = label,
-                                    live = amd64.MemLocSet.empty}),
+                    {entry = SOME (amd64.Entry.handler {frameInfo = frameInfo,
+                                                        label = label,
+                                                        live = args}),
                      statements = [],
                      transfer = NONE})
                  end
@@ -584,10 +595,9 @@ struct
             else AppendList.empty
 
 
-      fun toAMD64Blocks {returns, transfer,
-                       transInfo as {frameInfoToAMD64, ...}: transInfo}
+      fun toAMD64Blocks {returns, transfer, transInfo: transInfo}
         = (case transfer
-             of CCall {args, frameInfo, func, return}
+             of CCall {args, func, return}
               => let
                    val args = (Vector.concatV o Vector.map)
                               (args, Operand.toAMD64Operand)
@@ -595,10 +605,10 @@ struct
                    AppendList.append
                    (comments transfer,  
                     amd64MLton.ccall {args = args,
-                                    frameInfo = (Option.map
-                                                 (frameInfo, frameInfoToAMD64)),
                                     func = func,
-                                    return = return,
+                                    return = Option.map (return, fn {return, size} =>
+                                                         {return = return,
+                                                          size = Option.map (size, Bytes.toInt)}),
                                     transInfo = transInfo})
                  end
               | Return
@@ -744,8 +754,7 @@ struct
       open Machine.Chunk
 
       fun toAMD64Chunk {chunk = T {blocks, ...}, 
-                      frameInfoToAMD64,
-                      liveInfo}
+                        liveInfo}
         = let
             val data = ref []
             val addData = fn l => List.push (data, l)
@@ -761,7 +770,6 @@ struct
                                Vector.concatV o Vector.map)
                               (live, Operand.toAMD64Operand o Live.toOperand)))
             val transInfo = {addData = addData,
-                             frameInfoToAMD64 = frameInfoToAMD64,
                              live = live,
                              liveInfo = liveInfo}
             val amd64Blocks 
@@ -784,12 +792,10 @@ struct
     end
 
   fun translateChunk {chunk: amd64MLton.Machine.Chunk.t,
-                      frameInfoToAMD64,
                       liveInfo: amd64Liveness.LiveInfo.t}:
                      {chunk: amd64.Chunk.t}
     = {chunk = Chunk.toAMD64Chunk {chunk = chunk,
-                                 frameInfoToAMD64 = frameInfoToAMD64,
-                                 liveInfo = liveInfo}}
+                                   liveInfo = liveInfo}}
 
   val (translateChunk, translateChunk_msg)
     = tracerTop

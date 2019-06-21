@@ -9,12 +9,9 @@
 
 Group
 
-signature HANDLER
-signature RETURN
 signature SSA
 signature SSA2
 
-functor FlatLattice
 functor Ssa
 functor Ssa2
 functor SsaToSsa2
@@ -49,14 +46,6 @@ shrink.sig
 shrink2.sig
 shrink.fun
 shrink2.fun
-flat-lattice.sig
-flat-lattice.fun
-n-point-lattice.sig
-n-point-lattice.fun
-two-point-lattice.sig
-two-point-lattice.fun
-three-point-lattice.sig
-three-point-lattice.fun
 restore.sig
 restore.fun
 

@@ -44,25 +44,43 @@ val atMLtons = control {name = "atMLtons",
                         default = Vector.new0 (),
                         toString = fn v => Layout.toString (Vector.layout
                                                             String.layout v)}
+val bounceRssaLimit = control {name = "bounceRssaLimit",
+                               default = SOME 8,
+                               toString = Option.toString Int.toString}
+val bounceRssaLiveCutoff = control {name = "bounceRssaLiveCutoff",
+                               default = SOME 12,
+                               toString = Option.toString Int.toString}
+val bounceRssaLoopCutoff = control {name = "bounceRssaLoopCutoff",
+                               default = SOME 40,
+                               toString = Option.toString Int.toString}
+val bounceRssaUsageCutoff = control {name = "bounceRssaUsageCutoff",
+                               default = SOME 15,
+                               toString = Option.toString Int.toString}
 
-structure Chunk =
+val chunkBatch = control {name = "chunkBatch",
+                          default = Int.pow(2,15),
+                          toString = Int.toString}
+
+structure Chunkify =
    struct
       datatype t =
-         OneChunk
-       | ChunkPerFunc
-       | Coalesce of {limit: int}
+         Coalesce of {limit: int}
+       | One
+       | PerFunc
 
       val toString =
-         fn OneChunk => "one chunk"
-          | ChunkPerFunc => "chunk per function"
+         fn One => "one"
+          | PerFunc => "per function"
           | Coalesce {limit} => concat ["coalesce ", Int.toString limit]
    end
 
-datatype chunk = datatype Chunk.t
+val chunkify = control {name = "chunkify",
+                        default = Chunkify.Coalesce {limit = 4096},
+                        toString = Chunkify.toString}
 
-val chunk = control {name = "chunk",
-                     default = Coalesce {limit = 4096},
-                     toString = Chunk.toString}
+val chunkTailCall = control {name = "chunkTailCall",
+                             default = true,
+                             toString = Bool.toString}
 
 val closureConvertGlobalize = control {name = "closureConvertGlobalize",
                                        default = true,
@@ -749,11 +767,6 @@ structure Elaborate =
 
    end
 
-val elaborateOnly =
-   control {name = "elaborate only",
-            default = false,
-            toString = Bool.toString}
-
 val emitMain =
    control {name = "emit main",
             default = true,
@@ -936,14 +949,6 @@ val libTargetDir = control {name = "lib target dir",
                             toString = fn s => s} 
 
 val libname = ref ""
-
-val loopSsaPasses = control {name = "loop ssa passes",
-                             default = 1,
-                             toString = Int.toString}
-
-val loopSsa2Passes = control {name = "loop ssa2 passes",
-                              default = 1,
-                              toString = Int.toString}
 
 val loopUnrollLimit = control {name = "loop unrolling limit",
                                 default = 150,
@@ -1189,6 +1194,11 @@ val splitTypesBool = control {name = "bool type splitting method",
                               default = Smart,
                               toString = SplitTypesBool.toString}
 
+val stopPasses = control {name = "stop passes",
+                          default = [],
+                          toString = List.toString
+                                     (Layout.toString o
+                                      Regexp.Compiled.layout)}
 structure Target =
    struct
       datatype t =
@@ -1276,25 +1286,13 @@ fun mlbPathMap () =
              path = String.toLower (MLton.Platform.OS.toString
                                     (!Target.os))},
             {var = "OBJPTR_REP",
-             path = (case Bits.toInt (Target.Size.objptr ()) of
-                        32 => "rep32"
-                      | 64 => "rep64"
-                      | _ => Error.bug "Control.mlbPathMap")},
+             path = "rep" ^ Bits.toString (Target.Size.objptr ())},
             {var = "SEQUENCE_METADATA_SIZE",
-             path = (case Bits.toInt (Target.Size.sequenceMetaData ()) of
-                        96 => "size96"
-                      | 192 => "size192"
-                      | _ => Error.bug "Control.mlbPathMap")},
+             path = "size" ^ Bits.toString (Target.Size.sequenceMetaData ())},
             {var = "NORMAL_METADATA_SIZE",
-             path = (case Bits.toInt (Target.Size.normalMetaData ()) of
-                        32 => "size32"
-                      | 64 => "size64"
-                      | _ => Error.bug "Control.mlbPathMap")},
+             path = "size" ^ Bits.toString (Target.Size.normalMetaData ())},
             {var = "SEQINDEX_INT",
-             path = (case Bits.toInt (Target.Size.seqIndex ()) of
-                        32 => "int32"
-                      | 64 => "int64"
-                      | _ => Error.bug "Control.mlbPathMap")},
+             path = "int" ^ Bits.toString (Target.Size.seqIndex ())},
             {var = "DEFAULT_CHAR",
              path = !defaultChar},
             {var = "DEFAULT_WIDECHAR",

@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -22,8 +22,6 @@ signature X86_TRANSLATE =
     include X86_TRANSLATE_STRUCTS
 
     val translateChunk : {chunk: x86MLton.Machine.Chunk.t,
-                          frameInfoToX86: (x86MLton.Machine.FrameInfo.t
-                                           -> x86.FrameInfo.t),
                           liveInfo: x86Liveness.LiveInfo.t}
                          -> {chunk: x86.Chunk.t}
 

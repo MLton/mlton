@@ -3371,13 +3371,13 @@ struct
   structure FrameInfo =
      struct
         datatype t = T of {size: int, 
-                           frameLayoutsIndex: int}
+                           frameInfosIndex: int}
 
-        fun toString (T {size, frameLayoutsIndex})
+        fun toString (T {size, frameInfosIndex})
            = concat ["{",
                      "size = ", Int.toString size, ", ",
-                     "frameLayoutsIndex = ", 
-                     Int.toString frameLayoutsIndex, "}"]
+                     "frameInfosIndex = ",
+                     Int.toString frameInfosIndex, "}"]
      end
 
   structure Entry =
@@ -3585,9 +3585,9 @@ struct
         | Return of {live: MemLocSet.t}
         | Raise of {live: MemLocSet.t}
         | CCall of {args: (Operand.t * Size.t) list,
-                    frameInfo: FrameInfo.t option,
                     func: RepType.t CFunction.t,
-                    return: Label.t option}
+                    return: {return: Label.t,
+                             size: int option} option}
 
       val toString
         = fn Goto {target}
@@ -3672,7 +3672,13 @@ struct
                       (List.map(args, fn (oper,_) => Operand.toString oper),
                        ", "),
                       ") <",
-                      Option.toString Label.toString return,
+                      Option.toString (fn {return, size} =>
+                                       concat ["(",
+                                               Label.toString return,
+                                               ", ",
+                                               Option.toString Int.toString size,
+                                               ")"])
+                                      return,
                       ">"]
 
       val layout = Layout.str o toString
@@ -3704,7 +3710,7 @@ struct
            | CCall {return, ...} 
            => (case return of
                  NONE => []
-               | SOME l => [l])
+               | SOME {return, ...} => [return])
            | _ => []
 
       val live
@@ -3719,13 +3725,12 @@ struct
            => Switch {test = replacer {use = true, def = false} test,
                       cases = cases,
                       default = default}
-           | CCall {args, frameInfo, func, return}
+           | CCall {args, func, return}
            => CCall {args = List.map(args,
                                      fn (oper,size) => (replacer {use = true,
                                                                   def = false}
                                                                  oper,
                                                         size)),
-                     frameInfo = frameInfo,
                      func = func,
                      return = return}
            | transfer => transfer

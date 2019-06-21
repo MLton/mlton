@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -61,7 +62,7 @@ struct
                | Entry.Cont {label, ...} => forceNear (jumpInfo, label)
                | Entry.Handler {label, ...} => forceNear (jumpInfo, label)
                | Entry.CReturn {label, func, ...}
-               => if CFunction.maySwitchThreads func
+               => if CFunction.maySwitchThreadsTo func
                     then forceNear (jumpInfo, label)
                     else ();
             List.foreach

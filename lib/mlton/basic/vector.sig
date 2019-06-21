@@ -31,6 +31,7 @@ signature VECTOR =
       val exists: 'a t * ('a -> bool) -> bool
       val existsi: 'a t * (int * 'a -> bool) -> bool
       val existsR: 'a t * int * int * ('a -> bool) -> bool
+      val first: 'a t -> 'a
       val fold2: 'a t * 'b t * 'c * ('a * 'b * 'c -> 'c) -> 'c
       val fold3From:
          'a t * 'b t * 'c t * int * 'd * ('a * 'b * 'c * 'd -> 'd) -> 'd
@@ -44,8 +45,6 @@ signature VECTOR =
        * returns.  If the end of the vector is reached, g is applied to the
        * state.
        *)
-
-      val first: 'a t -> 'a
       val fold':
          'a t * int * 'b * (int * 'a * 'b -> ('b, 'c) continue) * ('b -> 'c)
          -> 'c

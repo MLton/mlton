@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2016-2017 Matthew Fluet.
+(* Copyright (C) 2009,2016-2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -20,13 +20,11 @@ signature RUNTIME =
             datatype t =
                AtomicState
              | CardMapAbsolute
-             | CurrentThread
-             | CurSourceSeqsIndex
+             | CurSourceSeqIndex
              | ExnStack
              | Frontier (* The place where the next object is allocated. *)
              | Limit (* frontier + heapSize - LIMIT_SLOP *)
              | LimitPlusSlop (* frontier + heapSize *)
-             | MaxFrameSize
              | SignalIsPending
              | StackBottom
              | StackLimit (* Must have StackTop <= StackLimit *)
@@ -36,26 +34,22 @@ signature RUNTIME =
             val offset: t -> Bytes.t (* Field offset in struct GC_state. *)
             val setOffsets: {atomicState: Bytes.t,
                              cardMapAbsolute: Bytes.t,
-                             currentThread: Bytes.t,
-                             curSourceSeqsIndex: Bytes.t,
+                             curSourceSeqIndex: Bytes.t,
                              exnStack: Bytes.t,
                              frontier: Bytes.t,
                              limit: Bytes.t,
                              limitPlusSlop: Bytes.t,
-                             maxFrameSize: Bytes.t,
                              signalIsPending: Bytes.t,
                              stackBottom: Bytes.t,
                              stackLimit: Bytes.t,
                              stackTop: Bytes.t} -> unit
             val setSizes: {atomicState: Bytes.t,
                            cardMapAbsolute: Bytes.t,
-                           currentThread: Bytes.t,
-                           curSourceSeqsIndex: Bytes.t,
+                           curSourceSeqIndex: Bytes.t,
                            exnStack: Bytes.t,
                            frontier: Bytes.t,
                            limit: Bytes.t,
                            limitPlusSlop: Bytes.t,
-                           maxFrameSize: Bytes.t,
                            signalIsPending: Bytes.t,
                            stackBottom: Bytes.t,
                            stackLimit: Bytes.t,

@@ -20,8 +20,6 @@ structure Type =
       and node =
           Bits
         | CPointer
-        | ExnStack
-        | GCState
         | Label of Label.t
         | Objptr of ObjptrTycon.t vector
         | Real of RealSize.t
@@ -44,8 +42,6 @@ structure Type =
             case node t of
                Bits => str (concat ["Bits", Bits.toString (width t)])
              | CPointer => str "CPointer"
-             | ExnStack => str "ExnStack"
-             | GCState => str "GCState"
              | Label l => seq [str "Label ", Label.layout l]
              | Objptr opts =>
                   seq [str "Objptr ",
@@ -62,8 +58,6 @@ structure Type =
          (case (node t, node t') of
              (Bits, Bits) => true 
            | (CPointer, CPointer) => true
-           | (ExnStack, ExnStack) => true
-           | (GCState, GCState) => true
            | (Label l, Label l') => Label.equals (l, l')
            | (Objptr opts, Objptr opts') =>
                 Vector.equals (opts, opts', ObjptrTycon.equals)
@@ -76,16 +70,11 @@ structure Type =
          fn (t, t') => Bits.equals (width t, width t')
 
 
-      val bits: Bits.t -> t = fn width => T {node = Bits, width = width}
+      val bits: Bits.t -> t =
+         fn width => T {node = Bits, width = width}
 
       val cpointer: unit -> t = fn () =>
          T {node = CPointer, width = WordSize.bits (WordSize.cpointer ())}
-
-      val exnStack: unit -> t = fn () => 
-         T {node = ExnStack, width = WordSize.bits (WordSize.csize ())}
-
-      val gcState: unit -> t = fn () => 
-         T {node = GCState, width = WordSize.bits (WordSize.cpointer ())}
 
       val label: Label.t -> t =
          fn l => T {node = Label l, width = WordSize.bits (WordSize.cpointer ())}
@@ -103,11 +92,15 @@ structure Type =
 
       val bool: t = word WordSize.bool
 
-      val csize: unit -> t = word o WordSize.csize
-
       val cint: unit -> t = word o WordSize.cint
 
       val compareRes = word WordSize.compareRes
+
+      val csize: unit -> t = word o WordSize.csize
+
+      val exnStack: unit -> t = csize
+
+      val gcState: unit -> t = cpointer
 
       val objptrHeader: unit -> t = word o WordSize.objptrHeader
 
@@ -334,8 +327,12 @@ structure Type =
             else 
                case node t of
                   CPointer => C.CPointer
-                | GCState => C.CPointer
-                | Label _ => C.CPointer
+                | Label _ =>
+                     (case !Control.codegen of
+                         Control.Codegen.AMD64Codegen => C.CPointer
+                       | Control.Codegen.CCodegen => C.fromBits (width t)
+                       | Control.Codegen.LLVMCodegen => C.fromBits (width t)
+                       | Control.Codegen.X86Codegen => C.CPointer)
                 | Real s =>
                      (case s of
                          RealSize.R32 => C.Real32
@@ -521,13 +518,11 @@ fun ofGCField (f: GCField.t): t =
       case f of
          AtomicState => word32
        | CardMapAbsolute => cpointer ()
-       | CurrentThread => thread ()
-       | CurSourceSeqsIndex => word32
+       | CurSourceSeqIndex => word32
        | ExnStack => exnStack ()
        | Frontier => cpointer ()
        | Limit => cpointer ()
        | LimitPlusSlop => cpointer ()
-       | MaxFrameSize => word32
        | SignalIsPending => word32
        | StackBottom => cpointer ()
        | StackLimit => cpointer ()
@@ -781,7 +776,8 @@ fun checkOffset {base, isVector, offset, result} =
 
 fun offsetIsOk {base, offset, tyconTy, result} = 
    case node base of
-      Objptr opts => 
+      CPointer => true
+    | Objptr opts =>
          if Bytes.equals (offset, Runtime.headerOffset ())
             then equals (result, objptrHeader ())
          else if Bytes.equals (offset, Runtime.sequenceLengthOffset ())
@@ -860,7 +856,8 @@ structure BuiltInCFunction =
                    kind = Kind.Runtime {bytesNeeded = NONE,
                                         ensuresBytesFree = SOME 1,
                                         mayGC = true,
-                                        maySwitchThreads = b,
+                                        maySwitchThreadsFrom = b,
+                                        maySwitchThreadsTo = b,
                                         modifiesFrontier = true,
                                         readsStackTop = true,
                                         writesStackTop = true},

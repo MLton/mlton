@@ -25,8 +25,6 @@ struct
   end
 
   type transInfo = {addData : amd64.Assembly.t list -> unit,
-                    frameInfoToAMD64: (amd64MLtonBasic.Machine.FrameInfo.t
-                                     -> amd64.FrameInfo.t),
                     live: amd64.Label.t -> amd64.Operand.t list,
                     liveInfo: amd64Liveness.LiveInfo.t}
 
@@ -1273,9 +1271,8 @@ struct
       end
 
   fun ccall {args: (amd64.Operand.t * amd64.Size.t) vector,
-             frameInfo,
              func,
-             return: amd64.Label.t option,
+             return: {return: amd64.Label.t, size: int option} option,
              transInfo = {...}: transInfo}
     = let
         val CFunction.T {convention, target, ...} = func
@@ -1302,7 +1299,6 @@ struct
            statements = [],
            transfer = SOME (Transfer.ccall 
                             {args = Vector.toList args,
-                             frameInfo = frameInfo,
                              func = func,
                              return = return})})]
       end

@@ -1,4 +1,4 @@
-(* Copyright (C) 2017 Matthew Fluet.
+(* Copyright (C) 2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -21,6 +21,7 @@ in
    structure Function = Function
    structure Kind = Kind
    structure Label = Label
+   structure Live = Live
    structure Type = Type
    structure Var = Var
 end
@@ -35,10 +36,15 @@ in
    structure StackOffset = StackOffset
 end
 
-structure Live = Live (Rssa)
-
 structure Allocation:
    sig
+      structure Registers:
+         sig
+            type t
+
+            val get: t * Type.t -> Register.t
+            val empty: unit -> t
+         end
       structure Stack:
          sig
             type t
@@ -218,6 +224,8 @@ structure Allocation:
                              Register.index r <= Register.index r')})))
              end
 
+          fun empty () = new []
+
           fun get (T f, ty: Type.t) =
              let
                 val t = Type.toCType ty
@@ -280,8 +288,8 @@ structure Info =
 (*                     allocate                      *)
 (* ------------------------------------------------- *)
 
-fun allocate {formalsStackOffsets,
-              function = f: Rssa.Function.t,
+fun allocate {function = f: Rssa.Function.t,
+              paramOffsets,
               varInfo: Var.t -> {operand: Machine.Operand.t option ref option,
                                  ty: Type.t}} =
    let
@@ -310,12 +318,12 @@ fun allocate {formalsStackOffsets,
       val {labelLive, remLabelLive} =
          Live.live (f, {shouldConsider = isSome o #operand o varInfo})
       val {args, blocks, name, ...} = Function.dest f
+
       (*
        * Decide which variables will live in stack slots and which
        * will live in registers.
        * Initially,
-       *   - all formals are put in stack slots
-       *   - everything else is put in a register.
+       *   - all variables are put in a register.
        * Variables get moved to the stack if they are
        *   - live at the beginning of a Cont block; such variables are
        *     live while the frame is suspended during a non-tail call
@@ -324,20 +332,19 @@ fun allocate {formalsStackOffsets,
        *     variables are live while the frame is suspended during a
        *     C call and must be stack allocated to be traced during
        *     the potential GC
-       * Both of the above are indiced by Kind.frameStyle kind =
-       * Kind.OffsetsAndSize
+       * Both of the above are indiced by
+       * Kind.frameStyle kind = Kind.OffsetsAndSize
        *)
       datatype place = Stack | Register
       val {get = place: Var.t -> place ref, rem = removePlace, ...} =
          Property.get (Var.plist, Property.initFun (fn _ => ref Register))
-      (* !hasHandler = true iff handlers are installed in this function. *)
-      val hasHandler: bool ref = ref false
+      (* The arguments for each Handler block in the function. *)
+      val handlersArgs: (Var.t * Type.t) vector list ref = ref []
       fun forceStack (x: Var.t): unit = place x := Stack
-      val _ = Vector.foreach (args, forceStack o #1)
       val _ =
          Vector.foreach
          (blocks,
-          fn R.Block.T {kind, label, statements, ...} =>
+          fn R.Block.T {args, kind, label, ...} =>
           let
              val {beginNoFormals, ...} = labelLive label
              val _ =
@@ -347,25 +354,14 @@ fun allocate {formalsStackOffsets,
                       Vector.foreach (beginNoFormals, forceStack)
                  | Kind.SizeOnly => ()
              val _ =
-                if not (!hasHandler)
-                   andalso (Vector.exists
-                            (statements, fn s =>
-                             let
-                                datatype z = datatype R.Statement.t
-                             in
-                                case s of
-                                   SetHandler _ => true
-                                 | SetExnStackLocal => true
-                                 | SetExnStackSlot => true
-                                 | SetSlotExnStack => true
-                                 | _ => false
-                             end))
-                   then hasHandler := true
-                else ()
+                case kind of
+                   Kind.Handler => List.push (handlersArgs, args)
+                 | _ => ()
           in
              ()
           end)
-      fun allocateVar (x: Var.t, a: Allocation.t): unit = 
+
+      fun allocateVar (x: Var.t, a: Allocation.t): unit =
          let
             val {operand, ty} = varInfo x
          in
@@ -397,38 +393,25 @@ fun allocate {formalsStackOffsets,
          Trace.trace2
          ("AllocateRegisters.allocateVar", Var.layout, Allocation.layout, Unit.layout)
          allocateVar
-      (* Set the stack slots for the formals.
-       * Also, create a stack allocation that includes all formals; if
-       * link and handler stack slots are required, then they will be
-       * allocated against this stack.
-       *)
-      val stack =
-         Allocation.Stack.new
-         (Vector.foldr2
-          (args, formalsStackOffsets args, [],
-           fn ((x, _), so, stack) =>
-           (valOf (#operand (varInfo x)) := SOME (Operand.StackOffset so)
-            ; so :: stack)))
-      (* Allocate stack slots for the link and handler, if necessary. *)
-      val handlerLinkOffset =
-         if !hasHandler
-            then
-               let
-                  (* Choose fixed and permanently allocated stack
-                   * slots that do not conflict with formals.
-                   *)
-                  val (stack, {offset = handler, ...}) =
-                     Allocation.Stack.get (stack, Type.label (Label.newNoname ()))
-                  val (_, {offset = link, ...}) = 
-                     Allocation.Stack.get (stack, Type.exnStack ())
-               in
-                  SOME {handler = handler, link = link}
-               end
-         else NONE
+      fun getOperand (x: Var.t): Operand.t =
+         case #operand (varInfo x) of
+            NONE => Error.bug (concat ["AllocatRegisters.getOperand: ",
+                                       "#operand (varInfo ",
+                                       Var.toString x, ") = NONE"])
+          | SOME r =>
+               (case !r of
+                   NONE => Error.bug (concat ["AllocatRegisters.getOperand: ",
+                                              "! (valOf (#operand (varInfo ",
+                                              Var.toString x, "))) = NONE"])
+                 | SOME oper => oper)
+      val getOperand =
+         Trace.trace
+         ("AllocateRegisters.getOperand", Var.layout, Operand.layout)
+         getOperand
       fun getOperands (xs: Var.t vector): Operand.t vector =
-         Vector.map (xs, fn x => valOf (! (valOf (#operand (varInfo x)))))
+         Vector.map (xs, getOperand)
       val getOperands =
-         Trace.trace 
+         Trace.trace
          ("AllocateRegisters.getOperands",
           Vector.layout Var.layout, Vector.layout Operand.layout)
          getOperands
@@ -437,34 +420,95 @@ fun allocate {formalsStackOffsets,
                               Property.initRaise ("labelInfo", R.Label.layout))
       val setLabelInfo =
          Trace.trace2
-         ("AllocateRegisters.setLabelInfo", 
+         ("AllocateRegisters.setLabelInfo",
           R.Label.layout, Info.layout, Unit.layout)
          setLabelInfo
+
+      (* Allocate stacks slots and/or registers for the formals.
+       * Don't use `allocateVar`, because a stack formal
+       * should use the stack slot of the incoming actual.
+       *)
+      val () =
+         let
+            val regs = Allocation.Registers.empty ()
+         in
+            Vector.foreach2
+            (args, paramOffsets args, fn ((x, ty), so) =>
+             let
+                val oper =
+                   case ! (place x) of
+                      Stack => Operand.StackOffset (StackOffset.T so)
+                    | Register => Operand.Register (Allocation.Registers.get (regs, ty))
+                val () = removePlace x
+                val () = valOf (#operand (varInfo x)) := SOME oper
+             in
+                ()
+             end)
+         end
+      (* Also, create a stack allocation that includes all incoming actuals;
+       * if link, handler label, and handler args stack slots are required,
+       * then they will be allocated against this stack.
+       *)
+      val stack =
+         Allocation.Stack.new (Vector.toListMap (paramOffsets args, StackOffset.T))
+      val handlersInfo =
+         case !handlersArgs of
+            [] => NONE
+          | handlersArgs =>
+               let
+                  (* Choose fixed and permanently allocated stack slots
+                   * that do not conflict with incoming actuals.
+                   *)
+                  val (stack, {offset = linkOffset, ...}) =
+                     Allocation.Stack.get (stack, Type.exnStack ())
+                  val (_, {offset = handlerOffset, ...}) =
+                     Allocation.Stack.get (stack, Type.label (Label.newNoname ()))
+                  val handlerArgsOffset =
+                     Bytes.align
+                     (Bytes.+ (handlerOffset, Runtime.labelSize ()),
+                      {alignment = (case !Control.align of
+                                       Control.Align4 => Bytes.inWord32
+                                     | Control.Align8 => Bytes.inWord64)})
+                  val handlerArgsSize =
+                     List.fold
+                     (handlersArgs, Bytes.zero, fn (args, maxSize) =>
+                      Vector.fold
+                      (paramOffsets args, maxSize, fn ({offset, ty}, maxSize) =>
+                       Bytes.max (maxSize, Bytes.+ (offset, Type.bytes ty))))
+                  val handlerOffset = Bytes.- (handlerArgsOffset, Runtime.labelSize ())
+               in
+                  SOME {handlerArgsOffset = handlerArgsOffset,
+                        handlerArgsSize = handlerArgsSize,
+                        handlerOffset = handlerOffset,
+                        linkOffset = linkOffset}
+               end
+
       (* Do a DFS of the control-flow graph. *)
       val () =
          Function.dfs
-         (f, fn R.Block.T {args, label, kind, statements, transfer, ...} =>
+         (f, fn R.Block.T {args, label, kind, statements, ...} =>
           let
-             val {begin, beginNoFormals, handler = handlerLive,
+             val {begin, beginNoFormals,
+                  handler = handlerLive,
                   link = linkLive} = labelLive label
              val () = remLabelLive label
              fun addHS (ops: Operand.t vector): Operand.t vector =
-                case handlerLinkOffset of
+                case handlersInfo of
                    NONE => ops
-                 | SOME {handler, link} =>
+                 | SOME {handlerOffset, linkOffset, ...} =>
                       let
                          val extra = []
                          val extra =
                             case handlerLive of
                                NONE => extra
                              | SOME h => 
-                                  Operand.stackOffset {offset = handler,
+                                  Operand.stackOffset {offset = handlerOffset,
                                                        ty = Type.label h}
                                   :: extra
                          val extra =
                             if linkLive
                                then
-                                  Operand.stackOffset {offset = link,
+                                  Operand.stackOffset {offset = linkOffset,
                                                        ty = Type.exnStack ()}
                                   :: extra
                             else extra
@@ -480,41 +524,46 @@ fun allocate {formalsStackOffsets,
                   | Operand.Register r => (stack, r::registers)
                   | _ => (stack, registers))
              val stackInit =
-                case handlerLinkOffset of
+                case handlersInfo of
                    NONE => stackInit
-                 | SOME {handler, link} =>
-                      StackOffset.T {offset = handler,
-                                     ty = Type.label (Label.newNoname ())}
-                      :: StackOffset.T {offset = link, 
-                                        ty = Type.exnStack ()}
-                      :: stackInit
+                 | SOME {handlerArgsOffset, handlerArgsSize, handlerOffset, linkOffset, ...} =>
+                      StackOffset.T {offset = linkOffset,
+                                     ty = Type.exnStack ()}
+                      :: StackOffset.T {offset = handlerOffset,
+                                        ty = Type.label (Label.newNoname ())}
+                      :: (if (Bytes.> (handlerArgsSize, Bytes.zero))
+                             then StackOffset.T {offset = handlerArgsOffset,
+                                                 ty = Type.bits (Bytes.toBits handlerArgsSize)}
+                                  :: stackInit
+                             else stackInit)
              val a = Allocation.new (stackInit, registersInit)
              val size =
                 case kind of
                    Kind.Handler =>
-                      (case handlerLinkOffset of
+                      (case handlersInfo of
                           NONE => Error.bug "AllocateRegisters.allocate: Handler with no handler offset"
-                        | SOME {handler, ...} =>
-                             Bytes.+ (Runtime.labelSize (), handler))
+                        | SOME {handlerOffset, ...} =>
+                             Bytes.+ (handlerOffset, Runtime.labelSize ()))
                  | _ =>
-                      let
-                         val size =
-                            Bytes.+
-                            (Runtime.labelSize (),
-                             Bytes.alignWord32 (Allocation.stackSize a))
-                      in
-                         case !Control.align of
-                            Control.Align4 => size
-                          | Control.Align8 => Bytes.alignWord64 size
-                      end
+                      Bytes.align
+                      (Bytes.+ (Allocation.stackSize a, Runtime.labelSize ()),
+                       {alignment = (case !Control.align of
+                                        Control.Align4 => Bytes.inWord32
+                                      | Control.Align8 => Bytes.inWord64)})
              val _ =
-                if Bytes.isWord32Aligned size
+                if Bytes.isAligned (size, {alignment = (case !Control.align of
+                                                           Control.Align4 => Bytes.inWord32
+                                                         | Control.Align8 => Bytes.inWord64)})
                    then ()
                 else Error.bug (concat ["AllocateRegisters.allocate: ",
                                         "bad size ",
                                         Bytes.toString size,
                                         " in ", Label.toString label])
-             val _ = Vector.foreach (args, fn (x, _) => allocateVar (x, a))
+             val _ = Vector.foreach (args, fn (x, _) =>
+                                     if Vector.exists (begin, fn y =>
+                                                       Var.equals (x, y))
+                                        then allocateVar (x, a)
+                                        else ())
              (* Must compute live after allocateVar'ing the args, since that
               * sets the operands for the args.
               *)
@@ -523,7 +572,6 @@ fun allocate {formalsStackOffsets,
              val _ =
                 Vector.foreach (statements, fn statement =>
                                 R.Statement.foreachDef (statement, one))
-             val _ = R.Transfer.foreachDef (transfer, one)
              val _ =
                 setLabelInfo (label, {live = addHS live,
                                       liveNoFormals = addHS liveNoFormals,
@@ -538,12 +586,15 @@ fun allocate {formalsStackOffsets,
              open Layout
              val _ =
                 display (seq [str "function ", Func.layout name,
-                              str " handlerLinkOffset ",
+                              str " handlersInfo ",
                               Option.layout
-                              (fn {handler, link} =>
-                               record [("handler", Bytes.layout handler),
-                                       ("link", Bytes.layout link)])
-                              handlerLinkOffset])
+                              (fn {handlerArgsOffset, handlerArgsSize,
+                                   handlerOffset, linkOffset, ...} =>
+                               record [("handlerArgsOffset", Bytes.layout handlerArgsOffset),
+                                       ("handlerArgsSize", Bytes.layout handlerArgsSize),
+                                       ("handlerOffset", Bytes.layout handlerOffset),
+                                       ("linkOffset", Bytes.layout linkOffset)])
+                              handlersInfo])
              val _ = Vector.foreach (args, diagVar o #1)
              val _ =
                 Vector.foreach
@@ -562,7 +613,9 @@ fun allocate {formalsStackOffsets,
           in ()
           end)
    in
-      {handlerLinkOffset = handlerLinkOffset,
+      {handlersInfo = Option.map (handlersInfo, fn {handlerOffset, linkOffset, ...} =>
+                                  {handlerOffset = handlerOffset,
+                                   linkOffset = linkOffset}),
        labelInfo = labelInfo}
    end
 

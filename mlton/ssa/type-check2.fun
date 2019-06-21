@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2011,2017 Matthew Fluet.
+(* Copyright (C) 2009,2011,2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -543,7 +543,5 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
 val typeCheck = fn p =>
    (typeCheck p)
    handle exn => Error.reraisePrefix (exn, "TypeError (SSA2): ")
-
-val typeCheck = Control.trace (Control.Pass, "typeCheck") typeCheck
 
 end

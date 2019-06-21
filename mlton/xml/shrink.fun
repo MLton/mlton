@@ -143,7 +143,7 @@ fun shrinkOnce (Program.T {datatypes, body}) =
           in
              Vector.foreach (cons, fn {con, ...} => setConNumCons (con, n))
           end)
-      fun isExhaustive (cases: exp Cases.t): bool =
+      fun isExhaustive (cases: (Pat.t, exp) Cases.t): bool =
          case cases of
             Cases.Con v =>
                (0 < Vector.length v

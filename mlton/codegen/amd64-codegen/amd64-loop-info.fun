@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -109,19 +110,19 @@ struct
                       => ()
                       | CCall {return, func, ...}
                       => Option.app (return, if CFunction.mayGC func
-                                               then doit''
-                                               else doit')
+                                               then doit'' o #return
+                                               else doit' o #return)
                  end)
         val _ = destInfo ()
 
-        val lf = Graph.loopForestSteensgaard (G, {root = root})
+        val lf = Graph.loopForestSteensgaard (G, {root = root, nodeValue = getNodeInfo})
 
-        fun doit (f: unit LoopForest.t,
+        fun doit (f: Label.t LoopForest.t,
                   headers,
                   path)
           = let
               val {loops, notInLoop} = LoopForest.dest f
-              val notInLoop = Vector.toListMap (notInLoop, getNodeInfo)
+              val notInLoop = Vector.toList notInLoop
               val path' = List.rev path
             in
               List.foreach
@@ -132,9 +133,7 @@ struct
                     loopPath = path'})) ;
               Vector.foreachi
               (loops, fn (i,{headers, child}) =>
-               doit (child, 
-                     Vector.map (headers, getNodeInfo),
-                     i::path))
+               doit (child, headers, i::path))
             end
         val _ = doit (lf, Vector.new0 (), [])
       in

@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -10,8 +11,8 @@ GC_sourceSeqIndex getCachedStackTopFrameSourceSeqIndex (GC_state s) {
   GC_frameIndex i;
 
   i = getCachedStackTopFrameIndex (s);
-  assert(i < s->sourceMaps.frameSourcesLength);
-  return s->sourceMaps.frameSources[i];
+  assert(i < s->frameInfosLength);
+  return s->frameInfos[i].sourceSeqIndex;
 }
 
 char* getSourceName (GC_state s, GC_sourceIndex i) {
@@ -25,11 +26,11 @@ char* GC_sourceName (GC_state s, GC_sourceIndex i) {
 
 #if HAS_TIME_PROFILING
 
-int compareSourceLabels (const void *v1, const void *v2) {
-  const struct GC_sourceLabel* l1 = (const struct GC_sourceLabel*)v1;
-  const struct GC_sourceLabel* l2 = (const struct GC_sourceLabel*)v2;
-  uintptr_t ui1 = (uintptr_t)(l1->label);
-  uintptr_t ui2 = (uintptr_t)(l2->label);
+int compareProfileLabelInfos (const void *v1, const void *v2) {
+  const struct GC_profileLabelInfo* l1 = (const struct GC_profileLabelInfo*)v1;
+  const struct GC_profileLabelInfo* l2 = (const struct GC_profileLabelInfo*)v2;
+  uintptr_t ui1 = (uintptr_t)(l1->profileLabel);
+  uintptr_t ui2 = (uintptr_t)(l2->profileLabel);
 
   if (ui1 < ui2)
     return -1;
@@ -39,48 +40,48 @@ int compareSourceLabels (const void *v1, const void *v2) {
     return 1;
 }
 
-void sortSourceLabels (GC_state s) {
-  GC_sourceLabelIndex i;
+void sortProfileLabelInfos (GC_state s) {
+  GC_profileLabelInfoIndex i;
 
-  /* Sort sourceLabels by address. */
-  qsort (s->sourceMaps.sourceLabels, 
-         s->sourceMaps.sourceLabelsLength, 
-         sizeof (*s->sourceMaps.sourceLabels),
-         compareSourceLabels);
-  if (0 == s->sourceMaps.sourceLabels[s->sourceMaps.sourceLabelsLength - 1].label)
+  /* Sort profileLabelInfos by address. */
+  qsort (s->sourceMaps.profileLabelInfos,
+         s->sourceMaps.profileLabelInfosLength,
+         sizeof (*s->sourceMaps.profileLabelInfos),
+         compareProfileLabelInfos);
+  if (0 == s->sourceMaps.profileLabelInfos[s->sourceMaps.profileLabelInfosLength - 1].profileLabel)
     die ("Max source label is 0 -- something is wrong.");
   if (ASSERT)
-    for (i = 1; i < s->sourceMaps.sourceLabelsLength; i++)
-      assert (s->sourceMaps.sourceLabels[i-1].label
-              <= s->sourceMaps.sourceLabels[i].label);
+    for (i = 1; i < s->sourceMaps.profileLabelInfosLength; i++)
+      assert (s->sourceMaps.profileLabelInfos[i-1].profileLabel
+              <= s->sourceMaps.profileLabelInfos[i].profileLabel);
 }
 
-void compressSourceLabels (GC_state s) {
-  GC_sourceLabelIndex in, out, i;
+void compressProfileLabelInfos (GC_state s) {
+  GC_profileLabelInfoIndex in, out, i;
   GC_sourceSeqIndex sourceSeqIndex;
   
-  /* Eliminate duplicate sourceLabels */
+  /* Eliminate duplicate profileLabelInfos */
   out = 0;
-  sourceSeqIndex = SOURCE_SEQ_UNKNOWN;
-  for (in = 0; in < s->sourceMaps.sourceLabelsLength; ++in) {
-    if (s->sourceMaps.sourceLabels[in].sourceSeqIndex != sourceSeqIndex) {
-      s->sourceMaps.sourceLabels[out++] = s->sourceMaps.sourceLabels[in];
-      sourceSeqIndex = s->sourceMaps.sourceLabels[in].sourceSeqIndex;
+  sourceSeqIndex = UNKNOWN_SOURCE_SEQ_INDEX;
+  for (in = 0; in < s->sourceMaps.profileLabelInfosLength; ++in) {
+    if (s->sourceMaps.profileLabelInfos[in].sourceSeqIndex != sourceSeqIndex) {
+      s->sourceMaps.profileLabelInfos[out++] = s->sourceMaps.profileLabelInfos[in];
+      sourceSeqIndex = s->sourceMaps.profileLabelInfos[in].sourceSeqIndex;
     }
   }
   
-  s->sourceMaps.sourceLabelsLength = out;
+  s->sourceMaps.profileLabelInfosLength = out;
 
   if (DEBUG_SOURCES)
-    for (i = 0; i < s->sourceMaps.sourceLabelsLength; i++)
+    for (i = 0; i < s->sourceMaps.profileLabelInfosLength; i++)
       fprintf (stderr, FMTPTR"  "FMTSSI"\n",
-               (uintptr_t)s->sourceMaps.sourceLabels[i].label,
-               s->sourceMaps.sourceLabels[i].sourceSeqIndex);
+               (uintptr_t)s->sourceMaps.profileLabelInfos[i].profileLabel,
+               s->sourceMaps.profileLabelInfos[i].sourceSeqIndex);
 }
 
-void initSourceLabels (GC_state s) {
-  sortSourceLabels (s);
-  compressSourceLabels (s);
+void initProfileLabelInfos (GC_state s) {
+  sortProfileLabelInfos (s);
+  compressProfileLabelInfos (s);
 }
 
 #endif

@@ -20,23 +20,18 @@ signature MATCH_COMPILE_STRUCTS =
             val unit: t
             val word: WordSize.t -> t
          end
-      structure Cases:
+      structure Pat:
          sig
-            type exp
-            type t
-
-            val con: {arg: (Var.t * Type.t) option,
-                      con: Con.t,
-                      rhs: exp,
-                      targs: Type.t vector} vector -> t
-            val word: WordSize.t * (WordX.t * exp) vector -> t
+            datatype t = T of {arg: (Var.t * Type.t) option,
+                               con: Con.t,
+                               targs: Type.t vector}
          end
       structure Exp:
          sig
             type t
 
             val casee:
-               {cases: Cases.t,
+               {cases: (Pat.t, t) Cases.t,
                 default: t option,
                 test: t,
                 ty: Type.t}  (* type of entire case expression *)
@@ -53,7 +48,6 @@ signature MATCH_COMPILE_STRUCTS =
             val var: Var.t * Type.t -> t
             val vectorLength: t -> t
          end
-      sharing type Cases.exp = Exp.t
       structure NestedPat: NESTED_PAT
       sharing Atoms = NestedPat.Atoms
       sharing Type = NestedPat.Type

@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2016-2017 Matthew Fluet.
+(* Copyright (C) 2009,2016-2017,2019 Matthew Fluet.
  * Copyright (C) 2002-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -16,13 +16,11 @@ structure GCField =
       datatype t =
          AtomicState
        | CardMapAbsolute
-       | CurrentThread
-       | CurSourceSeqsIndex
+       | CurSourceSeqIndex
        | ExnStack
        | Frontier
        | Limit
        | LimitPlusSlop
-       | MaxFrameSize
        | SignalIsPending
        | StackBottom
        | StackLimit
@@ -30,30 +28,26 @@ structure GCField =
 
       val atomicStateOffset: Bytes.t ref = ref Bytes.zero
       val cardMapAbsoluteOffset: Bytes.t ref = ref Bytes.zero
-      val currentThreadOffset: Bytes.t ref = ref Bytes.zero
-      val curSourceSeqsIndexOffset: Bytes.t ref = ref Bytes.zero
+      val curSourceSeqIndexOffset: Bytes.t ref = ref Bytes.zero
       val exnStackOffset: Bytes.t ref = ref Bytes.zero
       val frontierOffset: Bytes.t ref = ref Bytes.zero
       val limitOffset: Bytes.t ref = ref Bytes.zero
       val limitPlusSlopOffset: Bytes.t ref = ref Bytes.zero
-      val maxFrameSizeOffset: Bytes.t ref = ref Bytes.zero
       val signalIsPendingOffset: Bytes.t ref = ref Bytes.zero
       val stackBottomOffset: Bytes.t ref = ref Bytes.zero
       val stackLimitOffset: Bytes.t ref = ref Bytes.zero
       val stackTopOffset: Bytes.t ref = ref Bytes.zero
 
-      fun setOffsets {atomicState, cardMapAbsolute, currentThread, curSourceSeqsIndex, 
-                      exnStack, frontier, limit, limitPlusSlop, maxFrameSize, 
+      fun setOffsets {atomicState, cardMapAbsolute, curSourceSeqIndex,
+                      exnStack, frontier, limit, limitPlusSlop,
                       signalIsPending, stackBottom, stackLimit, stackTop} =
          (atomicStateOffset := atomicState
           ; cardMapAbsoluteOffset := cardMapAbsolute
-          ; currentThreadOffset := currentThread
-          ; curSourceSeqsIndexOffset := curSourceSeqsIndex
+          ; curSourceSeqIndexOffset := curSourceSeqIndex
           ; exnStackOffset := exnStack
           ; frontierOffset := frontier
           ; limitOffset := limit
           ; limitPlusSlopOffset := limitPlusSlop
-          ; maxFrameSizeOffset := maxFrameSize
           ; signalIsPendingOffset := signalIsPending
           ; stackBottomOffset := stackBottom
           ; stackLimitOffset := stackLimit
@@ -62,13 +56,11 @@ structure GCField =
       val offset =
          fn AtomicState => !atomicStateOffset
           | CardMapAbsolute => !cardMapAbsoluteOffset
-          | CurrentThread => !currentThreadOffset
-          | CurSourceSeqsIndex => !curSourceSeqsIndexOffset
+          | CurSourceSeqIndex => !curSourceSeqIndexOffset
           | ExnStack => !exnStackOffset
           | Frontier => !frontierOffset
           | Limit => !limitOffset
           | LimitPlusSlop => !limitPlusSlopOffset
-          | MaxFrameSize => !maxFrameSizeOffset
           | SignalIsPending => !signalIsPendingOffset
           | StackBottom => !stackBottomOffset
           | StackLimit => !stackLimitOffset
@@ -76,30 +68,26 @@ structure GCField =
 
       val atomicStateSize: Bytes.t ref = ref Bytes.zero
       val cardMapAbsoluteSize: Bytes.t ref = ref Bytes.zero
-      val currentThreadSize: Bytes.t ref = ref Bytes.zero
-      val curSourceSeqsIndexSize: Bytes.t ref = ref Bytes.zero
+      val curSourceSeqIndexSize: Bytes.t ref = ref Bytes.zero
       val exnStackSize: Bytes.t ref = ref Bytes.zero
       val frontierSize: Bytes.t ref = ref Bytes.zero
       val limitSize: Bytes.t ref = ref Bytes.zero
       val limitPlusSlopSize: Bytes.t ref = ref Bytes.zero
-      val maxFrameSizeSize: Bytes.t ref = ref Bytes.zero
       val signalIsPendingSize: Bytes.t ref = ref Bytes.zero
       val stackBottomSize: Bytes.t ref = ref Bytes.zero
       val stackLimitSize: Bytes.t ref = ref Bytes.zero
       val stackTopSize: Bytes.t ref = ref Bytes.zero
 
-      fun setSizes {atomicState, cardMapAbsolute, currentThread, curSourceSeqsIndex, 
-                    exnStack, frontier, limit, limitPlusSlop, maxFrameSize, 
+      fun setSizes {atomicState, cardMapAbsolute, curSourceSeqIndex,
+                    exnStack, frontier, limit, limitPlusSlop,
                     signalIsPending, stackBottom, stackLimit, stackTop} =
          (atomicStateSize := atomicState
           ; cardMapAbsoluteSize := cardMapAbsolute
-          ; currentThreadSize := currentThread
-          ; curSourceSeqsIndexSize := curSourceSeqsIndex
+          ; curSourceSeqIndexSize := curSourceSeqIndex
           ; exnStackSize := exnStack
           ; frontierSize := frontier
           ; limitSize := limit
           ; limitPlusSlopSize := limitPlusSlop
-          ; maxFrameSizeSize := maxFrameSize
           ; signalIsPendingSize := signalIsPending
           ; stackBottomSize := stackBottom
           ; stackLimitSize := stackLimit
@@ -108,13 +96,11 @@ structure GCField =
       val size =
          fn AtomicState => !atomicStateSize
           | CardMapAbsolute => !cardMapAbsoluteSize
-          | CurrentThread => !currentThreadSize
-          | CurSourceSeqsIndex => !curSourceSeqsIndexSize
+          | CurSourceSeqIndex => !curSourceSeqIndexSize
           | ExnStack => !exnStackSize
           | Frontier => !frontierSize
           | Limit => !limitSize
           | LimitPlusSlop => !limitPlusSlopSize
-          | MaxFrameSize => !maxFrameSizeSize
           | SignalIsPending => !signalIsPendingSize
           | StackBottom => !stackBottomSize
           | StackLimit => !stackLimitSize
@@ -123,13 +109,11 @@ structure GCField =
       val toString =
          fn AtomicState => "AtomicState"
           | CardMapAbsolute => "CardMapAbsolute"
-          | CurrentThread => "CurrentThread"
-          | CurSourceSeqsIndex => "CurSourceSeqsIndex"
+          | CurSourceSeqIndex => "CurSourceSeqIndex"
           | ExnStack => "ExnStack"
           | Frontier => "Frontier"
           | Limit => "Limit"
           | LimitPlusSlop => "LimitPlusSlop"
-          | MaxFrameSize => "MaxFrameSize"
           | SignalIsPending => "SignalIsPending"
           | StackBottom => "StackBottom"
           | StackLimit => "StackLimit"

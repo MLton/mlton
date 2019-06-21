@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014 Matthew Fluet.
+(* Copyright (C) 2009,2014,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -9,24 +9,16 @@
 
 signature MACHINE_STRUCTS = 
    sig
-      include ATOMS
+      include BACKEND_ATOMS
    end
 
 signature MACHINE = 
    sig
       include MACHINE_STRUCTS
 
-      structure ObjectType: OBJECT_TYPE
-      structure ObjptrTycon: OBJPTR_TYCON
-      structure Runtime: RUNTIME
       structure Switch: SWITCH
-      structure Type: REP_TYPE
 
-      sharing Atoms = Type
       sharing Atoms = Switch
-      sharing ObjectType = Type.ObjectType
-      sharing ObjptrTycon = ObjectType.ObjptrTycon = Type.ObjptrTycon
-      sharing Runtime = ObjectType.Runtime = Type.Runtime
 
       structure ChunkLabel: ID
 
@@ -50,10 +42,8 @@ signature MACHINE =
 
             val equals: t * t -> bool
             val index: t -> int
-            val isRoot: t -> bool
             val layout: t -> Layout.t
-            val new: {isRoot: bool, ty: Type.t} -> t
-            val numberOfNonRoot: unit -> int
+            val new: Type.t -> t
             val numberOfType: CType.t -> int
             val ty: t -> Type.t
          end
@@ -65,9 +55,6 @@ signature MACHINE =
 
             val ty: t -> Type.t
          end
-
-      structure Scale: SCALE
-      sharing Scale = Type.Scale
 
       structure Operand:
          sig
@@ -142,37 +129,66 @@ signature MACHINE =
             val object: {dst: Operand.t, header: word, size: Bytes.t} -> t vector
          end
 
-      structure FrameInfo:
-         sig
-            datatype t = T of {frameLayoutsIndex: int}
-
-            val equals: t * t -> bool
-            val layout: t -> Layout.t
-         end
-
       structure Transfer:
          sig
             datatype t =
                CCall of {args: Operand.t vector,
-                         frameInfo: FrameInfo.t option,
                          func: Type.t CFunction.t,
-                         (* return is NONE iff the func doesn't return.
-                          * Else, return must be SOME l, where l is of CReturn
-                          * kind with a matching func.
-                          *)
-                         return: Label.t option}
-             | Call of {label: Label.t, (* label must be a Func *)
+                         return: {return: Label.t (* must be CReturn *),
+                                  size: Bytes.t option} option}
+             | Call of {label: Label.t, (* must be kind Func *)
                         live: Live.t vector,
-                        return: {return: Label.t,
-                                 handler: Label.t option,
+                        return: {return: Label.t (* must be kind Cont *),
+                                 handler: Label.t option (* must be kind Handler*),
                                  size: Bytes.t} option}
-             | Goto of Label.t (* label must be a Jump *)
+             | Goto of Label.t (* must be kind Jump *)
              | Raise
              | Return
              | Switch of Switch.t
 
             val foldOperands: t * 'a * (Operand.t * 'a -> 'a) -> 'a
             val layout: t -> Layout.t
+         end
+
+      structure FrameOffsets:
+         sig
+            type t
+
+            val equals: t * t -> bool
+            val hash: t -> word
+            val index: t -> int
+            val layout: t -> Layout.t
+            val new: {index: int, offsets: Bytes.t vector} -> t
+            val offsets: t -> Bytes.t vector
+         end
+
+      structure FrameInfo:
+         sig
+            structure Kind:
+               sig
+                  datatype t = C_FRAME | ML_FRAME
+                  val equals: t * t -> bool
+                  val hash: t -> word
+                  val layout: t -> Layout.t
+                  val toString: t -> string
+               end
+
+            type t
+
+            val equals: t * t -> bool
+            val frameOffsets: t -> FrameOffsets.t
+            val index: t -> int
+            val kind: t -> Kind.t
+            val layout: t -> Layout.t
+            val new: {frameOffsets: FrameOffsets.t,
+                      index: int,
+                      kind: Kind.t,
+                      size: Bytes.t,
+                      sourceSeqIndex: int option} -> t
+            val offsets: t -> Bytes.t vector
+            val setIndex: t * int -> unit
+            val size: t -> Bytes.t
+            val sourceSeqIndex: t -> int option
          end
 
       structure Kind:
@@ -183,11 +199,12 @@ signature MACHINE =
              | CReturn of {dst: Live.t option,
                            frameInfo: FrameInfo.t option,
                            func: Type.t CFunction.t}
-             | Func
-             | Handler of {frameInfo: FrameInfo.t,
-                           handles: Live.t vector}
+             | Func of {frameInfo: FrameInfo.t}
+             | Handler of {args: Live.t vector,
+                           frameInfo: FrameInfo.t}
              | Jump
 
+            val isEntry: t -> bool
             val frameInfoOpt: t -> FrameInfo.t option
          end
 
@@ -217,55 +234,30 @@ signature MACHINE =
                       * for all registers in the chunk.
                       *)
                      regMax: CType.t -> int}
-         end
-
-      structure ProfileInfo:
-         sig
-            datatype t =
-               T of {(* For each frame, gives the index into sourceSeqs of the
-                      * source functions corresponding to the frame.
-                      *)
-                     frameSources: int vector,
-                     labels: {label: ProfileLabel.t,
-                              sourceSeqsIndex: int} vector,
-                     names: string vector,
-                     (* Each sourceSeq describes a sequence of source functions,
-                      * each given as an index into the source vector.
-                      *)
-                     sourceSeqs: int vector vector,
-                     sources: {nameIndex: int,
-                               successorsIndex: int} vector}
-
-            val empty: t
-            val modify: t -> {newProfileLabel: ProfileLabel.t -> ProfileLabel.t,
-                              delProfileLabel: ProfileLabel.t -> unit,
-                              getProfileInfo: unit -> t}
+            val chunkLabel: t -> ChunkLabel.t
          end
 
       structure Program:
          sig
             datatype t =
                T of {chunks: Chunk.t list,
-                     frameLayouts: {frameOffsetsIndex: int,
-                                    isC: bool,
-                                    size: Bytes.t} vector,
-                     (* Each vector in frame Offsets specifies the offsets
-                      * of live pointers in a stack frame.  A vector is referred
-                      * to by index as the offsetsIndex in frameLayouts.
-                      *)
-                     frameOffsets: Bytes.t vector vector,
+                     frameInfos: FrameInfo.t vector,
+                     frameOffsets: FrameOffsets.t vector,
                      handlesSignals: bool,
                      main: {chunkLabel: ChunkLabel.t,
                             label: Label.t},
                      maxFrameSize: Bytes.t,
                      objectTypes: Type.ObjectType.t vector,
-                     profileInfo: ProfileInfo.t option,
                      reals: (Global.t * RealX.t) list,
+                     sourceMaps: SourceMaps.t option,
                      vectors: (Global.t * WordXVector.t) list}
 
-            val frameSize: t * FrameInfo.t -> Bytes.t
             val clearLabelNames: t -> unit
             val layouts: t * (Layout.t -> unit) -> unit
+            val layoutStats: t -> Layout.t
+            val toFile: {display: t Control.display, style: Control.style, suffix: string}
             val typeCheck: t -> unit
          end
+
+      val simplify: Program.t -> Program.t
    end

@@ -40,18 +40,6 @@ signature XML_TREE =
             val layout: t -> Layout.t
          end
 
-      structure Cases:
-         sig
-            datatype 'a t =
-               Con of (Pat.t * 'a) vector
-             | Word of WordSize.t * (WordX.t * 'a) vector
-
-            val fold: 'a t * 'b * ('a * 'b -> 'b) -> 'b
-            val foreach: 'a t * ('a -> unit) -> unit
-            val foreach': 'a t * ('a -> unit) * (Pat.t -> unit) -> unit
-            val map: 'a t * ('a -> 'b) -> 'b t
-         end
-
       structure Lambda:
          sig
             type exp
@@ -91,7 +79,7 @@ signature XML_TREE =
             datatype t =
                App of {arg: VarExp.t,
                        func: VarExp.t}
-             | Case of {cases: exp Cases.t,
+             | Case of {cases: (Pat.t, exp) Cases.t,
                         default: exp option,
                         test: VarExp.t}
              | ConApp of {arg: VarExp.t option,
@@ -182,7 +170,7 @@ signature XML_TREE =
             val app: {func: t, arg: t, ty: Type.t} -> t
             val bug: string -> t
             val casee:
-               {cases: t Cases.t,
+               {cases: (Pat.t, t) Cases.t,
                 default: t option,
                 test: t,
                 ty: Type.t} (* type of entire case expression *)
@@ -248,6 +236,8 @@ signature XML_TREE =
             val layout: t -> Layout.t
             val layouts: t * (Layout.t -> unit) -> unit
             val layoutStats: t -> Layout.t
+            val mkLayoutStats: string -> t -> Layout.t
             val parse: unit -> t Parse.t
+            val toFile: {display: t Control.display, style: Control.style, suffix: string}
          end
    end

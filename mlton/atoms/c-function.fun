@@ -46,7 +46,8 @@ structure Kind =
        | Runtime of {bytesNeeded: int option,
                      ensuresBytesFree:int option,
                      mayGC: bool,
-                     maySwitchThreads: bool,
+                     maySwitchThreadsFrom: bool,
+                     maySwitchThreadsTo: bool,
                      modifiesFrontier: bool,
                      readsStackTop: bool,
                      writesStackTop: bool}
@@ -54,7 +55,8 @@ structure Kind =
       val runtimeDefault = Runtime {bytesNeeded = NONE,
                                     ensuresBytesFree = NONE,
                                     mayGC = true,
-                                    maySwitchThreads = false,
+                                    maySwitchThreadsFrom = false,
+                                    maySwitchThreadsTo = false,
                                     modifiesFrontier = true,
                                     readsStackTop = true,
                                     writesStackTop = true}
@@ -67,14 +69,15 @@ structure Kind =
             Impure => Layout.str "Impure"
           | Pure => Layout.str "Pure"
           | Runtime {bytesNeeded, ensuresBytesFree, mayGC,
-                     maySwitchThreads, modifiesFrontier,
-                     readsStackTop, writesStackTop} =>
+                     maySwitchThreadsFrom, maySwitchThreadsTo,
+                     modifiesFrontier, readsStackTop, writesStackTop} =>
                Layout.namedRecord
                ("Runtime",
                 [("bytesNeeded", Option.layout Int.layout bytesNeeded),
                  ("ensuresBytesFree", Option.layout Int.layout ensuresBytesFree),
                  ("mayGC", Bool.layout mayGC),
-                 ("maySwitchThreads", Bool.layout maySwitchThreads),
+                 ("maySwitchThreadsFrom", Bool.layout maySwitchThreadsFrom),
+                 ("maySwitchThreadsTo", Bool.layout maySwitchThreadsTo),
                  ("modifiesFrontier", Bool.layout modifiesFrontier),
                  ("readsStackTop", Bool.layout readsStackTop),
                  ("writesStackTop", Bool.layout writesStackTop)])
@@ -92,16 +95,19 @@ structure Kind =
              cbrack (ffield ("bytesNeeded", option int) >>= (fn bytesNeeded =>
                      nfield ("ensuresBytesFree", option int) >>= (fn ensuresBytesFree =>
                      nfield ("mayGC", bool) >>= (fn mayGC =>
-                     nfield ("maySwitchThreads", bool) >>= (fn maySwitchThreads =>
+                     nfield ("maySwitchThreadsFrom", bool) >>= (fn maySwitchThreadsFrom =>
+                     nfield ("maySwitchThreadsTo", bool) >>= (fn maySwitchThreadsTo =>
                      nfield ("modifiesFrontier", bool) >>= (fn modifiesFrontier =>
                      nfield ("readsStackTop", bool) >>= (fn readsStackTop =>
                      nfield ("writesStackTop", bool) >>= (fn writesStackTop =>
                      pure {bytesNeeded = bytesNeeded,
                            ensuresBytesFree = ensuresBytesFree,
-                           mayGC = mayGC, maySwitchThreads = maySwitchThreads,
+                           mayGC = mayGC,
+                           maySwitchThreadsFrom = maySwitchThreadsFrom,
+                           maySwitchThreadsTo = maySwitchThreadsTo,
                            modifiesFrontier = modifiesFrontier,
                            readsStackTop = readsStackTop,
-                           writesStackTop = writesStackTop})))))))) >>= (fn args =>
+                           writesStackTop = writesStackTop}))))))))) >>= (fn args =>
              pure (Runtime args))]
          end
 
@@ -117,7 +123,8 @@ structure Kind =
          val bytesNeeded = makeOpt #bytesNeeded
          val ensuresBytesFree = makeOpt #ensuresBytesFree
          val mayGC = makeBool #mayGC
-         val maySwitchThreads = makeBool #maySwitchThreads
+         val maySwitchThreadsFrom = makeBool #maySwitchThreadsFrom
+         val maySwitchThreadsTo = makeBool #maySwitchThreadsTo
          val modifiesFrontier = makeBool #modifiesFrontier
          val readsStackTop = makeBool #readsStackTop
          val writesStackTop = makeBool #writesStackTop
@@ -229,7 +236,8 @@ in
    fun convention z = make #convention z
    fun ensuresBytesFree z = makeKind Kind.ensuresBytesFree z
    fun mayGC z = makeKind Kind.mayGC z
-   fun maySwitchThreads z = makeKind Kind.maySwitchThreads z
+   fun maySwitchThreadsFrom z = makeKind Kind.maySwitchThreadsFrom z
+   fun maySwitchThreadsTo z = makeKind Kind.maySwitchThreadsTo z
    fun modifiesFrontier z = makeKind Kind.modifiesFrontier z
    fun prototype z = make #prototype z
    fun readsStackTop z = makeKind Kind.readsStackTop z
@@ -255,9 +263,13 @@ fun map (T {args, convention, kind, prototype, return, symbolScope, target},
 
 fun isOk (T {kind, return, ...},
           {isUnit}): bool =
-   (if Kind.maySwitchThreads kind
-       then Kind.mayGC kind andalso isUnit return
+   (if Kind.maySwitchThreadsFrom kind
+       then Kind.maySwitchThreadsTo kind
     else true)
+   andalso (if Kind.maySwitchThreadsTo kind
+               then (Kind.mayGC kind
+                     andalso isUnit return)
+            else true)
    andalso (if Option.isSome (Kind.ensuresBytesFree kind)
                then Kind.mayGC kind
             else true)

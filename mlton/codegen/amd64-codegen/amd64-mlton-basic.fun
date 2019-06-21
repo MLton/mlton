@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -268,8 +268,6 @@ struct
      val local_base = make "local"
      val global_base = make "global"
   end
-
-  val globalObjptrNonRoot_base = Label.fromString "globalObjptrNonRoot"
 
   val gcState_label = Label.fromString "gcState"
 

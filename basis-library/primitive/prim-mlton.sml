@@ -1,4 +1,4 @@
-(* Copyright (C) 2010-2011,2013-2014,2017 Matthew Fluet.
+(* Copyright (C) 2010-2011,2013-2014,2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -15,6 +15,7 @@ open Primitive
 
 structure MLton = struct
 
+val bug = _prim "MLton_bug": String8.string -> unit;
 val eq = _prim "MLton_eq": 'a * 'a -> bool;
 val equal = _prim "MLton_equal": 'a * 'a -> bool;
 (* val deserialize = _prim "MLton_deserialize": Word8Vector.vector -> 'a ref; *)
@@ -31,7 +32,7 @@ structure GCState =
    struct
       type t = Pointer.t
 
-      val gcState = #1 _symbol "gcStateAddress" private: t GetSet.t; ()
+      val gcState = _prim "GC_state": unit -> t;
    end
 
 structure Align =
@@ -107,7 +108,7 @@ structure Exn =
 
 structure FFI =
    struct
-      val getOpArgsResPtr = #1 _symbol "MLton_FFI_opArgsResPtr" private: Pointer.t GetSet.t;
+      val getOpArgsResPtr = _import "GC_getCallFromCOpArgsResPtr" runtime private: GCState.t -> Pointer.t;
       val numExports = _build_const "MLton_FFI_numExports": Int32.int;
    end
 
@@ -382,5 +383,7 @@ structure World =
    end
 
 end
+
+structure GCState = MLton.GCState
 
 end

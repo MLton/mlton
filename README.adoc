@@ -109,10 +109,9 @@ A small set of `Makefile` variables can be used to customize the build:
    executables ((self-compiled) `mlton`, `mllex`, `mlyacc`, `mlprof`, and
    `mlnlffigen`). Can be used for testing (e.g., `MLTON_COMPILE_ARGS="-codegen
    c"`) or for downstream packaging.
- * `BOOTSTRAP_MLTON_RUNTIME_ARGS`, `BOOTSTRAP_MLTON_COMPILE_ARGS`: Specify
-   runtime and compile arguments given to "old" `mlton` when compiling
-   "bootstrapped" `mlton`. Can be used to work around bugs in "old" `mlton` when
-   compiling "bootstrapped" `mlton`.
+ * `OLD_MLTON_RUNTIME_ARGS`, `OLD_MLTON_COMPILE_ARGS`: Specify runtime and
+   compile arguments given to "old" `mlton` when compiling "new" `mlton`. Can be
+   used to work around bugs in "old" `mlton` when compiling "new" `mlton`.
 
 For example:
 

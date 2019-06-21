@@ -1,0 +1,36 @@
+(* Copyright (C) 2019 Matthew Fluet.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
+Library
+
+signature FLAT_LATTICE
+signature N_POINT_LATTICE
+signature POWERSET_LATTICE
+signature THREE_POINT_LATTICE
+signature TWO_POINT_LATTICE
+
+functor FlatLattice
+functor NPointLattice
+functor PowerSetLattice_ListSet
+functor PowerSetLattice_UniqueSet
+functor ThreePointLattice
+functor TwoPointLattice
+
+is
+
+../basic/sources.cm
+../set/sources.cm
+
+flat-lattice.sig
+flat-lattice.fun
+n-point-lattice.sig
+n-point-lattice.fun
+powerset-lattice.sig
+powerset-lattice.fun
+two-point-lattice.sig
+two-point-lattice.fun
+three-point-lattice.sig
+three-point-lattice.fun

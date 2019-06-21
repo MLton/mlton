@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -10,18 +10,15 @@
 signature BACKEND_STRUCTS = 
    sig
       structure Machine: MACHINE
-      structure Ssa: SSA2
-      sharing Machine.Atoms = Ssa.Atoms
+      structure Rssa: RSSA
+      sharing Machine.BackendAtoms = Rssa.BackendAtoms
 
-      val funcToLabel: Ssa.Func.t -> Machine.Label.t
+      val funcToLabel: Rssa.Func.t -> Machine.Label.t
    end
 
 signature BACKEND = 
    sig
       include BACKEND_STRUCTS
 
-      val toMachine:
-         Ssa.Program.t
-         * {codegenImplementsPrim: Machine.Type.t Machine.Prim.t -> bool}
-         -> Machine.Program.t
+      val toMachine: Rssa.Program.t -> Machine.Program.t
    end

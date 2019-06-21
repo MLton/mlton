@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -56,7 +57,8 @@ void switchToSignalHandlerThreadIfNonAtomicAndSignalPending (GC_state s) {
  * write of s->signalsInfo.signalsPending.  The signals are blocked
  * by Posix_Signal_handle (see Posix/Signal/Signal.c).
  */
-void GC_handler (GC_state s, int signum) {
+void GC_handler (int signum) {
+  GC_state s = MLton_gcState ();
   if (DEBUG_SIGNALS)
     fprintf (stderr, "GC_handler signum = %d\n", signum);
   assert (sigismember (&s->signalsInfo.signalsHandled, signum));

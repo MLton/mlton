@@ -7,36 +7,8 @@
  # See the file MLton-LICENSE for details.
  ##
 
-CC := gcc
-AR := ar
-RANLIB := ranlib
-
-WITH_GMP_DIR :=
-ifneq ($(WITH_GMP_DIR),)
-WITH_GMP_INC_DIR := $(WITH_GMP_DIR)/include
-endif
-
-FIND := find
-GREP := grep
-GZIP := gzip
-PATCH := patch
-SED := sed
-TAR := tar
-
-######################################################################
-######################################################################
-
-SRC := $(shell cd .. && pwd)
-BUILD := $(SRC)/build
-BIN := $(BUILD)/bin
-
-PATH := $(BIN):$(shell echo $$PATH)
-
-HOST_ARCH := $(shell ../bin/host-arch)
-HOST_OS := $(shell ../bin/host-os)
-TARGET := self
-TARGET_ARCH := $(HOST_ARCH)
-TARGET_OS := $(HOST_OS)
+ROOT := ..
+include $(ROOT)/Makefile.config
 
 ######################################################################
 
@@ -61,47 +33,10 @@ CPPFLAGS :=
 CFLAGS :=
 
 WARNXCFLAGS :=
-WARNXCFLAGS += -pedantic -Wall
-ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
-WARNXCFLAGS += -Wextra
-endif
-WARNXCFLAGS += -Wformat=2
-ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
-WARNXCFLAGS += -Wswitch-default -Wswitch-enum
-endif
-WARNXCFLAGS += -Wuninitialized
-ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
-WARNXCFLAGS += -Winit-self
-endif
-ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
-WARNXCFLAGS += -Wstrict-aliasing=2
-endif
-WARNXCFLAGS += -Wfloat-equal
-WARNXCFLAGS += -Wundef
-WARNXCFLAGS += -Wshadow
-WARNXCFLAGS += -Wpointer-arith
-WARNXCFLAGS += -Wbad-function-cast -Wcast-qual
-WARNXCFLAGS += -Wwrite-strings
-# WARNXCFLAGS += -Wconversion
-WARNXCFLAGS += -Waggregate-return
-WARNXCFLAGS += -Wstrict-prototypes
-ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
-WARNXCFLAGS += -Wold-style-definition
-endif
-WARNXCFLAGS += -Wmissing-prototypes -Wmissing-declarations
-ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
-WARNXCFLAGS += -Wmissing-field-initializers
-endif
-WARNXCFLAGS += -Wmissing-noreturn
-WARNXCFLAGS += -Wmissing-format-attribute
-# WARNXCFLAGS += -Wpacked
-# WARNXCFLAGS += -Wpadded
-WARNXCFLAGS += -Wredundant-decls
-WARNXCFLAGS += -Wnested-externs
-# WARNXCFLAGS += -Wunreachable-code
+WARNXCFLAGS += -pedantic -Wall -Wextra
 
 XCFLAGS := -std=gnu11 -fno-common $(WARNXCFLAGS)
-OPTXCFLAGS := -Wdisabled-optimization -O2 -fomit-frame-pointer
+OPTXCFLAGS := -Wdisabled-optimization -O2
 DEBUGXCFLAGS := -DASSERT=1 -Wno-uninitialized -O0 -g
 PICXCFLAGS :=
 
@@ -111,10 +46,8 @@ PICXCFLAGS += -fPIC
 endif
 
 # Make mlton library symbols private (win32&64 use another technique)
-ifeq ($(findstring $(GCC_MAJOR_VERSION), 4),$(GCC_MAJOR_VERSION))
 ifeq ($(findstring $(TARGET_OS), mingw cygwin),)
 XCFLAGS += -fvisibility=hidden
-endif
 endif
 
 ifeq ($(TARGET_ARCH), alpha)
@@ -151,7 +84,6 @@ endif
 
 ifeq ($(TARGET_ARCH), x86)
 XCFLAGS += -m32
-OPTXCFLAGS += -falign-loops=2 -falign-jumps=2 -falign-functions=5
 endif
 
 ifeq ($(TARGET_OS), cygwin)
@@ -221,7 +153,7 @@ basis-ffi.h: gen/basis-ffi.h
 gen/basis-ffi.h gen/basis-ffi.sml: gen/gen-basis-ffi.stamp
 	@touch $@
 gen/gen-basis-ffi.stamp: gen/gen-basis-ffi.sml gen/basis-ffi.def
-	mlton -output gen/gen-basis-ffi gen/gen-basis-ffi.sml
+	$(RUN_MLTON) -output gen/gen-basis-ffi gen/gen-basis-ffi.sml
 	rm -f gen/basis-ffi.h gen/basis-ffi.sml gen/gen-basis-ffi.stamp
 	cd gen && ./gen-basis-ffi
 	rm -f gen/gen-basis-ffi
@@ -328,9 +260,6 @@ gc.o:     $(GCCFILES)
 
 gc.c_XCFLAGS := -Wno-unreachable-code
 
-basis/Real/Math-pic.o:  basis/Real/Math-fns.h
-basis/Real/Math-gdb.o:  basis/Real/Math-fns.h
-basis/Real/Math.o:      basis/Real/Math-fns.h
 basis/Real/Real-pic.o:  basis/Real/Real-ops.h
 basis/Real/Real-gdb.o:  basis/Real/Real-ops.h
 basis/Real/Real.o:      basis/Real/Real-ops.h

@@ -149,25 +149,6 @@ signature SSA_TREE2 =
             val replaceUses: t * (Var.t -> Var.t) -> t
          end
 
-      structure Cases:
-         sig
-            datatype t =
-               Con of (Con.t * Label.t) vector
-             | Word of WordSize.t * (WordX.t * Label.t) vector
-
-            val forall: t * (Label.t -> bool) -> bool
-            val foreach: t * (Label.t -> unit) -> unit
-            val hd: t -> Label.t
-            val isEmpty: t -> bool
-            val map: t * (Label.t -> Label.t) -> t
-         end
-
-      structure Handler: HANDLER
-      sharing Handler.Label = Label
-
-      structure Return: RETURN
-      sharing Return.Handler = Handler
-
       structure Transfer:
          sig
             datatype t =
@@ -175,7 +156,7 @@ signature SSA_TREE2 =
              | Call of {args: Var.t vector,
                         func: Func.t,
                         return: Return.t}
-             | Case of {cases: Cases.t,
+             | Case of {cases: (Con.t, Label.t) Cases.t,
                         default: Label.t option, (* Must be nullary. *)
                         test: Var.t}
              | Goto of {args: Var.t vector,
@@ -187,7 +168,7 @@ signature SSA_TREE2 =
              | Return of Var.t vector
              | Runtime of {args: Var.t vector,
                            prim: Type.t Prim.t,
-                           return: Label.t} (* Must be nullary. *)
+                           return: Label.t}
 
             val equals: t * t -> bool
             val foreachFunc : t * (Func.t -> unit) -> unit
@@ -293,5 +274,6 @@ signature SSA_TREE2 =
             val layouts: t * (Layout.t -> unit) -> unit
             val layoutStats: t -> Layout.t
             val parse: unit -> t Parse.t
+            val toFile: {display: t Control.display, style: Control.style, suffix: string}
          end
    end

@@ -8,6 +8,41 @@ Here are the changes from versoin 20180206 to version YYYYMMDD.
 
 === Details
 
+* 2019-05-31
+  ** Add new `BounceVars` RSSA optimization pass to split the live
+  ranges of RSSA variables.  See
+  https://github.com/MLton/mlton/pull/299 for details.  Undertaken by
+  Jason Carr at RIT supported by NSF CISE Research Infrastructure
+  (CRI) award.
+
+* 2019-05-24
+  ** Many updates and improvements to C and LLVM codegens.  See
+  https://github.com/MLton/mlton/pull/304 for details.
+
+* 2019-05-13
+  ** Improve RSSA shrink optimization.  Undertaken by Jason Carr at
+  RIT supported by NSF CISE Research Infrastructure (CRI) award.
+
+* 2019-03-22
+  ** Update word primitives.  Inline signed integer `quot` and `rem`
+  in C codegen (C99 and C11 have reliable semantics for signed
+  division).
+
+* 2019-03-20
+  ** Remove old `Overflow`-checking primitives and special-case code
+  required to support them.  Undertaken by Daman Morris at RIT
+  supported by NSF CISE Research Infrastructure (CRI) award.
+
+* 2019-03-12
+  ** Fix latent `MLton.GC.collect` bug; a explicit `MLton.GC.collect`
+  call was passed `0` bytes requested rather than the bytes required
+  by the return block(s).
+
+* 2019-01-16
+  ** Add support for alternate globalization strategies in
+  `ConstantPropagation` (but defaults correspond to previous
+  behavior).
+
 * 2019-01-03
   ** Strengthen `Useless` optimization with respect to a number of primitives
   (`MLton_equal`, `MLton_hash`, `MLton_eq`, `MLton_share`, `MLton_size`,
