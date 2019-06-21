@@ -368,7 +368,7 @@ structure Exp =
             val parseArgs = vector Var.parse
             val parseArgsOpt = vectorOpt Var.parse
          in
-           mlSpaces *> any
+            mlSpaces *> any
             [ConApp <$>
              (kw "con" *>
               Con.parse >>= (fn con =>
@@ -484,7 +484,7 @@ structure Statement =
          let
             open Parse
          in
-             T <$>
+            T <$>
             (kw "val" *>
              ((SOME <$> Var.parse) <|> (NONE <$ kw "_")) >>= (fn var =>
              sym ":" *> Type.parse >>= (fn ty =>

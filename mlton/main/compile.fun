@@ -529,13 +529,13 @@ fun mkCompile {outputC, outputLL, outputS} =
           tgtTypeCheck = SOME Xml.typeCheck}
       val mlbFrontend = frontend o MLBString.fromMLBFile
       val smlFrontend = frontend o MLBString.fromSMLFile
- 
-      fun regionFromLocation (file, {column, line}) =    
-        let    
-           val sourcePos = SourcePos.make    
-              {column=column, file=file, line=line}    
-        in    
-           Region.make {left=sourcePos, right=sourcePos}    
+
+      fun regionFromLocation (file, {column, line}) =
+        let
+           val sourcePos = SourcePos.make
+              {column=column, file=file, line=line}
+        in
+           Region.make {left=sourcePos, right=sourcePos}
         end
 
       fun mkFrontend {parse, stats, toFile, typeCheck} =
