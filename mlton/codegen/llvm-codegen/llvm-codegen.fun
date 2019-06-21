@@ -336,39 +336,54 @@ structure Metadata = struct
       concat
          [str t,
           " = !{",
-          (addSep o List.map) (ts, str)
+          (addSep o List.map) (ts, str),
           "}"]
    (* Does no escaping *)
-   fun defineString (t, str) =
+   fun defineString (t, s) =
       concat
          [str t,
           " = !\"",
-          str,
+          s,
           "\""]
 end
 
-val typeScopes : (ObjptrTycon.t vector, Metadata.t) HashTable.t =
-   HashTable.new
-      {hash = fn os =>
-         Hash.vectorMap (os, ObjptrTycon.hash),
-       equals = fn (os1, os2) =>
-         Vector.equals (os1, os2, ObjptrTycon.equals)}
+structure SimpleOper = struct
 
-fun getTypeScopes t =
-   Option.map (Type.deObjptrs t, fn os =>
-      HashTable.lookupOrInsert (typeScopes, os,
-         fn () => (Metadata.new (), Metadata.new ())))
+   datatype t = Stack of int
+              | Heap of int
+              | Other
+   val equals : t * t -> bool = op =
+   val hash =
+      fn Stack i => Hash.permute (Word.fromInt i)
+       | Heap i => Hash.permute (Hash.permute (Word.fromInt i))
+       | Other => 0w0
+   val fromOper =
+      fn Operand.StackOffset (StackOffset.T {offset, ...}) =>
+           Stack (Bytes.toInt offset)
+       | Operand.Offset {offset, ...} =>
+           Heap (Bytes.toInt offset)
+       | _ => Other
+   val toString =
+      fn Stack i => "Stack " ^ Int.toString i
+       | Heap i => "Heap " ^ Int.toString i
+       | Other => "Other"
+end
+
+val operScopes : (SimpleOper.t, Metadata.t * Metadata.t) HashTable.t =
+   HashTable.new
+      {hash = SimpleOper.hash,
+       equals = SimpleOper.equals}
 
 fun scopeString (scope, noalias) =
    concat [", !alias.scope ", Metadata.str scope,
            ", !noalias ", Metadata.str noalias]
 (* Generates the string for alias.scope and noalias metadata *)
-fun mkTyScope t =
-   case getTypeScopes t of
-        SOME (i, j) => scopeString (i, j)
-      | NONE => ""
-fun mkOperScope oper =
-   mkTyScope (Operand.ty oper)
+fun getOperScopes t =
+   HashTable.lookupOrInsert
+   (operScopes, SimpleOper.fromOper t,
+    fn () => (Metadata.new (), Metadata.new ()))
+
+val mkOperScope = scopeString o getOperScopes
 
 (* Makes a load instruction:
  * <lhs> = load <ty>, <ty>* <arg>
@@ -538,7 +553,7 @@ fun getArg (argv, i) =
  *)
 fun getOperandAddr (cxt, operand) =
    let
-      val scope = mkTyScope (Operand.ty operand)
+      val scope = mkOperScope operand
    in
     case operand of
         Operand.Contents {oper, ty} =>
@@ -1140,12 +1155,11 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                                    NONE => "\tunreachable\n"
                                  | SOME l =>
                                    let
-                                       val scope = mkTyScope returnTy
                                        val storeResult = if Type.isUnit returnTy
                                                          then ""
                                                          else mkstore (llty returnTy, resultReg,
                                                                        "@CReturn" ^ CType.name (Type.toCType returnTy),
-                                                                        scope)
+                                                                        "")
                                        val cacheFrontierCode = if CFunction.modifiesFrontier func
                                                                then cacheFrontier ()
                                                                else ""
@@ -1406,30 +1420,11 @@ fun outputLLVMDeclarations (cxt, print, chunk) =
                        labelStrings, "\n"])
     end
 
-fun outputTbaa (cxt, print) =
-   let
-      val Context { program = Program.T {objectTypes, ...}, ...} = cxt
-      val () = print (concat
-            [Metadata.str typeDomain, " = !{", Metadata.str typeDomain, "}",
-             "\t; ", "Type domain", "\n"])
-      val objectTypeMetadata = Vector.map (objectTypes,
-         (fn _ => Metadata.new ()))
-      val root = Metadata.new ()
-      val _ = print o (Metadata.defineString (root, "TBAA Root"))
-      val _ = print "\n"
-
-      val objPtrRoot = Metadata.new ()
-      val _ = print o (Metadata.defineNode )
-      val _ = print "\t; Objptr \n"
-
-        val () = List.foreach (HashTable.toList typeScopes,
-
-
 fun outputChunk (cxt, outputLL, chunk) =
     let
         val () = cFunctions := []
         val () = ffiSymbols := []
-        val () = HashTable.removeAll (typeScopes, fn _ => true)
+        val () = HashTable.removeAll (operScopes, fn _ => true)
         val () = Metadata.reset ()
         val Context { labelToStringIndex, chunkLabelIndex, labelChunk,
                       chunkLabelToString, entryLabels, printblock, ... } = cxt
@@ -1501,44 +1496,31 @@ fun outputChunk (cxt, outputLL, chunk) =
                  ; print (concat ["\tret %struct.cont ", leaveRet, "\n"])
                  ; print "}\n\n")
         val Context { program = Program.T {objectTypes, ...}, ...} = cxt
-        val typeDomain = Metadata.new ()
-        val () = print (concat
-               [Metadata.str typeDomain, " = !{", Metadata.str typeDomain, "}",
-                "\t; ", "Type domain", "\n"])
+        val operDomain = Metadata.new ()
         val () = (print o concat)
-        val objectTypeMetadata = Vector.map (objectTypes,
-            (fn objTy =>
+                  [Metadata.defineNode (operDomain, [operDomain]),
+                   "\t; ", "Oper domain", "\n"]
+        val operScopes = Vector.fromList (HashTable.toList operScopes)
+        val rawOperScopes = Vector.mapi (operScopes,
+            fn (i, (oper, _)) =>
                let
                   val m = Metadata.new ()
                   val () = (print o concat)
-                     [Metadata.defineNode (m, [m, typeDomain])
-                      "\t; ", Layout.toString (ObjectType.layout objTy), "\n"]
+                     [Metadata.defineNode (m, [m, operDomain]),
+                      "\t; ", SimpleOper.toString oper, "\n"]
                in
                   m
-               end))
-        val () = List.foreach (HashTable.toList typeScopes,
-            fn (objptrs, pos) =>
+               end)
+
+        val () = Vector.foreachi (operScopes,
+            fn (i, (_, (pos, neg))) =>
                let
-                  fun printList (m, objptrs) = print (
-                     Metadata.defineNode (m,
-                         List.map
-                         (objptrs, fn optr => (Metadata.str o Vector.sub) (
-                           objectTypeMetadata,
-                           optr)))
-                  val indices = Vector.toListMap (objptrs, ObjptrTycon.index)
-                  val () = printList (pos, indices)
-                  val objptrsString =
-                      (Layout.toString o Layout.tuple o List.map)
-                      (indices, (ObjptrTycon.layout o ObjptrTycon.fromIndex))
-                  val () = print (concat ["\t; ", objptrsString, "\n"])
-                  val noalias = Vector.toListKeepAllMapi (objectTypes,
-                     fn (i, a) =>
-                        if Vector.exists (objptrs, fn optr =>
-                           ObjptrTycon.index optr = i)
-                        then NONE
-                        else SOME i)
-                  val () = printList (neg, noalias)
-                  val () = print (concat ["\t; not ", objptrsString, "\n"])
+                  val () = (print o Metadata.defineNode) (pos, [Vector.sub (rawOperScopes, i)])
+                  val () = print "\n"
+                  val () = (print o Metadata.defineNode) (neg,
+                     Vector.toListKeepAllMapi (rawOperScopes,
+                        fn (j, m) => if i = j then NONE else SOME m))
+                  val () = print "\n"
                in
                   ()
                end)
