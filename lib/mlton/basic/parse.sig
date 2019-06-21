@@ -112,6 +112,11 @@ signature PARSE =
       (* returns a reader representation of the parser *)
       val toReader: 'a t -> State.t -> ('a * State.t) option
 
+      (* a Standard ML comment, with support for nesting *)
+      val mlComment: char t
+      (* may contain any number of spaces or comments *)
+      val mlSpaces: char list t
+
       (* The following parsers always (and only) consume spaces before
        * performing a `char` or `str`.
        *)
@@ -124,10 +129,6 @@ signature PARSE =
       (* parse `List.layout` (not `Layout.list`) *)
       val list: 'a t -> 'a list t
       val listOpt: 'a t -> 'a list t
-      (* a Standard ML comment, with support for nesting *)
-      val mlComment: char t
-      (* may contain any number of spaces or comments *)
-      val mlSpaces: char list t
       (* parse next field of a record (preceded by `,`) *)
       val nfield: string * 'a t -> 'a t
       (* parse `Option.layout` *)
