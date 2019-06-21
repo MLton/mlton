@@ -307,23 +307,24 @@ end
 
 structure SimpleOper = struct
 
-   datatype t = Stack of int
-              | Heap of int
+   datatype t = Stack
+              | Offset
+              | SequenceOffset
               | Other
    val equals : t * t -> bool = op =
    val hash =
-      fn Stack i => Hash.permute (Word.fromInt i)
-       | Heap i => Hash.permute (Hash.permute (Word.fromInt i))
-       | Other => 0w0
+      fn Stack => Hash.permute 0w0
+       | Heap => Hash.permute 0w1
+       | Other => Hash.permute 0w2
    val fromOper =
-      fn Operand.StackOffset (StackOffset.T {offset, ...}) =>
-           Stack (Bytes.toInt offset)
-       | Operand.Offset {offset, ...} =>
-           Heap (Bytes.toInt offset)
+      fn Operand.StackOffset _ => Stack
+       | Operand.Offset _ => Offset
+       | Operand.SequenceOffset _ => SequenceOffset
        | _ => Other
    val toString =
-      fn Stack i => "Stack " ^ Int.toString i
-       | Heap i => "Heap " ^ Int.toString i
+      fn Stack => "Stack"
+       | Heap => "Heap"
+       | SequenceOffset => "SequenceOffset"
        | Other => "Other"
 end
 
