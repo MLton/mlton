@@ -322,7 +322,7 @@ in
                       indent (alignPrefix (cases, "| "), 2)]
             end
        | ConApp {arg, con, targs, ...} =>
-            seq [str "new ",
+            seq [str "con ",
                  Con.layout con,
                  layoutTargs targs,
                  case arg of
@@ -444,7 +444,7 @@ in
                            parseCase (WordX.parse, fn cases => (Cases.Word (ws, cases)))))))
        end,
        ConApp <$>
-       (kw "new" *>
+       (kw "con" *>
         Con.parse >>= (fn con =>
         parseTargs >>= (fn targs =>
         optional VarExp.parse >>= (fn arg =>
