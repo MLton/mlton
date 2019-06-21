@@ -377,7 +377,7 @@ in
       pure {con = con, arg = arg}))
    val parseArgs = vector VarExp.parse
    fun parseDec () =
-      any
+      mlSpaces *> any
       [Exception <$>
        (kw "exception" *> parseConArg),
        Fun <$>
@@ -420,7 +420,7 @@ in
        (VarExp.parse >>= (fn result =>
         pure {decs = [], result = result})))
    and parsePrimExp () =
-      any
+      mlSpaces *> any
       [Case <$>
        let
           fun parseCase (parseP, mk) =

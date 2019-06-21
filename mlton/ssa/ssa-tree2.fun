@@ -737,7 +737,7 @@ structure Exp =
             open Parse
             val parseArgs = vector Var.parse
          in
-            any
+            mlSpaces *> any
             [Const <$> Const.parse,
              Inject <$>
              (kw "inj" *>
@@ -860,7 +860,7 @@ structure Statement =
          let
             open Parse
          in
-            any
+            mlSpaces *> any
             [Bind <$>
              (kw "val" *>
               ((SOME <$> Var.parse) <|> (NONE <$ kw "_")) >>= (fn var =>
@@ -1257,10 +1257,11 @@ structure Transfer =
                parseArgs >>= (fn args =>
                pure (fn return => pure {func = func, args = args, return = return})))
          in
-            any
+            mlSpaces *> any
             [Bug <$ kw "bug",
              Call <$>
              (kw "call" *>
+              mlSpaces *>
               any [kw "dead" *> parseCall >>= (fn mkCall => mkCall Return.Dead),
                    kw "tail" *> parseCall >>= (fn mkCall => mkCall Return.Tail),
                    Label.parse >>= (fn cont =>

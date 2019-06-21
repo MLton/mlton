@@ -442,7 +442,7 @@ structure Exp =
             val parseArgs = vector Var.parse
             val parseArgsOpt = vectorOpt Var.parse
          in
-            any
+           mlSpaces *> any
             [ConApp <$>
              (kw "con" *>
               Con.parse >>= (fn con =>
