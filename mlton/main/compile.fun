@@ -552,9 +552,9 @@ fun mkCompile {outputC, outputLL, outputS} =
                          Parse.Yes program => program
                        | Parse.No (msg, location) =>
                             (Control.error
-                             (regionFromLocation location,
+                             (regionFromLocation (input, location),
                               Layout.str (concat [name, "Parse failed"]),
-                              Layout.str msg)
+                              msg)
                              ; Control.checkForErrors ()
                              ; Error.bug "unreachable")),
               keepIL = false,
