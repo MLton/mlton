@@ -7,16 +7,16 @@
  * See the file MLton-LICENSE for details.
  *)
 
-signature ALLOCATE_REGISTERS_STRUCTS = 
+signature ALLOCATE_VARIABLES_STRUCTS =
    sig
       structure Rssa: RSSA
       structure Machine: MACHINE
       sharing Rssa.BackendAtoms = Machine.BackendAtoms
    end
 
-signature ALLOCATE_REGISTERS = 
+signature ALLOCATE_VARIABLES =
    sig
-      include ALLOCATE_REGISTERS_STRUCTS
+      include ALLOCATE_VARIABLES_STRUCTS
 
       val allocate:
          {function: Rssa.Function.t,

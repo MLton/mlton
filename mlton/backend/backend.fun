@@ -47,7 +47,7 @@ in
    structure Var = Var
 end 
 
-structure AllocateRegisters = AllocateRegisters (structure Machine = Machine
+structure AllocateVariables = AllocateVariables (structure Machine = Machine
                                                  structure Rssa = Rssa)
 structure Chunkify = Chunkify (Rssa)
 structure ParallelMove = ParallelMove ()
@@ -716,7 +716,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                      val paramOffsets = fn args =>
                         paramOffsets (args, fn (_, ty) => ty, fn so => so)
                   in
-                     AllocateRegisters.allocate {function = f,
+                     AllocateVariables.allocate {function = f,
                                                  paramOffsets = paramOffsets,
                                                  varInfo = varInfo}
                   end

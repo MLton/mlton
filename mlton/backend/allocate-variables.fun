@@ -7,7 +7,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor AllocateRegisters (S: ALLOCATE_REGISTERS_STRUCTS): ALLOCATE_REGISTERS = 
+functor AllocateVariables (S: ALLOCATE_VARIABLES_STRUCTS): ALLOCATE_VARIABLES = 
 struct
 
 open S
