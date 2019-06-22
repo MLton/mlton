@@ -1,18 +1,18 @@
-AllocateRegisters
+AllocateVariables
 =================
 
-<:AllocateRegisters:> is an analysis pass for the <:RSSA:>
+<:AllocateVariables:> is an analysis pass for the <:RSSA:>
 <:IntermediateLanguage:>, invoked from <:ToMachine:>.
 
 == Description ==
 
-Computes an allocation of <:RSSA:> variables as <:Machine:> register
+Computes an allocation of <:RSSA:> variables as <:Machine:> temporaries
 or stack operands.
 
 == Implementation ==
 
-* <!ViewGitFile(mlton,master,mlton/backend/allocate-registers.sig)>
-* <!ViewGitFile(mlton,master,mlton/backend/allocate-registers.fun)>
+* <!ViewGitFile(mlton,master,mlton/backend/allocate-variables.sig)>
+* <!ViewGitFile(mlton,master,mlton/backend/allocate-variables.fun)>
 
 == Details and Notes ==
 
