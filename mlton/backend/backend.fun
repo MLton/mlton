@@ -21,7 +21,7 @@ in
    structure Live = Live
    structure ObjptrTycon = ObjptrTycon
    structure RealX = RealX
-   structure Register = Register
+   structure Temporary = Temporary
    structure Runtime = Runtime
    structure StackOffset = StackOffset
    structure WordSize = WordSize
@@ -388,7 +388,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                Vector.fold2 (srcs, dsts, [],
                              fn (src, dst, ac) => {src = src, dst = dst} :: ac)
             fun temp r =
-               M.Operand.Register (Register.new (M.Operand.ty r, NONE))
+               M.Operand.Temporary (Temporary.new (M.Operand.ty r, NONE))
          in
             Vector.fromList
             (ParallelMove.move {
@@ -490,11 +490,11 @@ fun toMachine (rssa: Rssa.Program.t) =
                   (* ExnStack = stackTop + (handlerOffset + LABEL_SIZE) - StackBottom; *)
                   let
                      val tmp1 =
-                        M.Operand.Register
-                        (Register.new (Type.cpointer (), NONE))
+                        M.Operand.Temporary
+                        (Temporary.new (Type.cpointer (), NONE))
                      val tmp2 =
-                        M.Operand.Register
-                        (Register.new (Type.csize (), NONE))
+                        M.Operand.Temporary
+                        (Temporary.new (Type.csize (), NONE))
                   in
                      Vector.new3
                      (M.Statement.PrimApp
@@ -849,8 +849,8 @@ fun toMachine (rssa: Rssa.Program.t) =
                    | R.Transfer.Raise srcs =>
                         let
                            val handlerStackTop =
-                              M.Operand.Register
-                              (Register.new (Type.cpointer (), NONE))
+                              M.Operand.Temporary
+                              (Temporary.new (Type.cpointer (), NONE))
                            val dsts =
                               paramOffsets
                               (srcs, R.Operand.ty, fn {offset, ty} =>
@@ -1025,19 +1025,19 @@ fun toMachine (rssa: Rssa.Program.t) =
       fun chunkToMachine (Chunk.T {chunkLabel, blocks}) =
          let
             val blocks = Vector.fromList (!blocks)
-            val regMax = CType.memo (fn _ => ref ~1)
+            val tempsMax = CType.memo (fn _ => ref ~1)
             val regsNeedingIndex =
                Vector.fold
                (blocks, [], fn (b, ac) =>
                 M.Block.foldDefs
                 (b, ac, fn (z, ac) =>
                  case z of
-                    M.Operand.Register r =>
-                       (case Register.indexOpt r of
+                    M.Operand.Temporary r =>
+                       (case Temporary.indexOpt r of
                            NONE => r :: ac
                          | SOME i =>
                               let
-                                 val z = regMax (Type.toCType (Register.ty r))
+                                 val z = tempsMax (Type.toCType (Temporary.ty r))
                                  val _ =
                                     if i > !z
                                        then z := i
@@ -1050,17 +1050,17 @@ fun toMachine (rssa: Rssa.Program.t) =
                List.foreach
                (regsNeedingIndex, fn r =>
                 let
-                   val z = regMax (Type.toCType (Register.ty r))
+                   val z = tempsMax (Type.toCType (Temporary.ty r))
                    val i = 1 + !z
                    val _ = z := i
-                   val _ = Register.setIndex (r, i)
+                   val _ = Temporary.setIndex (r, i)
                 in
                    ()
                 end)
          in
             M.Chunk.T {chunkLabel = chunkLabel,
                        blocks = blocks,
-                       regMax = ! o regMax}
+                       tempsMax = ! o tempsMax}
          end
       val mainName = R.Function.name main
       val main = {chunkLabel = Chunk.label (funcChunk mainName),

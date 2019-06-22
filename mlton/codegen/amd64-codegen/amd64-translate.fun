@@ -24,7 +24,7 @@ struct
   in
      structure Label = Label
      structure Live = Live
-     structure Register = Register
+     structure Temporary = Temporary
      structure Scale = Scale
      structure StackOffset = StackOffset
      structure Type = Type
@@ -215,10 +215,10 @@ struct
                       size = size}, size), offset + amd64.Size.toBytes size))
                end
           | Real _ => Error.bug "amd64Translate.Operand.toAMD64Operand: Real unimplemented"
-          | Register r =>
+          | Temporary t =>
                let
-                  val ty = Machine.Type.toCType (Register.ty r)
-                  val index = Machine.Register.index r
+                  val ty = Machine.Type.toCType (Temporary.ty t)
+                  val index = Machine.Temporary.index t
                   val base = amd64.Immediate.label (amd64MLton.local_base ty)
                   val origin =
                      amd64.MemLoc.imm

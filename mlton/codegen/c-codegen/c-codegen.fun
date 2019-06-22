@@ -733,9 +733,9 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                        toString base,
                                        C.bytes offset]]
              | Real r => RealX.toC r
-             | Register r =>
-                  concat [Type.name (Register.ty r), "_",
-                          Int.toString (Register.index r)]
+             | Temporary t =>
+                  concat [Type.name (Temporary.ty t), "_",
+                          Int.toString (Temporary.index t)]
              | SequenceOffset {base, index, offset, scale, ty} =>
                   concat ["X", C.args [Type.toC ty,
                                        toString base,
@@ -759,7 +759,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
          !Control.profile = Control.ProfileTimeField
          orelse !Control.profile = Control.ProfileTimeLabel
 
-      fun outputChunkFn (Chunk.T {chunkLabel, blocks, regMax, ...}, print) =
+      fun outputChunkFn (Chunk.T {chunkLabel, blocks, tempsMax, ...}, print) =
          let
             fun declareCReturns () =
                List.foreach
@@ -769,14 +769,14 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                 in
                    print (concat ["\tUNUSED ", s, " CReturn", CType.name t, ";\n"])
                 end)
-            fun declareRegisters () =
+            fun declareTemporaries () =
                List.foreach
                (CType.all, fn t =>
                 let
                    val pre = concat ["\t", CType.toString t, " ",
                                      CType.name t, "_"]
                 in
-                   Int.for (0, 1 + regMax t, fn i =>
+                   Int.for (0, 1 + tempsMax t, fn i =>
                             print (concat [pre, C.int i, ";\n"]))
                 end)
             fun pop (fi: FrameInfo.t) =
@@ -1109,7 +1109,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
             declareProfileLabels ()
             ; C.callNoSemi ("Chunk", [chunkLabelIndexAsString chunkLabel], print); print "\n"
             ; declareCReturns (); print "\n"
-            ; declareRegisters (); print "\n"
+            ; declareTemporaries (); print "\n"
             ; C.callNoSemi ("ChunkSwitch", [chunkLabelIndexAsString chunkLabel], print); print "\n"
             ; Vector.foreach (blocks, fn Block.T {kind, label, ...} =>
                               if Kind.isEntry kind

@@ -145,8 +145,8 @@ struct
                   let
                      val m =
                         List.fold
-                        (chunks, ~1, fn (Machine.Chunk.T {regMax, ...}, max) =>
-                         Int.max (max, regMax t))
+                        (chunks, ~1, fn (Machine.Chunk.T {tempsMax, ...}, max) =>
+                         Int.max (max, tempsMax t))
                      val m = m + 1
                   in
                      print (concat ["PRIVATE ", CType.toString t, 

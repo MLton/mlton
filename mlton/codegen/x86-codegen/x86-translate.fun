@@ -24,7 +24,7 @@ struct
   in
      structure Label = Label
      structure Live = Live
-     structure Register = Register
+     structure Temporary = Temporary
      structure Scale = Scale
      structure StackOffset = StackOffset
      structure Type = Type
@@ -215,10 +215,10 @@ struct
                       size = size}, size), offset + x86.Size.toBytes size))
                end
           | Real _ => Error.bug "x86Translate.Operand.toX86Operand: Real unimplemented"
-          | Register r =>
+          | Temporary t =>
                let
-                  val ty = Machine.Type.toCType (Register.ty r)
-                  val index = Machine.Register.index r
+                  val ty = Machine.Type.toCType (Temporary.ty t)
+                  val index = Machine.Temporary.index t
                   val base = x86.Immediate.label (x86MLton.local_base ty)
                   val origin =
                      x86.MemLoc.imm
