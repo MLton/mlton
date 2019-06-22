@@ -40,7 +40,7 @@ L_3 (c)
   b = y
 ----
 which saves a number of resources: time of setting up the arguments
-for the jump to `L_3`, space (either stack or pseudo-registers) for
+for the jump to `L_3`, space (either stack slots or temporaries) for
 the arguments of `L_3`, etc.  It may also expose some other
 optimizations, if more information is known about `x` or `y`.
 
