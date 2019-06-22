@@ -23,7 +23,7 @@ signature ALLOCATE_VARIABLES =
           paramOffsets: (Rssa.Var.t * Rssa.Type.t) vector -> {offset: Bytes.t, ty: Rssa.Type.t} vector,
           varInfo: Rssa.Var.t -> {
                                   (* If (isSome operand) then a stack slot or
-                                   * register needs to be allocated for the
+                                   * temporary needs to be allocated for the
                                    * variable.
                                    *)
                                   operand: Machine.Operand.t option ref option,

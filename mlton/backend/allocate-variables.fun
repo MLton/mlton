@@ -94,7 +94,7 @@ structure Allocation:
                                        size = Type.bytes ty})
                 val () =
                    QuickSort.sortArray
-                   (a, fn (r, r') => Bytes.<= (#offset r, #offset r'))
+                   (a, fn (t, t') => Bytes.<= (#offset t, #offset t'))
                 fun loop (alloc, ac) =
                    case alloc of
                       [] => List.rev ac
@@ -158,10 +158,10 @@ structure Allocation:
        end
        structure Temporaries =
        struct
-          (* A register allocation keeps track of the registers that have
+          (* A temporary allocation keeps track of the temporaries that have
            * already been allocated, for each runtime type.  The reason that
            * we associate them with runtime types rather than Rssa types is
-           * that the register indices that the codegens use are based on
+           * that the temporary indices that the codegens use are based on
            * runtime types.
            *)
           datatype t = T of CType.t -> {alloc: Temporary.t list,
@@ -188,8 +188,8 @@ structure Allocation:
                    in
                       case alloc of
                          [] => done ()
-                       | r :: alloc =>
-                            if next = Temporary.index r
+                       | t :: alloc =>
+                            if next = Temporary.index t
                                then loop (next + 1, alloc)
                             else done ()
                    end
@@ -197,31 +197,31 @@ structure Allocation:
                 loop (next, alloc)
              end
 
-          fun new (rs: Temporary.t list): t =
+          fun new (ts: Temporary.t list): t =
              let
-                fun sameType (r, r') =
+                fun sameType (t, t') =
                    CType.equals
-                   (Type.toCType (Temporary.ty r),
-                    Type.toCType (Temporary.ty r'))
-                val rss = List.equivalence (rs, sameType)
+                   (Type.toCType (Temporary.ty t),
+                    Type.toCType (Temporary.ty t'))
+                val tss = List.equivalence (ts, sameType)
              in
                 T (CType.memo
-                   (fn t =>
-                    case List.peek (rss, fn rs =>
-                                    case rs of
+                   (fn ty =>
+                    case List.peek (tss, fn ts =>
+                                    case ts of
                                        [] => false
                                      | r :: _ => 
                                           CType.equals
-                                          (t, Type.toCType (Temporary.ty r))) of
+                                          (ty, Type.toCType (Temporary.ty t))) of
                        NONE => ref {alloc = [], next = 0}
-                     | SOME rs =>
+                     | SOME ts =>
                           ref
                           (compress
                            {next = 0,
                             alloc =
                             QuickSort.sortList
-                            (rs, fn (r, r') =>
-                             Temporary.index r <= Temporary.index r')})))
+                            (ts, fn (t, t') =>
+                             Temporary.index t <= Temporary.index t')})))
              end
 
           fun empty () = new []
@@ -231,16 +231,16 @@ structure Allocation:
                 val t = Type.toCType ty
                 val r = f t
                 val {alloc, next} = !r
-                val reg = Temporary.new (ty, SOME next)
+                val temp = Temporary.new (ty, SOME next)
                 val _ =
                    r := compress {alloc = alloc,
                                   next = next + 1}
              in
-                reg
+                temp
              end
        end
 
-       datatype t = T of {registers: Temporaries.t,
+       datatype t = T of {temporaries: Temporaries.t,
                           stack: Stack.t ref}
 
        local
@@ -250,10 +250,10 @@ structure Allocation:
           val stackSize = Stack.size o stack
        end
 
-       fun layout (T {registers, stack}) =
+       fun layout (T {temporaries, stack}) =
           Layout.record
           [("stack", Stack.layout (!stack)),
-           ("registers", Temporaries.layout registers)]
+           ("temporaries", Temporaries.layout temporaries)]
 
        fun getStack (T {stack, ...}, ty) =
           let
@@ -263,11 +263,11 @@ structure Allocation:
              offset
           end
 
-       fun getTemporary (T {registers, ...}, ty) =
-          Temporaries.get (registers, ty)
+       fun getTemporary (T {temporaries, ...}, ty) =
+          Temporaries.get (temporaries, ty)
 
-       fun new (stack, registers) = 
-          T {registers = Temporaries.new registers,
+       fun new (stack, temporaries) = 
+          T {temporaries = Temporaries.new temporaries,
              stack = ref (Stack.new stack)}
    end
 
@@ -321,9 +321,9 @@ fun allocate {function = f: Rssa.Function.t,
 
       (*
        * Decide which variables will live in stack slots and which
-       * will live in registers.
+       * will live in temporaries.
        * Initially,
-       *   - all variables are put in a register.
+       *   - all variables are put in a temporaries.
        * Variables get moved to the stack if they are
        *   - live at the beginning of a Cont block; such variables are
        *     live while the frame is suspended during a non-tail call
@@ -424,13 +424,13 @@ fun allocate {function = f: Rssa.Function.t,
           R.Label.layout, Info.layout, Unit.layout)
          setLabelInfo
 
-      (* Allocate stacks slots and/or registers for the formals.
+      (* Allocate stacks slots and/or temporaries for the formals.
        * Don't use `allocateVar`, because a stack formal
        * should use the stack slot of the incoming actual.
        *)
       val () =
          let
-            val regs = Allocation.Temporaries.empty ()
+            val temps = Allocation.Temporaries.empty ()
          in
             Vector.foreach2
             (args, paramOffsets args, fn ((x, ty), so) =>
@@ -438,7 +438,7 @@ fun allocate {function = f: Rssa.Function.t,
                 val oper =
                    case ! (place x) of
                       Stack => Operand.StackOffset (StackOffset.T so)
-                    | Temporary => Operand.Temporary (Allocation.Temporaries.get (regs, ty))
+                    | Temporary => Operand.Temporary (Allocation.Temporaries.get (temps, ty))
                 val () = removePlace x
                 val () = valOf (#operand (varInfo x)) := SOME oper
              in
@@ -516,13 +516,13 @@ fun allocate {function = f: Rssa.Function.t,
                          Vector.concat [Vector.fromList extra, ops]
                       end
              val liveNoFormals = getOperands beginNoFormals
-             val (stackInit, registersInit) =
+             val (stackInit, temporariesInit) =
                 Vector.fold
-                (liveNoFormals, ([],[]), fn (oper, (stack, registers)) =>
+                (liveNoFormals, ([],[]), fn (oper, (stack, temporaries)) =>
                  case oper of
-                    Operand.StackOffset s => (s::stack, registers)
-                  | Operand.Temporary r => (stack, r::registers)
-                  | _ => (stack, registers))
+                    Operand.StackOffset s => (s::stack, temporaries)
+                  | Operand.Temporary t => (stack, t::temporaries)
+                  | _ => (stack, temporaries))
              val stackInit =
                 case handlersInfo of
                    NONE => stackInit
@@ -536,7 +536,7 @@ fun allocate {function = f: Rssa.Function.t,
                                                  ty = Type.bits (Bytes.toBits handlerArgsSize)}
                                   :: stackInit
                              else stackInit)
-             val a = Allocation.new (stackInit, registersInit)
+             val a = Allocation.new (stackInit, temporariesInit)
              val size =
                 case kind of
                    Kind.Handler =>

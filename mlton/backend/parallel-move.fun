@@ -11,7 +11,7 @@ struct
 
 open S
 
-fun ('register, 'statement) move {moves, equals, move, interfere, temp}
+fun ('temporary, 'statement) move {moves, equals, move, interfere, temp}
    : 'statement list =
    let
       val mvs =

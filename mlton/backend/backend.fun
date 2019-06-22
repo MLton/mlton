@@ -387,8 +387,8 @@ fun toMachine (rssa: Rssa.Program.t) =
             val moves =
                Vector.fold2 (srcs, dsts, [],
                              fn (src, dst, ac) => {src = src, dst = dst} :: ac)
-            fun temp r =
-               M.Operand.Temporary (Temporary.new (M.Operand.ty r, NONE))
+            fun temp t =
+               M.Operand.Temporary (Temporary.new (M.Operand.ty t, NONE))
          in
             Vector.fromList
             (ParallelMove.move {
@@ -1026,18 +1026,18 @@ fun toMachine (rssa: Rssa.Program.t) =
          let
             val blocks = Vector.fromList (!blocks)
             val tempsMax = CType.memo (fn _ => ref ~1)
-            val regsNeedingIndex =
+            val tempsNeedingIndex =
                Vector.fold
                (blocks, [], fn (b, ac) =>
                 M.Block.foldDefs
                 (b, ac, fn (z, ac) =>
                  case z of
-                    M.Operand.Temporary r =>
-                       (case Temporary.indexOpt r of
-                           NONE => r :: ac
+                    M.Operand.Temporary t =>
+                       (case Temporary.indexOpt t of
+                           NONE => t :: ac
                          | SOME i =>
                               let
-                                 val z = tempsMax (Type.toCType (Temporary.ty r))
+                                 val z = tempsMax (Type.toCType (Temporary.ty t))
                                  val _ =
                                     if i > !z
                                        then z := i
@@ -1048,12 +1048,12 @@ fun toMachine (rssa: Rssa.Program.t) =
                   | _ => ac))
             val _ =
                List.foreach
-               (regsNeedingIndex, fn r =>
+               (tempsNeedingIndex, fn t =>
                 let
-                   val z = tempsMax (Type.toCType (Temporary.ty r))
+                   val z = tempsMax (Type.toCType (Temporary.ty t))
                    val i = 1 + !z
                    val _ = z := i
-                   val _ = Temporary.setIndex (r, i)
+                   val _ = Temporary.setIndex (t, i)
                 in
                    ()
                 end)
