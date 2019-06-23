@@ -272,7 +272,6 @@ structure Metadata = struct
    datatype t =
       Unnamed of int
    fun str (Unnamed i) = "!" ^ (Int.toString i)
-   fun int (Unnamed i) = i
 
    val metaDataCounter = ref 0
    fun new () =
@@ -296,13 +295,6 @@ structure Metadata = struct
           " = !{",
           (addSep o List.map) (ts, str),
           "}"]
-   (* Does no escaping *)
-   fun defineString (t, s) =
-      concat
-         [str t,
-          " = !\"",
-          s,
-          "\""]
 end
 
 structure SimpleOper = struct
@@ -314,8 +306,9 @@ structure SimpleOper = struct
    val equals : t * t -> bool = op =
    val hash =
       fn Stack => Hash.permute 0w0
-       | Heap => Hash.permute 0w1
-       | Other => Hash.permute 0w2
+       | Offset => Hash.permute 0w1
+       | SequenceOffset => Hash.permute 0w2
+       | Other => Hash.permute 0w3
    val fromOper =
       fn Operand.StackOffset _ => Stack
        | Operand.Offset _ => Offset
@@ -323,7 +316,7 @@ structure SimpleOper = struct
        | _ => Other
    val toString =
       fn Stack => "Stack"
-       | Heap => "Heap"
+       | Offset => "Offset"
        | SequenceOffset => "SequenceOffset"
        | Other => "Other"
 end
@@ -384,19 +377,6 @@ fun addFfiSymbol s = if not (List.contains (!ffiSymbols, s, fn ({name=n1, ...}, 
                              String.equals (n1, n2)))
                      then ffiSymbols := List.cons (s, !ffiSymbols)
                      else ()
-
-structure ScopeOper = struct
-   datatype t =
-         Frontier
-       | GCState
-       | Offset of {offset: Bytes.t}
-       | SequenceOffset of {base: t,
-                            index: t,
-                            offset: Bytes.t,
-                            scale: Scale.t,
-                            ty: Type.t}
-       | StackOffset of StackOffset.t
-end
 
 fun offsetGCState (gcfield, ty) =
     let
@@ -1390,9 +1370,10 @@ fun outputChunks (cxt, chunks,
                                      done: unit -> unit}) =
    let
         val Context { chunkLabelIndexAsString, program, ... } = cxt
-        val () = HashTable.removeAll (operScopes, fn _ => true)
         val () = cFunctions := []
         val () = ffiSymbols := []
+        val () = HashTable.removeAll (operScopes, fn _ => true)
+        val () = Metadata.reset ()
         val { done, print, file=_ } = outputLL ()
         val () = outputLLVMDeclarations print
         val () = print "\n"
@@ -1418,7 +1399,7 @@ fun outputChunks (cxt, chunks,
                 "\t; ", "Operator domain", "\n"]
         val operScopes = Vector.fromList (HashTable.toList operScopes)
         val rawOperScopes = Vector.mapi (operScopes,
-            fn (i, (oper, _)) =>
+            fn (_, (oper, _)) =>
                let
                   val m = Metadata.new ()
                   val () = (print o concat)
