@@ -16,9 +16,14 @@
 
 #include "export.h"
 
+typedef uintptr_t ChunkFn_t (CPointer, CPointer, CPointer, uintptr_t);
+typedef ChunkFn_t *ChunkFnPtr_t;
+
 #define ChunkName(n) Chunk ## n
 
-#define DeclareChunk(n)                         \
+#define DeclareChunk(n) PRIVATE extern ChunkFn_t ChunkName(n);
+
+#define DefineChunk(n)                          \
         PRIVATE uintptr_t ChunkName(n)(CPointer gcState, CPointer stackTop, CPointer frontier, uintptr_t nextBlock)
 
 #define Chunkp(n) &(ChunkName(n))

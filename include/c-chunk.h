@@ -45,7 +45,7 @@
 /* ------------------------------------------------- */
 
 #define Chunk(n)                                \
-        DeclareChunk(n) {                       \
+        DefineChunk(n) {                        \
                 if (DEBUG_CCODEGEN)             \
                         fprintf (stderr, "%s:%d: Chunk%d(nextBlock = %d)\n", \
                                         __FILE__, __LINE__, n, (int)nextBlock);

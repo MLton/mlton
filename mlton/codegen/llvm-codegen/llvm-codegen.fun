@@ -1424,9 +1424,9 @@ fun transC (cxt, outputC) =
            C.call ("DeclareChunk",
                    [chunkLabelIndexAsString chunkLabel],
                    print))
-          ; print "PRIVATE uintptr_t (*nextChunks["
+          ; print "PRIVATE ChunkFnPtr_t nextChunks["
           ; print (C.int (Vector.length nextChunks))
-          ; print "]) (CPointer, CPointer, CPointer, uintptr_t) = {\n"
+          ; print "] = {\n"
           ; Vector.foreachi
             (nextChunks, fn (i, label) =>
              (print "\t"
