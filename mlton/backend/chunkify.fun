@@ -54,44 +54,6 @@ fun blockSize (Block.T {statements, transfer, ...}): int =
       statementsSize + transferSize
    end
 
-(* Compute the list of functions that each function returns to *)
-structure Labels = PowerSetLattice_ListSet(structure Element = Label)
-fun returnsTo (Program.T {functions, main, ...}) =
-   let
-      val functions = main :: functions
-      val {get: Func.t -> {returnsTo: Labels.t},
-           rem, ...} =
-         Property.get (Func.plist,
-                       Property.initFun (fn _ =>
-                                         {returnsTo = Labels.empty ()}))
-      val returnsTo = #returnsTo o get
-      val empty = Labels.empty ()
-      val _ =
-         List.foreach
-         (functions, fn f =>
-          let
-             val {name, blocks, ...} = Function.dest f
-          in
-             Vector.foreach
-             (blocks, fn Block.T {transfer, ...} =>
-              case transfer of
-                 Call {func, return, ...} =>
-                    let
-                       val returns =
-                          case return of
-                             Return.Dead => empty
-                           | Return.NonTail {cont, ...} => Labels.singleton cont
-                           | Return.Tail => returnsTo name
-                    in
-                       Labels.<= (returns, returnsTo func)
-                    end
-                 | _ => ())
-          end)
-   in
-      {rem = rem,
-       returnsTo = Labels.getElements o returnsTo}
-   end
-
 structure Graph = EquivalenceGraph
 structure Class = Graph.Class
 fun coalesce (program as Program.T {functions, main, ...}, limit) =
@@ -138,7 +100,8 @@ fun coalesce (program as Program.T {functions, main, ...}, limit) =
           in
              ()
           end)
-      val {returnsTo, rem = remReturnsTo} = returnsTo program
+      val rflow = Program.rflow program
+      val returnsTo = #returnsTo o rflow
       (* Add edges, and then coalesce the graph. *)
       val _ =
          List.foreach
@@ -209,7 +172,6 @@ fun coalesce (program as Program.T {functions, main, ...}, limit) =
           let
              val {blocks, name, ...} = Function.dest f
              val _ = remFuncClass name
-             val _ = remReturnsTo name
              val _ = Vector.foreach (blocks, remLabelClass o Block.label)
           in
              ()
