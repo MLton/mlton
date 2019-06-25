@@ -21,9 +21,9 @@ in
    structure Live = Live
    structure ObjptrTycon = ObjptrTycon
    structure RealX = RealX
-   structure Temporary = Temporary
    structure Runtime = Runtime
    structure StackOffset = StackOffset
+   structure Temporary = Temporary
    structure WordSize = WordSize
    structure WordX = WordX
    structure WordXVector = WordXVector

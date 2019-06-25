@@ -733,9 +733,6 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                        toString base,
                                        C.bytes offset]]
              | Real r => RealX.toC r
-             | Temporary t =>
-                  concat [Type.name (Temporary.ty t), "_",
-                          Int.toString (Temporary.index t)]
              | SequenceOffset {base, index, offset, scale, ty} =>
                   concat ["X", C.args [Type.toC ty,
                                        toString base,
@@ -744,6 +741,9 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                        C.bytes offset]]
              | StackOffset s => StackOffset.toString s
              | StackTop => "StackTop"
+             | Temporary t =>
+                  concat [Type.name (Temporary.ty t), "_",
+                          Int.toString (Temporary.index t)]
              | Word w => WordX.toC w
       in
          val operandToString = toString

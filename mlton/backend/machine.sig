@@ -71,7 +71,6 @@ signature MACHINE =
                           offset: Bytes.t,
                           ty: Type.t}
              | Real of RealX.t
-             | Temporary of Temporary.t
              | SequenceOffset of {base: t,
                                   index: t,
                                   offset: Bytes.t,
@@ -79,6 +78,7 @@ signature MACHINE =
                                   ty: Type.t}
              | StackOffset of StackOffset.t
              | StackTop
+             | Temporary of Temporary.t
              | Word of WordX.t
 
             val equals: t * t -> bool
@@ -95,8 +95,8 @@ signature MACHINE =
          sig
             datatype t =
                Global of Global.t
-             | Temporary of Temporary.t
              | StackOffset of StackOffset.t
+             | Temporary of Temporary.t
 
             val equals: t * t -> bool
             val fromOperand: Operand.t -> t option

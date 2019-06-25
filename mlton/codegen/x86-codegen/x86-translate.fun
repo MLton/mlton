@@ -24,9 +24,9 @@ struct
   in
      structure Label = Label
      structure Live = Live
-     structure Temporary = Temporary
      structure Scale = Scale
      structure StackOffset = StackOffset
+     structure Temporary = Temporary
      structure Type = Type
      structure WordSize = WordSize
      structure WordX = WordX

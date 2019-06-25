@@ -455,14 +455,6 @@ fun getOperandAddr (cxt, operand) =
         in
             (concat [basePre, gep, cast], llvmTy, temporary)
         end
-      | Operand.Temporary temporary =>
-        let
-            val tempTy = Temporary.ty temporary
-            val temp = temporaryName (Type.toCType tempTy, Temporary.index temporary)
-            val ty = llty tempTy
-        in
-            ("", ty, temp)
-        end
       | Operand.SequenceOffset {base, index, offset, scale, ty} =>
         let
             (* arrayoffset = base + (index * scale) + offset *)
@@ -497,6 +489,14 @@ fun getOperandAddr (cxt, operand) =
             (concat [load, gep, cast], llvmTy, temp)
         end
       | Operand.StackTop => ("", "%CPointer", "%stackTop")
+      | Operand.Temporary temporary =>
+        let
+            val tempTy = Temporary.ty temporary
+            val temp = temporaryName (Type.toCType tempTy, Temporary.index temporary)
+            val ty = llty tempTy
+        in
+            ("", ty, temp)
+        end
       | _ => Error.bug ("Cannot get address of " ^ Operand.toString operand)
 
 (* ty is the type of the value *)

@@ -173,7 +173,6 @@ structure Operand =
        | Offset of {base: t,
                     offset: Bytes.t,
                     ty: Type.t}
-       | Temporary of Temporary.t
        | Real of RealX.t
        | SequenceOffset of {base: t,
                             index: t,
@@ -182,6 +181,7 @@ structure Operand =
                             ty: Type.t}
        | StackOffset of StackOffset.t
        | StackTop
+       | Temporary of Temporary.t
        | Word of WordX.t
 
     val ty =
@@ -194,10 +194,10 @@ structure Operand =
         | Null => Type.cpointer ()
         | Offset {ty, ...} => ty
         | Real r => Type.real (RealX.size r)
-        | Temporary r => Temporary.ty r
         | SequenceOffset {ty, ...} => ty
         | StackOffset s => StackOffset.ty s
         | StackTop => Type.cpointer ()
+        | Temporary t => Temporary.ty t
         | Word w => Type.ofWordX w
 
     fun layout (z: t): Layout.t =
@@ -224,7 +224,6 @@ structure Operand =
                        tuple [layout base, Bytes.layout offset],
                        constrain ty]
              | Real r => RealX.layout (r, {suffix = true})
-             | Temporary r => Temporary.layout r
              | SequenceOffset {base, index, offset, scale, ty} =>
                   seq [str (concat ["X", Type.name ty, " "]),
                        tuple [layout base, layout index, Scale.layout scale,
@@ -232,6 +231,7 @@ structure Operand =
                        constrain ty]
              | StackOffset so => StackOffset.layout so
              | StackTop => str "<StackTop>"
+             | Temporary t => Temporary.layout t
              | Word w => WordX.layout (w, {suffix = true})
          end
 
@@ -249,11 +249,11 @@ structure Operand =
               Offset {base = b', offset = i', ...}) =>
                 equals (b, b') andalso Bytes.equals (i, i')
            | (Real r, Real r') => RealX.equals (r, r')
-           | (Temporary r, Temporary r') => Temporary.equals (r, r')
            | (SequenceOffset {base = b, index = i, ...},
               SequenceOffset {base = b', index = i', ...}) =>
                 equals (b, b') andalso equals (i, i')
            | (StackOffset so, StackOffset so') => StackOffset.equals (so, so')
+           | (Temporary t, Temporary t') => Temporary.equals (t, t')
            | (Word w, Word w') => WordX.equals (w, w')
            | _ => false
 
@@ -269,7 +269,7 @@ structure Operand =
              | (Contents {oper, ...}, _) => inter oper
              | (Global g, Global g') => Global.equals (g, g')
              | (Offset {base, ...}, _) => inter base
-             | (Temporary r, Temporary r') => Temporary.equals (r, r')
+             | (Temporary t, Temporary t') => Temporary.equals (t, t')
              | (SequenceOffset {base, index, ...}, _) =>
                   inter base orelse inter index
              | (StackOffset so, StackOffset so') =>
@@ -283,9 +283,9 @@ structure Operand =
           | GCState => true
           | Global _ => true
           | Offset _ => true
-          | Temporary _ => true
           | SequenceOffset _ => true
           | StackOffset _ => true
+          | Temporary _ => true
           | _ => false
    end
 
@@ -395,29 +395,29 @@ structure Live =
    struct
       datatype t =
          Global of Global.t
-       | Temporary of Temporary.t
        | StackOffset of StackOffset.t
+       | Temporary of Temporary.t
 
       val layout: t -> Layout.t =
          fn Global g => Global.layout g
-          | Temporary r => Temporary.layout r
           | StackOffset s => StackOffset.layout s
+          | Temporary t => Temporary.layout t
 
       val equals: t * t -> bool =
          fn (Global g, Global g') => Global.equals (g, g')
-          | (Temporary r, Temporary r') => Temporary.equals (r, r')
           | (StackOffset s, StackOffset s') => StackOffset.equals (s, s')
+          | (Temporary t, Temporary t') => Temporary.equals (t, t')
           | _ => false
 
       val ty =
          fn Global g => Global.ty g
-          | Temporary r => Temporary.ty r
           | StackOffset s => StackOffset.ty s
+          | Temporary t => Temporary.ty t
 
       val isSubtype: t * t -> bool =
          fn (Global g, Global g') => Global.isSubtype (g, g')
-          | (Temporary r, Temporary r') => Temporary.isSubtype (r, r')
           | (StackOffset s, StackOffset s') => StackOffset.isSubtype (s, s')
+          | (Temporary t, Temporary t') => Temporary.isSubtype (t, t')
           | _ => false
 
       val interfere: t * t -> bool =
@@ -430,14 +430,14 @@ structure Live =
 
       val fromOperand: Operand.t -> t option =
          fn Operand.Global g => SOME (Global g)
-          | Operand.Temporary r => SOME (Temporary r)
           | Operand.StackOffset s => SOME (StackOffset s)
+          | Operand.Temporary t => SOME (Temporary t)
           | _ => NONE
 
       val toOperand: t -> Operand.t =
          fn Global g => Operand.Global g
-          | Temporary r => Operand.Temporary r
           | StackOffset s => Operand.StackOffset s
+          | Temporary t => Operand.Temporary t
    end
 
 structure Transfer =
@@ -1072,7 +1072,6 @@ structure Program =
                                                  tyconTy = tyconTy,
                                                  result = ty})))
                       | Real _ => true
-                      | Temporary r => Alloc.doesDefine (alloc, Live.Temporary r)
                       | StackOffset (so as StackOffset.T {offset, ty, ...}) =>
                            Bytes.<= (Bytes.+ (offset, Type.bytes ty), maxFrameSize)
                            andalso Alloc.doesDefine (alloc, Live.StackOffset so)
@@ -1117,6 +1116,7 @@ structure Program =
                                                          result = ty,
                                                          scale = scale})))
                       | StackTop => true
+                      | Temporary t => Alloc.doesDefine (alloc, Live.Temporary t)
                       | Word _ => true
                in
                   Err.check ("operand", ok, fn () => Operand.layout x)

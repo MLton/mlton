@@ -31,9 +31,9 @@ local
 in
    structure CType = CType
    structure Operand = Operand
-   structure Temporary = Temporary
    structure Runtime = Runtime
    structure StackOffset = StackOffset
+   structure Temporary = Temporary
 end
 
 structure Allocation:
