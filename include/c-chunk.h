@@ -63,13 +63,13 @@
                         goto doLeaveChunk;      \
                 } /* end switch (nextBlock) */
 
-#define EndChunk(n, tail)                       \
+#define EndChunk(n)                             \
                 /* interchunk return */         \
                 doLeaveChunk:                   \
                 if (DEBUG_CCODEGEN)             \
                         fprintf (stderr, "%s:%d: EndChunk%d(nextBlock = %d)\n", \
                                         __FILE__, __LINE__, n, (int)nextBlock); \
-                if (tail) {                     \
+                if (TailCall) {                 \
                         return (*(nextChunks[nextBlock]))(gcState, stackTop, frontier, nextBlock); \
                 } else {                        \
                         FlushFrontier();        \
@@ -149,12 +149,12 @@
 #define NearCall(l)                             \
         goto l
 
-#define FarCall(n, l, tail)                     \
+#define FarCall(n, l)                           \
         do {                                    \
                 if (DEBUG_CCODEGEN)             \
                         fprintf (stderr, "%s:%d: FarCall(%d, %s)\n", \
                                         __FILE__, __LINE__, (int)n, #l); \
-                if (tail) {                     \
+                if (TailCall) {                 \
                         return ChunkName(n)(gcState, stackTop, frontier, l); \
                 } else {                        \
                         FlushFrontier();        \

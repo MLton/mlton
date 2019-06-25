@@ -983,8 +983,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                            print)
                               else C.call ("\tFarCall",
                                            [chunkLabelIndexAsString dstChunk,
-                                            labelIndexAsString (label, {pretty = true}),
-                                            C.bool (!Control.chunkTailCall)],
+                                            labelIndexAsString (label, {pretty = true})],
                                            print)
                         end
                    | Goto dst => gotoLabel (dst, {tab = true})
@@ -1121,7 +1120,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                               else ())
             ; print "EndChunkSwitch\n\n"
             ; List.foreach (List.rev (!dfsBlocks), outputBlock)
-            ; C.callNoSemi ("EndChunk", [chunkLabelIndexAsString chunkLabel, C.bool (!Control.chunkTailCall)], print); print "\n\n"
+            ; C.callNoSemi ("EndChunk", [chunkLabelIndexAsString chunkLabel], print); print "\n\n"
          end
 
       fun outputChunks chunks =
@@ -1137,7 +1136,10 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                 print (concat ["#define ", name, " ",
                                Bytes.toString (GCField.offset f), "\n"]))
          in
-            outputIncludes (["c-chunk.h"], print); print "\n"
+            (print "#define TailCall "
+             ; print (C.bool (!Control.chunkTailCall))
+             ; print "\n")
+            ; outputIncludes (["c-chunk.h"], print); print "\n"
             ; outputOffsets (); print "\n"
             ; declareGlobals ("PRIVATE extern ", print); print "\n"
             ; declareNextChunks (chunks, print); print "\n"
