@@ -623,7 +623,7 @@ struct
                                                           size = Option.map (size, Bytes.toInt)}),
                                     transInfo = transInfo})
                  end
-              | Return
+              | Return _
               => AppendList.append
                  (comments transfer,
                   AppendList.single
@@ -645,7 +645,7 @@ struct
                                  case x86.Operand.deMemloc operand of
                                     SOME memloc => x86.MemLocSet.add(live, memloc)
                                   | NONE => live))})}))
-              | Raise
+              | Raise _
               => AppendList.append
                  (comments transfer,
                   AppendList.single

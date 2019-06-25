@@ -453,8 +453,8 @@ structure Transfer =
                            handler: Label.t option,
                            size: Bytes.t} option}
        | Goto of Label.t
-       | Raise
-       | Return
+       | Raise of {raisesTo: Label.t list}
+       | Return of {returnsTo: Label.t list}
        | Switch of Switch.t
 
       fun layout t =
@@ -484,8 +484,12 @@ structure Transfer =
                                          ("size", Bytes.layout size)])
                                 return)]]
              | Goto l => seq [str "Goto ", Label.layout l]
-             | Raise => str "Raise"
-             | Return => str "Return "
+             | Raise {raisesTo} =>
+                  seq [str "Raise ",
+                       record [("raisesTo", List.layout Label.layout raisesTo)]]
+             | Return {returnsTo} =>
+                  seq [str "Return ",
+                       record [("returnsTo", List.layout Label.layout returnsTo)]]
              | Switch s => Switch.layout s
          end
 
@@ -1452,11 +1456,11 @@ structure Program =
                                   return = return,
                                   returns = returns}
                    | Goto l => jump l
-                   | Raise =>
+                   | Raise _ =>
                         (case raises of
                             NONE => false
                           | SOME live => liveIsOk (live, alloc))
-                   | Return =>
+                   | Return _ =>
                         (case returns of
                             NONE => false
                           | SOME live => liveIsOk (live, alloc))

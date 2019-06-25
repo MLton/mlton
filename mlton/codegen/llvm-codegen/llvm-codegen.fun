@@ -1093,7 +1093,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
             in
                 concat [comment, goto]
             end
-          | Transfer.Raise =>
+          | Transfer.Raise _ =>
             let
                 val comment = "\t; Raise\n"
                 (* StackTop = StackBottom + ExnStack *)
@@ -1110,7 +1110,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                 concat [comment, sbpre, loadStackBottom, espre, loadExnStack, gep, store,
                         callReturn()]
             end
-          | Transfer.Return => concat ["\t; Return\n", callReturn ()]
+          | Transfer.Return _ => concat ["\t; Return\n", callReturn ()]
           | Transfer.Switch switch =>
             let
                 val Switch.T {cases, default, test, ...} = switch

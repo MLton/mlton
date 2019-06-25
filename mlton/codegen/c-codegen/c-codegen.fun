@@ -987,8 +987,8 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                            print)
                         end
                    | Goto dst => gotoLabel (dst, {tab = true})
-                   | Raise => C.call ("\tRaise", [], print)
-                   | Return => C.call ("\tReturn", [], print)
+                   | Raise _ => C.call ("\tRaise", [], print)
+                   | Return _ => C.call ("\tReturn", [], print)
                    | Switch switch =>
                         let
                            val Switch.T {cases, default, test, ...} = switch
@@ -1084,8 +1084,8 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                  Option.app (return, visit o #return)
                             | Call _ => ()
                             | Goto dst => visit dst
-                            | Raise => ()
-                            | Return => ()
+                            | Raise _ => ()
+                            | Return _ => ()
                             | Switch (Switch.T {cases, default, ...}) =>
                                  (Vector.foreach (cases, visit o #2);
                                   Option.app (default, visit)))

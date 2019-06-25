@@ -142,8 +142,8 @@ signature MACHINE =
                                  handler: Label.t option (* must be kind Handler*),
                                  size: Bytes.t} option}
              | Goto of Label.t (* must be kind Jump *)
-             | Raise
-             | Return
+             | Raise of {raisesTo: Label.t list}
+             | Return of {returnsTo: Label.t list}
              | Switch of Switch.t
 
             val foldOperands: t * 'a * (Operand.t * 'a -> 'a) -> 'a

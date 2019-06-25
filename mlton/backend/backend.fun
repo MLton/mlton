@@ -134,6 +134,8 @@ fun eliminateDeadCode (f: R.Function.t): R.Function.t =
 fun toMachine (rssa: Rssa.Program.t) =
    let
       val R.Program.T {functions, handlesSignals, main, objectTypes, profileInfo} = rssa
+      (* returnsTo and raisesTo info *)
+      val rflow = R.Program.rflow rssa
       (* Chunk info *)
       val {get = labelChunk, set = setLabelChunk, ...} =
          Property.getSetOnce (Label.plist,
@@ -603,6 +605,7 @@ fun toMachine (rssa: Rssa.Program.t) =
             val f = eliminateDeadCode f
             val {args, blocks, name, raises, returns, start, ...} =
                Function.dest f
+            val {raisesTo, returnsTo} = rflow name
             val (returnLives, returnOperands) =
                case returns of
                   NONE => (NONE, NONE)
@@ -859,7 +862,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                                                  ty = ty})
                         in
                            if Vector.isEmpty srcs
-                              then (Vector.new0 (), M.Transfer.Raise)
+                              then (Vector.new0 (), M.Transfer.Raise {raisesTo = raisesTo})
                               else (Vector.concat
                                     [Vector.new1
                                      (M.Statement.PrimApp
@@ -868,12 +871,12 @@ fun toMachine (rssa: Rssa.Program.t) =
                                        prim = Prim.cpointerAdd}),
                                      parallelMove {dsts = dsts,
                                                    srcs = translateOperands srcs}],
-                                    M.Transfer.Raise)
+                                    M.Transfer.Raise {raisesTo = raisesTo})
                         end
                    | R.Transfer.Return xs =>
                         (parallelMove {dsts = valOf returnOperands,
                                        srcs = translateOperands xs},
-                         M.Transfer.Return)
+                         M.Transfer.Return {returnsTo = returnsTo})
                    | R.Transfer.Switch switch =>
                         let
                            val R.Switch.T {cases, default, size, test} =
