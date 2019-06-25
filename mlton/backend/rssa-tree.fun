@@ -1002,6 +1002,55 @@ structure Program =
             ()
          end
 
+      structure Labels = PowerSetLattice_ListSet(structure Element = Label)
+      fun rflow (T {functions, main, ...}) =
+         let
+            val functions = main :: functions
+            val table = HashTable.new {equals = Func.equals, hash = Func.hash}
+            fun get f =
+               HashTable.lookupOrInsert (table, f, fn () =>
+                                         {raisesTo = Labels.empty (),
+                                          returnsTo = Labels.empty ()})
+            val raisesTo = #raisesTo o get
+            val returnsTo = #returnsTo o get
+            val empty = Labels.empty ()
+            val _ =
+               List.foreach
+               (functions, fn f =>
+                let
+                   val {name, blocks, ...} = Function.dest f
+                in
+                   Vector.foreach
+                   (blocks, fn Block.T {transfer, ...} =>
+                    case transfer of
+                       Transfer.Call {func, return, ...} =>
+                          let
+                             val (returns, raises) =
+                                case return of
+                                   Return.Dead => (empty, empty)
+                                 | Return.NonTail {cont, handler, ...} =>
+                                      (Labels.singleton cont,
+                                       case handler of
+                                          Handler.Caller => raisesTo name
+                                        | Handler.Dead => empty
+                                        | Handler.Handle hand => Labels.singleton hand)
+                                 | Return.Tail => (returnsTo name, raisesTo name)
+                          in
+                             Labels.<= (returns, returnsTo func)
+                             ; Labels.<= (raises, raisesTo func)
+                          end
+                     | _ => ())
+                end)
+         in
+            fn f =>
+            let
+               val {raisesTo, returnsTo} = get f
+            in
+               {raisesTo = Labels.getElements raisesTo,
+                returnsTo = Labels.getElements returnsTo}
+            end
+         end
+
       fun orderFunctions (p as T {handlesSignals, objectTypes, profileInfo, ...}) =
          let
             val functions = ref []
