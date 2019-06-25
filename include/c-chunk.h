@@ -50,12 +50,12 @@
                         fprintf (stderr, "%s:%d: Chunk%d(nextBlock = %d)\n", \
                                         __FILE__, __LINE__, n, (int)nextBlock);
 
-#define ChunkSwitch(n)                          \
+#define ChunkSwitch                             \
                 goto doSwitchNextBlock;         \
                 doSwitchNextBlock:              \
                 if (DEBUG_CCODEGEN)             \
-                        fprintf (stderr, "%s:%d: ChunkSwitch%d(nextBlock = %d)\n", \
-                                        __FILE__, __LINE__, n, (int)nextBlock); \
+                        fprintf (stderr, "%s:%d: ChunkSwitch(nextBlock = %d)\n", \
+                                        __FILE__, __LINE__, (int)nextBlock); \
                 switch (nextBlock) {
 
 #define EndChunkSwitch                          \
@@ -63,12 +63,12 @@
                         goto doLeaveChunk;      \
                 } /* end switch (nextBlock) */
 
-#define EndChunk(n)                             \
+#define EndChunk                                \
                 /* interchunk return */         \
                 doLeaveChunk:                   \
                 if (DEBUG_CCODEGEN)             \
-                        fprintf (stderr, "%s:%d: EndChunk%d(nextBlock = %d)\n", \
-                                        __FILE__, __LINE__, n, (int)nextBlock); \
+                        fprintf (stderr, "%s:%d: EndChunk(nextBlock = %d)\n", \
+                                        __FILE__, __LINE__,(int)nextBlock); \
                 if (TailCall) {                 \
                         return (*(nextChunks[nextBlock]))(gcState, stackTop, frontier, nextBlock); \
                 } else {                        \

@@ -1147,7 +1147,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
             ; C.callNoSemi ("Chunk", [chunkLabelIndexAsString chunkLabel], print); print "\n"
             ; declareCReturns (); print "\n"
             ; declareRegisters (); print "\n"
-            ; C.callNoSemi ("ChunkSwitch", [chunkLabelIndexAsString chunkLabel], print); print "\n"
+            ; print "ChunkSwitch\n"
             ; Vector.foreach (blocks, fn Block.T {kind, label, ...} =>
                               if Kind.isEntry kind
                                  then (print "case "
@@ -1158,7 +1158,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                               else ())
             ; print "EndChunkSwitch\n\n"
             ; List.foreach (List.rev (!dfsBlocks), outputBlock)
-            ; C.callNoSemi ("EndChunk", [chunkLabelIndexAsString chunkLabel], print); print "\n\n"
+            ; print "EndChunk\n\n"
          end
 
       fun outputChunks chunks =
