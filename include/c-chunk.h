@@ -163,22 +163,26 @@
                 }                               \
         } while (0)
 
-#define Return()                                                                \
+#define Return(mayReturnToSelf)                                                 \
         do {                                                                    \
                 nextBlock = *(uintptr_t*)(StackTop - sizeof(uintptr_t));        \
                 if (DEBUG_CCODEGEN)                                             \
                         fprintf (stderr, "%s:%d: Return()  nextBlock = %d\n",   \
                                         __FILE__, __LINE__, (int)nextBlock);    \
-                goto doSwitchNextBlock;                                         \
+                if (mayReturnToSelf) {                                          \
+                        goto doSwitchNextBlock;                                 \
+                } else {                                                        \
+                        goto doLeaveChunk;                                      \
+                }                                                               \
         } while (0)
 
-#define Raise()                                                                 \
+#define Raise(mayRaiseToSelf)                                                   \
         do {                                                                    \
                 if (DEBUG_CCODEGEN)                                             \
                         fprintf (stderr, "%s:%d: Raise()\n",                    \
                                         __FILE__, __LINE__);                    \
                 StackTop = StackBottom + ExnStack;                              \
-                Return();                                                       \
+                Return(mayRaiseToSelf);                                         \
         } while (0)                                                             \
 
 

@@ -961,7 +961,9 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                               else ()
                            val _ =
                               if CFunction.maySwitchThreadsFrom func
-                                 then print "\tReturn();\n"
+                                 then C.call ("\tReturn",
+                                              [C.truee],
+                                              print)
                               else (case return of
                                        NONE => print "\tUnreachable ();\n"
                                      | SOME {return, ...} => gotoLabel (return, {tab = true}))
@@ -987,8 +989,44 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                            print)
                         end
                    | Goto dst => gotoLabel (dst, {tab = true})
-                   | Raise _ => C.call ("\tRaise", [], print)
-                   | Return _ => C.call ("\tReturn", [], print)
+                   | Raise {raisesTo} =>
+                        let
+                           val raisesTo =
+                              List.fold
+                              (raisesTo, [], fn (l, cs) =>
+                               let
+                                  val c = labelChunk l
+                               in
+                                  if List.exists (cs, fn c' => ChunkLabel.equals (c, c'))
+                                     then cs
+                                     else c::cs
+                               end)
+                           val mayRaiseToSelf =
+                              List.exists (raisesTo, fn c => ChunkLabel.equals (chunkLabel, c))
+                        in
+                           C.call ("\tRaise",
+                                   [C.bool mayRaiseToSelf],
+                                   print)
+                        end
+                   | Return {returnsTo} =>
+                        let
+                           val returnsTo =
+                              List.fold
+                              (returnsTo, [], fn (l, cs) =>
+                               let
+                                  val c = labelChunk l
+                               in
+                                  if List.exists (cs, fn c' => ChunkLabel.equals (c, c'))
+                                     then cs
+                                     else c::cs
+                               end)
+                           val mayReturnToSelf =
+                              List.exists (returnsTo, fn c => ChunkLabel.equals (chunkLabel, c))
+                        in
+                           C.call ("\tReturn",
+                                   [C.bool mayReturnToSelf],
+                                   print)
+                        end
                    | Switch switch =>
                         let
                            val Switch.T {cases, default, test, ...} = switch
