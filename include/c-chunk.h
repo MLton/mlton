@@ -149,17 +149,17 @@
 #define NearCall(l)                             \
         goto l
 
-#define FarCall(n, l)                           \
+#define FarCall(nextChunk, nextBlock)           \
         do {                                    \
                 if (DEBUG_CCODEGEN)             \
-                        fprintf (stderr, "%s:%d: FarCall(%d, %s)\n", \
-                                        __FILE__, __LINE__, (int)n, #l); \
+                        fprintf (stderr, "%s:%d: FarCall(%d, %d)\n", \
+                                        __FILE__, __LINE__, (int)nextChunk, (int)nextBlock); \
                 if (TailCall) {                 \
-                        return ChunkName(n)(gcState, stackTop, frontier, l); \
+                        return ChunkName(nextChunk)(gcState, stackTop, frontier, nextBlock); \
                 } else {                        \
                         FlushFrontier();        \
                         FlushStackTop();        \
-                        return l;               \
+                        return nextBlock;       \
                 }                               \
         } while (0)
 
