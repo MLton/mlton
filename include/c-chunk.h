@@ -69,14 +69,22 @@
                 if (DEBUG_CCODEGEN)             \
                         fprintf (stderr, "%s:%d: EndChunk(nextBlock = %d)\n", \
                                         __FILE__, __LINE__,(int)nextBlock); \
+                LeaveChunk((*(nextChunks[nextBlock])), nextBlock); \
+        } /* end chunk */
+
+#define LeaveChunk(nextChunk, nextBlock)        \
+        do {                                    \
+                if (DEBUG_CCODEGEN)             \
+                        fprintf (stderr, "%s:%d: LeaveChunk(nextChunk = \"%s\", nextBlock = %d)\n", \
+                                        __FILE__, __LINE__, #nextChunk, (int)nextBlock); \
                 if (TailCall) {                 \
-                        return (*(nextChunks[nextBlock]))(gcState, stackTop, frontier, nextBlock); \
+                        return nextChunk(gcState, stackTop, frontier, nextBlock); \
                 } else {                        \
                         FlushFrontier();        \
                         FlushStackTop();        \
                         return nextBlock;       \
                 }                               \
-        } /* end chunk */
+        } while (0)
 
 
 /* ------------------------------------------------- */
@@ -154,13 +162,7 @@
                 if (DEBUG_CCODEGEN)             \
                         fprintf (stderr, "%s:%d: FarCall(%d, %d)\n", \
                                         __FILE__, __LINE__, (int)nextChunk, (int)nextBlock); \
-                if (TailCall) {                 \
-                        return ChunkName(nextChunk)(gcState, stackTop, frontier, nextBlock); \
-                } else {                        \
-                        FlushFrontier();        \
-                        FlushStackTop();        \
-                        return nextBlock;       \
-                }                               \
+                LeaveChunk(ChunkName(nextChunk), nextBlock); \
         } while (0)
 
 #define Return(mayReturnToSelf)                                                 \
