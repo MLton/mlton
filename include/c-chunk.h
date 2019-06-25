@@ -48,10 +48,10 @@
         DefineChunk(n) {                        \
                 if (DEBUG_CCODEGEN)             \
                         fprintf (stderr, "%s:%d: Chunk%d(nextBlock = %d)\n", \
-                                        __FILE__, __LINE__, n, (int)nextBlock);
+                                        __FILE__, __LINE__, n, (int)nextBlock); \
+                goto doSwitchNextBlock;
 
 #define ChunkSwitch                             \
-                goto doSwitchNextBlock;         \
                 doSwitchNextBlock:              \
                 if (DEBUG_CCODEGEN)             \
                         fprintf (stderr, "%s:%d: ChunkSwitch(nextBlock = %d)\n", \
