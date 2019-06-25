@@ -174,7 +174,7 @@
                 if (mayReturnToSelf) {                                          \
                         goto doSwitchNextBlock;                                 \
                 } else {                                                        \
-                        goto doLeaveChunk;                                      \
+                        LeaveChunk ((*nextChunks[nextBlock]), nextBlock);       \
                 }                                                               \
         } while (0)
 
