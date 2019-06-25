@@ -293,47 +293,47 @@ structure Metadata = struct
       concat
          [str t,
           " = !{",
-          (addSep o List.map) (ts, str),
+          addSep ts,
           "}"]
 end
 
 structure SimpleOper = struct
 
-   datatype t = Stack
-              | Offset
+   datatype t = Stack of int
+              | Offset of int
               | SequenceOffset
               | Other
    val equals : t * t -> bool = op =
    val hash =
-      fn Stack => Hash.permute 0w0
-       | Offset => Hash.permute 0w1
+      fn Stack i => Hash.combine (0w0, Word.fromInt i)
+       | Offset i => Hash.combine (0w1, Word.fromInt i)
        | SequenceOffset => Hash.permute 0w2
        | Other => Hash.permute 0w3
    val fromOper =
-      fn Operand.StackOffset _ => Stack
-       | Operand.Offset _ => Offset
+      fn Operand.StackOffset
+         (StackOffset.T {offset, ...}) => Stack (Bytes.toInt offset)
+       | Operand.Offset {offset, ...} => Offset (Bytes.toInt offset)
        | Operand.SequenceOffset _ => SequenceOffset
        | _ => Other
    val toString =
-      fn Stack => "Stack"
-       | Offset => "Offset"
+      fn Stack i => "Stack " ^ Int.toString i
+       | Offset i => "Offset " ^ Int.toString i
        | SequenceOffset => "SequenceOffset"
        | Other => "Other"
 end
 
-val operScopes : (SimpleOper.t, Metadata.t * Metadata.t) HashTable.t =
+val operScopes : (SimpleOper.t, Metadata.t) HashTable.t =
    HashTable.new
       {hash = SimpleOper.hash,
        equals = SimpleOper.equals}
 
-fun scopeString (scope, noalias) =
-   concat [", !alias.scope ", Metadata.str scope,
-           ", !noalias ", Metadata.str noalias]
+fun scopeString scope =
+   concat [", !tbaa ", Metadata.str scope]
 (* Generates the string for alias.scope and noalias metadata *)
 fun getOperScopes t =
    HashTable.lookupOrInsert
    (operScopes, SimpleOper.fromOper t,
-    fn () => (Metadata.new (), Metadata.new ()))
+    Metadata.new)
 
 val mkOperScope = scopeString o getOperScopes
 
@@ -1395,30 +1395,19 @@ fun outputChunks (cxt, chunks,
 
         val operDomain = Metadata.new ()
         val () = (print o concat)
-               [Metadata.defineNode (operDomain, [operDomain]),
+               [Metadata.defineNode (operDomain, ["!\"operRoot\""]),
                 "\t; ", "Operator domain", "\n"]
         val operScopes = Vector.fromList (HashTable.toList operScopes)
         val rawOperScopes = Vector.mapi (operScopes,
-            fn (_, (oper, _)) =>
+            fn (_, (oper, m)) =>
                let
-                  val m = Metadata.new ()
-                  val () = (print o concat)
-                     [Metadata.defineNode (m, [m, operDomain]),
-                      "\t; ", SimpleOper.toString oper, "\n"]
+                  val () = (print o Metadata.defineNode) (m,
+                        ["!\"" ^ SimpleOper.toString oper ^ "\"",
+                         Metadata.str operDomain,
+                         "i64 0"])
+                  val () = print "\n"
                in
                   m
-               end)
-        val () = Vector.foreachi (operScopes,
-            fn (i, (_, (pos, neg))) =>
-               let
-                  val () = (print o Metadata.defineNode) (pos, [Vector.sub (rawOperScopes, i)])
-                  val () = print "\n"
-                  val () = (print o Metadata.defineNode) (neg,
-                     Vector.toListKeepAllMapi (rawOperScopes,
-                        fn (j, m) => if i = j then NONE else SOME m))
-                  val () = print "\n"
-               in
-                  ()
                end)
         val () = List.foreach (!cFunctions, fn f =>
                      print (concat ["declare ", f, "\n"]))
