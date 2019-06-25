@@ -210,7 +210,7 @@ structure Allocation:
                     case List.peek (tss, fn ts =>
                                     case ts of
                                        [] => false
-                                     | r :: _ => 
+                                     | t :: _ =>
                                           CType.equals
                                           (ty, Type.toCType (Temporary.ty t))) of
                        NONE => ref {alloc = [], next = 0}
