@@ -45,8 +45,8 @@
 /* ------------------------------------------------- */
 
 #define Chunk(n)                                \
-        DefineChunk(n) {                        \
-                const ChunkFnPtr_t selfChunk = Chunkp(n); \
+        PRIVATE uintptr_t ChunkName(n)(CPointer gcState, CPointer stackTop, CPointer frontier, uintptr_t nextBlock) { \
+                const ChunkFnPtr_t selfChunk = Chunkp(n);                \
                 if (DEBUG_CCODEGEN)             \
                         fprintf (stderr, "%s:%d: Chunk%d(nextBlock = %d)\n", \
                                         __FILE__, __LINE__, n, (int)nextBlock); \
