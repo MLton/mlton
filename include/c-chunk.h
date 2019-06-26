@@ -46,6 +46,7 @@
 
 #define Chunk(n)                                \
         DefineChunk(n) {                        \
+                const ChunkFnPtr_t selfChunk = Chunkp(n); \
                 if (DEBUG_CCODEGEN)             \
                         fprintf (stderr, "%s:%d: Chunk%d(nextBlock = %d)\n", \
                                         __FILE__, __LINE__, n, (int)nextBlock); \
@@ -60,20 +61,15 @@
 
 #define EndChunkSwitch                          \
                 default:                        \
-                        goto doLeaveChunk;      \
+                        Unreachable();          \
                 } /* end switch (nextBlock) */
 
 #define EndChunk                                \
-                /* interchunk return */         \
-                doLeaveChunk:                   \
-                if (DEBUG_CCODEGEN)             \
-                        fprintf (stderr, "%s:%d: EndChunk(nextBlock = %d)\n", \
-                                        __FILE__, __LINE__,(int)nextBlock); \
-                LeaveChunk((*(nextChunks[nextBlock])), nextBlock); \
         } /* end chunk */
 
 #define LeaveChunk(nextChunk, nextBlock)        \
         do {                                    \
+                /* interchunk return */         \
                 if (DEBUG_CCODEGEN)             \
                         fprintf (stderr, "%s:%d: LeaveChunk(nextChunk = \"%s\", nextBlock = %d)\n", \
                                         __FILE__, __LINE__, #nextChunk, (int)nextBlock); \
@@ -165,27 +161,29 @@
                 LeaveChunk(ChunkName(nextChunk), nextBlock); \
         } while (0)
 
-#define Return(mayReturnToSelf)                                                 \
+#define Return(mustReturnToSelf,mayReturnToSelf)                                \
         do {                                                                    \
                 nextBlock = *(uintptr_t*)(StackTop - sizeof(uintptr_t));        \
                 if (DEBUG_CCODEGEN)                                             \
                         fprintf (stderr, "%s:%d: Return()  nextBlock = %d\n",   \
                                         __FILE__, __LINE__, (int)nextBlock);    \
-                if (mayReturnToSelf) {                                          \
+                ChunkFnPtr_t nextChunk = nextChunks[nextBlock];                 \
+                if (mustReturnToSelf                                            \
+                    || (mayReturnToSelf && (nextChunk == selfChunk))) {         \
                         goto doSwitchNextBlock;                                 \
                 } else {                                                        \
-                        LeaveChunk ((*nextChunks[nextBlock]), nextBlock);       \
+                        LeaveChunk ((*nextChunk), nextBlock);                   \
                 }                                                               \
         } while (0)
 
-#define Raise(mayRaiseToSelf)                                                   \
+#define Raise(mustRaiseToSelf,mayRaiseToSelf)                                   \
         do {                                                                    \
                 if (DEBUG_CCODEGEN)                                             \
                         fprintf (stderr, "%s:%d: Raise()\n",                    \
                                         __FILE__, __LINE__);                    \
                 StackTop = StackBottom + ExnStack;                              \
-                Return(mayRaiseToSelf);                                         \
-        } while (0)                                                             \
+                Return(mustRaiseToSelf,mayRaiseToSelf);                         \
+        } while (0)
 
 
 /* ------------------------------------------------- */
