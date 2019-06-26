@@ -161,7 +161,7 @@
                 LeaveChunk(ChunkName(nextChunk), nextBlock); \
         } while (0)
 
-#define Return(mustReturnToSelf,mayReturnToSelf)                                \
+#define Return(mustReturnToSelf,mayReturnToSelf,mustReturnToOther)              \
         do {                                                                    \
                 nextBlock = *(uintptr_t*)(StackTop - sizeof(uintptr_t));        \
                 if (DEBUG_CCODEGEN)                                             \
@@ -171,18 +171,20 @@
                 if (mustReturnToSelf                                            \
                     || (mayReturnToSelf && (nextChunk == selfChunk))) {         \
                         goto doSwitchNextBlock;                                 \
+                } else if (mustReturnToOther) {                                 \
+                        LeaveChunk ((*mustReturnToOther), nextBlock);           \
                 } else {                                                        \
                         LeaveChunk ((*nextChunk), nextBlock);                   \
                 }                                                               \
         } while (0)
 
-#define Raise(mustRaiseToSelf,mayRaiseToSelf)                                   \
+#define Raise(mustRaiseToSelf,mayRaiseToSelf,mustRaiseToOther)                  \
         do {                                                                    \
                 if (DEBUG_CCODEGEN)                                             \
                         fprintf (stderr, "%s:%d: Raise()\n",                    \
                                         __FILE__, __LINE__);                    \
                 StackTop = StackBottom + ExnStack;                              \
-                Return(mustRaiseToSelf,mayRaiseToSelf);                         \
+                Return(mustRaiseToSelf,mayRaiseToSelf,mustRaiseToOther);        \
         } while (0)
 
 

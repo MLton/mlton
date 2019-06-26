@@ -674,6 +674,10 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                  case transfer of
                     Transfer.Call {label, ...} =>
                        declareChunk (labelChunk label)
+                  | Transfer.Raise {raisesTo, ...} =>
+                       List.foreach (raisesTo, declareChunk o labelChunk)
+                  | Transfer.Return {returnsTo, ...} =>
+                       List.foreach (returnsTo, declareChunk o labelChunk)
                   |  _ => ())))
             ; print "PRIVATE extern ChunkFnPtr_t nextChunks[];\n"
          end
@@ -963,7 +967,8 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                               if CFunction.maySwitchThreadsFrom func
                                  then C.call ("\tReturn",
                                               [C.falsee,
-                                               C.truee],
+                                               C.truee,
+                                               "(ChunkFnPtr_t)NULL"],
                                               print)
                               else (case return of
                                        NONE => print "\tUnreachable ();\n"
@@ -1004,11 +1009,27 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                      else c::cs
                                end)
                            val mayRaiseToSelf = List.exists (raisesTo, isSelf)
-                           val mustRaiseToSelf = List.forall (raisesTo, isSelf)
+                           val (mustRaiseToSelf, mustRaiseToOther) =
+                              case List.revKeepAll (raisesTo, not o isSelf) of
+                                 [] => (true, NONE)
+                               | c::raisesTo =>
+                                    (false,
+                                     List.fold (raisesTo, SOME c, fn (c', co) =>
+                                                case co of
+                                                   NONE => NONE
+                                                 | SOME c => if ChunkLabel.equals (c, c')
+                                                                then SOME c
+                                                                else NONE))
                         in
                            C.call ("\tRaise",
                                    [C.bool mustRaiseToSelf,
-                                    C.bool mayRaiseToSelf],
+                                    C.bool mayRaiseToSelf,
+                                    case mustRaiseToOther of
+                                       NONE => "(ChunkFnPtr_t)NULL"
+                                     | SOME otherChunk =>
+                                          concat ["Chunkp (",
+                                                  chunkLabelIndexAsString otherChunk,
+                                                  ")"]],
                                    print)
                         end
                    | Return {returnsTo} =>
@@ -1025,11 +1046,27 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                      else c::cs
                                end)
                            val mayReturnToSelf = List.exists (returnsTo, isSelf)
-                           val mustReturnToSelf = List.forall (returnsTo, isSelf)
+                           val (mustReturnToSelf, mustReturnToOther) =
+                              case List.revKeepAll (returnsTo, not o isSelf) of
+                                 [] => (true, NONE)
+                               | c::returnsTo =>
+                                    (false,
+                                     List.fold (returnsTo, SOME c, fn (c', co) =>
+                                                case co of
+                                                   NONE => NONE
+                                                 | SOME c => if ChunkLabel.equals (c, c')
+                                                                then SOME c
+                                                                else NONE))
                         in
                            C.call ("\tReturn",
                                    [C.bool mustReturnToSelf,
-                                    C.bool mayReturnToSelf],
+                                    C.bool mayReturnToSelf,
+                                    case mustReturnToOther of
+                                       NONE => "(ChunkFnPtr_t)NULL"
+                                     | SOME otherChunk =>
+                                          concat ["Chunkp (",
+                                                  chunkLabelIndexAsString otherChunk,
+                                                  ")"]],
                                    print)
                         end
                    | Switch switch =>
