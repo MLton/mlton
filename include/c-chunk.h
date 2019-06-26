@@ -52,24 +52,6 @@
                                         __FILE__, __LINE__, n, (int)nextBlock); \
                 SwitchNextBlock();
 
-#define SwitchNextBlock()                       \
-                if (DEBUG_CCODEGEN)             \
-                        fprintf (stderr, "%s:%d: SwitchNextBlock(nextBlock = %d)\n", \
-                                        __FILE__, __LINE__, (int)nextBlock); \
-                goto doSwitchNextBlock
-
-#define ChunkSwitch                             \
-                doSwitchNextBlock:              \
-                switch (nextBlock) {
-
-#define ChunkSwitchCase(index, label)           \
-                case index: goto label;
-
-#define EndChunkSwitch                          \
-                default:                        \
-                        Unreachable();          \
-                } /* end switch (nextBlock) */
-
 #define EndChunk                                \
         } /* end chunk */
 
@@ -88,6 +70,27 @@
                 }                               \
         } while (0)
 
+/* ------------------------------------------------- */
+/*  ChunkSwitch                                      */
+/* ------------------------------------------------- */
+
+#define ChunkSwitch                             \
+                doSwitchNextBlock:              \
+                switch (nextBlock) {
+
+#define ChunkSwitchCase(index, label)           \
+                case index: goto label;
+
+#define EndChunkSwitch                          \
+                default:                        \
+                        Unreachable();          \
+                } /* end switch (nextBlock) */
+
+#define SwitchNextBlock()                       \
+                if (DEBUG_CCODEGEN)             \
+                        fprintf (stderr, "%s:%d: SwitchNextBlock(nextBlock = %d)\n", \
+                                        __FILE__, __LINE__, (int)nextBlock); \
+                goto doSwitchNextBlock
 
 /* ------------------------------------------------- */
 /*  Operands                                         */
