@@ -1192,10 +1192,11 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
             ; print "ChunkSwitch\n"
             ; Vector.foreach (blocks, fn Block.T {kind, label, ...} =>
                               if Kind.isEntry kind
-                                 then (print "case "
-                                       ; print (labelIndexAsString (label, {pretty = false}))
-                                       ; print ": "
-                                       ; gotoLabel (label, {tab = false})
+                                 then (C.callNoSemi ("ChunkSwitchCase",
+                                                     [labelIndexAsString (label, {pretty = false}),
+                                                      Label.toString label],
+                                                     print)
+                                       ; print "\n"
                                        ; visit label)
                               else ())
             ; print "EndChunkSwitch\n\n"

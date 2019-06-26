@@ -62,6 +62,9 @@
                 doSwitchNextBlock:              \
                 switch (nextBlock) {
 
+#define ChunkSwitchCase(index, label)           \
+                case index: goto label;
+
 #define EndChunkSwitch                          \
                 default:                        \
                         Unreachable();          \
