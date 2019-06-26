@@ -312,8 +312,14 @@ structure SimpleOper = struct
    val fromOper =
       fn Operand.StackOffset
          (StackOffset.T {offset, ...}) => Stack (Bytes.toInt offset)
-       | Operand.Offset {offset, ...} => Offset (Bytes.toInt offset)
-       | Operand.SequenceOffset _ => SequenceOffset
+       | Operand.Offset {offset, base, ...} =>
+         if Type.isObjptr (Operand.ty base)
+         then Offset (Bytes.toInt offset)
+         else Other
+       | Operand.SequenceOffset {base, ...} =>
+         if Type.isObjptr (Operand.ty base)
+         then SequenceOffset
+         else Other
        | _ => Other
    val toString =
       fn Stack i => "Stack " ^ Int.toString i
