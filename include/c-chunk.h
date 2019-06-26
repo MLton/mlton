@@ -50,13 +50,16 @@
                 if (DEBUG_CCODEGEN)             \
                         fprintf (stderr, "%s:%d: Chunk%d(nextBlock = %d)\n", \
                                         __FILE__, __LINE__, n, (int)nextBlock); \
-                goto doSwitchNextBlock;
+                SwitchNextBlock();
+
+#define SwitchNextBlock()                       \
+                if (DEBUG_CCODEGEN)             \
+                        fprintf (stderr, "%s:%d: SwitchNextBlock(nextBlock = %d)\n", \
+                                        __FILE__, __LINE__, (int)nextBlock); \
+                goto doSwitchNextBlock
 
 #define ChunkSwitch                             \
                 doSwitchNextBlock:              \
-                if (DEBUG_CCODEGEN)             \
-                        fprintf (stderr, "%s:%d: ChunkSwitch(nextBlock = %d)\n", \
-                                        __FILE__, __LINE__, (int)nextBlock); \
                 switch (nextBlock) {
 
 #define EndChunkSwitch                          \
@@ -170,11 +173,11 @@
                 ChunkFnPtr_t nextChunk = nextChunks[nextBlock];                 \
                 if (mustReturnToSelf                                            \
                     || (mayReturnToSelf && (nextChunk == selfChunk))) {         \
-                        goto doSwitchNextBlock;                                 \
+                        SwitchNextBlock();                                      \
                 } else if (mustReturnToOther) {                                 \
-                        LeaveChunk ((*mustReturnToOther), nextBlock);           \
+                        LeaveChunk((*mustReturnToOther), nextBlock);            \
                 } else {                                                        \
-                        LeaveChunk ((*nextChunk), nextBlock);                   \
+                        LeaveChunk((*nextChunk), nextBlock);                    \
                 }                                                               \
         } while (0)
 
