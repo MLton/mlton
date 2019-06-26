@@ -78,6 +78,9 @@ val chunkify = control {name = "chunkify",
                         default = Chunkify.Coalesce {limit = 4096},
                         toString = Chunkify.toString}
 
+val chunkJumpTable = control {name = "chunkJumpTable",
+                              default = false,
+                              toString = Bool.toString}
 val chunkTailCall = control {name = "chunkTailCall",
                              default = true,
                              toString = Bool.toString}

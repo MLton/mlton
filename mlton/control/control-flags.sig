@@ -42,6 +42,7 @@ signature CONTROL_FLAGS =
          end
       val chunkify: Chunkify.t ref
 
+      val chunkJumpTable: bool ref
       val chunkTailCall: bool ref
 
       val closureConvertGlobalize: bool ref
