@@ -30,7 +30,7 @@ structure Temporary =
          let
             open Layout
          in
-            seq [str (concat ["R", Type.name ty]),
+            seq [str (concat ["T", Type.name ty]),
                  paren (case !index of
                            NONE => str "NONE"
                          | SOME i => Int.layout i),
