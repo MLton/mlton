@@ -6,8 +6,8 @@ AllocateVariables
 
 == Description ==
 
-Computes an allocation of <:RSSA:> variables as <:Machine:> temporaries
-or stack operands.
+Computes an allocation of <:RSSA:> variables as <:Machine:> temporary
+or stack-offset operands.
 
 == Implementation ==
 
