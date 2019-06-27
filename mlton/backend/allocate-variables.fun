@@ -150,7 +150,7 @@ structure Allocation:
              end
           val get =
              Trace.trace2
-             ("AllocateTemporaries.Allocation.Stack.get",
+             ("AllocateVariables.Allocation.Stack.get",
               layout, Type.layout,
               Layout.tuple2 (layout, fn {offset} =>
                              Layout.record [("offset", Bytes.layout offset)]))
@@ -323,7 +323,7 @@ fun allocate {function = f: Rssa.Function.t,
        * Decide which variables will live in stack slots and which
        * will live in temporaries.
        * Initially,
-       *   - all variables are put in a temporaries.
+       *   - all variables are put in a temporary.
        * Variables get moved to the stack if they are
        *   - live at the beginning of a Cont block; such variables are
        *     live while the frame is suspended during a non-tail call
@@ -391,28 +391,28 @@ fun allocate {function = f: Rssa.Function.t,
          end
       val allocateVar =
          Trace.trace2
-         ("AllocateTemporaries.allocateVar", Var.layout, Allocation.layout, Unit.layout)
+         ("AllocateVariables.allocateVar", Var.layout, Allocation.layout, Unit.layout)
          allocateVar
       fun getOperand (x: Var.t): Operand.t =
          case #operand (varInfo x) of
-            NONE => Error.bug (concat ["AllocatTemporaries.getOperand: ",
+            NONE => Error.bug (concat ["AllocateVariables.getOperand: ",
                                        "#operand (varInfo ",
                                        Var.toString x, ") = NONE"])
           | SOME r =>
                (case !r of
-                   NONE => Error.bug (concat ["AllocatTemporaries.getOperand: ",
+                   NONE => Error.bug (concat ["AllocateVariables.getOperand: ",
                                               "! (valOf (#operand (varInfo ",
                                               Var.toString x, "))) = NONE"])
                  | SOME oper => oper)
       val getOperand =
          Trace.trace
-         ("AllocateTemporaries.getOperand", Var.layout, Operand.layout)
+         ("AllocateVariables.getOperand", Var.layout, Operand.layout)
          getOperand
       fun getOperands (xs: Var.t vector): Operand.t vector =
          Vector.map (xs, getOperand)
       val getOperands =
          Trace.trace
-         ("AllocateTemporaries.getOperands",
+         ("AllocateVariables.getOperands",
           Vector.layout Var.layout, Vector.layout Operand.layout)
          getOperands
       val {get = labelInfo: R.Label.t -> Info.t, set = setLabelInfo, ...} =
@@ -420,7 +420,7 @@ fun allocate {function = f: Rssa.Function.t,
                               Property.initRaise ("labelInfo", R.Label.layout))
       val setLabelInfo =
          Trace.trace2
-         ("AllocateTemporaries.setLabelInfo",
+         ("AllocateVariables.setLabelInfo",
           R.Label.layout, Info.layout, Unit.layout)
          setLabelInfo
 
@@ -541,7 +541,7 @@ fun allocate {function = f: Rssa.Function.t,
                 case kind of
                    Kind.Handler =>
                       (case handlersInfo of
-                          NONE => Error.bug "AllocateTemporaries.allocate: Handler with no handler offset"
+                          NONE => Error.bug "AllocateVariables.allocate: Handler with no handler offset"
                         | SOME {handlerOffset, ...} =>
                              Bytes.+ (handlerOffset, Runtime.labelSize ()))
                  | _ =>
@@ -555,7 +555,7 @@ fun allocate {function = f: Rssa.Function.t,
                                                            Control.Align4 => Bytes.inWord32
                                                          | Control.Align8 => Bytes.inWord64)})
                    then ()
-                else Error.bug (concat ["AllocateTemporaries.allocate: ",
+                else Error.bug (concat ["AllocateVariables.allocate: ",
                                         "bad size ",
                                         Bytes.toString size,
                                         " in ", Label.toString label])
@@ -621,7 +621,7 @@ fun allocate {function = f: Rssa.Function.t,
 
 val allocate = 
    Trace.trace
-   ("AllocateTemporaries.allocate",
+   ("AllocateVariables.allocate",
     fn {function, ...} => Func.layout (Function.name function),
     Layout.ignore)
    allocate
