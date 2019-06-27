@@ -198,7 +198,7 @@
                 if (mustReturnToSelf                                            \
                     || (mayReturnToSelf && (nextChunk == selfChunk))) {         \
                         SwitchNextBlock();                                      \
-                } else if (mustReturnToOther) {                                 \
+                } else if ((void*)mustReturnToOther != NULL) {                  \
                         LeaveChunk((*mustReturnToOther), nextBlock);            \
                 } else {                                                        \
                         LeaveChunk((*nextChunk), nextBlock);                    \
