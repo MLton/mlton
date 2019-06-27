@@ -554,10 +554,10 @@ and getOperandValue (cxt, operand) =
           | Operand.Null => ("", "i8*", "null")
           | Operand.Offset _ => loadOperand ()
           | Operand.Real real => ("", (llrs o RealX.size) real, RealX.toString (real, {suffix = false}))
-          | Operand.Temporary  _ => loadOperand ()
           | Operand.SequenceOffset _ => loadOperand ()
           | Operand.StackOffset _ => loadOperand ()
           | Operand.StackTop => loadOperand()
+          | Operand.Temporary  _ => loadOperand ()
           | Operand.Word word => ("", (llws o WordX.size) word, llwordx word)
     end
 

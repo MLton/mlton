@@ -215,28 +215,6 @@ struct
                       size = size}, size), offset + amd64.Size.toBytes size))
                end
           | Real _ => Error.bug "amd64Translate.Operand.toAMD64Operand: Real unimplemented"
-          | Temporary t =>
-               let
-                  val ty = Machine.Type.toCType (Temporary.ty t)
-                  val index = Machine.Temporary.index t
-                  val base = amd64.Immediate.label (amd64MLton.local_base ty)
-                  val origin =
-                     amd64.MemLoc.imm
-                     {base = base,
-                      index = amd64.Immediate.int index,
-                      scale = amd64.Scale.fromCType ty,
-                      size = amd64.Size.BYTE,
-                      class = amd64MLton.Classes.Locals}
-                  val sizes = amd64.Size.fromCType ty
-               in
-                  (#1 o Vector.mapAndFold)
-                  (sizes, 0, fn (size,offset) =>
-                   (((amd64.Operand.memloc o amd64.MemLoc.shift)
-                     {origin = origin,
-                      disp = amd64.Immediate.int offset,
-                      scale = amd64.Scale.One,
-                      size = size}, size), offset + amd64.Size.toBytes size))
-               end
           | StackOffset (StackOffset.T {offset, ty}) =>
                let
                   val offset = Bytes.toInt offset
@@ -263,6 +241,28 @@ struct
                   val stackTop = amd64MLton.gcState_stackTopContentsOperand ()
                in
                   Vector.new1 (stackTop, valOf (amd64.Operand.size stackTop))
+               end
+          | Temporary t =>
+               let
+                  val ty = Machine.Type.toCType (Temporary.ty t)
+                  val index = Machine.Temporary.index t
+                  val base = amd64.Immediate.label (amd64MLton.local_base ty)
+                  val origin =
+                     amd64.MemLoc.imm
+                     {base = base,
+                      index = amd64.Immediate.int index,
+                      scale = amd64.Scale.fromCType ty,
+                      size = amd64.Size.BYTE,
+                      class = amd64MLton.Classes.Locals}
+                  val sizes = amd64.Size.fromCType ty
+               in
+                  (#1 o Vector.mapAndFold)
+                  (sizes, 0, fn (size,offset) =>
+                   (((amd64.Operand.memloc o amd64.MemLoc.shift)
+                     {origin = origin,
+                      disp = amd64.Immediate.int offset,
+                      scale = amd64.Scale.One,
+                      size = size}, size), offset + amd64.Size.toBytes size))
                end
           | Word w =>
                let

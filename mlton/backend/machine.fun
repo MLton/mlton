@@ -269,11 +269,11 @@ structure Operand =
              | (Contents {oper, ...}, _) => inter oper
              | (Global g, Global g') => Global.equals (g, g')
              | (Offset {base, ...}, _) => inter base
-             | (Temporary t, Temporary t') => Temporary.equals (t, t')
              | (SequenceOffset {base, index, ...}, _) =>
                   inter base orelse inter index
              | (StackOffset so, StackOffset so') =>
                   StackOffset.interfere (so, so')
+             | (Temporary t, Temporary t') => Temporary.equals (t, t')
              | _ => false
          end
 
