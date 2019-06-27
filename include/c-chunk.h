@@ -74,7 +74,23 @@
 /*  ChunkSwitch                                      */
 /* ------------------------------------------------- */
 
-#define ChunkSwitch                             \
+#if JumpTable
+
+#define ChunkSwitch(firstIndex, length)         \
+                static const uintptr_t nextLabelsBias = firstIndex; \
+                static const void* nextLabels[length] = {
+
+#define ChunkSwitchCase(index, label)           \
+                &&label,
+
+#define EndChunkSwitch                          \
+                };                              \
+                doSwitchNextBlock:              \
+                goto *nextLabels[nextBlock - nextLabelsBias];
+
+#else
+
+#define ChunkSwitch(firstIndex, length)         \
                 doSwitchNextBlock:              \
                 switch (nextBlock) {
 
@@ -85,6 +101,8 @@
                 default:                        \
                         Unreachable();          \
                 } /* end switch (nextBlock) */
+
+#endif
 
 #define SwitchNextBlock()                       \
                 if (DEBUG_CCODEGEN)             \

@@ -1189,17 +1189,32 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
             ; C.callNoSemi ("Chunk", [chunkLabelIndexAsString chunkLabel], print); print "\n"
             ; declareCReturns (); print "\n"
             ; declareRegisters (); print "\n"
-            ; print "ChunkSwitch\n"
-            ; Vector.foreach (blocks, fn Block.T {kind, label, ...} =>
-                              if Kind.isEntry kind
-                                 then (C.callNoSemi ("ChunkSwitchCase",
-                                                     [labelIndexAsString (label, {pretty = false}),
-                                                      Label.toString label],
-                                                     print)
-                                       ; print "\n"
-                                       ; visit label)
-                              else ())
-            ; print "EndChunkSwitch\n\n"
+            ; let
+                 val entries = ref []
+                 val () =
+                    Vector.foreach
+                    (blocks, fn Block.T {kind, label, ...} =>
+                     if Kind.isEntry kind
+                        then (List.push (entries, (label, valOf (labelIndex label)))
+                              ; visit label)
+                        else ())
+                 val entries = List.insertionSort (!entries, fn ((_, i1), (_, i2)) => i1 <= i2)
+              in
+                 C.callNoSemi ("ChunkSwitch",
+                               [C.int (#2 (List.first entries)),
+                                C.int (List.length entries)],
+                               print)
+                 ; print "\n"
+                 ; List.foreach
+                   (entries, fn (label, index) =>
+                    (C.callNoSemi ("ChunkSwitchCase",
+                                   [C.int index,
+                                    Label.toString label],
+                                   print)
+                     ; print "\n"
+                     ; visit label))
+                 ; print "EndChunkSwitch\n\n"
+              end
             ; List.foreach (List.rev (!dfsBlocks), outputBlock)
             ; print "EndChunk\n\n"
          end
@@ -1217,9 +1232,12 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                 print (concat ["#define ", name, " ",
                                Bytes.toString (GCField.offset f), "\n"]))
          in
-            (print "#define TailCall "
-             ; print (C.bool (!Control.chunkTailCall))
-             ; print "\n")
+            print "#define JumpTable "
+            ; print (C.bool (!Control.chunkJumpTable))
+            ; print "\n"
+            ; print "#define TailCall "
+            ; print (C.bool (!Control.chunkTailCall))
+            ; print "\n"
             ; outputIncludes (["c-chunk.h"], print); print "\n"
             ; outputOffsets (); print "\n"
             ; declareGlobals ("PRIVATE extern ", print); print "\n"
