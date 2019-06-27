@@ -375,11 +375,11 @@ fun callReturn () =
         val ptrsize = (llbytes o Bits.toBytes o Control.Target.Size.cpointer) ()
         val ptr = nextLLVMTemp ()
         val gep = mkgep (ptr, "%CPointer", stacktop, [("i32", "-" ^ ptrsize)])
-        val castreg = nextLLVMTemp ()
-        val cast = mkconv (castreg, "bitcast", "%CPointer", ptr, "%uintptr_t*")
-        val loadreg = nextLLVMTemp ()
-        val loadofs = mkload (loadreg, "%uintptr_t*", castreg)
-        val store = mkstore ("%uintptr_t", loadreg, "%nextBlock")
+        val casttemp = nextLLVMTemp ()
+        val cast = mkconv (casttemp, "bitcast", "%CPointer", ptr, "%uintptr_t*")
+        val loadtemp = nextLLVMTemp ()
+        val loadofs = mkload (loadtemp, "%uintptr_t*", casttemp)
+        val store = mkstore ("%uintptr_t", loadtemp, "%nextBlock")
         val br = "\tbr label %doSwitchNextBlock\n"
     in
         concat [loadst, gep, cast, loadofs, store, br]
@@ -860,25 +860,25 @@ fun outputPrimApp (cxt, p) =
                          | Word_ror _ => SOME (typeOfArg0 ())
                          | _ => NONE
         val operands = Vector.map (args, fn opr => getOperandValue (cxt, opr))
-        val (arg0pre, arg0ty, arg0reg) = getArg (operands, 0)
+        val (arg0pre, arg0ty, arg0temp) = getArg (operands, 0)
         val (arg1pre, _, arg1) = getArg (operands, 1)
-        val (cast, arg1reg) = case castArg1 of
-                                  SOME ty =>
-                                  let
-                                      val temp = nextLLVMTemp ()
-                                      val opr = case WordSize.prim ty of
-                                                    WordSize.W8 => "trunc"
-                                                  | WordSize.W16 => "trunc"
-                                                  | WordSize.W32 => "bitcast"
-                                                  | WordSize.W64 => "zext"
-                                      val inst = mkconv (temp, opr, "%Word32", arg1, llws ty)
-                                  in
-                                      (inst, temp)
-                                  end
-                                | NONE => ("", arg1)
-        val (arg2pre, _, arg2reg) = getArg (operands, 2)
+        val (cast, arg1temp) = case castArg1 of
+                                   SOME ty =>
+                                   let
+                                       val temp = nextLLVMTemp ()
+                                       val opr = case WordSize.prim ty of
+                                                     WordSize.W8 => "trunc"
+                                                   | WordSize.W16 => "trunc"
+                                                   | WordSize.W32 => "bitcast"
+                                                   | WordSize.W64 => "zext"
+                                       val inst = mkconv (temp, opr, "%Word32", arg1, llws ty)
+                                   in
+                                       (inst, temp)
+                                   end
+                                 | NONE => ("", arg1)
+        val (arg2pre, _, arg2temp) = getArg (operands, 2)
         val temp = nextLLVMTemp ()
-        val (inst, _) = outputPrim (prim, temp, arg0ty, arg0reg, arg1reg, arg2reg)
+        val (inst, _) = outputPrim (prim, temp, arg0ty, arg0temp, arg1temp, arg2temp)
         val storeDest =
             case dst of
                 NONE => ""
@@ -900,9 +900,9 @@ fun outputStatement (cxt: Context, stmt: Statement.t): string =
             case stmt of
                 Statement.Move {dst, src} =>
                 let
-                    val (srcpre, _, srcreg) = getOperandValue (cxt, src)
-                    val (dstpre, dstty, dstreg) = getOperandAddr (cxt, dst)
-                    val store = mkstore (dstty, srcreg, dstreg)
+                    val (srcpre, _, srctemp) = getOperandValue (cxt, src)
+                    val (dstpre, dstty, dsttemp) = getOperandAddr (cxt, dst)
+                    val store = mkstore (dstty, srctemp, dsttemp)
                 in
                     concat [srcpre, dstpre, store]
                 end
@@ -925,9 +925,9 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                 val load = mkload (stackTop, "%CPointer*", "%stackTop")
                 val gepTemp = nextLLVMTemp ()
                 val gep = mkgep (gepTemp, "%CPointer", stackTop, [("i32", offset)])
-                val castreg = nextLLVMTemp ()
-                val cast = mkconv (castreg, "bitcast", "%CPointer", gepTemp, "%uintptr_t*")
-                val storeIndex = mkstore ("%uintptr_t", frameIndex, castreg)
+                val casttemp = nextLLVMTemp ()
+                val cast = mkconv (casttemp, "bitcast", "%CPointer", gepTemp, "%uintptr_t*")
+                val storeIndex = mkstore ("%uintptr_t", frameIndex, casttemp)
                 val pushcode = stackPush (llbytes size)
             in
                 concat [load, gep, cast, storeIndex, pushcode]
@@ -1097,12 +1097,12 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
             let
                 val comment = "\t; Raise\n"
                 (* StackTop = StackBottom + ExnStack *)
-                val (sbpre, sbreg) = offsetGCState (GCField.StackBottom, "%CPointer*")
+                val (sbpre, sbtemp) = offsetGCState (GCField.StackBottom, "%CPointer*")
                 val stackBottom = nextLLVMTemp ()
-                val loadStackBottom = mkload (stackBottom, "%CPointer*", sbreg)
-                val (espre, esreg) = offsetGCState (GCField.ExnStack, "i32*")
+                val loadStackBottom = mkload (stackBottom, "%CPointer*", sbtemp)
+                val (espre, estemp) = offsetGCState (GCField.ExnStack, "i32*")
                 val exnStack = nextLLVMTemp ()
-                val loadExnStack = mkload (exnStack, "i32*", esreg)
+                val loadExnStack = mkload (exnStack, "i32*", estemp)
                 val sum = nextLLVMTemp ()
                 val gep = mkgep (sum, "%CPointer", stackBottom, [("i32", exnStack)])
                 val store = mkstore ("%CPointer", sum, "%stackTop")
@@ -1114,7 +1114,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
           | Transfer.Switch switch =>
             let
                 val Switch.T {cases, default, test, ...} = switch
-                val (testpre, testty, testreg) = getOperandValue (cxt, test)
+                val (testpre, testty, testtemp) = getOperandValue (cxt, test)
                 val (default, extra) =
                    case default of
                       SOME d => (d, "")
@@ -1128,7 +1128,7 @@ fun outputTransfer (cxt, transfer, sourceLabel) =
                               end
             in
                concat [comment, testpre,
-                       "\tswitch ", testty, " ", testreg,
+                       "\tswitch ", testty, " ", testtemp,
                        ", label %", Label.toString default, " [\n",
                        String.concatV
                        (Vector.map
@@ -1163,9 +1163,9 @@ fun outputBlock (cxt, block) =
                                                val load = mkload (temp, llvmTy ^ "*",
                                                                   "%CReturn" ^
                                                                   CType.name (Type.toCType ty))
-                                               val (dstpre, dstty, dstreg) =
+                                               val (dstpre, dstty, dsttemp) =
                                                    getOperandAddr (cxt, xop)
-                                               val store = mkstore (dstty, temp, dstreg)
+                                               val store = mkstore (dstty, temp, dsttemp)
                                            in
                                                concat [dstpre, load, store]
                                            end
