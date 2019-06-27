@@ -67,8 +67,8 @@ ssa2-to-rssa.fun
 machine.sig
 machine.fun
 
-allocate-registers.sig
-allocate-registers.fun
+allocate-variables.sig
+allocate-variables.fun
 equivalence-graph.sig
 equivalence-graph.fun
 chunkify.sig

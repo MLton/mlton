@@ -39,9 +39,10 @@ fun shouldAvoid (Block.T {kind, ...}) =
       | _ => false
 
 fun shouldBounceAt (Block.T {kind, ...}) =
-   (* This is based on the allocate
-    * registers choice, of which variables
-    * go to the stack, and similarly,
+   (* This is based on the choice
+    * made by AllocateVariables of
+    * which variables go to the stack,
+    * and similarly to above,
     * cannot be frivolously changed *)
    case Kind.frameStyle kind of
         Kind.OffsetsAndSize => true

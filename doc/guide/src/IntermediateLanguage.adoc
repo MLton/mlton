@@ -10,4 +10,4 @@ MLton uses a number of intermediate languages in translating from the input sour
  * <:SSA:>.  SimplyTyped, <:FirstOrder:>.
  * <:SSA2:>.  SimplyTyped, <:FirstOrder:>.
  * <:RSSA:>.  Explicit data representations.
- * <:Machine:>.  Untyped register transfer language.
+ * <:Machine:>.  Untyped abstract machine.
