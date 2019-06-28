@@ -51,6 +51,11 @@ val mltypes =
 \%CPointer = type i8*\n\
 \%Objptr = type i8*\n"
 
+val chunkfntypes = "\
+\%ChunkFn_t = type %uintptr_t(%CPointer,%CPointer,%CPointer,%uintptr_t)\n\
+\%ChunkFnPtr_t = type %ChunkFn_t*\n\
+\%ChunkFnPtrArr_t = type [0 x %ChunkFnPtr_t]\n"
+
 val llvmIntrinsics =
 "declare float @llvm.sqrt.f32(float %Val)\n\
 \declare double @llvm.sqrt.f64(double %Val)\n\
@@ -1195,6 +1200,7 @@ fun outputLLVMDeclarations print =
                           end))
     in
         print (concat [llvmIntrinsics, "\n", mltypes, "\n", ctypes (),
+                       "\n", chunkfntypes,
                        "\n", globals, "\n"])
     end
 
@@ -1250,12 +1256,12 @@ fun outputChunkFn (cxt, chunk, print) =
                         then let
                                 val chkFnPtrPtrReg = nextLLVMReg ()
                                 val () = print (concat ["\t", chkFnPtrPtrReg, " = getelementptr inbounds ",
-                                                        "[0 x %uintptr_t(%CPointer,%CPointer,%CPointer,%uintptr_t)*], ",
-                                                        "[0 x %uintptr_t(%CPointer,%CPointer,%CPointer,%uintptr_t)*]* @nextChunks, ",
+                                                        "%ChunkFnPtrArr_t, ",
+                                                        "%ChunkFnPtrArr_t* @nextChunks, ",
                                                         "i64 0, ",
                                                         "%uintptr_t ", nextBlockReg, "\n"])
                                 val chkFnPtrReg = nextLLVMReg ()
-                                val () = print (mkload (chkFnPtrReg, "%uintptr_t(%CPointer,%CPointer,%CPointer,%uintptr_t)**", chkFnPtrPtrReg))
+                                val () = print (mkload (chkFnPtrReg, "%ChunkFnPtr_t*", chkFnPtrPtrReg))
                                 val stackTopArg = nextLLVMReg ()
                                 val frontierArg = nextLLVMReg ()
                                 val () = print (mkload (stackTopArg, "%CPointer*", "%stackTop"))
@@ -1305,7 +1311,7 @@ fun outputChunks (cxt, chunks,
                     val Program.T {chunks, ...} = program
                  in
                     List.foreach (chunks, declareChunk)
-                    ; print "@nextChunks = external hidden global [0 x %uintptr_t(%CPointer,%CPointer,%CPointer,%uintptr_t)*]\n"
+                    ; print "@nextChunks = external hidden global %ChunkFnPtrArr_t\n"
                     ; print "\n\n"
                  end
         val () = List.foreach (chunks, fn chunk => outputChunkFn (cxt, chunk, print))
