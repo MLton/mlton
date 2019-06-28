@@ -894,6 +894,44 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
             fun outputTransfer t =
                let
                   datatype z = datatype Transfer.t
+                  fun rtrans (name, rsTo) =
+                     let
+                        fun isSelf c = ChunkLabel.equals (chunkLabel, c)
+                        val rsTo =
+                           List.fold
+                           (rsTo, [], fn (l, cs) =>
+                            let
+                               val c = labelChunk l
+                            in
+                               if List.exists (cs, fn c' => ChunkLabel.equals (c, c'))
+                                  then cs
+                                  else c::cs
+                            end)
+                        val mayRToSelf = List.exists (rsTo, isSelf)
+                        val (mustRToSelf, mustRToOther) =
+                           case List.revKeepAll (rsTo, not o isSelf) of
+                              [] => (true, NONE)
+                            | c::rsTo =>
+                                 (false,
+                                  List.fold (rsTo, SOME c, fn (c', co) =>
+                                             case co of
+                                                NONE => NONE
+                                              | SOME c => if ChunkLabel.equals (c, c')
+                                                             then SOME c
+                                                             else NONE))
+                     in
+                        print "\t"
+                        ; C.call (name,
+                                  [C.bool mustRToSelf,
+                                   C.bool mayRToSelf,
+                                   case mustRToOther of
+                                      NONE => "(ChunkFnPtr_t)NULL"
+                                    | SOME otherChunk =>
+                                         concat ["Chunkp (",
+                                                 chunkLabelIndexAsString otherChunk,
+                                                 ")"]],
+                                  print)
+                     end
                in
                   case t of
                      CCall {func =
@@ -995,80 +1033,8 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                            print)
                         end
                    | Goto dst => gotoLabel (dst, {tab = true})
-                   | Raise {raisesTo} =>
-                        let
-                           fun isSelf c = ChunkLabel.equals (chunkLabel, c)
-                           val raisesTo =
-                              List.fold
-                              (raisesTo, [], fn (l, cs) =>
-                               let
-                                  val c = labelChunk l
-                               in
-                                  if List.exists (cs, fn c' => ChunkLabel.equals (c, c'))
-                                     then cs
-                                     else c::cs
-                               end)
-                           val mayRaiseToSelf = List.exists (raisesTo, isSelf)
-                           val (mustRaiseToSelf, mustRaiseToOther) =
-                              case List.revKeepAll (raisesTo, not o isSelf) of
-                                 [] => (true, NONE)
-                               | c::raisesTo =>
-                                    (false,
-                                     List.fold (raisesTo, SOME c, fn (c', co) =>
-                                                case co of
-                                                   NONE => NONE
-                                                 | SOME c => if ChunkLabel.equals (c, c')
-                                                                then SOME c
-                                                                else NONE))
-                        in
-                           C.call ("\tRaise",
-                                   [C.bool mustRaiseToSelf,
-                                    C.bool mayRaiseToSelf,
-                                    case mustRaiseToOther of
-                                       NONE => "(ChunkFnPtr_t)NULL"
-                                     | SOME otherChunk =>
-                                          concat ["Chunkp (",
-                                                  chunkLabelIndexAsString otherChunk,
-                                                  ")"]],
-                                   print)
-                        end
-                   | Return {returnsTo} =>
-                        let
-                           fun isSelf c = ChunkLabel.equals (chunkLabel, c)
-                           val returnsTo =
-                              List.fold
-                              (returnsTo, [], fn (l, cs) =>
-                               let
-                                  val c = labelChunk l
-                               in
-                                  if List.exists (cs, fn c' => ChunkLabel.equals (c, c'))
-                                     then cs
-                                     else c::cs
-                               end)
-                           val mayReturnToSelf = List.exists (returnsTo, isSelf)
-                           val (mustReturnToSelf, mustReturnToOther) =
-                              case List.revKeepAll (returnsTo, not o isSelf) of
-                                 [] => (true, NONE)
-                               | c::returnsTo =>
-                                    (false,
-                                     List.fold (returnsTo, SOME c, fn (c', co) =>
-                                                case co of
-                                                   NONE => NONE
-                                                 | SOME c => if ChunkLabel.equals (c, c')
-                                                                then SOME c
-                                                                else NONE))
-                        in
-                           C.call ("\tReturn",
-                                   [C.bool mustReturnToSelf,
-                                    C.bool mayReturnToSelf,
-                                    case mustReturnToOther of
-                                       NONE => "(ChunkFnPtr_t)NULL"
-                                     | SOME otherChunk =>
-                                          concat ["Chunkp (",
-                                                  chunkLabelIndexAsString otherChunk,
-                                                  ")"]],
-                                   print)
-                        end
+                   | Raise {raisesTo} => rtrans ("Raise", raisesTo)
+                   | Return {returnsTo} => rtrans ("Return", returnsTo)
                    | Switch switch =>
                         let
                            val Switch.T {cases, default, test, ...} = switch
