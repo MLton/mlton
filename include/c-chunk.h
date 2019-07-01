@@ -44,15 +44,15 @@
 /* Chunk                                             */
 /* ------------------------------------------------- */
 
-#define Chunk(n)                                \
-        PRIVATE uintptr_t ChunkName(n)(UNUSED CPointer gcState, UNUSED CPointer stackTop, UNUSED CPointer frontier, uintptr_t nextBlock) { \
-                UNUSED static const ChunkFnPtr_t selfChunk = Chunkp(n); \
+#define DefineChunk(chunkName)                  \
+        PRIVATE uintptr_t chunkName(UNUSED CPointer gcState, UNUSED CPointer stackTop, UNUSED CPointer frontier, uintptr_t nextBlock) { \
+                UNUSED static const ChunkFnPtr_t selfChunk = &(chunkName); \
                 if (DEBUG_CCODEGEN)             \
-                        fprintf (stderr, "%s:%d: Chunk%d(nextBlock = %d)\n", \
-                                        __FILE__, __LINE__, n, (int)nextBlock); \
+                        fprintf (stderr, "%s:%d: %s(nextBlock = %d)\n", \
+                                        __FILE__, __LINE__, #chunkName, (int)nextBlock); \
                 SwitchNextBlock();
 
-#define EndChunk                                \
+#define EndDefineChunk                          \
         } /* end chunk */
 
 #define LeaveChunk(nextChunk, nextBlock)        \
@@ -183,9 +183,9 @@
 #define FarCall(nextChunk, nextBlock)           \
         do {                                    \
                 if (DEBUG_CCODEGEN)             \
-                        fprintf (stderr, "%s:%d: FarCall(%d, %d)\n", \
-                                        __FILE__, __LINE__, (int)nextChunk, (int)nextBlock); \
-                LeaveChunk(ChunkName(nextChunk), nextBlock); \
+                        fprintf (stderr, "%s:%d: FarCall(%s, %d)\n", \
+                                        __FILE__, __LINE__, #nextChunk, (int)nextBlock); \
+                LeaveChunk(nextChunk, nextBlock); \
         } while (0)
 
 #define Return(mustReturnToSelf,mayReturnToSelf,mustReturnToOther)              \

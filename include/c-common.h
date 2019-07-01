@@ -19,8 +19,4 @@
 typedef uintptr_t ChunkFn_t (CPointer, CPointer, CPointer, uintptr_t);
 typedef ChunkFn_t *ChunkFnPtr_t;
 
-#define ChunkName(n) Chunk ## n
-
-#define Chunkp(n) &(ChunkName(n))
-
 #endif /* #ifndef _C_COMMON_H_ */

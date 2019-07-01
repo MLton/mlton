@@ -624,12 +624,11 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
          end
       val chunkLabelIndex = #index o chunkLabelInfo
       val chunkLabelIndexAsString = C.int o chunkLabelIndex
+      fun chunkName c = concat ["Chunk", chunkLabelIndexAsString c]
 
-      fun declareChunk (chunkLabel, print) =
+      fun declareChunk (chunkLabel, print: string -> unit) =
          (print "PRIVATE extern ChunkFn_t "
-          ; C.callNoSemi ("ChunkName",
-                          [chunkLabelIndexAsString chunkLabel],
-                          print)
+          ; print (chunkName chunkLabel)
           ; print ";\n")
       fun defineNextChunks print =
          (List.foreach (chunks, fn Chunk.T {chunkLabel, ...} =>
@@ -639,21 +638,15 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
           ; print "] = {\n"
           ; Vector.foreachi
             (nextChunks, fn (i, label) =>
-             let
-                val {chunkLabel, ...} = labelInfo label
-             in
-                print "\t"
-                ; print "/* "
-                ; print (C.int i)
-                ; print ": */ "
-                ; print "/* "
-                ; print (Label.toString label)
-                ; print " */ "
-                ; C.callNoSemi ("Chunkp",
-                                [chunkLabelIndexAsString chunkLabel],
-                                print)
-                ; print ",\n"
-             end)
+             (print "\t"
+              ; print "/* "
+              ; print (C.int i)
+              ; print ": */ "
+              ; print "/* "
+              ; print (Label.toString label)
+              ; print " */ &("
+              ; print (chunkName (labelChunk label))
+              ; print "),\n"))
           ; print "};\n")
       fun declareNextChunks (chunks, print) =
          let
@@ -929,9 +922,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                    case mustRToOther of
                                       NONE => "(ChunkFnPtr_t)NULL"
                                     | SOME otherChunk =>
-                                         concat ["Chunkp (",
-                                                 chunkLabelIndexAsString otherChunk,
-                                                 ")"]],
+                                         concat ["&(", chunkName otherChunk, ")"]],
                                   print)
                      end
                in
@@ -1030,7 +1021,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                            [Label.toString label],
                                            print)
                               else C.call ("\tFarCall",
-                                           [chunkLabelIndexAsString dstChunk,
+                                           [chunkName dstChunk,
                                             labelIndexAsString (label, {pretty = true})],
                                            print)
                         end
@@ -1154,7 +1145,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                end
          in
             declareProfileLabels ()
-            ; C.callNoSemi ("Chunk", [chunkLabelIndexAsString chunkLabel], print); print "\n"
+            ; C.callNoSemi ("DefineChunk", [chunkName chunkLabel], print); print "\n"
             ; declareCReturns (); print "\n"
             ; declareRegisters (); print "\n"
             ; let
@@ -1184,7 +1175,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                  ; print "EndChunkSwitch\n\n"
               end
             ; List.foreach (List.rev (!dfsBlocks), outputBlock)
-            ; print "EndChunk\n\n"
+            ; print "EndDefineChunk\n\n"
          end
 
       fun outputChunks chunks =
