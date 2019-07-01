@@ -1427,9 +1427,11 @@ fun transC (cxt, outputC) =
       fun defineNextChunks print =
          (List.foreach
           (chunks, fn Chunk.T {chunkLabel, ...} =>
-           C.call ("DeclareChunk",
-                   [chunkLabelIndexAsString chunkLabel],
-                   print))
+           (print "PRIVATE extern ChunkFn_t "
+            ; C.callNoSemi ("ChunkName",
+                            [chunkLabelIndexAsString chunkLabel],
+                            print)
+            ; print ";\n"))
           ; print "PRIVATE ChunkFnPtr_t nextChunks["
           ; print (C.int (Vector.length nextChunks))
           ; print "] = {\n"

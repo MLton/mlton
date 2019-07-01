@@ -626,9 +626,11 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
       val chunkLabelIndexAsString = C.int o chunkLabelIndex
 
       fun declareChunk (chunkLabel, print) =
-         C.call ("DeclareChunk",
-                 [chunkLabelIndexAsString chunkLabel],
-                 print)
+         (print "PRIVATE extern ChunkFn_t "
+          ; C.callNoSemi ("ChunkName",
+                          [chunkLabelIndexAsString chunkLabel],
+                          print)
+          ; print ";\n")
       fun defineNextChunks print =
          (List.foreach (chunks, fn Chunk.T {chunkLabel, ...} =>
                         declareChunk (chunkLabel, print))

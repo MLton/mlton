@@ -21,8 +21,6 @@ typedef ChunkFn_t *ChunkFnPtr_t;
 
 #define ChunkName(n) Chunk ## n
 
-#define DeclareChunk(n) PRIVATE extern ChunkFn_t ChunkName(n);
-
 #define Chunkp(n) &(ChunkName(n))
 
 #endif /* #ifndef _C_COMMON_H_ */
