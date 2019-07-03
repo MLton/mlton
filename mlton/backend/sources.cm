@@ -40,6 +40,8 @@ backend-atoms.fun
 switch.sig
 switch.fun
 err.sml
+static.sig
+static.fun
 
 rssa-tree.sig
 rssa-tree.fun

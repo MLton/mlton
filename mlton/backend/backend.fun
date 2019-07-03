@@ -598,6 +598,7 @@ fun toMachine (rssa: Rssa.Program.t) =
          in
             get
          end
+
       fun genFunc (f: Function.t, isMain: bool): unit =
          let
             val f = eliminateDeadCode f
@@ -1106,6 +1107,15 @@ fun toMachine (rssa: Rssa.Program.t) =
               max
            end))
       val maxFrameSize = Bytes.alignWord32 maxFrameSize
+
+      (* Until statics added to rssa *)
+      val allStatics = List.map (allVectors (),
+         fn (g, v) =>
+            (g, M.Static.T
+             {data = M.Static.Vector v,
+              (* temporarily for now *)
+              header = WordXVector.fromString "",
+              location = M.Static.Heap}))
       val machine =
          M.Program.T
          {chunks = chunks,
@@ -1117,7 +1127,7 @@ fun toMachine (rssa: Rssa.Program.t) =
           objectTypes = objectTypes,
           reals = allReals (),
           sourceMaps = sourceMaps,
-          vectors = allVectors ()}
+          statics = allStatics }
    in
       machine
    end

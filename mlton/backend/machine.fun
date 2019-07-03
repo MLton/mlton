@@ -764,7 +764,7 @@ structure Program =
                          objectTypes: ObjectType.t vector,
                          reals: (Global.t * RealX.t) list,
                          sourceMaps: SourceMaps.t option,
-                         vectors: (Global.t * WordXVector.t) list}
+                         statics: (Global.t * Static.t) list}
 
       fun clear (T {chunks, sourceMaps, ...}) =
          (List.foreach (chunks, Chunk.clear)
@@ -823,7 +823,7 @@ structure Program =
 
       fun shuffle (T {chunks, frameInfos, frameOffsets,
                       handlesSignals, main, maxFrameSize,
-                      objectTypes, reals, sourceMaps, vectors}) =
+                      objectTypes, reals, sourceMaps, statics}) =
          let
             fun shuffle v =
                let
@@ -852,7 +852,7 @@ structure Program =
                objectTypes = objectTypes,
                reals = reals,
                sourceMaps = sourceMaps,
-               vectors = vectors}
+               statics = statics}
          end
 
       structure Alloc =
@@ -892,7 +892,7 @@ structure Program =
       fun typeCheck (program as
                      T {chunks, frameInfos, frameOffsets,
                         maxFrameSize, objectTypes, sourceMaps, reals,
-                        vectors, ...}) =
+                        statics, ...}) =
          let
             val (checkProfileLabel, finishCheckProfileLabel) =
                Err.check'
@@ -1008,10 +1008,10 @@ structure Program =
                         fn (t, r) => Type.equals (t, Type.real (RealX.size r)),
                         fn r => RealX.layout (r, {suffix = true}))
             val _ =
-               globals ("vector", vectors,
+               globals ("static", statics,
                         fn (t, v) =>
-                        Type.equals (t, Type.ofWordXVector v),
-                        WordXVector.layout)
+                        Type.isObjptr t,
+                        Static.layout)
             (* Check for no duplicate labels. *)
             local
                val {get, ...} =

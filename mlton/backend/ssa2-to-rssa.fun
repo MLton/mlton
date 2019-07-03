@@ -1649,6 +1649,11 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
              val start = Label.newNoname ()
              val bug = Label.newNoname ()
           in
+             (* Every global which is dynamically allocated
+              * must be allocated here.
+              *
+              * Every global which is dynamically initialized
+              * must be initialized here. *)
              translateFunction
              (S.Function.profile
               (S.Function.new

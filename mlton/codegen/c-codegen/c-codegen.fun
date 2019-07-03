@@ -243,7 +243,7 @@ fun outputDeclarations
     print: string -> unit,
     program = (Program.T
                {frameInfos, frameOffsets, maxFrameSize,
-                objectTypes, reals, sourceMaps, vectors, ...}),
+                objectTypes, reals, sourceMaps, statics, ...}),
     rest: unit -> unit
     }: unit =
    let
@@ -275,7 +275,25 @@ fun outputDeclarations
       fun declareVectors () =
          (print "BeginVectorInits\n"
           ; (List.foreach
-             (vectors, fn (g, v) =>
+             (statics, fn (g, s as Machine.Static.T {data, header, location}) =>
+             let
+                val shouldInit =
+                   (case location of
+                      Machine.Static.Heap => true
+                    | _ => false)
+                    andalso
+                   (case data of
+                       Machine.Static.Empty _ => false
+                     | _ => true)
+
+                (* Init needs adjustments
+                 * to handle headers *)
+                val v =
+                   case data of
+                      Machine.Static.Vector v => v
+                    | _ => Error.bug "CCodegen.declareVectors: Temporarily unsupported"
+
+             in
               (C.callNoSemi ("VectorInitElem",
                              [C.int (Bytes.toInt
                                      (WordSize.bytes
@@ -284,7 +302,8 @@ fun outputDeclarations
                               C.int (WordXVector.length v),
                               WordXVector.toC v],
                              print)
-                 ; print "\n")))
+                 ; print "\n")
+             end))
           ; print "EndVectorInits\n")
       fun declareReals () =
          (print "static void real_Init() {\n"

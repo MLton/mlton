@@ -254,7 +254,7 @@ signature MACHINE =
                      objectTypes: Type.ObjectType.t vector,
                      reals: (Global.t * RealX.t) list,
                      sourceMaps: SourceMaps.t option,
-                     vectors: (Global.t * WordXVector.t) list}
+                     statics: (Global.t * Static.t) list}
 
             val clearLabelNames: t -> unit
             val layouts: t * (Layout.t -> unit) -> unit
