@@ -530,6 +530,14 @@ fun mkCompile {outputC, outputLL, outputS} =
       val mlbFrontend = frontend o MLBString.fromMLBFile
       val smlFrontend = frontend o MLBString.fromSMLFile
 
+      fun regionFromLocation (file, {column, line}) =
+        let
+           val sourcePos = SourcePos.make
+              {column=column, file=file, line=line}
+        in
+           Region.make {left=sourcePos, right=sourcePos}
+        end
+
       fun mkFrontend {parse, stats, toFile, typeCheck} =
          let
             val name = #suffix toFile
@@ -541,12 +549,12 @@ fun mkCompile {outputC, outputLL, outputS} =
              {arg = input,
               doit = (fn input =>
                       case Parse.parseFile (parse (), input) of
-                         Result.Yes program => program
-                       | Result.No msg =>
+                         Parse.Yes program => program
+                       | Parse.No (msg, location) =>
                             (Control.error
-                             (Region.bogus,
+                             (regionFromLocation (input, location),
                               Layout.str (concat [name, "Parse failed"]),
-                              Layout.str msg)
+                              msg)
                              ; Control.checkForErrors ()
                              ; Error.bug "unreachable")),
               keepIL = false,

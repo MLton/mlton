@@ -16,9 +16,12 @@ signature PARSE =
             type t = {line: int, column: int}
          end
 
-      val parseFile: 'a t * File.t -> 'a Result.t
-      val parseStream: 'a t * char Stream.t -> 'a Result.t
-      val parseString: 'a t * string -> 'a Result.t
+      datatype 'a parseResult = Yes of 'a
+                              | No of Layout.t * Location.t
+
+      val parseFile: 'a t * File.t -> 'a parseResult
+      val parseStream: 'a t * char Stream.t -> 'a parseResult
+      val parseString: 'a t * string -> 'a parseResult
 
       (*
        * infix 1 <|> >>=
@@ -28,7 +31,7 @@ signature PARSE =
       val >>= : 'a t * ('a -> 'b t) -> 'b t
       val <*> : ('a -> 'b) t * 'a t -> 'b t
       val <$> : ('a -> 'b) * 'a t -> 'b t
-      (* replace the result of a parser witih a constant *)
+      (* replace the result of a parser with a constant *)
       val <$ : 'b * 'a t -> 'b t
       (* map over pairs of parsers, joining their results together *)
       val <$$> : ('a * 'b -> 'c) * ('a t * 'b t) -> 'c t
@@ -60,19 +63,12 @@ signature PARSE =
       val any: 'a t list -> 'a t
       (* matches the given character *)
       val char: char -> char t
-      (* composes two parsers in turn, the characters used for the second come
-       * from the first *)
-      val compose : char list t * 'a t -> 'a t
-      (* if the parser fails, it will fail as a cut *)
-      val cut: 'a t -> 'a t
       (* delays a stream lazily, for recursive combinations *)
       val delay: (unit -> 'a t) -> 'a t
       (* succeeds if all of the parsers succeed and combines their results *)
       val each: 'a t list -> 'a list t
       (* fail with a specified error message *)
       val fail: string -> 'a t
-      (* as fail, but also cuts at the next choice point *)
-      val failCut: string -> 'a t
       (* succeeds if and only if its argument fails to parse *)
       val failing: 'a t -> unit t
       (* return the parser representation of a given reader *)
@@ -89,6 +85,8 @@ signature PARSE =
       val manyFailing: ('a t * 'b t) -> 'a list t
       (* manyFailing, specialized to the case that p is "next" *)
       val manyCharsFailing: 'a t -> char list t
+      (* sets the parser name, to build better error messages *)
+      val named: string * 'a t -> 'a t
       (* gets the next char of input *)
       val next: char t
       (* as sat, specialized to "next" *)
@@ -114,6 +112,11 @@ signature PARSE =
       (* returns a reader representation of the parser *)
       val toReader: 'a t -> State.t -> ('a * State.t) option
 
+      (* a Standard ML comment, with support for nesting *)
+      val mlComment: char t
+      (* may contain any number of spaces or comments *)
+      val mlSpaces: char list t
+
       (* The following parsers always (and only) consume spaces before
        * performing a `char` or `str`.
        *)
@@ -136,6 +139,4 @@ signature PARSE =
       (* parse `Vector.layout` (not `Layout.vector`) *)
       val vector: 'a t -> 'a vector t
       val vectorOpt: 'a t -> 'a vector t
-
-      val skipCommentsML: char list t
    end

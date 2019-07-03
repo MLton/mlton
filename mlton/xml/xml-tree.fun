@@ -160,7 +160,7 @@ structure VarExp =
       val parse =
          let
             open Parse
-            val varExcepts = Vector.new3 ("exception", "val", "in")
+            val varExcepts = Vector.new4 ("exception", "val", "in", "fun")
          in
             T <$>
             (Var.parseExcept varExcepts >>= (fn var =>
@@ -237,7 +237,7 @@ in
                     let
                        val pre =
                           if i = 0
-                             then seq [str "val rec ", layoutTyvars tyvars]
+                             then seq [str "fun ", layoutTyvars tyvars]
                              else str "and "
                     in
                        mayAlign [maybeConstrain (pre, var, ty, str " ="),
@@ -286,7 +286,7 @@ in
                       indent (alignPrefix (cases, "| "), 2)]
             end
        | ConApp {arg, con, targs, ...} =>
-            seq [str "new ",
+            seq [str "con ",
                  Con.layout con,
                  layoutTargs targs,
                  case arg of
@@ -341,11 +341,11 @@ in
       pure {con = con, arg = arg}))
    val parseArgs = vector VarExp.parse
    fun parseDec () =
-      any
+      mlSpaces *> any
       [Exception <$>
        (kw "exception" *> parseConArg),
        Fun <$>
-       (kw "val" *> kw "rec" *>
+       (kw "fun" *>
         parseTyvars >>= (fn tyvars =>
         sepBy (Var.parse >>= (fn var =>
                sym ":" *>
@@ -384,7 +384,7 @@ in
        (VarExp.parse >>= (fn result =>
         pure {decs = [], result = result})))
    and parsePrimExp () =
-      any
+      mlSpaces *> any
       [Case <$>
        let
           fun parseCase (parseP, mk) =
@@ -408,7 +408,7 @@ in
                            parseCase (WordX.parse, fn cases => (Cases.Word (ws, cases)))))))
        end,
        ConApp <$>
-       (kw "new" *>
+       (kw "con" *>
         Con.parse >>= (fn con =>
         parseTargs >>= (fn targs =>
         optional VarExp.parse >>= (fn arg =>
@@ -436,7 +436,7 @@ in
         VarExp.parse >>= (fn exn =>
         pure {extend = Option.isSome extend, exn = exn}))),
        Select <$>
-       (spaces *> char #"#" *>
+       (mlSpaces *> char #"#" *>
         (peek (nextSat Char.isDigit) *>
          fromScan (Function.curry Int.scan StringCvt.DEC)) >>= (fn offset =>
         VarExp.parse >>= (fn tuple =>
@@ -1118,7 +1118,7 @@ structure Program =
                 pure {datatypes = Vector.fromList datatypes,
                       body = body})))
          in
-            compose (skipCommentsML, parseProgram <* (spaces *> (failing next <|> failCut "end of file")))
+            parseProgram <* (mlSpaces *> (failing next <|> fail "end of file"))
          end
 
       fun clear (T {datatypes, body, ...}) =

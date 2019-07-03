@@ -7,7 +7,7 @@ by <:ToMachine:> and used as input by the <:Codegen:>.
 == Description ==
 
 <:Machine:> is an <:Untyped:> <:IntermediateLanguage:>, corresponding
-to a abstract register machine.
+to an abstract machine with an infinite number of temporaries.
 
 == Implementation ==
 

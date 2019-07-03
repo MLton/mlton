@@ -14,7 +14,7 @@ open S
 
 structure ChunkLabel = Id (val noname = "ChunkLabel")
 
-structure Register =
+structure Temporary =
    struct
       datatype t = T of {index: int option ref,
                          ty: Type.t}
@@ -30,7 +30,7 @@ structure Register =
          let
             open Layout
          in
-            seq [str (concat ["R", Type.name ty]),
+            seq [str (concat ["T", Type.name ty]),
                  paren (case !index of
                            NONE => str "NONE"
                          | SOME i => Int.layout i),
@@ -43,7 +43,7 @@ structure Register =
       fun index (r as T {index, ...}) =
          case !index of
             NONE =>
-               Error.bug (concat ["Machine.Register: register ", 
+               Error.bug (concat ["Machine.Temporary: temporary ",
                                   toString r, " missing index"])
           | SOME i => i
 
@@ -51,7 +51,7 @@ structure Register =
          case !index of
             NONE => index := SOME i
           | SOME _ =>
-               Error.bug (concat ["Machine.Register: register ", 
+               Error.bug (concat ["Machine.Temporary: temporary ",
                                   toString r, " index already set"])
 
       fun new (ty, i) = T {index = ref i,
@@ -64,7 +64,7 @@ structure Register =
          andalso CType.equals (Type.toCType (ty r), Type.toCType (ty r'))
 
       val equals =
-         Trace.trace2 ("Machine.Register.equals", layout, layout, Bool.layout) equals
+         Trace.trace2 ("Machine.Temporary.equals", layout, layout, Bool.layout) equals
 
       val isSubtype: t * t -> bool =
          fn (T {index = i, ty = t}, T {index = i', ty = t'}) =>
@@ -173,7 +173,6 @@ structure Operand =
        | Offset of {base: t,
                     offset: Bytes.t,
                     ty: Type.t}
-       | Register of Register.t
        | Real of RealX.t
        | SequenceOffset of {base: t,
                             index: t,
@@ -182,6 +181,7 @@ structure Operand =
                             ty: Type.t}
        | StackOffset of StackOffset.t
        | StackTop
+       | Temporary of Temporary.t
        | Word of WordX.t
 
     val ty =
@@ -194,10 +194,10 @@ structure Operand =
         | Null => Type.cpointer ()
         | Offset {ty, ...} => ty
         | Real r => Type.real (RealX.size r)
-        | Register r => Register.ty r
         | SequenceOffset {ty, ...} => ty
         | StackOffset s => StackOffset.ty s
         | StackTop => Type.cpointer ()
+        | Temporary t => Temporary.ty t
         | Word w => Type.ofWordX w
 
     fun layout (z: t): Layout.t =
@@ -224,7 +224,6 @@ structure Operand =
                        tuple [layout base, Bytes.layout offset],
                        constrain ty]
              | Real r => RealX.layout (r, {suffix = true})
-             | Register r => Register.layout r
              | SequenceOffset {base, index, offset, scale, ty} =>
                   seq [str (concat ["X", Type.name ty, " "]),
                        tuple [layout base, layout index, Scale.layout scale,
@@ -232,6 +231,7 @@ structure Operand =
                        constrain ty]
              | StackOffset so => StackOffset.layout so
              | StackTop => str "<StackTop>"
+             | Temporary t => Temporary.layout t
              | Word w => WordX.layout (w, {suffix = true})
          end
 
@@ -249,11 +249,11 @@ structure Operand =
               Offset {base = b', offset = i', ...}) =>
                 equals (b, b') andalso Bytes.equals (i, i')
            | (Real r, Real r') => RealX.equals (r, r')
-           | (Register r, Register r') => Register.equals (r, r')
            | (SequenceOffset {base = b, index = i, ...},
               SequenceOffset {base = b', index = i', ...}) =>
                 equals (b, b') andalso equals (i, i')
            | (StackOffset so, StackOffset so') => StackOffset.equals (so, so')
+           | (Temporary t, Temporary t') => Temporary.equals (t, t')
            | (Word w, Word w') => WordX.equals (w, w')
            | _ => false
 
@@ -269,11 +269,11 @@ structure Operand =
              | (Contents {oper, ...}, _) => inter oper
              | (Global g, Global g') => Global.equals (g, g')
              | (Offset {base, ...}, _) => inter base
-             | (Register r, Register r') => Register.equals (r, r')
              | (SequenceOffset {base, index, ...}, _) =>
                   inter base orelse inter index
              | (StackOffset so, StackOffset so') =>
                   StackOffset.interfere (so, so')
+             | (Temporary t, Temporary t') => Temporary.equals (t, t')
              | _ => false
          end
 
@@ -283,9 +283,9 @@ structure Operand =
           | GCState => true
           | Global _ => true
           | Offset _ => true
-          | Register _ => true
           | SequenceOffset _ => true
           | StackOffset _ => true
+          | Temporary _ => true
           | _ => false
    end
 
@@ -353,7 +353,7 @@ structure Statement =
             datatype z = datatype Operand.t
             fun bytes (b: Bytes.t): Operand.t =
                Word (WordX.fromIntInf (Bytes.toIntInf b, WordSize.csize ()))
-            val temp = Register (Register.new (Type.cpointer (), NONE))
+            val temp = Temporary (Temporary.new (Type.cpointer (), NONE))
          in
             Vector.new4
             ((* *((GC_header * )frontier) = header; *)
@@ -395,29 +395,29 @@ structure Live =
    struct
       datatype t =
          Global of Global.t
-       | Register of Register.t
        | StackOffset of StackOffset.t
+       | Temporary of Temporary.t
 
       val layout: t -> Layout.t =
          fn Global g => Global.layout g
-          | Register r => Register.layout r
           | StackOffset s => StackOffset.layout s
+          | Temporary t => Temporary.layout t
 
       val equals: t * t -> bool =
          fn (Global g, Global g') => Global.equals (g, g')
-          | (Register r, Register r') => Register.equals (r, r')
           | (StackOffset s, StackOffset s') => StackOffset.equals (s, s')
+          | (Temporary t, Temporary t') => Temporary.equals (t, t')
           | _ => false
 
       val ty =
          fn Global g => Global.ty g
-          | Register r => Register.ty r
           | StackOffset s => StackOffset.ty s
+          | Temporary t => Temporary.ty t
 
       val isSubtype: t * t -> bool =
          fn (Global g, Global g') => Global.isSubtype (g, g')
-          | (Register r, Register r') => Register.isSubtype (r, r')
           | (StackOffset s, StackOffset s') => StackOffset.isSubtype (s, s')
+          | (Temporary t, Temporary t') => Temporary.isSubtype (t, t')
           | _ => false
 
       val interfere: t * t -> bool =
@@ -430,14 +430,14 @@ structure Live =
 
       val fromOperand: Operand.t -> t option =
          fn Operand.Global g => SOME (Global g)
-          | Operand.Register r => SOME (Register r)
           | Operand.StackOffset s => SOME (StackOffset s)
+          | Operand.Temporary t => SOME (Temporary t)
           | _ => NONE
 
       val toOperand: t -> Operand.t =
          fn Global g => Operand.Global g
-          | Register r => Operand.Register r
           | StackOffset s => Operand.StackOffset s
+          | Temporary t => Operand.Temporary t
    end
 
 structure Transfer =
@@ -727,7 +727,7 @@ structure Chunk =
    struct
       datatype t = T of {blocks: Block.t vector,
                          chunkLabel: ChunkLabel.t,
-                         regMax: CType.t -> int}
+                         tempsMax: CType.t -> int}
 
       local
          fun make sel (T r) = sel r
@@ -831,11 +831,11 @@ structure Program =
             val chunks = shuffle chunks
             val chunks =
                Vector.map
-               (chunks, fn Chunk.T {blocks, chunkLabel, regMax} =>
+               (chunks, fn Chunk.T {blocks, chunkLabel, tempsMax} =>
                 Chunk.T
                 {blocks = shuffle blocks,
                  chunkLabel = chunkLabel,
-                 regMax = regMax})
+                 tempsMax = tempsMax})
             val chunks = Vector.toList chunks
          in
             T {chunks = chunks,
@@ -1072,7 +1072,6 @@ structure Program =
                                                  tyconTy = tyconTy,
                                                  result = ty})))
                       | Real _ => true
-                      | Register r => Alloc.doesDefine (alloc, Live.Register r)
                       | StackOffset (so as StackOffset.T {offset, ty, ...}) =>
                            Bytes.<= (Bytes.+ (offset, Type.bytes ty), maxFrameSize)
                            andalso Alloc.doesDefine (alloc, Live.StackOffset so)
@@ -1117,6 +1116,7 @@ structure Program =
                                                          result = ty,
                                                          scale = scale})))
                       | StackTop => true
+                      | Temporary t => Alloc.doesDefine (alloc, Live.Temporary t)
                       | Word _ => true
                in
                   Err.check ("operand", ok, fn () => Operand.layout x)
