@@ -117,6 +117,11 @@ structure Global =
          andalso CType.equals (Type.toCType ty, Type.toCType ty')
    end
 
+structure Static = Static (
+   structure Global = Global
+   structure WordX = WordX
+   structure WordXVector = WordXVector)
+
 structure StackOffset =
    struct
       datatype t = T of {offset: Bytes.t,

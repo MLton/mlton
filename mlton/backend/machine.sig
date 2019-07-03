@@ -47,6 +47,9 @@ signature MACHINE =
             val numberOfType: CType.t -> int
             val ty: t -> Type.t
          end
+      structure Static: STATIC
+      sharing Static.WordX = WordX
+      sharing Static.WordXVector = WordXVector
 
       structure StackOffset:
          sig
@@ -236,6 +239,7 @@ signature MACHINE =
                      tempsMax: CType.t -> int}
             val chunkLabel: t -> ChunkLabel.t
          end
+
 
       structure Program:
          sig
