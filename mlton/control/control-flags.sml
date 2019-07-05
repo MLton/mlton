@@ -844,6 +844,11 @@ val globalizeSmallType = control {name = "globalize small type",
                                   default = 1,
                                   toString = Int.toString}
 
+val includeLLVMAliasingInfo =
+   control {name = "includeLLVMAliasingInfo",
+            default = true,
+            toString = Bool.toString}
+
 val indentation = control {name = "indentation",
                            default = 3,
                            toString = Int.toString}

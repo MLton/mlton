@@ -341,7 +341,10 @@ fun getOperScopes t =
    (operScopes, SimpleOper.fromOper t,
     Metadata.new)
 
-val mkOperScope = scopeString o getOperScopes
+fun mkOperScope oper =
+   if !Control.includeLLVMAliasingInfo
+   then scopeString (getOperScopes oper)
+   else ""
 
 (* Makes a load instruction:
  * <lhs> = load <ty>, <ty>* <arg>

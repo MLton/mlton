@@ -210,6 +210,8 @@ signature CONTROL_FLAGS =
 
       val globalizeSmallType: int ref
 
+      val includeLLVMAliasingInfo: bool ref
+
       (* Indentation used in laying out ILs. *)
       val indentation: int ref
 
