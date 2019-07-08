@@ -210,8 +210,6 @@ signature CONTROL_FLAGS =
 
       val globalizeSmallType: int ref
 
-      val includeLLVMAliasingInfo: bool ref
-
       (* Indentation used in laying out ILs. *)
       val indentation: int ref
 
@@ -264,6 +262,8 @@ signature CONTROL_FLAGS =
       
       (* name of the output library *)
       val libname : string ref
+
+      val llvmIncludeAliasingInfo: bool ref
 
       (* Limit the code growth loop unrolling/unswitching will allow. *)
       val loopUnrollLimit: int ref

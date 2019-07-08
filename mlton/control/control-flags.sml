@@ -844,11 +844,6 @@ val globalizeSmallType = control {name = "globalize small type",
                                   default = 1,
                                   toString = Int.toString}
 
-val includeLLVMAliasingInfo =
-   control {name = "includeLLVMAliasingInfo",
-            default = true,
-            toString = Bool.toString}
-
 val indentation = control {name = "indentation",
                            default = 3,
                            toString = Int.toString}
@@ -954,6 +949,11 @@ val libTargetDir = control {name = "lib target dir",
                             toString = fn s => s} 
 
 val libname = ref ""
+
+val llvmIncludeAliasingInfo =
+      control {name = "llvmIncludeAliasingInfo",
+               default = true,
+               toString = Bool.toString}
 
 val loopUnrollLimit = control {name = "loop unrolling limit",
                                 default = 150,

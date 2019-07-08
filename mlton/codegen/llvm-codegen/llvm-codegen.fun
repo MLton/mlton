@@ -342,7 +342,7 @@ fun getOperScopes t =
     Metadata.new)
 
 fun mkOperScope oper =
-   if !Control.includeLLVMAliasingInfo
+   if !Control.llvmIncludeAliasingInfo
    then scopeString (getOperScopes oper)
    else ""
 
