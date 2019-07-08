@@ -762,9 +762,9 @@ structure Program =
                                 label: Label.t},
                          maxFrameSize: Bytes.t,
                          objectTypes: ObjectType.t vector,
-                         reals: (Global.t * RealX.t) list,
+                         reals: (RealX.t * Global.t) list,
                          sourceMaps: SourceMaps.t option,
-                         statics: (Global.t * Static.t) list}
+                         statics: (Static.t * Global.t option) list}
 
       fun clear (T {chunks, sourceMaps, ...}) =
          (List.foreach (chunks, Chunk.clear)
@@ -992,25 +992,24 @@ structure Program =
             fun tyconTy (opt: ObjptrTycon.t): ObjectType.t =
                Vector.sub (objectTypes, ObjptrTycon.index opt)
             open Layout
-            fun globals (name, gs, isOk, layout) =
+            fun globals (name, gs, isOk, layoutTy, layout) =
                List.foreach
-               (gs, fn (g, s) =>
-                let
-                   val ty = Global.ty g
-                in
+               (gs, fn (data, g) =>
                    Err.check
                    (concat ["global ", name],
-                    fn () => isOk (ty, s),
-                    fn () => seq [layout s, str ": ", Type.layout ty])
-                end)
+                    fn () => isOk (g, data),
+                    fn () => seq [layout data, str ": ", layoutTy g]))
             val _ =
                globals ("real", reals,
-                        fn (t, r) => Type.equals (t, Type.real (RealX.size r)),
+                        fn (g, r) => Type.equals
+                           (Global.ty g, Type.real (RealX.size r)),
+                        Type.layout o Global.ty,
                         fn r => RealX.layout (r, {suffix = true}))
             val _ =
                globals ("static", statics,
-                        fn (t, v) =>
-                        Type.isObjptr t,
+                        fn (g, v) =>
+                           Option.forall (g, Type.isObjptr o Global.ty),
+                        Option.layout (Type.layout o Global.ty),
                         Static.layout)
             (* Check for no duplicate labels. *)
             local

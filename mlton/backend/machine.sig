@@ -252,9 +252,9 @@ signature MACHINE =
                             label: Label.t},
                      maxFrameSize: Bytes.t,
                      objectTypes: Type.ObjectType.t vector,
-                     reals: (Global.t * RealX.t) list,
+                     reals: (RealX.t * Global.t) list,
                      sourceMaps: SourceMaps.t option,
-                     statics: (Global.t * Static.t) list}
+                     statics: (Static.t * Global.t option) list}
 
             val clearLabelNames: t -> unit
             val layouts: t * (Layout.t -> unit) -> unit

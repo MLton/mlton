@@ -275,7 +275,7 @@ fun outputDeclarations
       fun declareVectors () =
          (print "BeginVectorInits\n"
           ; (List.foreach
-             (statics, fn (g, s as Machine.Static.T {data, header, location}) =>
+             (statics, fn (s as Machine.Static.T {data, header, location}, g) =>
              let
                 val shouldInit =
                    (case location of
@@ -292,22 +292,24 @@ fun outputDeclarations
                    case data of
                       Machine.Static.Vector v => v
                     | _ => Error.bug "CCodegen.declareVectors: Temporarily unsupported"
-
              in
-              (C.callNoSemi ("VectorInitElem",
+                case g of
+                     NONE => () (* Shouldn't happen yet *)
+                   | SOME g' =>
+                      (C.callNoSemi ("VectorInitElem",
                              [C.int (Bytes.toInt
                                      (WordSize.bytes
                                       (WordXVector.elementSize v))),
-                              C.int (Global.index g),
+                              C.int (Global.index g'),
                               C.int (WordXVector.length v),
                               WordXVector.toC v],
-                             print)
-                 ; print "\n")
+                             print);
+                       print "\n")
              end))
           ; print "EndVectorInits\n")
       fun declareReals () =
          (print "static void real_Init() {\n"
-          ; List.foreach (reals, fn (g, r) =>
+          ; List.foreach (reals, fn (r, g) =>
                           print (concat ["\tglobalReal",
                                          RealSize.toString (RealX.size r),
                                          "[", C.int (Global.index g), "] = ",

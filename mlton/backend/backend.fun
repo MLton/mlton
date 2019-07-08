@@ -339,10 +339,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                   (HashTable.lookupOrInsert
                    (table, value, fn () =>
                     M.Global.new (ty value)))
-               fun all () =
-                  HashTable.fold
-                  (table, [], fn ((value, global), ac) =>
-                   (global, value) :: ac)
+               fun all () = HashTable.toList table
             in
                (all, get)
             end
@@ -1110,12 +1107,12 @@ fun toMachine (rssa: Rssa.Program.t) =
 
       (* Until statics added to rssa *)
       val allStatics = List.map (allVectors (),
-         fn (g, v) =>
-            (g, M.Static.T
+         fn (v, g) =>
+            (M.Static.T
              {data = M.Static.Vector v,
               (* temporarily for now *)
               header = WordXVector.fromString "",
-              location = M.Static.Heap}))
+              location = M.Static.Heap}, SOME g))
       val machine =
          M.Program.T
          {chunks = chunks,
