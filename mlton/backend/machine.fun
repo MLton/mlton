@@ -118,7 +118,7 @@ structure Global =
    end
 
 structure Static = Static (
-   structure Global = Global
+   structure Index = Int
    structure WordX = WordX
    structure WordXVector = WordXVector)
 

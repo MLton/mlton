@@ -352,6 +352,17 @@ fun toMachine (rssa: Rssa.Program.t) =
             make {equals = WordXVector.equals,
                   hash = WordXVector.hash,
                   ty = Type.ofWordXVector}
+         (* Doesn't likely need uniquifying *)
+         val staticsRef = ref []
+         val (allStatics, globalStatic) =
+            (fn () => !staticsRef,
+             fn {static, ty} =>
+                let
+                   val g = M.Global.new ty
+                   val _ = List.push (staticsRef, (static, g))
+                in
+                   M.Operand.Global g
+                end)
       end
       fun bogusOp (t: Type.t): M.Operand.t =
          case Type.deReal t of
@@ -444,6 +455,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                                                         ty = ty}
                      else bogusOp ty
                   end
+             | Static s => globalStatic s
              | Var {var, ...} => varOperand var
          end
       fun translateOperands ops = Vector.map (ops, translateOperand)
@@ -686,6 +698,8 @@ fun toMachine (rssa: Rssa.Program.t) =
                                                       set (z, casts)
                                                  | VarOperand.Allocate _ =>
                                                       normal ())
+                                          | R.Operand.Static s =>
+                                               set (globalStatic s, casts)
                                           | _ => normal ()
                                    in
                                       loop (src, [])

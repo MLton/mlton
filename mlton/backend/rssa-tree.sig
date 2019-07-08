@@ -19,6 +19,12 @@ signature RSSA_TREE =
       structure Switch: SWITCH
       sharing Atoms = Switch
 
+
+      structure Static: STATIC
+      sharing Static.WordXVector = WordXVector
+      sharing Static.WordX = WordX
+      sharing Static.Index = Var
+
       structure Operand:
          sig
             datatype t =
@@ -35,6 +41,8 @@ signature RSSA_TREE =
                                   offset: Bytes.t,
                                   scale: Scale.t,
                                   ty: Type.t}
+             | Static of {static: Static.t,
+                          ty: Type.t}
              | Var of {ty: Type.t,
                        var: Var.t}
 

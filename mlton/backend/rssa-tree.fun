@@ -34,6 +34,11 @@ fun constrain (ty: Type.t): Layout.t =
       else empty
    end
 
+structure Static = Static (
+   structure Index = Var
+   structure WordX = WordX
+   structure WordXVector = WordXVector)
+
 structure Operand =
    struct
       datatype t =
@@ -50,6 +55,8 @@ structure Operand =
                             offset: Bytes.t,
                             scale: Scale.t,
                             ty: Type.t}
+       | Static of {static: Static.t,
+                    ty: Type.t}
        | Var of {var: Var.t,
                  ty: Type.t}
 
@@ -80,6 +87,7 @@ structure Operand =
           | ObjptrTycon _ => Type.objptrHeader ()
           | Runtime z => Type.ofGCField z
           | SequenceOffset {ty, ...} => ty
+          | Static {ty, ...} => ty
           | Var {ty, ...} => ty
 
       fun layout (z: t): Layout.t =
@@ -101,6 +109,7 @@ structure Operand =
                   seq [str (concat ["X", Type.name ty, " "]),
                        tuple [layout base, layout index, Scale.layout scale,
                               Bytes.layout offset]]
+             | Static {static, ...} => Static.layout static
              | Var {var, ...} => Var.layout var
          end
 
@@ -1617,6 +1626,7 @@ structure Program =
                                                         tyconTy = tyconTy,
                                                         result = ty,
                                                         scale = scale})
+                       | Static {ty, ...} => Type.isCPointer ty orelse Type.isObjptr ty
                        | Var {ty, var} => Type.isSubtype (varType var, ty)
                 in
                    Err.check ("operand", ok, fn () => Operand.layout x)

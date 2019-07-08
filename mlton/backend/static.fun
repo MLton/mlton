@@ -10,7 +10,7 @@ functor Static (S: STATIC_STRUCTS): STATIC =
       open S
 
       datatype elem =
-         Address of Global.t (* must be statically allocated *)
+         Address of Index.t (* must be statically allocated *)
        | Word of WordX.t (* must be pointer-sized *)
       datatype data =
          Empty of Bytes.t
@@ -37,7 +37,7 @@ functor Static (S: STATIC_STRUCTS): STATIC =
 
       val layoutElem =
          let open Layout
-         in fn Address g => Global.layout g
+         in fn Address g => Index.layout g
              | Word w => WordX.layout (w, {suffix=false})
          end
       val layoutData =
