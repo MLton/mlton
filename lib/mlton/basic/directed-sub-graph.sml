@@ -219,12 +219,12 @@ fun layoutDot (g, {edgeOptions: Edge.t -> Dot.EdgeOption.t list,
                    options,
                    title}): Layout.t =
    let
-      val c = Counter.new 0
+      val c = Counter.generator 0
       val {get = nodeId, destroy, ...} =
          Property.destGet
          (Node.plist,
           Property.initFun
-          (fn _ => concat ["n", Int.toString (Counter.next c)]))
+          (fn _ => concat ["n", Int.toString (c ())]))
       val nodes =
          List.revMap
          (nodes g,
@@ -292,10 +292,10 @@ fun foreachDescendent (g, n, f) =
 
 (* fun removeBackEdges g =
  *    let
- *       val discoverTime = Counter.new 0
+ *       val discoverTime = Counter.generator 0
  *       val {get, destroy, ...} =
  *       Property.newDest
- *       (Node.plist, Property.initFun (fn _ => {time = Counter.next discoverTime,
+ *       (Node.plist, Property.initFun (fn _ => {time = discoverTime (),
  *                                              alive = ref true}))
  *       val ignore = DfsParam.ignore
  *    in dfs
@@ -616,11 +616,10 @@ fun dominators (graph, {root}) =
       val numNodes = List.length (nodes graph)
       val nodes = Array.new (numNodes, n0)
       fun ndfs i = Array.sub (nodes, i)
-      val dfnCounter = ref 0
+      val dfnCounter = Counter.new 0
       fun dfs (v: Node.t): unit =
          let
-            val i = !dfnCounter
-            val _ = Int.inc dfnCounter
+            val i = Counter.next dfnCounter
             val _ = dfn' v := i
             val _ = sdno' v := i
             val _ = Array.update (nodes, i, v)
@@ -639,7 +638,7 @@ fun dominators (graph, {root}) =
          end
       val _ = dfs root
       val _ =
-         if !dfnCounter = numNodes
+         if Counter.value dfnCounter = numNodes
             then ()
          else Error.bug "DirectedSubGraph.dominators: graph is not connected"
       (* compress ancestor path to node v to the node whose label has the

@@ -154,7 +154,7 @@ fun transform program =
       val infoNodes: InfoNode.t list ref = ref []
       val sourceNames: string list ref = ref []
       local
-         val sourceNameCounter = Counter.new 0
+         val nextSourceName = Counter.generator 0
          val sep =
             if profile = ProfileCallStack
                then " "
@@ -164,15 +164,15 @@ fun transform program =
                           Property.initFun
                           (fn si =>
                            (List.push (sourceNames, SourceInfo.toString' (si, sep))
-                            ; Counter.next sourceNameCounter)))
-         val sourceCounter = Counter.new 0
-      in         
+                            ; nextSourceName ())))
+         val nextSource = Counter.generator 0
+      in
          fun sourceInfoNode (si: SourceInfo.t) =
             let
                val infoNode =
                   InfoNode.T {info = si,
                               sourceNameIndex = sourceNameIndex si,
-                              sourceIndex = Counter.next sourceCounter,
+                              sourceIndex = nextSource (),
                               successors = ref []}
                val _ = List.push (infoNodes, infoNode)
             in
@@ -270,7 +270,7 @@ fun transform program =
                {equals = equals,
                 hash = hash}
             end
-         val c = Counter.new 0
+         val c = Counter.generator 0
       in
          fun sourceSeqIndex (s: sourceSeq): int =
             let
@@ -279,7 +279,7 @@ fun transform program =
                HashTable.lookupOrInsert
                (table, s, fn () =>
                 (List.push (sourceSeqs, s)
-                 ; Counter.next c))
+                 ; c ()))
             end
       end
       (* Ensure that [SourceInfo.unknown] is index 0. *)

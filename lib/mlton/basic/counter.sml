@@ -23,4 +23,10 @@ fun next c = value c before tick c
 
 val equals = fn (T r, T r') => r = r'
 
+fun generator i =
+   let val c = new i
+   in
+      fn () => next c
+   end
+
 end

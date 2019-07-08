@@ -44,11 +44,11 @@ val symbols: {name: string,
 fun numExports () = List.length (!exports)
 
 local
-   val exportCounter = Counter.new 0
+   val nextId = Counter.generator 0
 in
    fun addExport {args, convention, name, res, symbolScope} =
       let
-         val id = Counter.next exportCounter
+         val id = nextId ()
          val _ = List.push (exports, {args = args,
                                       convention = convention,
                                       id = id,

@@ -1266,9 +1266,7 @@ structure Time:>
 
       val op >= : t * t -> bool = op >=
 
-      val c = Counter.new 0
-
-      fun next () = Counter.next c
+      val next = Counter.generator 0
 
       val next = 
          Trace.trace 

@@ -369,11 +369,7 @@ structure Unknown =
 
       fun equals (u, u') = id u = id u'
 
-      local
-         val c = Counter.new 0
-      in
-         val newId = fn () => Counter.next c
-      end
+      val newId = Counter.generator 0
 
       fun new {canGeneralize} =
          T {canGeneralize = canGeneralize,
@@ -408,11 +404,7 @@ structure Spine:
                          body: {fields: Field.t list ref,
                                 more: bool ref} Set.t}
 
-      local
-         val c = Counter.new 0
-      in
-         val newId = fn () => Counter.next c
-      end
+      val newId = Counter.generator 0
       
       fun new fields = T {id = newId (),
                           body = Set.singleton {fields = ref fields,

@@ -145,12 +145,12 @@ fun layoutDot (T {nodes, ...},
                    title: string}): Layout.t =
    let
       val ns = !nodes
-      val c = Counter.new 0
+      val c = Counter.generator 0
       val {get = nodeId, rem, ...} =
          Property.get
          (Node.plist,
           Property.initFun
-          (fn _ => concat ["n", Int.toString (Counter.next c)]))
+          (fn _ => concat ["n", Int.toString (c ())]))
       val {edgeOptions, nodeOptions, options, title} =
          mkOptions {nodeName = nodeId}
       val nodes =
@@ -598,8 +598,8 @@ structure LoopForest =
                in
                   NodeOption.Label (loop ns)
                end
-            val c = Counter.new 0
-            fun newName () = concat ["n", Int.toString (Counter.next c)]
+            val c = Counter.generator 0
+            fun newName () = concat ["n", Int.toString (c ())]
             val nodes = ref []
             fun loop (T {loops, notInLoop}, root) =
                let
@@ -734,16 +734,16 @@ val stronglyConnectedComponents =
       then stronglyConnectedComponents
    else
    let
-      val c = Counter.new 0
+      val c = Counter.generator 0
    in
       fn g =>
       let
-         val nodeCounter = Counter.new 0
+         val nextNode = Counter.generator 0
          val {get = nodeIndex: Node.t -> int, destroy, ...} =
             Property.destGet
             (Node.plist,
-             Property.initFun (fn _ => Counter.next nodeCounter))
-         val index = Counter.next c
+             Property.initFun (nextNode o ignore))
+         val index = c ()
          val _ =
             File.withOut
             (concat ["graph", Int.toString index, ".dot"], fn out =>
@@ -1054,16 +1054,16 @@ val transpose =
       then transpose
    else
    let
-      val c = Counter.new 0
+      val c = Counter.generator 0
    in
       fn g =>
       let
-         val nodeCounter = Counter.new 0
+         val nextNode = Counter.generator 0
          val {get = nodeIndex: Node.t -> int, destroy, ...} =
             Property.destGet
             (Node.plist,
-             Property.initFun (fn _ => Counter.next nodeCounter))
-         val index = Counter.next c
+             Property.initFun (nextNode o ignore))
+         val index = c ()
          val _ =
             File.withOut
             (concat ["graph", Int.toString index, ".dot"], fn out =>
