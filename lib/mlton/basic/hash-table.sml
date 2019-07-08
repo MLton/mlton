@@ -5,7 +5,7 @@
  * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
  *)
-structure HashTable: HASH_TABLE =
+structure HashTable:> HASH_TABLE =
 struct
 
 structure Set = HashSet
@@ -54,8 +54,14 @@ fun removeWhen (T {set, hash, equals, ...}, a, cond) =
 fun remove (t, a) = removeWhen (t, a, fn _ => true)
 fun removeAll (T {set, ...}, f) = Set.removeAll (set, f o toPair)
 
-fun fold (T {set, ...}, b, f) =
+fun foldi (T {set, ...}, b, f) =
    Set.fold (set, b, fn ({key, value, ...}, b) =>
-             f ((key, value), b))
+             f (key, value, b))
+fun fold (t, b, f) =
+   foldi (t, b, fn (_, v, b) => f (v, b))
+fun foreachi (T {set, ...}, f) =
+   Set.foreach (set, fn {key, value, ...} => f (key, value))
+fun foreach (t, f) =
+   foreachi (t, fn (_, v) => f v)
 
 end

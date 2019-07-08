@@ -26,23 +26,22 @@ fun ++ (v: int ref): unit =
 
 structure Histogram =
   struct
-    type t = (IntInf.t * int ref) HashSet.t
+    type t = (IntInf.t, int ref) HashTable.t
 
     fun inc (set: t, key: IntInf.t): unit =
       let
-        val _ = HashSet.insertIfNew (set, IntInf.hash key,
-                                     (fn (k, _) => k = key),
-                                     (fn () => (key, ref 1)),
-                                     (fn (_, r) => ++r))
+        val _ = HashTable.insertIfNew (set, key,
+                                       (fn () => ref 1),
+                                       Int.inc)
       in
         ()
       end
 
     fun new (): t =
-      HashSet.new {hash = fn (k, _) => IntInf.hash k}
+      HashTable.new {hash = IntInf.hash, equals = IntInf.equals}
 
     fun toList (set: t): (IntInf.t * int ref) list =
-      HashSet.toList set
+      HashTable.toList set
 
     fun toString (set: t) : string =
       let

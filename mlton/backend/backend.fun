@@ -340,8 +340,8 @@ fun toMachine (rssa: Rssa.Program.t) =
                    (table, value, fn () =>
                     M.Global.new (ty value)))
                fun all () =
-                  HashTable.fold
-                  (table, [], fn ((value, global), ac) =>
+                  HashTable.foldi
+                  (table, [], fn (value, global, ac) =>
                    (global, value) :: ac)
             in
                (all, get)

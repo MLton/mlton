@@ -47,7 +47,7 @@ structure Cache:
       val toList: 'a t -> (Stype.t vector * 'a) list
    end =
    struct
-      type 'a t = (Stype.t vector * Word.t * 'a) HashSet.t
+      type 'a t = (Stype.t vector, 'a) HashTable.t
 
       local
          val base = Random.word ()
@@ -58,18 +58,12 @@ structure Cache:
             Vector.equals (ts, ts', Stype.equals)
       end
 
-      fun new () : 'a t = HashSet.new {hash = #2}
+      fun new () : 'a t = HashTable.new {hash = hash, equals = equal}
 
       fun getOrAdd (c, ts, th) =
-         let
-            val hash = hash ts
-         in
-            (#3 o HashSet.lookupOrInsert)
-            (c, hash, fn (ts', _, _) => equal (ts, ts'), 
-             fn () => (ts, hash, th ()))
-         end
+         HashTable.lookupOrInsert (c, ts, th)
 
-      fun toList c = HashSet.fold (c, [], fn ((ts, _, v), l) => (ts, v) :: l)
+      val toList = HashTable.toList
    end
 
 fun monomorphise (Xprogram.T {datatypes, body, ...}): Sprogram.t =
