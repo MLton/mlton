@@ -102,6 +102,24 @@ structure Type =
 
       val gcState: unit -> t = cpointer
 
+      local
+         val b = Random.word ()
+         val cpointer = Random.word ()
+         val label = Random.word ()
+         val objptr = Random.word ()
+      in
+         fun hash (T {node, width}) =
+            case node of
+                 Bits => b
+               | CPointer => cpointer
+               | Label l => Hash.combine (label, Label.hash l)
+               | Objptr os => Hash.combine (objptr,
+                  Hash.vectorMap (os, ObjptrTycon.hash))
+               | Real rs => RealSize.hash rs
+               | Seq ts => Hash.vectorMap (ts, hash)
+               | Word ws => WordSize.hash ws
+      end
+
       val objptrHeader: unit -> t = word o WordSize.objptrHeader
 
       val seqIndex: unit -> t = word o WordSize.seqIndex

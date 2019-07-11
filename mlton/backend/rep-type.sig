@@ -56,6 +56,7 @@ signature REP_TYPE =
       val equals: t * t -> bool
       val exnStack: unit -> t
       val gcState: unit -> t
+      val hash: t -> word
       val exists: t * (t -> bool) -> bool
       val intInf: unit -> t
       val isCPointer: t -> bool

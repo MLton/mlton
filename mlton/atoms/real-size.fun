@@ -16,6 +16,15 @@ val all = [R32, R64]
 
 val equals: t * t -> bool = op =
 
+local
+   val r32 = Random.word ()
+   val r64 = Random.word ()
+in
+val hash: t -> word =
+   fn R32 => r32
+    | R64 => r64
+end
+
 val memoize: (t -> 'a) -> t -> 'a =
    fn f =>
    let
