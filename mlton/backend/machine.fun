@@ -257,6 +257,11 @@ structure Operand =
            | (Word w, Word w') => WordX.equals (w, w')
            | _ => false
 
+      fun gcField field =
+         Offset {base = GCState,
+                 offset = Runtime.GCField.offset field,
+                 ty = Type.ofGCField field}
+
       val stackOffset = StackOffset o StackOffset.T
 
       fun interfere (write: t, read: t): bool =

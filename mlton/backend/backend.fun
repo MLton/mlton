@@ -405,10 +405,7 @@ fun toMachine (rssa: Rssa.Program.t) =
          case field of
             GCField.Frontier => M.Operand.Frontier
           | GCField.StackTop => M.Operand.StackTop
-          | _ => 
-               M.Operand.Offset {base = M.Operand.GCState,
-                                 offset = GCField.offset field,
-                                 ty = Type.ofGCField field}
+          | _ => M.Operand.gcField field
       val exnStackOp = runtimeOp GCField.ExnStack
       val stackBottomOp = runtimeOp GCField.StackBottom
       val stackTopOp = runtimeOp GCField.StackTop
