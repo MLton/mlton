@@ -124,9 +124,7 @@
 #define Frontier frontier
 #define StackTop stackTop
 
-#define ExnStack *(size_t*)(GCState + ExnStackOffset)
 #define FrontierMem *(Pointer*)(GCState + FrontierOffset)
-#define StackBottom *(Pointer*)(GCState + StackBottomOffset)
 #define StackTopMem *(Pointer*)(GCState + StackTopOffset)
 
 /* ------------------------------------------------- */
@@ -204,16 +202,6 @@
                         LeaveChunk((*nextChunk), nextBlock);                    \
                 }                                                               \
         } while (0)
-
-#define Raise(mustRaiseToSelf,mayRaiseToSelf,mustRaiseToOther)                  \
-        do {                                                                    \
-                if (DEBUG_CCODEGEN)                                             \
-                        fprintf (stderr, "%s:%d: Raise()\n",                    \
-                                        __FILE__, __LINE__);                    \
-                StackTop = StackBottom + ExnStack;                              \
-                Return(mustRaiseToSelf,mayRaiseToSelf,mustRaiseToOther);        \
-        } while (0)
-
 
 /* ------------------------------------------------- */
 /* Calling SML from C                                */

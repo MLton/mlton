@@ -1026,7 +1026,14 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                            print)
                         end
                    | Goto dst => gotoLabel (dst, {tab = true})
-                   | Raise {raisesTo} => rtrans ("Raise", raisesTo)
+                   | Raise {raisesTo} =>
+                        (outputStatement (Statement.PrimApp
+                                          {args = Vector.new2
+                                                  (Operand.gcField GCField.StackBottom,
+                                                   Operand.gcField GCField.ExnStack),
+                                           dst = SOME Operand.StackTop,
+                                           prim = Prim.cpointerAdd})
+                         ; rtrans ("Return", raisesTo))
                    | Return {returnsTo} => rtrans ("Return", returnsTo)
                    | Switch switch =>
                         let
@@ -1183,9 +1190,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
             val {done, print, ...} = outputC ()
             fun outputOffsets () =
                List.foreach
-               ([("ExnStackOffset", GCField.ExnStack),
-                 ("FrontierOffset", GCField.Frontier),
-                 ("StackBottomOffset", GCField.StackBottom),
+               ([("FrontierOffset", GCField.Frontier),
                  ("StackTopOffset", GCField.StackTop)],
                 fn (name, f) =>
                 print (concat ["#define ", name, " ",
