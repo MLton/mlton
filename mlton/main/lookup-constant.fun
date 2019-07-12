@@ -119,19 +119,11 @@ fun build (constants, out) =
 fun load (ins: In.t, commandLineConstants)
    : {default: string option, name: string} * ConstType.t -> Const.t =
    let
-      val table: {hash: word, name: string, value: string} HashSet.t =
-         HashSet.new {hash = #hash}
+      val table: (string, string) HashTable.t =
+         HashTable.new {hash = String.hash, equals = String.equals}
       fun add {name, value} =
-         let
-            val hash = String.hash name
-            val _ = 
-               HashSet.lookupOrInsert
-               (table, hash,
-                fn {name = name', ...} => name = name',
-                fn () => {hash = hash, name = name, value = value})
-         in
-            ()
-         end
+         (ignore o HashTable.lookupOrInsert)
+         (table, name, fn () => value)
       val () =
          List.foreach (buildConstants, fn (name, f) =>
                        add {name = name, value = f ()})
@@ -151,24 +143,16 @@ fun load (ins: In.t, commandLineConstants)
                   (concat ["LookupConstants.load: strange constants line: ", l]))
       fun lookupConstant ({default, name}, ty: ConstType.t): Const.t =
          let
-            val {value, ...} =
-               let
-                  val hash = String.hash name
-               in
-                  HashSet.lookupOrInsert
-                  (table, hash,
-                   fn {name = name', ...} => name = name',
-                   fn () =>
-                   case default of
-                      NONE => Error.bug 
-                              (concat ["LookupConstants.load.lookupConstant: ",
-                                       "constant not found: ", 
-                                       name])
-                    | SOME value =>
-                         {hash = hash,
-                          name = name,
-                          value = value})
-               end
+            val value =
+               HashTable.lookupOrInsert
+               (table, name,
+                fn () =>
+                case default of
+                   SOME value => value
+                 | NONE => Error.bug
+                           (concat ["LookupConstants.load.lookupConstant: ",
+                                    "constant not found: ",
+                                    name]))
             fun error (t: string) =
                Error.bug (concat ["LookupConstants.load.lookupConstant: ",
                                   "constant ", name, " expects a ", t,

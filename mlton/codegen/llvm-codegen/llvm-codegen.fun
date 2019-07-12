@@ -278,18 +278,10 @@ fun mkload (lhs, ty, arg) = concat ["\t", lhs, " = load ", getTypeFromPointer ty
  *)
 fun mkstore (ty, arg, loc) = concat ["\tstore ", ty, " ", arg, ", ", ty, "* ", loc, "\n"]
 
-val temporaryNum = ref 0
+val tempCounter = Counter.new 0
 
-fun getAndIncTemp () =
-   let
-      val i = !temporaryNum
-      val () = Int.inc temporaryNum
-   in
-      i
-   end
-
-fun resetLLVMTemp () = temporaryNum := 0
-fun nextLLVMTemp () = concat ["%t", Int.toString (getAndIncTemp ())]
+fun resetLLVMTemp () = Counter.reset (tempCounter, 0)
+fun nextLLVMTemp () = concat ["%t", Int.toString (Counter.next tempCounter)]
 
 fun temporaryName (ty: CType.t, index: int): string =
     concat ["%temp", CType.name ty, "_", Int.toString index]

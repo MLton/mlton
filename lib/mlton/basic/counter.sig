@@ -10,10 +10,11 @@ signature COUNTER =
    sig
       type t
 
+      val equals: t * t -> bool
+      val generator: int -> (unit -> int)
       val new: int -> t
       val next: t -> int
-      val tick: t -> unit
       val reset: t * int -> unit
+      val tick: t -> unit
       val value: t -> int
-      val equals: t * t -> bool
    end

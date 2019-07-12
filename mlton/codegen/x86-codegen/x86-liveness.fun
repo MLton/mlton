@@ -314,20 +314,20 @@ struct
             end
 
             local
-              val num = Counter.new 1
+              val nextNum = Counter.generator 1
             in
               fun topo_sort label
                 = let
                     val {topo, pred, ...} = getBlockInfo label
                   in
                     if !topo = 0
-                      then (topo := Counter.next num;
+                      then (topo := nextNum ();
                             push_todo label;
                             List.foreach(!pred, topo_sort))
                       else ()
                   end
               fun topo_root label
-                = (get_topo label := Counter.next num;
+                = (get_topo label := nextNum ();
                    push_todo label)
             end
 

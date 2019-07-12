@@ -121,15 +121,13 @@ struct
                   end
                (* globals that are used in other globals,
                 * we want to avoid duplicating to help reduce churn/improve diagonstic data *)
-               val usedGlobals: Var.t HashSet.t =
-                  HashSet.new {hash=Var.hash}
+               val usedGlobals: (Var.t, unit) HashTable.t =
+                  HashTable.new {equals=Var.equals, hash=Var.hash}
                val _ = Vector.map (globals, fn Statement.T {exp, ...} =>
                   Exp.foreachVar (exp, fn var =>
-                        ignore (HashSet.lookupOrInsert (usedGlobals, Var.hash var,
-                           fn var' => Var.equals (var, var'),
-                           fn () => var))))
+                        ignore (HashTable.lookupOrInsert (usedGlobals, var, ignore))))
                fun isUsedInGlobals global =
-                  case HashSet.peek (usedGlobals, Var.hash global, fn var' => Var.equals (global, var')) of
+                  case HashTable.peek (usedGlobals, global) of
                        NONE => false
                      | SOME _ => true
                fun shouldKeepOriginal (Statement.T {var=varOpt, ...}) =

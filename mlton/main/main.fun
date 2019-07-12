@@ -1552,11 +1552,10 @@ fun commandLine (args: string list): unit =
                   fun compileSrc sel =
                      let
                         val outputs: File.t list ref = ref []
-                        val r = ref 0
+                        val r = Counter.generator 0
                         fun make (style: style, suf: string) () =
                            let
-                              val suf = concat [".", Int.toString (!r), suf]
-                              val _ = Int.inc r
+                              val suf = concat [".", Int.toString (r ()), suf]
                               val file = (if !keepGenerated
                                              orelse stop = Place.Generated
                                              then maybeOutBase

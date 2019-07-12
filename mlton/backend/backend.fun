@@ -168,7 +168,7 @@ fun toMachine (rssa: Rssa.Program.t) =
       (* Frame info *)
       local
          val frameInfos: M.FrameInfo.t list ref = ref []
-         val frameInfosCounter = Counter.new 0
+         val nextFrameInfo = Counter.generator 0
          val _ = ByteSet.reset ()
          val table =
             let
@@ -188,14 +188,14 @@ fun toMachine (rssa: Rssa.Program.t) =
                               hash = hash}
             end
          val frameOffsets: M.FrameOffsets.t list ref = ref []
-         val frameOffsetsCounter = Counter.new 0
+         val nextFrameOffset = Counter.generator 0
          val {get = getFrameOffsets: ByteSet.t -> M.FrameOffsets.t, ...} =
             Property.get
             (ByteSet.plist,
              Property.initFun
              (fn offsets =>
               let
-                 val index = Counter.next frameOffsetsCounter
+                 val index = nextFrameOffset ()
                  val offsets =
                     QuickSort.sortVector
                     (Vector.fromList (ByteSet.toList offsets),
@@ -260,7 +260,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                val frameOffsets = getFrameOffsets (ByteSet.fromList offsets)
                fun new () =
                   let
-                     val index = Counter.next frameInfosCounter
+                     val index = nextFrameInfo ()
                      val frameInfo =
                         M.FrameInfo.new
                         {frameOffsets = frameOffsets,
@@ -340,8 +340,8 @@ fun toMachine (rssa: Rssa.Program.t) =
                    (table, value, fn () =>
                     M.Global.new (ty value)))
                fun all () =
-                  HashTable.fold
-                  (table, [], fn ((value, global), ac) =>
+                  HashTable.foldi
+                  (table, [], fn (value, global, ac) =>
                    (global, value) :: ac)
             in
                (all, get)

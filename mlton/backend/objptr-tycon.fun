@@ -20,9 +20,9 @@ in
 end
 
 local
-   val c = Counter.new 0
+   val c = Counter.generator 0
 in
-   fun new () = T {index = ref (Counter.next c)}
+   fun new () = T {index = ref (c ())}
 end
 
 fun setIndex (T {index = r}, i) = r := i
