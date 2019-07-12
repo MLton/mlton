@@ -36,7 +36,6 @@ fun ctypes () =
 
 val mltypes =
 "; ML types\n\
-\%Pointer = type i8*\n\
 \%Int8 = type i8\n\
 \%Int16 = type i16\n\
 \%Int32 = type i32\n\
@@ -221,8 +220,7 @@ fun typeOfGlobal global =
 
 fun getTypeFromPointer (typ: string):string =
     case typ of
-        "%Pointer" => "i8"
-      | "%CPointer" => "i8"
+        "%CPointer" => "i8"
       | "%Objptr" => "i8"
       | t =>
         let
