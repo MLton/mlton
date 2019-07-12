@@ -44,24 +44,19 @@ fun make () =
                     (!binds, fn {var, ty, exp} =>
                      Statement.T {var = SOME var, ty = ty, exp = exp}))
                    before binds := []
-      val set: (word * bind) HashSet.t = HashSet.new {hash = #1}
+      val table: (Exp.t, bind) HashTable.t =
+         HashTable.new {equals = expEquals,
+                        hash = Exp.hash}
       fun new (ty: Type.t, exp: Exp.t): Var.t =
-         let
-            val hash = hash exp
-         in
-            #var
-            (#2
-             (HashSet.lookupOrInsert
-              (set, hash,
-               fn (_, {exp = exp', ...}) => expEquals (exp, exp'),
-               fn () => 
-               let
-                  val x = Var.newString "global"
-                  val bind = {var = x, ty = ty, exp = exp}
-               in List.push (binds, bind)
-                  ; (hash, bind)
-               end)))
-         end
+         #var
+         (HashTable.lookupOrInsert
+          (table, exp, fn () =>
+           let
+              val x = Var.newString "global"
+              val bind = {var = x, ty = ty, exp = exp}
+           in List.push (binds, bind)
+              ; bind
+           end))
    in {new = new, all = all}
    end
 end
