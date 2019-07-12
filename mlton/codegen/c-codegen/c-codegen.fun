@@ -859,7 +859,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                      then
                         let
                            val _ = print "\t{\n"
-                           val c = Counter.generator 0
+                           val nextTmp = Counter.generator 0
                            val args =
                               Vector.toListMap
                               (args, fn z =>
@@ -869,7 +869,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                         val ty = Operand.ty z
                                         val tmp =
                                            concat ["tmp",
-                                                   Int.toString (c ())]
+                                                   Int.toString (nextTmp ())]
                                         val _ =
                                            print
                                            (concat

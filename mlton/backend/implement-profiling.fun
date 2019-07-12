@@ -270,7 +270,7 @@ fun transform program =
                {equals = equals,
                 hash = hash}
             end
-         val c = Counter.generator 0
+         val nextSourceSeqIndex = Counter.generator 0
       in
          fun sourceSeqIndex (s: sourceSeq): int =
             let
@@ -279,7 +279,7 @@ fun transform program =
                HashTable.lookupOrInsert
                (table, s, fn () =>
                 (List.push (sourceSeqs, s)
-                 ; c ()))
+                 ; nextSourceSeqIndex ()))
             end
       end
       (* Ensure that [SourceInfo.unknown] is index 0. *)
