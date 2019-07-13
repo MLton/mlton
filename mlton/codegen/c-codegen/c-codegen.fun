@@ -52,9 +52,6 @@ structure C =
          end
 
       fun word (w: Word.t) = "0x" ^ Word.toString w
-
-      fun push (size: Bytes.t, print) =
-         call ("\tPush", [bytes size], print)
    end
 
 structure RealX =
@@ -778,11 +775,6 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                    Int.for (0, 1 + regMax t, fn i =>
                             print (concat [pre, C.int i, ";\n"]))
                 end)
-            fun pop (fi: FrameInfo.t) =
-               (C.push (Bytes.~ (FrameInfo.size fi), print)
-                ; if amTimeProfiling
-                     then print "\tFlushStackTop();\n"
-                     else ())
             fun outputStatement s =
                let
                   datatype z = datatype Statement.t
@@ -825,20 +817,28 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                         (print "\t"
                          ; C.call ("ProfileLabel", [ProfileLabel.toString l], print))
                end
-            fun push (return: Label.t, size: Bytes.t) =
-               (print "\t"
-                ; print (move {dst = (StackOffset.toString
-                                      (StackOffset.T
-                                       {offset = Bytes.- (size, Runtime.labelSize ()),
-                                        ty = Type.label return})),
-                               dstIsMem = true,
-                               src = labelIndexAsString (return, {pretty = true}),
-                               srcIsMem = false,
-                               ty = Type.label return})
-                ; C.push (size, print)
+            fun adjStackTop (size: Bytes.t) =
+               (outputStatement (Statement.PrimApp
+                                 {args = Vector.new2
+                                         (Operand.StackTop,
+                                          Operand.Word
+                                          (WordX.fromBytes
+                                           (size,
+                                            WordSize.cptrdiff ()))),
+                                  dst = SOME Operand.StackTop,
+                                  prim = Prim.cpointerAdd})
                 ; if amTimeProfiling
                      then print "\tFlushStackTop();\n"
                      else ())
+            fun pop (fi: FrameInfo.t) =
+               adjStackTop (Bytes.~ (FrameInfo.size fi))
+            fun push (return: Label.t, size: Bytes.t) =
+               (outputStatement (Statement.Move
+                                 {dst = Operand.stackOffset
+                                        {offset = Bytes.- (size, Runtime.labelSize ()),
+                                         ty = Type.label return},
+                                  src = Operand.Label return})
+                ; adjStackTop size)
             fun copyArgs (args: Operand.t vector): string list * (unit -> unit) =
                let
                   fun usesStack z =
