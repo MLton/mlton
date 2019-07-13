@@ -582,8 +582,8 @@ structure Base =
                               PrimApp {args = (Vector.new2
                                                (index,
                                                 Operand.word
-                                                (WordX.fromIntInf
-                                                 (Bytes.toIntInf eltWidth,
+                                                (WordX.fromBytes
+                                                 (eltWidth,
                                                   seqIndexSize)))),
                                        dst = SOME (prod, seqIndexTy),
                                        prim = (Prim.wordMul

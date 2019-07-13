@@ -357,7 +357,7 @@ structure Statement =
          let
             datatype z = datatype Operand.t
             fun bytes (b: Bytes.t): Operand.t =
-               Word (WordX.fromIntInf (Bytes.toIntInf b, WordSize.csize ()))
+               Word (WordX.fromBytes (b, WordSize.csize ()))
             val temp = Register (Register.new (Type.cpointer (), NONE))
          in
             Vector.new4
