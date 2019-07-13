@@ -96,9 +96,11 @@ structure Type =
 
       val compareRes = word WordSize.compareRes
 
+      val cptrdiff: unit -> t = word o WordSize.cptrdiff
+
       val csize: unit -> t = word o WordSize.csize
 
-      val exnStack: unit -> t = csize
+      val exnStack: unit -> t = cptrdiff
 
       val gcState: unit -> t = cpointer
 

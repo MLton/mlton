@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -14,7 +15,7 @@
  * header ::
  * padding ::
  * bytesNeeded (size_t) ::
- * exnStack (size_t) ::
+ * exnStack (ptrdiff_t) ::
  * stack (object-pointer)
  *
  * There may be zero or more bytes of padding for alignment purposes.
@@ -22,7 +23,7 @@
  * The bytesNeeded size_t is the number of bytes needed when returning
  * to this thread.
  *
- * The exnStack size_t is an offset added to stackBottom that
+ * The exnStack ptrdiff_t is an offset added to stackBottom that
  * specifies the top of the exnStack.
  *
  * The final component is the stack object-pointer.
@@ -33,17 +34,17 @@
  */
 typedef struct GC_thread {
   size_t bytesNeeded;
-  size_t exnStack;
+  ptrdiff_t exnStack;
   objptr stack;
 } __attribute__ ((packed)) *GC_thread;
 
 COMPILE_TIME_ASSERT(GC_thread__packed,
                     sizeof(struct GC_thread) ==
                     sizeof(size_t)
-                    + sizeof(size_t)
+                    + sizeof(ptrdiff_t)
                     + sizeof(objptr));
 
-#define BOGUS_EXN_STACK ((size_t)(-1))
+#define BOGUS_EXN_STACK ((ptrdiff_t)(-1))
 
 #else
 

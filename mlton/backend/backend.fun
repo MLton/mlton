@@ -510,7 +510,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                        prim = Prim.cpointerDiff})
                   end
              | SetExnStackSlot =>
-                  (* ExnStack = *(size_t* )(stackTop + linkOffset); *)
+                  (* ExnStack = *(ptrdiff_t* )(stackTop + linkOffset); *)
                   Vector.new1
                   (M.Statement.move
                    {dst = exnStackOp,
@@ -524,7 +524,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                                                  ty = Type.label h},
                     src = M.Operand.Label h})
              | SetSlotExnStack =>
-                  (* *(size_t* )(stackTop + linkOffset) = ExnStack; *)
+                  (* *(ptrdiff_t* )(stackTop + linkOffset) = ExnStack; *)
                   Vector.new1
                   (M.Statement.move
                    {dst = M.Operand.stackOffset {offset = linkOffset (),

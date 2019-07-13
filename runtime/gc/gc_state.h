@@ -18,7 +18,7 @@ struct GC_state {
   pointer limit; /* limit = heap.start + heap.size */
   pointer stackTop; /* Top of stack in current thread. */
   pointer stackLimit; /* stackBottom + stackSize - maxFrameSize */
-  size_t exnStack;
+  ptrdiff_t exnStack;
   /* Alphabetized fields follow. */
   size_t alignment; /* */
   bool amInGC;
