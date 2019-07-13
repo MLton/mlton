@@ -488,14 +488,11 @@ fun toMachine (rssa: Rssa.Program.t) =
              | SetExnStackLocal =>
                   (* ExnStack = stackTop + (handlerOffset + LABEL_SIZE) - StackBottom; *)
                   let
-                     val tmp1 =
+                     val tmp =
                         M.Operand.Register
                         (Register.new (Type.cpointer (), NONE))
-                     val tmp2 =
-                        M.Operand.Register
-                        (Register.new (Type.csize (), NONE))
                   in
-                     Vector.new3
+                     Vector.new2
                      (M.Statement.PrimApp
                       {args = (Vector.new2
                                (stackTopOp,
@@ -504,16 +501,13 @@ fun toMachine (rssa: Rssa.Program.t) =
                                  (Int.toIntInf
                                   (Bytes.toInt
                                    (Bytes.+ (handlerOffset (), Runtime.labelSize ()))),
-                                  WordSize.cpointer ())))),
-                       dst = SOME tmp1,
+                                  WordSize.cptrdiff ())))),
+                       dst = SOME tmp,
                        prim = Prim.cpointerAdd},
                       M.Statement.PrimApp
-                      {args = Vector.new2 (tmp1, stackBottomOp),
-                       dst = SOME tmp2,
-                       prim = Prim.cpointerDiff},
-                      M.Statement.move
-                      {dst = exnStackOp,
-                       src = M.Operand.Cast (tmp2, Type.exnStack ())})
+                      {args = Vector.new2 (tmp, stackBottomOp),
+                       dst = SOME exnStackOp,
+                       prim = Prim.cpointerDiff})
                   end
              | SetExnStackSlot =>
                   (* ExnStack = *(size_t* )(stackTop + linkOffset); *)
