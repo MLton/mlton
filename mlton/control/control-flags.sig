@@ -39,6 +39,7 @@ signature CONTROL_FLAGS =
             datatype t = Coalesce of {limit: int}
                        | One
                        | PerFunc
+                       | Simple
          end
       val chunkify: Chunkify.t ref
 

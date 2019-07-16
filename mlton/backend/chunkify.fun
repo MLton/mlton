@@ -182,11 +182,183 @@ fun coalesce (program as Program.T {functions, main, ...}, limit) =
                            labels = Vector.fromList (!labels)})
    end
 
+structure Class =
+   struct
+      type t = PropertyList.t DisjointSet.t
+      val new = DisjointSet.singleton o PropertyList.new
+      val plist = DisjointSet.!
+      val == = DisjointSet.union
+   end
+structure Graph = DirectedGraph
+structure Node = Graph.Node
+fun simple (program as Program.T {functions, main, ...}) =
+   let
+      val functions = main :: functions
+      val {get = funcInfo: Func.t -> {class: Class.t,
+                                      function: Function.t,
+                                      node: unit Node.t},
+           set = setFuncInfo,
+           rem = remFuncInfo, ...} =
+         Property.getSetOnce (Func.plist,
+                              Property.initRaise ("Chunkify.simple.funcInfo", Func.layout))
+      val funcClass = #class o funcInfo
+      val funcFunction = #function o funcInfo
+      val funcNode = #node o funcInfo
+      val {get = labelInfo: Label.t -> {class: Class.t,
+                                        func: Func.t},
+           set = setLabelInfo,
+           rem = remLabelInfo, ...} =
+         Property.getSetOnce (Label.plist,
+                              Property.initRaise ("Chunkify.simple.labelInfo", Label.layout))
+      val labelClass = #class o labelInfo
+      val labelFunc = #func o labelInfo
+      val {get = nodeInfo: unit Node.t -> {func: Func.t},
+           set = setNodeInfo, ...} =
+         Property.getSetOnce (Node.plist,
+                              Property.initRaise ("Chunkify.simple.nodeInfo", Node.layout))
+      val nodeFunc = #func o nodeInfo
+      val cgraph = Graph.new ()
+      val _ =
+         List.foreach
+         (functions, fn f =>
+          let
+             val {name, blocks, start, ...} = Function.dest f
+             val _ =
+                Vector.foreach
+                (blocks, fn Block.T {label, ...} =>
+                 setLabelInfo (label, {class = Class.new (),
+                                       func = name}))
+             val node = Graph.newNode cgraph
+             val _ = setNodeInfo (node, {func = name})
+             val _ = setFuncInfo (name, {class = labelClass start,
+                                         function = f,
+                                         node = node})
+          in
+             ()
+         end)
+      (* Place src and dst blocks of intraprocedural transfers in same chunks. *)
+      val _ =
+         List.foreach
+         (functions, fn f =>
+          Vector.foreach
+          (Function.blocks f, fn Block.T {label, transfer, ...} =>
+           let
+              val c = labelClass label
+              fun same (j: Label.t): unit =
+                 Class.== (c, labelClass j)
+           in
+              case transfer of
+                 CCall {return, ...} => Option.app (return, same)
+               | Goto {dst, ...} => same dst
+               | Switch s => Switch.foreachLabel (s, same)
+               | _ => ()
+           end))
+      (* Build interprocedural call graph. *)
+      val _ =
+         List.foreach
+         (functions, fn f =>
+          let
+             val {name, blocks, ...} = Function.dest f
+             val node = funcNode name
+          in
+             Vector.foreach
+             (blocks, fn Block.T {transfer, ...} =>
+              case transfer of
+                 Call {func, ...} =>
+                    (ignore o Graph.addEdge)
+                    (cgraph, {from = node, to = funcNode func})
+               | _ => ())
+          end)
+      (* Compute rflow. *)
+      val rflow = Program.rflow program
+      val returnsTo = #returnsTo o rflow
+      val raisesTo = #raisesTo o rflow
+      (* Place src and dst blocks of SCC calls/raises/returns in same chunks. *)
+      val _ =
+         List.foreach
+         (Graph.stronglyConnectedComponents cgraph, fn nodes =>
+          let
+             val funcs = List.map (nodes, nodeFunc)
+             fun funcInSCC f =
+                List.exists (funcs, fn f' => Func.equals (f, f'))
+             fun labelInSCC l =
+                funcInSCC (labelFunc l)
+          in
+             List.foreach
+             (funcs, fn f =>
+              let
+                 val {name, blocks, ...} = Function.dest (funcFunction f)
+                 fun mkRTo rTo = List.revKeepAllMap (rTo name, fn l =>
+                                                     if labelInSCC l
+                                                        then SOME (labelClass l)
+                                                        else NONE)
+                 val returnsTo = mkRTo returnsTo
+                 val raisesTo = mkRTo raisesTo
+                 fun eqRTo (l, rTo) =
+                    let val lc = labelClass l
+                    in List.foreach (rTo, fn rlc => Class.== (lc, rlc))
+                    end
+              in
+                 Vector.foreach
+                 (blocks, fn Block.T {label, transfer, ...} =>
+                  case transfer of
+                     Call {func, ...} =>
+                        if funcInSCC func
+                           then Class.== (labelClass label, funcClass func)
+                           else ()
+                   | Raise _ => eqRTo (label, raisesTo)
+                   | Return _ => eqRTo (label, returnsTo)
+                   | _ => ())
+              end)
+          end)
+      type chunk = {funcs: Func.t list ref,
+                    labels: Label.t list ref}
+      val chunks: chunk list ref = ref []
+      val {get = classChunk: Class.t -> chunk, ...} =
+         Property.get
+         (Class.plist,
+          Property.initFun (fn _ =>
+                            let
+                               val c = {funcs = ref [],
+                                        labels = ref []}
+                               val _ = List.push (chunks, c)
+                            in
+                               c
+                            end))
+      val _ =
+         let
+            fun 'a add (l: 'a,
+                        get: 'a -> Class.t,
+                        sel: chunk -> 'a list ref): unit =
+               List.push (sel (classChunk (get l)), l)
+            val _ =
+               List.foreach
+               (functions, fn f =>
+                let
+                   val {name, blocks, ...} = Function.dest f
+                   val _ = add (name, funcClass, #funcs)
+                   val _ = remFuncInfo name
+                   val _ =
+                      Vector.foreach
+                      (blocks, fn Block.T {label, ...} =>
+                       (add (label, labelClass, #labels)
+                        ; remLabelInfo label))
+                in ()
+                end)
+         in ()
+         end
+   in
+      Vector.fromListMap (!chunks, fn {funcs, labels} =>
+                          {funcs = Vector.fromList (!funcs),
+                           labels = Vector.fromList (!labels)})
+   end
+
 fun chunkify p =
    case !Control.chunkify of
       Control.Chunkify.Coalesce {limit} => coalesce (p, limit)
     | Control.Chunkify.One => one p
     | Control.Chunkify.PerFunc => perFunc p
+    | Control.Chunkify.Simple => simple p
 
 val chunkify =
    fn p =>

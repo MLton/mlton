@@ -67,11 +67,13 @@ structure Chunkify =
          Coalesce of {limit: int}
        | One
        | PerFunc
+       | Simple
 
       val toString =
-         fn One => "one"
+         fn Coalesce {limit} => concat ["coalesce ", Int.toString limit]
+          | One => "one"
           | PerFunc => "per function"
-          | Coalesce {limit} => concat ["coalesce ", Int.toString limit]
+          | Simple => "simple"
    end
 
 val chunkify = control {name = "chunkify",

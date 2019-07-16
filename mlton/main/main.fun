@@ -275,12 +275,13 @@ fun makeOptions {usage} =
        (Expert, "cc-opt-quote", " <opt>", "pass (quoted) option to C compiler",
         SpaceString
         (fn s => List.push (ccOpts, {opt = s, pred = OptPred.Yes}))),
-       (Expert, "chunkify", " {coalesce<n>|func|one}", "set chunkify stategy",
+       (Expert, "chunkify", " {coalesce<n>|func|one|simple}", "set chunkify stategy",
         SpaceString (fn s =>
                      explicitChunkify
                      := SOME (case s of
                                  "func" => Chunkify.PerFunc
                                | "one" => Chunkify.One
+                               | "simple" => Chunkify.Simple
                                | _ => let
                                          val usage = fn () =>
                                             usage (concat ["invalid -chunkify flag: ", s])
