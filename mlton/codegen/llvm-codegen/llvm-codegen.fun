@@ -931,7 +931,7 @@ fun callReturn (cxt, selfChunk, mustReturnToSelf, mayReturnToSelf, mustReturnToO
        returnToSelfLabel, ":\n",
        "\tbr label %doSwitchNextBlock\n",
        leaveChunkLabel, ":\n",
-       case NONE (* mustReturnToOther *) of
+       case mustReturnToOther of
           NONE => leaveChunk (cxt, nextChunk, nextBlock)
         | SOME dstChunk => leaveChunk (cxt, concat ["@", chunkName dstChunk], nextBlock)]
    end
@@ -997,7 +997,13 @@ fun outputTransfer (cxt, chunkLabel, transfer) =
                                                    then SOME c
                                                    else NONE))
            in
-              callReturn (cxt, chunkLabel, mustRToSelf, mayRToSelf, mustRToOther)
+              callReturn (cxt, chunkLabel,
+                          !Control.chunkMustRToSelfOpt andalso mustRToSelf,
+                          !Control.chunkMayRToSelfOpt andalso mayRToSelf,
+                          if (!Control.chunkMustRToOtherOpt andalso
+                              (!Control.chunkMayRToSelfOpt orelse not mayRToSelf))
+                             then mustRToOther
+                             else NONE)
            end
     in
         case transfer of

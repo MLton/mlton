@@ -917,9 +917,12 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                      in
                         print "\t"
                         ; C.call (name,
-                                  [C.bool mustRToSelf,
-                                   C.bool mayRToSelf,
-                                   case mustRToOther of
+                                  [C.bool (!Control.chunkMustRToSelfOpt andalso mustRToSelf),
+                                   C.bool (!Control.chunkMayRToSelfOpt andalso mayRToSelf),
+                                   case (if (!Control.chunkMustRToOtherOpt andalso
+                                             (!Control.chunkMayRToSelfOpt orelse not mayRToSelf))
+                                            then mustRToOther
+                                            else NONE) of
                                       NONE => "(ChunkFnPtr_t)NULL"
                                     | SOME otherChunk =>
                                          concat ["&(", chunkName otherChunk, ")"]],
