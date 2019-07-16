@@ -40,7 +40,11 @@ PRIVATE GC_state MLton_gcState() {
 }
 
 static GC_frameIndex returnAddressToFrameIndex (GC_returnAddress ra) {
-        return *((GC_frameIndex*)(ra - sizeof(GC_frameIndex)));
+  return *((GC_frameIndex*)(ra - sizeof(GC_frameIndex)));
+}
+
+static inline pointer getJumpFromStackTop (GC_state s) {
+  return *(pointer*)(s->stackTop - GC_RETURNADDRESS_SIZE);
 }
 
 PRIVATE void MLton_jumpToSML (pointer jump);
@@ -49,7 +53,6 @@ PRIVATE void MLton_jumpToSML (pointer jump);
 static void MLton_callFromC (CPointer localOpArgsResPtr) {              \
         pointer jump;                                                   \
         GC_state s = MLton_gcState();                                   \
-                                                                        \
         if (DEBUG_AMD64CODEGEN)                                         \
                 fprintf (stderr, "MLton_callFromC() starting\n");       \
         s->callFromCOpArgsResPtr = localOpArgsResPtr;                   \
@@ -59,8 +62,8 @@ static void MLton_callFromC (CPointer localOpArgsResPtr) {              \
                 s->limit = s->limitPlusSlop - GC_HEAP_LIMIT_SLOP;       \
         /* Return to the C Handler thread. */                           \
         GC_switchToThread (s, GC_getCallFromCHandlerThread (s), 0);     \
-        jump = *(pointer*)(s->stackTop - GC_RETURNADDRESS_SIZE);        \
-        MLton_jumpToSML(jump);                                          \
+        jump = getJumpFromStackTop (s);                                 \
+        MLton_jumpToSML (jump);                                         \
         s->atomicState += 1;                                            \
         GC_switchToThread (s, GC_getSavedThread (s), 0);                \
         s->atomicState -= 1;                                            \
@@ -73,41 +76,38 @@ static void MLton_callFromC (CPointer localOpArgsResPtr) {              \
 
 #define MLtonMain(al, mg, mfs, mmc, pk, ps, ml)                         \
 PUBLIC int MLton_main (int argc, char* argv[]) {                        \
-        pointer jump;                                                   \
         extern unsigned char ml;                                        \
+        pointer jump;                                                   \
         GC_state s = MLton_gcState();                                   \
-                                                                        \
         Initialize (s, al, mg, mfs, mmc, pk, ps);                       \
         if (s->amOriginal) {                                            \
                 real_Init();                                            \
                 jump = (pointer)&ml;                                    \
         } else {                                                        \
-                jump = *(pointer*)(s->stackTop - GC_RETURNADDRESS_SIZE); \
+                jump = getJumpFromStackTop (s);                         \
         }                                                               \
-        MLton_jumpToSML(jump);                                          \
+        MLton_jumpToSML (jump);                                         \
         return 1;                                                       \
 }
 
 #define MLtonLibrary(al, mg, mfs, mmc, pk, ps, ml)                      \
 PUBLIC void LIB_OPEN(LIBNAME) (int argc, char* argv[]) {                \
+        extern unsigned char ml;                                        \
         pointer jump;                                                   \
         GC_state s = MLton_gcState();                                   \
-        extern unsigned char ml;                                        \
-                                                                        \
         Initialize (s, al, mg, mfs, mmc, pk, ps);                       \
         if (s->amOriginal) {                                            \
                 real_Init();                                            \
                 jump = (pointer)&ml;                                    \
         } else {                                                        \
-                jump = *(pointer*)(s->stackTop - GC_RETURNADDRESS_SIZE); \
+                jump = getJumpFromStackTop (s);                         \
         }                                                               \
         MLton_jumpToSML(jump);                                          \
 }                                                                       \
 PUBLIC void LIB_CLOSE(LIBNAME) () {                                     \
         pointer jump;                                                   \
         GC_state s = MLton_gcState();                                   \
-                                                                        \
-        jump = *(pointer*)(s->stackTop - GC_RETURNADDRESS_SIZE);        \
+        jump = getJumpFromStackTop (s);                                 \
         MLton_jumpToSML(jump);                                          \
         GC_done(s);                                                     \
 }
