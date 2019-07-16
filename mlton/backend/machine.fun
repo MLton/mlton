@@ -12,7 +12,7 @@ struct
 
 open S
 
-structure ChunkLabel = Id (val noname = "ChunkLabel")
+structure ChunkLabel = Id (val noname = "Chunk")
 
 structure Register =
    struct

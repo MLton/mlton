@@ -570,11 +570,6 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                               print: string -> unit,
                               done: unit -> unit}} =
    let
-      val numChunks = List.length chunks
-      val {get = chunkLabelInfo: ChunkLabel.t -> {index: int},
-           set = setChunkLabelInfo, ...} =
-         Property.getSetOnce
-         (ChunkLabel.plist, Property.initRaise ("CCodegen.chunkLabelInfo", ChunkLabel.layout))
       val {get = labelInfo: Label.t -> {block: Block.t,
                                         chunkLabel: ChunkLabel.t,
                                         index: int option,
@@ -584,30 +579,29 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
          (Label.plist, Property.initRaise ("CCodeGen.labelInfo", Label.layout))
       val nextChunks = Array.new (Vector.length frameInfos, NONE)
       val _ =
-         List.foreachi
-         (chunks, fn (i, Chunk.T {blocks, chunkLabel, ...}) =>
-          (setChunkLabelInfo (chunkLabel, {index = i});
-           Vector.foreach
-           (blocks, fn block as Block.T {kind, label, ...} =>
-            let
-               val index =
-                  case Kind.frameInfoOpt kind of
-                     NONE => NONE
-                   | SOME fi =>
-                        let
-                           val index = FrameInfo.index fi
-                        in
-                           if Kind.isEntry kind
-                              then Array.update (nextChunks, index, SOME label)
-                              else ()
-                           ; SOME index
-                        end
-            in
-               setLabelInfo (label, {block = block,
-                                     chunkLabel = chunkLabel,
-                                     index = index,
-                                     marked = ref false})
-            end)))
+         List.foreach
+         (chunks, fn Chunk.T {blocks, chunkLabel, ...} =>
+          Vector.foreach
+          (blocks, fn block as Block.T {kind, label, ...} =>
+           let
+              val index =
+                 case Kind.frameInfoOpt kind of
+                    NONE => NONE
+                  | SOME fi =>
+                       let
+                          val index = FrameInfo.index fi
+                       in
+                          if Kind.isEntry kind
+                             then Array.update (nextChunks, index, SOME label)
+                             else ()
+                          ; SOME index
+                       end
+           in
+              setLabelInfo (label, {block = block,
+                                    chunkLabel = chunkLabel,
+                                    index = index,
+                                    marked = ref false})
+           end))
       val nextChunks = Vector.keepAllMap (Vector.fromArray nextChunks, fn lo => lo)
       val labelChunk = #chunkLabel o labelInfo
       val labelIndex = #index o labelInfo
@@ -619,13 +613,10 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                then concat ["/* ", Label.toString l, " */ ", s]
                else s
          end
-      val chunkLabelIndex = #index o chunkLabelInfo
-      val chunkLabelIndexAsString = C.int o chunkLabelIndex
-      fun chunkName c = concat ["Chunk", chunkLabelIndexAsString c]
 
       fun declareChunk (chunkLabel, print: string -> unit) =
          (print "PRIVATE extern ChunkFn_t "
-          ; print (chunkName chunkLabel)
+          ; print (ChunkLabel.toString chunkLabel)
           ; print ";\n")
       fun defineNextChunks print =
          (List.foreach (chunks, fn Chunk.T {chunkLabel, ...} =>
@@ -642,19 +633,21 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
               ; print "/* "
               ; print (Label.toString label)
               ; print " */ &("
-              ; print (chunkName (labelChunk label))
+              ; print (ChunkLabel.toString (labelChunk label))
               ; print "),\n"))
           ; print "};\n")
       fun declareNextChunks (chunks, print) =
          let
-            val seen = Array.new (numChunks, false)
+            val {destroy, get} =
+               Property.destGet
+               (ChunkLabel.plist, Property.initFun (fn _ => ref false))
             val declareChunk = fn chunkLabel =>
                let
-                  val index = chunkLabelIndex chunkLabel
+                  val seen = get chunkLabel
                in
-                  if Array.sub (seen, index)
+                  if !seen
                      then ()
-                     else (Array.update (seen, index, true)
+                     else (seen := true
                            ; declareChunk (chunkLabel, print))
                end
          in
@@ -671,6 +664,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                   | Transfer.Return {returnsTo, ...} =>
                        List.foreach (returnsTo, declareChunk o labelChunk)
                   |  _ => ())))
+            ; destroy ()
             ; print "PRIVATE extern ChunkFnPtr_t nextChunks[];\n"
          end
 
@@ -925,7 +919,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                             else NONE) of
                                       NONE => "(ChunkFnPtr_t)NULL"
                                     | SOME otherChunk =>
-                                         concat ["&(", chunkName otherChunk, ")"]],
+                                         concat ["&(", ChunkLabel.toString otherChunk, ")"]],
                                   print)
                      end
                in
@@ -1024,7 +1018,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                            [Label.toString label],
                                            print)
                               else C.call ("\tFarCall",
-                                           [chunkName dstChunk,
+                                           [ChunkLabel.toString dstChunk,
                                             labelIndexAsString (label, {pretty = true})],
                                            print)
                         end
@@ -1155,7 +1149,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                end
          in
             declareProfileLabels ()
-            ; C.callNoSemi ("DefineChunk", [chunkName chunkLabel], print); print "\n"
+            ; C.callNoSemi ("DefineChunk", [ChunkLabel.toString chunkLabel], print); print "\n"
             ; declareCReturns (); print "\n"
             ; declareRegisters (); print "\n"
             ; let
