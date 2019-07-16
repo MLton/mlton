@@ -28,6 +28,7 @@ datatype Context = Context of {
     program: Program.t,
     chunkName: ChunkLabel.t -> string,
     labelChunk: Label.t -> ChunkLabel.t,
+    labelIndex: Label.t -> int,
     labelIndexAsString: Label.t -> string,
     nextChunks: Label.t vector
 }
@@ -1249,8 +1250,38 @@ fun outputLLVMDeclarations print =
 fun outputChunkFn (cxt, chunk, print) =
    let
         val () = resetLLVMReg ()
-        val Context { chunkName, labelIndexAsString, ... } = cxt
+        val Context { chunkName, labelIndex, ... } = cxt
         val Chunk.T {blocks, chunkLabel, regMax} = chunk
+        val entries =
+           let
+              val entries = ref []
+              val () =
+                 Vector.foreach
+                 (blocks, fn Block.T {kind, label, ...} =>
+                  if Kind.isEntry kind
+                     then List.push (entries, (label, labelIndex label))
+                     else ())
+           in
+              List.insertionSort (!entries, fn ((_, i1), (_, i2)) => i1 <= i2)
+           end
+        val numEntries = List.length entries
+        val () = if !Control.chunkJumpTable
+                    then let
+                            val () = print (concat ["@", chunkName chunkLabel, ".nextLabels ",
+                                                    "= internal constant ",
+                                                    "[", llint numEntries, " x i8*] ",
+                                                    "[\n"])
+                            val () = List.foreachi (entries, fn (i, (label, _)) =>
+                                                    print (concat ["\t\ti8* blockaddress(",
+                                                                   "@", chunkName chunkLabel, ", ",
+                                                                   "%", Label.toString label, ")",
+                                                                   if i < numEntries - 1
+                                                                      then ",\n"
+                                                                      else " ]\n"]))
+                         in
+                            ()
+                         end
+                    else ()
         val () = print (concat ["define hidden %uintptr_t @",
                                 chunkName chunkLabel,
                                 "(%CPointer %gcState, %CPointer %stackTopArg, %CPointer %frontierArg, %uintptr_t %nextBlockArg) {\nentry:\n"])
@@ -1275,21 +1306,49 @@ fun outputChunkFn (cxt, chunk, print) =
         val () = print (mkstore ("%uintptr_t", "%nextBlockArg", "%nextBlock"))
         val () = print "\tbr label %doSwitchNextBlock\n\n"
         val () = print "doSwitchNextBlock:\n"
-        val tmp = nextLLVMReg ()
-        val () = print (mkload (tmp, "%uintptr_t*", "%nextBlock"))
-        val () = print (concat ["\tswitch %uintptr_t ", tmp,
-                                ", label %switchNextBlockDefault [\n"])
-        val () = Vector.foreach (blocks, fn Block.T {kind, label, ...} =>
-                                 if Kind.isEntry kind
-                                    then print (concat ["\t\t%uintptr_t ",
-                                                        labelIndexAsString label,
-                                                        ", label %",
-                                                        Label.toString label,
-                                                        "\n"])
-                                    else ())
-        val () = print "\t]\n\n"
-        val () = print "switchNextBlockDefault:\n"
-        val () = print "\tunreachable\n\n"
+        val () =
+           if !Control.chunkJumpTable
+              then let
+                      val tmp1 = nextLLVMReg ()
+                      val tmp2 = nextLLVMReg ()
+                      val tmp3 = nextLLVMReg ()
+                      val tmp4 = nextLLVMReg ()
+                      val () = print (mkload (tmp1, "%uintptr_t*", "%nextBlock"))
+                      val () = print (mkinst (tmp2, "sub", "i64", tmp1, llint (#2 (List.first entries))))
+                      val () = print (mkgep (tmp3,
+                                             concat ["[", llint numEntries, " x i8*]*"],
+                                             concat ["@", chunkName chunkLabel, ".nextLabels"],
+                                             [("i64", "0"), ("%uintptr_t", tmp2)]))
+                      val () = print (mkload (tmp4, "i8**", tmp3))
+                      val () = print (concat ["\tindirectbr i8* ", tmp4,
+                                              ", [\n"])
+                      val () = List.foreachi (entries, fn (i, (label, _)) =>
+                                              print (concat ["\t\t label %",
+                                                             Label.toString label,
+                                                             if i < numEntries - 1
+                                                                then ",\n"
+                                                                else " ]\n"]))
+                   in
+                      ()
+                   end
+              else let
+                      val tmp = nextLLVMReg ()
+                      val () = print (mkload (tmp, "%uintptr_t*", "%nextBlock"))
+                      val () = print (concat ["\tswitch %uintptr_t ", tmp,
+                                              ", label %switchNextBlockDefault [\n"])
+                      val () = List.foreach (entries, fn (label, index) =>
+                                             print (concat ["\t\t%uintptr_t ",
+                                                            llint index,
+                                                            ", label %",
+                                                            Label.toString label,
+                                                            "\n"]))
+                      val () = print "\t]\n\n"
+                      val () = print "switchNextBlockDefault:\n"
+                      val () = print "\tunreachable\n"
+                   in
+                      ()
+                   end
+        val () = print "\n"
         val () = print (String.concatV (Vector.map (blocks, fn b => outputBlock (cxt, chunkLabel, b))))
         val () = print "}\n\n"
    in
@@ -1393,6 +1452,7 @@ fun makeContext program =
     in
         Context { amTimeProfiling = amTimeProfiling,
                   program = program,
+                  labelIndex = labelIndex,
                   labelIndexAsString = labelIndexAsString,
                   chunkName = chunkName,
                   labelChunk = labelChunk,
