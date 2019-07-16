@@ -120,6 +120,7 @@ structure Global =
 structure Static = Static (
    structure Index = Int
    structure WordX = WordX
+   structure WordSize = WordSize
    structure WordXVector = WordXVector)
 
 structure StackOffset =
@@ -764,7 +765,7 @@ structure Program =
                          objectTypes: ObjectType.t vector,
                          reals: (RealX.t * Global.t) list,
                          sourceMaps: SourceMaps.t option,
-                         statics: (Static.t * Global.t option) list}
+                         statics: (Static.t * Global.t option) vector}
 
       fun clear (T {chunks, sourceMaps, ...}) =
          (List.foreach (chunks, Chunk.clear)
@@ -992,25 +993,32 @@ structure Program =
             fun tyconTy (opt: ObjptrTycon.t): ObjectType.t =
                Vector.sub (objectTypes, ObjptrTycon.index opt)
             open Layout
-            fun globals (name, gs, isOk, layoutTy, layout) =
+
+
+            fun checkGlobal (name, global, isOk, layoutVal) =
+               let
+                  val ty = Global.ty global
+                  open Layout
+               in
+                  Err.check
+                  (name,
+                   fn () => isOk ty,
+                   fn () => seq [layoutVal (), str ": ", Type.layout ty])
+               end
+            val _ =
                List.foreach
-               (gs, fn (data, g) =>
-                   Err.check
-                   (concat ["global ", name],
-                    fn () => isOk (g, data),
-                    fn () => seq [layout data, str ": ", layoutTy g]))
+               (reals, fn (r, g) => checkGlobal
+                  ("global real", g,
+                   fn t => Type.equals (t, Type.real (RealX.size r)),
+                   fn () => RealX.layout (r, {suffix=true})))
             val _ =
-               globals ("real", reals,
-                        fn (g, r) => Type.equals
-                           (Global.ty g, Type.real (RealX.size r)),
-                        Type.layout o Global.ty,
-                        fn r => RealX.layout (r, {suffix = true}))
-            val _ =
-               globals ("static", statics,
-                        fn (g, v) =>
-                           Option.forall (g, Type.isObjptr o Global.ty),
-                        Option.layout (Type.layout o Global.ty),
-                        Static.layout)
+               Vector.foreach
+               (statics, fn (s, g) =>
+                  case g of
+                       NONE => ()
+                     | SOME g' =>
+                        checkGlobal ("static", g',
+                        Type.isObjptr, fn () => Static.layout s))
             (* Check for no duplicate labels. *)
             local
                val {get, ...} =

@@ -123,6 +123,9 @@ fun fromString s =
 
 fun length v = Vector.length (elements v)
 
+fun size v = Bytes.fromInt
+   (length v * ((Bytes.toInt o WordSize.bytes o elementSize) v))
+
 fun sub (v, i) = Vector.sub (elements v, i)
 
 fun tabulate ({elementSize}, n, f) =

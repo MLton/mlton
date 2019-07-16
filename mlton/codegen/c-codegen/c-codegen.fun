@@ -83,21 +83,30 @@ structure RealX =
          end
    end
 
+structure WordSize =
+   struct
+      open WordSize
+
+      fun toC (ws: t): string =
+         case prim ws of
+            W8 => "8"
+          | W16 => "16"
+          | W32 => "32"
+          | W64 => "64"
+   end
+
 structure WordX =
    struct
-      open WordX
+      local
+         structure Z = WordSize
+      in
+         open WordX
+         structure WordSize = Z
+      end
 
       fun toC (w: t): string =
-         let
-            fun doit s =
-               concat ["(Word", s, ")(", toString (w, {suffix = false}), "ull)"]
-         in
-            case WordSize.prim (size w) of
-               W8 => doit "8"
-             | W16 => doit "16"
-             | W32 => doit "32"
-             | W64 => doit "64"
-         end
+         concat ["(Word", WordSize.toC (size w), ")(",
+                 toString (w, {suffix = false}), "ull)"]
    end
 
 structure WordXVector =
@@ -112,12 +121,11 @@ structure WordXVector =
       fun toC (v: t): string =
          let
             fun string () =
-               concat ["(pointer)",
-                       C.string (String.implode (toListMap (v, WordX.toChar)))]
+               concat [C.string (String.implode (toListMap (v, WordX.toChar)))]
             fun vector s =
-               concat ["(pointer)((Word", s, "[]){",
+               concat ["{",
                        String.concatWith (toListMap (v, WordX.toC), ","),
-                       "})"]
+                       "}"]
          in
             case WordSize.prim (elementSize v) of
                W8 => string ()
@@ -125,6 +133,40 @@ structure WordXVector =
              | W32 => vector "32"
              | W64 => vector "64"
          end
+   end
+
+structure Static =
+   struct
+      local
+         structure WordSize' = WordSize
+         structure WordX' = WordX
+         structure WordXVector' = WordXVector
+      in
+         open Static
+         structure WordSize = WordSize'
+         structure WordX = WordX'
+         structure WordXVector = WordXVector'
+      end
+
+      structure Data =
+      struct
+         open Data
+
+         fun toC indexToC =
+            fn Empty bytes => "{}"
+             | Vector v => WordXVector.toC v
+             | Object es =>
+                  let
+                     val elemToC =
+                        fn Word wx => WordX.toC wx
+                         | Address i => indexToC i
+                  in
+                     "{" ^
+                     String.concatWith
+                     (List.map (es, elemToC),
+                      ", ") ^ "}"
+                  end
+      end
    end
 
 structure Operand =
@@ -272,37 +314,66 @@ fun outputDeclarations
          in
             ()
          end
+      local
+         val cid = Counter.new 0
+         val cvar = Counter.new 0
+      in
+         val nextId = fn () => Counter.next cid
+         val nextStaticVar = fn () => Counter.next cvar
+      end
+      fun staticVar i =
+         "static_" ^ Int.toString i
+      fun staticAddress i =
+         (* TODO *)
+         "&static_" ^ Layout.toString (Static.Index.layout i)
+      fun declareStaticInits () =
+         (Vector.foreachi
+          (statics, fn (i, (s as Machine.Static.T {data, header, location}, g)) =>
+             let
+                val dataC = Static.Data.toC staticAddress data
+                val (dataType, dataElems) = Static.Data.size data
+                val dataElems = Int.toString dataElems
+                val dataTypeStr = "Word" ^ WordSize.toC dataType
+                val headerElems = Int.toString (WordXVector.length header)
+                val headerTypeStr = "Word" ^ (WordSize.toC o WordSize.objptr) ()
+                val qualifier =
+                   let datatype z = datatype Machine.Static.location in
+                   case location of
+                        MutStatic => ""
+                      | _ => "const "
+                   end
+                val structName =
+                   qualifier ^ "struct { " ^
+                     headerTypeStr ^ " header[" ^ headerElems ^ "]; " ^
+                     dataTypeStr   ^ " data["   ^ dataElems   ^ "]; " ^
+                   "}"
+             in
+                 print (structName ^ " " ^ staticVar i  ^
+                        " = {" ^ WordXVector.toC header ^ ", " ^ dataC ^ "};\n")
+             end))
       fun declareVectors () =
          (print "BeginVectorInits\n"
-          ; (List.foreach
-             (statics, fn (s as Machine.Static.T {data, header, location}, g) =>
+          ; (Vector.foreachi
+             (statics, fn (i, (s as Machine.Static.T {data, header, location}, g)) =>
              let
                 val shouldInit =
                    (case location of
                       Machine.Static.Heap => true
                     | _ => false)
-                    andalso
-                   (case data of
-                       Machine.Static.Empty _ => false
-                     | _ => true)
-
-                (* Init needs adjustments
-                 * to handle headers *)
-                val v =
-                   case data of
-                      Machine.Static.Vector v => v
-                    | _ => Error.bug "CCodegen.declareVectors: Temporarily unsupported"
+                val (dataWidth, dataSize) = Static.Data.size data
+                val dataBytes = dataSize * (Bytes.toInt (WordSize.bytes dataWidth))
+                val headerBytes = WordXVector.size header
              in
                 case g of
                      NONE => () (* Shouldn't happen yet *)
                    | SOME g' =>
                       (C.callNoSemi ("VectorInitElem",
-                             [C.int (Bytes.toInt
-                                     (WordSize.bytes
-                                      (WordXVector.elementSize v))),
+                             [C.bytes (WordSize.bytes dataWidth),
                               C.int (Global.index g'),
-                              C.int (WordXVector.length v),
-                              WordXVector.toC v],
+                              C.int dataBytes,
+                              (* TODO, header not yet supported *)
+                              C.bytes headerBytes ^ " + " ^
+                              "(Pointer) &" ^ staticVar i ],
                              print);
                        print "\n")
              end))
@@ -497,6 +568,7 @@ fun outputDeclarations
       outputIncludes (includes, print); print "\n"
       ; declareGlobals ("PRIVATE ", print); print "\n"
       ; declareLoadSaveGlobals (); print "\n"
+      ; declareStaticInits (); print "\n"
       ; declareVectors (); print "\n"
       ; declareReals (); print "\n"
       ; declareFrameInfos (); print "\n"

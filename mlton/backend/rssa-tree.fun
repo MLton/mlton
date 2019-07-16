@@ -37,6 +37,7 @@ fun constrain (ty: Type.t): Layout.t =
 structure Static = Static (
    structure Index = Var
    structure WordX = WordX
+   structure WordSize = WordSize
    structure WordXVector = WordXVector)
 
 structure Operand =

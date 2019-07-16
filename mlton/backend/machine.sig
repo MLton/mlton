@@ -48,6 +48,7 @@ signature MACHINE =
             val ty: t -> Type.t
          end
       structure Static: STATIC
+      sharing Static.WordSize = WordSize
       sharing Static.WordX = WordX
       sharing Static.WordXVector = WordXVector
 
@@ -254,7 +255,7 @@ signature MACHINE =
                      objectTypes: Type.ObjectType.t vector,
                      reals: (RealX.t * Global.t) list,
                      sourceMaps: SourceMaps.t option,
-                     statics: (Static.t * Global.t option) list}
+                     statics: (Static.t * Global.t option) vector}
 
             val clearLabelNames: t -> unit
             val layouts: t * (Layout.t -> unit) -> unit

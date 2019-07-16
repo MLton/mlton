@@ -1120,12 +1120,12 @@ fun toMachine (rssa: Rssa.Program.t) =
       val maxFrameSize = Bytes.alignWord32 maxFrameSize
 
       (* Until statics added to rssa *)
-      val allStatics = List.map (allVectors (),
+      val allStatics = Vector.fromListMap (allVectors (),
          fn (v, g) =>
             (M.Static.T
-             {data = M.Static.Vector v,
+             {data = M.Static.Data.Vector v,
               (* temporarily for now *)
-              header = WordXVector.fromString "",
+              header = WordXVector.fromList ({elementSize=WordSize.objptr ()}, []),
               location = M.Static.Heap}, SOME g))
       val machine =
          M.Program.T
