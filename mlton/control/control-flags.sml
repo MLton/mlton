@@ -962,6 +962,10 @@ val libTargetDir = control {name = "lib target dir",
 
 val libname = ref ""
 
+val llvmCC10 = control {name = "llvm 'cc10'",
+                        default = false,
+                        toString = Bool.toString}
+
 val loopUnrollLimit = control {name = "loop unrolling limit",
                                 default = 150,
                                 toString = Int.toString}

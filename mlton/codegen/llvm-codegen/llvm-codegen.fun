@@ -12,6 +12,16 @@ open S
 
 open Machine
 
+structure ChunkLabel =
+   struct
+      open ChunkLabel
+      fun toStringX cl = "X" ^ toString cl
+      fun toString' cl =
+         if !Control.llvmCC10
+            then toStringX cl
+            else toString cl
+   end
+
 local
     open Runtime
 in
@@ -860,7 +870,11 @@ fun leaveChunk (cxt, nextChunk, nextBlock) =
               concat
               [mkload (stackTopArg, "%CPointer*", "%stackTop"),
                mkload (frontierArg, "%CPointer*", "%frontier"),
-               "\t", resReg, " = musttail call %uintptr_t ",
+               "\t", resReg, " = musttail call ",
+               if !Control.llvmCC10
+                  then "cc10 "
+                  else "",
+               "%uintptr_t ",
                nextChunk, "(",
                "%CPointer ", "%gcState", ", ",
                "%CPointer ", stackTopArg, ", ",
@@ -906,7 +920,10 @@ fun callReturn (cxt, selfChunk, mustReturnToSelf, mayReturnToSelf, mustReturnToO
             val tmp = nextLLVMReg ()
          in
             concat
-            [mkgep (tmp, "%ChunkFnPtrArr_t*", "@nextChunks",
+            [mkgep (tmp, "%ChunkFnPtrArr_t*",
+                    if !Control.llvmCC10
+                       then "@nextXChunks"
+                       else "@nextChunks",
                     [("i32", "0"), ("%uintptr_t", nextBlock)]),
              mkload (nextChunk, "%ChunkFnPtr_t*", tmp)]
          end
@@ -917,7 +934,7 @@ fun callReturn (cxt, selfChunk, mustReturnToSelf, mayReturnToSelf, mustReturnToO
             val tmp2 = nextLLVMReg ()
          in
             concat
-            [mkinst (tmp1, "icmp eq", "%ChunkFnPtr_t", nextChunk, concat ["@", ChunkLabel.toString selfChunk]),
+            [mkinst (tmp1, "icmp eq", "%ChunkFnPtr_t", nextChunk, concat ["@", ChunkLabel.toString' selfChunk]),
              mkinst (tmp2, "and", "i1", if mayReturnToSelf then "1" else "0", tmp1),
              mkinst (returnToSelf, "or", "i1", if mustReturnToSelf then "1" else "0", tmp2)]
          end
@@ -932,7 +949,7 @@ fun callReturn (cxt, selfChunk, mustReturnToSelf, mayReturnToSelf, mustReturnToO
        leaveChunkLabel, ":\n",
        case mustReturnToOther of
           NONE => leaveChunk (cxt, nextChunk, nextBlock)
-        | SOME dstChunk => leaveChunk (cxt, concat ["@", ChunkLabel.toString dstChunk], nextBlock)]
+        | SOME dstChunk => leaveChunk (cxt, concat ["@", ChunkLabel.toString' dstChunk], nextBlock)]
    end
 
 fun adjStackTop (cxt, size: Bytes.t) =
@@ -1132,7 +1149,7 @@ fun outputTransfer (cxt, chunkLabel, transfer) =
                                         "\tbr label %", Label.toString label, "\n"]
                            else concat ["\t; FarCall\n",
                                         leaveChunk (cxt,
-                                                    concat ["@", ChunkLabel.toString dstChunk],
+                                                    concat ["@", ChunkLabel.toString' dstChunk],
                                                     labelIndexAsString label)]
             in
                 concat [push, call]
@@ -1265,13 +1282,15 @@ fun outputChunkFn (cxt, chunk, print) =
         val numEntries = List.length entries
         val () = if !Control.chunkJumpTable
                     then let
-                            val () = print (concat ["@", ChunkLabel.toString chunkLabel, ".nextLabels ",
+                            val () = print (concat ["@", ChunkLabel.toString' chunkLabel, ".nextLabels ",
                                                     "= internal constant ",
                                                     "[", llint numEntries, " x i8*] ",
                                                     "[\n"])
                             val () = List.foreachi (entries, fn (i, (label, _)) =>
                                                     print (concat ["\t\ti8* blockaddress(",
-                                                                   "@", ChunkLabel.toString chunkLabel, ", ",
+                                                                   "@",
+                                                                   ChunkLabel.toString' chunkLabel,
+                                                                   ", ",
                                                                    "%", Label.toString label, ")",
                                                                    if i < numEntries - 1
                                                                       then ",\n"
@@ -1283,6 +1302,16 @@ fun outputChunkFn (cxt, chunk, print) =
         val () = print (concat ["define hidden %uintptr_t @",
                                 ChunkLabel.toString chunkLabel,
                                 "(%CPointer %gcState, %CPointer %stackTopArg, %CPointer %frontierArg, %uintptr_t %nextBlockArg) {\nentry:\n"])
+        val () =
+           if !Control.llvmCC10
+              then (print (concat ["\t%res = call cc10 %uintptr_t @",
+                                   ChunkLabel.toStringX chunkLabel,
+                                   "(%CPointer %gcState, %CPointer %stackTopArg, %CPointer %frontierArg, %uintptr_t %nextBlockArg)\n",
+                                   "\tret %uintptr_t %res\n}\n"])
+                    ; print (concat ["define hidden cc10 %uintptr_t @",
+                                     ChunkLabel.toStringX chunkLabel,
+                                     "(%CPointer %gcState, %CPointer %stackTopArg, %CPointer %frontierArg, %uintptr_t %nextBlockArg) {\nentry:\n"]))
+              else ()
         val () = print "\t%stackTop = alloca %CPointer\n"
         val () = print "\t%frontier = alloca %CPointer\n"
         val () = print "\t%nextBlock = alloca %uintptr_t\n"
@@ -1315,7 +1344,7 @@ fun outputChunkFn (cxt, chunk, print) =
                       val () = print (mkinst (tmp2, "sub", "i64", tmp1, llint (#2 (List.first entries))))
                       val () = print (mkgep (tmp3,
                                              concat ["[", llint numEntries, " x i8*]*"],
-                                             concat ["@", ChunkLabel.toString chunkLabel, ".nextLabels"],
+                                             concat ["@", ChunkLabel.toString' chunkLabel, ".nextLabels"],
                                              [("i64", "0"), ("%uintptr_t", tmp2)]))
                       val () = print (mkload (tmp4, "i8**", tmp3))
                       val () = print (concat ["\tindirectbr i8* ", tmp4,
@@ -1370,12 +1399,13 @@ fun outputChunks (cxt, chunks,
                                        ChunkLabel.equals (chunkLabel, Chunk.chunkLabel chunk))
                           then ()
                           else print (concat ["declare hidden %uintptr_t @",
-                                              ChunkLabel.toString chunkLabel,
+                                              ChunkLabel.toString' chunkLabel,
                                               "(%CPointer,%CPointer,%CPointer,%uintptr_t)\n"])
                     val Program.T {chunks, ...} = program
                  in
                     List.foreach (chunks, declareChunk)
-                    ; print "@nextChunks = external hidden global %ChunkFnPtrArr_t\n"
+                    ; print (if !Control.llvmCC10 then "@nextXChunks" else "@nextChunks")
+                    ; print " = external hidden global %ChunkFnPtrArr_t\n"
                     ; print "\n\n"
                  end
         val () = List.foreach (chunks, fn chunk => outputChunkFn (cxt, chunk, print))
@@ -1482,13 +1512,15 @@ fun transC (cxt, outputC) =
       val Program.T {main = main, chunks = chunks, ... } = program
       val Context { labelChunk, labelIndexAsString, nextChunks, ... } = cxt
 
-      fun defineNextChunks print =
+      fun defineNextChunks (print, nextChunksName, chunkName) =
          (List.foreach
           (chunks, fn Chunk.T {chunkLabel, ...} =>
            (print "PRIVATE extern ChunkFn_t "
-            ; print (ChunkLabel.toString chunkLabel)
+            ; print (chunkName chunkLabel)
             ; print ";\n"))
-          ; print "PRIVATE ChunkFnPtr_t nextChunks["
+          ; print "PRIVATE ChunkFnPtr_t "
+          ; print nextChunksName
+          ; print "["
           ; print (C.int (Vector.length nextChunks))
           ; print "] = {\n"
           ; Vector.foreachi
@@ -1500,9 +1532,14 @@ fun transC (cxt, outputC) =
               ; print "/* "
               ; print (Label.toString label)
               ; print " */ &("
-              ; print (ChunkLabel.toString (labelChunk label))
+              ; print (chunkName (labelChunk label))
               ; print "),\n"))
           ; print "};\n")
+      val defineNextChunks = fn print =>
+         (defineNextChunks (print, "nextChunks", ChunkLabel.toString)
+          ; if !Control.llvmCC10
+               then defineNextChunks (print, "nextXChunks", ChunkLabel.toStringX)
+               else ())
 
       val {print, done, file = _} = outputC ()
       val _ =

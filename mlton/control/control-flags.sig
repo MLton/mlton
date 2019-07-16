@@ -267,6 +267,8 @@ signature CONTROL_FLAGS =
       (* name of the output library *)
       val libname : string ref
 
+      val llvmCC10: bool ref
+
       (* Limit the code growth loop unrolling/unswitching will allow. *)
       val loopUnrollLimit: int ref
       val loopUnswitchLimit: int ref

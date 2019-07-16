@@ -588,6 +588,8 @@ fun makeOptions {usage} =
        (Expert, "llvm-as-opt-quote", " <opt>", "pass (quoted) option to llvm assembler",
         SpaceString
         (fn s => List.push (llvm_asOpts, {opt = s, pred = OptPred.Yes}))),
+       (Expert, "llvm-cc10", " {false|true}", "use llvm 'cc10' for interchunk transfers",
+        boolRef llvmCC10),
        (Expert, "llvm-llc", " <llc>", "path to llvm .bc -> .o compiler",
         SpaceString (fn s => llvm_llc := s)),
        (Normal, "llvm-llc-opt", " <opt>", "pass option to llvm compiler",
