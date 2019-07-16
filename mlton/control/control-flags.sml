@@ -82,13 +82,13 @@ val chunkJumpTable = control {name = "chunkJumpTable",
                               default = false,
                               toString = Bool.toString}
 val chunkMayRToSelfOpt = control {name = "chunkMayRToSelfOpt",
-                                  default = false,
+                                  default = true,
                                   toString = Bool.toString}
 val chunkMustRToOtherOpt = control {name = "chunkMustRToOtherOpt",
                                     default = false,
                                     toString = Bool.toString}
 val chunkMustRToSelfOpt = control {name = "chunkMustRToSelfOpt",
-                                   default = false,
+                                   default = true,
                                    toString = Bool.toString}
 val chunkTailCall = control {name = "chunkTailCall",
                              default = true,
