@@ -5,7 +5,6 @@
  *)
 
 signature STATIC_STRUCTS = sig
-   structure Index: T
    structure WordX: WORD_X
    structure WordSize: WORD_SIZE
    structure WordXVector: WORD_X_VECTOR
@@ -18,28 +17,30 @@ signature STATIC =
 
       include STATIC_STRUCTS
       structure Data: sig
-         datatype elem =
-            Address of Index.t (* must be statically allocated *)
+         datatype 'a elem =
+            Address of 'a (* must be statically allocated *)
           | Word of WordX.t (* must be pointer-sized *)
 
-         datatype t =
+         datatype 'a t =
             Empty of Bytes.t
-          | Object of elem list
+          | Object of ('a elem) list
           | Vector of WordXVector.t
 
-         val layout: t -> Layout.t
-         val size: t -> WordSize.t * int
+         val map: ('a t * ('a -> 'b)) -> 'b t
+         val layout: ('a -> Layout.t) -> 'a t -> Layout.t
+         val size: 'a t -> WordSize.t * int
       end
 
       datatype location =
          MutStatic (* Mutable static, .data/.bss *)
        | ImmStatic (* Immutable static, .rodata *)
        | Heap (* Dynamically allocated in main *)
-      datatype t =
-         T of {data: Data.t,
+      datatype 'a t =
+         T of {data: 'a Data.t,
                header: WordXVector.t, (* mapped in-order *)
                location: location}
 
-      val layout: t -> Layout.t
+      val map: ('a t * ('a -> 'b)) -> 'b t
+      val layout: ('a -> Layout.t) -> 'a t -> Layout.t
    end
 

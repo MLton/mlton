@@ -16,6 +16,7 @@ signature BACKEND_ATOMS' =
       structure ObjectType: OBJECT_TYPE
       structure ObjptrTycon: OBJPTR_TYCON
       structure Runtime: RUNTIME
+      structure Static: STATIC
       structure Type: REP_TYPE
 
       sharing ObjectType = Type.ObjectType
@@ -40,6 +41,9 @@ signature BACKEND_ATOMS' =
       sharing WordSize = Type.WordSize
       sharing WordX = Type.WordX
       sharing WordXVector = Type.WordXVector
+      sharing WordSize = Static.WordSize
+      sharing WordX = Static.WordX
+      sharing WordXVector = Static.WordXVector
    end
 
 signature BACKEND_ATOMS =

@@ -47,10 +47,6 @@ signature MACHINE =
             val numberOfType: CType.t -> int
             val ty: t -> Type.t
          end
-      structure Static: STATIC
-      sharing Static.WordSize = WordSize
-      sharing Static.WordX = WordX
-      sharing Static.WordXVector = WordXVector
 
       structure StackOffset:
          sig
@@ -255,7 +251,7 @@ signature MACHINE =
                      objectTypes: Type.ObjectType.t vector,
                      reals: (RealX.t * Global.t) list,
                      sourceMaps: SourceMaps.t option,
-                     statics: (Static.t * Global.t option) vector}
+                     statics: (int Static.t * Global.t option) vector}
 
             val clearLabelNames: t -> unit
             val layouts: t * (Layout.t -> unit) -> unit

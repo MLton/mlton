@@ -322,8 +322,7 @@ fun outputDeclarations
       fun staticVar i =
          "static_" ^ Int.toString i
       fun staticAddress i =
-         (* TODO *)
-         "&static_" ^ Layout.toString (Static.Index.layout i)
+         "&" ^ staticVar i
       fun declareStaticInits () =
          (Vector.foreachi
           (statics, fn (i, (Machine.Static.T {data, header, location}, g)) =>

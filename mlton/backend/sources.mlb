@@ -20,6 +20,8 @@ local
    object-type.sig
    rep-type.sig
    rep-type.fun
+   static.sig
+   static.fun
 
    backend-atoms.sig
    backend-atoms.fun
@@ -27,8 +29,6 @@ local
    switch.sig
    switch.fun
    err.sml
-   static.sig
-   static.fun
 
    rssa-tree.sig
    rssa-tree.fun

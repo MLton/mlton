@@ -34,12 +34,6 @@ fun constrain (ty: Type.t): Layout.t =
       else empty
    end
 
-structure Static = Static (
-   structure Index = Var
-   structure WordX = WordX
-   structure WordSize = WordSize
-   structure WordXVector = WordXVector)
-
 structure Operand =
    struct
       datatype t =
@@ -56,7 +50,7 @@ structure Operand =
                             offset: Bytes.t,
                             scale: Scale.t,
                             ty: Type.t}
-       | Static of {static: Static.t,
+       | Static of {static: Var.t Static.t,
                     ty: Type.t}
        | Var of {var: Var.t,
                  ty: Type.t}
@@ -110,7 +104,7 @@ structure Operand =
                   seq [str (concat ["X", Type.name ty, " "]),
                        tuple [layout base, layout index, Scale.layout scale,
                               Bytes.layout offset]]
-             | Static {static, ...} => Static.layout static
+             | Static {static, ...} => Static.layout Var.layout static
              | Var {var, ...} => Var.layout var
          end
 

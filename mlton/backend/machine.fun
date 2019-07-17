@@ -765,7 +765,7 @@ structure Program =
                          objectTypes: ObjectType.t vector,
                          reals: (RealX.t * Global.t) list,
                          sourceMaps: SourceMaps.t option,
-                         statics: (Static.t * Global.t option) vector}
+                         statics: (int Static.t * Global.t option) vector}
 
       fun clear (T {chunks, sourceMaps, ...}) =
          (List.foreach (chunks, Chunk.clear)
@@ -1018,7 +1018,7 @@ structure Program =
                        NONE => ()
                      | SOME g' =>
                         checkGlobal ("static", g',
-                        Type.isObjptr, fn () => Static.layout s))
+                        Type.isObjptr, fn () => Static.layout Int.layout s))
             (* Check for no duplicate labels. *)
             local
                val {get, ...} =
