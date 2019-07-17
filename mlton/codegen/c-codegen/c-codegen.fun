@@ -350,10 +350,11 @@ fun outputDeclarations
                  print (structName ^ " " ^ staticVar i  ^
                         " = {" ^ WordXVector.toC header ^ ", " ^ dataC ^ "};\n")
              end))
-      fun declareVectors () =
-         (print "BeginVectorInits\n"
+      fun declareHeapStatics () =
+
+         (print "static struct GC_vectorInit vectorInits[] = {\n"
           ; (Vector.foreachi
-             (statics, fn (i, (s as Machine.Static.T {data, header, location}, g)) =>
+             (statics, fn (i, (Machine.Static.T {data, header, location}, g)) =>
              let
                 val shouldInit =
                    (case location of
@@ -366,17 +367,16 @@ fun outputDeclarations
                 case g of
                      NONE => () (* Shouldn't happen yet *)
                    | SOME g' =>
-                      (C.callNoSemi ("VectorInitElem",
-                             [C.bytes (WordSize.bytes dataWidth),
-                              C.int (Global.index g'),
-                              C.int dataBytes,
+                      (print o concat) ["{ ",
+                              C.bytes (WordSize.bytes dataWidth), ", ",
+                              C.int (Global.index g'), ", ",
+                              C.int dataBytes, ", ",
                               (* TODO, header not yet supported *)
-                              C.bytes headerBytes ^ " + " ^
-                              "(Pointer) &" ^ staticVar i ],
-                             print);
-                       print "\n")
+                              "(Pointer) &" ^ staticVar i,
+                              " + ", C.bytes headerBytes,
+                              " },\n"]
              end))
-          ; print "EndVectorInits\n")
+          ; print "};\n")
       fun declareReals () =
          (print "static void real_Init() {\n"
           ; List.foreach (reals, fn (r, g) =>
@@ -568,7 +568,7 @@ fun outputDeclarations
       ; declareGlobals ("PRIVATE ", print); print "\n"
       ; declareLoadSaveGlobals (); print "\n"
       ; declareStaticInits (); print "\n"
-      ; declareVectors (); print "\n"
+      ; declareHeapStatics (); print "\n"
       ; declareReals (); print "\n"
       ; declareFrameInfos (); print "\n"
       ; declareObjectTypes (); print "\n"
