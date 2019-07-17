@@ -1406,8 +1406,7 @@ fun outputChunks (cxt, chunks,
                [Metadata.defineNode (operDomain, ["!\"operRoot\""]),
                 "\t; ", "Operator domain", "\n"]
         val operScopes = Vector.fromList (HashTable.toList operScopes)
-        val rawOperScopes = Vector.mapi (operScopes,
-            fn (_, (oper, m)) =>
+        val _ = Vector.foreach (operScopes, fn (oper, m) =>
                let
                   val () = (print o Metadata.defineNode) (m,
                         ["!\"" ^ SimpleOper.toString oper ^ "\"",
@@ -1415,7 +1414,7 @@ fun outputChunks (cxt, chunks,
                          "i64 0"])
                   val () = print "\n"
                in
-                  m
+                  ()
                end)
         val () = List.foreach (!cFunctions, fn f =>
                      print (concat ["declare ", f, "\n"]))
