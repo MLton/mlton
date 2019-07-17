@@ -110,7 +110,7 @@ structure Type =
       in
          fun hash (T {node, width}) =
             case node of
-                 Bits => b
+                 Bits => Hash.combine (b, Bits.toWord width)
                | CPointer => cpointer
                | Label l => Hash.combine (label, Label.hash l)
                | Objptr os => Hash.combine (objptr,
