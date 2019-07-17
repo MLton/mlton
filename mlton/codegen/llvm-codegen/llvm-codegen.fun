@@ -284,16 +284,11 @@ structure Metadata = struct
    fun reset () =
       metaDataCounter := 0
 
-   val rec addSep =
-      fn [] => ""
-       | [s] => s
-       | s :: ss' => concat [s, ", ", addSep ss']
-
    fun defineNode (t, ts) =
       concat
          [str t,
           " = !{",
-          addSep ts,
+          String.concatWith (ts, ", "),
           "}"]
 end
 
