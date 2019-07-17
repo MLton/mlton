@@ -122,16 +122,14 @@ structure WordXVector =
          let
             fun string () =
                concat [C.string (String.implode (toListMap (v, WordX.toChar)))]
-            fun vector s =
+            fun vector () =
                concat ["{",
                        String.concatWith (toListMap (v, WordX.toC), ","),
                        "}"]
          in
             case WordSize.prim (elementSize v) of
                W8 => string ()
-             | W16 => vector "16"
-             | W32 => vector "32"
-             | W64 => vector "64"
+             | _ => vector ()
          end
    end
 
@@ -153,7 +151,7 @@ structure Static =
          open Data
 
          fun toC indexToC =
-            fn Empty bytes => "{}"
+            fn Empty _ => "{0}"
              | Vector v => WordXVector.toC v
              | Object es =>
                   let
@@ -328,7 +326,7 @@ fun outputDeclarations
          "&static_" ^ Layout.toString (Static.Index.layout i)
       fun declareStaticInits () =
          (Vector.foreachi
-          (statics, fn (i, (s as Machine.Static.T {data, header, location}, g)) =>
+          (statics, fn (i, (Machine.Static.T {data, header, location}, g)) =>
              let
                 val dataC = Static.Data.toC staticAddress data
                 val (dataType, dataElems) = Static.Data.size data
@@ -340,7 +338,8 @@ fun outputDeclarations
                    let datatype z = datatype Machine.Static.location in
                    case location of
                         MutStatic => ""
-                      | _ => "const "
+                      | ImmStatic => "const "
+                      | Heap => "const static "
                    end
                 val structName =
                    qualifier ^ "struct { " ^
