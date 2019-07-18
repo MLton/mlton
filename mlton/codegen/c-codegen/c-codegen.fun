@@ -1219,8 +1219,8 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
 
       fun declareStatics (prefix: string, print) =
          Vector.foreachi (statics,
-            fn (i, _) =>
-               print (concat [prefix, "PointerAux static_", C.int i, ";\n"]))
+            fn (i, (Static.T {header, ...}, _)) =>
+               print (concat [prefix, "PointerAux static_", C.int i, C.int (WordXVector.length header), ";\n"]))
 
       fun outputChunks chunks =
          let
