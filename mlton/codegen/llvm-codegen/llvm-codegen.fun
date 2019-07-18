@@ -1397,21 +1397,31 @@ fun outputChunks (cxt, chunks,
                  end
         val () = List.foreach (chunks, fn chunk => outputChunkFn (cxt, chunk, print))
 
-        val operDomain = Metadata.new ()
-        val () = (print o concat)
-               [Metadata.defineNode (operDomain, ["!\"operRoot\""]),
-                "\t; ", "Operator domain", "\n"]
-        val operScopes = Vector.fromList (HashTable.toList operScopes)
-        val _ = Vector.foreach (operScopes, fn (oper, m) =>
-               let
-                  val () = (print o Metadata.defineNode) (m,
-                        ["!\"" ^ SimpleOper.toString oper ^ "\"",
-                         Metadata.str operDomain,
-                         "i64 0"])
-                  val () = print "\n"
-               in
-                  ()
-               end)
+        val () =
+           case !Control.llvmAAMD of
+              Control.LLVMAliasAnalysisMetaData.None => ()
+            | Control.LLVMAliasAnalysisMetaData.TBAA =>
+                 let
+                    val operDomain = Metadata.new ()
+                    val () = print (concat
+                                    [Metadata.defineNode (operDomain, ["!\"operRoot\""]),
+                                     "\t; ", "Operator domain", "\n"])
+                    val () =
+                       List.foreach
+                       (HashTable.toList operScopes, fn (oper, m) =>
+                        let
+                           val () = print (Metadata.defineNode
+                                           (m,
+                                            ["!\"" ^ SimpleOper.toString oper ^ "\"",
+                                             Metadata.str operDomain,
+                                             "i64 0"]))
+                           val () = print "\n"
+                        in
+                           ()
+                        end)
+                 in
+                    ()
+                 end
         val () = List.foreach (!cFunctions, fn f =>
                      print (concat ["declare ", f, "\n"]))
         val () = List.foreach (!ffiSymbols, fn {name, cty, symbolScope} =>
