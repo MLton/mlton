@@ -117,12 +117,6 @@ structure Global =
          andalso CType.equals (Type.toCType ty, Type.toCType ty')
    end
 
-structure Static = Static (
-   structure Index = Int
-   structure WordX = WordX
-   structure WordSize = WordSize
-   structure WordXVector = WordXVector)
-
 structure StackOffset =
    struct
       datatype t = T of {offset: Bytes.t,
@@ -187,6 +181,8 @@ structure Operand =
                             ty: Type.t}
        | StackOffset of StackOffset.t
        | StackTop
+       | Static of {index: int,
+                    ty: Type.t}
        | Temporary of Temporary.t
        | Word of WordX.t
 
@@ -203,6 +199,7 @@ structure Operand =
         | SequenceOffset {ty, ...} => ty
         | StackOffset s => StackOffset.ty s
         | StackTop => Type.cpointer ()
+        | Static {ty, ...} => ty
         | Temporary t => Temporary.ty t
         | Word w => Type.ofWordX w
 
@@ -237,6 +234,7 @@ structure Operand =
                        constrain ty]
              | StackOffset so => StackOffset.layout so
              | StackTop => str "<StackTop>"
+             | Static {index, ty} => seq [str "M", tuple [Int.layout index, Type.layout ty]]
              | Temporary t => Temporary.layout t
              | Word w => WordX.layout (w, {suffix = true})
          end
@@ -259,6 +257,9 @@ structure Operand =
               SequenceOffset {base = b', index = i', ...}) =>
                 equals (b, b') andalso equals (i, i')
            | (StackOffset so, StackOffset so') => StackOffset.equals (so, so')
+           | (Static {index = i, ty = t},
+              Static {index = i', ty = t'}) =>
+              i = i' andalso Type.equals (t, t')
            | (Temporary t, Temporary t') => Temporary.equals (t, t')
            | (Word w, Word w') => WordX.equals (w, w')
            | _ => false
@@ -279,6 +280,7 @@ structure Operand =
                   inter base orelse inter index
              | (StackOffset so, StackOffset so') =>
                   StackOffset.interfere (so, so')
+             | (Static {index, ...}, Static {index=index', ...}) => index = index'
              | (Temporary t, Temporary t') => Temporary.equals (t, t')
              | _ => false
          end
@@ -291,6 +293,7 @@ structure Operand =
           | Offset _ => true
           | SequenceOffset _ => true
           | StackOffset _ => true
+          | Static _ => true
           | Temporary _ => true
           | _ => false
    end
@@ -773,7 +776,7 @@ structure Program =
 
       fun layouts (T {chunks, frameInfos, frameOffsets, handlesSignals,
                       main = {label, ...},
-                      maxFrameSize, objectTypes, sourceMaps, ...},
+                      maxFrameSize, objectTypes, sourceMaps, statics, ...},
                    output': Layout.t -> unit) =
          let
             open Layout
@@ -792,6 +795,14 @@ structure Program =
             ; Vector.foreachi (objectTypes, fn (i, ty) =>
                                output (seq [str "opt_", Int.layout i,
                                             str " = ", ObjectType.layout ty]))
+            ; output (str "\n")
+            ; output (str "Statics:")
+            ; Vector.foreachi (statics, fn (i, (s, g)) =>
+                               output (seq [str "static_", Int.layout i,
+                                            str " = ", Static.layout Int.layout s,
+                                            case g of
+                                               SOME g' => seq [str " -> ", Global.layout g']
+                                             | NONE => empty]))
             ; output (str "\n")
             ; List.foreach (chunks, fn chunk => Chunk.layouts (chunk, output))
          end
@@ -1127,6 +1138,10 @@ structure Program =
                                                          tyconTy = tyconTy,
                                                          result = ty,
                                                          scale = scale})))
+                      | Static {index=index, ty=ty} =>
+                           0 < index andalso index < Vector.length statics
+                           andalso
+                           (Type.isCPointer ty orelse Type.isObjptr ty)
                       | StackTop => true
                       | Temporary t => Alloc.doesDefine (alloc, Live.Temporary t)
                       | Word _ => true

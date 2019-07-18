@@ -78,6 +78,8 @@ signature MACHINE =
                                   ty: Type.t}
              | StackOffset of StackOffset.t
              | StackTop
+             | Static of {index: int,
+                          ty: Type.t}
              | Temporary of Temporary.t
              | Word of WordX.t
 

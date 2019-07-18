@@ -343,6 +343,9 @@ fun toMachine (rssa: Rssa.Program.t) =
             in
                (all, get)
             end
+
+         val staticsRef = ref []
+         val staticsCount = Counter.new 0
       in
          val (allReals, globalReal) =
             make {equals = RealX.equals,
@@ -352,16 +355,28 @@ fun toMachine (rssa: Rssa.Program.t) =
             make {equals = WordXVector.equals,
                   hash = WordXVector.hash,
                   ty = Type.ofWordXVector}
-         (* Doesn't likely need uniquifying *)
-         val staticsRef = ref []
+         (* Doesn't likely need uniquifying, since they're introduced
+          * late and mutable statics can't be unique *)
          val (allStatics, globalStatic) =
-            (fn () => !staticsRef,
-             fn {static, ty} =>
+            (fn () => Vector.fromList (!staticsRef),
+             fn {static as M.Static.T {location, ...}, ty} =>
                 let
-                   val g = M.Global.new ty
+                   val static = M.Static.map (static,
+                     fn v =>
+                        case varOperandOpt v of
+                             SOME (M.Operand.Static {index, ...}) => index
+                           | _ => Error.bug "Backend.globalStatic: invalid referrent")
+                   val i = Counter.next staticsCount
+
+                   val g =
+                      case location of
+                           M.Static.Heap => SOME (M.Global.new ty)
+                         | _ => NONE
                    val _ = List.push (staticsRef, (static, g))
                 in
-                   M.Operand.Global g
+                   case g of
+                        SOME g' => M.Operand.Global g'
+                      | NONE => M.Operand.Static {index=i, ty=ty}
                 end)
       end
       fun bogusOp (t: Type.t): M.Operand.t =
@@ -1120,7 +1135,7 @@ fun toMachine (rssa: Rssa.Program.t) =
       val maxFrameSize = Bytes.alignWord32 maxFrameSize
 
       (* Until statics added to rssa *)
-      val allStatics = Vector.fromListMap (allVectors (),
+      val vectorStatics = Vector.fromListMap (allVectors (),
          fn (v, g) =>
             (M.Static.T
              {data = M.Static.Data.Vector v,
@@ -1138,7 +1153,7 @@ fun toMachine (rssa: Rssa.Program.t) =
           objectTypes = objectTypes,
           reals = allReals (),
           sourceMaps = sourceMaps,
-          statics = allStatics }
+          statics = Vector.concat [allStatics (), vectorStatics] }
    in
       machine
    end

@@ -832,6 +832,8 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                        C.bytes offset]]
              | StackOffset s => StackOffset.toString s
              | StackTop => "StackTop"
+             | Static {index, ty} =>
+                  concat ["((", Type.toC ty, ")static_", Int.toString index, ")"]
              | Temporary t =>
                   concat [Type.name (Temporary.ty t), "_",
                           Int.toString (Temporary.index t)]

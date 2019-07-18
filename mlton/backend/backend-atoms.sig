@@ -56,5 +56,6 @@ signature BACKEND_ATOMS =
       sharing ObjectType = BackendAtoms.ObjectType
       sharing ObjptrTycon = BackendAtoms.ObjptrTycon
       sharing Runtime = BackendAtoms.Runtime
+      sharing Static = BackendAtoms.Static
       sharing Type = BackendAtoms.Type
    end
