@@ -1396,7 +1396,6 @@ fun outputChunks (cxt, chunks,
                     ; print "\n\n"
                  end
         val () = List.foreach (chunks, fn chunk => outputChunkFn (cxt, chunk, print))
-
         val () =
            case !Control.llvmAAMD of
               Control.LLVMAliasAnalysisMetaData.None => ()
@@ -1419,6 +1418,7 @@ fun outputChunks (cxt, chunks,
                         in
                            ()
                         end)
+                    val () = print "\n"
                  in
                     ()
                  end
