@@ -73,6 +73,7 @@ structure VarOperand =
       val operand: t -> M.Operand.t option =
          fn Allocate {operand, ...} => !operand
           | Const oper => SOME oper
+
    end
 
 structure ByteSet = UniqueSet (val cacheSize: int = 1
@@ -445,11 +446,9 @@ fun toMachine (rssa: Rssa.Program.t) =
                   let
                      val base = translateOperand base
                   in
-                     if M.Operand.isLocation base
-                        then M.Operand.Offset {base = base,
-                                               offset = offset,
-                                               ty = ty}
-                     else bogusOp ty
+                     M.Operand.Offset {base = base,
+                                       offset = offset,
+                                       ty = ty}
                   end
              | ObjptrTycon opt =>
                   M.Operand.Word
@@ -462,13 +461,11 @@ fun toMachine (rssa: Rssa.Program.t) =
                   let
                      val base = translateOperand base
                   in
-                     if M.Operand.isLocation base
-                        then M.Operand.SequenceOffset {base = base,
-                                                        index = translateOperand index,
-                                                        offset = offset,
-                                                        scale = scale,
-                                                        ty = ty}
-                     else bogusOp ty
+                     M.Operand.SequenceOffset {base = base,
+                                               index = translateOperand index,
+                                               offset = offset,
+                                               scale = scale,
+                                               ty = ty}
                   end
              | Static s => globalStatic s
              | Var {var, ...} => varOperand var
@@ -485,9 +482,15 @@ fun toMachine (rssa: Rssa.Program.t) =
          in
             case s of
                Bind {dst = (var, _), src, ...} =>
-                  Vector.new1
-                  (M.Statement.move {dst = varOperand var,
-                                     src = translateOperand src})
+                  let
+                     val oper = varOperand var
+                  in
+                     if M.Operand.isDestination oper
+                     then Vector.new1
+                        (M.Statement.move {dst = oper,
+                                           src = translateOperand src})
+                     else Vector.new0 () (* Destination already propagated *)
+                  end
              | Move {dst, src} =>
                   Vector.new1
                   (M.Statement.move {dst = translateOperand dst,

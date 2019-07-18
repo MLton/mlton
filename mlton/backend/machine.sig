@@ -85,7 +85,7 @@ signature MACHINE =
 
             val equals: t * t -> bool
             val interfere: t * t -> bool
-            val isLocation: t -> bool
+            val isDestination: t -> bool
             val layout: t -> Layout.t
             val stackOffset: {offset: Bytes.t, ty: Type.t} -> t
             val toString: t -> string

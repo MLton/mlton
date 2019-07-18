@@ -285,15 +285,14 @@ structure Operand =
              | _ => false
          end
 
-      val rec isLocation =
-         fn Cast (z, _) => isLocation z
+      val rec isDestination =
+         fn Cast (z, _) => isDestination z
           | Contents _ => true
           | GCState => true
           | Global _ => true
           | Offset _ => true
           | SequenceOffset _ => true
           | StackOffset _ => true
-          | Static _ => true
           | Temporary _ => true
           | _ => false
    end
@@ -1088,12 +1087,10 @@ structure Program =
                       | Null => true
                       | Offset {base, offset, ty} =>
                            (checkOperand (base, alloc)
-                            ; (Operand.isLocation base
-                               andalso
-                               (Type.offsetIsOk {base = Operand.ty base,
+                            ; Type.offsetIsOk {base = Operand.ty base,
                                                  offset = offset,
                                                  tyconTy = tyconTy,
-                                                 result = ty})))
+                                                 result = ty})
                       | Real _ => true
                       | StackOffset (so as StackOffset.T {offset, ty, ...}) =>
                            Bytes.<= (Bytes.+ (offset, Type.bytes ty), maxFrameSize)
@@ -1130,14 +1127,12 @@ structure Program =
                       | SequenceOffset {base, index, offset, scale, ty} =>
                            (checkOperand (base, alloc)
                             ; checkOperand (index, alloc)
-                            ; (Operand.isLocation base
-                               andalso
-                               (Type.sequenceOffsetIsOk {base = Operand.ty base,
+                            ; Type.sequenceOffsetIsOk {base = Operand.ty base,
                                                          index = Operand.ty index,
                                                          offset = offset,
                                                          tyconTy = tyconTy,
                                                          result = ty,
-                                                         scale = scale})))
+                                                         scale = scale})
                       | Static {index=index, ty=ty} =>
                            0 < index andalso index < Vector.length statics
                            andalso
@@ -1257,7 +1252,7 @@ structure Program =
                            val _ = checkOperand (dst, alloc)
                         in
                            if Type.isSubtype (Operand.ty src, Operand.ty dst)
-                              andalso Operand.isLocation dst
+                              andalso Operand.isDestination dst
                               then SOME alloc
                            else NONE
                         end

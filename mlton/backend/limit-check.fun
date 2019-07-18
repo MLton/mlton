@@ -238,8 +238,12 @@ fun insertFunction (f: Function.t,
                                val global = Var.newNoname ()
                                val _ = List.push (extraGlobals, global)
                                val global =
-                                  Operand.Var {var = global,
-                                               ty = Type.bool}
+                                  Operand.Offset
+                                  {base=Operand.Var
+                                     {var = global,
+                                      ty = Type.cpointer ()},
+                                   offset=Bytes.zero,
+                                   ty=Type.bool}
                                val dontCollect' = Label.newNoname ()
                                val _ =
                                   List.push
@@ -844,17 +848,21 @@ fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileI
       val {args, blocks, name, raises, returns, start} =
          Function.dest (insert main)
       val newStart = Label.newNoname ()
+      fun define x = Statement.Bind
+         {dst = (x, Type.cpointer ()),
+          isMutable = false,
+          src = Operand.Static
+            {static=Static.T
+               {data=Static.Data.Object [Static.Data.Word (WordX.one WordSize.bool)],
+                header=WordXVector.fromList ({elementSize=WordSize.objptr ()}, []),
+                location=Static.MutStatic},
+             ty=Type.cpointer ()}}
       val block =
          Block.T {args = Vector.new0 (),
                   kind = Kind.Jump,
                   label = newStart,
                   statements = (Vector.fromListMap
-                                (!extraGlobals, fn x =>
-                                 Statement.Bind
-                                 {dst = (x, Type.bool),
-                                  isMutable = true,
-                                  src = Operand.cast (Operand.bool true,
-                                                      Type.bool)})),
+                                (!extraGlobals, define)),
                   transfer = Transfer.Goto {args = Vector.new0 (),
                                             dst = start}}
       val blocks = Vector.concat [Vector.new1 block, blocks]
