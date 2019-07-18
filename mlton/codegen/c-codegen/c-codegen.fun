@@ -659,7 +659,7 @@ fun declareFFI (chunks, print) =
       ; if !empty then () else print "\n"
    end
 
-fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
+fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...},
             outputC: unit -> {file: File.t,
                               print: string -> unit,
                               done: unit -> unit}} =
@@ -833,7 +833,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
              | StackOffset s => StackOffset.toString s
              | StackTop => "StackTop"
              | Static {index, ty} =>
-                  concat ["((", Type.toC ty, ")static_", Int.toString index, ")"]
+                  concat ["M", C.args [Type.toC ty, Int.toString index]]
              | Temporary t =>
                   concat [Type.name (Temporary.ty t), "_",
                           Int.toString (Temporary.index t)]
@@ -1217,6 +1217,11 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
             ; C.callNoSemi ("EndChunk", [chunkLabelIndexAsString chunkLabel, C.bool (!Control.chunkTailCall)], print); print "\n\n"
          end
 
+      fun declareStatics (prefix: string, print) =
+         Vector.foreachi (statics,
+            fn (i, _) =>
+               print (concat [prefix, "PointerAux static_", C.int i, ";\n"]))
+
       fun outputChunks chunks =
          let
             val {done, print, ...} = outputC ()
@@ -1233,6 +1238,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
             outputIncludes (["c-chunk.h"], print); print "\n"
             ; outputOffsets (); print "\n"
             ; declareGlobals ("PRIVATE extern ", print); print "\n"
+            ; declareStatics ("PRIVATE extern ", print); print "\n"
             ; declareNextChunks (chunks, print); print "\n"
             ; declareFFI (chunks, print)
             ; List.foreach (chunks, fn chunk => outputChunkFn (chunk, print))
