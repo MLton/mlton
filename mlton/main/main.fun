@@ -576,7 +576,7 @@ fun makeOptions {usage} =
        (Expert, "llvm-as-opt-quote", " <opt>", "pass (quoted) option to llvm assembler",
         SpaceString
         (fn s => List.push (llvm_asOpts, {opt = s, pred = OptPred.Yes}))),
-       (Expert, "llvm-aamd", " {tbaa|none}",
+       (Expert, "llvm-aamd", " {none|tbaa}",
         "Include alias-analysis metadata when compiling with LLVM",
         SpaceString
         (fn s =>

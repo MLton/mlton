@@ -966,7 +966,7 @@ structure LLVMAliasAnalysisMetaData =
 
 val llvmAAMD =
       control {name = "llvmTBAA",
-               default = LLVMAliasAnalysisMetaData.TBAA,
+               default = LLVMAliasAnalysisMetaData.None,
                toString = LLVMAliasAnalysisMetaData.toString}
 
 val loopUnrollLimit = control {name = "loop unrolling limit",
