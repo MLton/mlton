@@ -59,4 +59,6 @@ in
        | _ => Error.bug "ObjptrTycon.wordVector"
 end
 
+fun hash (T {index}) = (Hash.permute o Word.fromInt o !) index
+
 end

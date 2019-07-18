@@ -353,23 +353,27 @@ structure Statement =
             datatype z = datatype Operand.t
             fun bytes (b: Bytes.t): Operand.t =
                Word (WordX.fromIntInf (Bytes.toIntInf b, WordSize.csize ()))
+            val metaDataSize = Runtime.normalMetaDataSize ()
+            val headerOffset = Runtime.headerOffset ()
+            val header =
+               Word (WordX.fromIntInf (Word.toIntInf header,
+                                       WordSize.objptrHeader ()))
             val temp = Temporary (Temporary.new (Type.cpointer (), NONE))
          in
             Vector.new4
-            ((* *((GC_header * )frontier) = header; *)
-             Move {dst = Contents {oper = Frontier,
-                                   ty = Type.objptrHeader ()},
-                   src = Word (WordX.fromIntInf (Word.toIntInf header,
-                                                 WordSize.objptrHeader ()))},
-             (* tmp = frontier + NORMAL_METADATA_SIZE; *)
-             PrimApp {args = Vector.new2 (Frontier,
-                                          bytes (Runtime.normalMetaDataSize ())),
+            ((* tmp = Frontier + NORMAL_METADATA_SIZE; *)
+             PrimApp {args = Vector.new2 (Frontier, bytes metaDataSize),
                       dst = SOME temp,
                       prim = Prim.cpointerAdd},
-             (* dst = tmp *)
              (* CHECK; if objptr <> cpointer, need non-trivial coercion here. *)
+             (* dst = pointerToObjptr(tmp); *)
              Move {dst = dst, src = Cast (temp, Operand.ty dst)},
-             (* frontier += size; *)
+             (* OW(dst, -GC_HEADER_SIZE) = header; *)
+             Move {dst = Offset {base = dst,
+                                 offset = headerOffset,
+                                 ty = Type.objptrHeader ()},
+                   src = header},
+             (* Frontier += size; *)
              PrimApp {args = Vector.new2 (Frontier, bytes size),
                       dst = SOME Frontier,
                       prim = Prim.cpointerAdd})

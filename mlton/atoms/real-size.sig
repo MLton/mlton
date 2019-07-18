@@ -19,6 +19,7 @@ signature REAL_SIZE =
       val bits: t -> Bits.t
       val bytes: t -> Bytes.t
       val equals: t * t -> bool
+      val hash: t -> word
       val memoize: (t -> 'a) -> t -> 'a
       val toString: t -> string
    end
