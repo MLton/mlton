@@ -576,9 +576,13 @@ fun makeOptions {usage} =
        (Expert, "llvm-as-opt-quote", " <opt>", "pass (quoted) option to llvm assembler",
         SpaceString
         (fn s => List.push (llvm_asOpts, {opt = s, pred = OptPred.Yes}))),
-       (Expert, "llvm-include-aliasing-info", " {true|false}",
-        "Include extra aliasing information when compiling with LLVM",
-        boolRef llvmIncludeAliasingInfo),
+       (Expert, "llvm-aamd", " {tbaa|none}",
+        "Include alias-analysis metadata when compiling with LLVM",
+        SpaceString
+        (fn s =>
+         llvmAAMD := (case LLVMAliasAnalysisMetaData.fromString s of
+                         SOME aamd => aamd
+                       | NONE => usage (concat ["invalid -llvm-aamd flag: ", s])))),
        (Expert, "llvm-llc", " <llc>", "path to llvm .bc -> .o compiler",
         SpaceString (fn s => llvm_llc := s)),
        (Normal, "llvm-llc-opt", " <opt>", "pass option to llvm compiler",

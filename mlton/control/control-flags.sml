@@ -950,10 +950,24 @@ val libTargetDir = control {name = "lib target dir",
 
 val libname = ref ""
 
-val llvmIncludeAliasingInfo =
-      control {name = "llvmIncludeAliasingInfo",
-               default = true,
-               toString = Bool.toString}
+structure LLVMAliasAnalysisMetaData =
+   struct
+      datatype t = None | TBAA
+      fun toString aamd =
+         case aamd of
+            None => "none"
+          | TBAA => "tbaa"
+      fun fromString s =
+         case s of
+            "none" => SOME None
+          | "tbaa" => SOME TBAA
+          | _ => NONE
+   end
+
+val llvmAAMD =
+      control {name = "llvmTBAA",
+               default = LLVMAliasAnalysisMetaData.TBAA,
+               toString = LLVMAliasAnalysisMetaData.toString}
 
 val loopUnrollLimit = control {name = "loop unrolling limit",
                                 default = 150,

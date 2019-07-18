@@ -337,9 +337,10 @@ fun getOperScopes t =
     Metadata.new)
 
 fun mkOperScope oper =
-   if !Control.llvmIncludeAliasingInfo
-   then scopeString (getOperScopes oper)
-   else ""
+   case !Control.llvmAAMD of
+      Control.LLVMAliasAnalysisMetaData.None => ""
+    | Control.LLVMAliasAnalysisMetaData.TBAA =>
+         scopeString (getOperScopes oper)
 
 (* Makes a load instruction:
  * <lhs> = load <ty>, <ty>* <arg>
