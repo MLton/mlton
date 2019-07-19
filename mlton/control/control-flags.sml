@@ -65,15 +65,34 @@ structure Chunkify =
    struct
       datatype t =
          Coalesce of {limit: int}
+       | Func
        | One
-       | PerFunc
        | Simple
 
-      val toString =
-         fn Coalesce {limit} => concat ["coalesce ", Int.toString limit]
+      fun toString c =
+         case c of
+            Coalesce {limit} => concat ["coalesce ", Int.toString limit]
+          | Func => "func"
           | One => "one"
-          | PerFunc => "per function"
           | Simple => "simple"
+      fun fromString s =
+         case s of
+            "func" => SOME Func
+          | "one" => SOME One
+          | "simple" => SOME Simple
+          | s =>
+               if String.hasPrefix (s, {prefix = "coalesce"})
+                  then let
+                          val s = String.dropPrefix (s, 8)
+                       in
+                          if String.forall (s, Char.isDigit)
+                             then (case Int.fromString s of
+                                      NONE => NONE
+                                    | SOME limit =>
+                                         SOME (Coalesce {limit = limit}))
+                             else NONE
+                       end
+                  else NONE
    end
 
 val chunkify = control {name = "chunkify",

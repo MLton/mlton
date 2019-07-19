@@ -276,30 +276,11 @@ fun makeOptions {usage} =
         SpaceString
         (fn s => List.push (ccOpts, {opt = s, pred = OptPred.Yes}))),
        (Expert, "chunkify", " {coalesce<n>|func|one|simple}", "set chunkify stategy",
-        SpaceString (fn s =>
-                     explicitChunkify
-                     := SOME (case s of
-                                 "func" => Chunkify.PerFunc
-                               | "one" => Chunkify.One
-                               | "simple" => Chunkify.Simple
-                               | _ => let
-                                         val usage = fn () =>
-                                            usage (concat ["invalid -chunkify flag: ", s])
-                                      in
-                                         if String.hasPrefix (s, {prefix = "coalesce"})
-                                            then let
-                                                    val s = String.dropPrefix (s, 8)
-                                                 in
-                                                    if String.forall (s, Char.isDigit)
-                                                       then (case Int.fromString s of
-                                                                NONE => usage ()
-                                                              | SOME n =>
-                                                                   Chunkify.Coalesce
-                                                                   {limit = n})
-                                                       else usage ()
-                                                 end
-                                            else usage ()
-                                      end))),
+        SpaceString
+        (fn s =>
+         explicitChunkify := (case Chunkify.fromString s of
+                                 SOME chunkify => SOME chunkify
+                               | NONE => usage (concat ["invalid -chunkify flag: ", s])))),
        (Expert, "chunk-batch", " <n>", "batch c files at size ~n",
         Int (fn n => chunkBatch := n)),
        (Expert, "chunk-jump-table", " {false|true}",
@@ -1216,10 +1197,10 @@ fun commandLine (args: string list): unit =
          chunkify :=
          (case !explicitChunkify of
              NONE => (case !codegen of
-                         AMD64Codegen => Chunkify.PerFunc
+                         AMD64Codegen => Chunkify.Func
                        | CCodegen => Chunkify.Coalesce {limit = 4096}
                        | LLVMCodegen => Chunkify.Coalesce {limit = 4096}
-                       | X86Codegen => Chunkify.PerFunc
+                       | X86Codegen => Chunkify.Func
                        )
            | SOME c => c)
       val _ = if not (!Control.codegen = X86Codegen) andalso !Native.IEEEFP

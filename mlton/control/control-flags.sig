@@ -37,9 +37,11 @@ signature CONTROL_FLAGS =
       structure Chunkify:
          sig
             datatype t = Coalesce of {limit: int}
+                       | Func
                        | One
-                       | PerFunc
                        | Simple
+            val toString: t -> string
+            val fromString: string -> t option
          end
       val chunkify: Chunkify.t ref
 

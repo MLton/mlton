@@ -26,7 +26,7 @@ fun one (Program.T {functions, main, ...}) =
    end
 
 (* A chunkifier that puts each function in its own chunk. *)
-fun perFunc (Program.T {functions, main, ...}) =
+fun func (Program.T {functions, main, ...}) =
    Vector.fromListMap
    (main :: functions, fn f =>
     let
@@ -432,7 +432,7 @@ fun chunkify p =
    case !Control.chunkify of
       Control.Chunkify.Coalesce {limit} => coalesce (p, limit)
     | Control.Chunkify.One => one p
-    | Control.Chunkify.PerFunc => perFunc p
+    | Control.Chunkify.Func => func p
     | Control.Chunkify.Simple => simple p
 
 val chunkify =
