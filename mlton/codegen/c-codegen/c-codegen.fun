@@ -720,9 +720,6 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                        toString base,
                                        C.bytes offset]]
              | Real r => RealX.toC r
-             | Register r =>
-                  concat [Type.name (Register.ty r), "_",
-                          Int.toString (Register.index r)]
              | SequenceOffset {base, index, offset, scale, ty} =>
                   concat ["X", C.args [Type.toC ty,
                                        toString base,
@@ -731,6 +728,9 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                        C.bytes offset]]
              | StackOffset s => StackOffset.toString s
              | StackTop => "StackTop"
+             | Temporary t =>
+                  concat [Type.name (Temporary.ty t), "_",
+                          Int.toString (Temporary.index t)]
              | Word w => WordX.toC w
       in
          val operandToString = toString
@@ -746,7 +746,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
          !Control.profile = Control.ProfileTimeField
          orelse !Control.profile = Control.ProfileTimeLabel
 
-      fun outputChunkFn (Chunk.T {chunkLabel, blocks, regMax, ...}, print) =
+      fun outputChunkFn (Chunk.T {chunkLabel, blocks, tempsMax, ...}, print) =
          let
             fun declareCReturns () =
                List.foreach
@@ -756,14 +756,14 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                 in
                    print (concat ["\tUNUSED ", s, " CReturn", CType.name t, ";\n"])
                 end)
-            fun declareRegisters () =
+            fun declareTemporaries () =
                List.foreach
                (CType.all, fn t =>
                 let
                    val pre = concat ["\t", CType.toString t, " ",
                                      CType.name t, "_"]
                 in
-                   Int.for (0, 1 + regMax t, fn i =>
+                   Int.for (0, 1 + tempsMax t, fn i =>
                             print (concat [pre, C.int i, ";\n"]))
                 end)
             fun outputStatement s =
@@ -849,7 +849,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                      then
                         let
                            val _ = print "\t{\n"
-                           val c = Counter.new 0
+                           val nextTmp = Counter.generator 0
                            val args =
                               Vector.toListMap
                               (args, fn z =>
@@ -859,7 +859,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                         val ty = Operand.ty z
                                         val tmp =
                                            concat ["tmp",
-                                                   Int.toString (Counter.next c)]
+                                                   Int.toString (nextTmp ())]
                                         val _ =
                                            print
                                            (concat
@@ -1149,7 +1149,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
             declareProfileLabels ()
             ; C.callNoSemi ("DefineChunk", [ChunkLabel.toString chunkLabel], print); print "\n"
             ; declareCReturns (); print "\n"
-            ; declareRegisters (); print "\n"
+            ; declareTemporaries (); print "\n"
             ; let
                  val entries = ref []
                  val () =

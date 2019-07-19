@@ -19,6 +19,8 @@ signature OBJPTR_TYCON =
       val <= : t * t -> bool
       val compare: t * t -> Relation.t
       val equals: t * t -> bool
+      (* This hash may change if setIndex is called *)
+      val hash: t -> word
       val fromIndex: int -> t
       val index: t -> int (* index into objectTypes array *)
       val layout: t -> Layout.t

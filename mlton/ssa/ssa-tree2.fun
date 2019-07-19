@@ -525,11 +525,11 @@ structure Base =
             open Parse
          in
             SequenceSub <$>
-            (spaces *> str "$(" *>
+            (mlSpaces *> str "$(" *>
              parseX >>= (fn sequence =>
-             spaces *> str "," *>
+             mlSpaces *> str "," *>
              parseX >>= (fn index =>
-             spaces *> str ")" *>
+             mlSpaces *> str ")" *>
              pure {index = index, sequence = sequence})))
             <|>
             (Object <$> parseX)
@@ -547,7 +547,7 @@ structure Base =
          let
             open Parse
          in
-            spaces *> char #"#" *>
+            mlSpaces *> char #"#" *>
             (peek (nextSat Char.isDigit) *>
              fromScan (Function.curry Int.scan StringCvt.DEC)) >>= (fn offset =>
             parse parseX >>= (fn base =>
@@ -665,7 +665,7 @@ structure Exp =
             open Parse
             val parseArgs = vector Var.parse
          in
-            any
+            mlSpaces *> any
             [Const <$> Const.parse,
              Inject <$>
              (kw "inj" *>
@@ -788,7 +788,7 @@ structure Statement =
          let
             open Parse
          in
-            any
+            mlSpaces *> any
             [Bind <$>
              (kw "val" *>
               ((SOME <$> Var.parse) <|> (NONE <$ kw "_")) >>= (fn var =>
@@ -1042,10 +1042,11 @@ structure Transfer =
                parseArgs >>= (fn args =>
                pure (fn return => pure {func = func, args = args, return = return})))
          in
-            any
+            mlSpaces *> any
             [Bug <$ kw "bug",
              Call <$>
              (kw "call" *>
+              mlSpaces *>
               any [kw "dead" *> parseCall >>= (fn mkCall => mkCall Return.Dead),
                    kw "tail" *> parseCall >>= (fn mkCall => mkCall Return.Tail),
                    Label.parse >>= (fn cont =>
@@ -2062,7 +2063,7 @@ structure Program =
                       functions = functions,
                       main = main})))))
          in
-            compose (skipCommentsML, parseProgram <* (spaces *> (failing next <|> failCut "end of file")))
+            parseProgram <* (mlSpaces *> (failing next <|> fail "end of file"))
          end
 
       fun layoutStats (program as T {datatypes, globals, functions, main, ...}) =

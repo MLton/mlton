@@ -21,9 +21,9 @@ in
    structure Live = Live
    structure ObjptrTycon = ObjptrTycon
    structure RealX = RealX
-   structure Register = Register
    structure Runtime = Runtime
    structure StackOffset = StackOffset
+   structure Temporary = Temporary
    structure WordSize = WordSize
    structure WordX = WordX
    structure WordXVector = WordXVector
@@ -47,7 +47,7 @@ in
    structure Var = Var
 end 
 
-structure AllocateRegisters = AllocateRegisters (structure Machine = Machine
+structure AllocateVariables = AllocateVariables (structure Machine = Machine
                                                  structure Rssa = Rssa)
 structure Chunkify = Chunkify (Rssa)
 structure ParallelMove = ParallelMove ()
@@ -170,7 +170,7 @@ fun toMachine (rssa: Rssa.Program.t) =
       (* Frame info *)
       local
          val frameInfos: M.FrameInfo.t list ref = ref []
-         val frameInfosCounter = Counter.new 0
+         val nextFrameInfo = Counter.generator 0
          val _ = ByteSet.reset ()
          val table =
             let
@@ -190,14 +190,14 @@ fun toMachine (rssa: Rssa.Program.t) =
                               hash = hash}
             end
          val frameOffsets: M.FrameOffsets.t list ref = ref []
-         val frameOffsetsCounter = Counter.new 0
+         val nextFrameOffset = Counter.generator 0
          val {get = getFrameOffsets: ByteSet.t -> M.FrameOffsets.t, ...} =
             Property.get
             (ByteSet.plist,
              Property.initFun
              (fn offsets =>
               let
-                 val index = Counter.next frameOffsetsCounter
+                 val index = nextFrameOffset ()
                  val offsets =
                     QuickSort.sortVector
                     (Vector.fromList (ByteSet.toList offsets),
@@ -262,7 +262,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                val frameOffsets = getFrameOffsets (ByteSet.fromList offsets)
                fun new () =
                   let
-                     val index = Counter.next frameInfosCounter
+                     val index = nextFrameInfo ()
                      val frameInfo =
                         M.FrameInfo.new
                         {frameOffsets = frameOffsets,
@@ -342,8 +342,8 @@ fun toMachine (rssa: Rssa.Program.t) =
                    (table, value, fn () =>
                     M.Global.new (ty value)))
                fun all () =
-                  HashTable.fold
-                  (table, [], fn ((value, global), ac) =>
+                  HashTable.foldi
+                  (table, [], fn (value, global, ac) =>
                    (global, value) :: ac)
             in
                (all, get)
@@ -389,8 +389,8 @@ fun toMachine (rssa: Rssa.Program.t) =
             val moves =
                Vector.fold2 (srcs, dsts, [],
                              fn (src, dst, ac) => {src = src, dst = dst} :: ac)
-            fun temp r =
-               M.Operand.Register (Register.new (M.Operand.ty r, NONE))
+            fun temp t =
+               M.Operand.Temporary (Temporary.new (M.Operand.ty t, NONE))
          in
             Vector.fromList
             (ParallelMove.move {
@@ -489,8 +489,8 @@ fun toMachine (rssa: Rssa.Program.t) =
                   (* ExnStack = stackTop + (handlerOffset + LABEL_SIZE) - StackBottom; *)
                   let
                      val tmp =
-                        M.Operand.Register
-                        (Register.new (Type.cpointer (), NONE))
+                        M.Operand.Temporary
+                        (Temporary.new (Type.cpointer (), NONE))
                   in
                      Vector.new2
                      (M.Statement.PrimApp
@@ -710,7 +710,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                      val paramOffsets = fn args =>
                         paramOffsets (args, fn (_, ty) => ty, fn so => so)
                   in
-                     AllocateRegisters.allocate {function = f,
+                     AllocateVariables.allocate {function = f,
                                                  paramOffsets = paramOffsets,
                                                  varInfo = varInfo}
                   end
@@ -843,8 +843,8 @@ fun toMachine (rssa: Rssa.Program.t) =
                    | R.Transfer.Raise srcs =>
                         let
                            val handlerStackTop =
-                              M.Operand.Register
-                              (Register.new (Type.cpointer (), NONE))
+                              M.Operand.Temporary
+                              (Temporary.new (Type.cpointer (), NONE))
                            val dsts =
                               paramOffsets
                               (srcs, R.Operand.ty, fn {offset, ty} =>
@@ -1019,19 +1019,19 @@ fun toMachine (rssa: Rssa.Program.t) =
       fun chunkToMachine (Chunk.T {chunkLabel, blocks}) =
          let
             val blocks = Vector.fromList (!blocks)
-            val regMax = CType.memo (fn _ => ref ~1)
-            val regsNeedingIndex =
+            val tempsMax = CType.memo (fn _ => ref ~1)
+            val tempsNeedingIndex =
                Vector.fold
                (blocks, [], fn (b, ac) =>
                 M.Block.foldDefs
                 (b, ac, fn (z, ac) =>
                  case z of
-                    M.Operand.Register r =>
-                       (case Register.indexOpt r of
-                           NONE => r :: ac
+                    M.Operand.Temporary t =>
+                       (case Temporary.indexOpt t of
+                           NONE => t :: ac
                          | SOME i =>
                               let
-                                 val z = regMax (Type.toCType (Register.ty r))
+                                 val z = tempsMax (Type.toCType (Temporary.ty t))
                                  val _ =
                                     if i > !z
                                        then z := i
@@ -1042,19 +1042,19 @@ fun toMachine (rssa: Rssa.Program.t) =
                   | _ => ac))
             val _ =
                List.foreach
-               (regsNeedingIndex, fn r =>
+               (tempsNeedingIndex, fn t =>
                 let
-                   val z = regMax (Type.toCType (Register.ty r))
+                   val z = tempsMax (Type.toCType (Temporary.ty t))
                    val i = 1 + !z
                    val _ = z := i
-                   val _ = Register.setIndex (r, i)
+                   val _ = Temporary.setIndex (t, i)
                 in
                    ()
                 end)
          in
             M.Chunk.T {chunkLabel = chunkLabel,
                        blocks = blocks,
-                       regMax = ! o regMax}
+                       tempsMax = ! o tempsMax}
          end
       val mainName = R.Function.name main
       val main = {chunkLabel = Chunk.label (funcChunk mainName),

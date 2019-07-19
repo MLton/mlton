@@ -33,10 +33,10 @@ local
    type passGen = string -> pass option
 
    fun mkSimplePassGen (name, doit): passGen =
-      let val count = Counter.new 1
+      let val count = Counter.generator 1
       in fn s => if s = name
                     then SOME {name = concat [name, "#",
-                                              Int.toString (Counter.next count)],
+                                              Int.toString (count ())],
                                doit = doit,
                                execute = true}
                     else NONE

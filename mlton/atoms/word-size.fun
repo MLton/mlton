@@ -68,6 +68,8 @@ val all: t list = Vector.toListKeepAllMap (allVector, fn so => so)
 
 val prims = List.map ([8, 16, 32, 64], fromBits o Bits.fromInt)
 
+fun hash (T b) = Hash.permute (Bits.hash b)
+
 val memoize: (t -> 'a) -> t -> 'a =
    fn f =>
    let

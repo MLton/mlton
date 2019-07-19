@@ -31,6 +31,7 @@ local
                val equals: t * t -> bool
                val fromInt: int -> t
                val fromIntInf: IntInf.t -> t
+               val hash: t -> word
                val inByte: t
                val inWord8: t
                val inWord16: t

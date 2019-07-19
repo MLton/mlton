@@ -368,7 +368,7 @@ structure Exp =
             val parseArgs = vector Var.parse
             val parseArgsOpt = vectorOpt Var.parse
          in
-            any
+            mlSpaces *> any
             [ConApp <$>
              (kw "con" *>
               Con.parse >>= (fn con =>
@@ -382,7 +382,7 @@ structure Exp =
               parseArgs >>= (fn args =>
               pure {prim = prim, targs = Vector.fromList targs, args = args})))),
              Select <$>
-             (spaces *> char #"#" *>
+             (mlSpaces *> char #"#" *>
               (peek (nextSat Char.isDigit) *>
                fromScan (Function.curry Int.scan StringCvt.DEC)) >>= (fn offset =>
               paren Var.parse >>= (fn tuple =>
@@ -713,7 +713,7 @@ structure Transfer =
                parseArgs >>= (fn args =>
                pure (fn return => pure {func = func, args = args, return = return})))
          in
-            any
+            mlSpaces *> any
             [Bug <$ kw "bug",
              Call <$>
              (kw "call" *>
@@ -1788,7 +1788,7 @@ structure Program =
                       functions = functions,
                       main = main})))))
          in
-            compose (skipCommentsML, parseProgram <* (spaces *> (failing next <|> failCut "end of file")))
+            parseProgram <* (mlSpaces *> (failing next <|> fail "end of file"))
          end
 
       fun layoutStats (program as T {datatypes, globals, functions, main, ...}) =

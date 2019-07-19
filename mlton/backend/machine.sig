@@ -22,7 +22,7 @@ signature MACHINE =
 
       structure ChunkLabel: ID
 
-      structure Register:
+      structure Temporary:
          sig
             type t
 
@@ -71,7 +71,6 @@ signature MACHINE =
                           offset: Bytes.t,
                           ty: Type.t}
              | Real of RealX.t
-             | Register of Register.t
              | SequenceOffset of {base: t,
                                   index: t,
                                   offset: Bytes.t,
@@ -79,6 +78,7 @@ signature MACHINE =
                                   ty: Type.t}
              | StackOffset of StackOffset.t
              | StackTop
+             | Temporary of Temporary.t
              | Word of WordX.t
 
             val equals: t * t -> bool
@@ -96,8 +96,8 @@ signature MACHINE =
          sig
             datatype t =
                Global of Global.t
-             | Register of Register.t
              | StackOffset of StackOffset.t
+             | Temporary of Temporary.t
 
             val equals: t * t -> bool
             val fromOperand: Operand.t -> t option
@@ -109,7 +109,7 @@ signature MACHINE =
       structure Statement:
          sig
             datatype t =
-             (* When registers or offsets appear in operands, there is an
+             (* When temporaries or offsets appear in operands, there is an
               * implicit contents of.
               * When they appear as locations, there is not.
               *)
@@ -214,7 +214,7 @@ signature MACHINE =
             datatype t =
                T of {kind: Kind.t,
                      label: Label.t,
-                     (* Live registers and stack offsets at start of block. *)
+                     (* Live temporaries and stack offsets at start of block. *)
                      live: Live.t vector,
                      raises: Live.t vector option,
                      returns: Live.t vector option,
@@ -230,11 +230,11 @@ signature MACHINE =
             datatype t =
                T of {blocks: Block.t vector,
                      chunkLabel: ChunkLabel.t,
-                     (* Register.index r
-                      *    <= regMax (Type.toCType (Register.ty r))
-                      * for all registers in the chunk.
+                     (* Temporary.index r
+                      *    <= tempsMax (Type.toCType (Temporary.ty r))
+                      * for all temporaries in the chunk.
                       *)
-                     regMax: CType.t -> int}
+                     tempsMax: CType.t -> int}
             val chunkLabel: t -> ChunkLabel.t
          end
 

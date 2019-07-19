@@ -7,23 +7,23 @@
  * See the file MLton-LICENSE for details.
  *)
 
-signature ALLOCATE_REGISTERS_STRUCTS = 
+signature ALLOCATE_VARIABLES_STRUCTS =
    sig
       structure Rssa: RSSA
       structure Machine: MACHINE
       sharing Rssa.BackendAtoms = Machine.BackendAtoms
    end
 
-signature ALLOCATE_REGISTERS = 
+signature ALLOCATE_VARIABLES =
    sig
-      include ALLOCATE_REGISTERS_STRUCTS
+      include ALLOCATE_VARIABLES_STRUCTS
 
       val allocate:
          {function: Rssa.Function.t,
           paramOffsets: (Rssa.Var.t * Rssa.Type.t) vector -> {offset: Bytes.t, ty: Rssa.Type.t} vector,
           varInfo: Rssa.Var.t -> {
                                   (* If (isSome operand) then a stack slot or
-                                   * register needs to be allocated for the
+                                   * temporary needs to be allocated for the
                                    * variable.
                                    *)
                                   operand: Machine.Operand.t option ref option,

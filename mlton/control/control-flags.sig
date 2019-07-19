@@ -268,6 +268,14 @@ signature CONTROL_FLAGS =
       (* name of the output library *)
       val libname : string ref
 
+      structure LLVMAliasAnalysisMetaData:
+         sig
+            datatype t = None | TBAA
+            val toString: t -> string
+            val fromString: string -> t option
+         end
+      val llvmAAMD: LLVMAliasAnalysisMetaData.t ref
+
       val llvmCC10: bool ref
 
       (* Limit the code growth loop unrolling/unswitching will allow. *)

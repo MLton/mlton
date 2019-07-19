@@ -20,29 +20,25 @@ in
   structure Forest = LoopForest
 end
 
-fun ++ (v: int ref): unit =
-  v := (!v) + 1
-
 
 structure Histogram =
   struct
-    type t = (IntInf.t * int ref) HashSet.t
+    type t = (IntInf.t, int ref) HashTable.t
 
     fun inc (set: t, key: IntInf.t): unit =
       let
-        val _ = HashSet.insertIfNew (set, IntInf.hash key,
-                                     (fn (k, _) => k = key),
-                                     (fn () => (key, ref 1)),
-                                     (fn (_, r) => ++r))
+        val _ = HashTable.insertIfNew (set, key,
+                                       (fn () => ref 1),
+                                       Int.inc)
       in
         ()
       end
 
     fun new (): t =
-      HashSet.new {hash = fn (k, _) => IntInf.hash k}
+      HashTable.new {hash = IntInf.hash, equals = IntInf.equals}
 
     fun toList (set: t): (IntInf.t * int ref) list =
-      HashSet.toList set
+      HashTable.toList set
 
     fun toString (set: t) : string =
       let
@@ -54,18 +50,18 @@ structure Histogram =
       end
   end
 
-val loopCount = ref 0
-val optCount = ref 0
-val total = ref 0
-val partial = ref 0
-val multiHeaders = ref 0
-val varEntryArg = ref 0
-val variantTransfer = ref 0
-val unsupported = ref 0
-val ccTransfer = ref 0
-val varBound = ref 0
-val infinite = ref 0
-val boundDom = ref 0
+val loopCount = Counter.new 0
+val optCount = Counter.new 0
+val total = Counter.new 0
+val partial = Counter.new 0
+val multiHeaders = Counter.new 0
+val varEntryArg = Counter.new 0
+val variantTransfer = Counter.new 0
+val unsupported = Counter.new 0
+val ccTransfer = Counter.new 0
+val varBound = Counter.new 0
+val infinite = Counter.new 0
+val boundDom = Counter.new 0
 val histogram = ref (Histogram.new ())
 
 type BlockInfo = Label.t * (Var.t * Type.t) vector
@@ -318,8 +314,8 @@ fun logsi (s: string, i: int): unit =
 fun logs (s: string): unit =
    logsi(s, 0)
 
-fun logstat (x: int ref, s: string): unit =
-  logs (concat[Int.toString(!x), " ", s])
+fun logstat (x: Counter.t, s: string): unit =
+  logs (concat [Int.toString(Counter.value x), " ", s])
 
 fun listPop lst =
   case lst of
@@ -536,7 +532,7 @@ fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody,
               loadVar: Var.t * bool -> IntInf.t option, domInfo, depth) =
    case entryArg of
       NONE => (logsi ("Can't unroll: entry arg not constant", depth) ;
-               ++varEntryArg ;
+               Counter.tick varEntryArg ;
                NONE)
    | SOME (entryX, entryXSigned) =>
       let
@@ -582,12 +578,12 @@ fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody,
                         end))
          then
             (logsi ("Can't unroll: variant transfer to head of loop", depth) ;
-             ++variantTransfer ;
+             Counter.tick variantTransfer ;
              NONE)
          else if (!unsupportedTransfer) then
             (logsi ("Can't unroll: unsupported transfer to head of loop",
                     depth) ;
-             ++unsupported ;
+             Counter.tick unsupported ;
              NONE)
          else
             let
@@ -596,7 +592,7 @@ fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody,
                case varChain (argVar, loopVar, loopBody, loadVar, x) of
                  NONE => (logsi ("Can't unroll: can't compute transfer",
                                  depth) ; 
-                          ++ccTransfer ;
+                          Counter.tick ccTransfer ;
                           NONE)
                | SOME (step) =>
                   let
@@ -665,7 +661,7 @@ fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody,
                     case transferVarBlock of
                       NONE =>
                         (logsi ("Can't unroll: can't determine bound", depth) ;
-                         ++varBound ;
+                         Counter.tick varBound ;
                          NONE)
                     | SOME(bound, block, signed) =>
                         let
@@ -691,7 +687,7 @@ fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody,
                                           invert = not contIsTrue})
                           else
                             (logsi ("Can't unroll: bound doesn't dominate", depth) ;
-                             ++boundDom ;
+                             Counter.tick boundDom ;
                              NONE)
                         end
                   end
@@ -783,7 +779,7 @@ fun findOpportunity(functionBody: Block.t vector,
       end
    else
       (logsi ("Can't optimize: loop has more than 1 header", depth) ;
-       multiHeaders := (!multiHeaders) + 1 ;
+       Counter.tick multiHeaders;
        NONE)
 
 fun makeHeader(oldHeader, (newVars, newStmts), newEntry) =
@@ -1077,7 +1073,7 @@ fun expandLoop (oldHeader, loopBlocks, loop, tBlock, argi, argSize, oldArg,
 fun optimizeLoop(allBlocks, headerNodes, loopNodes,
                  nodeBlock, loadGlobal, domInfo, depth) =
    let
-      val () = ++loopCount
+      val () = Counter.tick loopCount
       val headers = Vector.map (headerNodes, nodeBlock)
       val loopBlocks = Vector.map (loopNodes, nodeBlock)
       val loopBlockNames = Vector.map (loopBlocks, Block.label)
@@ -1093,13 +1089,13 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
       | SOME (argi, tBlock, loop) =>
           if Loop.isInfiniteLoop loop then
             (logsi ("Can't unroll: infinite loop", depth) ;
-             ++infinite ;
+             Counter.tick infinite ;
              logsi (concat["Index: ", Int.toString argi, Loop.toString loop],
                     depth) ;
              ([], []))
           else
             let
-              val () = ++optCount
+              val () = Counter.tick optCount
               val oldHeader = Vector.sub (headers, 0)
               val oldArgs = Block.args oldHeader
               val (oldArg, oldType) = Vector.sub (oldArgs, argi)
@@ -1123,7 +1119,7 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
             in
               if totalUnroll then
                 let
-                  val () = ++total
+                  val () = Counter.tick total
                   val () = logsi ("Completely unrolling loop", depth)
                   val newEntry = Label.newNoname()
                   val (newHeader, argLabels) =
@@ -1154,7 +1150,7 @@ fun optimizeLoop(allBlocks, headerNodes, loopNodes,
                 end
               else
                 let
-                  val () = ++partial
+                  val () = Counter.tick partial
                   val () = logsi ("Partially unrolling loop", depth)
                   val () = logsi (concat["Body expansion: ",
                                          IntInf.toString exBody,
@@ -1361,18 +1357,11 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                       | _ => NONE)
                 | _ => NONE)
          end
-      val () = loopCount := 0
-      val () = total := 0
-      val () = partial := 0
-      val () = optCount := 0
-      val () = multiHeaders := 0
-      val () = varEntryArg := 0
-      val () = variantTransfer := 0
-      val () = unsupported := 0
-      val () = ccTransfer := 0
-      val () = varBound := 0
-      val () = infinite := 0
-      val () = boundDom := 0
+      val () =
+        List.foreach
+        ([loopCount, total, partial, optCount, multiHeaders, varEntryArg,
+          variantTransfer, unsupported, ccTransfer, varBound, infinite, boundDom],
+         fn c => Counter.reset (c, 0))
       val () = histogram := Histogram.new ()
       val () = logs (concat["Unrolling loops. Unrolling factor = ",
                     Int.toString (!Control.loopUnrollLimit)])

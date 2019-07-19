@@ -964,6 +964,25 @@ val libTargetDir = control {name = "lib target dir",
 
 val libname = ref ""
 
+structure LLVMAliasAnalysisMetaData =
+   struct
+      datatype t = None | TBAA
+      fun toString aamd =
+         case aamd of
+            None => "none"
+          | TBAA => "tbaa"
+      fun fromString s =
+         case s of
+            "none" => SOME None
+          | "tbaa" => SOME TBAA
+          | _ => NONE
+   end
+
+val llvmAAMD =
+      control {name = "llvmTBAA",
+               default = LLVMAliasAnalysisMetaData.None,
+               toString = LLVMAliasAnalysisMetaData.toString}
+
 val llvmCC10 = control {name = "llvm 'cc10'",
                         default = false,
                         toString = Bool.toString}

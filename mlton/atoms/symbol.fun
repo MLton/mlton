@@ -10,32 +10,26 @@ struct
 
 open S
 
-datatype t = T of {hash: word,
-                   name: string,
+datatype t = T of {name: string,
                    plist: PropertyList.t}
 
 local
    fun make f (T r) = f r
 in
-   val hash = make #hash
    val plist = make #plist
    val name = make #name
 end
 
-val table: t HashSet.t = HashSet.new {hash = hash}
+val table: (string, t) HashTable.t =
+   HashTable.new {equals = String.equals, hash = String.hash}
 
 fun fromString s =
-   let
-      val hash = String.hash s
-   in
-      HashSet.lookupOrInsert
-      (table, hash, fn T {name, ...} => s = name,
-       fn () => T {hash = hash,
-                   name = s,
-                   plist = PropertyList.new ()})
-   end
+   HashTable.lookupOrInsert
+   (table, s, fn () =>
+    T {name = s, 
+       plist = PropertyList.new ()})
 
-fun foreach f = HashSet.foreach (table, f)
+fun foreach f = HashTable.foreach (table, f)
 
 val toString = name
 

@@ -24,9 +24,9 @@ struct
   in
      structure Label = Label
      structure Live = Live
-     structure Register = Register
      structure Scale = Scale
      structure StackOffset = StackOffset
+     structure Temporary = Temporary
      structure Type = Type
      structure WordSize = WordSize
      structure WordX = WordX
@@ -215,28 +215,6 @@ struct
                       size = size}, size), offset + x86.Size.toBytes size))
                end
           | Real _ => Error.bug "x86Translate.Operand.toX86Operand: Real unimplemented"
-          | Register r =>
-               let
-                  val ty = Machine.Type.toCType (Register.ty r)
-                  val index = Machine.Register.index r
-                  val base = x86.Immediate.label (x86MLton.local_base ty)
-                  val origin =
-                     x86.MemLoc.imm
-                     {base = base,
-                      index = x86.Immediate.int index,
-                      scale = x86.Scale.fromCType ty,
-                      size = x86.Size.BYTE,
-                      class = x86MLton.Classes.Locals}
-                  val sizes = x86.Size.fromCType ty
-               in
-                  (#1 o Vector.mapAndFold)
-                  (sizes, 0, fn (size,offset) =>
-                   (((x86.Operand.memloc o x86.MemLoc.shift)
-                     {origin = origin,
-                      disp = x86.Immediate.int offset,
-                      scale = x86.Scale.One,
-                      size = size}, size), offset + x86.Size.toBytes size))
-               end
           | StackOffset (StackOffset.T {offset, ty}) =>
                let
                   val offset = Bytes.toInt offset
@@ -263,6 +241,28 @@ struct
                   val stackTop = x86MLton.gcState_stackTopContentsOperand ()
                in
                   Vector.new1 (stackTop, valOf (x86.Operand.size stackTop))
+               end
+          | Temporary t =>
+               let
+                  val ty = Machine.Type.toCType (Temporary.ty t)
+                  val index = Machine.Temporary.index t
+                  val base = x86.Immediate.label (x86MLton.local_base ty)
+                  val origin =
+                     x86.MemLoc.imm
+                     {base = base,
+                      index = x86.Immediate.int index,
+                      scale = x86.Scale.fromCType ty,
+                      size = x86.Size.BYTE,
+                      class = x86MLton.Classes.Locals}
+                  val sizes = x86.Size.fromCType ty
+               in
+                  (#1 o Vector.mapAndFold)
+                  (sizes, 0, fn (size,offset) =>
+                   (((x86.Operand.memloc o x86.MemLoc.shift)
+                     {origin = origin,
+                      disp = x86.Immediate.int offset,
+                      scale = x86.Scale.One,
+                      size = size}, size), offset + x86.Size.toBytes size))
                end
           | Word w =>
                let

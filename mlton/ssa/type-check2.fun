@@ -137,16 +137,15 @@ fun checkScopes (program as
                             hash: 'a -> word,
                             numExhaustiveCases: IntInf.t) =
                      let
-                        val table = HashSet.new {hash = hash}
+                        val table = HashTable.new {equals = equals, hash = hash}
                         val _ =
                            Vector.foreach
                            (cases, fn (x, _) =>
                             let
                                val _ =
-                                  HashSet.insertIfNew
-                                  (table, hash x, fn y => equals (x, y),
-                                   fn () => x,
-                                   fn _ => Error.bug "Ssa2.TypeCheck2.loopTransfer: redundant branch in case")
+                                  HashTable.insertIfNew
+                                  (table, x, ignore, fn _ =>
+                                   Error.bug "Ssa2.TypeCheck2.loopTransfer: redundant branch in case")
                             in
                                ()
                             end)

@@ -12,22 +12,17 @@ structure UniqueString:
       val unique: string -> string
    end =
    struct
-      val set: {counter: Counter.t,
-                hash: word,
-                original: string} HashSet.t =
-         HashSet.new {hash = #hash}
+      val counters: (string, Counter.t) HashTable.t =
+         HashTable.new {hash = String.hash, equals = String.equals}
 
-      fun unique (s: string): string =
+      fun unique (original: string): string =
          let
-            val hash = String.hash s
-            val {counter, ...} =
-               HashSet.lookupOrInsert
-               (set, hash, fn {original, ...} => s = original,
-                fn () => {counter = Counter.new 0,
-                          hash = hash,
-                          original = s})
+            val c =
+               HashTable.lookupOrInsert
+               (counters, original,
+                fn () => Counter.new 0)
          in
-            concat [s, "_", Int.toString (Counter.next counter)]
+            concat [original, "_", Int.toString (Counter.next c)]
          end
    end
 
@@ -132,12 +127,12 @@ local
       (cache, toString id, fn () => id)
 
    val alphanum =
-      nextSat (fn c => Char.isAlphaNum c orelse c = #"_" orelse c = #"'")
+      named ("alphanum", nextSat (fn c => Char.isAlphaNum c orelse c = #"_" orelse c = #"'"))
    val sym =
-      nextSat (fn c => String.contains ("!%&$#+-/:<=>?@\\~`^|*", c))
+      named ("sym", nextSat (fn c => String.contains ("!%&$#+-/:<=>?@\\~`^|*", c)))
 
    val alphanumId =
-      (op ::) <$$> (nextSat Char.isAlpha, many alphanum)
+      (op ::) <$$> (named ("alpha", nextSat Char.isAlpha), many alphanum)
    val symId =
       (fn (c,cs,suf) => (c::(cs@suf))) <$$$>
       (sym, many sym,
@@ -147,7 +142,7 @@ local
       (op ::) <$$> (nextSat (fn c => c = #"'"), many alphanum)
 
    fun parseGen (alts: (string * 'a Parse.t) vector, fromId: id -> 'a Parse.t) : 'a Parse.t =
-      spaces *>
+      mlSpaces *>
       (String.implode <$>
        (if String.sub (noname, 0) = #"'"
            then tyvarId

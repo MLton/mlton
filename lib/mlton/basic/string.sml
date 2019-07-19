@@ -55,20 +55,14 @@ structure String: STRING =
 
       fun memoizeList (init: string -> 'a, l: (t * 'a) list): t -> 'a =
          let
-            val set: (word * t * 'a) HashSet.t = HashSet.new {hash = #1}
+            val set = HashTable.new {hash = hash, equals = equals}
             fun lookupOrInsert (s, f) =
-               let
-                  val hash = hash s
-               in HashSet.lookupOrInsert
-                  (set, hash,
-                   fn (hash', s', _) => hash = hash' andalso s = s',
-                   fn () => (hash, s, f ()))
-               end
+               HashTable.lookupOrInsert (set, s, f)
             val _ =
                List.foreach (l, fn (s, a) =>
                              ignore (lookupOrInsert (s, fn () => a)))
          in
-            fn s => #3 (lookupOrInsert (s, fn () => init s))
+            fn s => lookupOrInsert (s, fn () => init s)
          end
 
       fun memoize init = memoizeList (init, [])

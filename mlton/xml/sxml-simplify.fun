@@ -59,10 +59,10 @@ local
    type passGen = string -> pass option
 
    fun mkSimplePassGen (name, doit): passGen =
-      let val count = Counter.new 1
+      let val next = Counter.generator 1
       in fn s => if s = name
                     then SOME {name = name ^ "#" ^ 
-                               (Int.toString (Counter.next count)),
+                               (Int.toString (next ())),
                                doit = doit,
                                execute = true}
                     else NONE
@@ -70,7 +70,7 @@ local
 
    val polyvariancePassGen =
       let
-         val count = Counter.new 1
+         val next = Counter.generator 1
          fun nums s =
             if s = ""
                then SOME []
@@ -98,7 +98,7 @@ local
                                             Int.toString rounds, ",",
                                             Int.toString small, ",",
                                             Int.toString product, ")#",
-                                            Int.toString (Counter.next count)],
+                                            Int.toString (next ())],
                              doit = polyvariance (hofo, rounds, small, product),
                              execute = true}
                     val s = String.dropPrefix (s, String.size "polyvariance")
