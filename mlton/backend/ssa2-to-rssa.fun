@@ -1669,7 +1669,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                             statements = Vector.new0 (),
                             transfer = S.Transfer.Bug})),
                 mayInline = false, (* doesn't matter *)
-                name = Func.newNoname (),
+                name = Func.newString "globals",
                 raises = NONE,
                 returns = NONE,
                 start = start},
