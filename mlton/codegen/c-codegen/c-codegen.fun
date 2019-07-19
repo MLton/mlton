@@ -929,7 +929,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                         (push (return, size);
                          print "\tFlushFrontier ();\n";
                          print "\tFlushStackTop ();\n";
-                         print "\tThread_returnToC ();\n")
+                         print "\treturn (uintptr_t)-1;\n")
                    | CCall {args, func, return} =>
                         let
                            val CFunction.T {return = returnTy,
