@@ -188,19 +188,34 @@ structure Class =
       val new = DisjointSet.singleton o PropertyList.new
       val plist = DisjointSet.!
       val == = DisjointSet.union
+      val equals = DisjointSet.equals
    end
 structure Graph = DirectedGraph
 structure Node = Graph.Node
 fun simple (program as Program.T {functions, main, ...}) =
    let
       val functions = main :: functions
-      val {get = funcInfo: Func.t -> {class: Class.t,
+      val mainFns =
+         let
+            val {name, blocks, ...} = Function.dest main
+         in
+            Vector.fold
+            (blocks, [name], fn (Block.T {transfer, ...}, mainFns) =>
+             case transfer of
+                Call {func, ...} => func::mainFns
+              | _ => mainFns)
+         end
+      fun isMain f =
+         List.exists (mainFns, fn f' => Func.equals (f, f'))
+      val {get = funcInfo: Func.t -> {callSites: Label.t list ref,
+                                      class: Class.t,
                                       function: Function.t,
                                       node: unit Node.t},
            set = setFuncInfo,
            rem = remFuncInfo, ...} =
          Property.getSetOnce (Func.plist,
                               Property.initRaise ("Chunkify.simple.funcInfo", Func.layout))
+      val funcCallSites = #callSites o funcInfo
       val funcClass = #class o funcInfo
       val funcFunction = #function o funcInfo
       val funcNode = #node o funcInfo
@@ -230,7 +245,8 @@ fun simple (program as Program.T {functions, main, ...}) =
                                        func = name}))
              val node = Graph.newNode cgraph
              val _ = setNodeInfo (node, {func = name})
-             val _ = setFuncInfo (name, {class = labelClass start,
+             val _ = setFuncInfo (name, {callSites = ref [],
+                                         class = labelClass start,
                                          function = f,
                                          node = node})
           in
@@ -262,11 +278,12 @@ fun simple (program as Program.T {functions, main, ...}) =
              val node = funcNode name
           in
              Vector.foreach
-             (blocks, fn Block.T {transfer, ...} =>
+             (blocks, fn Block.T {label, transfer, ...} =>
               case transfer of
                  Call {func, ...} =>
-                    (ignore o Graph.addEdge)
-                    (cgraph, {from = node, to = funcNode func})
+                    (List.push (funcCallSites func, label)
+                     ; ignore (Graph.addEdge
+                               (cgraph, {from = node, to = funcNode func})))
                | _ => ())
           end)
       (* Compute rflow. *)
@@ -311,6 +328,64 @@ fun simple (program as Program.T {functions, main, ...}) =
                    | _ => ())
               end)
           end)
+      (* If all of a function's call sites are in the same (non-main) chunk,
+       * then place the function's entry block in the chunk.
+       * If all of a function's raise/return points are in the same (non-main) chunk,
+       * then place the function's raise/return blocks in the chunk.
+       *)
+      val _ =
+         let
+            val changed = ref false
+            fun loop () =
+               (List.foreach
+                (functions, fn f =>
+                 let
+                    val {name, blocks, ...} = Function.dest f
+                    val {callSites, class = funcClass, ...} = funcInfo name
+                    fun oneClass ls =
+                       case ls of
+                          [] => NONE
+                        | l::ls =>
+                             let
+                                val c = labelClass l
+                             in
+                                if not (isMain (labelFunc l))
+                                   andalso List.forall (ls, fn l =>
+                                                        not (isMain (labelFunc l))
+                                                        andalso Class.equals (c, labelClass l))
+                                   then SOME (fn c' =>
+                                              if not (Class.equals (c, c'))
+                                                 then (Class.== (c, c')
+                                                       ; changed := true)
+                                                 else ())
+                                   else NONE
+                             end
+                    val () =
+                       Option.app
+                       (oneClass (!callSites), fn f => f funcClass)
+                    val () =
+                       Option.app
+                       (oneClass (returnsTo name @ raisesTo name), fn f =>
+                        Vector.foreach
+                        (blocks, fn Block.T {label, transfer, ...} =>
+                         let
+                            val f = fn () => f (labelClass label)
+                         in
+                            case transfer of
+                               Raise _ => f ()
+                             | Return _ => f()
+                             | _ => ()
+                         end))
+                 in
+                    ()
+                 end)
+                ; if !changed
+                     then (changed := false; loop ())
+                     else ())
+         in
+            loop ()
+         end
+
       type chunk = {funcs: Func.t list ref,
                     labels: Label.t list ref}
       val chunks: chunk list ref = ref []
