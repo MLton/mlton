@@ -543,7 +543,7 @@ fun declareFFI (chunks, print) =
                 | _ => ())
            val _ =
               case transfer of
-                 Transfer.CCall {func, return, ...} =>
+                 Transfer.CCall {func, ...} =>
                     let
                        datatype z = datatype CFunction.Target.t
                        val CFunction.T {target, ...} = func
@@ -552,10 +552,7 @@ fun declareFFI (chunks, print) =
                           Direct "Thread_returnToC" => ()
                         | Direct name =>
                              doit (name, fn () =>
-                                   concat [case return of
-                                              NONE => "NORETURN "
-                                            | SOME _ => "",
-                                           CFunction.cPrototype func, ";\n"])
+                                   concat [CFunction.cPrototype func, ";\n"])
                         | Indirect => ()
                     end
                | _ => ()
@@ -999,7 +996,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                                "(ChunkFnPtr_t)NULL"],
                                               print)
                               else (case return of
-                                       NONE => print "\tUnreachable ();\n"
+                                       NONE => print "\treturn (uintptr_t)-2;\n"
                                      | SOME {return, ...} => gotoLabel (return, {tab = true}))
                         in
                            ()
@@ -1049,7 +1046,8 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                                        ; gotoLabel (l, {tab = false})))
                                ; print "\tdefault: "
                                ; (case default of
-                                     NONE => print "\tUnreachable();\n"
+                                     NONE => (print "\t"
+                                              ; C.call ("Unreachable", [], print))
                                    | SOME default => gotoLabel (default, {tab = false}))
                                ; print "\t}\n")
                         in

@@ -1060,10 +1060,6 @@ fun outputTransfer (cxt, chunkLabel, transfer) =
                               mkstore (llty returnTy, resReg,
                                        "%CReturn" ^ CType.name (Type.toCType returnTy)))
                           end
-               val callAttrs =
-                  case return of
-                     NONE => " noreturn"
-                   | SOME _ => ""
                val (fnptrPre, fnptrVal, args) =
                   case target of
                      CFunction.Target.Direct name =>
@@ -1075,8 +1071,7 @@ fun outputTransfer (cxt, chunkLabel, transfer) =
                                        name, " (",
                                        String.concatWith
                                        (List.map (args, #1),
-                                        ", "), ")",
-                                       callAttrs])
+                                        ", "), ")"])
                         in
                            ("", name, args)
                         end
@@ -1108,11 +1103,10 @@ fun outputTransfer (cxt, chunkLabel, transfer) =
                           String.concatWith
                           (List.map
                            (args, fn (ty, reg) => ty ^ " " ^ reg),
-                           ", "), ")",
-                          callAttrs]
+                           ", "), ")"]
                val epilogue =
                   case return of
-                     NONE => "\tunreachable\n"
+                     NONE => "\tret %uintptr_t -2\n"
                    | SOME {return, ...} =>
                         let
                            val cacheFrontierCode =
