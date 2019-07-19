@@ -192,19 +192,22 @@ structure Class =
    end
 structure Graph = DirectedGraph
 structure Node = Graph.Node
-fun simple (program as Program.T {functions, main, ...}) =
+fun simple (program as Program.T {functions, main, ...},
+            {mainFns, sccC, sccR, singC, singR}) =
    let
       val functions = main :: functions
       val mainFns =
-         let
-            val {name, blocks, ...} = Function.dest main
-         in
-            Vector.fold
-            (blocks, [name], fn (Block.T {transfer, ...}, mainFns) =>
-             case transfer of
-                Call {func, ...} => func::mainFns
-              | _ => mainFns)
-         end
+         if mainFns
+            then let
+                    val {name, blocks, ...} = Function.dest main
+                 in
+                    Vector.fold
+                    (blocks, [name], fn (Block.T {transfer, ...}, mainFns) =>
+                     case transfer of
+                        Call {func, ...} => func::mainFns
+                      | _ => mainFns)
+                 end
+            else []
       fun isMain f =
          List.exists (mainFns, fn f' => Func.equals (f, f'))
       val {get = funcInfo: Func.t -> {callSites: Label.t list ref,
@@ -312,15 +315,17 @@ fun simple (program as Program.T {functions, main, ...}) =
                  val returnsTo = mkRTo returnsTo
                  val raisesTo = mkRTo raisesTo
                  fun eqRTo (l, rTo) =
-                    let val lc = labelClass l
-                    in List.foreach (rTo, fn rlc => Class.== (lc, rlc))
-                    end
+                    if sccR
+                       then let val lc = labelClass l
+                            in List.foreach (rTo, fn rlc => Class.== (lc, rlc))
+                            end
+                       else ()
               in
                  Vector.foreach
                  (blocks, fn Block.T {label, transfer, ...} =>
                   case transfer of
                      Call {func, ...} =>
-                        if funcInSCC func
+                        if sccC andalso funcInSCC func
                            then Class.== (labelClass label, funcClass func)
                            else ()
                    | Raise _ => eqRTo (label, raisesTo)
@@ -360,10 +365,11 @@ fun simple (program as Program.T {functions, main, ...}) =
                                                  else ())
                                    else NONE
                              end
-                    val () =
+                    fun doSingC () =
                        Option.app
                        (oneClass (!callSites), fn f => f funcClass)
-                    val () =
+                    val () = if singC then doSingC () else ()
+                    fun doSingR () =
                        Option.app
                        (oneClass (returnsTo name @ raisesTo name), fn f =>
                         Vector.foreach
@@ -376,6 +382,7 @@ fun simple (program as Program.T {functions, main, ...}) =
                              | Return _ => f()
                              | _ => ()
                          end))
+                    val () = if singR then doSingR () else ()
                  in
                     ()
                  end)
@@ -433,7 +440,7 @@ fun chunkify p =
       Control.Chunkify.Coalesce {limit} => coalesce (p, limit)
     | Control.Chunkify.One => one p
     | Control.Chunkify.Func => func p
-    | Control.Chunkify.Simple => simple p
+    | Control.Chunkify.Simple opts => simple (p, opts)
 
 val chunkify =
    fn p =>

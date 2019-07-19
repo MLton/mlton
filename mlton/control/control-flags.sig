@@ -39,7 +39,11 @@ signature CONTROL_FLAGS =
             datatype t = Coalesce of {limit: int}
                        | Func
                        | One
-                       | Simple
+                       | Simple of {mainFns: bool,
+                                    sccC: bool,
+                                    sccR: bool,
+                                    singC: bool,
+                                    singR: bool}
             val toString: t -> string
             val fromString: string -> t option
          end

@@ -67,32 +67,61 @@ structure Chunkify =
          Coalesce of {limit: int}
        | Func
        | One
-       | Simple
+       | Simple of {mainFns: bool,
+                    sccC: bool,
+                    sccR: bool,
+                    singC: bool,
+                    singR: bool}
 
       fun toString c =
          case c of
-            Coalesce {limit} => concat ["coalesce ", Int.toString limit]
+            Coalesce {limit} => concat ["coalesce", Int.toString limit]
           | Func => "func"
           | One => "one"
-          | Simple => "simple"
+          | Simple {mainFns, sccC, sccR, singC, singR} =>
+               let
+                  open Layout
+               in
+                  toString
+                  (namedRecord
+                   ("simple",
+                    [("mainFns", Bool.layout mainFns),
+                     ("sccC", Bool.layout sccC),
+                     ("sccR", Bool.layout sccR),
+                     ("singC", Bool.layout singC),
+                     ("singR", Bool.layout singR)]))
+               end
       fun fromString s =
-         case s of
-            "func" => SOME Func
-          | "one" => SOME One
-          | "simple" => SOME Simple
-          | s =>
-               if String.hasPrefix (s, {prefix = "coalesce"})
-                  then let
-                          val s = String.dropPrefix (s, 8)
-                       in
-                          if String.forall (s, Char.isDigit)
-                             then (case Int.fromString s of
-                                      NONE => NONE
-                                    | SOME limit =>
-                                         SOME (Coalesce {limit = limit}))
-                             else NONE
-                       end
-                  else NONE
+         let
+            open Parse
+            infix 1 <|> >>=
+            infix  3 <*> <* *>
+            infixr 4 <$> <$$> <$$$> <$$$$> <$ <$?>
+            val p =
+               any
+               [str "coalesce" *>
+                (peek (nextSat Char.isDigit) *>
+                 fromScan (Function.curry Int.scan StringCvt.DEC)) >>= (fn limit =>
+                pure (Coalesce {limit = limit})),
+                str "func" *> pure Func,
+                str "one" *> pure One,
+                str "simple" *>
+                cbrack (ffield ("mainFns", bool) >>= (fn mainFns =>
+                        nfield ("sccC", bool) >>= (fn sccC =>
+                        nfield ("sccR", bool) >>= (fn sccR =>
+                        nfield ("singC", bool) >>= (fn singC =>
+                        nfield ("singR", bool) >>= (fn singR =>
+                        pure (Simple {mainFns = mainFns,
+                                      sccC = sccC,
+                                      sccR = sccR,
+                                      singC = singC,
+                                      singR = singR})))))))]
+               <* failing next
+         in
+            case parseString (p, s) of
+               No _ => NONE
+             | Yes c => SOME c
+         end
    end
 
 val chunkify = control {name = "chunkify",
