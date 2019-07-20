@@ -764,6 +764,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                    (Switch.T
                     {cases = cases,
                      default = default,
+                     expect = NONE,
                      size = convertWordSize s,
                      test = varOp test}))
                end

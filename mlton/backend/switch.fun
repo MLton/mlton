@@ -34,22 +34,24 @@ fun isRedundant {cases: 'a vector,
 datatype t =
    T of {cases: (WordX.t * Label.t) vector,
          default: Label.t option,
+         expect: WordX.t option,
          size: WordSize.t,
          test: Use.t}
 
-fun layout (T {cases, default, test, ...})= 
+fun layout (T {cases, default, expect, test, ...})=
    let
       open Layout
    in
       seq [str "switch ",
            record [("test", Use.layout test),
                    ("default", Option.layout Label.layout default),
+                   ("expect", Option.layout (fn w => WordX.layout (w, {suffix = true})) expect),
                    ("cases",
                     Vector.layout (Layout.tuple2 (fn w => WordX.layout (w, {suffix = true}), Label.layout))
                     cases)]]
    end
 
-fun isOk (T {cases, default, size = _, test}, {checkUse, labelIsOk}): bool =
+fun isOk (T {cases, default, test, ...}, {checkUse, labelIsOk}): bool =
    let
       val () = checkUse test
       val ty = Use.ty test
@@ -91,8 +93,9 @@ fun foreachLabel (s, f) =
    foldLabelUse (s, (), {label = f o #1,
                          use = fn _ => ()})
 
-fun replaceLabels (T {cases, default, size, test}, f) =
+fun replaceLabels (T {cases, default, expect, size, test}, f) =
    T {cases = Vector.map (cases, (fn (w, l) => (w, f l))),
       default = Option.map (default, f),
+      expect = expect,
       size = size, test = test}
 end

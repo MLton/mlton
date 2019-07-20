@@ -1578,6 +1578,7 @@ structure Objptrs =
                     in
                        ([s], Switch (Switch.T {cases = cases,
                                                default = default,
+                                               expect = NONE,
                                                size = WordSize.objptrHeader (),
                                                test = tag}))
                     end
@@ -1677,6 +1678,7 @@ structure Small =
                                {cases = Vector.new1 (WordX.zero testSize,
                                                      notSmall),
                                 default = SOME smallDefault,
+                                expect = NONE,
                                 size = testSize,
                                 test = test})
                         in
@@ -1708,6 +1710,7 @@ structure Small =
                        val transfer =
                           Switch (Switch.T {cases = cases,
                                             default = default,
+                                            expect = NONE,
                                             size = testSize,
                                             test = tagOp})
                     in

@@ -870,7 +870,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                          M.Transfer.Return {returnsTo = returnsTo})
                    | R.Transfer.Switch switch =>
                         let
-                           val R.Switch.T {cases, default, size, test} =
+                           val R.Switch.T {cases, default, expect, size, test} =
                               switch
                         in
                            simple
@@ -884,6 +884,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                                   (M.Switch.T
                                    {cases = cases,
                                     default = default,
+                                    expect = expect,
                                     size = size,
                                     test = translateOperand test}))
                         end

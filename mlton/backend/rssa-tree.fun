@@ -161,9 +161,10 @@ structure Switch =
          open S
       end
 
-      fun replaceVar (T {cases, default, size, test}, f) =
+      fun replaceVar (T {cases, default, expect, size, test}, f) =
          T {cases = cases,
             default = default,
+            expect = expect,
             size = size,
             test = Operand.replaceVar (test, f)}
    end
@@ -449,12 +450,14 @@ structure Transfer =
             Switch (Switch.T
                     {cases = Vector.new2 ((make 0, falsee), (make 1, truee)),
                      default = NONE,
+                     expect = NONE,
                      size = WordSize.bool,
                      test = test})
          fun ifZero (test, {falsee, truee}) =
             Switch (Switch.T
                     {cases = Vector.new1 (make 0, truee),
                      default = SOME falsee,
+                     expect = NONE,
                      size = WordSize.bool,
                      test = test})
       end
