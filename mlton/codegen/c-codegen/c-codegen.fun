@@ -1031,8 +1031,12 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                    | Return {returnsTo} => rtrans ("Return", returnsTo)
                    | Switch switch =>
                         let
-                           val Switch.T {cases, default, test, ...} = switch
+                           val Switch.T {cases, default, expect, test, ...} = switch
                            val test = operandToString test
+                           val test =
+                              case expect of
+                                 NONE => test
+                               | SOME w => concat ["Expect (", test, ", ", WordX.toC w, ")"]
                            fun bnz (lnz, lz) =
                               C.call ("\tBNZ", [test, Label.toString lnz, Label.toString lz], print)
                            fun switch () =

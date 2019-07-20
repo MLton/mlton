@@ -36,6 +36,7 @@
 #define DEBUG_CCODEGEN FALSE
 #endif
 
+#define Expect(x,c) __builtin_expect(x, c)
 #define UNUSED __attribute__ ((unused))
 #define Unreachable() __builtin_unreachable()
 
