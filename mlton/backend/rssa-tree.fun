@@ -446,13 +446,14 @@ structure Transfer =
       local
          fun make i = WordX.fromIntInf (i, WordSize.bool)
       in
-         fun ifBool (test, {falsee, truee}) =
+         fun ifBoolE (test, expect, {falsee, truee}) =
             Switch (Switch.T
                     {cases = Vector.new2 ((make 0, falsee), (make 1, truee)),
                      default = NONE,
-                     expect = NONE,
+                     expect = Option.map (expect, fn expect => if expect then make 1 else make 0),
                      size = WordSize.bool,
                      test = test})
+         fun ifBool (test, branches) = ifBoolE (test, NONE, branches)
          fun ifZero (test, {falsee, truee}) =
             Switch (Switch.T
                     {cases = Vector.new1 (make 0, truee),

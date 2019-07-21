@@ -249,9 +249,11 @@ fun insertFunction (f: Function.t,
                                     label = dontCollect',
                                     statements = Vector.new0 (),
                                     transfer =
-                                    Transfer.ifBool
-                                    (global, {falsee = dontCollect,
-                                              truee = collect})})
+                                    Transfer.ifBoolE
+                                    (global,
+                                     !Control.gcExpect,
+                                     {falsee = dontCollect,
+                                      truee = collect})})
                             in
                                (dontCollect',
                                 Vector.new1
@@ -324,8 +326,9 @@ fun insertFunction (f: Function.t,
                                          dst = SOME (res, Type.bool),
                                          prim = prim}
                    val transfer =
-                      Transfer.ifBool
+                      Transfer.ifBoolE
                       (Operand.Var {var = res, ty = Type.bool},
+                       !Control.gcExpect,
                        {falsee = dontCollect,
                         truee = collect})
                 in
@@ -479,8 +482,9 @@ fun insertFunction (f: Function.t,
                                      prim = Prim.wordAddCheckP
                                             (WordSize.csize (),
                                              {signed = false})}),
-                                   Transfer.ifBool
+                                   Transfer.ifBoolE
                                    (Operand.Var {var = test, ty = Type.bool},
+                                    !Control.gcExpect,
                                     {falsee = heapCheck (false,
                                                          Operand.Var
                                                          {var = bytes,

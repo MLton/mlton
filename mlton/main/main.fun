@@ -451,6 +451,14 @@ fun makeOptions {usage} =
                        | "first" => First
                        | "every" => Every
                        | _ => usage (concat ["invalid -gc-check flag: ", s])))),
+       (Expert, "gc-expect", " {none|false|true}", "GC expect",
+        SpaceString (fn s =>
+                     gcExpect :=
+                     (case s of
+                         "false" => SOME false
+                       | "none" => NONE
+                       | "true" => SOME true
+                       | _ => usage (concat ["invalid -gc-expect flag: ", s])))),
        (Expert, "globalize-arrays", " {false|true}", "globalize arrays",
         boolRef globalizeArrays),
        (Expert, "globalize-refs", " {true|false}", "globalize refs",

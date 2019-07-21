@@ -213,6 +213,8 @@ signature CONTROL_FLAGS =
        | Every
       val gcCheck: gcCheck ref
 
+      val gcExpect: bool option ref
+
       val globalizeArrays: bool ref
 
       val globalizeRefs: bool ref

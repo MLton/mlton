@@ -890,6 +890,10 @@ val gcCheck = control {name = "gc check",
                        default = Limit,
                        toString = GcCheck.toString}
 
+val gcExpect = control {name = "gc check expect",
+                        default = NONE,
+                        toString = Option.toString Bool.toString}
+
 val globalizeArrays = control {name = "globalize arrays",
                                default = false,
                                toString = Bool.toString}
