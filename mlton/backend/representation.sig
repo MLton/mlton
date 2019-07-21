@@ -19,6 +19,10 @@ signature REPRESENTATION =
    sig
       include REPRESENTATION_STRUCTS
 
+      datatype 'a staticOrWord =
+         Static of 'a Rssa.Static.t
+       | ConstWord of Rssa.WordX.t
+
       val compute:
          Ssa2.Program.t
          -> {diagnostic: unit -> unit,
@@ -40,6 +44,13 @@ signature REPRESENTATION =
                       baseTy: Ssa2.Type.t,
                       dst: Rssa.Var.t * Rssa.Type.t,
                       offset: int} -> Rssa.Statement.t list,
+             static: {args: 'a vector,
+                      con: Ssa2.Con.t option,
+                      elem: 'a -> 'b Rssa.Static.Data.elem,
+                      location: Rssa.Static.location,
+                      objectTy: Ssa2.Type.t} ->
+                      'b staticOrWord,
+
              toRtype: Ssa2.Type.t -> Rssa.Type.t option,
              update: {base: Rssa.Operand.t Ssa2.Base.t,
                       baseTy: Ssa2.Type.t,

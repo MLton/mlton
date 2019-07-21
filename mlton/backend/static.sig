@@ -19,7 +19,7 @@ signature STATIC =
       structure Data: sig
          datatype 'a elem =
             Address of 'a (* must be statically allocated *)
-          | Word of WordX.t (* must be pointer-sized *)
+          | Word of WordX.t
 
          datatype 'a t =
             Empty of Bytes.t

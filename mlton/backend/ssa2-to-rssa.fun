@@ -652,7 +652,7 @@ fun convertWordX (w: WordX.t): WordX.t =
 fun convert (program as S.Program.T {functions, globals, main, ...},
              {codegenImplementsPrim: Rssa.Type.t Rssa.Prim.t -> bool}): Rssa.Program.t =
    let
-      val {diagnostic, genCase, object, objectTypes, select, toRtype, update} =
+      val {diagnostic, genCase, object, objectTypes, select, toRtype, update, ...} =
          PackedRepresentation.compute program
       val objectTypes = Vector.concat [ObjectType.basic (), objectTypes]
       val () =

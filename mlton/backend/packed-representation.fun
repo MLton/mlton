@@ -30,12 +30,14 @@ in
    structure Runtime = Runtime
    structure Scale = Scale
    structure Statement = Statement
+   structure Static = Static
    structure Switch = Switch
    structure Transfer = Transfer
    structure Type = Type
    structure Var = Var
    structure WordSize = WordSize
    structure WordX = WordX
+   structure WordXVector = WordXVector
 end
 structure S = Ssa2
 local
@@ -51,6 +53,11 @@ end
 datatype z = datatype Operand.t
 datatype z = datatype Statement.t
 datatype z = datatype Transfer.t
+
+(* Statics may simply become words *)
+datatype 'a staticOrWord =
+   Static of 'a Static.t
+ | ConstWord of WordX.t
 
 structure Type =
    struct
@@ -359,6 +366,33 @@ structure WordRep =
          ("PackedRepresentation.WordRep.tuple",
           layout o #1, List.layout Statement.layout)
          tuple
+
+
+      fun staticTuple (T {components, rep, ...},
+                 {src: {index: int} -> WordX.t}): WordX.t =
+         let
+            val (_,word) =
+               Vector.fold
+               (components,
+                  (Bits.zero, (WordX.zero o WordSize.fromBits o Rep.width) rep),
+                fn ({index, rep, ...}, (shift,word)) =>
+                if index < 0
+                   then (Bits.+ (shift, Rep.width rep), word)
+                else let
+                   val src = src {index=index}
+                   val src =
+                      if Bits.equals (shift, Bits.zero)
+                         then src
+                         else
+                            WordX.lshift (src, (WordX.fromIntInf
+                            (Bits.toIntInf shift, WordSize.shiftArg)))
+                in
+                   (Bits.+ (shift, Rep.width rep),
+                    WordX.orb (src, word))
+                end)
+         in
+            word
+         end
    end
 
 structure Component =
@@ -447,6 +481,21 @@ structure Component =
           fn {dst = (dst, _), ...} => Var.layout dst,
           List.layout Statement.layout)
          tuple
+
+      fun staticTuple (c: t, {src: {index: int} -> 'a Static.Data.elem})
+         : 'a Static.Data.elem =
+         case c of
+            Direct {index, ...} => src {index=index}
+          | Word wr =>
+               let
+                  val src = fn i =>
+                     case src i of
+                        Static.Data.Word w => w
+                      | Static.Data.Address x =>
+                           Error.bug "PackedRepresentation.Component.staticTuple: bad component"
+               in
+                  (Static.Data.Word o WordRep.staticTuple) (wr, {src = src})
+               end
    end
 
 structure Unpack =
@@ -981,6 +1030,26 @@ structure ObjptrRep =
          ("PackedRepresentation.ObjptrRep.tuple",
           layout, Var.layout o #dst, List.layout Statement.layout)
          tuple
+
+      fun staticTuple (T {components, componentsTy, ty, tycon, ...},
+                 {location: Static.location,
+                  src: {index: int} -> 'a Static.Data.elem})
+         : 'a Static.t =
+         let
+            val elems =
+               Vector.toListMap
+              (components, fn {component, offset} =>
+                  Component.staticTuple (component, {src=src}))
+            val header = Runtime.typeIndexToHeader (ObjptrTycon.index tycon)
+            val header = WordX.fromIntInf (Word.toIntInf header, WordSize.objptrHeader ())
+            val header =  WordXVector.fromList
+               ({elementSize = WordSize.objptrHeader ()}, [header])
+         in
+            Static.T
+            {header = header,
+             data = Static.Data.Object elems,
+             location = location}
+         end
    end
 
 structure TupleRep =
@@ -1034,12 +1103,26 @@ structure TupleRep =
                Component.tuple (c, {dst = dst, src = src})
           | Indirect pr =>
                ObjptrRep.tuple (pr, {dst = #1 dst, src = src})
-
       val tuple =
          Trace.trace2
          ("PackedRepresentation.TupleRep.tuple",
           layout, Var.layout o #1 o #dst, List.layout Statement.layout)
          tuple
+
+      fun staticTuple (tr: t,
+                 {location: Static.location,
+                  src: {index: int} -> 'a Static.Data.elem}): 'a staticOrWord =
+         case tr of
+            Direct {component = c, ...} =>
+               (case Component.staticTuple (c, {src = src}) of
+                    Static.Data.Word w => ConstWord w
+              (* If the tuple is direct, the component must have a word representation
+               * a single-entry static would be incorrect as it would be
+               * pointed one level too deep*)
+                  | _ => Error.bug "TupleRep.staticTuple: strange component rep")
+          | Indirect pr =>
+               Static (ObjptrRep.staticTuple (pr, {location = location, src = src}))
+
 
       (* TupleRep.make decides how to layout a series of types in an object,
        * or in the case of a sequence, in a sequence element.
@@ -1463,6 +1546,27 @@ structure ConRep =
          ("PackedRepresentation.ConRep.conApp",
           layout o #1, List.layout Statement.layout)
          conApp
+
+      fun staticConApp (r: t, {location: Static.location,
+                               src: {index: int} -> 'a Static.Data.elem})
+         : 'a staticOrWord =
+         case r of
+            ShiftAndTag {component, tag, ...} =>
+               (case Component.staticTuple (component, {src=src}) of
+                  Static.Data.Word w =>
+                   let
+                      val shift = (WordX.resize
+                                    (tag, WordSize.shiftArg))
+                      val w = WordX.lshift (w, shift)
+                      val mask = (WordX.resize
+                                   (tag, WordX.size w))
+                   in
+                      ConstWord (WordX.orb (WordX.lshift (w, shift), mask))
+                   end
+                | _ => Error.bug "PackedRepresentation.ConRep.staticConApp: bad component")
+          | Tag {tag, ...} => ConstWord tag
+          | Tuple tr => TupleRep.staticTuple (tr, {location = location, src = src})
+
    end
 
 structure Block =
@@ -2782,6 +2886,7 @@ fun compute (program as Ssa2.Program.T {datatypes, ...}) =
          ("PackedRepresentation.tupleRep",
           S.Type.layout, TupleRep.layout)
          tupleRep
+
       fun object {args, con, dst, objectTy, oper} =
          let
             val src = makeSrc (args, oper)
@@ -2833,12 +2938,22 @@ fun compute (program as Ssa2.Program.T {datatypes, ...}) =
                                        value = value})
                end
           | _ => Error.bug "PackedRepresentation.update: non-object"
+
+      fun static {args, con, elem, location, objectTy} =
+         let
+            val src = makeSrc (args, elem)
+         in
+            case con of
+               NONE => TupleRep.staticTuple (tupleRep objectTy, {location = location, src = src})
+             | SOME con => ConRep.staticConApp (conRep con, {location = location, src = src})
+         end
    in
       {diagnostic = diagnostic,
        genCase = genCase,
        object = object,
        objectTypes = objectTypes,
        select = select,
+       static = static,
        toRtype = toRtype,
        update = update}
    end
