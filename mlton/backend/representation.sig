@@ -50,7 +50,6 @@ signature REPRESENTATION =
                       location: Rssa.Static.location,
                       objectTy: Ssa2.Type.t} ->
                       'b staticOrWord,
-
              toRtype: Ssa2.Type.t -> Rssa.Type.t option,
              update: {base: Rssa.Operand.t Ssa2.Base.t,
                       baseTy: Ssa2.Type.t,

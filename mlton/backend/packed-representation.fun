@@ -386,6 +386,7 @@ structure WordRep =
                          else
                             WordX.lshift (src, (WordX.fromIntInf
                             (Bits.toIntInf shift, WordSize.shiftArg)))
+                   val src = WordX.resize (src, WordX.size word)
                 in
                    (Bits.+ (shift, Rep.width rep),
                     WordX.orb (src, word))
@@ -491,7 +492,7 @@ structure Component =
                   val src = fn i =>
                      case src i of
                         Static.Data.Word w => w
-                      | Static.Data.Address x =>
+                      | Static.Data.Address _ =>
                            Error.bug "PackedRepresentation.Component.staticTuple: bad component"
                in
                   (Static.Data.Word o WordRep.staticTuple) (wr, {src = src})
@@ -1031,14 +1032,14 @@ structure ObjptrRep =
           layout, Var.layout o #dst, List.layout Statement.layout)
          tuple
 
-      fun staticTuple (T {components, componentsTy, ty, tycon, ...},
+      fun staticTuple (T {components, tycon, ...},
                  {location: Static.location,
                   src: {index: int} -> 'a Static.Data.elem})
          : 'a Static.t =
          let
             val elems =
                Vector.toListMap
-              (components, fn {component, offset} =>
+              (components, fn {component, ...} =>
                   Component.staticTuple (component, {src=src}))
             val header = Runtime.typeIndexToHeader (ObjptrTycon.index tycon)
             val header = WordX.fromIntInf (Word.toIntInf header, WordSize.objptrHeader ())
@@ -1561,7 +1562,7 @@ structure ConRep =
                       val mask = (WordX.resize
                                    (tag, WordX.size w))
                    in
-                      ConstWord (WordX.orb (WordX.lshift (w, shift), mask))
+                      ConstWord (WordX.orb (w, mask))
                    end
                 | _ => Error.bug "PackedRepresentation.ConRep.staticConApp: bad component")
           | Tag {tag, ...} => ConstWord tag
