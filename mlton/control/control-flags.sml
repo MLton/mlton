@@ -135,7 +135,7 @@ val chunkMayRToSelfOpt = control {name = "chunkMayRToSelfOpt",
                                   default = true,
                                   toString = Bool.toString}
 val chunkMustRToOtherOpt = control {name = "chunkMustRToOtherOpt",
-                                    default = false,
+                                    default = true,
                                     toString = Bool.toString}
 val chunkMustRToSelfOpt = control {name = "chunkMustRToSelfOpt",
                                    default = true,

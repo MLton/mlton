@@ -289,7 +289,7 @@ fun makeOptions {usage} =
        (Expert, "chunk-may-rto-self-opt", " {true|false}",
         "whether to optimize return/raise that may transfer to self chunk",
         Bool (fn b => chunkMayRToSelfOpt := b)),
-       (Expert, "chunk-must-rto-other-opt", " {false|true}",
+       (Expert, "chunk-must-rto-other-opt", " {true|false}",
         "whether to optimize return/raise that must transfer to one other chunk",
         Bool (fn b => chunkMustRToOtherOpt := b)),
        (Expert, "chunk-must-rto-self-opt", " {true|false}",
