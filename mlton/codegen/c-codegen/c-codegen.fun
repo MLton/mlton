@@ -833,7 +833,12 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
              | StackOffset s => StackOffset.toString s
              | StackTop => "StackTop"
              | Static {index, ty} =>
-                  concat ["M", C.args [Type.toC ty, Int.toString index]]
+                  let
+                     val Static.T {header, ...} = (#1 o Vector.sub) (statics, index)
+                     val offset = (C.int o Bytes.toInt o WordXVector.size) header
+                  in
+                     concat ["M", C.args [Type.toC ty, C.int index, offset]]
+                  end
              | Temporary t =>
                   concat [Type.name (Temporary.ty t), "_",
                           Int.toString (Temporary.index t)]
@@ -1220,7 +1225,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
       fun declareStatics (prefix: string, print) =
          Vector.foreachi (statics,
             fn (i, (Static.T {header, ...}, _)) =>
-               print (concat [prefix, "PointerAux static_", C.int i, C.int (WordXVector.length header), ";\n"]))
+               print (concat [prefix, "PointerAux static_", C.int i, ";\n"]))
 
       fun outputChunks chunks =
          let
