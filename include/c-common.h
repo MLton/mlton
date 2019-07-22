@@ -10,6 +10,14 @@
 #ifndef _C_COMMON_H_
 #define _C_COMMON_H_
 
+#ifndef TRUE
+#define TRUE 1
+#endif
+
+#ifndef FALSE
+#define FALSE 0
+#endif
+
 #ifndef DEBUG_CCODEGEN
 #define DEBUG_CCODEGEN FALSE
 #endif
