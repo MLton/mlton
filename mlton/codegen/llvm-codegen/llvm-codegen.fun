@@ -373,7 +373,7 @@ fun resetLLVMTemp () = Counter.reset (tempCounter, 0)
 fun nextLLVMTemp () = concat ["%t", Int.toString (Counter.next tempCounter)]
 
 fun temporaryName (ty: CType.t, index: int): string =
-    concat ["%temp", CType.name ty, "_", Int.toString index]
+    concat ["%T", CType.name ty, "_", Int.toString index]
 
 val cFunctions : string list ref = ref []
 
@@ -1402,15 +1402,13 @@ fun outputChunkFn (cxt, chunk, print) =
                                fn t =>
                                   print (concat ["\t%CReturn", CType.name t,
                                                  " = alloca %", CType.toString t, "\n"]))
-        val () = List.foreach (CType.all,
-                               fn t =>
-                                  let
-                                      val pre = concat ["\t%temp", CType.name t, "_"]
-                                      val post = concat [" = alloca %", CType.toString t, "\n"]
-                                  in
-                                      Int.for (0, 1 + tempsMax t,
-                                               fn i => print (concat [pre, llint i, post]))
-                                  end)
+        val () = List.foreach (CType.all, fn t =>
+                               Int.for (0, 1 + tempsMax t, fn i =>
+                                        (print "\t"
+                                         ; print (temporaryName (t, i))
+                                         ; print " = alloca %"
+                                         ; print (CType.toString t)
+                                         ; print "\n")))
         val () = print (mkstore ("%CPointer", "%stackTopArg", "%stackTop", ""))
         val () = print (mkstore ("%CPointer", "%frontierArg", "%frontier", ""))
         val () = print (mkstore ("%uintptr_t", "%nextBlockArg", "%nextBlock", ""))

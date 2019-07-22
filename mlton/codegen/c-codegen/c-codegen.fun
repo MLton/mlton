@@ -729,8 +729,8 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
              | StackOffset s => StackOffset.toString s
              | StackTop => "StackTop"
              | Temporary t =>
-                  concat [Type.name (Temporary.ty t), "_",
-                          Int.toString (Temporary.index t)]
+                  concat ["T", C.args [Type.name (Temporary.ty t),
+                                       Int.toString (Temporary.index t)]]
              | Word w => WordX.toC w
       in
          val operandToString = toString
@@ -760,11 +760,13 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                List.foreach
                (CType.all, fn t =>
                 let
-                   val pre = concat ["\t", CType.toString t, " ",
-                                     CType.name t, "_"]
+                   val pre = concat ["\t", CType.toString t, " "]
                 in
                    Int.for (0, 1 + tempsMax t, fn i =>
-                            print (concat [pre, C.int i, ";\n"]))
+                            (print pre
+                             ; print (concat ["T", C.args [CType.name t,
+                                                           Int.toString i]])
+                             ; print ";\n"))
                 end)
             fun outputStatement s =
                let
