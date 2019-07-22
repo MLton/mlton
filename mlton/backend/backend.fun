@@ -359,7 +359,7 @@ fun toMachine (rssa: Rssa.Program.t) =
          (* Doesn't likely need uniquifying, since they're introduced
           * late and mutable statics can't be unique *)
          val (allStatics, globalStatic) =
-            (fn () => Vector.fromList (!staticsRef),
+            (fn () => Vector.fromListRev (!staticsRef),
              fn {static as M.Static.T {location, ...}, ty} =>
                 let
                    val static = M.Static.map (static,
