@@ -796,12 +796,13 @@ structure Program =
                                             str " = ", ObjectType.layout ty]))
             ; output (str "\n")
             ; output (str "Statics:")
-            ; Vector.foreachi (statics, fn (i, (s, g)) =>
-                               output (seq [str "static_", Int.layout i,
-                                            str " = ", Static.layout Int.layout s,
-                                            case g of
-                                               SOME g' => seq [str " -> ", Global.layout g']
-                                             | NONE => empty]))
+            ; Vector.foreachi (statics, fn (i, (s, g)) => (output o seq)
+                     [str "static_", Int.layout i,
+                      str " = ",
+                      Static.layout (fn i => seq [str "&static_", Int.layout i]) s,
+                      case g of
+                         SOME g' => seq [str " -> ", Global.layout g']
+                       | NONE => empty])
             ; output (str "\n")
             ; List.foreach (chunks, fn chunk => Chunk.layouts (chunk, output))
          end

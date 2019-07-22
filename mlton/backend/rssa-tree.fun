@@ -104,7 +104,9 @@ structure Operand =
                   seq [str (concat ["X", Type.name ty, " "]),
                        tuple [layout base, layout index, Scale.layout scale,
                               Bytes.layout offset]]
-             | Static {static, ...} => Static.layout Var.layout static
+             | Static {static, ...} =>
+                  Layout.seq [Layout.str "Static ",
+                  Static.layout (fn v => Layout.seq [Layout.str "&", Var.layout v]) static]
              | Var {var, ...} => Var.layout var
          end
 

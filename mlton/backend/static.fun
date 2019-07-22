@@ -29,7 +29,7 @@ functor Static (S: STATIC_STRUCTS): STATIC =
          fun layoutElem layoutI =
             let open Layout
             in fn Address i => layoutI i
-                | Word w => WordX.layout (w, {suffix=false})
+                | Word w => WordX.layout (w, {suffix=true})
             end
 
          fun layout layoutI =
