@@ -156,14 +156,6 @@
 /* Transfers                                         */
 /* ------------------------------------------------- */
 
-#define BNZ(x, lnz, lz)                                                 \
-        do {                                                            \
-                if (DEBUG_CCODEGEN)                                     \
-                        fprintf (stderr, "%s:%d: BNZ(%llu, %s, %s)\n",  \
-                                        __FILE__, __LINE__, ((unsigned long long)x), #lnz, #lz); \
-                if (x) goto lnz; else goto lz;                          \
-        } while (0)
-
 #define NearJump(l)                             \
         goto l
 

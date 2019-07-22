@@ -1050,7 +1050,13 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                  NONE => test
                                | SOME w => concat ["Expect (", test, ", ", WordX.toC w, ")"]
                            fun bnz (lnz, lz) =
-                              C.call ("\tBNZ", [test, Label.toString lnz, Label.toString lz], print)
+                              (print "\tif ("
+                               ; print test
+                               ; print ") goto "
+                               ; print (Label.toString lnz)
+                               ; print "; else goto "
+                               ; print (Label.toString lz)
+                               ; print ";\n")
                            fun switch () =
                               (print "\tswitch ("
                                ; print test
