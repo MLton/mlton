@@ -1652,7 +1652,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
             val statics = ref []
             val keeps = ref []
             datatype elem = datatype Static.Data.elem
-            datatype z = datatype PackedRepresentation.staticOrWord
+            datatype z = datatype PackedRepresentation.staticOrElem
             val {get = globalStatic: Var.t -> Var.t elem option,
                  set = setGlobalStatic, destroy = destGlobalStatics} =
                Property.destGetSetOnce
@@ -1752,7 +1752,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                         (setGlobalStatic (var, SOME (Word w));
                          pushKeep st)
                      fun 'a static (mk: S.Type.t * location * 'a ->
-                                    Var.t PackedRepresentation.staticOrWord, isEmpty, a: 'a) =
+                                    Var.t PackedRepresentation.staticOrElem, isEmpty, a: 'a) =
                         let
                            val location = getLocation (ty, isEmpty)
                            val s = mk (ty, location, a)
@@ -1764,8 +1764,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                       Static s =>
                                        (setGlobalStatic (var, SOME (Address var));
                                         pushStatic (var, ty, rty, s))
-                                    | ConstWord w =>
-                                       (setGlobalStatic (var, SOME (Word w));
+                                    | Elem e =>
+                                       (setGlobalStatic (var, SOME e);
                                         pushKeep st))
                              | NONE => keep ()
                         end

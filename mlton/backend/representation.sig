@@ -19,9 +19,9 @@ signature REPRESENTATION =
    sig
       include REPRESENTATION_STRUCTS
 
-      datatype 'a staticOrWord =
+      datatype 'a staticOrElem =
          Static of 'a Rssa.Static.t
-       | ConstWord of Rssa.WordX.t
+       | Elem of 'a Rssa.Static.Data.elem
 
       val compute:
          Ssa2.Program.t
@@ -49,7 +49,7 @@ signature REPRESENTATION =
                       elem: 'a -> 'b Rssa.Static.Data.elem,
                       location: Rssa.Static.location,
                       objectTy: Ssa2.Type.t} ->
-                      'b staticOrWord,
+                      'b staticOrElem,
              toRtype: Ssa2.Type.t -> Rssa.Type.t option,
              update: {base: Rssa.Operand.t Ssa2.Base.t,
                       baseTy: Ssa2.Type.t,

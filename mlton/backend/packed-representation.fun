@@ -55,9 +55,9 @@ datatype z = datatype Statement.t
 datatype z = datatype Transfer.t
 
 (* Statics may simply become words *)
-datatype 'a staticOrWord =
+datatype 'a staticOrElem =
    Static of 'a Static.t
- | ConstWord of WordX.t
+ | Elem of 'a Static.Data.elem
 
 structure Type =
    struct
@@ -1032,14 +1032,11 @@ structure ObjptrRep =
           layout, Var.layout o #dst, List.layout Statement.layout)
          tuple
 
-      fun staticTuple (T {components, tycon, ...},
-                 {location: Static.location,
-                  src: {index: int} -> 'a Static.Data.elem})
-         : 'a Static.t =
+      fun makeStatic {components, tycon, location, src} =
          let
             val elems =
                Vector.toListMap
-              (components, fn {component, ...} =>
+              (components, fn {component, offset=_} =>
                   Component.staticTuple (component, {src=src}))
             val header = Runtime.typeIndexToHeader (ObjptrTycon.index tycon)
             val header = WordX.fromIntInf (Word.toIntInf header, WordSize.objptrHeader ())
@@ -1051,6 +1048,14 @@ structure ObjptrRep =
              data = Static.Data.Object elems,
              location = location}
          end
+
+
+      fun staticTuple (T {components, tycon, ...},
+                 {location: Static.location,
+                  src: {index: int} -> 'a Static.Data.elem})
+         : 'a Static.t =
+         makeStatic {components=components, tycon=tycon,
+                     location=location, src=src}
    end
 
 structure TupleRep =
@@ -1112,15 +1117,10 @@ structure TupleRep =
 
       fun staticTuple (tr: t,
                  {location: Static.location,
-                  src: {index: int} -> 'a Static.Data.elem}): 'a staticOrWord =
+                  src: {index: int} -> 'a Static.Data.elem}): 'a staticOrElem =
          case tr of
             Direct {component = c, ...} =>
-               (case Component.staticTuple (c, {src = src}) of
-                    Static.Data.Word w => ConstWord w
-              (* If the tuple is direct, the component must have a word representation
-               * a single-entry static would be incorrect as it would be
-               * pointed one level too deep*)
-                  | _ => Error.bug "TupleRep.staticTuple: strange component rep")
+               Elem (Component.staticTuple (c, {src = src}))
           | Indirect pr =>
                Static (ObjptrRep.staticTuple (pr, {location = location, src = src}))
 
@@ -1550,7 +1550,7 @@ structure ConRep =
 
       fun staticConApp (r: t, {location: Static.location,
                                src: {index: int} -> 'a Static.Data.elem})
-         : 'a staticOrWord =
+         : 'a staticOrElem =
          case r of
             ShiftAndTag {component, tag, ...} =>
                (case Component.staticTuple (component, {src=src}) of
@@ -1562,10 +1562,10 @@ structure ConRep =
                       val mask = (WordX.resize
                                    (tag, WordX.size w))
                    in
-                      ConstWord (WordX.orb (w, mask))
+                      (Elem o Static.Data.Word o WordX.orb) (w, mask)
                    end
                 | _ => Error.bug "PackedRepresentation.ConRep.staticConApp: bad component")
-          | Tag {tag, ...} => ConstWord (WordX.resize (tag, WordSize.objptr ()))
+          | Tag {tag, ...} => (Elem o Static.Data.Word o WordX.resize) (tag, WordSize.objptr ())
           | Tuple tr => TupleRep.staticTuple (tr, {location = location, src = src})
 
    end
