@@ -324,7 +324,7 @@ fun outputDeclarations
          let val Static.T {header, ...} = (#1 o Vector.sub) (statics, i)
          in Bytes.toInt (WordXVector.size header) end
       fun staticAddress i = concat
-         ["(&", staticVar i, " + ",
+         ["((Pointer)(&", staticVar i, ") + ",
           C.int (headerSize i), ")"]
       fun declareStaticInits () =
          (Vector.foreachi
@@ -394,8 +394,8 @@ fun outputDeclarations
                               C.int (Global.index g'), ", ",
                               C.int dataBytes, ", ",
                               (* TODO, header not yet supported *)
-                              "(Pointer) &" ^ staticVar i,
-                              " + ", C.bytes headerBytes,
+                              "((Pointer) &" ^ staticVar i,
+                              ") + ", C.bytes headerBytes,
                               " },\n"]
              end))
           ; print "};\n")
