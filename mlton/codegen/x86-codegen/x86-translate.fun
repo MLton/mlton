@@ -397,7 +397,7 @@ struct
       open Machine.Statement
 
       fun comments statement
-        = if !Control.Native.commented > 0
+        = if !Control.codegenComments > 0
             then let
                    val comment = (Layout.toString o layout) statement
                  in
@@ -594,7 +594,7 @@ struct
               => switch(test, x86.Transfer.Cases.word cases, l))
 
       fun comments transfer
-        = if !Control.Native.commented > 0
+        = if !Control.codegenComments > 0
             then let
                    val comment = (Layout.toString o layout) transfer
                  in
@@ -727,7 +727,7 @@ struct
                   x86.Block.mkBlock'
                   {entry = NONE,
                    statements 
-                   = if !Control.Native.commented > 0
+                   = if !Control.codegenComments > 0
                        then let
                               val comment =
                                  concat ["Live: ",

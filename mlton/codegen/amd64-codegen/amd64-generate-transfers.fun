@@ -745,11 +745,11 @@ struct
                                   end))]
                      val pre
                        = AppendList.appends
-                         [if !Control.Native.commented > 1
+                         [if !Control.codegenComments > 1
                             then AppendList.single
                                  (Assembly.comment (Entry.toString entry))
                             else AppendList.empty,
-                          if !Control.Native.commented > 2
+                          if !Control.codegenComments > 2
                             then AppendList.single
                                  (Assembly.comment 
                                   (LiveSet.fold
@@ -803,7 +803,7 @@ struct
         and effectDefault (gef as GEF {fall,...})
                           {label, transfer} : Assembly.t AppendList.t
           = AppendList.append
-            (if !Control.Native.commented > 1
+            (if !Control.codegenComments > 1
                then AppendList.single
                     (Assembly.comment
                      (Transfer.toString transfer))

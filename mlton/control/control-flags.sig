@@ -74,6 +74,9 @@ signature CONTROL_FLAGS =
 
       val codegen: Codegen.t ref
 
+      (* whether or not to use comments in codegen *)
+      val codegenComments: int ref
+
       val contifyIntoMain: bool ref
 
       (* Generate an executable with debugging info. *)
@@ -303,9 +306,6 @@ signature CONTROL_FLAGS =
 
       structure Native:
          sig
-            (* whether or not to use comments in native codegen *)
-            val commented: int ref
-
             (* whether to eliminate redundant AL ops in native codegen *)
             val elimALRedundant: bool ref
 

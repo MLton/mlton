@@ -330,6 +330,8 @@ fun makeOptions {usage} =
                                           s = Control.Codegen.toString cg) of
                                        SOME cg => Explicit cg
                                      | NONE => usage (concat ["invalid -codegen flag: ", s]))))),
+       (Expert, "codegen-comments", " <n>", "level of comments  (0)",
+        intRef codegenComments),
        (Normal, "const", " '<name> <value>'", "set compile-time constant",
         SpaceString (fn s =>
                      case String.tokens (s, Char.isSpace) of
@@ -630,8 +632,6 @@ fun makeOptions {usage} =
                                 [case parseMlbPathVar s of
                                     NONE => Error.bug ("strange mlb path var: " ^ s)
                                   | SOME v => v])),
-       (Expert, "native-commented", " <n>", "level of comments  (0)",
-        intRef Native.commented),
        (Expert, "native-al-redundant", "{true|false}",
         "eliminate redundant AL ops",
         boolRef Native.elimALRedundant),

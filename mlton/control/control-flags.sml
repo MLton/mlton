@@ -178,6 +178,11 @@ val codegen = control {name = "codegen",
                        default = Codegen.X86Codegen,
                        toString = Codegen.toString}
 
+val codegenComments = control {name = "codegen comments",
+                               default = 0,
+                               toString = Int.toString}
+   
+
 val contifyIntoMain = control {name = "contifyIntoMain",
                                default = false,
                                toString = Bool.toString}
@@ -1067,10 +1072,6 @@ val mlbPathVars =
 
 structure Native =
    struct
-      val commented = control {name = "native commented",
-                               default = 0,
-                               toString = Int.toString}
-
       val elimALRedundant = control {name = "elim AL redundant",
                                      default = true,
                                      toString = Bool.toString}
