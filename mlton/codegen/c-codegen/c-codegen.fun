@@ -159,10 +159,9 @@ structure Static =
                         fn Word wx => WordX.toC wx
                          | Address i => indexToC i
                   in
-                     "{" ^
                      String.concatWith
                      (List.map (es, elemToC),
-                      ", ") ^ "}"
+                      ", ")
                   end
       end
    end
@@ -321,16 +320,38 @@ fun outputDeclarations
       end
       fun staticVar i =
          "static_" ^ Int.toString i
-      fun staticAddress i =
-         "&" ^ staticVar i
+      fun headerSize i =
+         let val Static.T {header, ...} = (#1 o Vector.sub) (statics, i)
+         in Bytes.toInt (WordXVector.size header) end
+      fun staticAddress i = concat
+         ["(&", staticVar i, " + ",
+          C.int (headerSize i), ")"]
       fun declareStaticInits () =
          (Vector.foreachi
           (statics, fn (i, (Machine.Static.T {data, header, location}, g)) =>
              let
                 val dataC = Static.Data.toC staticAddress data
-                val (dataType, dataElems) = Static.Data.size data
-                val dataElems = Int.toString dataElems
-                val dataTypeStr = "Word" ^ WordSize.toC dataType
+                datatype dataType =
+                   TObject of string list
+                 | TVector of string * int
+                val dataType =
+                   case data of
+                      Static.Data.Object es =>
+                         (TObject o List.map) (es,
+                           fn Static.Data.Word w => "Word" ^ WordSize.toC (WordX.size w)
+                            | Static.Data.Address _ => "Pointer")
+                    | Static.Data.Vector v =>
+                         TVector ("Word" ^ WordSize.toC (WordXVector.elementSize v), WordXVector.length v)
+                    | Static.Data.Empty b =>
+                         TVector ("Word" ^ WordSize.toC WordSize.byte, Bytes.toInt b)
+                val dataDescr =
+                   case dataType of
+                      TObject strings => String.concatWith (List.mapi (strings,
+                           fn (i, s) => concat [s, " data_", C.int i]),
+                        "; ")
+                    | TVector (str, length) => concat [str, " data[", C.int length, "]"]
+
+
                 val headerElems = Int.toString (WordXVector.length header)
                 val headerTypeStr = "Word" ^ (WordSize.toC o WordSize.objptr) ()
                 val qualifier =
@@ -340,11 +361,12 @@ fun outputDeclarations
                       | ImmStatic => "const "
                       | Heap => "const static "
                    end
-                val structName =
-                   qualifier ^ "struct { " ^
-                     headerTypeStr ^ " header[" ^ headerElems ^ "]; " ^
-                     dataTypeStr   ^ " data["   ^ dataElems   ^ "]; " ^
-                   "}"
+
+                val structName = concat
+                   [qualifier, "struct { ",
+                     headerTypeStr, " header[", headerElems, "]; ",
+                     dataDescr,
+                   "}\n"]
              in
                  print (structName ^ " " ^ staticVar i  ^
                         " = {" ^ WordXVector.toC header ^ ", " ^ dataC ^ "};\n")
