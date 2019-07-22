@@ -485,7 +485,7 @@ structure Component =
 
       fun staticTuple (c: t, {src: {index: int} -> 'a Static.Data.elem})
          : 'a Static.Data.elem =
-         case c of
+         case padToPrim c of
             Direct {index, ...} => src {index=index}
           | Word wr =>
                let
@@ -1565,7 +1565,7 @@ structure ConRep =
                       ConstWord (WordX.orb (w, mask))
                    end
                 | _ => Error.bug "PackedRepresentation.ConRep.staticConApp: bad component")
-          | Tag {tag, ...} => ConstWord tag
+          | Tag {tag, ...} => ConstWord (WordX.resize (tag, WordSize.objptr ()))
           | Tuple tr => TupleRep.staticTuple (tr, {location = location, src = src})
 
    end
