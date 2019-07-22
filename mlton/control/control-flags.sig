@@ -53,6 +53,7 @@ signature CONTROL_FLAGS =
       val chunkMayRToSelfOpt: bool ref
       val chunkMustRToOtherOpt: bool ref
       val chunkMustRToSelfOpt: bool ref
+      val chunkMustRToSingOpt: bool ref
       val chunkTailCall: bool ref
 
       val closureConvertGlobalize: bool ref

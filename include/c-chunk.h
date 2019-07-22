@@ -163,18 +163,18 @@
                 if (x) goto lnz; else goto lz;                          \
         } while (0)
 
-#define NearCall(l)                             \
+#define NearJump(l)                             \
         goto l
 
-#define FarCall(nextChunk, nextBlock)           \
+#define FarJump(nextChunk, nextBlock)           \
         do {                                    \
                 if (DEBUG_CCODEGEN)             \
-                        fprintf (stderr, "%s:%d: FarCall(%s, %d)\n", \
+                        fprintf (stderr, "%s:%d: FarJump(%s, %d)\n", \
                                         __FILE__, __LINE__, #nextChunk, (int)nextBlock); \
                 LeaveChunk(nextChunk, nextBlock); \
         } while (0)
 
-#define Return(mustReturnToSelf,mayReturnToSelf,mustReturnToOther)              \
+#define IndJump(mustReturnToSelf,mayReturnToSelf,mustReturnToOther)             \
         do {                                                                    \
                 nextBlock = *(uintptr_t*)(StackTop - sizeof(uintptr_t));        \
                 if (DEBUG_CCODEGEN)                                             \

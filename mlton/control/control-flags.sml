@@ -140,6 +140,9 @@ val chunkMustRToOtherOpt = control {name = "chunkMustRToOtherOpt",
 val chunkMustRToSelfOpt = control {name = "chunkMustRToSelfOpt",
                                    default = true,
                                    toString = Bool.toString}
+val chunkMustRToSingOpt = control {name = "chunkMustRToSingOpt",
+                                   default = true,
+                                   toString = Bool.toString}
 val chunkTailCall = control {name = "chunkTailCall",
                              default = true,
                              toString = Bool.toString}

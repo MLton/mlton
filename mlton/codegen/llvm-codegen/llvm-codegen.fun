@@ -961,7 +961,7 @@ fun leaveChunk (cxt, nextChunk, nextBlock) =
                    flushStackTop cxt,
                    "\tret %uintptr_t ", nextBlock, "\n"]
 
-(* Return(mustReturnToSelf, mayReturnToSelf, mustReturnToOther)
+(* IndJump(mustReturnToSelf, mayReturnToSelf, mustReturnToOther)
 
    nextBlock = *(uintptr_t* )(StackTop - sizeof(uintptr_t));
    ChunkFnPtr_t nextChunk = nextChunks[nextBlock];
@@ -973,7 +973,7 @@ fun leaveChunk (cxt, nextChunk, nextBlock) =
      LeaveChunk( *nextChunk, nextBlock);
    }
 *)
-fun callReturn (cxt, selfChunk, mustReturnToSelf, mayReturnToSelf, mustReturnToOther) =
+fun indJump (cxt, selfChunk, mustReturnToSelf, mayReturnToSelf, mustReturnToOther) =
    let
       val stackTop = nextLLVMTemp ()
       val loadStackTop = mkload (stackTop, "%CPointer*", "%stackTop", "")
@@ -1062,8 +1062,25 @@ fun outputTransfer (cxt, chunkLabel, transfer) =
     let
         val comment = concat ["\t; ", Layout.toString (Transfer.layout transfer), "\n"]
         val Context { labelChunk, labelIndexAsString, ... } = cxt
+        fun jump label =
+           let
+              val dstChunk = labelChunk label
+           in
+              if ChunkLabel.equals (chunkLabel, dstChunk)
+                 then concat ["\tbr label %", Label.toString label, "\n"]
+                 else leaveChunk (cxt,
+                                  concat ["@", ChunkLabel.toString' dstChunk],
+                                  labelIndexAsString label)
+           end
         fun rtrans rsTo =
            let
+              val mustRToOne =
+                 case rsTo of
+                    [] => NONE
+                  | l::rsTo =>
+                       if List.forall (rsTo, fn l' => Label.equals (l, l'))
+                          then SOME l
+                          else NONE
               fun isSelf c = ChunkLabel.equals (chunkLabel, c)
               val rsTo =
                  List.fold
@@ -1088,13 +1105,16 @@ fun outputTransfer (cxt, chunkLabel, transfer) =
                                                    then SOME c
                                                    else NONE))
            in
-              callReturn (cxt, chunkLabel,
-                          !Control.chunkMustRToSelfOpt andalso mustRToSelf,
-                          !Control.chunkMayRToSelfOpt andalso mayRToSelf,
-                          if (!Control.chunkMustRToOtherOpt andalso
-                              (!Control.chunkMayRToSelfOpt orelse not mayRToSelf))
-                             then mustRToOther
-                             else NONE)
+              case (!Control.chunkMustRToSingOpt, mustRToOne) of
+                 (true, SOME dst) => jump dst
+               | _ =>
+                    indJump (cxt, chunkLabel,
+                             !Control.chunkMustRToSelfOpt andalso mustRToSelf,
+                             !Control.chunkMayRToSelfOpt andalso mayRToSelf,
+                             if (!Control.chunkMustRToOtherOpt andalso
+                                 (!Control.chunkMayRToSelfOpt orelse not mayRToSelf))
+                                then mustRToOther
+                                else NONE)
            end
     in
         case transfer of
@@ -1189,7 +1209,7 @@ fun outputTransfer (cxt, chunkLabel, transfer) =
                            val cacheStackTopCode =
                               if CFunction.writesStackTop func then cacheStackTop cxt else ""
                            val br = if CFunction.maySwitchThreadsFrom func
-                                       then callReturn (cxt, chunkLabel, false, true, NONE)
+                                       then indJump (cxt, chunkLabel, false, true, NONE)
                                        else concat ["\tbr label %", Label.toString return, "\n"]
                         in
                            concat [cacheFrontierCode, cacheStackTopCode, br]
@@ -1209,19 +1229,11 @@ fun outputTransfer (cxt, chunkLabel, transfer) =
             end
           | Transfer.Call {label, return, ...} =>
             let
-                val dstChunk = labelChunk label
                 val push = case return of
                                NONE => ""
                              | SOME {return, size, ...} => push (cxt, return, size)
-                val call = if ChunkLabel.equals (chunkLabel, dstChunk)
-                           then concat ["\t; NearCall\n",
-                                        "\tbr label %", Label.toString label, "\n"]
-                           else concat ["\t; FarCall\n",
-                                        leaveChunk (cxt,
-                                                    concat ["@", ChunkLabel.toString' dstChunk],
-                                                    labelIndexAsString label)]
             in
-                concat [push, call]
+                concat [comment, push, jump label]
             end
           | Transfer.Goto label =>
             let

@@ -880,8 +880,28 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
             fun outputTransfer t =
                let
                   datatype z = datatype Transfer.t
-                  fun rtrans (name, rsTo) =
+                  fun jump label =
                      let
+                        val dstChunk = labelChunk label
+                     in
+                        if ChunkLabel.equals (chunkLabel, dstChunk)
+                           then C.call ("\tNearJump",
+                                        [Label.toString label],
+                                        print)
+                           else C.call ("\tFarJump",
+                                        [ChunkLabel.toString dstChunk,
+                                         labelIndexAsString (label, {pretty = true})],
+                                        print)
+                     end
+                  fun rtrans rsTo =
+                     let
+                        val mustRToOne =
+                           case rsTo of
+                              [] => NONE
+                            | l::rsTo =>
+                                 if List.forall (rsTo, fn l' => Label.equals (l, l'))
+                                    then SOME l
+                                    else NONE
                         fun isSelf c = ChunkLabel.equals (chunkLabel, c)
                         val rsTo =
                            List.fold
@@ -899,25 +919,24 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                               [] => (true, NONE)
                             | c::rsTo =>
                                  (false,
-                                  List.fold (rsTo, SOME c, fn (c', co) =>
-                                             case co of
-                                                NONE => NONE
-                                              | SOME c => if ChunkLabel.equals (c, c')
-                                                             then SOME c
-                                                             else NONE))
+                                  if List.forall (rsTo, fn c' => ChunkLabel.equals (c, c'))
+                                     then SOME c
+                                     else NONE)
                      in
-                        print "\t"
-                        ; C.call (name,
-                                  [C.bool (!Control.chunkMustRToSelfOpt andalso mustRToSelf),
-                                   C.bool (!Control.chunkMayRToSelfOpt andalso mayRToSelf),
-                                   case (if (!Control.chunkMustRToOtherOpt andalso
-                                             (!Control.chunkMayRToSelfOpt orelse not mayRToSelf))
-                                            then mustRToOther
-                                            else NONE) of
-                                      NONE => "(ChunkFnPtr_t)NULL"
-                                    | SOME otherChunk =>
-                                         concat ["&(", ChunkLabel.toString otherChunk, ")"]],
-                                  print)
+                        case (!Control.chunkMustRToSingOpt, mustRToOne) of
+                           (true, SOME dst) => jump dst
+                         | _ =>
+                              C.call ("\tIndJump",
+                                      [C.bool (!Control.chunkMustRToSelfOpt andalso mustRToSelf),
+                                       C.bool (!Control.chunkMayRToSelfOpt andalso mayRToSelf),
+                                       case (if (!Control.chunkMustRToOtherOpt andalso
+                                                 (!Control.chunkMayRToSelfOpt orelse not mayRToSelf))
+                                                then mustRToOther
+                                                else NONE) of
+                                          NONE => "(ChunkFnPtr_t)NULL"
+                                        | SOME otherChunk =>
+                                             concat ["&(", ChunkLabel.toString otherChunk, ")"]],
+                                      print)
                      end
                in
                   case t of
@@ -1002,23 +1021,8 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                            ()
                         end
                    | Call {label, return, ...} =>
-                        let
-                           val dstChunk = labelChunk label
-                           val _ =
-                              case return of
-                                 NONE => ()
-                               | SOME {return, size, ...} =>
-                                    push (return, size)
-                        in
-                           if ChunkLabel.equals (chunkLabel, dstChunk)
-                              then C.call ("\tNearCall",
-                                           [Label.toString label],
-                                           print)
-                              else C.call ("\tFarCall",
-                                           [ChunkLabel.toString dstChunk,
-                                            labelIndexAsString (label, {pretty = true})],
-                                           print)
-                        end
+                        (Option.app (return, fn {return, size, ...} => push (return, size))
+                         ; jump label)
                    | Goto dst => gotoLabel (dst, {tab = true})
                    | Raise {raisesTo} =>
                         (outputStatement (Statement.PrimApp
@@ -1027,8 +1031,8 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                                    Operand.gcField GCField.ExnStack),
                                            dst = SOME Operand.StackTop,
                                            prim = Prim.cpointerAdd})
-                         ; rtrans ("Return", raisesTo))
-                   | Return {returnsTo} => rtrans ("Return", returnsTo)
+                         ; rtrans raisesTo)
+                   | Return {returnsTo} => rtrans returnsTo
                    | Switch switch =>
                         let
                            val Switch.T {cases, default, expect, test, ...} = switch
