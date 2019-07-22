@@ -165,6 +165,23 @@ void forwardObjptrIfInNursery (GC_state s, objptr *opp) {
   forwardObjptr (s, opp);
 }
 
+void forwardObjptrIfInHeap (GC_state s, objptr *opp) {
+  objptr op;
+  pointer p;
+
+  op = *opp;
+  p = objptrToPointer (op, s->heap.start);
+
+  if ((p < s->heap.start) or (p > s->frontier))
+    return;
+  if (DEBUG_DETAILED)
+    fprintf (stderr,
+             "forwardObjptrIfInHeap  opp = "FMTPTR"  op = "FMTOBJPTR"  p = "FMTPTR"\n",
+             (uintptr_t)opp, op, (uintptr_t)p);
+  assert (s->heap.start <= p and p < s->limitPlusSlop);
+  forwardObjptr (s, opp);
+}
+
 /* Walk through all the cards and forward all intergenerational pointers. */
 void forwardInterGenerationalObjptrs (GC_state s) {
   GC_cardMapElem *cardMap;

@@ -30,6 +30,7 @@ static inline objptr getFwdPtr (pointer p);
 static inline bool hasFwdPtr (pointer p);
 static inline void forwardObjptr (GC_state s, objptr *opp);
 static inline void forwardObjptrIfInNursery (GC_state s, objptr *opp);
+static inline void forwardObjptrIfInHeap (GC_state s, objptr *opp);
 static inline void forwardInterGenerationalObjptrs (GC_state s);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
