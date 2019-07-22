@@ -363,7 +363,8 @@ fun outputDeclarations
                    end
 
                 val structName = concat
-                   [qualifier, "struct { ",
+                   ["__attribute__ ((packed)) ",
+                     qualifier, "struct { ",
                      headerTypeStr, " header[", headerElems, "]; ",
                      dataDescr,
                    "}\n"]
