@@ -46,29 +46,14 @@
 
 #define DefineChunk(chunkName)                  \
         PRIVATE uintptr_t chunkName(UNUSED CPointer gcState, UNUSED CPointer stackTop, UNUSED CPointer frontier, uintptr_t nextBlock) { \
-                UNUSED static const ChunkFnPtr_t selfChunk = &(chunkName); \
+                UNUSED ChunkFnPtr_t nextChunk;  \
                 if (DEBUG_CCODEGEN)             \
                         fprintf (stderr, "%s:%d: %s(nextBlock = %d)\n", \
                                         __FILE__, __LINE__, #chunkName, (int)nextBlock); \
-                SwitchNextBlock();
+                goto doSwitchNextBlock;
 
 #define EndDefineChunk                          \
         } /* end chunk */
-
-#define LeaveChunk(nextChunk, nextBlock)        \
-        do {                                    \
-                /* interchunk return */         \
-                if (DEBUG_CCODEGEN)             \
-                        fprintf (stderr, "%s:%d: LeaveChunk(nextChunk = \"%s\", nextBlock = %d)\n", \
-                                        __FILE__, __LINE__, #nextChunk, (int)nextBlock); \
-                if (TailCall) {                 \
-                        return nextChunk(gcState, stackTop, frontier, nextBlock); \
-                } else {                        \
-                        FlushFrontier();        \
-                        FlushStackTop();        \
-                        return nextBlock;       \
-                }                               \
-        } while (0)
 
 /* ------------------------------------------------- */
 /*  ChunkSwitch                                      */
@@ -104,12 +89,6 @@
 
 #endif
 
-#define SwitchNextBlock()                       \
-                if (DEBUG_CCODEGEN)             \
-                        fprintf (stderr, "%s:%d: SwitchNextBlock(nextBlock = %d)\n", \
-                                        __FILE__, __LINE__, (int)nextBlock); \
-                goto doSwitchNextBlock
-
 /* ------------------------------------------------- */
 /*  Operands                                         */
 /* ------------------------------------------------- */
@@ -124,65 +103,6 @@
 #define GCState gcState
 #define Frontier frontier
 #define StackTop stackTop
-
-#define FrontierMem *(Pointer*)(GCState + FrontierOffset)
-#define StackTopMem *(Pointer*)(GCState + StackTopOffset)
-
-/* ------------------------------------------------- */
-/* Cache and Flush                                   */
-/* ------------------------------------------------- */
-
-#define CacheFrontier()                         \
-        do {                                    \
-                Frontier = FrontierMem;         \
-        } while (0)
-
-#define CacheStackTop()                         \
-        do {                                    \
-                StackTop = StackTopMem;         \
-        } while (0)
-
-#define FlushFrontier()                         \
-        do {                                    \
-                FrontierMem = Frontier;         \
-        } while (0)
-
-#define FlushStackTop()                         \
-        do {                                    \
-                StackTopMem = StackTop;         \
-        } while (0)
-
-/* ------------------------------------------------- */
-/* Transfers                                         */
-/* ------------------------------------------------- */
-
-#define NearJump(l)                             \
-        goto l
-
-#define FarJump(nextChunk, nextBlock)           \
-        do {                                    \
-                if (DEBUG_CCODEGEN)             \
-                        fprintf (stderr, "%s:%d: FarJump(%s, %d)\n", \
-                                        __FILE__, __LINE__, #nextChunk, (int)nextBlock); \
-                LeaveChunk(nextChunk, nextBlock); \
-        } while (0)
-
-#define IndJump(mustReturnToSelf,mayReturnToSelf,mustReturnToOther)             \
-        do {                                                                    \
-                nextBlock = *(uintptr_t*)(StackTop - sizeof(uintptr_t));        \
-                if (DEBUG_CCODEGEN)                                             \
-                        fprintf (stderr, "%s:%d: Return()  nextBlock = %d\n",   \
-                                        __FILE__, __LINE__, (int)nextBlock);    \
-                ChunkFnPtr_t nextChunk = nextChunks[nextBlock];                 \
-                if (mustReturnToSelf                                            \
-                    || (mayReturnToSelf && (nextChunk == selfChunk))) {         \
-                        SwitchNextBlock();                                      \
-                } else if ((void*)mustReturnToOther != NULL) {                  \
-                        LeaveChunk((*mustReturnToOther), nextBlock);            \
-                } else {                                                        \
-                        LeaveChunk((*nextChunk), nextBlock);                    \
-                }                                                               \
-        } while (0)
 
 /* ------------------------------------------------- */
 /* Primitives                                        */

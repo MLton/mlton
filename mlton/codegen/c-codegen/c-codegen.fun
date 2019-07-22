@@ -748,6 +748,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
 
       fun outputChunkFn (Chunk.T {chunkLabel, blocks, tempsMax, ...}, print) =
          let
+            val selfChunk = chunkLabel
             fun declareCReturns () =
                List.foreach
                (CType.all, fn t =>
@@ -810,6 +811,20 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                         (print "\t"
                          ; C.call ("ProfileLabel", [ProfileLabel.toString l], print))
                end
+            local
+               fun mk (dst, src) () =
+                  outputStatement (Statement.Move {dst = dst, src = src})
+               val stackTop = Operand.StackTop
+               val gcStateStackTop = Operand.gcField GCField.StackTop
+               val frontier = Operand.Frontier
+               val gcStateFrontier = Operand.gcField GCField.Frontier
+            in
+               val cacheStackTop = mk (stackTop, gcStateStackTop)
+               val flushStackTop = mk (gcStateStackTop, stackTop)
+               val cacheFrontier = mk (frontier, gcStateFrontier)
+               val flushFrontier = mk (gcStateFrontier, frontier)
+            end
+            (* StackTop += size *)
             fun adjStackTop (size: Bytes.t) =
                (outputStatement (Statement.PrimApp
                                  {args = Vector.new2
@@ -821,7 +836,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                   dst = SOME Operand.StackTop,
                                   prim = Prim.cpointerAdd})
                 ; if amTimeProfiling
-                     then print "\tFlushStackTop();\n"
+                     then flushStackTop ()
                      else ())
             fun pop (fi: FrameInfo.t) =
                adjStackTop (Bytes.~ (FrameInfo.size fi))
@@ -879,6 +894,73 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                end
             fun gotoLabel (l, {tab}) =
                print (concat [if tab then "\tgoto " else "goto ", Label.toString l, ";\n"])
+            (* LeaveChunk(nextChunk, nextBlock)
+                 if (TailCall) {
+                   return nextChunk(gcState, stackTop, frontier, nextBlock);
+                 } else {
+                   flushFrontier();
+                   flushStackTop();
+                   return nextBlock;
+                }
+            *)
+            fun leaveChunk (nextChunk, nextBlock) =
+               if !Control.chunkTailCall
+                  then (print "\treturn "
+                        ; C.call (nextChunk,
+                                  ["gcState", "stackTop", "frontier", nextBlock],
+                                  print))
+                  else (flushFrontier ()
+                        ; flushStackTop ()
+                        ; print "\treturn "
+                        ; print nextBlock
+                        ; print ";\n")
+            (* IndJump(mustReturnToSelf, mayReturnToSelf, mustReturnToOther)
+                 nextBlock = *(uintptr_t* )(StackTop - sizeof(uintptr_t));
+                 if (mustReturnToSelf) {
+                   goto doSwitchNextBlock;
+                 } else {
+                   ChunkFnPtr_t nextChunk = nextChunks[nextBlock];
+                   if (mayReturnToSelf && (nextChunk == selfChunk)) {
+                     goto doSwitchNextBlock;
+                   }
+                   if (mustReturnToOther != NULL) {
+                     LeaveChunk( *mustReturnToOther, nextBlock);
+                   } else {
+                     LeaveChunk( *nextChunk, nextBlock);
+                   }
+                }
+            *)
+            fun indJump (mustReturnToSelf, mayReturnToSelf, mustReturnToOther) =
+               let
+                  val _ = print "\tnextBlock = "
+                  val _ = print (operandToString
+                                 (Operand.stackOffset
+                                  {offset = Bytes.~ (Runtime.labelSize ()),
+                                   ty = Type.label (Label.newNoname ())}))
+                  val _ = print ";\n"
+               in
+                  if mustReturnToSelf
+                     then print "\tgoto doSwitchNextBlock;\n"
+                     else let
+                             val doNextChunk =
+                                Promise.delay
+                                (fn () =>
+                                 print "\tnextChunk = nextChunks[nextBlock];\n")
+                             val _ =
+                                if mayReturnToSelf
+                                   then (Promise.force doNextChunk
+                                         ; print "\tif (nextChunk == &"
+                                         ; print (ChunkLabel.toString selfChunk)
+                                         ; print ") { goto doSwitchNextBlock; }\n")
+                                   else ()
+                             val _ =
+                                case mustReturnToOther of
+                                   NONE => (Promise.force doNextChunk; leaveChunk ("(*nextChunk)", "nextBlock"))
+                                 | SOME dstChunk => leaveChunk (ChunkLabel.toString dstChunk, "nextBlock")
+                          in
+                             ()
+                          end
+               end
             fun outputTransfer t =
                let
                   datatype z = datatype Transfer.t
@@ -886,14 +968,10 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                      let
                         val dstChunk = labelChunk label
                      in
-                        if ChunkLabel.equals (chunkLabel, dstChunk)
-                           then C.call ("\tNearJump",
-                                        [Label.toString label],
-                                        print)
-                           else C.call ("\tFarJump",
-                                        [ChunkLabel.toString dstChunk,
-                                         labelIndexAsString (label, {pretty = true})],
-                                        print)
+                        if ChunkLabel.equals (dstChunk, selfChunk)
+                           then gotoLabel (label, {tab = true})
+                           else leaveChunk (ChunkLabel.toString dstChunk,
+                                            labelIndexAsString (label, {pretty = true}))
                      end
                   fun rtrans rsTo =
                      let
@@ -904,7 +982,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                  if List.forall (rsTo, fn l' => Label.equals (l, l'))
                                     then SOME l
                                     else NONE
-                        fun isSelf c = ChunkLabel.equals (chunkLabel, c)
+                        fun isSelf c = ChunkLabel.equals (selfChunk, c)
                         val rsTo =
                            List.fold
                            (rsTo, [], fn (l, cs) =>
@@ -928,17 +1006,12 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                         case (!Control.chunkMustRToSingOpt, mustRToOne) of
                            (true, SOME dst) => jump dst
                          | _ =>
-                              C.call ("\tIndJump",
-                                      [C.bool (!Control.chunkMustRToSelfOpt andalso mustRToSelf),
-                                       C.bool (!Control.chunkMayRToSelfOpt andalso mayRToSelf),
-                                       case (if (!Control.chunkMustRToOtherOpt andalso
-                                                 (!Control.chunkMayRToSelfOpt orelse not mayRToSelf))
-                                                then mustRToOther
-                                                else NONE) of
-                                          NONE => "(ChunkFnPtr_t)NULL"
-                                        | SOME otherChunk =>
-                                             concat ["&(", ChunkLabel.toString otherChunk, ")"]],
-                                      print)
+                              indJump (!Control.chunkMustRToSelfOpt andalso mustRToSelf,
+                                       !Control.chunkMayRToSelfOpt andalso mayRToSelf,
+                                       if (!Control.chunkMustRToOtherOpt andalso
+                                           (!Control.chunkMayRToSelfOpt orelse not mayRToSelf))
+                                          then mustRToOther
+                                          else NONE)
                      end
                   val () =
                      if !Control.codegenComments > 0
@@ -954,8 +1027,8 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                              CFunction.Target.Direct "Thread_returnToC", ...},
                             return = SOME {return, size = SOME size}, ...} =>
                         (push (return, size);
-                         print "\tFlushFrontier ();\n";
-                         print "\tFlushStackTop ();\n";
+                         flushFrontier ();
+                         flushStackTop ();
                          print "\treturn (uintptr_t)-1;\n")
                    | CCall {args, func, return} =>
                         let
@@ -978,11 +1051,11 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                     end
                            val _ =
                               if CFunction.modifiesFrontier func
-                                 then print "\tFlushFrontier ();\n"
+                                 then flushFrontier ()
                               else ()
                            val _ =
                               if CFunction.readsStackTop func
-                                 then print "\tFlushStackTop ();\n"
+                                 then flushStackTop ()
                               else ()
                            val _ = print "\t"
                            val _ =
@@ -1009,22 +1082,18 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                            val _ = afterCall ()
                            val _ =
                               if CFunction.modifiesFrontier func
-                                 then print "\tCacheFrontier ();\n"
+                                 then cacheFrontier ()
                               else ()
                            val _ =
                               if CFunction.writesStackTop func
-                                 then print "\tCacheStackTop ();\n"
+                                 then cacheStackTop ()
                               else ()
                            val _ =
                               if CFunction.maySwitchThreadsFrom func
-                                 then C.call ("\tReturn",
-                                              [C.falsee,
-                                               C.truee,
-                                               "(ChunkFnPtr_t)NULL"],
-                                              print)
-                              else (case return of
-                                       NONE => print "\treturn (uintptr_t)-2;\n"
-                                     | SOME {return, ...} => gotoLabel (return, {tab = true}))
+                                 then indJump (false, true, NONE)
+                                 else (case return of
+                                          NONE => print "\treturn (uintptr_t)-2;\n"
+                                        | SOME {return, ...} => gotoLabel (return, {tab = true}))
                         in
                            ()
                         end
@@ -1216,22 +1285,11 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
       fun outputChunks chunks =
          let
             val {done, print, ...} = outputC ()
-            fun outputOffsets () =
-               List.foreach
-               ([("FrontierOffset", GCField.Frontier),
-                 ("StackTopOffset", GCField.StackTop)],
-                fn (name, f) =>
-                print (concat ["#define ", name, " ",
-                               Bytes.toString (GCField.offset f), "\n"]))
          in
             print "#define JumpTable "
             ; print (C.bool (!Control.chunkJumpTable))
             ; print "\n"
-            ; print "#define TailCall "
-            ; print (C.bool (!Control.chunkTailCall))
-            ; print "\n"
             ; outputIncludes (["c-chunk.h"], print); print "\n"
-            ; outputOffsets (); print "\n"
             ; declareGlobals ("PRIVATE extern ", print); print "\n"
             ; declareNextChunks (chunks, print); print "\n"
             ; declareFFI (chunks, print)
