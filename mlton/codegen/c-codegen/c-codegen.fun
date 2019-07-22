@@ -938,6 +938,12 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                              concat ["&(", ChunkLabel.toString otherChunk, ")"]],
                                       print)
                      end
+                  val () =
+                     if !Control.codegenComments > 0
+                        then (print "\t/* "
+                              ; print (Layout.toString (Transfer.layout t))
+                              ; print " */\n")
+                        else ()
                in
                   case t of
                      CCall {func =
@@ -1084,6 +1090,17 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                  end
                             | _ => switch ()
                         end
+               end
+            val outputStatement = fn s =>
+               let
+                  val () =
+                     if !Control.codegenComments > 1
+                        then (print "\t/* "
+                              ; print (Layout.toString (Statement.layout s))
+                              ; print " */\n")
+                        else ()
+               in
+                  outputStatement s
                end
             fun outputBlock (Block.T {kind, label, statements, transfer, ...}) =
                let
