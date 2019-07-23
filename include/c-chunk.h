@@ -29,21 +29,6 @@
 #define Unreachable() __builtin_unreachable()
 
 /* ------------------------------------------------- */
-/* Chunk                                             */
-/* ------------------------------------------------- */
-
-#define DefineChunk(chunkName)                  \
-        PRIVATE uintptr_t chunkName(UNUSED CPointer gcState, UNUSED CPointer stackTop, UNUSED CPointer frontier, uintptr_t nextBlock) { \
-                UNUSED ChunkFnPtr_t nextChunk;  \
-                if (DEBUG_CCODEGEN)             \
-                        fprintf (stderr, "%s:%d: %s(nextBlock = %d)\n", \
-                                        __FILE__, __LINE__, #chunkName, (int)nextBlock); \
-                goto doSwitchNextBlock;
-
-#define EndDefineChunk                          \
-        } /* end chunk */
-
-/* ------------------------------------------------- */
 /*  Operands                                         */
 /* ------------------------------------------------- */
 
@@ -53,10 +38,6 @@
 #define S(ty, i) (*(ty*)(StackTop + (i)))
 #define T(ty, i) T ## ty ## _ ## i
 #define X(ty, b, i, s, o) (*(ty*)((b) + ((i) * (s)) + (o)))
-
-#define GCState gcState
-#define Frontier frontier
-#define StackTop stackTop
 
 /* ------------------------------------------------- */
 /* Primitives                                        */

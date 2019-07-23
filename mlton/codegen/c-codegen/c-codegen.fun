@@ -735,6 +735,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
       in
          val operandToString = toString
       end
+      val chunkArgs = [Operand.GCState, Operand.StackTop, Operand.Frontier]
       fun fetchOperand (z: Operand.t): string =
          if handleMisaligned (Operand.ty z) andalso Operand.isMem z
             then fetch (operandToString z, Operand.ty z)
@@ -907,7 +908,8 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                if !Control.chunkTailCall
                   then (print "\treturn "
                         ; C.call (nextChunk,
-                                  ["gcState", "stackTop", "frontier", nextBlock],
+                                  List.map (chunkArgs, operandToString)
+                                  @ [nextBlock],
                                   print))
                   else (flushFrontier ()
                         ; flushStackTop ()
@@ -1248,7 +1250,18 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                end
          in
             declareProfileLabels ()
-            ; C.callNoSemi ("DefineChunk", [ChunkLabel.toString chunkLabel], print); print "\n"
+            ; print "PRIVATE uintptr_t "
+            ; C.callNoSemi (ChunkLabel.toString chunkLabel,
+                            List.map
+                            (chunkArgs, fn oper =>
+                             concat ["UNUSED ",
+                                     CType.toString (Type.toCType (Operand.ty oper)),
+                                     " ",
+                                     operandToString oper])
+                            @ ["uintptr_t nextBlock"],
+                            print)
+            ; print " {\n\n"
+            ; print "\tUNUSED ChunkFnPtr_t nextChunk;\n"
             ; declareCReturns (); print "\n"
             ; declareTemporaries (); print "\n"
             ; let
@@ -1291,7 +1304,9 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                           ; print "\t}\n\n")
               end
             ; List.foreach (List.rev (!dfsBlocks), outputBlock)
-            ; print "EndDefineChunk\n\n"
+            ; print "} /* "
+            ; print (ChunkLabel.toString chunkLabel)
+            ; print " */\n\n"
          end
 
       fun outputChunks chunks =
