@@ -1262,8 +1262,9 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                             print)
             ; print " {\n\n"
             ; print "\tUNUSED ChunkFnPtr_t nextChunk;\n"
-            ; declareCReturns (); print "\n"
-            ; declareTemporaries (); print "\n"
+            ; declareCReturns ()
+            ; declareTemporaries ()
+            ; print "\n"
             ; let
                  val entries = ref []
                  val () =
