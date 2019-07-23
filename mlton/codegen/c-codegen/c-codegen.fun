@@ -1137,8 +1137,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                                        ; gotoLabel (l, {tab = false})))
                                ; print "\tdefault: "
                                ; (case default of
-                                     NONE => (print "\t"
-                                              ; C.call ("Unreachable", [], print))
+                                     NONE => C.call ("Unreachable", [], print)
                                    | SOME default => gotoLabel (default, {tab = false}))
                                ; print "\t}\n")
                         in
