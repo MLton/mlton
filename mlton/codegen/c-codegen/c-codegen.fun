@@ -1262,20 +1262,33 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                         else ())
                  val entries = List.insertionSort (!entries, fn ((_, i1), (_, i2)) => i1 <= i2)
               in
-                 C.callNoSemi ("ChunkSwitch",
-                               [C.int (#2 (List.first entries)),
-                                C.int (List.length entries)],
-                               print)
-                 ; print "\n"
-                 ; List.foreach
-                   (entries, fn (label, index) =>
-                    (C.callNoSemi ("ChunkSwitchCase",
-                                   [C.int index,
-                                    Label.toString label],
-                                   print)
-                     ; print "\n"
-                     ; visit label))
-                 ; print "EndChunkSwitch\n\n"
+                 if !Control.chunkJumpTable
+                    then (print "\tstatic const void* nextLabels["
+                          ; print (C.int (List.length entries))
+                          ; print "] = {\n"
+                          ; List.foreach
+                            (entries, fn (label, index) =>
+                             (print "\t/* "
+                              ; print (C.int index)
+                              ; print " */ &&"
+                              ; print (Label.toString label)
+                              ; print ",\n"))
+                          ; print "\t};\n"
+                          ; print "\tdoSwitchNextBlock:\n"
+                          ; print "\tgoto *nextLabels[nextBlock - "
+                          ; print (C.int (#2 (List.first entries)))
+                          ; print "];\n\n")
+                    else (print "\tdoSwitchNextBlock:\n"
+                          ; print "\tswitch (nextBlock) {\n"
+                          ; List.foreach
+                            (entries, fn (label, index) =>
+                             (print "\tcase "
+                              ; print (C.int index)
+                              ; print ": goto "
+                              ; print (Label.toString label)
+                              ; print ";\n"))
+                          ; print "\tdefault: Unreachable();\n"
+                          ; print "\t}\n\n")
               end
             ; List.foreach (List.rev (!dfsBlocks), outputBlock)
             ; print "EndDefineChunk\n\n"
@@ -1285,10 +1298,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
          let
             val {done, print, ...} = outputC ()
          in
-            print "#define JumpTable "
-            ; print (C.bool (!Control.chunkJumpTable))
-            ; print "\n"
-            ; outputIncludes (["c-chunk.h"], print); print "\n"
+            outputIncludes (["c-chunk.h"], print); print "\n"
             ; declareGlobals ("PRIVATE extern ", print); print "\n"
             ; declareNextChunks (chunks, print); print "\n"
             ; declareFFI (chunks, print)

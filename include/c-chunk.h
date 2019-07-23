@@ -44,40 +44,6 @@
         } /* end chunk */
 
 /* ------------------------------------------------- */
-/*  ChunkSwitch                                      */
-/* ------------------------------------------------- */
-
-#if JumpTable
-
-#define ChunkSwitch(firstIndex, length)         \
-                static const uintptr_t nextLabelsBias = firstIndex; \
-                static const void* nextLabels[length] = {
-
-#define ChunkSwitchCase(index, label)           \
-                &&label,
-
-#define EndChunkSwitch                          \
-                };                              \
-                doSwitchNextBlock:              \
-                goto *nextLabels[nextBlock - nextLabelsBias];
-
-#else
-
-#define ChunkSwitch(firstIndex, length)         \
-                doSwitchNextBlock:              \
-                switch (nextBlock) {
-
-#define ChunkSwitchCase(index, label)           \
-                case index: goto label;
-
-#define EndChunkSwitch                          \
-                default:                        \
-                        Unreachable();          \
-                } /* end switch (nextBlock) */
-
-#endif
-
-/* ------------------------------------------------- */
 /*  Operands                                         */
 /* ------------------------------------------------- */
 
