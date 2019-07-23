@@ -1287,11 +1287,11 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                               ; print (Label.toString label)
                               ; print ",\n"))
                           ; print "\t};\n"
-                          ; print "\tdoSwitchNextBlock:\n"
+                          ; print "\tdoSwitchNextBlock: UNUSED;\n"
                           ; print "\tgoto *nextLabels[nextBlock - "
                           ; print (C.int (#2 (List.first entries)))
                           ; print "];\n\n")
-                    else (print "\tdoSwitchNextBlock:\n"
+                    else (print "\tdoSwitchNextBlock: UNUSED;\n"
                           ; print "\tswitch (nextBlock) {\n"
                           ; List.foreach
                             (entries, fn (label, index) =>
