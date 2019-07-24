@@ -1140,11 +1140,12 @@ fun toMachine (rssa: Rssa.Program.t) =
       (* Until statics added to rssa *)
       val vectorStatics = Vector.fromListMap (allVectors (),
          fn (v, g) =>
-            (M.Static.T
-             {data = M.Static.Data.Vector v,
-              (* temporarily for now *)
-              header = WordXVector.fromList ({elementSize=WordSize.objptr ()}, []),
-              location = M.Static.Heap}, SOME g))
+            let
+               val size = WordXVector.elementSize v
+               val tycon = ObjptrTycon.wordVector (WordSize.bits size)
+            in
+               (M.Static.vector {data=v, tycon=tycon, location=M.Static.Heap}, SOME g)
+            end)
       val machine =
          M.Program.T
          {chunks = chunks,

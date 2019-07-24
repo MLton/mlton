@@ -53,14 +53,7 @@ functor Static (S: STATIC_STRUCTS): STATIC =
          T of {data: 'a Data.t,
                header: WordXVector.t, (* mapped in-order *)
                location: location}
-      (*
 
-      fun dataEquals
-      fun equals
-         (T {data=data1, header=header1, location=loc1, mutable=mut1},
-          T {data=data2, header=header2, location=loc2, mutable=mut2}) =
-
-       *)
       val layoutLocation =
          fn MutStatic => Layout.str "MutStatic"
           | ImmStatic => Layout.str "ImmStatic"
@@ -74,4 +67,36 @@ functor Static (S: STATIC_STRUCTS): STATIC =
              ("header", WordXVector.layout header),
              ("location", layoutLocation location)]
          end
+
+
+      fun object {elems, tycon, location} =
+         let
+            val header = Runtime.typeIndexToHeader (ObjptrTycon.index tycon)
+            val header = WordX.fromIntInf (Word.toIntInf header, WordSize.objptrHeader ())
+            val header =  WordXVector.fromList
+               ({elementSize = WordSize.objptrHeader ()}, [header])
+         in
+            T
+            {header = header,
+             data = Data.Object elems,
+             location = location}
+         end
+
+      fun vector {data, tycon, location} =
+         let
+            val header = Runtime.typeIndexToHeader (ObjptrTycon.index tycon)
+            val header = WordX.fromIntInf (Word.toIntInf header, WordSize.objptrHeader ())
+            val wordSize = WordSize.objptr ()
+            val length = WordX.fromIntInf (Int.toIntInf (WordXVector.length data), wordSize)
+            val capacity = WordX.zero wordSize
+            val header =  WordXVector.fromList
+               ({elementSize = WordSize.objptrHeader ()}, [capacity, length, header])
+         in
+            T
+            {header = header,
+             data = Data.Vector data,
+             location = location}
+         end
+
+
    end

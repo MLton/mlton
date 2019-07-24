@@ -20,8 +20,8 @@ signature BACKEND_ATOMS' =
       structure Type: REP_TYPE
 
       sharing ObjectType = Type.ObjectType
-      sharing ObjptrTycon = ObjectType.ObjptrTycon = Type.ObjptrTycon
-      sharing Runtime = ObjectType.Runtime = Type.Runtime
+      sharing ObjptrTycon = ObjectType.ObjptrTycon = Static.ObjptrTycon = Type.ObjptrTycon
+      sharing Runtime = ObjectType.Runtime = Static.Runtime = Type.Runtime
 
       (* SML/NJ bug:
        *

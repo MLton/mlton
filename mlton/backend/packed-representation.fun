@@ -1038,17 +1038,10 @@ structure ObjptrRep =
                Vector.toListMap
               (components, fn {component, offset=_} =>
                   Component.staticTuple (component, {src=src}))
-            val header = Runtime.typeIndexToHeader (ObjptrTycon.index tycon)
-            val header = WordX.fromIntInf (Word.toIntInf header, WordSize.objptrHeader ())
-            val header =  WordXVector.fromList
-               ({elementSize = WordSize.objptrHeader ()}, [header])
          in
-            Static.T
-            {header = header,
-             data = Static.Data.Object elems,
-             location = location}
+            Static.object {elems=elems, tycon=tycon,
+                           location=location}
          end
-
 
       fun staticTuple (T {components, tycon, ...},
                  {location: Static.location,

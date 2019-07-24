@@ -8,8 +8,11 @@ signature STATIC_STRUCTS = sig
    structure WordX: WORD_X
    structure WordSize: WORD_SIZE
    structure WordXVector: WORD_X_VECTOR
+   structure ObjptrTycon: OBJPTR_TYCON
+   structure Runtime: RUNTIME
    sharing WordX.WordSize = WordSize
    sharing WordXVector.WordSize = WordSize
+   sharing WordXVector.WordX = WordX
 end
 
 signature STATIC =
@@ -39,6 +42,13 @@ signature STATIC =
          T of {data: 'a Data.t,
                header: WordXVector.t, (* mapped in-order *)
                location: location}
+
+      val object: {elems: ('a Data.elem) list,
+                   tycon: ObjptrTycon.t,
+                   location: location} -> 'a t
+      val vector: {data: WordXVector.t,
+                   tycon: ObjptrTycon.t,
+                   location: location} -> 'a t
 
       val map: ('a t * ('a -> 'b)) -> 'b t
       val layout: ('a -> Layout.t) -> 'a t -> Layout.t

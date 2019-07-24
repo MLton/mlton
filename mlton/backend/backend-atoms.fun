@@ -25,7 +25,9 @@ structure BackendAtoms =
                                    structure WordXVector = WordXVector)
       structure ObjectType = RepType.ObjectType
 
-      structure Static = Static (structure WordX = WordX
+      structure Static = Static (structure ObjptrTycon = ObjptrTycon
+                                 structure Runtime = Runtime
+                                 structure WordX = WordX
                                  structure WordSize = WordSize
                                  structure WordXVector = WordXVector)
       structure Type = RepType
