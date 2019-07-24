@@ -18,8 +18,6 @@ signature C_CODEGEN =
 
       structure C:
          sig
-            val callNoSemi: string * string list * (string -> unit) -> unit
-            val call: string * string list * (string -> unit) -> unit
             val int: int -> string
          end
 

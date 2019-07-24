@@ -33,11 +33,11 @@ structure C =
       fun args (ss: string list): string =
          concat ("(" :: List.separate (ss, ", ") @ [")"])
 
-      fun callNoSemi (f: string, xs: string list, print: string -> unit): unit =
-         (print f; print " "; print (args xs))
+      fun callNoSemi (f: string, xs: string list): string =
+         concat [f, " ", args xs]
 
-      fun call (f, xs, print) =
-         (callNoSemi (f, xs, print); print ";\n")
+      fun call (f, xs) =
+         concat [f, " ", args xs, ";\n"]
 
       fun int (i: int) =
          if i >= 0
@@ -215,7 +215,7 @@ fun outputIncludes (includes, print) =
                                     print ">\n"))
 
 fun declareProfileLabel (l, print) =
-   C.call ("DeclareProfileLabel", [ProfileLabel.toString l], print)
+   print (C.call ("DeclareProfileLabel", [ProfileLabel.toString l]))
 
 fun declareGlobals (prefix: string, print) =
    let
@@ -273,14 +273,13 @@ fun outputDeclarations
          (print "BeginVectorInits\n"
           ; (List.foreach
              (vectors, fn (g, v) =>
-              (C.callNoSemi ("VectorInitElem",
-                             [C.int (Bytes.toInt
-                                     (WordSize.bytes
-                                      (WordXVector.elementSize v))),
-                              C.int (Global.index g),
-                              C.int (WordXVector.length v),
-                              WordXVector.toC v],
-                             print)
+              (print (C.callNoSemi ("VectorInitElem",
+                                    [C.int (Bytes.toInt
+                                            (WordSize.bytes
+                                             (WordXVector.elementSize v))),
+                                     C.int (Global.index g),
+                                     C.int (WordXVector.length v),
+                                     WordXVector.toC v]))
                  ; print "\n")))
           ; print "EndVectorInits\n")
       fun declareReals () =
@@ -420,19 +419,18 @@ fun outputDeclarations
                 | Control.ProfileTimeField => "PROFILE_TIME_FIELD"
                 | Control.ProfileTimeLabel => "PROFILE_TIME_LABEL"
          in
-            C.callNoSemi (case !Control.format of
-                             Control.Archive => "MLtonLibrary"
-                           | Control.Executable => "MLtonMain"
-                           | Control.LibArchive => "MLtonLibrary"
-                           | Control.Library => "MLtonLibrary",
-                          [C.int align,
-                           C.word magic,
-                           C.bytes maxFrameSize,
-                           C.bool (!Control.markCards),
-                           profile,
-                           C.bool (!Control.profileStack)]
-                          @ additionalMainArgs,
-                          print)
+            print (C.callNoSemi (case !Control.format of
+                                    Control.Archive => "MLtonLibrary"
+                                  | Control.Executable => "MLtonMain"
+                                  | Control.LibArchive => "MLtonLibrary"
+                                  | Control.Library => "MLtonLibrary",
+                                 [C.int align,
+                                  C.word magic,
+                                  C.bytes maxFrameSize,
+                                  C.bool (!Control.markCards),
+                                  profile,
+                                  C.bool (!Control.profileStack)]
+                                  @ additionalMainArgs))
             ; print "\n"
          end
       fun declareMain () =
@@ -810,7 +808,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                         end
                    | ProfileLabel l =>
                         (print "\t"
-                         ; C.call ("ProfileLabel", [ProfileLabel.toString l], print))
+                         ; print (C.call ("ProfileLabel", [ProfileLabel.toString l])))
                end
             local
                fun mk (dst, src) () =
@@ -907,10 +905,9 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
             fun leaveChunk (nextChunk, nextBlock) =
                if !Control.chunkTailCall
                   then (print "\treturn "
-                        ; C.call (nextChunk,
-                                  List.map (chunkArgs, operandToString)
-                                  @ [nextBlock],
-                                  print))
+                        ; print (C.call (nextChunk,
+                                         List.map (chunkArgs, operandToString)
+                                         @ [nextBlock])))
                   else (flushFrontier ()
                         ; flushStackTop ()
                         ; print "\treturn "
@@ -1067,7 +1064,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                            datatype z = datatype CFunction.Target.t
                            val _ =
                               case target of
-                                 Direct name => C.call (name, args, print)
+                                 Direct name => print (C.call (name, args))
                                | Indirect =>
                                     let
                                        val (fptr,args) =
@@ -1079,7 +1076,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                                   CFunction.cPointerType func,
                                                   " ", fptr, "))"]
                                     in
-                                       C.call (name, args, print)
+                                       print (C.call (name, args))
                                     end
                            val _ = afterCall ()
                            val _ =
@@ -1139,7 +1136,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                                        ; gotoLabel (l, {tab = false})))
                                ; print "\tdefault: "
                                ; (case default of
-                                     NONE => C.call ("Unreachable", [], print)
+                                     NONE => print (C.call ("Unreachable", []))
                                    | SOME default => gotoLabel (default, {tab = false}))
                                ; print "\t}\n")
                         in
@@ -1251,15 +1248,14 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
          in
             declareProfileLabels ()
             ; print "PRIVATE uintptr_t "
-            ; C.callNoSemi (ChunkLabel.toString chunkLabel,
-                            List.map
-                            (chunkArgs, fn oper =>
-                             concat ["UNUSED ",
-                                     CType.toString (Type.toCType (Operand.ty oper)),
-                                     " ",
-                                     operandToString oper])
-                            @ ["uintptr_t nextBlock"],
-                            print)
+            ; print (C.callNoSemi (ChunkLabel.toString chunkLabel,
+                                   List.map
+                                   (chunkArgs, fn oper =>
+                                    concat ["UNUSED ",
+                                            CType.toString (Type.toCType (Operand.ty oper)),
+                                            " ",
+                                            operandToString oper])
+                                   @ ["uintptr_t nextBlock"]))
             ; print " {\n\n"
             ; print "\tUNUSED ChunkFnPtr_t nextChunk;\n"
             ; declareCReturns ()
