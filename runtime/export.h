@@ -31,15 +31,9 @@
 #define PUBLIC   __declspec(dllexport)
 #define PRIVATE
 #else
-#if __GNUC__ > 3 || (__GNUC__ == 3 && __GNUC_MINOR__ >= 4)
 #define EXTERNAL __attribute__((visibility("default")))
 #define PUBLIC   __attribute__((visibility("default")))
 #define PRIVATE  __attribute__((visibility("hidden")))
-#else
-#define EXTERNAL
-#define PUBLIC
-#define PRIVATE
-#endif
 #endif
 
 #endif /* _MLTON_EXPORT_H_ */
