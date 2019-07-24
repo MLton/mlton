@@ -75,7 +75,7 @@ PUBLIC int MLton_main (int argc, char* argv[]) {                        \
         return 1;                                                       \
 }
 
-#define MLtonLibrary(al, mg, mfs, mmc, pk, ps, mc, ml)                  \
+#define MLtonLibrary(al, mg, mfs, mmc, pk, ps, ml)                      \
 PUBLIC void LIB_OPEN(LIBNAME) (int argc, char* argv[]) {                \
         uintptr_t nextBlock;                                            \
         GC_state s = MLton_gcState();                                   \
