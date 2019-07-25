@@ -1797,7 +1797,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                in
                                   case length of
                                      SOME (Word l) =>
-                                        static (makeSequence, WordX.isZero l, 0)
+                                        static (makeSequence, WordX.isZero l, WordX.toInt l)
                                    | _ => keep ()
                                end
                              | _ => keep ())
