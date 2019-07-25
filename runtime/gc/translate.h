@@ -11,6 +11,7 @@
 struct GC_translateState {
   pointer from;
   pointer to;
+  size_t size;
 };
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
