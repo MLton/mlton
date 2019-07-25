@@ -131,7 +131,6 @@ structure Operand =
       fun isMem (z: t): bool =
          case z of
             Cast (z, _) => isMem z
-          | Contents _ => true
           | Offset _ => true
           | SequenceOffset _ => true
           | StackOffset _ => true
@@ -703,9 +702,6 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
          fun toString (z: Operand.t): string =
             case z of
                Cast (z, ty) => concat ["(", Type.toC ty, ")", toString z]
-             | Contents {oper, ty} =>
-                  concat ["C", C.args [Type.toC ty,
-                                       toString oper]]
              | Frontier => "Frontier"
              | GCState => "GCState"
              | Global g =>
@@ -852,8 +848,6 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                      case z of
                         Operand.Cast (z, _) =>
                            (usesStack z)
-                      | Operand.Contents {oper, ...} =>
-                           (usesStack oper)
                       | Operand.Offset {base, ...} =>
                            (usesStack base)
                       | Operand.SequenceOffset {base, index, ...} =>

@@ -132,36 +132,6 @@ struct
                       size = size}, size), offset + amd64.Size.toBytes size))
                end
           | Cast (z, _) => toAMD64Operand z
-          | Contents {oper, ty} =>
-               let
-                  val ty = Type.toCType ty
-                  val base = toAMD64Operand oper
-                  val _ = Assert.assert("amd64Translate.Operand.toAMD64Operand: Contents/base",
-                                        fn () => Vector.length base = 1)
-                  val base = getOp0 base
-                  val origin =
-                     case amd64.Operand.deMemloc base of
-                        SOME base =>
-                           amd64.MemLoc.simple 
-                           {base = base,
-                            index = amd64.Immediate.zero,
-                            scale = amd64.Scale.One,
-                            size = amd64.Size.BYTE,
-                            class = amd64MLton.Classes.Heap}
-                      | _ => Error.bug (concat
-                                        ["amd64Translate.Operand.toAMD64Operand: ",
-                                         "strange Contents: base: ",
-                                         amd64.Operand.toString base])    
-                  val sizes = amd64.Size.fromCType ty
-               in
-                  (#1 o Vector.mapAndFold)
-                  (sizes, 0, fn (size,offset) =>
-                   (((amd64.Operand.memloc o amd64.MemLoc.shift)
-                     {origin = origin,
-                      disp = amd64.Immediate.int offset,
-                      scale = amd64.Scale.One,
-                      size = size}, size), offset + amd64.Size.toBytes size))
-               end
           | Frontier => 
                let 
                   val frontier = amd64MLton.gcState_frontierContentsOperand ()

@@ -1081,7 +1081,6 @@ fun toMachine (rssa: Rssa.Program.t) =
                        SequenceOffset {base, index, ...} =>
                           doOperand (base, doOperand (index, max))
                      | Cast (z, _) => doOperand (z, max)
-                     | Contents {oper, ...} => doOperand (oper, max)
                      | Offset {base, ...} => doOperand (base, max)
                      | StackOffset (StackOffset.T {offset, ty}) =>
                           Bytes.max (Bytes.+ (offset, Type.bytes ty), max)

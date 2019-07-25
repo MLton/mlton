@@ -413,18 +413,7 @@ fun getOperandAddr (cxt, operand) =
       val scope = mkOperScope operand
    in
     case operand of
-        Operand.Contents {oper, ty} =>
-        let
-            val (operPre, operTy, operTemp) = getOperandAddr (cxt, oper)
-            val llvmTy = llty ty
-            val loaded = nextLLVMTemp ()
-            val load = mkload (loaded, operTy ^ "*", operTemp, scope)
-            val temporary = nextLLVMTemp ()
-            val cast = mkconv (temporary, "bitcast", operTy, loaded, llvmTy ^ "*")
-        in
-            (concat [operPre, load, cast], llvmTy, temporary)
-        end
-      | Operand.Frontier => ("", "%CPointer", "%frontier")
+        Operand.Frontier => ("", "%CPointer", "%frontier")
       | Operand.Global global =>
         let
             val globalType = Global.ty global
@@ -542,7 +531,6 @@ and getOperandValue (cxt, operand) =
             in
                 (concat [operPre, inst], llvmTy, temp)
             end
-          | Operand.Contents _ => loadOperand ()
           | Operand.Frontier => loadOperand ()
           | Operand.GCState => ("", "%CPointer", "%gcState")
           | Operand.Global _ => loadOperand ()

@@ -60,8 +60,6 @@ signature MACHINE =
          sig
             datatype t =
                Cast of t * Type.t
-             | Contents of {oper: t,
-                            ty: Type.t}
              | Frontier
              | GCState
              | Global of Global.t

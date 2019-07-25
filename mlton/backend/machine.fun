@@ -163,8 +163,6 @@ structure Operand =
    struct
       datatype t =
          Cast of t * Type.t
-       | Contents of {oper: t,
-                      ty: Type.t}
        | Frontier
        | GCState
        | Global of Global.t
@@ -186,7 +184,6 @@ structure Operand =
 
     val ty =
        fn Cast (_, ty) => ty
-        | Contents {ty, ...} => ty
         | Frontier => Type.cpointer ()
         | GCState => Type.gcState ()
         | Global g => Global.ty g
@@ -211,9 +208,6 @@ structure Operand =
             case z of
                Cast (z, ty) =>
                   seq [str "Cast ", tuple [layout z, Type.layout ty]]
-             | Contents {oper, ty} =>
-                  seq [str (concat ["C", Type.name ty, " "]),
-                       paren (layout oper)]
              | Frontier => str "<Frontier>"
              | GCState => str "<GCState>"
              | Global g => Global.layout g
@@ -240,8 +234,6 @@ structure Operand =
     val rec equals =
          fn (Cast (z, t), Cast (z', t')) =>
                 Type.equals (t, t') andalso equals (z, z')
-           | (Contents {oper = z, ...}, Contents {oper = z', ...}) =>
-                equals (z, z')
            | (GCState, GCState) => true
            | (Global g, Global g') => Global.equals (g, g')
            | (Label l, Label l') => Label.equals (l, l')
@@ -271,7 +263,6 @@ structure Operand =
             case (read, write) of
                (Cast (z, _), _) => interfere (write, z)
              | (_, Cast (z, _)) => interfere (z, read)
-             | (Contents {oper, ...}, _) => inter oper
              | (Global g, Global g') => Global.equals (g, g')
              | (Offset {base, ...}, _) => inter base
              | (SequenceOffset {base, index, ...}, _) =>
@@ -284,7 +275,6 @@ structure Operand =
 
       val rec isLocation =
          fn Cast (z, _) => isLocation z
-          | Contents _ => true
           | GCState => true
           | Global _ => true
           | Offset _ => true
@@ -1060,9 +1050,6 @@ structure Program =
                                {from = Operand.ty z,
                                 to = t,
                                 tyconTy = tyconTy}))
-                      | Contents {oper, ...} =>
-                           (checkOperand (oper, alloc)
-                            ; Type.isCPointer (Operand.ty oper))
                       | Frontier => true
                       | GCState => true
                       | Global _ =>

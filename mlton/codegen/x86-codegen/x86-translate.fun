@@ -132,36 +132,6 @@ struct
                       size = size}, size), offset + x86.Size.toBytes size))
                end
           | Cast (z, _) => toX86Operand z
-          | Contents {oper, ty} =>
-               let
-                  val ty = Type.toCType ty
-                  val base = toX86Operand oper
-                  val _ = Assert.assert("x86Translate.Operand.toX86Operand: Contents/base",
-                                        fn () => Vector.length base = 1)
-                  val base = getOp0 base
-                  val origin =
-                     case x86.Operand.deMemloc base of
-                        SOME base =>
-                           x86.MemLoc.simple 
-                           {base = base,
-                            index = x86.Immediate.zero,
-                            scale = x86.Scale.One,
-                            size = x86.Size.BYTE,
-                            class = x86MLton.Classes.Heap}
-                      | _ => Error.bug (concat
-                                        ["x86Translate.Operand.toX86Operand: ",
-                                         "strange Contents: base: ",
-                                         x86.Operand.toString base])    
-                  val sizes = x86.Size.fromCType ty
-               in
-                  (#1 o Vector.mapAndFold)
-                  (sizes, 0, fn (size,offset) =>
-                   (((x86.Operand.memloc o x86.MemLoc.shift)
-                     {origin = origin,
-                      disp = x86.Immediate.int offset,
-                      scale = x86.Scale.One,
-                      size = size}, size), offset + x86.Size.toBytes size))
-               end
           | Frontier => 
                let 
                   val frontier = x86MLton.gcState_frontierContentsOperand ()
