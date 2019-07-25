@@ -140,7 +140,7 @@ markInNormal:
     assert (objptrIndex < numObjptrs);
     // next = *(pointer*)todo;
     next = fetchObjptrToPointer (todo, s->heap.start);
-    if (not isPointer (next)) {
+    if (not isPointerInHeap (s, next)) {
 markNextInNormal:
       assert (objptrIndex < numObjptrs);
       objptrIndex++;
@@ -170,7 +170,7 @@ markNextInNormal:
       if (DEBUG_WEAK)
         fprintf (stderr, "marking weak "FMTPTR" ",
                  (uintptr_t)w);
-      if (isObjptr (w->objptr)) {
+      if (isObjptrInHeap (s, w->objptr)) {
         if (DEBUG_WEAK)
           fprintf (stderr, "linking\n");
         w->link = s->weaks;
@@ -216,7 +216,7 @@ markInSequence:
     assert (todo == indexSequenceAtObjptrIndex (s, cur, sequenceIndex, objptrIndex));
     // next = *(pointer*)todo;
     next = fetchObjptrToPointer (todo, s->heap.start);
-    if (not (isPointer(next))) {
+    if (not (isPointerInHeap(s, next))) {
 markNextInSequence:
       assert (sequenceIndex < getSequenceLength (cur));
       assert (objptrIndex < numObjptrs);
@@ -279,7 +279,7 @@ markInFrame:
                "    offset %u  todo "FMTPTR"  next = "FMTPTR"\n",
                frameOffsets [objptrIndex + 1],
                (uintptr_t)todo, (uintptr_t)next);
-    if (not isPointer (next)) {
+    if (not isPointerInHeap (s, next)) {
       objptrIndex++;
       goto markInFrame;
     }
