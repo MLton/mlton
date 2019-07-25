@@ -1034,10 +1034,25 @@ structure ObjptrRep =
 
       fun makeStatic {components, tycon, location, src} =
          let
-            val elems =
-               Vector.toListMap
-              (components, fn {component, offset=_} =>
-                  Component.staticTuple (component, {src=src}))
+            val (_, elems) =
+               Vector.fold
+              (components, (Bytes.zero, []),
+               fn ({component, offset}, (sumOffset, acc)) =>
+                  let
+                     open Bytes
+                     val (sumOffset, acc) =
+                        if sumOffset < offset
+                        then let
+                           val padBits = toBits (offset - sumOffset)
+                           val pad = (WordX.zero o WordSize.fromBits) padBits
+                        in (offset, Static.Data.Word pad :: acc) end
+                        else (sumOffset, acc)
+                     val sumOffset = sumOffset + Type.bytes (Component.ty component)
+                  in
+                     (sumOffset,
+                      Component.staticTuple (component, {src=src}) :: acc)
+                  end)
+            val elems = List.rev elems
          in
             Static.object {elems=elems, tycon=tycon,
                            location=location}
