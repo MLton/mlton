@@ -63,6 +63,8 @@ size_t dfsMarkByMode (GC_state s, pointer root,
   GC_frameInfo frameInfo;
   GC_frameOffsets frameOffsets;
 
+  if (not isPointerInHeap (s, root))
+    return 0;
   if (isPointerMarkedByMode (root, mode))
     /* Object has already been marked. */
     return 0;
