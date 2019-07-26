@@ -213,9 +213,6 @@ fun outputIncludes (includes, print) =
                                     print i;
                                     print ">\n"))
 
-fun declareProfileLabel (l, print) =
-   print (C.call ("DeclareProfileLabel", [ProfileLabel.toString l]))
-
 fun declareGlobals (prefix: string, print) =
    let
       fun prints ss = List.foreach (ss, print)
@@ -440,6 +437,8 @@ fun outputDeclarations
          else ()
       fun declareSourceMaps () =
          let
+            fun declareProfileLabel (l, print) =
+               print (C.call ("DeclareProfileLabel", [ProfileLabel.toString l]))
             fun doit (SourceMaps.T {profileLabelInfos, sourceNames, sourceSeqs, sources}) =
                (Vector.foreach (profileLabelInfos, fn {profileLabel, ...} =>
                                 declareProfileLabel (profileLabel, print))
@@ -780,9 +779,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                               srcIsMem = false,
                                               ty = Operand.ty dst})
                         end
-                   | ProfileLabel l =>
-                        (print "\t"
-                         ; print (C.call ("ProfileLabel", [ProfileLabel.toString l])))
+                   | ProfileLabel _ => Error.bug "CCodegen.outputStatement: ProfileLabel"
                end
             local
                fun mk (dst, src) () =
@@ -1202,20 +1199,6 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                   List.insertionSort (!entries, fn ((_, i1), (_, i2)) => i1 <= i2)
                end
 
-            val _ =
-               let
-                  val empty = ref true
-               in
-                  Vector.foreach
-                  (blocks, fn Block.T {statements, ...} =>
-                   Vector.foreach
-                   (statements, fn s =>
-                    case s of
-                       Statement.ProfileLabel l => (empty := false
-                                                    ; declareProfileLabel (l, print))
-                     | _ => ()))
-                  ; if !empty then () else print "\n"
-               end
             val _ = print "PRIVATE uintptr_t "
             val _ = print (C.callNoSemi (ChunkLabel.toString chunkLabel,
                                          List.map
