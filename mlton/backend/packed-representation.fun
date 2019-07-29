@@ -1557,7 +1557,8 @@ structure ConRep =
          conApp
 
       fun staticConApp (r: t, {location: Static.location,
-                               src: {index: int} -> 'a Static.Data.elem})
+                               src: {index: int} -> 'a Static.Data.elem,
+                               width: WordSize.t})
          : 'a staticOrElem =
          case r of
             ShiftAndTag {component, tag, ...} =>
@@ -1573,7 +1574,7 @@ structure ConRep =
                       (Elem o Static.Data.Word o WordX.orb) (w, mask)
                    end
                 | _ => Error.bug "PackedRepresentation.ConRep.staticConApp: bad component")
-          | Tag {tag, ...} => (Elem o Static.Data.Word o WordX.resize) (tag, WordSize.objptr ())
+          | Tag {tag, ...} => (Elem o Static.Data.Word o WordX.resize) (tag, width)
           | Tuple tr => TupleRep.staticTuple (tr, {location = location, src = src})
 
    end
@@ -2951,10 +2952,13 @@ fun compute (program as Ssa2.Program.T {datatypes, ...}) =
       fun static {args, con, elem, location, objectTy} =
          let
             val src = makeSrc (args, elem)
+            val width = (WordSize.fromBits o Rep.width o Value.get o typeRep) objectTy
          in
             case con of
-               NONE => TupleRep.staticTuple (tupleRep objectTy, {location = location, src = src})
-             | SOME con => ConRep.staticConApp (conRep con, {location = location, src = src})
+               NONE => TupleRep.staticTuple
+               (tupleRep objectTy, {location = location, src = src})
+             | SOME con => ConRep.staticConApp
+               (conRep con, {location = location, src = src, width = width})
          end
    in
       {diagnostic = diagnostic,
