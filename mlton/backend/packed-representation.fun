@@ -1568,8 +1568,8 @@ structure ConRep =
                       val shift = (WordX.resize
                                     (tag, WordSize.shiftArg))
                       val w = WordX.lshift (w, shift)
-                      val mask = (WordX.resize
-                                   (tag, WordX.size w))
+                      val w = WordX.resize (w, width)
+                      val mask = WordX.resize (tag, width)
                    in
                       (Elem o Static.Data.Word o WordX.orb) (w, mask)
                    end
