@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -37,11 +38,15 @@ fun ('temporary, 'statement) move {moves, equals, move, interfere, temp}
                                 if interfere (dst, s)
                                    then let val temp = temp s
                                         in ({src = temp, dst = d} :: hard,
-                                            move {dst = temp, src = s}
-                                            :: moves)
+                                            case move {dst = temp, src = s} of
+                                               NONE => moves
+                                             | SOME move => move :: moves)
                                         end
                                 else (mv :: hard, moves))
-                            val moves = move {src = src, dst = dst} :: moves
+                            val moves =
+                               case move {src = src, dst = dst} of
+                                  NONE => moves
+                                | SOME move => move :: moves
                          in loopTop (hard, moves)
                          end)
           | (mv as {src, dst}) :: mvs =>
@@ -52,7 +57,9 @@ fun ('temporary, 'statement) move {moves, equals, move, interfere, temp}
                in if isHard mvs orelse isHard hard
                      then loop (mvs, mv :: hard, moves, changed)
                   else loop (mvs, hard,
-                            move {src = src, dst = dst} :: moves,
+                             case move {src = src, dst = dst} of
+                                NONE => moves
+                              | SOME move => move :: moves,
                             true)
                end
    in loopTop (mvs, [])

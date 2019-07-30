@@ -293,7 +293,6 @@ structure Statement =
       datatype t =
          Move of {dst: Operand.t,
                   src: Operand.t}
-       | Noop
        | PrimApp of {args: Operand.t vector,
                      dst: Operand.t option,
                      prim: Type.t Prim.t}
@@ -307,7 +306,6 @@ structure Statement =
                   mayAlign
                   [seq [Operand.layout dst, str " ="],
                    indent (Operand.layout src, 2)]
-             | Noop => str "Noop"
              | PrimApp {args, dst, prim, ...} =>
                   let
                      val rest =
@@ -327,21 +325,16 @@ structure Statement =
 
       fun move (arg as {dst, src}) =
          if Operand.equals (dst, src)
-            then Noop
-         else Move arg
+            then NONE
+         else SOME (Move arg)
 
       val move =
          Trace.trace ("Machine.Statement.move",
                       fn {dst, src} =>
                       Layout.record [("dst", Operand.layout dst),
                                      ("src", Operand.layout src)],
-                      layout)
+                      Option.layout layout)
          move
-
-      fun moves {srcs, dsts} =
-         Vector.fromListRev
-         (Vector.fold2 (srcs, dsts, [], fn (src, dst, ac)  =>
-                        move {src = src, dst = dst} :: ac))
 
       fun object {dst, header, size} =
          let
@@ -1234,7 +1227,6 @@ structure Program =
                               then SOME alloc
                            else NONE
                         end
-                   | Noop => SOME alloc
                    | PrimApp {args, dst, prim, ...} =>
                         let
                            val _ = checkOperands (args, alloc)

@@ -113,7 +113,6 @@ signature MACHINE =
               *)
                Move of {dst: Operand.t,
                         src: Operand.t}
-             | Noop
              | PrimApp of {args: Operand.t vector,
                            dst: Operand.t option,
                            prim: Type.t Prim.t}
@@ -121,10 +120,7 @@ signature MACHINE =
 
             val foldOperands: t * 'a * (Operand.t * 'a -> 'a) -> 'a
             val layout: t -> Layout.t
-            val move: {dst: Operand.t, src: Operand.t} -> t
-            (* Error if dsts and srcs aren't of same length. *)
-            val moves: {dsts: Operand.t vector,
-                        srcs: Operand.t vector} -> t vector
+            val move: {dst: Operand.t, src: Operand.t} -> t option
             val object: {dst: Operand.t, header: word, size: Bytes.t} -> t vector
          end
 

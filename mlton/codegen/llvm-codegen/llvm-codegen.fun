@@ -970,7 +970,6 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                         in
                            ()
                         end
-                     | Statement.Noop => ()
                      | Statement.PrimApp {args, dst, prim} =>
                         let
                            val args = operandsToRValues args

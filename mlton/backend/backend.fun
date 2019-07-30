@@ -457,16 +457,18 @@ fun toMachine (rssa: Rssa.Program.t) =
             fun handlerOffset () = #handlerOffset (valOf handlersInfo)
             fun linkOffset () = #linkOffset (valOf handlersInfo)
             datatype z = datatype R.Statement.t
+            fun move arg =
+               case M.Statement.move arg of
+                  NONE => Vector.new0 ()
+                | SOME move => Vector.new1 move
          in
             case s of
                Bind {dst = (var, _), src, ...} =>
-                  Vector.new1
-                  (M.Statement.move {dst = varOperand var,
-                                     src = translateOperand src})
+                  move {dst = varOperand var,
+                        src = translateOperand src}
              | Move {dst, src} =>
-                  Vector.new1
-                  (M.Statement.move {dst = translateOperand dst,
-                                     src = translateOperand src})
+                  move {dst = translateOperand dst,
+                        src = translateOperand src}
              | Object {dst, header, size} =>
                   M.Statement.object {dst = varOperand (#1 dst),
                                       header = header,
@@ -511,25 +513,22 @@ fun toMachine (rssa: Rssa.Program.t) =
                   end
              | SetExnStackSlot =>
                   (* ExnStack = *(ptrdiff_t* )(stackTop + linkOffset); *)
-                  Vector.new1
-                  (M.Statement.move
-                   {dst = exnStackOp,
-                    src = M.Operand.stackOffset {offset = linkOffset (),
-                                                 ty = Type.exnStack ()}})
+                  move
+                  {dst = exnStackOp,
+                   src = M.Operand.stackOffset {offset = linkOffset (),
+                                                ty = Type.exnStack ()}}
              | SetHandler h =>
                   (* *(uintptr_t)(stackTop + handlerOffset) = h; *)
-                  Vector.new1
-                  (M.Statement.move
-                   {dst = M.Operand.stackOffset {offset = handlerOffset (),
-                                                 ty = Type.label h},
-                    src = M.Operand.Label h})
+                  move
+                  {dst = M.Operand.stackOffset {offset = handlerOffset (),
+                                                ty = Type.label h},
+                   src = M.Operand.Label h}
              | SetSlotExnStack =>
                   (* *(ptrdiff_t* )(stackTop + linkOffset) = ExnStack; *)
-                  Vector.new1
-                  (M.Statement.move
-                   {dst = M.Operand.stackOffset {offset = linkOffset (),
-                                                 ty = Type.exnStack ()},
-                    src = exnStackOp})
+                  move
+                  {dst = M.Operand.stackOffset {offset = linkOffset (),
+                                                ty = Type.exnStack ()},
+                   src = exnStackOp}
              | _ => Error.bug (concat
                                ["Backend.genStatement: strange statement: ",
                                 R.Statement.toString s])

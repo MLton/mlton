@@ -380,9 +380,7 @@ struct
       fun toAMD64Blocks {statement,
                        transInfo as {...} : transInfo}
         = (case statement
-             of Noop
-              => AppendList.empty
-              | Move {src, dst}
+             of Move {src, dst}
               => let
                    val (comment_begin,
                         comment_end) = comments statement

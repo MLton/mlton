@@ -754,7 +754,6 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                         src = operandToString src,
                                         srcIsMem = Operand.isMem src,
                                         ty = Operand.ty dst}))
-                   | Noop => ()
                    | PrimApp {args, dst, prim} =>
                         let
                            fun call (): string =
