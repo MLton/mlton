@@ -35,6 +35,12 @@ binaryNameFn(size, Math_##f, f)
 #define fmaNameOp(size, name, op)                                       \
 naryNameFnResArgsCall(size, name, fma, Real##size##_t, (Real##size##_t r1, Real##size##_t r2, Real##size##_t r3), (r1, r2, op r3))
 
+#define qequal(size)                                                    \
+  MLTON_CODEGEN_STATIC_INLINE                                           \
+  Bool Real##size##_qequal (Real##size##_t r1, Real##size##_t r2) {     \
+    return isunordered (r1, r2) || r1 == r2;                            \
+  }
+
 #define unaryOp(size, name, op)                                         \
   MLTON_CODEGEN_STATIC_INLINE                                           \
   Real##size##_t Real##size##_##name (Real##size##_t r) {               \
@@ -82,6 +88,7 @@ binaryOp(size, mul, *)                          \
 fmaNameOp(size, muladd,  )                      \
 fmaNameOp(size, mulsub, -)                      \
 unaryOp(size, neg, -)                           \
+qequal(size)                                    \
 unaryNameFn(size, realCeil, ceil)               \
 unaryNameFn(size, realFloor, floor)             \
 unaryNameFn(size, realTrunc, trunc)             \
@@ -113,6 +120,7 @@ all(64)
 #undef unaryFn
 #undef unaryNameFn
 #undef unaryOp
+#undef qequal
 #undef fmaNameOp
 #undef compareOp
 #undef binaryMathFn
