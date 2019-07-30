@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -27,6 +28,6 @@ static inline void callStackAux (GC_state s, GC_frameIndex i);
 
 PRIVATE uint32_t GC_numStackFrames (GC_state s);
 PRIVATE void GC_callStack (GC_state s, pointer p);
-PRIVATE uint32_t* GC_frameIndexSourceSeq (GC_state s, GC_frameIndex frameIndex);
+PRIVATE const uint32_t * GC_frameIndexSourceSeq (GC_state s, GC_frameIndex frameIndex);
 
 #endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */

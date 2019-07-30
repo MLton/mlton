@@ -314,11 +314,11 @@ fun outputDeclarations
       fun declareFrameInfos () =
          (Vector.foreachi
           (frameOffsets, fn (i, fo) =>
-           declareArray ("uint16_t", concat ["frameOffsets", C.int i],
+           declareArray ("const uint16_t", concat ["frameOffsets", C.int i],
                          {firstElemLen = true, oneline = true},
                          FrameOffsets.offsets fo,
                          fn (_, offset) => C.bytes offset))
-          ; declareArray ("struct GC_frameInfo", "frameInfos",
+          ; declareArray ("const struct GC_frameInfo", "frameInfos",
                           {firstElemLen = false, oneline = false},
                           frameInfos, fn (_, fi) =>
                           concat ["{",
@@ -330,12 +330,12 @@ fun outputDeclarations
                                           | SOME ssi => C.int ssi),
                                   "}"]))
       fun declareAtMLtons () =
-         declareArray ("char*", "atMLtons",
+         declareArray ("char *", "atMLtons",
                        {firstElemLen = false, oneline = true},
                        !Control.atMLtons, fn (_, s) => C.string s)
       fun declareObjectTypes () =
          declareArray
-         ("struct GC_objectType", "objectTypes",
+         ("const struct GC_objectType", "objectTypes",
           {firstElemLen = false, oneline = false},
           objectTypes, fn (_, ty) =>
           let
@@ -447,17 +447,17 @@ fun outputDeclarations
                                 profileLabelInfos, fn (_, {profileLabel, sourceSeqIndex}) =>
                                 concat ["{(pointer)&", ProfileLabel.toString profileLabel, ", ",
                                         C.int sourceSeqIndex, "}"])
-                ; declareArray ("char*", "sourceNames",
+                ; declareArray ("const char * const", "sourceNames",
                                 {firstElemLen = false, oneline = false},
                                 sourceNames, fn (_, s) => C.string s)
                 ; Vector.foreachi (sourceSeqs, fn (i, ss) =>
-                                   declareArray ("GC_sourceIndex", concat ["sourceSeq", C.int i],
+                                   declareArray ("const GC_sourceIndex", concat ["sourceSeq", C.int i],
                                                  {firstElemLen = true, oneline = true},
                                                  ss, fn (_, {sourceIndex}) => C.int sourceIndex))
-                ; declareArray ("uint32_t*", "sourceSeqs",
+                ; declareArray ("const uint32_t * const", "sourceSeqs",
                                 {firstElemLen = false, oneline = false},
                                 sourceSeqs, fn (i, _) => concat ["sourceSeq", Int.toString i])
-                ; declareArray ("struct GC_source", "sources",
+                ; declareArray ("const struct GC_source", "sources",
                                 {firstElemLen = false, oneline = false},
                                 sources, fn (_, {sourceNameIndex, successorSourceSeqIndex}) =>
                                 concat ["{ ", Int.toString sourceNameIndex, ", ",
@@ -646,7 +646,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                        List.foreach (returnsTo, declareChunk o labelChunk)
                   |  _ => ())))
             ; destroy ()
-            ; print "PRIVATE extern ChunkFnPtr_t const nextChunks[];\n"
+            ; print "PRIVATE extern const ChunkFnPtr_t nextChunks[];\n"
          end
 
       val handleMisaligned =
@@ -1219,7 +1219,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
             val _ = print "doSwitchNextBlock: UNUSED;\n"
             val _ =
                if !Control.chunkJumpTable
-                  then (print "\tstatic const void* nextLabels["
+                  then (print "\tstatic void* const nextLabels["
                         ; print (C.int (List.length entries))
                         ; print "] = {\n"
                         ; List.foreach
@@ -1287,7 +1287,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
       fun defineNextChunks () =
          (List.foreach (chunks, fn Chunk.T {chunkLabel, ...} =>
                         declareChunk (chunkLabel, print))
-          ; print "PRIVATE ChunkFnPtr_t const nextChunks["
+          ; print "PRIVATE const ChunkFnPtr_t nextChunks["
           ; print (C.int (Vector.length nextChunks))
           ; print "] = {\n"
           ; Vector.foreachi

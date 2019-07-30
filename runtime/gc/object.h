@@ -1,4 +1,4 @@
-/* Copyright (C) 2016 Matthew Fluet.
+/* Copyright (C) 2016,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -26,7 +26,7 @@ typedef enum {
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS)) 
 
-static const char* objectTypeTagToString (GC_objectTypeTag tag);
+static const char * objectTypeTagToString (GC_objectTypeTag tag);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
 
@@ -130,12 +130,12 @@ static inline GC_header buildHeaderFromTypeIndex (uint32_t t);
  * In a weak object, the bytesNonObjptrs and numObjptrs fields are
  * interpreted as in a normal object.
 */
-typedef struct GC_objectType {
+typedef const struct GC_objectType {
   /* Keep tag first, at zero offset, since it is referenced most often. */
-  GC_objectTypeTag tag;
-  bool hasIdentity;
-  uint16_t bytesNonObjptrs;
-  uint16_t numObjptrs;
+  const GC_objectTypeTag tag;
+  const bool hasIdentity;
+  const uint16_t bytesNonObjptrs;
+  const uint16_t numObjptrs;
 } *GC_objectType;
 enum {
   /* The type indices here must agree with those in backend/rep-type.fun. */

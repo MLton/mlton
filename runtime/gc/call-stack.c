@@ -36,8 +36,8 @@ void GC_callStack (GC_state s, pointer p) {
   foreachStackFrame (s, callStackAux);
 }
 
-uint32_t* GC_frameIndexSourceSeq (GC_state s, GC_frameIndex frameIndex) {
-  uint32_t *res;
+const uint32_t * GC_frameIndexSourceSeq (GC_state s, GC_frameIndex frameIndex) {
+  const uint32_t *res;
 
   res = s->sourceMaps.sourceSeqs[s->frameInfos[frameIndex].sourceSeqIndex];
   if (DEBUG_CALL_STACK)

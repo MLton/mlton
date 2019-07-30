@@ -31,18 +31,18 @@
  * the sequence of source names corresponding to the frame as an index
  * into sourceSeqs; see sources.h.
  */
-typedef uint16_t *GC_frameOffsets;
+typedef const uint16_t *GC_frameOffsets;
 
 typedef enum {
   C_FRAME,
   ML_FRAME
 } GC_frameKind;
 
-typedef struct GC_frameInfo {
-  GC_frameKind kind;
-  GC_frameOffsets offsets;
-  uint16_t size;
-  GC_sourceSeqIndex sourceSeqIndex;
+typedef const struct GC_frameInfo {
+  const GC_frameKind kind;
+  const GC_frameOffsets offsets;
+  const uint16_t size;
+  const GC_sourceSeqIndex sourceSeqIndex;
 } *GC_frameInfo;
 typedef uint32_t GC_frameIndex;
 #define PRIFI PRIu32

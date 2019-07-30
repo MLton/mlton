@@ -23,8 +23,8 @@ GC_sourceNameIndex profileMasterIndexToSourceNameIndex (GC_state s,
   return i - s->sourceMaps.sourcesLength;
 }
 
-char* profileIndexSourceName (GC_state s, GC_sourceIndex i) {
-  char* res;
+const char * profileIndexSourceName (GC_state s, GC_sourceIndex i) {
+  const char *res;
 
   if (i < s->sourceMaps.sourcesLength)
     res = getSourceName (s, i);
@@ -76,7 +76,7 @@ void enterSourceForProfiling (GC_state s, GC_profileMasterIndex i) {
 void enterForProfiling (GC_state s, GC_sourceSeqIndex sourceSeqIndex) {
   uint32_t i;
   GC_sourceIndex sourceIndex;
-  uint32_t *sourceSeq;
+  const uint32_t *sourceSeq;
 
   if (DEBUG_PROFILE)
     fprintf (stderr, "enterForProfiling ("FMTSSI")\n", sourceSeqIndex);
@@ -132,7 +132,7 @@ void leaveSourceForProfiling (GC_state s, GC_profileMasterIndex i) {
 void leaveForProfiling (GC_state s, GC_sourceSeqIndex sourceSeqIndex) {
   uint32_t i;
   GC_sourceIndex sourceIndex;
-  uint32_t *sourceSeq;
+  const uint32_t *sourceSeq;
 
   if (DEBUG_PROFILE)
     fprintf (stderr, "leaveForProfiling ("FMTSSI")\n", sourceSeqIndex);
@@ -158,7 +158,7 @@ void GC_profileLeave (GC_state s) {
 
 
 void incForProfiling (GC_state s, size_t amount, GC_sourceSeqIndex sourceSeqIndex) {
-  uint32_t *sourceSeq;
+  const uint32_t *sourceSeq;
   GC_sourceIndex topSourceIndex;
 
   if (DEBUG_PROFILE)
