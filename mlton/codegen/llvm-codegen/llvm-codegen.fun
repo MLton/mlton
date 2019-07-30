@@ -368,7 +368,8 @@ structure LLVM =
                                                   resTy: Type.t,
                                                   vis: string option}) HashTable.t,
                                fnDefns: (string, unit) HashTable.t,
-                               globDecls: (string, {ty: Type.t,
+                               globDecls: (string, {const: bool,
+                                                    ty: Type.t,
                                                     vis: string option}) HashTable.t,
                                metaData: (MetaData.t, MetaData.Id.t) HashTable.t}
             fun new () = T {fnDecls = HashTable.new {equals = String.equals, hash = String.hash},
@@ -380,12 +381,12 @@ structure LLVM =
                   val empty = ref true
                   val _ =
                      HashTable.foreachi
-                     (globDecls, fn (name, {ty, vis}) =>
+                     (globDecls, fn (name, {const, ty, vis}) =>
                       (empty := false
                        ; print name
                        ; print " = external "
                        ; Option.app (vis, fn vis => (print vis; print " "))
-                       ; print "global "
+                       ; print (if const then "constant " else "global ")
                        ; print (Type.toString ty)
                        ; print "\n"))
                   val _ = if !empty then () else print "\n"
@@ -428,9 +429,9 @@ structure LLVM =
             fun addFnDefn (T {fnDefns, ...}, name) =
                (ignore o HashTable.insertIfNew)
                (fnDefns, name, fn () => (), ignore)
-            fun addGlobDecl (T {globDecls, ...}, name, ty_vis as {ty, ...}) =
+            fun addGlobDecl (T {globDecls, ...}, name, const_ty_vis as {ty, ...}) =
                ((ignore o HashTable.insertIfNew)
-                (globDecls, name, fn () => ty_vis, ignore)
+                (globDecls, name, fn () => const_ty_vis, ignore)
                 ; Value.globptr (name, ty))
             fun addMetaData (T {metaData, ...}, md) =
                HashTable.lookupOrInsert
@@ -619,7 +620,7 @@ fun primApp (prim: 'a Prim.t): ({args: LLVM.Value.t list,
                    | CFunction.SymbolScope.Public => "default"
                val globptr =
                   LLVM.ModuleContext.addGlobDecl
-                  (mc, name, {ty = ty, vis = SOME vis})
+                  (mc, name, {const = false, ty = ty, vis = SOME vis})
                val res = newTemp LLVM.Type.cpointer
                val _ = $(bitcast {dst = res, src = globptr})
             in
@@ -787,7 +788,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
             val name = globalName ct
             val ty = LLVM.Type.Array (Global.numberOfType ct, LLVM.Type.fromCType ct)
          in
-            LLVM.ModuleContext.addGlobDecl (mc, name, {ty = ty, vis = SOME "hidden"})
+            LLVM.ModuleContext.addGlobDecl (mc, name, {const = false, ty = ty, vis = SOME "hidden"})
          end
       fun globalVal (c, mc) = globalValC (Type.toCType c, mc)
       fun temporaryName (ct: CType.t, index: int): string =
@@ -823,7 +824,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
             val name = if !Control.llvmCC10 then "@nextXChunks" else "@nextChunks"
             val ty = LLVM.Type.Array (Vector.length nextChunks, chunkFnPtrTy)
          in
-            LLVM.ModuleContext.addGlobDecl (mc, name, {ty = ty, vis = SOME "hidden"})
+            LLVM.ModuleContext.addGlobDecl (mc, name, {const = true, ty = ty, vis = SOME "hidden"})
          end
 
       val doSwitchNextBlock = LLVM.Value.label' "doSwitchNextBlock"
@@ -1491,7 +1492,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
            (print "PRIVATE extern ChunkFn_t "
             ; print (chunkName chunkLabel)
             ; print ";\n"))
-          ; print "PRIVATE ChunkFnPtr_t "
+          ; print "PRIVATE ChunkFnPtr_t const "
           ; print nextChunksName
           ; print "["
           ; print (Int.toString (Vector.length nextChunks))
