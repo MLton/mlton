@@ -26,10 +26,16 @@ binaryNameFn(size, f, f)
 #define binaryMathFn(size, f)                                           \
 binaryNameFn(size, Math_##f, f)
 
-#define compareOp(size, name, op)                                       \
+#define compareNameFn(size, name, f)                                    \
   MLTON_CODEGEN_STATIC_INLINE                                           \
   Bool Real##size##_##name (Real##size##_t r1, Real##size##_t r2) {     \
-    return r1 op r2;                                                    \
+    return f (r1, r2);                                                  \
+  }
+
+#define equal(size)                                                     \
+  MLTON_CODEGEN_STATIC_INLINE                                           \
+  Bool Real##size##_equal (Real##size##_t r1, Real##size##_t r2) {      \
+    return r1 == r2;                                                    \
   }
 
 #define fmaNameOp(size, name, op)                                       \
@@ -78,11 +84,11 @@ unaryNameFn(size, Math_##f, f)
 unaryNameFn(size, abs, fabs)                    \
 binaryOp(size, add, +)                          \
 binaryOp(size, div, /)                          \
-compareOp(size, equal, ==)                      \
+equal(size)                                     \
 naryNameFnResArgsCall(size, frexp, frexp, Real##size##_t, (Real##size##_t r, Ref(C_Int_t) ip), (r, (int*)ip)) \
 naryNameFnResArgsCall(size, ldexp, ldexp, Real##size##_t, (Real##size##_t r, C_Int_t i), (r, i)) \
-compareOp(size, le, <=)                         \
-compareOp(size, lt, <)                          \
+compareNameFn(size, le, islessequal)            \
+compareNameFn(size, lt, isless)                 \
 naryNameFnResArgsCall(size, modf, modf, Real##size##_t, (Real##size##_t x, Ref(Real##size##_t) yp), (x, (Real##size##_t*)yp)) \
 binaryOp(size, mul, *)                          \
 fmaNameOp(size, muladd,  )                      \
@@ -122,7 +128,8 @@ all(64)
 #undef unaryOp
 #undef qequal
 #undef fmaNameOp
-#undef compareOp
+#undef equal
+#undef compareNameFn
 #undef binaryMathFn
 #undef binaryFn
 #undef binaryNameFn
