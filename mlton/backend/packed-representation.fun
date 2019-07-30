@@ -380,13 +380,13 @@ structure WordRep =
                    then (Bits.+ (shift, Rep.width rep), word)
                 else let
                    val src = src {index=index}
+                   val src = WordX.resize (src, WordX.size word)
                    val src =
                       if Bits.equals (shift, Bits.zero)
                          then src
                          else
                             WordX.lshift (src, (WordX.fromIntInf
                             (Bits.toIntInf shift, WordSize.shiftArg)))
-                   val src = WordX.resize (src, WordX.size word)
                 in
                    (Bits.+ (shift, Rep.width rep),
                     WordX.orb (src, word))
