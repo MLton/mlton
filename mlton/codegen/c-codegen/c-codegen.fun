@@ -178,6 +178,7 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Real_rndToWord _ => true
        | Real_round _ => true
        | Real_sub _ => true
+       | Thread_returnToC => false
        | Word_add _ => true
        | Word_addCheckP _ => true
        | Word_andb _ => true
@@ -205,7 +206,7 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Word_sub _ => true
        | Word_subCheckP _ => true
        | Word_xorb _ => true
-       | _ => false
+       | _ => Error.bug ("CCodegen.implementsPrim: " ^ Prim.toString p)
    end
 
 fun outputIncludes (includes, print) =
