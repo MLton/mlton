@@ -25,6 +25,7 @@ structure CFunction =
          fun make {args, name, prototype} =
             T {args = args,
                convention = Convention.Cdecl,
+               inline = false,
                kind = Kind.Runtime {bytesNeeded = NONE,
                                     ensuresBytesFree = NONE,
                                     mayGC = false,

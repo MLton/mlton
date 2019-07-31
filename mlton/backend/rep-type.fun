@@ -872,20 +872,20 @@ structure BuiltInCFunction =
       local
          fun make b = fn () =>
             T {args = Vector.new3 (Type.gcState (), Type.csize (), Type.bool),
-                   convention = Cdecl,
-                   kind = Kind.Runtime {bytesNeeded = NONE,
-                                        ensuresBytesFree = SOME 1,
-                                        mayGC = true,
-                                        maySwitchThreadsFrom = b,
-                                        maySwitchThreadsTo = b,
-                                        modifiesFrontier = true,
-                                        readsStackTop = true,
-                                        writesStackTop = true},
-                   prototype = (Vector.new3 (CType.cpointer, CType.csize (), CType.bool),
-                                NONE),
-                   return = Type.unit,
-                   symbolScope = SymbolScope.Private,
-                   target = Direct "GC_collect"}
+               convention = Cdecl,
+               inline = false,
+               kind = Kind.Runtime {bytesNeeded = NONE,
+                                    ensuresBytesFree = SOME 1,
+                                    mayGC = true,
+                                    maySwitchThreadsFrom = b,
+                                    maySwitchThreadsTo = b,
+                                    modifiesFrontier = true,
+                                    readsStackTop = true,
+                                    writesStackTop = true},
+               prototype = (Vector.new3 (CType.cpointer, CType.csize (), CType.bool), NONE),
+               return = Type.unit,
+               symbolScope = SymbolScope.Private,
+               target = Direct "GC_collect"}
          val t = make true
          val f = make false
       in

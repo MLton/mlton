@@ -91,6 +91,7 @@ signature C_FUNCTION =
 
       datatype 'a t = T of {args: 'a vector,
                             convention: Convention.t,
+                            inline: bool,
                             kind: Kind.t,
                             prototype: CType.t vector * CType.t option,
                             return: 'a,

@@ -285,7 +285,7 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
                      val newPrim =
                         case Prim.name prim of
                            Prim.Name.FFI (cfunc as CFunction.T {args=_, return=_,
-                                 convention, kind, prototype, symbolScope, target}) =>
+                                 convention, inline, kind, prototype, symbolScope, target}) =>
                               let
                                  val newArgs = argTys
                                  val newReturn = newTy
@@ -293,7 +293,7 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
                                    case kind of
                                         CFunction.Kind.Runtime _ =>
                                            CFunction.T {args=newArgs, return=newReturn,
-                                            convention=convention, kind=kind, prototype=prototype,
+                                            convention=convention, inline=inline, kind=kind, prototype=prototype,
                                             symbolScope=symbolScope, target=target}
                                       | _ => cfunc
                               in

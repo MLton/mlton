@@ -175,6 +175,7 @@ fun insertFunction (f: Function.t,
                      val cfunc =
                         CFunction.T {args = Vector.new0 (),
                                      convention = CFunction.Convention.Cdecl,
+                                     inline = false,
                                      kind = CFunction.Kind.Runtime {bytesNeeded = NONE,
                                                                     ensuresBytesFree = NONE,
                                                                     mayGC = false,
