@@ -79,6 +79,7 @@ signature MACHINE =
              | StackOffset of StackOffset.t
              | StackTop
              | Static of {index: int,
+                          offset: Bytes.t,
                           ty: Type.t}
              | Temporary of Temporary.t
              | Word of WordX.t

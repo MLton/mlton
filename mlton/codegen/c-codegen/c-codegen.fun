@@ -855,13 +855,8 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                                        C.bytes offset]]
              | StackOffset s => StackOffset.toString s
              | StackTop => "StackTop"
-             | Static {index, ty} =>
-                  let
-                     val Static.T {header, ...} = (#1 o Vector.sub) (statics, index)
-                     val offset = (C.int o Bytes.toInt o WordXVector.size) header
-                  in
-                     concat ["M", C.args [Type.toC ty, C.int index, offset]]
-                  end
+             | Static {index, offset, ty} =>
+                  concat ["M", C.args [Type.toC ty, C.int index, C.bytes offset]]
              | Temporary t =>
                   concat [Type.name (Temporary.ty t), "_",
                           Int.toString (Temporary.index t)]

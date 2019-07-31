@@ -360,7 +360,7 @@ fun toMachine (rssa: Rssa.Program.t) =
           * late and mutable statics can't be unique *)
          val (allStatics, globalStatic) =
             (fn () => Vector.fromListRev (!staticsRef),
-             fn {static as M.Static.T {location, ...}, ty} =>
+             fn {static as M.Static.T {location, header, ...}, ty} =>
                 let
                    val static = M.Static.map (static,
                      fn v =>
@@ -374,10 +374,13 @@ fun toMachine (rssa: Rssa.Program.t) =
                            M.Static.Heap => SOME (M.Global.new ty)
                          | _ => NONE
                    val _ = List.push (staticsRef, (static, g))
+
+                   val offset = WordXVector.size header
                 in
                    case g of
                         SOME g' => M.Operand.Global g'
-                      | NONE => M.Operand.Static {index=i, ty=ty}
+                      | NONE => M.Operand.Static
+                         {index=i, offset=offset, ty=ty}
                 end)
       end
       fun bogusOp (t: Type.t): M.Operand.t =

@@ -182,6 +182,7 @@ structure Operand =
        | StackOffset of StackOffset.t
        | StackTop
        | Static of {index: int,
+                    offset: Bytes.t,
                     ty: Type.t}
        | Temporary of Temporary.t
        | Word of WordX.t
@@ -234,7 +235,10 @@ structure Operand =
                        constrain ty]
              | StackOffset so => StackOffset.layout so
              | StackTop => str "<StackTop>"
-             | Static {index, ty} => seq [str "M", tuple [Int.layout index, Type.layout ty]]
+             | Static {index, offset, ty} =>
+                  seq [str "M",
+                       tuple [Int.layout index, Type.layout ty,
+                              Bytes.layout offset]]
              | Temporary t => Temporary.layout t
              | Word w => WordX.layout (w, {suffix = true})
          end
@@ -257,9 +261,11 @@ structure Operand =
               SequenceOffset {base = b', index = i', ...}) =>
                 equals (b, b') andalso equals (i, i')
            | (StackOffset so, StackOffset so') => StackOffset.equals (so, so')
-           | (Static {index = i, ty = t},
-              Static {index = i', ty = t'}) =>
-              i = i' andalso Type.equals (t, t')
+           | (Static {index = i, offset = j, ty = t},
+              Static {index = i', offset = j', ty = t'}) =>
+              i = i'
+              andalso Bytes.equals (j, j')
+              andalso Type.equals (t, t')
            | (Temporary t, Temporary t') => Temporary.equals (t, t')
            | (Word w, Word w') => WordX.equals (w, w')
            | _ => false
@@ -1134,7 +1140,7 @@ structure Program =
                                                          tyconTy = tyconTy,
                                                          result = ty,
                                                          scale = scale})
-                      | Static {index=index, ty=ty} =>
+                      | Static {index, ty, ...} =>
                            0 < index andalso index < Vector.length statics
                            andalso
                            (Type.isCPointer ty orelse Type.isObjptr ty)
