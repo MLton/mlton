@@ -271,6 +271,16 @@ struct
 
   val gcState_label = Label.fromString "gcState"
 
+  local
+     val static_labels = HashTable.new
+      {hash=Hash.permute o Word.fromInt, equals=Int.equals}
+     fun make i = Label.fromString ("static_" ^ Int.toString i)
+  in
+     fun static_label i = HashTable.lookupOrInsert
+       (static_labels, i, fn () => make i)
+  end
+
+
   structure Field = Runtime.GCField
   fun make' (offset: int, size, class) =
      let

@@ -96,6 +96,9 @@ signature AMD64_MLTON_BASIC =
     val local_base : amd64.CType.t -> amd64.Label.t
     val global_base : amd64.CType.t -> amd64.Label.t
 
+    (* Machine statics *)
+    val static_label: int -> amd64.Label.t
+
     (* gcState relative locations defined in gc.h *)
     val gcState_label: amd64.Label.t
     val gcState_offset: {offset: int, ty: amd64.CType.t} -> amd64.Operand.t
