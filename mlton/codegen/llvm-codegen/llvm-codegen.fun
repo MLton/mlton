@@ -692,17 +692,27 @@ fun implementsPrim (p: 'a Prim.t): bool = Option.isSome (primApp p)
 fun aamd (oper, mc) =
    case !Control.llvmAAMD of
       Control.LLVMAliasAnalysisMetaData.None => NONE
-    | Control.LLVMAliasAnalysisMetaData.TBAA =>
+    | Control.LLVMAliasAnalysisMetaData.TBAA {gcstate, global, heap, other, stack} =>
          let
-            fun tbaa s =
+            fun tbaa path =
                let
                   val root =
                      LLVM.ModuleContext.addMetaData
-                     (mc, LLVM.MetaData.node [LLVM.MetaData.string "root"])
-                  val desc =
-                     LLVM.ModuleContext.addMetaData
-                     (mc, LLVM.MetaData.node [LLVM.MetaData.string s,
-                                              LLVM.MetaData.id root])
+                     (mc, LLVM.MetaData.node [LLVM.MetaData.string "MLton TBAA Root"])
+                  val (desc, _) =
+                     List.foldr
+                     (path, (root, ""), fn (node,(desc,name)) =>
+                      let
+                         val name =
+                            if String.isEmpty name
+                               then node
+                               else concat [name, " ", node]
+                      in
+                         (LLVM.ModuleContext.addMetaData
+                          (mc, LLVM.MetaData.node [LLVM.MetaData.string name,
+                                                   LLVM.MetaData.id desc]),
+                          name)
+                      end)
                   val acc =
                      LLVM.ModuleContext.addMetaData
                      (mc, LLVM.MetaData.node [LLVM.MetaData.id desc,
@@ -711,20 +721,138 @@ fun aamd (oper, mc) =
                 in
                   SOME (concat ["!tbaa ", LLVM.MetaData.Id.toString acc])
                end
-            fun other () = tbaa "other"
+            val other = fn () =>
+               if other then tbaa ["Other"] else NONE
          in
             case oper of
-               Operand.Offset {base, offset, ...} =>
-                  if Type.isObjptr (Operand.ty base)
-                     then tbaa ("Offset " ^ Bytes.toString offset)
-                     else other ()
-             | Operand.SequenceOffset {base, ...} =>
-                  if Type.isObjptr (Operand.ty base)
-                     then tbaa "SequenceOffset"
-                     else other ()
+               Operand.Frontier => NONE (* alloca *)
+             | Operand.Global g =>
+                  (case global of
+                      NONE => NONE
+                    | SOME {cty = doCTy, index = doIndex} =>
+                         let
+                            val path = ["Global"]
+                            val path =
+                               if doCTy
+                                  then (CType.name (Type.toCType (Global.ty g)))::path
+                                  else path
+                            val path =
+                               if doIndex
+                                  then (Int.toString (Global.index g))::path
+                                  else path
+                         in
+                            tbaa path
+                         end)
+             | Operand.Offset {base = Operand.GCState, offset, ...} =>
+                  (case gcstate of
+                      NONE => NONE
+                    | SOME {offset = doOffset} =>
+                         let
+                            val path = ["GCState"]
+                            val path =
+                               if doOffset
+                                  then (Bytes.toString offset)::path
+                                  else path
+                         in
+                            tbaa path
+                         end)
+             | Operand.Offset {base, offset, ty, ...} =>
+                  (if Type.isObjptr (Operand.ty base)
+                      then (case heap of
+                               NONE => NONE
+                             | SOME {cty = doCTy, kind = doKind, offset = doOffset, tycon = doTycon} =>
+                                  let
+                                     val path = ["Heap"]
+                                     val path =
+                                        if doKind
+                                           then "Normal"::path
+                                           else path
+                                     val path =
+                                        if doTycon
+                                           then (case Type.deObjptr (Operand.ty base) of
+                                                    NONE => path
+                                                  | SOME tyc => (ObjptrTycon.toString tyc)::path)
+                                           else path
+                                     val path =
+                                        if doCTy
+                                           then (CType.name (Type.toCType ty))::path
+                                           else path
+                                     val path =
+                                        if doOffset
+                                           then (Bytes.toString offset)::path
+                                           else path
+                                  in
+                                     tbaa path
+                                  end)
+                      else other ())
+             | Operand.SequenceOffset {base, offset, ty, ...} =>
+                  (if Type.isObjptr (Operand.ty base)
+                      then (case heap of
+                               NONE => NONE
+                             | SOME {cty = doCTy, kind = doKind, offset = doOffset, tycon = doTycon} =>
+                                  let
+                                     val path = ["Heap"]
+                                     val path =
+                                        if doKind
+                                           then "Sequence"::path
+                                           else path
+                                     (* Unsound: Around a `Array_toVector` primitive, a sequence may
+                                      * be written to at one `ObjptrTycon.t` (corresponding to an
+                                      * `array`) and then read from at a distinct `ObjptrTycon.t`
+                                      * (corresponding to a `vector`).
+                                      *)
+                                     val path =
+                                        if doTycon
+                                           then (case Type.deObjptr (Operand.ty base) of
+                                                    NONE => path
+                                                  | SOME tyc => (ObjptrTycon.toString tyc)::path)
+                                           else path
+                                     (* Unsound: `WordArray_{sub,update}Word {seqSize, elemSize}`
+                                      * and `WordVector_subWord {seqSize, elemSize}` primitives (for
+                                      * `signature PACK_WORD`) are translated to `SequenceOffset`
+                                      * with `base` corresponding to a sequence of `seqSize`,
+                                      * `offset = Bytes.zero`, `scale` corresponding to `elemSize`,
+                                      * and `ty` corresponding to the `elemSize`; thus, the same
+                                      * address can be accessed for `Word8` and `Word64` elements.
+                                      *)
+                                     val path =
+                                        if doCTy
+                                           then (CType.name (Type.toCType ty))::path
+                                           else path
+                                     val path =
+                                        if doOffset
+                                           then (Bytes.toString offset)::path
+                                           else path
+                                  in
+                                     tbaa path
+                                  end)
+                      else other ())
              | Operand.StackOffset (StackOffset.T {offset, ...}) =>
-                  tbaa ("StackOffset " ^ Bytes.toString offset)
-             | _ => tbaa "other"
+                  (case stack of
+                      NONE => NONE
+                    | SOME {offset = doOffset} =>
+                         let
+                            (* Unsound: At raise, exception results are written to the stack via an
+                             * `Offset` with `base` corresponding to `StackBottom + exnStack` and
+                             * then read from the stack via a `StackOffset` by the handler.
+                             *)
+                            val path = ["StackOffset"]
+                            (* Unsound: At non-tail call/return, arguments/results are written to
+                             * the stack relative to the callee/caller stack frame and then read
+                             * from the stack relative to the caller/callee stack frame.  In
+                             * general, around a stack push/pop, distinct offsets correspond to the
+                             * same location.
+                             *)
+                            val path =
+                               if doOffset
+                                  then (Bytes.toString offset)::path
+                                  else path
+                         in
+                            tbaa path
+                         end)
+             | Operand.StackTop => NONE (* alloca *)
+             | Operand.Temporary _ => NONE (* alloca *)
+             | _ => NONE (* not lvalue *)
          end
 
 fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},

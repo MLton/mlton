@@ -1026,20 +1026,90 @@ val libname = ref ""
 
 structure LLVMAliasAnalysisMetaData =
    struct
-      datatype t = None | TBAA
+      datatype t = None | TBAA of {gcstate: {offset: bool} option,
+                                   global: {cty: bool, index: bool} option,
+                                   heap: {cty: bool, kind: bool, offset: bool, tycon: bool} option,
+                                   other: bool,
+                                   stack: {offset: bool} option}
+      val tbaaDefault =
+         TBAA {gcstate = SOME {offset = false},
+               global = SOME {cty = false, index = false},
+               heap = SOME {cty = false, kind = false, offset = false, tycon = false},
+               other = true,
+               stack = SOME {offset = false}}
+
       fun toString aamd =
          case aamd of
             None => "none"
-          | TBAA => "tbaa"
+          | TBAA {gcstate, global, heap, other, stack} =>
+               let
+                  open Layout
+               in
+                  toString
+                  (namedRecord
+                   ("tbaa",
+                    [("gcstate",
+                      Option.layout (fn {offset} =>
+                                     record [("offset", Bool.layout offset)])
+                      gcstate),
+                     ("global",
+                      Option.layout (fn {cty, index} =>
+                                     record [("cty", Bool.layout cty),
+                                             ("index", Bool.layout index)])
+                      global),
+                     ("heap",
+                      Option.layout (fn {cty, kind, offset, tycon} =>
+                                     record [("cty", Bool.layout cty),
+                                             ("kind", Bool.layout kind),
+                                             ("offset", Bool.layout offset),
+                                             ("tycon", Bool.layout tycon)])
+                      heap),
+                     ("other", Bool.layout other),
+                     ("stack",
+                      Option.layout (fn {offset} =>
+                                     record [("offset", Bool.layout offset)])
+                      stack)]))
+               end
       fun fromString s =
-         case s of
-            "none" => SOME None
-          | "tbaa" => SOME TBAA
-          | _ => NONE
+         let
+            open Parse
+            infix 1 <|> >>=
+            infix  3 <*> <* *>
+            infixr 4 <$> <$$> <$$$> <$$$$> <$ <$?>
+            val p =
+               any
+               [kw "none" *> pure None,
+                kw "tbaa" *>
+                (cbrack (ffield ("gcstate", option (cbrack (ffield ("offset", bool) >>= (fn offset =>
+                                                            pure {offset = offset})))) >>= (fn gcstate =>
+                         nfield ("global", option (cbrack (ffield ("cty", bool) >>= (fn cty =>
+                                                           nfield ("index", bool) >>= (fn index =>
+                                                           pure {cty = cty,
+                                                                 index = index}))))) >>= (fn global =>
+                         nfield ("heap", option (cbrack (ffield ("cty", bool) >>= (fn cty =>
+                                                         nfield ("kind", bool) >>= (fn kind =>
+                                                         nfield ("offset", bool) >>= (fn offset =>
+                                                         nfield ("tycon", bool) >>= (fn tycon =>
+                                                         pure {cty = cty,
+                                                               kind = kind,
+                                                               offset = offset,
+                                                               tycon = tycon}))))))) >>= (fn heap =>
+                         nfield ("other", bool) >>= (fn other =>
+                         nfield ("stack", option (cbrack (ffield ("offset", bool) >>= (fn offset =>
+                                                          pure {offset = offset})))) >>= (fn stack =>
+                         pure (TBAA {gcstate = gcstate, global = global, heap = heap, other = other, stack = stack})))))))
+                <|>
+                pure tbaaDefault)]
+               <* failing next
+         in
+            case parseString (p, s) of
+               No _ => NONE
+             | Yes c => SOME c
+         end
    end
 
 val llvmAAMD =
-      control {name = "llvmTBAA",
+      control {name = "llvmAAMD",
                default = LLVMAliasAnalysisMetaData.None,
                toString = LLVMAliasAnalysisMetaData.toString}
 
