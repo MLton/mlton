@@ -1026,11 +1026,15 @@ val libname = ref ""
 
 structure LLVMAliasAnalysisMetaData =
    struct
-      datatype t = None | TBAA of {gcstate: {offset: bool} option,
-                                   global: {cty: bool, index: bool} option,
-                                   heap: {cty: bool, kind: bool, offset: bool, tycon: bool} option,
-                                   other: bool,
-                                   stack: {offset: bool} option}
+      datatype t =
+         None
+       | Scope
+       | TBAA of {gcstate: {offset: bool} option,
+                  global: {cty: bool, index: bool} option,
+                  heap: {cty: bool, kind: bool, offset: bool, tycon: bool} option,
+                  other: bool,
+                  stack: {offset: bool} option}
+
       val tbaaDefault =
          TBAA {gcstate = SOME {offset = false},
                global = SOME {cty = false, index = false},
@@ -1041,6 +1045,7 @@ structure LLVMAliasAnalysisMetaData =
       fun toString aamd =
          case aamd of
             None => "none"
+          | Scope => "scope"
           | TBAA {gcstate, global, heap, other, stack} =>
                let
                   open Layout
@@ -1079,6 +1084,7 @@ structure LLVMAliasAnalysisMetaData =
             val p =
                any
                [kw "none" *> pure None,
+                kw "scope" *> pure Scope,
                 kw "tbaa" *>
                 (cbrack (ffield ("gcstate", option (cbrack (ffield ("offset", bool) >>= (fn offset =>
                                                             pure {offset = offset})))) >>= (fn gcstate =>

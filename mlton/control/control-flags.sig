@@ -282,11 +282,14 @@ signature CONTROL_FLAGS =
 
       structure LLVMAliasAnalysisMetaData:
          sig
-            datatype t = None | TBAA of {gcstate: {offset: bool} option,
-                                         global: {cty: bool, index: bool} option,
-                                         heap: {cty: bool, kind: bool, offset: bool, tycon: bool} option,
-                                         other: bool,
-                                         stack: {offset: bool} option}
+            datatype t =
+               None
+             | Scope
+             | TBAA of {gcstate: {offset: bool} option,
+                        global: {cty: bool, index: bool} option,
+                        heap: {cty: bool, kind: bool, offset: bool, tycon: bool} option,
+                        other: bool,
+                        stack: {offset: bool} option}
             val toString: t -> string
             val fromString: string -> t option
          end

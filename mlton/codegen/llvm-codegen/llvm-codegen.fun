@@ -692,6 +692,50 @@ fun implementsPrim (p: 'a Prim.t): bool = Option.isSome (primApp p)
 fun aamd (oper, mc) =
    case !Control.llvmAAMD of
       Control.LLVMAliasAnalysisMetaData.None => NONE
+    | Control.LLVMAliasAnalysisMetaData.Scope =>
+         let
+            val domain =
+               LLVM.ModuleContext.addMetaData
+               (mc, LLVM.MetaData.node [LLVM.MetaData.string "MLton Scope Domain"])
+            fun scope s =
+               LLVM.ModuleContext.addMetaData
+               (mc, LLVM.MetaData.node [LLVM.MetaData.string s,
+                                        LLVM.MetaData.id domain])
+            val (global,gcstate,heap,other,stack) =
+               (scope "Global", scope "GCState", scope "Heap", scope "Other", scope "Stack")
+            val scopes = [global,gcstate,heap,other,stack]
+            fun scope s =
+               let
+                  fun scopeSet ss =
+                     LLVM.ModuleContext.addMetaData
+                     (mc, LLVM.MetaData.node (List.map (ss, LLVM.MetaData.id)))
+                  val noalias = scopeSet (List.remove (scopes, fn s' => LLVM.MetaData.Id.equals (s, s')))
+                  val alias = scopeSet [s]
+               in
+                  SOME (concat ["!noalias ", LLVM.MetaData.Id.toString noalias,
+                                ", !alias.scope ", LLVM.MetaData.Id.toString alias])
+               end
+         in
+            case oper of
+               Operand.Frontier => NONE (* alloca *)
+             | Operand.Global _ => scope global
+             | Operand.Offset {base = Operand.GCState, ...} => scope gcstate
+             | Operand.Offset {base, ...} => if Type.isObjptr (Operand.ty base)
+                                                then scope heap
+                                                else scope other
+             | Operand.SequenceOffset {base, ...} => if Type.isObjptr (Operand.ty base)
+                                                        then scope heap
+                                                        else scope other
+             | Operand.StackOffset _ =>
+                  (* Unsound: At raise, exception results are written to the stack via an
+                   * `Offset` with `base` corresponding to `StackBottom + exnStack` and
+                   * then read from the stack via a `StackOffset` by the handler.
+                   *)
+                  scope stack
+             | Operand.StackTop => NONE (* alloca *)
+             | Operand.Temporary _ => NONE (* alloca *)
+             | _ => NONE (* not lvalue *)
+         end
     | Control.LLVMAliasAnalysisMetaData.TBAA {gcstate, global, heap, other, stack} =>
          let
             fun tbaa path =
