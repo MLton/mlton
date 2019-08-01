@@ -42,7 +42,7 @@
 /* ------------------------------------------------- */
 
 #ifndef INLINE
-#define INLINE inline
+#define INLINE __attribute__((always_inline)) inline
 #endif
 #include "basis/coerce.h"
 #include "basis/cpointer.h"
