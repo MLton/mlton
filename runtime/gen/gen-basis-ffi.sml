@@ -1,4 +1,5 @@
-(* Copyright (C) 2004-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 2004-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a HPND-style license.
@@ -188,7 +189,8 @@ structure Entry =
                 ";"]
           | Import {attrs, name, ty = {args, ret}} =>
                String.concat
-               [attrs, 
+               ["PRIVATE ",
+                attrs,
                 if String.size attrs > 0 then " " else "",
                 Type.toC ret,
                 " ",
@@ -220,7 +222,10 @@ structure Entry =
                 Name.last name,
                 " = _import \"",
                 Name.toC name,
-                "\" private : ",
+                "\" private ",
+                if List.exists (fn s => s = "INLINE") (String.tokens Char.isSpace attrs)
+                   then "inline " else "",
+                ": ",
                 String.concatWith " * " (List.map Type.toML args),
                 " -> ",
                 Type.toML ret,

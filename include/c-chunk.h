@@ -41,8 +41,8 @@
 /* Primitives                                        */
 /* ------------------------------------------------- */
 
-#ifndef MLTON_CODEGEN_STATIC_INLINE
-#define MLTON_CODEGEN_STATIC_INLINE static inline
+#ifndef INLINE
+#define INLINE inline
 #endif
 #include "basis/coerce.h"
 #include "basis/cpointer.h"

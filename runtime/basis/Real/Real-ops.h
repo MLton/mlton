@@ -2,7 +2,7 @@
 #define FNSUF64
 
 #define naryNameFnSufResArgsCall_(size, name, f, suf, rty, args, call)  \
-  MLTON_CODEGEN_STATIC_INLINE                                           \
+  PRIVATE INLINE                                                        \
   rty Real##size##_##name args {                                        \
     return f##suf call;                                                 \
   }
@@ -12,7 +12,7 @@ naryNameFnSufResArgsCall_(size, name, f, suf, rty, args, call)
 naryNameFnSufResArgsCall(size, name, f, FNSUF##size, rty, args, call)
 
 #define binaryOp(size, name, op)                                        \
-  MLTON_CODEGEN_STATIC_INLINE                                           \
+  PRIVATE INLINE                                                        \
   Real##size##_t Real##size##_##name (Real##size##_t r1, Real##size##_t r2) { \
     return r1 op r2;                                                    \
   }
@@ -27,13 +27,13 @@ binaryNameFn(size, f, f)
 binaryNameFn(size, Math_##f, f)
 
 #define compareNameFn(size, name, f)                                    \
-  MLTON_CODEGEN_STATIC_INLINE                                           \
+  PRIVATE INLINE                                                        \
   Bool Real##size##_##name (Real##size##_t r1, Real##size##_t r2) {     \
     return f (r1, r2);                                                  \
   }
 
 #define equal(size)                                                     \
-  MLTON_CODEGEN_STATIC_INLINE                                           \
+  PRIVATE INLINE                                                        \
   Bool Real##size##_equal (Real##size##_t r1, Real##size##_t r2) {      \
     return r1 == r2;                                                    \
   }
@@ -42,13 +42,13 @@ binaryNameFn(size, Math_##f, f)
 naryNameFnResArgsCall(size, name, fma, Real##size##_t, (Real##size##_t r1, Real##size##_t r2, Real##size##_t r3), (r1, r2, op r3))
 
 #define qequal(size)                                                    \
-  MLTON_CODEGEN_STATIC_INLINE                                           \
+  PRIVATE INLINE                                                        \
   Bool Real##size##_qequal (Real##size##_t r1, Real##size##_t r2) {     \
     return isunordered (r1, r2) || r1 == r2;                            \
   }
 
 #define unaryOp(size, name, op)                                         \
-  MLTON_CODEGEN_STATIC_INLINE                                           \
+  PRIVATE INLINE                                                        \
   Real##size##_t Real##size##_##name (Real##size##_t r) {               \
     return op r;                                                        \
   }
@@ -63,18 +63,18 @@ unaryNameFn(size, f, f)
 unaryNameFn(size, Math_##f, f)
 
 #define misaligned(size)                                                \
-  MLTON_CODEGEN_STATIC_INLINE                                           \
+  PRIVATE INLINE                                                        \
   Real##size##_t Real##size##_fetch (Ref(Real##size##_t) rp) {          \
     Real##size##_t r;                                                   \
     memcpy(&r, rp, sizeof(Real##size##_t));                             \
     return r;                                                           \
   }                                                                     \
-  MLTON_CODEGEN_STATIC_INLINE                                           \
+  PRIVATE INLINE                                                        \
   void Real##size##_store (Ref(Real##size##_t) rp, Real##size##_t r) {  \
     memcpy(rp, &r, sizeof(Real##size##_t));                             \
     return;                                                             \
   }                                                                     \
-  MLTON_CODEGEN_STATIC_INLINE                                           \
+  PRIVATE INLINE                                                        \
   void Real##size##_move (Ref(Real##size##_t) dst, Ref(Real##size##_t) src) { \
     memcpy(dst, src, sizeof(Real##size##_t));                           \
     return;                                                             \

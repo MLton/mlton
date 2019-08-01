@@ -1,5 +1,5 @@
 #define binary(kind, name, op)                                          \
-  MLTON_CODEGEN_STATIC_INLINE                                           \
+  PRIVATE INLINE                                                        \
   Word##kind Word##kind##_##name (Word##kind w1, Word##kind w2) {       \
     return w1 op w2;                                                    \
   }
@@ -13,7 +13,7 @@ binary (U##size, name, op)
  * and to encourage fusing with matching `Word<N>_<op>CheckP`.
  */
 #define binaryOvflOp(kind, name)                                        \
-  MLTON_CODEGEN_STATIC_INLINE                                           \
+  PRIVATE INLINE                                                        \
   Word##kind Word##kind##_##name (Word##kind w1, Word##kind w2) {       \
     Word##kind res;                                                     \
     __builtin_##name##_overflow(w1, w2, &res);                          \
@@ -25,7 +25,7 @@ binaryOvflOp (S##size, name)                    \
 binaryOvflOp (U##size, name)
 
 #define binaryOvflChk(kind, name)                                       \
-  MLTON_CODEGEN_STATIC_INLINE                                           \
+  PRIVATE INLINE                                                        \
   Bool Word##kind##_##name##CheckP (Word##kind w1, Word##kind w2) {     \
     Word##kind res;                                                     \
     return __builtin_##name##_overflow(w1, w2, &res);                   \
@@ -36,7 +36,7 @@ binaryOvflChk (S##size, name)                   \
 binaryOvflChk (U##size, name)
 
 #define compare(kind, name, op)                                         \
-  MLTON_CODEGEN_STATIC_INLINE                                           \
+  PRIVATE INLINE                                                        \
   Bool Word##kind##_##name (Word##kind w1, Word##kind w2) {             \
     return w1 op w2;                                                    \
   }
@@ -46,7 +46,7 @@ compare (S##size, name, op)                     \
 compare (U##size, name, op)
 
 #define negOvflOp(kind)                                                 \
-  MLTON_CODEGEN_STATIC_INLINE                                           \
+  PRIVATE INLINE                                                        \
   Word##kind Word##kind##_neg (Word##kind w) {                          \
     Word##kind res;                                                     \
     __builtin_sub_overflow(0, w, &res);                                 \
@@ -54,49 +54,49 @@ compare (U##size, name, op)
   }
 
 #define negOvflChk(kind)                                                \
-  MLTON_CODEGEN_STATIC_INLINE                                           \
+  PRIVATE INLINE                                                        \
   Bool Word##kind##_negCheckP (Word##kind w) {                          \
     Word##kind res;                                                     \
     return __builtin_sub_overflow(0, w, &res);                          \
   }
 
 #define rol(size)                                                       \
-  MLTON_CODEGEN_STATIC_INLINE                                           \
+  PRIVATE INLINE                                                        \
   Word##size Word##size##_rol (Word##size w1, Word32 w2) {              \
     return (Word##size)(w1 >> (size - w2)) | (Word##size)(w1 << w2);    \
   }
 
 #define ror(size)                                                       \
-  MLTON_CODEGEN_STATIC_INLINE                                           \
+  PRIVATE INLINE                                                        \
   Word##size Word##size##_ror (Word##size w1, Word32 w2) {              \
     return (Word##size)(w1 >> w2) | (Word##size)(w1 << (size - w2));    \
   }                                                                     \
 
 #define shift(kind, name, op)                                           \
-  MLTON_CODEGEN_STATIC_INLINE                                           \
+  PRIVATE INLINE                                                        \
   Word##kind Word##kind##_##name (Word##kind w1, Word32 w2) {           \
     return (Word##kind)(w1 op w2);                                      \
   }
 
 #define unary(kind, name, op)                                         \
-  MLTON_CODEGEN_STATIC_INLINE                                           \
+  PRIVATE INLINE                                                        \
   Word##kind Word##kind##_##name (Word##kind w) {                       \
     return (Word##kind)(op w);                                          \
   }
 
 #define misaligned(size)                                                \
-  MLTON_CODEGEN_STATIC_INLINE                                           \
+  PRIVATE INLINE                                                        \
   Word##size##_t Word##size##_fetch (Ref(Word##size##_t) wp) {          \
     Word##size##_t w;                                                   \
     memcpy(&w, wp, sizeof(Word##size##_t));                             \
     return w;                                                           \
   }                                                                     \
-  MLTON_CODEGEN_STATIC_INLINE                                           \
+  PRIVATE INLINE                                                        \
   void Word##size##_store (Ref(Word##size##_t) wp, Word##size##_t w) {  \
     memcpy(wp, &w, sizeof(Word##size##_t));                             \
     return;                                                             \
   }                                                                     \
-  MLTON_CODEGEN_STATIC_INLINE                                           \
+  PRIVATE INLINE                                                        \
   void Word##size##_move (Ref(Word##size##_t) dst, Ref(Word##size##_t) src) { \
     memcpy(dst, src, sizeof(Word##size##_t));                           \
     return;                                                             \

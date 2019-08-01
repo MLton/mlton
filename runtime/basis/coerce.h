@@ -1,6 +1,5 @@
-
 #define coerce(n, f, t)                         \
-  MLTON_CODEGEN_STATIC_INLINE                   \
+  PRIVATE INLINE                                \
   t f##_##n##To##t (f x) {                      \
     return (t)x;                                \
   }
@@ -36,7 +35,7 @@ coerce(rnd, Real64, Real64)
 #undef coerce
 
 #define cast(f, t)                              \
-  MLTON_CODEGEN_STATIC_INLINE                   \
+  PRIVATE INLINE                                \
   t f##_castTo##t (f x) {                       \
     t y;                                        \
     memcpy(&y, &x, sizeof(t));                  \

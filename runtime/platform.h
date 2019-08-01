@@ -90,8 +90,8 @@
 
 #include "gc.h"
 
-#ifndef MLTON_CODEGEN_STATIC_INLINE
-#define MLTON_CODEGEN_STATIC_INLINE PRIVATE
+#ifndef INLINE
+#define INLINE
 #endif
 #include "basis-ffi.h"
 
