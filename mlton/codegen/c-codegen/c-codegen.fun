@@ -118,19 +118,29 @@ structure WordXVector =
          structure WordX = Z
       end
 
-      fun toC (v: t): string =
-         let
-            fun string () =
-               concat [C.string (String.implode (toListMap (v, WordX.toChar)))]
-            fun vector () =
-               concat ["{",
-                       String.concatWith (toListMap (v, WordX.toC), ","),
-                       "}"]
-         in
+      local
+         fun string v =
+            concat [C.string (String.implode (toListMap (v, WordX.toChar)))]
+         fun vector v =
+            concat ["{",
+                    String.concatWith (toListMap (v, WordX.toC), ","),
+                    "}"]
+      in
+         fun toC (v: t): string =
             case WordSize.prim (elementSize v) of
-               W8 => string ()
-             | _ => vector ()
-         end
+               W8 => string v
+             | _ => vector v
+         fun literal (v: t): string =
+            let
+               fun mkLit (name, init) = concat ["((", name, ")", init, ")"]
+            in
+               case WordSize.prim (elementSize v) of
+                  W8 => mkLit ("Word8[]", string v)
+                | W16 => mkLit ("Word16[]", vector v)
+                | W32 => mkLit ("Word32[]", vector v)
+                | W64 => mkLit ("Word64[]", vector v)
+            end
+      end
    end
 
 structure Static =
@@ -151,15 +161,15 @@ structure Static =
          open Data
 
          fun toC indexToC =
-            fn Empty _ => "{0}"
-             | Vector v => WordXVector.toC v
+            fn Empty _ => NONE
+             | Vector v => SOME (WordXVector.toC v)
              | Object es =>
                   let
                      val elemToC =
                         fn Word wx => WordX.toC wx
                          | Address i => indexToC i
                   in
-                     String.concatWith
+                     (SOME o String.concatWith)
                      (List.map (es, elemToC),
                       ", ")
                   end
@@ -326,7 +336,8 @@ fun outputDeclarations
       fun staticAddress i = concat
          ["((Pointer)(&", staticVar i, ") + ",
           C.int (headerSize i), ")"]
-      fun declareStaticInits () =
+
+      fun declareStatics () =
          (Vector.foreachi
           (statics, fn (i, (Machine.Static.T {data, header, location}, g)) =>
              let
@@ -346,10 +357,9 @@ fun outputDeclarations
                          TVector ("Word" ^ WordSize.toC WordSize.byte, Bytes.toInt b)
                 val dataDescr =
                    case dataType of
-                      TObject strings => String.concatWith (List.mapi (strings,
-                           fn (i, s) => concat [s, " data_", C.int i]),
-                        "; ")
-                    | TVector (str, length) => concat [str, " data[", C.int length, "]"]
+                      TObject strings => (concat o List.mapi) (strings,
+                           fn (i, s) => concat [s, " data_", C.int i, "; "])
+                    | TVector (str, length) => concat [str, " data[", C.int length, "];"]
 
 
                 val headerElems = Int.toString (WordXVector.length header)
@@ -358,47 +368,74 @@ fun outputDeclarations
                    let datatype z = datatype Machine.Static.location in
                    case location of
                         MutStatic => ""
-                      | ImmStatic => "const "
-                      | Heap => "const static "
+                      | ImmStatic =>
+                           (case data of
+                                (* Requires initialization, and is likely an array anyway *)
+                                Machine.Static.Data.Empty _ => ""
+                              | _ => "const ")
+                      | Heap => "const static " (* Will just be handed to GC by address *)
                    end
 
                 val structName = concat
-                   ["__attribute__ ((packed)) ",
-                     qualifier, "struct { ",
+                   [ qualifier, "struct { ",
                      headerTypeStr, " header[", headerElems, "]; ",
                      dataDescr,
                    "}\n"]
+                val decl = concat [structName, " ", staticVar i]
              in
-                 print (structName ^ " " ^ staticVar i  ^
-                        " = {" ^ WordXVector.toC header ^ ", " ^ dataC ^ "};\n")
+                case dataC of
+                     SOME init =>
+                       (print o concat)
+                       [decl, " = {", WordXVector.toC header, ", ", init, "};\n"]
+                    (* needs code initialization *)
+                   | NONE => print (decl ^ ";\n")
              end))
       fun declareHeapStatics () =
 
-         (print "static struct GC_vectorInit vectorInits[] = {\n"
+         (print "static struct GC_objectInit objectInits[] = {\n"
+          ; (Vector.foreachi
+             (statics, fn (i, (Machine.Static.T {data, header, location}, g)) =>
+             let
+                val (dataWidth, dataSize) = Static.Data.size data
+                val dataBytes = dataSize * (Bytes.toInt (WordSize.bytes dataWidth))
+                val headerBytes = Bytes.toInt (WordXVector.size header)
+             in
+                case g of
+                     NONE => ()
+                   | SOME g' =>
+                      (print o concat) ["{ ",
+                              C.int (Global.index g'), ", ",
+                              C.int headerBytes, ", ",
+                              C.int (headerBytes + dataBytes), ", ",
+                              "((Pointer) &", staticVar i, ")",
+                              " },\n"]
+             end))
+          ; print "};\n")
+      fun declareStaticInits () =
+         (print "static void static_Init() {\n"
           ; (Vector.foreachi
              (statics, fn (i, (Machine.Static.T {data, header, location}, g)) =>
              let
                 val shouldInit =
                    (case location of
-                      Machine.Static.Heap => true
+                      Machine.Static.Heap => false
+                    | _ => true)
+                    andalso
+                   (case data of
+                      Machine.Static.Data.Empty _ => true
                     | _ => false)
-                val (dataWidth, dataSize) = Static.Data.size data
-                val dataBytes = dataSize * (Bytes.toInt (WordSize.bytes dataWidth))
                 val headerBytes = WordXVector.size header
              in
-                case g of
-                     NONE => () (* Shouldn't happen yet *)
-                   | SOME g' =>
-                      (print o concat) ["{ ",
-                              C.bytes (WordSize.bytes dataWidth), ", ",
-                              C.int (Global.index g'), ", ",
-                              C.int dataBytes, ", ",
-                              (* TODO, header not yet supported *)
-                              "((Pointer) &" ^ staticVar i,
-                              ") + ", C.bytes headerBytes,
-                              " },\n"]
+                if shouldInit
+                then C.call ("memcpy",
+                           ["&" ^ staticVar i,
+                            "&" ^ WordXVector.literal header,
+                            C.bytes headerBytes],
+                           print)
+                else ()
              end))
           ; print "};\n")
+
       fun declareReals () =
          (print "static void real_Init() {\n"
           ; List.foreach (reals, fn (r, g) =>
@@ -589,8 +626,9 @@ fun outputDeclarations
       outputIncludes (includes, print); print "\n"
       ; declareGlobals ("PRIVATE ", print); print "\n"
       ; declareLoadSaveGlobals (); print "\n"
-      ; declareStaticInits (); print "\n"
+      ; declareStatics (); print "\n"
       ; declareHeapStatics (); print "\n"
+      ; declareStaticInits (); print "\n"
       ; declareReals (); print "\n"
       ; declareFrameInfos (); print "\n"
       ; declareObjectTypes (); print "\n"

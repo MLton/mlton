@@ -17,65 +17,36 @@ size_t sizeofInitialBytesLive (GC_state s) {
   size_t total;
 
   total = 0;
-  for (i = 0; i < s->vectorInitsLength; ++i) {
+  for (i = 0; i < s->objectInitsLength; ++i) {
     dataBytes =
-      s->vectorInits[i].elementSize
-      * s->vectorInits[i].length;
+      s->objectInits[i].size;
     total += align (GC_SEQUENCE_METADATA_SIZE + dataBytes, s->alignment);
   }
   return total;
 }
 
-void initVectors (GC_state s) {
-  struct GC_vectorInit *inits;
+void initObjects (GC_state s) {
+  struct GC_objectInit *inits;
   pointer frontier;
   uint32_t i;
 
   assert (isFrontierAligned (s, s->frontier));
-  inits = s->vectorInits;
+  inits = s->objectInits;
   frontier = s->frontier;
-  for (i = 0; i < s->vectorInitsLength; i++) {
-    size_t elementSize;
-    size_t dataBytes;
-    size_t objectSize;
-    uint32_t typeIndex;
+  for (i = 0; i < s->objectInitsLength; i++) {
 
-    elementSize = inits[i].elementSize;
-    dataBytes = elementSize * inits[i].length;
-    objectSize = align (GC_SEQUENCE_METADATA_SIZE + dataBytes, s->alignment);
-    assert (objectSize <= (size_t)(s->heap.start + s->heap.size - frontier));
-    *((GC_sequenceCounter*)(frontier)) = 0;
-    frontier = frontier + GC_SEQUENCE_COUNTER_SIZE;
-    *((GC_sequenceLength*)(frontier)) = inits[i].length;
-    frontier = frontier + GC_SEQUENCE_LENGTH_SIZE;
-    switch (elementSize) {
-    case 1:
-      typeIndex = WORD8_VECTOR_TYPE_INDEX;
-      break;
-    case 2:
-      typeIndex = WORD16_VECTOR_TYPE_INDEX;
-      break;
-    case 4:
-      typeIndex = WORD32_VECTOR_TYPE_INDEX;
-      break;
-    case 8:
-      typeIndex = WORD64_VECTOR_TYPE_INDEX;
-      break;
-    default:
-      die ("unknown element size in vectorInit: %"PRIuMAX"",
-           (uintmax_t)elementSize);
-    }
-    *((GC_header*)(frontier)) = buildHeaderFromTypeIndex (typeIndex);
-    frontier = frontier + GC_HEADER_SIZE;
-    s->globals[inits[i].globalIndex] = pointerToObjptr(frontier, s->heap.start);
+    assert (align (inits[i].size, s->alignment) <=
+      (size_t)(s->heap.start + s->heap.size - frontier));
+    memcpy (frontier, inits[i].words, inits[i].size);
+    s->globals[inits[i].globalIndex] =
+      pointerToObjptr(frontier + inits[i].headerOffset, s->heap.start);
+    frontier = frontier + inits[i].size;
     if (DEBUG_DETAILED)
-      fprintf (stderr, "allocated vector at "FMTPTR"\n",
+      fprintf (stderr, "allocated object at "FMTPTR"\n",
                (uintptr_t)(s->globals[inits[i].globalIndex]));
-    memcpy (frontier, inits[i].words, dataBytes);
-    frontier += objectSize - GC_SEQUENCE_METADATA_SIZE;
   }
   if (DEBUG_DETAILED)
-    fprintf (stderr, "frontier after string allocation is "FMTPTR"\n",
+    fprintf (stderr, "frontier after global object allocations is "FMTPTR"\n",
              (uintptr_t)frontier);
   GC_profileAllocInc (s, (size_t)(frontier - s->frontier));
   s->cumulativeStatistics.bytesAllocated += (size_t)(frontier - s->frontier);
@@ -99,7 +70,7 @@ void initWorld (GC_state s) {
   s->frontier = start;
   s->limitPlusSlop = s->heap.start + s->heap.size;
   s->limit = s->limitPlusSlop - GC_HEAP_LIMIT_SLOP;
-  initVectors (s);
+  initObjects (s);
   assert ((size_t)(s->frontier - start) <= s->lastMajorStatistics.bytesLive);
   s->heap.oldGenSize = (size_t)(s->frontier - s->heap.start);
   setGCStateCurrentHeap (s, 0, 0);
