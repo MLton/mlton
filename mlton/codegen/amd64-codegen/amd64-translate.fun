@@ -125,14 +125,14 @@ struct
                                index = index,
                                scale = scale,
                                size = amd64.Size.BYTE,
-                               class = amd64MLton.Classes.Code}
+                               class = amd64MLton.Classes.Heap}
                          | (_, SOME base, _, SOME index) =>
                               amd64.MemLoc.basic
                               {base = base,
                                index = index,
                                scale = scale,
                                size = amd64.Size.BYTE,
-                               class = amd64MLton.Classes.Code}
+                               class = amd64MLton.Classes.Heap}
 
                          | _ => Error.bug (concat ["amd64Translate.Operand.toAMD64Operand: ",
                                                    "strange SequenceOffset: base: ",

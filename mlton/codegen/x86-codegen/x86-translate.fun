@@ -125,14 +125,14 @@ struct
                                index = index,
                                scale = scale,
                                size = x86.Size.BYTE,
-                               class = x86MLton.Classes.Code}
+                               class = x86MLton.Classes.Heap}
                          | (_, SOME base, _, SOME index) =>
                               x86.MemLoc.basic
                               {base = base,
                                index = index,
                                scale = scale,
                                size = x86.Size.BYTE,
-                               class = x86MLton.Classes.Code}
+                               class = x86MLton.Classes.Heap}
 
                          | _ => Error.bug (concat ["x86Translate.Operand.toX86Operand: ",
                                                    "strange SequenceOffset: base: ",
@@ -222,7 +222,7 @@ struct
                              index = x86.Immediate.int offset,
                              scale = x86.Scale.One,
                              size = x86.Size.BYTE,
-                             class = x86MLton.Classes.Code}
+                             class = x86MLton.Classes.Heap}
                         | _ => Error.bug (concat ["x86Translate.Operand.toX86Operand: ",
                                                   "strange Offset: base: ",
                                                   x86.Operand.toString base]))
