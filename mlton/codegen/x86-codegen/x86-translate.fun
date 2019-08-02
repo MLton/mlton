@@ -72,221 +72,234 @@ struct
       fun getOp0 v =
          get #1 0 v
 
-      val rec toX86Operand : t -> (x86.Operand.t * x86.Size.t) vector =
-         fn SequenceOffset {base, index, offset, scale, ty}
-            => let
-                  val base = toX86Operand base
-                  val _ = Assert.assert("x86Translate.Operand.toX86Operand: Array/base",
-                                        fn () => Vector.length base = 1)
-                  val base = getOp0 base
-                  val index = toX86Operand index
-                  val _ = Assert.assert("x86Translate.Operand.toX86Operand: Array/index",
-                                       fn () => Vector.length index = 1)
-                  val index = getOp0 index
-                  val scale =
-                     case scale of
-                        Scale.One => x86.Scale.One
-                      | Scale.Two => x86.Scale.Two
-                      | Scale.Four => x86.Scale.Four
-                      | Scale.Eight => x86.Scale.Eight
-                  val ty = Type.toCType ty
-                  val origin =
-                     case (x86.Operand.deMemloc base,
-                           x86.Operand.deImmediate index,
-                           x86.Operand.deMemloc index) of
-                        (SOME base, SOME index, _) =>
-                           x86.MemLoc.simple 
-                           {base = base,
-                            index = index,
-                            scale = scale,
-                            size = x86.Size.BYTE,
-                            class = x86MLton.Classes.Heap}
-                      | (SOME base, _, SOME index) =>
-                           x86.MemLoc.complex 
-                           {base = base,
-                            index = index,
-                            scale = scale,
-                            size = x86.Size.BYTE,
-                            class = x86MLton.Classes.Heap}
-                      | _ => Error.bug (concat ["x86Translate.Operand.toX86Operand: ",
-                                                "strange Offset: base: ",
-                                                x86.Operand.toString base,
-                                                " index: ",
-                                                x86.Operand.toString index])
-                  val origin =
-                     if Bytes.isZero offset
-                        then origin
-                        else x86.MemLoc.shift
-                             {origin = origin,
-                              disp = x86.Immediate.int (Bytes.toInt offset),
-                              scale = x86.Scale.One,
-                              size = x86.Size.BYTE}
-                  val sizes = x86.Size.fromCType ty
-               in
-                  (#1 o Vector.mapAndFold)
-                  (sizes, 0, fn (size,offset) =>
-                   (((x86.Operand.memloc o x86.MemLoc.shift)
-                     {origin = origin,
-                      disp = x86.Immediate.int offset,
-                      scale = x86.Scale.One,
-                      size = size}, size), offset + x86.Size.toBytes size))
-               end
-          | Cast (z, _) => toX86Operand z
-          | Contents {oper, ty} =>
-               let
-                  val ty = Type.toCType ty
-                  val base = toX86Operand oper
-                  val _ = Assert.assert("x86Translate.Operand.toX86Operand: Contents/base",
-                                        fn () => Vector.length base = 1)
-                  val base = getOp0 base
-                  val origin =
-                     case x86.Operand.deMemloc base of
-                        SOME base =>
-                           x86.MemLoc.simple 
-                           {base = base,
-                            index = x86.Immediate.zero,
-                            scale = x86.Scale.One,
-                            size = x86.Size.BYTE,
-                            class = x86MLton.Classes.Heap}
-                      | _ => Error.bug (concat
-                                        ["x86Translate.Operand.toX86Operand: ",
-                                         "strange Contents: base: ",
-                                         x86.Operand.toString base])    
-                  val sizes = x86.Size.fromCType ty
-               in
-                  (#1 o Vector.mapAndFold)
-                  (sizes, 0, fn (size,offset) =>
-                   (((x86.Operand.memloc o x86.MemLoc.shift)
-                     {origin = origin,
-                      disp = x86.Immediate.int offset,
-                      scale = x86.Scale.One,
-                      size = size}, size), offset + x86.Size.toBytes size))
-               end
-          | Frontier => 
-               let 
-                  val frontier = x86MLton.gcState_frontierContentsOperand ()
-               in
-                  Vector.new1 (frontier, valOf (x86.Operand.size frontier))
-               end
-          | GCState => 
-               Vector.new1 (x86.Operand.immediate_label x86MLton.gcState_label,
-                            x86MLton.pointerSize)
-          | Global g => Global.toX86Operand g
-          | Label l => 
-               Vector.new1 (x86.Operand.immediate_label l, x86MLton.pointerSize)
-          | Null => 
-               Vector.new1 (x86.Operand.immediate_zero, x86MLton.wordSize)
-          | Offset {base = GCState, offset, ty} =>
-               let
-                  val offset = Bytes.toInt offset
-                  val ty = Type.toCType ty
-                  val offset = x86MLton.gcState_offset {offset = offset, ty = ty}
-               in
-                  Vector.new1 (offset, valOf (x86.Operand.size offset))
-               end
-          | Offset {base, offset, ty} =>
-               let
-                  val offset = Bytes.toInt offset
-                 val ty = Type.toCType ty
-                 val base = toX86Operand base
-                 val _ = Assert.assert("x86Translate.Operand.toX86Operand: Offset/base",
-                                       fn () => Vector.length base = 1)
-                 val base = getOp0 base
-                 val origin =
-                   case x86.Operand.deMemloc base of
-                     SOME base =>
-                       x86.MemLoc.simple 
-                       {base = base,
-                        index = x86.Immediate.int offset,
-                        scale = x86.Scale.One,
-                        size = x86.Size.BYTE,
-                        class = x86MLton.Classes.Heap}
-                   | _ => Error.bug (concat ["x86Translate.Operand.toX86Operand: ",
-                                             "strange Offset: base: ",
-                                             x86.Operand.toString base])
-                  val sizes = x86.Size.fromCType ty
-               in
-                  (#1 o Vector.mapAndFold)
-                  (sizes, 0, fn (size,offset) =>
-                   (((x86.Operand.memloc o x86.MemLoc.shift)
-                     {origin = origin,
-                      disp = x86.Immediate.int offset,
-                      scale = x86.Scale.One,
-                      size = size}, size), offset + x86.Size.toBytes size))
-               end
-          | Real _ => Error.bug "x86Translate.Operand.toX86Operand: Real unimplemented"
-          | StackOffset (StackOffset.T {offset, ty}) =>
-               let
-                  val offset = Bytes.toInt offset
-                  val ty = Type.toCType ty
-                  val origin =
-                     x86.MemLoc.simple 
-                     {base = x86MLton.gcState_stackTopContents (), 
-                      index = x86.Immediate.int offset,
-                      scale = x86.Scale.One,
-                      size = x86.Size.BYTE,
-                      class = x86MLton.Classes.Stack}
-                  val sizes = x86.Size.fromCType ty
-               in
-                  (#1 o Vector.mapAndFold)
-                  (sizes, 0, fn (size,offset) =>
-                   (((x86.Operand.memloc o x86.MemLoc.shift)
-                     {origin = origin,
-                      disp = x86.Immediate.int offset,
-                      scale = x86.Scale.One,
-                      size = size}, size), offset + x86.Size.toBytes size))
-               end
-          | StackTop => 
-               let 
-                  val stackTop = x86MLton.gcState_stackTopContentsOperand ()
-               in
-                  Vector.new1 (stackTop, valOf (x86.Operand.size stackTop))
-               end
-          | Temporary t =>
-               let
-                  val ty = Machine.Type.toCType (Temporary.ty t)
-                  val index = Machine.Temporary.index t
-                  val base = x86.Immediate.label (x86MLton.local_base ty)
-                  val origin =
-                     x86.MemLoc.imm
-                     {base = base,
-                      index = x86.Immediate.int index,
-                      scale = x86.Scale.fromCType ty,
-                      size = x86.Size.BYTE,
-                      class = x86MLton.Classes.Locals}
-                  val sizes = x86.Size.fromCType ty
-               in
-                  (#1 o Vector.mapAndFold)
-                  (sizes, 0, fn (size,offset) =>
-                   (((x86.Operand.memloc o x86.MemLoc.shift)
-                     {origin = origin,
-                      disp = x86.Immediate.int offset,
-                      scale = x86.Scale.One,
-                      size = size}, size), offset + x86.Size.toBytes size))
-               end
-          | Word w =>
-               let
-                  fun single size =
-                     Vector.new1 (x86.Operand.immediate_word w, size)
-               in
-                  case WordSize.prim (WordX.size w) of
-                     W8 => single x86.Size.BYTE
-                   | W16 => single x86.Size.WORD
-                   | W32 => single x86.Size.LONG
-                   | W64 =>
-                        let
-                           val lo = WordX.resize (w, WordSize.word32)
-                           val w = WordX.rshift (w, 
-                                                 WordX.fromIntInf (32, WordSize.word64),
-                                                 {signed = true})
-                           val hi = WordX.resize (w, WordSize.word32)
-                        in
-                           Vector.new2
-                           ((x86.Operand.immediate_word lo, x86.Size.LONG),
-                            (x86.Operand.immediate_word hi, x86.Size.LONG))
-                        end
-               end
-    end
+      local
+         fun fromSizes (sizes, origin) =
+            (#1 o Vector.mapAndFold)
+            (sizes, 0, fn (size,offset) =>
+             (((x86.Operand.memloc o x86.MemLoc.shift)
+               {origin = origin,
+                disp = x86.Immediate.int offset,
+                scale = x86.Scale.One,
+                size = size}, size), offset + x86.Size.toBytes size))
+      in
+         val rec toX86Operand : t -> (x86.Operand.t * x86.Size.t) vector =
+            fn SequenceOffset {base, index, offset, scale, ty}
+               => let
+                     val base = toX86Operand base
+                     val _ = Assert.assert("x86Translate.Operand.toX86Operand: Array/base",
+                                           fn () => Vector.length base = 1)
+                     val base = getOp0 base
+                     val index = toX86Operand index
+                     val _ = Assert.assert("x86Translate.Operand.toX86Operand: Array/index",
+                                          fn () => Vector.length index = 1)
+                     val index = getOp0 index
+                     val scale =
+                        case scale of
+                           Scale.One => x86.Scale.One
+                         | Scale.Two => x86.Scale.Two
+                         | Scale.Four => x86.Scale.Four
+                         | Scale.Eight => x86.Scale.Eight
+                     val ty = Type.toCType ty
+                     val origin =
+                        case (x86.Operand.deMemloc base,
+                              x86.Operand.deImmediate base,
+                              x86.Operand.deImmediate index,
+                              x86.Operand.deMemloc index) of
+                           (SOME base, _, SOME index, _) =>
+                              x86.MemLoc.simple 
+                              {base = base,
+                               index = index,
+                               scale = scale,
+                               size = x86.Size.BYTE,
+                               class = x86MLton.Classes.Heap}
+                         | (SOME base, _, _, SOME index) =>
+                              x86.MemLoc.complex 
+                              {base = base,
+                               index = index,
+                               scale = scale,
+                               size = x86.Size.BYTE,
+                               class = x86MLton.Classes.Heap}
+                         | (_, SOME base, SOME index, _) =>
+                              x86.MemLoc.imm
+                              {base = base,
+                               index = index,
+                               scale = scale,
+                               size = x86.Size.BYTE,
+                               class = x86MLton.Classes.Code}
+                         | (_, SOME base, _, SOME index) =>
+                              x86.MemLoc.basic
+                              {base = base,
+                               index = index,
+                               scale = scale,
+                               size = x86.Size.BYTE,
+                               class = x86MLton.Classes.Code}
+
+                         | _ => Error.bug (concat ["x86Translate.Operand.toX86Operand: ",
+                                                   "strange SequenceOffset: base: ",
+                                                   x86.Operand.toString base,
+                                                   " index: ",
+                                                   x86.Operand.toString index])
+                     val origin =
+                        if Bytes.isZero offset
+                           then origin
+                           else x86.MemLoc.shift
+                                {origin = origin,
+                                 disp = x86.Immediate.int (Bytes.toInt offset),
+                                 scale = x86.Scale.One,
+                                 size = x86.Size.BYTE}
+                     val sizes = x86.Size.fromCType ty
+                  in
+                    fromSizes (sizes, origin)
+                  end
+             | Cast (z, _) => toX86Operand z
+             | Contents {oper, ty} =>
+                  let
+                     val ty = Type.toCType ty
+                     val base = toX86Operand oper
+                     val _ = Assert.assert("x86Translate.Operand.toX86Operand: Contents/base",
+                                           fn () => Vector.length base = 1)
+                     val base = getOp0 base
+                     val origin =
+                        case x86.Operand.deMemloc base of
+                           SOME base =>
+                              x86.MemLoc.simple 
+                              {base = base,
+                               index = x86.Immediate.zero,
+                               scale = x86.Scale.One,
+                               size = x86.Size.BYTE,
+                               class = x86MLton.Classes.Heap}
+                         | _ => Error.bug (concat
+                                           ["x86Translate.Operand.toX86Operand: ",
+                                            "strange Contents: base: ",
+                                            x86.Operand.toString base])    
+                     val sizes = x86.Size.fromCType ty
+                  in
+                     fromSizes (sizes, origin)
+                  end
+             | Frontier => 
+                  let 
+                     val frontier = x86MLton.gcState_frontierContentsOperand ()
+                  in
+                     Vector.new1 (frontier, valOf (x86.Operand.size frontier))
+                  end
+             | GCState => 
+                  Vector.new1 (x86.Operand.immediate_label x86MLton.gcState_label,
+                               x86MLton.pointerSize)
+             | Global g => Global.toX86Operand g
+             | Label l => 
+                  Vector.new1 (x86.Operand.immediate_label l, x86MLton.pointerSize)
+             | Null => 
+                  Vector.new1 (x86.Operand.immediate_zero, x86MLton.wordSize)
+             | Offset {base = GCState, offset, ty} =>
+                  let
+                     val offset = Bytes.toInt offset
+                     val ty = Type.toCType ty
+                     val offset = x86MLton.gcState_offset {offset = offset, ty = ty}
+                  in
+                     Vector.new1 (offset, valOf (x86.Operand.size offset))
+                  end
+             | Offset {base, offset, ty} =>
+                  let
+                     val offset = Bytes.toInt offset
+                    val ty = Type.toCType ty
+                    val base = toX86Operand base
+                    val _ = Assert.assert("x86Translate.Operand.toX86Operand: Offset/base",
+                                          fn () => Vector.length base = 1)
+                    val base = getOp0 base
+                    val origin =
+                       (case (x86.Operand.deMemloc base,
+                              x86.Operand.deImmediate base) of
+                          (SOME base, _) =>
+                            x86.MemLoc.simple
+                            {base = base,
+                             index = x86.Immediate.int offset,
+                             scale = x86.Scale.One,
+                             size = x86.Size.BYTE,
+                             class = x86MLton.Classes.Heap}
+                        | (_, SOME base) =>
+                            x86.MemLoc.imm
+                            {base = base,
+                             index = x86.Immediate.int offset,
+                             scale = x86.Scale.One,
+                             size = x86.Size.BYTE,
+                             class = x86MLton.Classes.Code}
+                        | _ => Error.bug (concat ["x86Translate.Operand.toX86Operand: ",
+                                                  "strange Offset: base: ",
+                                                  x86.Operand.toString base]))
+                     val sizes = x86.Size.fromCType ty
+                  in
+                     fromSizes (sizes, origin)
+                  end
+             | Real _ => Error.bug "x86Translate.Operand.toX86Operand: Real unimplemented"
+             | StackOffset (StackOffset.T {offset, ty}) =>
+                  let
+                     val offset = Bytes.toInt offset
+                     val ty = Type.toCType ty
+                     val origin =
+                        x86.MemLoc.simple 
+                        {base = x86MLton.gcState_stackTopContents (), 
+                         index = x86.Immediate.int offset,
+                         scale = x86.Scale.One,
+                         size = x86.Size.BYTE,
+                         class = x86MLton.Classes.Stack}
+                     val sizes = x86.Size.fromCType ty
+                  in
+                     fromSizes (sizes, origin)
+                  end
+              | Static {index, offset, ty} =>
+                  let
+                     val offset = Bytes.toInt offset
+                     val base = x86.Immediate.labelPlusInt
+                           (x86MLton.static_label index, offset)
+                  in
+                     Vector.new1 (x86.Operand.immediate base, x86MLton.pointerSize)
+                  end
+             | StackTop => 
+                  let 
+                     val stackTop = x86MLton.gcState_stackTopContentsOperand ()
+                  in
+                     Vector.new1 (stackTop, valOf (x86.Operand.size stackTop))
+                  end
+             | Temporary t =>
+                  let
+                     val ty = Machine.Type.toCType (Temporary.ty t)
+                     val index = Machine.Temporary.index t
+                     val base = x86.Immediate.label (x86MLton.local_base ty)
+                     val origin =
+                        x86.MemLoc.imm
+                        {base = base,
+                         index = x86.Immediate.int index,
+                         scale = x86.Scale.fromCType ty,
+                         size = x86.Size.BYTE,
+                         class = x86MLton.Classes.Locals}
+                     val sizes = x86.Size.fromCType ty
+                  in
+                     fromSizes (sizes, origin)
+                  end
+             | Word w =>
+                  let
+                     fun single size =
+                        Vector.new1 (x86.Operand.immediate_word w, size)
+                  in
+                     case WordSize.prim (WordX.size w) of
+                        W8 => single x86.Size.BYTE
+                      | W16 => single x86.Size.WORD
+                      | W32 => single x86.Size.LONG
+                      | W64 =>
+                           let
+                              val lo = WordX.resize (w, WordSize.word32)
+                              val w = WordX.rshift (w, 
+                                                    WordX.fromIntInf (32, WordSize.word64),
+                                                    {signed = true})
+                              val hi = WordX.resize (w, WordSize.word32)
+                           in
+                              Vector.new2
+                              ((x86.Operand.immediate_word lo, x86.Size.LONG),
+                               (x86.Operand.immediate_word hi, x86.Size.LONG))
+                           end
+                  end
+      end
+  end
 
   type transInfo = x86MLton.transInfo
 
