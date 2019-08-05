@@ -29,18 +29,20 @@ void initObjects (GC_state s) {
   struct GC_objectInit *inits;
   pointer frontier;
   uint32_t i;
+  size_t objectSize;
 
   assert (isFrontierAligned (s, s->frontier));
   inits = s->objectInits;
   frontier = s->frontier;
   for (i = 0; i < s->objectInitsLength; i++) {
 
-    assert (align (inits[i].size, s->alignment) <=
-      (size_t)(s->heap.start + s->heap.size - frontier));
+    objectSize = align (inits[i].size, s->alignment);
+    assert (objectSize <= (size_t)(s->heap.start + s->heap.size - frontier));
     memcpy (frontier, inits[i].words, inits[i].size);
+
     s->globals[inits[i].globalIndex] =
       pointerToObjptr(frontier + inits[i].headerOffset, s->heap.start);
-    frontier = frontier + inits[i].size;
+    frontier = frontier + objectSize;
     if (DEBUG_DETAILED)
       fprintf (stderr, "allocated object at "FMTPTR"\n",
                (uintptr_t)(s->globals[inits[i].globalIndex]));
