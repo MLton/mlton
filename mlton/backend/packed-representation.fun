@@ -1565,10 +1565,13 @@ structure ConRep =
                (case Component.staticTuple (component, {src=src}) of
                   Static.Data.Word w =>
                    let
-                      val shift = (WordX.resize
-                                    (tag, WordSize.shiftArg))
-                      val w = WordX.lshift (w, shift)
+		      val shift = (WordX.fromIntInf
+                                   (Bits.toIntInf
+                                    (WordSize.bits
+                                     (WordX.size tag)),
+                                   WordSize.shiftArg))
                       val w = WordX.resize (w, width)
+                      val w = WordX.lshift (w, shift)
                       val mask = WordX.resize (tag, width)
                    in
                       (Elem o Static.Data.Word o WordX.orb) (w, mask)
