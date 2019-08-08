@@ -77,6 +77,9 @@ signature CONTROL_FLAGS =
       (* whether or not to use comments in codegen *)
       val codegenComments: int ref
 
+      (* whether or not to fuse `op` and `opCheckP` primitives in codegen *)
+      val codegenFuseOpAndChk: bool ref
+
       val contifyIntoMain: bool ref
 
       (* Generate an executable with debugging info. *)

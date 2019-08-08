@@ -190,7 +190,10 @@ val codegen = control {name = "codegen",
 val codegenComments = control {name = "codegen comments",
                                default = 0,
                                toString = Int.toString}
-   
+
+val codegenFuseOpAndChk = control {name = "fuse `op` and `opCheckP` primitives in codegen",
+                                   default = false,
+                                   toString = Bool.toString}
 
 val contifyIntoMain = control {name = "contifyIntoMain",
                                default = false,

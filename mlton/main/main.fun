@@ -332,6 +332,8 @@ fun makeOptions {usage} =
                                      | NONE => usage (concat ["invalid -codegen flag: ", s]))))),
        (Expert, "codegen-comments", " <n>", "level of comments  (0)",
         intRef codegenComments),
+       (Expert, "codegen-fuse-op-and-chk", " {false|true}", "fuse `op` and `opCheckP` primitives in codegen",
+        boolRef codegenFuseOpAndChk),
        (Normal, "const", " '<name> <value>'", "set compile-time constant",
         SpaceString (fn s =>
                      case String.tokens (s, Char.isSpace) of
