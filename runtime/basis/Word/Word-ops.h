@@ -35,6 +35,16 @@ binaryOvflOp (U##size, name)
 binaryOvflChk (S##size, name)                   \
 binaryOvflChk (U##size, name)
 
+#define binaryOvflOpAndChk(kind, name)                                  \
+  PRIVATE INLINE                                                        \
+  void Word##kind##_##name##AndCheck (Word##kind w1, Word##kind w2, Word##kind *rw, Bool *rb) {  \
+    *rb = __builtin_##name##_overflow(w1, w2, rw);                      \
+  }
+
+#define bothBinaryOvflOpAndChk(size, name)      \
+binaryOvflOpAndChk (S##size, name)              \
+binaryOvflOpAndChk (U##size, name)
+
 #define compare(kind, name, op)                                         \
   PRIVATE INLINE                                                        \
   Bool Word##kind##_##name (Word##kind w1, Word##kind w2) {             \
@@ -60,6 +70,12 @@ compare (U##size, name, op)
     return __builtin_sub_overflow(0, w, &res);                          \
   }
 
+#define negOvflOpAndChk(kind)                                           \
+  PRIVATE INLINE                                                        \
+  void Word##kind##_negAndCheck (Word##kind w, Word##kind *rw, Bool *rb) { \
+    *rb = __builtin_sub_overflow(0, w, rw);                             \
+  }
+
 #define rol(size)                                                       \
   PRIVATE INLINE                                                        \
   Word##size Word##size##_rol (Word##size w1, Word32 w2) {              \
@@ -78,7 +94,7 @@ compare (U##size, name, op)
     return (Word##kind)(w1 op w2);                                      \
   }
 
-#define unary(kind, name, op)                                         \
+#define unary(kind, name, op)                                           \
   PRIVATE INLINE                                                        \
   Word##kind Word##kind##_##name (Word##kind w) {                       \
     return (Word##kind)(op w);                                          \
@@ -105,6 +121,7 @@ compare (U##size, name, op)
 #define all(size)                               \
 binaryOvflOp (size, add)                        \
 bothBinaryOvflChk (size, add)                   \
+bothBinaryOvflOpAndChk (size, add)              \
 binary (size, andb, &)                          \
 compare (size, equal, ==)                       \
 bothCompare (size, ge, >=)                      \
@@ -114,9 +131,12 @@ shift (size, lshift, <<)                        \
 bothCompare (size, lt, <)                       \
 bothBinaryOvflOp (size, mul)                    \
 bothBinaryOvflChk (size, mul)                   \
+bothBinaryOvflOpAndChk (size, mul)              \
 negOvflOp (size)                                \
 negOvflChk (S##size)                            \
 negOvflChk (U##size)                            \
+negOvflOpAndChk (S##size)                       \
+negOvflOpAndChk (U##size)                       \
 unary (size, notb, ~)                           \
 bothBinary (size, quot, /)                      \
 bothBinary (size, rem, %)                       \
@@ -134,6 +154,7 @@ shift (S##size, rshift, >>)                     \
 shift (U##size, rshift, >>)                     \
 binaryOvflOp (size, sub)                        \
 bothBinaryOvflChk (size, sub)                   \
+bothBinaryOvflOpAndChk (size, sub)              \
 binary (size, xorb, ^)
 
 all (8)
@@ -149,12 +170,13 @@ misaligned(64)
 #undef shift
 #undef ror
 #undef rol
-#undef negOvfl
+#undef negOvflOpAndChk
 #undef negOvflChk
 #undef negOvflOp
 #undef bothCompare
 #undef compare
-#undef bothBinaryOvfl
+#undef bothBinaryOvflOpAndChk
+#undef binaryOvflOpAndChk
 #undef bothBinaryOvflChk
 #undef binaryOvflChk
 #undef bothBinaryOvflOp
