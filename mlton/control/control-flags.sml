@@ -73,6 +73,13 @@ structure Chunkify =
                     singC: bool,
                     singR: bool}
 
+      val simpleDefault =
+         Simple {mainFns = true,
+                 sccC = true,
+                 sccR = true,
+                 singC = true,
+                 singR = true}
+
       fun toString c =
          case c of
             Coalesce {limit} => concat ["coalesce", Int.toString limit]
@@ -106,16 +113,18 @@ structure Chunkify =
                 str "func" *> pure Func,
                 str "one" *> pure One,
                 str "simple" *>
-                cbrack (ffield ("mainFns", bool) >>= (fn mainFns =>
-                        nfield ("sccC", bool) >>= (fn sccC =>
-                        nfield ("sccR", bool) >>= (fn sccR =>
-                        nfield ("singC", bool) >>= (fn singC =>
-                        nfield ("singR", bool) >>= (fn singR =>
-                        pure (Simple {mainFns = mainFns,
-                                      sccC = sccC,
-                                      sccR = sccR,
-                                      singC = singC,
-                                      singR = singR})))))))]
+                (cbrack (ffield ("mainFns", bool) >>= (fn mainFns =>
+                         nfield ("sccC", bool) >>= (fn sccC =>
+                         nfield ("sccR", bool) >>= (fn sccR =>
+                         nfield ("singC", bool) >>= (fn singC =>
+                         nfield ("singR", bool) >>= (fn singR =>
+                         pure (Simple {mainFns = mainFns,
+                                       sccC = sccC,
+                                       sccR = sccR,
+                                       singC = singC,
+                                       singR = singR})))))))
+                 <|>
+                 pure simpleDefault)]
                <* failing next
          in
             case parseString (p, s) of
