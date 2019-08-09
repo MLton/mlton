@@ -1132,6 +1132,112 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                in
                   outputStatement s
                end
+            fun outputStatementsFuseOpAndChk statements =
+               Vector.foreachi
+               (statements, fn (i, s1) =>
+                let
+                   fun default () = outputStatement s1
+                in
+                   case s1 of
+                      Statement.PrimApp {args = args1, dst = SOME dst1, prim = prim1} =>
+                         let
+                            fun fuse chk =
+                               (case Vector.sub (statements, i + 1) of
+                                   s2 as Statement.PrimApp {args = args2, dst = SOME dst2, prim = prim2} =>
+                                      if Vector.equals (args1, args2, Operand.equals)
+                                         andalso chk prim2
+                                         then let
+                                                 val name =
+                                                    String.substituteFirst
+                                                    (Prim.toString prim2,
+                                                     {substring = "CheckP",
+                                                      replacement = "AndCheck"})
+                                                 val _ =
+                                                    if !Control.codegenComments > 1
+                                                       then (print "\t/* "
+                                                             ; print (Layout.toString (Statement.layout s1))
+                                                             ; print " */\n"
+                                                             ; print "\t/* "
+                                                             ; print (Layout.toString (Statement.layout s2))
+                                                             ; print " */\n")
+                                                       else ()
+                                                 val _ = print "\t"
+                                                 val _ =
+                                                    print (C.call (name,
+                                                                   Vector.toListMap (args1, fetchOperand) @
+                                                                   [addr (operandToString dst1),
+                                                                    addr (operandToString dst2)]))
+                                              in
+                                                 ()
+                                              end
+                                         else default ()
+                                 | _ => default ())
+                               handle Subscript => default ()
+                            fun skip chk =
+                               (case Vector.sub (statements, i - 1) of
+                                   Statement.PrimApp {args = args2, dst = SOME _, prim = prim2} =>
+                                      if Vector.equals (args1, args2, Operand.equals)
+                                         andalso chk prim2
+                                         then ()
+                                         else default ()
+                                 | _ => default ())
+                               handle Subscript => default ()
+                         in
+                            case Prim.name prim1 of
+                               Prim.Name.Word_add ws1 =>
+                                  fuse (fn prim2 =>
+                                        case Prim.name prim2 of
+                                           Prim.Name.Word_addCheckP (ws2, _) =>
+                                              WordSize.equals (ws1, ws2)
+                                         | _ => false)
+                             | Prim.Name.Word_addCheckP (ws1, _) =>
+                                  skip (fn prim2 =>
+                                        case Prim.name prim2 of
+                                           Prim.Name.Word_add ws2 =>
+                                              WordSize.equals (ws1, ws2)
+                                         | _ => false)
+                             | Prim.Name.Word_mul (ws1, {signed = signed1}) =>
+                                  fuse (fn prim2 =>
+                                        case Prim.name prim2 of
+                                           Prim.Name.Word_mulCheckP (ws2, {signed = signed2}) =>
+                                              WordSize.equals (ws1, ws2)
+                                              andalso Bool.equals (signed1, signed2)
+                                         | _ => false)
+                             | Prim.Name.Word_mulCheckP (ws1, {signed = signed1}) =>
+                                  skip (fn prim2 =>
+                                        case Prim.name prim2 of
+                                           Prim.Name.Word_mul (ws2, {signed = signed2}) =>
+                                              WordSize.equals (ws1, ws2)
+                                              andalso Bool.equals (signed1, signed2)
+                                         | _ => false)
+                             | Prim.Name.Word_neg ws1 =>
+                                  fuse (fn prim2 =>
+                                        case Prim.name prim2 of
+                                           Prim.Name.Word_negCheckP (ws2, _) =>
+                                              WordSize.equals (ws1, ws2)
+                                         | _ => false)
+                             | Prim.Name.Word_negCheckP (ws1, _) =>
+                                  skip (fn prim2 =>
+                                        case Prim.name prim2 of
+                                           Prim.Name.Word_neg ws2 =>
+                                              WordSize.equals (ws1, ws2)
+                                         | _ => false)
+                             | Prim.Name.Word_sub ws1 =>
+                                  fuse (fn prim2 =>
+                                        case Prim.name prim2 of
+                                           Prim.Name.Word_subCheckP (ws2, _) =>
+                                              WordSize.equals (ws1, ws2)
+                                         | _ => false)
+                             | Prim.Name.Word_subCheckP (ws1, _) =>
+                                  skip (fn prim2 =>
+                                        case Prim.name prim2 of
+                                           Prim.Name.Word_sub ws2 =>
+                                              WordSize.equals (ws1, ws2)
+                                         | _ => false)
+                             | _ => default ()
+                         end
+                    | _ => default ()
+                end)
             fun outputBlock (Block.T {kind, label, statements, transfer, ...}) =
                let
                   val _ = prints [Label.toString label, ":\n"]
@@ -1157,7 +1263,10 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                       | Kind.Func _ => ()
                       | Kind.Handler {frameInfo, ...} => pop frameInfo
                       | Kind.Jump => ()
-                  val _ = Vector.foreach (statements, outputStatement)
+                  val _ =
+                     if !Control.codegenFuseOpAndChk
+                        then outputStatementsFuseOpAndChk statements
+                        else Vector.foreach (statements, outputStatement)
                   val _ = outputTransfer transfer
                   val _ = print "\n"
                in
