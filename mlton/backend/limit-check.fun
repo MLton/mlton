@@ -850,7 +850,7 @@ fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileI
       val newStart = Label.newNoname ()
       fun define x = Statement.Bind
          {dst = (x, Type.cpointer ()),
-          isMutable = false,
+          pinned = false,
           src = Operand.Static
             {static=Static.T
                {data=Static.Data.Object [Static.Data.Word (WordX.one WordSize.bool)],

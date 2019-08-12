@@ -353,12 +353,10 @@ fun transformFunc func =
                      val src = Operand.Var {var=src, ty=ty}
                      val dst = (dst, ty)
                   in
-                     Statement.Bind {dst=dst, src=src,
-                     (* This is a bit of a hack, but makes it clear
-                      * to the shrinker that these variables should
-                      * block copy-propagation. It is preserved by
-                      * RestoreRssa *)
-                     isMutable= true}
+                     Statement.Bind
+                        {dst=dst,
+                         pinned=true,
+                         src=src}
                   end)
             (* Due to the loop forest construction, (i.e. shouldAvoid)
              * The kind of a block on the edge is always Kind.Jump

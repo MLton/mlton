@@ -178,7 +178,7 @@ structure Statement =
    struct
       datatype t =
          Bind of {dst: Var.t * Type.t,
-                  isMutable: bool,
+                  pinned: bool,
                   src: Operand.t}
        | Move of {dst: Operand.t,
                   src: Operand.t}
@@ -238,9 +238,9 @@ structure Statement =
                Operand.replaceVar (z, f)
          in
             case s of
-               Bind {dst, isMutable, src} =>
+               Bind {dst, pinned, src} =>
                   Bind {dst = dst,
-                        isMutable = isMutable,
+                        pinned = pinned,
                         src = oper src}
              | Move {dst, src} => Move {dst = oper dst, src = oper src}
              | Object _ => s
@@ -846,7 +846,7 @@ structure Function =
                                     Vector.map2
                                     (formals, args, fn (dst, src) =>
                                      Bind {dst = dst,
-                                           isMutable = false,
+                                           pinned = false,
                                            src = src})
                               in
                                  expand (statements :: binds :: ss, replaceTransfer transfer)
@@ -1077,8 +1077,8 @@ structure Program =
                       ; SOME s)
                in
                   case s of
-                     Bind {dst = (dst, dstTy), isMutable, src} =>
-                        if isMutable
+                     Bind {dst = (dst, dstTy), pinned, src} =>
+                        if pinned
                            then keep ()
                         else
                            let

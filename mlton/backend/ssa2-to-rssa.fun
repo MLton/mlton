@@ -962,7 +962,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                            NONE => none ()
                          | SOME ty =>
                               add (Bind {dst = (valOf var, ty),
-                                         isMutable = false,
+                                         pinned = false,
                                          src = f ty})
                      fun move (src: Operand.t) = maybeMove (fn _ => src)
                   in
@@ -1184,7 +1184,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                  ty = Type.objptrHeader ()}),
                                          src = ObjptrTycon arrOpt},
                                         Bind {dst = (valOf var, arrTy),
-                                              isMutable = false,
+                                              pinned = false,
                                               src = Operand.cast (rawarr, arrTy)})
                                     end
                                | Array_toVector =>
@@ -1204,7 +1204,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                  ty = Type.objptrHeader ()}),
                                          src = ObjptrTycon vecOpt},
                                         Bind {dst = (valOf var, vecTy),
-                                              isMutable = false,
+                                              pinned = false,
                                               src = Operand.cast (sequence, vecTy)})
                                     end
                                | Array_uninit =>
@@ -1872,7 +1872,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                   (statics, fn (v, rty, static) =>
                   Statement.Bind
                   {dst=(v, rty),
-                   isMutable=false,
+                   pinned=false,
                    src=Operand.Static {static=static, ty=rty}}),
                 transfer=Transfer.Goto {args=Vector.new0 (), dst=start}}
           in

@@ -55,7 +55,7 @@ signature RSSA_TREE =
          sig
             datatype t =
                Bind of {dst: Var.t * Type.t,
-                        isMutable: bool,
+                        pinned: bool,
                         src: Operand.t}
              | Move of {dst: Operand.t,
                         src: Operand.t}

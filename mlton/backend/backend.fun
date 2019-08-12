@@ -690,41 +690,38 @@ fun toMachine (rssa: Rssa.Program.t) =
                           fun normal () = R.Statement.foreachDef (s, newVarInfo)
                        in
                           case s of
-                             R.Statement.Bind {dst = (var, _), isMutable, src} =>
-                                if isMutable
-                                   then normal ()
-                                else
-                                   let
-                                      fun set (z: M.Operand.t,
-                                               casts: Type.t list) =
-                                         let
-                                            val z =
-                                               List.fold
-                                               (casts, z, fn (t, z) =>
-                                                M.Operand.Cast (z, t))
-                                         in
-                                            setVarInfo
-                                            (var, {operand = VarOperand.Const z,
-                                                   ty = M.Operand.ty z})
-                                         end
-                                      fun loop (z: R.Operand.t, casts) =
-                                         case z of
-                                            R.Operand.Cast (z, t) =>
-                                               loop (z, t :: casts)
-                                          | R.Operand.Const c =>
-                                               set (constOperand c, casts)
-                                          | R.Operand.Var {var = var', ...} =>
-                                               (case #operand (varInfo var') of
-                                                   VarOperand.Const z =>
-                                                      set (z, casts)
-                                                 | VarOperand.Allocate _ =>
-                                                      normal ())
-                                          | R.Operand.Static s =>
-                                               set (globalStatic s, casts)
-                                          | _ => normal ()
-                                   in
-                                      loop (src, [])
-                                   end
+                             R.Statement.Bind {dst = (var, _), src, ...} =>
+                                let
+                                   fun set (z: M.Operand.t,
+                                            casts: Type.t list) =
+                                      let
+                                         val z =
+                                            List.fold
+                                            (casts, z, fn (t, z) =>
+                                             M.Operand.Cast (z, t))
+                                      in
+                                         setVarInfo
+                                         (var, {operand = VarOperand.Const z,
+                                                ty = M.Operand.ty z})
+                                      end
+                                   fun loop (z: R.Operand.t, casts) =
+                                      case z of
+                                         R.Operand.Cast (z, t) =>
+                                            loop (z, t :: casts)
+                                       | R.Operand.Const c =>
+                                            set (constOperand c, casts)
+                                       | R.Operand.Var {var = var', ...} =>
+                                            (case #operand (varInfo var') of
+                                                VarOperand.Const z =>
+                                                   set (z, casts)
+                                              | VarOperand.Allocate _ =>
+                                                   normal ())
+                                       | R.Operand.Static s =>
+                                            set (globalStatic s, casts)
+                                       | _ => normal ()
+                                in
+                                   loop (src, [])
+                                end
                            | _ => normal ()
                        end)
                 in

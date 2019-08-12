@@ -354,7 +354,7 @@ structure WordRep =
                   NONE => []
                 | SOME src =>
                      [Bind {dst = (dstVar, dstTy),
-                            isMutable = false,
+                            pinned = false,
                             src = src}]
                      :: statements
          in
@@ -470,7 +470,7 @@ structure Component =
                      Statement.resize (src {index = index}, #2 dst)
                in
                   ss @ [Bind {dst = dst,
-                              isMutable = false,
+                              pinned = false,
                               src = src}]
                end
           | Word wr => WordRep.tuple (wr, {dst = dst, src = src})
@@ -552,7 +552,7 @@ structure Unpack =
                   end
          in
             ss1 @ ss2 @ ss3 @ [Bind {dst = (dst, dstTy),
-                                     isMutable = false,
+                                     pinned = false,
                                      src = src}]
          end
 
@@ -707,7 +707,7 @@ structure Select =
                   val (src, ss') = Statement.resize (src, dstTy)
                in
                   ss @ ss' @ [Bind {dst = (dst, dstTy),
-                                    isMutable = false,
+                                    pinned = false,
                                     src = src}]
                end
          in
@@ -730,7 +730,7 @@ structure Select =
                                         ty = ty}
                   in
                      ss @ (Bind {dst = (tmpVar, ty),
-                                 isMutable = false,
+                                 pinned = false,
                                  src = src}
                            :: Unpack.select (rest, {dst = dst, src = tmpOp}))
                   end
@@ -1531,7 +1531,7 @@ structure ConRep =
                                              (Operand.ty tmp))))
                   val (s2, tmp) = Statement.orb (tmp, mask)
                   val s3 = Bind {dst = (dstVar, dstTy),
-                                 isMutable = false,
+                                 pinned = false,
                                  src = tmp}
                in
                   component @ [s1, s2, s3]
@@ -1545,7 +1545,7 @@ structure ConRep =
                                            (Type.width dstTy)))
                in
                   [Bind {dst = (dstVar, dstTy),
-                         isMutable = false,
+                         pinned = false,
                          src = src}]
                end
           | Tuple tr => TupleRep.tuple (tr, {dst = dst, src = src})
