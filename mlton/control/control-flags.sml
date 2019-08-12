@@ -1176,6 +1176,41 @@ val showTypes = control {name = "show types",
                          default = true,
                          toString = Bool.toString}
 
+structure StaticAlloc =
+   struct
+      structure Objptrs =
+      struct
+         datatype t =
+            All
+          | Static
+          | None
+
+         val toString = fn
+            All => "All"
+          | Static => "Static"
+          | None => "None"
+      end
+
+   end
+datatype staticAllocInternalPtrs = datatype StaticAlloc.Objptrs.t
+val staticAllocInternalPtrs =
+   control {name = "staticAllocInternalPtrs",
+            default = Static,
+            toString = StaticAlloc.Objptrs.toString}
+
+val staticAllocArrays =
+   control {name = "staticAllocArrays",
+            default = true,
+            toString = Bool.toString}
+val staticAllocObjects =
+   control {name = "staticAllocObjects",
+            default = true,
+            toString = Bool.toString}
+val staticAllocVectors =
+   control {name = "staticAllocVectors",
+            default = true,
+            toString = Bool.toString}
+
 structure SplitTypesBool =
    struct
       datatype t =

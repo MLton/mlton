@@ -807,6 +807,25 @@ fun makeOptions {usage} =
         SpaceString (fn s => showDefUse := SOME s)),
        (Expert, "show-types", " {true|false}", "show types in ILs",
         boolRef showTypes),
+       (Expert, "static-alloc-internal-ptrs", " {all|static|none}",
+        "which pointers to allow in statically allocated values",
+        SpaceString (fn s =>
+                     staticAllocInternalPtrs :=
+                     (case s of
+                         "all" => Control.All
+                       | "none" => Control.None
+                       | "static" => Control.Static
+                       | _ => usage (concat ["invalid ",
+                       "-static-alloc-internal-ptrs flag: ", s])))),
+       (Expert, "static-alloc-arrays", " {true|false}",
+        "Allow arrays to be statically allocated",
+        boolRef staticAllocArrays),
+       (Expert, "static-alloc-objects", " {true|false}",
+        "Allow objects to be statically allocated",
+        boolRef staticAllocObjects),
+       (Expert, "static-alloc-vectors", " {true|false}",
+        "Allow vectors to be statically allocated",
+        boolRef staticAllocVectors),
        (Expert, "split-types-bool", " {smart|always|never}",
         "bool type splitting method",
         SpaceString (fn s =>

@@ -1662,18 +1662,29 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                 List.push (statics, (v, rty, s)))
             fun pushKeep st = List.push (keeps, st)
 
-            fun canHaveDownpointer {elt, isMutable} =
-               isMutable andalso
-               Option.exists (toRtype elt, Type.isObjptr)
-
+            fun validArg {elt, isMutable} =
+               case !Control.staticAllocInternalPtrs of
+                    Control.All => true
+                  | Control.Static =>
+                       not (isMutable andalso Option.exists (toRtype elt, Type.isObjptr))
+                  | Control.None => false
+            fun validCon con =
+              case (con,
+                    !Control.staticAllocObjects,
+                    !Control.staticAllocVectors) of
+                   (S.ObjectCon.Con _, true, _) => true
+                 | (S.ObjectCon.Tuple, true, _) => true
+                 | (S.ObjectCon.Sequence, _, true) => true
+                 | _ => false
             fun getLocation (ty, isEmpty) =
                case S.Type.dest ty of
                     (* Important: isMutable is a proxy for hasIdentity,
                      * so we need to preserve it even if there are no fields *)
-                    S.Type.Object {args, ...} =>
-                     if isEmpty orelse
-                        Vector.forall
-                        (S.Prod.dest args, not o canHaveDownpointer)
+                    S.Type.Object {args, con} =>
+                     if validCon con andalso
+                        (isEmpty orelse
+                           Vector.forall
+                           (S.Prod.dest args, validArg))
                      then
                         if S.Prod.someIsMutable args
                            then Static.MutStatic
@@ -1760,11 +1771,14 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                         in
                            case rty of
                                SOME rty =>
-                                 (case s of
-                                      Static s =>
+                                 (case (s, location) of
+                                      (* address of heap static not a valid elem *)
+                                      (Static s, Heap) =>
+                                       pushStatic (var, ty, rty, s)
+                                    | (Static s, _) =>
                                        (setGlobalStatic (var, SOME (Address var));
                                         pushStatic (var, ty, rty, s))
-                                    | Elem e =>
+                                    | (Elem e, _) =>
                                        (setGlobalStatic (var, SOME e);
                                         pushKeep st))
                              | NONE => keep ()
@@ -1795,8 +1809,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                let
                                   val length = (globalStatic o Vector.first) args
                                in
-                                  case length of
-                                     SOME (Word l) =>
+                                  case (length, !Control.staticAllocArrays) of
+                                     (SOME (Word l), true) =>
                                         static (makeSequence, WordX.isZero l, WordX.toInt l)
                                    | _ => keep ()
                                end

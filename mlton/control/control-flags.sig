@@ -387,6 +387,15 @@ signature CONTROL_FLAGS =
        | Always
       val splitTypesBool: splitTypesBool ref
 
+      datatype staticAllocInternalPtrs =
+         All
+       | Static
+       | None
+      val staticAllocInternalPtrs: staticAllocInternalPtrs ref
+      val staticAllocArrays: bool ref
+      val staticAllocObjects: bool ref
+      val staticAllocVectors: bool ref
+
       (* List of pass names to stop at. *)
       val stopPasses: Regexp.Compiled.t list ref
 
