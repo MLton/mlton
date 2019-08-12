@@ -557,6 +557,16 @@ and getOperandValue (cxt, operand) =
           | Operand.SequenceOffset _ => loadOperand ()
           | Operand.StackOffset _ => loadOperand ()
           | Operand.StackTop => loadOperand ()
+          | Operand.Static {index, ty, offset} =>
+               let
+                  val llvmTy = llty ty
+                  val temp = nextLLVMTemp ()
+                  val name = "@static_" ^ Int.toString index
+                  val idx = llbytes offset
+                  val gep = mkgep (temp, llvmTy, name, [("i32", idx)])
+               in
+                  (gep, llvmTy, temp)
+               end
           | Operand.Temporary  _ => loadOperand ()
           | Operand.Word word => ("", (llws o WordX.size) word, llwordx word)
     end
@@ -1181,7 +1191,7 @@ fun outputBlock (cxt, block) =
         concat [blockLabel, dopop, blockBody, blockTransfer, "\n"]
     end
 
-fun outputLLVMDeclarations print =
+fun outputLLVMDeclarations (statics, print) =
     let
         val globals = concat (List.map (CType.all, fn t =>
                           let
@@ -1193,9 +1203,19 @@ fun outputLLVMDeclarations print =
                                               llint n, " x %", s, "]\n"]
                                  else ""
                           end))
+        val staticType = getTypeFromPointer "%Pointer"
+        val statics = String.concatV (Vector.mapi (statics,
+            fn (_, (_, SOME _)) => ""
+             | (i, (Static.T {location, ...}, NONE)) =>
+               concat ["@static_", Int.toString i, " = external hidden ",
+                       (case location of
+                            Static.ImmStatic => "constant "
+                          | _ => "global "),
+                        staticType,
+                       "\n"]))
     in
         print (concat [llvmIntrinsics, "\n", mltypes, "\n", ctypes (),
-                       "\n", globals, "\n"])
+                       "\n", globals, "\n", statics, "\n"])
     end
 
 fun outputChunkFn (cxt, chunk, print) =
@@ -1292,7 +1312,8 @@ fun outputChunks (cxt, chunks,
         val () = cFunctions := []
         val () = ffiSymbols := []
         val { done, print, file=_ } = outputLL ()
-        val () = outputLLVMDeclarations print
+        val Program.T {statics, ...} = program
+        val () = outputLLVMDeclarations (statics, print)
         val () = print "\n"
         val () = let
                     fun declareChunk (Chunk.T {chunkLabel, ...}) =
