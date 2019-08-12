@@ -246,7 +246,7 @@ struct
                   in
                      fromSizes (sizes, origin)
                   end
-              | Static {index, offset, ty} =>
+              | Static {index, offset, ...} =>
                   let
                      val offset = Bytes.toInt offset
                      val base = x86.Immediate.labelPlusInt

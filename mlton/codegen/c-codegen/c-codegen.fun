@@ -146,12 +146,10 @@ structure WordXVector =
 structure Static =
    struct
       local
-         structure WordSize' = WordSize
          structure WordX' = WordX
          structure WordXVector' = WordXVector
       in
          open Static
-         structure WordSize = WordSize'
          structure WordX = WordX'
          structure WordXVector = WordXVector'
       end
@@ -321,13 +319,6 @@ fun outputDeclarations
          in
             ()
          end
-      local
-         val cid = Counter.new 0
-         val cvar = Counter.new 0
-      in
-         val nextId = fn () => Counter.next cid
-         val nextStaticVar = fn () => Counter.next cvar
-      end
       fun staticVar i =
          "static_" ^ Int.toString i
       fun headerSize i =
@@ -339,7 +330,7 @@ fun outputDeclarations
 
       fun declareStatics () =
          (Vector.foreachi
-          (statics, fn (i, (Machine.Static.T {data, header, location}, g)) =>
+          (statics, fn (i, (Machine.Static.T {data, header, location}, _)) =>
              let
                 val dataC = Static.Data.toC staticAddress data
                 datatype dataType =
@@ -394,7 +385,7 @@ fun outputDeclarations
 
          (print "static struct GC_objectInit objectInits[] = {\n"
           ; (Vector.foreachi
-             (statics, fn (i, (Machine.Static.T {data, header, location}, g)) =>
+             (statics, fn (i, (Machine.Static.T {data, header, ...}, g)) =>
              let
                 val (dataWidth, dataSize) = Static.Data.size data
                 val dataBytes = dataSize * (Bytes.toInt (WordSize.bytes dataWidth))
@@ -414,7 +405,7 @@ fun outputDeclarations
       fun declareStaticInits () =
          (print "static void static_Init() {\n"
           ; (Vector.foreachi
-             (statics, fn (i, (Machine.Static.T {data, header, location}, g)) =>
+             (statics, fn (i, (Machine.Static.T {data, header, location}, _)) =>
              let
                 val shouldInit =
                    (case location of
@@ -1280,7 +1271,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
 
       fun declareStatics (prefix: string, print) =
          Vector.foreachi (statics,
-            fn (i, (Static.T {header, ...}, _)) =>
+            fn (i, (Static.T _, _)) =>
                print (concat [prefix, "PointerAux static_", C.int i, ";\n"]))
 
       fun outputChunks chunks =

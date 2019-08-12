@@ -37,7 +37,6 @@ in
    structure Var = Var
    structure WordSize = WordSize
    structure WordX = WordX
-   structure WordXVector = WordXVector
 end
 structure S = Ssa2
 local
