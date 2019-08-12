@@ -1561,21 +1561,27 @@ structure ConRep =
          : 'a staticOrElem =
          case r of
             ShiftAndTag {component, tag, ...} =>
-               (case Component.staticTuple (component, {src=src}) of
-                  Static.Data.Word w =>
-                   let
-		      val shift = (WordX.fromIntInf
-                                   (Bits.toIntInf
-                                    (WordSize.bits
-                                     (WordX.size tag)),
-                                   WordSize.shiftArg))
-                      val w = WordX.resize (w, width)
-                      val w = WordX.lshift (w, shift)
-                      val mask = WordX.resize (tag, width)
-                   in
-                      (Elem o Static.Data.Word o WordX.orb) (w, mask)
-                   end
-                | _ => Error.bug "PackedRepresentation.ConRep.staticConApp: bad component")
+               let
+                  val w =
+                     (case Component.staticTuple (component, {src=src}) of
+                        Static.Data.Word w => w
+                      | Static.Data.Real r =>
+                         (case RealX.castToWord r of
+                              SOME w => w
+                            | NONE => Error.bug
+                            "PackedRepresentation.Component.staticConApp: unexpected real")
+                      | _ => Error.bug "PackedRepresentation.ConRep.staticConApp: bad component")
+                  val shift = (WordX.fromIntInf
+                               (Bits.toIntInf
+                                (WordSize.bits
+                                 (WordX.size tag)),
+                               WordSize.shiftArg))
+                  val w = WordX.resize (w, width)
+                  val w = WordX.lshift (w, shift)
+                  val mask = WordX.resize (tag, width)
+               in
+                  (Elem o Static.Data.Word o WordX.orb) (w, mask)
+               end
           | Tag {tag, ...} => (Elem o Static.Data.Word o WordX.resize) (tag, width)
           | Tuple tr => TupleRep.staticTuple (tr, {location = location, src = src})
 
