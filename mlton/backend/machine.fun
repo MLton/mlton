@@ -1145,7 +1145,7 @@ structure Program =
                                                          result = ty,
                                                          scale = scale})
                       | Static {index, ty, ...} =>
-                           0 < index andalso index < Vector.length statics
+                           0 <= index andalso index < Vector.length statics
                            andalso
                            (Type.isCPointer ty orelse Type.isObjptr ty)
                       | StackTop => true
