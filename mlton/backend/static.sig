@@ -5,11 +5,14 @@
  *)
 
 signature STATIC_STRUCTS = sig
-   structure WordX: WORD_X
+   structure RealSize: REAL_SIZE
+   structure RealX: REAL_X
    structure WordSize: WORD_SIZE
+   structure WordX: WORD_X
    structure WordXVector: WORD_X_VECTOR
    structure ObjptrTycon: OBJPTR_TYCON
    structure Runtime: RUNTIME
+   sharing RealX.RealSize = RealSize
    sharing WordX.WordSize = WordSize
    sharing WordXVector.WordSize = WordSize
    sharing WordXVector.WordX = WordX
@@ -23,6 +26,7 @@ signature STATIC =
          datatype 'a elem =
             Address of 'a (* must be statically allocated *)
           | Word of WordX.t
+          | Real of RealX.t
 
          datatype 'a t =
             Empty of Bytes.t

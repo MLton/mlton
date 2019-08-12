@@ -13,6 +13,7 @@ functor Static (S: STATIC_STRUCTS): STATIC =
          datatype 'a elem =
             Address of 'a (* must be statically allocated *)
           | Word of WordX.t (* must be pointer-sized *)
+          | Real of RealX.t
          datatype 'a t =
             Empty of Bytes.t
           | Object of ('a elem) list
@@ -23,13 +24,15 @@ functor Static (S: STATIC_STRUCTS): STATIC =
                  Empty b => Empty b
                | Object es => (Object o List.map) (es,
                   fn Address a => Address (f a)
-                   | Word wx => Word wx)
+                   | Word wx => Word wx
+                   | Real rx => Real rx)
                | Vector wxv => Vector wxv
 
          fun layoutElem layoutI =
             let open Layout
             in fn Address i => layoutI i
                 | Word w => WordX.layout (w, {suffix=true})
+                | Real r => RealX.layout (r, {suffix=true})
             end
 
          fun layout layoutI =

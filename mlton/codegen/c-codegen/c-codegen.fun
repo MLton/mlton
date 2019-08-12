@@ -57,6 +57,16 @@ structure C =
          call ("\tPush", [bytes size], print)
    end
 
+structure RealSize =
+   struct
+      open RealSize
+
+      fun toC (rs: t): string =
+         case rs of
+            R32 => "32"
+          | R64 => "64"
+   end
+
 structure RealX =
    struct
       open RealX
@@ -146,10 +156,12 @@ structure WordXVector =
 structure Static =
    struct
       local
+         structure RealX' = RealX
          structure WordX' = WordX
          structure WordXVector' = WordXVector
       in
          open Static
+         structure RealX = RealX'
          structure WordX = WordX'
          structure WordXVector = WordXVector'
       end
@@ -164,7 +176,8 @@ structure Static =
              | Object es =>
                   let
                      val elemToC =
-                        fn Word wx => WordX.toC wx
+                        fn Real rx => RealX.toC rx
+                         | Word wx => WordX.toC wx
                          | Address i => indexToC i
                   in
                      (SOME o String.concatWith)
@@ -340,7 +353,8 @@ fun outputDeclarations
                    case data of
                       Static.Data.Object es =>
                          (TObject o List.map) (es,
-                           fn Static.Data.Word w => "Word" ^ WordSize.toC (WordX.size w)
+                           fn Static.Data.Real r => "Real" ^ RealSize.toC (RealX.size r)
+                            | Static.Data.Word w => "Word" ^ WordSize.toC (WordX.size w)
                             | Static.Data.Address _ => "Pointer")
                     | Static.Data.Vector v =>
                          TVector ("Word" ^ WordSize.toC (WordXVector.elementSize v), WordXVector.length v)

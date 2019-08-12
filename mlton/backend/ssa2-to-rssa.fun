@@ -1760,6 +1760,9 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                      fun word w =
                         (setGlobalStatic (var, SOME (Word w));
                          pushKeep st)
+                     fun real r =
+                        (setGlobalStatic (var, SOME (Real r));
+                         pushKeep st)
                      fun 'a static (mk: S.Type.t * location * 'a ->
                                     Var.t PackedRepresentation.staticOrElem, isEmpty, a: 'a) =
                         let
@@ -1787,6 +1790,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                            (case c of
                                Const.WordVector wxv => static (makeWordXVector, false, wxv)
                              | Const.Word w => word w
+                             | Const.Real r => real r
                              | _ => keep ())
                       | S.Exp.Inject {variant, ...} =>
                            copy variant

@@ -41,6 +41,9 @@ signature BACKEND_ATOMS' =
       sharing WordSize = Type.WordSize
       sharing WordX = Type.WordX
       sharing WordXVector = Type.WordXVector
+
+      sharing RealSize = Static.RealSize
+      sharing RealX = Static.RealX
       sharing WordSize = Static.WordSize
       sharing WordX = Static.WordX
       sharing WordXVector = Static.WordXVector

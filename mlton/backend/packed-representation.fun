@@ -491,7 +491,7 @@ structure Component =
                   val src = fn i =>
                      case src i of
                         Static.Data.Word w => w
-                      | Static.Data.Address _ =>
+                      | _ =>
                            Error.bug "PackedRepresentation.Component.staticTuple: bad component"
                in
                   (Static.Data.Word o WordRep.staticTuple) (wr, {src = src})

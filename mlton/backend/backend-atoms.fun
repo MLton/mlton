@@ -27,8 +27,10 @@ structure BackendAtoms =
 
       structure Static = Static (structure ObjptrTycon = ObjptrTycon
                                  structure Runtime = Runtime
-                                 structure WordX = WordX
+                                 structure RealSize = RealSize
+                                 structure RealX = RealX
                                  structure WordSize = WordSize
+                                 structure WordX = WordX
                                  structure WordXVector = WordXVector)
       structure Type = RepType
    end
