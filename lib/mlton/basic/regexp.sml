@@ -11,12 +11,6 @@
  * which I will refer to in comments as the Dragon Book.
  *)
 local
-   fun ++ (r: int ref): int =
-      let
-         val n = 1 + !r
-         val _ = r := n
-      in n
-      end
 
    val numChars: int = Char.maxOrd + 1
 
@@ -415,7 +409,7 @@ local
                val saves = Vector.fromList saves
                val numStates = numPos + 1
                val start = numPos
-               val posCounter = ref ~1
+               val posCounter = Counter.new 0
                val follow: MatchAction.t vector option Array2.t =
                   Array2.new (numStates, numStates, NONE)
                val posChars = Array2.tabulate (numPos, numChars, fn _ => false)
@@ -461,7 +455,7 @@ local
                val anchorStarts = ref []
                fun anchor r =
                   let
-                     val i = ++ posCounter
+                     val i = Counter.next posCounter
                      val _ = List.push (r, i)
                      val first = singleton i
                   in
@@ -482,7 +476,7 @@ local
                    | Regexp.AnchorStart => anchor anchorStarts
                    | Regexp.CharSet f =>
                         let
-                           val i = ++ posCounter
+                           val i = Counter.next posCounter
                            val _ =
                               Int.for
                               (0, numChars, fn c =>
@@ -636,7 +630,7 @@ local
                     fn ((j, v), (j', v')) =>
                     j = j' andalso Vector.equals (v, v', MatchAction.equals)))
                (* Compute charClass. *)
-               val repCounter = ref ~1
+               val repCounter = Counter.new 0
                val reps = ref [] (* representative of each char class *)
                val charClass = Array.new (numChars, ~1)
                val _ = 
@@ -647,14 +641,14 @@ local
                                                  charEquiv (c, char)) of
                                     NONE =>
                                        let
-                                          val rep = ++ repCounter
+                                          val rep = Counter.next repCounter
                                        in List.push (reps, {char = c, rep = rep})
                                           ; rep
                                        end
                                   | SOME {rep, ...} => rep
                            in Array.update (charClass, c, rep)
                            end)
-               val numClasses = 1 + !repCounter
+               val numClasses = Counter.value repCounter
                (* Compute "next" for the charClasses. *)
                val next' =
                   Array2.new (numStates, numClasses, Array.fromList [])
@@ -922,7 +916,7 @@ local
                 * order of state index.
                 *)
                type states = NFA.State.t array
-               val counter = ref ~1
+               val counter = Counter.new 0
                type work =
                   {states: states,
                    state: int,
@@ -941,7 +935,7 @@ local
                                      Array.equals (ss, states, op =)) of
                         NONE =>
                            let
-                              val state = ++ counter
+                              val state = Counter.next counter
                               val work = {out = ref NONE,
                                           state = state,
                                           states = ss}
@@ -1035,7 +1029,7 @@ local
                    end)
                val _ = loop ()
                (* The worklist is empty.  Compute the transition table. *)
-               val numStates = 1 + !counter
+               val numStates = Counter.value counter
                val next' = Array2.new (numStates, numCharClasses,
                                        (~1, Vector.new0 ()))
                val final' = Array.new (numStates, NONE)
@@ -1274,9 +1268,9 @@ local
  *             val numCharClasses = numCharClasses dfa
  *             type class = int list
  *             type classes = class list
- *             val repCounter = ref ~1
+ *             val repCounter = Counter.new 0
  *             val change = ref false
- *             fun newRep () = (change := true; ++ repCounter)
+ *             fun newRep () = (change := true; Counter.next repCounter)
  *             val finRep = newRep ()
  *             val nonfinRep = newRep ()
  *             val r = Array.tabulate (numStates, fn i =>
@@ -1347,7 +1341,7 @@ local
  *                             then (i :: f, n)
  *                          else (f, i :: n))
  *             val _ = refineAll [fin, nonfin]
- *             val numStates' = 1 + !repCounter
+ *             val numStates' = Counter.value repCounter
  *             (* Compute reachable states. *)
  *             val reached = Array.new (numStates', false)
  *             fun visit (s: int (* an old state *)): unit =
@@ -1363,12 +1357,12 @@ local
  *             val _ = visit start
  *             val _ = visit anchorStart
  *             (* Compute new representatives. *)
- *             val c = ref ~1
+ *             val c = Counter.new 0
  *             val newR = Array.tabulate (numStates', fn s =>
  *                                        if Array.sub (reached, s)
- *                                           then ++ c
+ *                                           then Counter.next c
  *                                        else ~1)
- *             val numStates' = 1 + !c
+ *             val numStates' = Counter.value c
  *             val _ = Array.modify (r, fn s => Array.sub (newR, s))
  *             val next' = Array2.new (numStates', numCharClasses, ~1)
  *             val _ =

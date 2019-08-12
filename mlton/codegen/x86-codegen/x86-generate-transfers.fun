@@ -465,25 +465,17 @@ struct
                                    {registers = [Register.esp]})
 
         local
-           val set: (word * String.t * Label.t) HashSet.t =
-              HashSet.new {hash = #1}
+           val set: (String.t, Label.t) HashTable.t =
+              HashTable.new {hash = String.hash, equals = String.equals}
         in
            fun makeDarwinSymbolStubLabel name =
-              let
-                 val hash = String.hash name
-              in
-                 (#3 o HashSet.lookupOrInsert)
-                 (set, hash,
-                  fn (hash', name', _) =>
-                  hash = hash' andalso name = name',
-                  fn () =>
-                  (hash, name,
-                   Label.newString (concat ["L_", name, "_stub"])))
-              end
+               (HashTable.lookupOrInsert)
+               (set, name, fn () =>
+                Label.newString (concat ["L_", name, "_stub"]))
 
            fun makeDarwinSymbolStubs () =
-              HashSet.fold
-              (set, [], fn ((_, name, label), assembly) =>
+              HashTable.foldi
+              (set, [], fn (name, label, assembly) =>
                  (Assembly.pseudoop_symbol_stub ()) ::
                  (Assembly.label label) ::
                  (Assembly.pseudoop_indirect_symbol (Label.fromString name)) ::

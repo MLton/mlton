@@ -576,6 +576,13 @@ fun makeOptions {usage} =
        (Expert, "llvm-as-opt-quote", " <opt>", "pass (quoted) option to llvm assembler",
         SpaceString
         (fn s => List.push (llvm_asOpts, {opt = s, pred = OptPred.Yes}))),
+       (Expert, "llvm-aamd", " {none|tbaa}",
+        "Include alias-analysis metadata when compiling with LLVM",
+        SpaceString
+        (fn s =>
+         llvmAAMD := (case LLVMAliasAnalysisMetaData.fromString s of
+                         SOME aamd => aamd
+                       | NONE => usage (concat ["invalid -llvm-aamd flag: ", s])))),
        (Expert, "llvm-llc", " <llc>", "path to llvm .bc -> .o compiler",
         SpaceString (fn s => llvm_llc := s)),
        (Normal, "llvm-llc-opt", " <opt>", "pass option to llvm compiler",
@@ -1571,11 +1578,10 @@ fun commandLine (args: string list): unit =
                   fun compileSrc sel =
                      let
                         val outputs: File.t list ref = ref []
-                        val r = ref 0
+                        val r = Counter.generator 0
                         fun make (style: style, suf: string) () =
                            let
-                              val suf = concat [".", Int.toString (!r), suf]
-                              val _ = Int.inc r
+                              val suf = concat [".", Int.toString (r ()), suf]
                               val file = (if !keepGenerated
                                              orelse stop = Place.Generated
                                              then maybeOutBase

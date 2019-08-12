@@ -31,9 +31,9 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                               Property.initRaise ("varIndex", Var.layout))
       val setVarIndex =
          let
-            val c = Counter.new 0
+            val c = Counter.generator 0
          in
-            fn x => setVarIndex (x, Counter.next c)
+            fn x => setVarIndex (x, c ())
          end
       (* Keep track of the replacements of variables. *)
       val {get = replace: Var.t -> Var.t option, set = setReplace, ...} =

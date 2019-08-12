@@ -663,13 +663,11 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 
       val newObjectTypes = ref []
       local
-         val h = HashSet.new {hash = fn {bits, ...} =>
-                              Bits.toWord bits}
+         val h = HashTable.new {hash = Bits.toWord, equals = Bits.equals }
       in
          fun allocRawOpt width =
-            (#opt o HashSet.lookupOrInsert)
-            (h, Bits.toWord width,
-             fn {bits, ...} => Bits.equals (bits, width),
+            HashTable.lookupOrInsert
+            (h, width,
              fn () =>
              let
                 val rawElt = Type.bits width
@@ -677,11 +675,11 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                 val rawOpt = ObjptrTycon.new ()
                 val () =
                    ObjptrTycon.setIndex
-                   (rawOpt, Vector.length objectTypes + HashSet.size h)
+                   (rawOpt, Vector.length objectTypes + HashTable.size h)
                 val () =
                    List.push (newObjectTypes, rawTy)
              in
-                {bits = width, opt = rawOpt}
+                rawOpt
              end)
       end
 

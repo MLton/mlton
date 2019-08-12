@@ -31,6 +31,7 @@ signature WORD_SIZE =
       val csize: unit -> t
       val equals: t * t -> bool
       val fromBits: Bits.t -> t
+      val hash: t -> word
       val isInRange: t * IntInf.t * {signed: bool} -> bool
       val max: t * {signed: bool} -> IntInf.t
       val min: t * {signed: bool} -> IntInf.t

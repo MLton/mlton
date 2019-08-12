@@ -1159,31 +1159,22 @@ in
 end
 
 local
-   val table: {hash: word,
-               prim: unit t,
-               string: string} HashSet.t =
-      HashSet.new {hash = #hash}
+   val table : (string, unit t) HashTable.t =
+      HashTable.new {hash = String.hash, equals = String.equals}
    val () =
       List.foreach (all, fn prim =>
                     let
                        val string = toString prim
-                       val hash = String.hash string
-                       val _ =
-                          HashSet.lookupOrInsert (table, hash,
-                                                  fn _ => false,
-                                                  fn () => {hash = hash,
-                                                            prim = prim,
-                                                            string = string})
                     in
-                       ()
+                       (ignore o HashTable.lookupOrInsert)
+                       (table, string, fn () => prim)
                     end)
 in
    val fromString: string -> 'a t option =
       fn name =>
       Option.map
-      (HashSet.peek
-       (table, String.hash name, fn {string, ...} => name = string),
-       fn {prim, ...} => cast prim)
+      (HashTable.peek (table, name),
+       cast)
 end
 
 local

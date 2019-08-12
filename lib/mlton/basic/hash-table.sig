@@ -10,7 +10,10 @@ signature HASH_TABLE =
    sig
       type ('a, 'b) t
 
-      val fold: ('a, 'b) t * 'c * (('a * 'b) * 'c -> 'c) -> 'c
+      val fold: ('a, 'b) t * 'c * ('b * 'c -> 'c) -> 'c
+      val foldi: ('a, 'b) t * 'c * ('a * 'b * 'c -> 'c) -> 'c
+      val foreach: ('a, 'b) t * ('b -> unit) -> unit
+      val foreachi: ('a, 'b) t * ('a * 'b -> unit) -> unit
       val insertIfNew: ('a, 'b) t * 'a * (unit -> 'b) * ('b -> unit) -> 'b
       val layout: ('a * 'b -> Layout.t) -> ('a, 'b) t -> Layout.t
       val lookupOrInsert: ('a, 'b) t * 'a * (unit -> 'b) -> 'b

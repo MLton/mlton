@@ -91,8 +91,8 @@ fun elaborateMLB (mlb : Basdec.t, {addPrim}) =
 
       fun elabProg p = ElaboratePrograms.elaborateProgram (p, {env = E})
 
-      val psi : (File.t * Env.Basis.t Promise.t) HashSet.t =
-         HashSet.new {hash = String.hash o #1}
+      val psi : (File.t, Env.Basis.t Promise.t) HashTable.t =
+         HashTable.new {hash = String.hash, equals = String.equals}
 
       val elabBasexpInfo = Trace.info "ElaborateMLBs.elabBasexp"
       val elabBasdecInfo = Trace.info "ElaborateMLBs.elabBasdec"
@@ -103,7 +103,7 @@ fun elaborateMLB (mlb : Basdec.t, {addPrim}) =
                            Layout.ignore)
          (fn (basexp: Basexp.t) =>
           case Basexp.node basexp of
-             Basexp.Bas basdec => 
+             Basexp.Bas basdec =>
                 let
                    val ((), B) =
                       Env.makeBasis (E, fn () => elabBasdec basdec)
@@ -171,21 +171,19 @@ fun elaborateMLB (mlb : Basdec.t, {addPrim}) =
                 end
            | Basdec.MLB ({fileAbs, ...}, basdec) =>
                 let
-                   val (_, B) =
-                      HashSet.lookupOrInsert
-                      (psi, String.hash fileAbs, fn (fileAbs', _) => 
-                       String.equals (fileAbs, fileAbs'), fn () =>
+                   val B =
+                      HashTable.lookupOrInsert
+                      (psi, fileAbs,
+                       fn () =>
                        let
                           val basdec = Promise.force basdec
-                          val B =
-                             Promise.delay
-                             (fn () =>
-                              emptySnapshot
-                              (fn () =>
-                               (#2 o Env.makeBasis) 
-                               (E, fn () => elabBasdec basdec)))
                        in
-                          (fileAbs, B)
+                          Promise.delay
+                          (fn () =>
+                           emptySnapshot
+                           (fn () =>
+                            (#2 o Env.makeBasis) 
+                            (E, fn () => elabBasdec basdec)))
                        end)
                    val B = Promise.force B
                            handle Promise.Force =>

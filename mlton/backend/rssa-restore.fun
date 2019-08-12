@@ -238,18 +238,18 @@ fun restoreFunction {main: Function.t}
                   else ()
 
         (* init violations *)
-        val index = ref 0
+        val index = Counter.new 0
         val violations
           = Vector.fromListMap
             (!violations, fn x =>
              let
                val vi = varInfo x
-               val _ = VarInfo.index vi := (!index)
-               val _ = Int.inc index
+               val i = Counter.next index
+               val _ = VarInfo.index vi := i
              in
                x
              end)
-        val numViolations = !index
+        val numViolations = Counter.value index
 
         (* Diagnostics *)
         val _ = Control.diagnostics

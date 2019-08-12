@@ -12,22 +12,17 @@ structure UniqueString:
       val unique: string -> string
    end =
    struct
-      val set: {counter: Counter.t,
-                hash: word,
-                original: string} HashSet.t =
-         HashSet.new {hash = #hash}
+      val counters: (string, Counter.t) HashTable.t =
+         HashTable.new {hash = String.hash, equals = String.equals}
 
-      fun unique (s: string): string =
+      fun unique (original: string): string =
          let
-            val hash = String.hash s
-            val {counter, ...} =
-               HashSet.lookupOrInsert
-               (set, hash, fn {original, ...} => s = original,
-                fn () => {counter = Counter.new 0,
-                          hash = hash,
-                          original = s})
+            val c =
+               HashTable.lookupOrInsert
+               (counters, original,
+                fn () => Counter.new 0)
          in
-            concat [s, "_", Int.toString (Counter.next counter)]
+            concat [original, "_", Int.toString (Counter.next c)]
          end
    end
 

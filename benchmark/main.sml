@@ -189,7 +189,7 @@ fun batch ab =
   concat [batch_ ab, ".sml"]
 
 local
-   val n = Counter.new 0
+   val next = Counter.generator 0
 in
    fun makeMLton commandPattern =
       case ChoicePattern.expand commandPattern of
@@ -198,7 +198,7 @@ in
             List.map
             (cmds, fn cmd =>
              let
-                val abbrv = "MLton" ^ (Int.toString (Counter.next n))
+                val abbrv = "MLton" ^ (Int.toString (next ()))
              in
                 {name = cmd,
                  abbrv = abbrv,

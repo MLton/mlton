@@ -73,22 +73,13 @@ in
 end
 
 local
-   val set: {hash: word,
-             name: string,
-             sourceInfo: t} HashSet.t =
-      HashSet.new {hash = #hash}
+   val table: (string, t) HashTable.t =
+      HashTable.new {equals = String.equals,
+                     hash = String.hash}
 in   
    fun fromC (name: string) =
-      let
-         val hash = String.hash name
-      in
-         #sourceInfo
-         (HashSet.lookupOrInsert
-          (set, hash, fn {hash = h, ...} => hash = h,
-           fn () => {hash = hash,
-                     name = name,
-                     sourceInfo = new (C name)}))
-      end
+      HashTable.lookupOrInsert
+      (table, name, fn () => new (C name))
 end
 
 fun function {name, region} =

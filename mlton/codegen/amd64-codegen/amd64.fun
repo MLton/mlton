@@ -695,7 +695,7 @@ struct
     struct
       structure Class =
         struct
-          val counter = Counter.new 0
+          val nextCounter = Counter.generator 0
           datatype t = T of {counter: int,
                              name: string}
 
@@ -709,7 +709,7 @@ struct
 
           fun new {name}
             = let
-                val class = T {counter = Counter.next counter,
+                val class = T {counter = nextCounter (),
                                name = name}
               in
                 class
@@ -848,7 +848,7 @@ struct
            => utilized
 
       local
-        val counter = Counter.new 0
+        val nextCounter = Counter.generator 0
         val table: t HashSet.t ref = ref (HashSet.new {hash = hash})
       in
         val construct 
@@ -863,7 +863,7 @@ struct
                    fn () => T {memloc = memloc,
                                hash = hash,
                                plist = PropertyList.new (),
-                               counter = Counter.next counter,
+                               counter = nextCounter (),
                                utilized = utilizedU memloc})
                 end
 
@@ -1160,14 +1160,13 @@ struct
            end
 
       local
-        val num : int ref = ref 0
+        val nextNum = Counter.generator 0
       in
-        val temp = fn {size} => (Int.inc num;
-                                 imm {base = Immediate.zero,
-                                      index = Immediate.int (!num),
-                                      scale = Scale.One,
-                                      size = size,
-                                      class = Class.Temp})
+        val temp = fn {size} => imm {base = Immediate.zero,
+                                     index = Immediate.int (nextNum ()),
+                                     scale = Scale.One,
+                                     size = size,
+                                     class = Class.Temp}
       end
 
       (*
@@ -2653,16 +2652,11 @@ struct
     struct
       structure Id = 
         struct
-          val num : int ref = ref 0
+          val nextNum = Counter.generator 0
           datatype t = T of {num : int,
                              plist: PropertyList.t}
-          fun new () = let
-                         val id = T {num = !num,
-                                     plist = PropertyList.new ()}
-                         val _ = Int.inc num
-                       in
-                         id
-                       end
+          fun new () = T {num = nextNum (),
+                          plist = PropertyList.new ()}
           val plist = fn T {plist, ...} => plist
           val layout
             = let

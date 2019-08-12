@@ -93,8 +93,8 @@ val lexAndParseString =
       val cwd = Dir.current ()
       val relativize = SOME cwd
       val state = {cwd = cwd, relativize = relativize, seen = []}
-      val psi : (File.t * Ast.Basdec.t Promise.t) HashSet.t =
-         HashSet.new {hash = String.hash o #1}
+      val psi : (File.t, Ast.Basdec.t Promise.t) HashTable.t =
+         HashTable.new {hash = String.hash, equals = String.equals}
       local
          val pathMap =
              Control.mlbPathMap ()
@@ -228,28 +228,21 @@ val lexAndParseString =
                                                    File.layout f])))
                             ; Ast.Basdec.empty
                    end)
-                else 
-                   let
-                      val (_, basdec) =
-                         HashSet.lookupOrInsert
-                         (psi, String.hash fileAbs, fn (fileAbs', _) =>
-                          String.equals (fileAbs, fileAbs'), fn () =>
-                          let
-                             val cwd = OS.Path.dir fileAbs
-                             val basdec =
-                                Promise.delay
-                                (fn () =>
-                                 wrapLexAndParse
-                                 ({cwd = cwd,
-                                   relativize = relativize,
-                                   seen = seen'},
-                                  lexAndParseFile, fileUse))
-                          in
-                             (fileAbs, basdec)
-                          end)
-                   in
-                      Promise.force basdec
-                   end
+                else
+                   (Promise.force o HashTable.lookupOrInsert)
+                      (psi, fileAbs,
+                       fn () =>
+                       let
+                          val cwd = OS.Path.dir fileAbs
+                       in
+                          Promise.delay
+                          (fn () =>
+                           wrapLexAndParse
+                           ({cwd = cwd,
+                             relativize = relativize,
+                             seen = seen'},
+                            lexAndParseFile, fileUse))
+                       end)
              end})))
       and lexAndParseProgOrMLB {cwd, relativize, seen}
                                (fileOrig: File.t, reg: Region.t) =
