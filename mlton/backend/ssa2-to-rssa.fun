@@ -1743,6 +1743,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                   elem=fn v =>
                   case globalStatic v of
                      SOME static => static
+
                    | NONE => Error.bug "translateGlobalStatics.makeObject.elem",
                   location=location,
                   objectTy=ty}
@@ -1795,10 +1796,15 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                       | S.Exp.Inject {variant, ...} =>
                            copy variant
                       | S.Exp.Object {args, con} =>
+
                            let
                               val location = getLocation (ty, false)
                            in
-                              if Vector.exists (args, Option.isNone o globalStatic)
+                              if Vector.exists (args, fn v =>
+                                        case globalStatic v of
+                                             NONE => true
+                                           | SOME (Real _) => RealX.disableCF ()
+                                           | _ => false)
                               (* For objects, there's no reason to statically initalize,
                                * since they're so small and irregular *)
                               orelse location = Static.Heap

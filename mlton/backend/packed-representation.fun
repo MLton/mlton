@@ -27,6 +27,7 @@ in
    structure ObjptrTycon = ObjptrTycon
    structure Prim = Prim
    structure RealSize = RealSize
+   structure RealX = RealX
    structure Runtime = Runtime
    structure Scale = Scale
    structure Statement = Statement
@@ -491,11 +492,16 @@ structure Component =
                   val src = fn i =>
                      case src i of
                         Static.Data.Word w => w
-                      | _ =>
-                           Error.bug "PackedRepresentation.Component.staticTuple: bad component"
-               in
-                  (Static.Data.Word o WordRep.staticTuple) (wr, {src = src})
-               end
+
+                       | Static.Data.Real r =>
+                          (case RealX.castToWord r of
+                               SOME w => w
+                             | NONE => Error.bug
+                             "PackedRepresentation.Component.staticTuple: unexpected real")
+                       | _ => Error.bug "PackedRepresentation.Component.staticTuple: bad component"
+                in
+                   (Static.Data.Word o WordRep.staticTuple) (wr, {src = src})
+                end
    end
 
 structure Unpack =
