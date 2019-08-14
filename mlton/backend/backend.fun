@@ -424,6 +424,24 @@ fun toMachine (rssa: Rssa.Program.t) =
       val exnStackOp = runtimeOp GCField.ExnStack
       val stackBottomOp = runtimeOp GCField.StackBottom
       val stackTopOp = runtimeOp GCField.StackTop
+
+      val rec isWord =
+         fn M.Operand.Word _ => true
+          | M.Operand.Cast (z, _) => isWord z
+          | _ => false
+      fun bogusOp (t: Type.t): M.Operand.t =
+         case Type.deReal t of
+            NONE => let
+                       val bogusWord =
+                          M.Operand.Word
+                          (WordX.zero
+                           (WordSize.fromBits (Type.width t)))
+                    in
+                       case Type.deWord t of
+                          NONE => M.Operand.Cast (bogusWord, t)
+                        | SOME _ => bogusWord
+                    end
+          | SOME s => globalReal (RealX.zero s)
       fun translateOperand (oper: R.Operand.t): M.Operand.t =
          let
             datatype z = datatype R.Operand.t
@@ -436,9 +454,14 @@ fun toMachine (rssa: Rssa.Program.t) =
                   let
                      val base = translateOperand base
                   in
-                     M.Operand.Offset {base = base,
-                                       offset = offset,
-                                       ty = ty}
+                    (* Native codegens can't handle this;
+                     * Dead code may treat small constant
+                     * intInfs are large and take offsets *)
+                     if isWord base
+                     then bogusOp ty
+                     else M.Operand.Offset {base = base,
+                                            offset = offset,
+                                            ty = ty}
                   end
              | ObjptrTycon opt =>
                   M.Operand.Word
@@ -451,11 +474,14 @@ fun toMachine (rssa: Rssa.Program.t) =
                   let
                      val base = translateOperand base
                   in
-                     M.Operand.SequenceOffset {base = base,
-                                               index = translateOperand index,
-                                               offset = offset,
-                                               scale = scale,
-                                               ty = ty}
+                     if isWord base
+                     then bogusOp ty
+                     else M.Operand.SequenceOffset
+                              {base = base,
+                               index = translateOperand index,
+                               offset = offset,
+                               scale = scale,
+                               ty = ty}
                   end
              | Static s => globalStatic s
              | Var {var, ...} => varOperand var
