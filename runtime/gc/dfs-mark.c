@@ -114,6 +114,7 @@ mark:
   assert (not isPointerMarkedByMode (cur, mode));
   assert (header == getHeader (cur));
   assert (headerp == getHeaderp (cur));
+  assert (isPointerInHeap (s, cur));
   header ^= MARK_MASK;
   /* Store the mark.  In the case of an object that contains a pointer to
    * itself, it is essential that we store the marked header before marking
@@ -140,9 +141,9 @@ markInNormal:
     if (DEBUG_DFS_MARK)
       fprintf (stderr, "markInNormal  objptrIndex = %"PRIu32"\n", objptrIndex);
     assert (objptrIndex < numObjptrs);
-    // next = *(pointer*)todo;
     next = fetchObjptrToPointer (todo, s->heap.start);
-    if (not isPointerInHeap (s, next)) {
+    if (not isPointer (next) or
+        not isPointerInHeap (s, next)) {
 markNextInNormal:
       assert (objptrIndex < numObjptrs);
       objptrIndex++;
@@ -216,9 +217,9 @@ markInSequence:
     assert (sequenceIndex < getSequenceLength (cur));
     assert (objptrIndex < numObjptrs);
     assert (todo == indexSequenceAtObjptrIndex (s, cur, sequenceIndex, objptrIndex));
-    // next = *(pointer*)todo;
     next = fetchObjptrToPointer (todo, s->heap.start);
-    if (not (isPointerInHeap(s, next))) {
+    if (not isPointer (next) or
+        not isPointerInHeap (s, next)) {
 markNextInSequence:
       assert (sequenceIndex < getSequenceLength (cur));
       assert (objptrIndex < numObjptrs);
@@ -274,14 +275,14 @@ markInFrame:
       goto markInStack;
     }
     todo = top - frameInfo->size + frameOffsets [objptrIndex + 1];
-    // next = *(pointer*)todo;
     next = fetchObjptrToPointer (todo, s->heap.start);
     if (DEBUG_DFS_MARK)
       fprintf (stderr,
                "    offset %u  todo "FMTPTR"  next = "FMTPTR"\n",
                frameOffsets [objptrIndex + 1],
                (uintptr_t)todo, (uintptr_t)next);
-    if (not isPointerInHeap (s, next)) {
+    if (not isPointer (next) or
+        not isPointerInHeap (s, next)) {
       objptrIndex++;
       goto markInFrame;
     }
