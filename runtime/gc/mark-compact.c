@@ -52,6 +52,9 @@ void threadInternalObjptr (GC_state s, objptr *opp) {
 
   opop = pointerToObjptr ((pointer)opp, s->heap.start);
   p = objptrToPointer (*opp, s->heap.start);
+  if (not isPointerInHeap (s, p))
+      return;
+
   if (FALSE)
     fprintf (stderr,
              "threadInternal opp = "FMTPTR"  p = "FMTPTR"  header = "FMTHDR"\n",
@@ -196,6 +199,7 @@ thread:
     objptr newObjptr;
 
     assert (not (GC_VALID_HEADER_MASK & header));
+    assert (isPointerInHeap (s, (pointer)headerp));
     /* It's a pointer.  This object must be live.  Fix all the forward
      * pointers to it, store its header, then thread its internal
      * pointers.
@@ -327,6 +331,7 @@ unmark:
     objptr newObjptr;
 
     assert (not (GC_VALID_HEADER_MASK & header));
+    assert (isPointerInHeap (s, (pointer)headerp));
     /* It's a pointer.  This object must be live.  Fix all the
      * backward pointers to it.  Then unmark it.
      */
