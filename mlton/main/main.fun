@@ -1157,14 +1157,7 @@ fun commandLine (args: string list): unit =
              then opt :: ac
           else ac)
       val asOpts = addTargetOpts asOpts
-      val asOpts = if !debug
-                      then "-Wa,-g" :: asOpts
-                      else asOpts
       val ccOpts = addTargetOpts ccOpts
-      val ccOpts = ("-I" ^ targetIncDir) :: ccOpts
-      val ccOpts = if !debug
-                      then "-g" :: "-DASSERT=1" :: ccOpts
-                      else ccOpts
       val linkOpts = addTargetOpts linkOpts
       val linkOpts = if !debugRuntime then
                      "-lmlton-gdb" :: "-lgdtoa-gdb" :: linkOpts
@@ -1373,7 +1366,6 @@ fun commandLine (args: string list): unit =
                         atMLtons :=
                         Vector.fromList
                         (tokenize (rev ("--" :: (!runtimeArgs))))
-                     val (ccDebug, asDebug) = (["-g", "-DASSERT=1"], "-Wa,-g")
                      fun compileO (inputs: File.t list): unit =
                         let
                            val output =
@@ -1473,11 +1465,13 @@ fun commandLine (args: string list): unit =
                              List.concat
                              [tl cc,
                               [ "-c" ],
+                              if !debug
+                              then [ "-g", "-DASSERT=1" ] else [],
                               if !format = Executable
                               then [] else [ "-DLIBNAME=" ^ !libname ],
                               if positionIndependent
                               then [ "-fPIC", "-DPIC" ] else [],
-                              if !debug then ccDebug else [],
+                              [ "-I" ^ targetIncDir ],
                               ccOpts,
                               ["-o", output],
                               [input]])
@@ -1493,7 +1487,7 @@ fun commandLine (args: string list): unit =
                             List.concat
                             [tl cc,
                              ["-c"],
-                             if !debug then [asDebug] else [],
+                             if !debug then [ "-Wa,-g" ] else [],
                              asOpts,
                              ["-o", output],
                              [input]])
