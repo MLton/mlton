@@ -1517,8 +1517,10 @@ fun commandLine (args: string list): unit =
                            System.system
                            (llvm_llc,
                             List.concat
-                            [llvm_llcOpts,
-                             ["-filetype=obj"],
+                            [["-filetype=obj"],
+                             if positionIndependent
+                             then [ "-relocation-model=pic" ] else [],
+                             llvm_llcOpts,
                              ["-o", output],
                              [optBC]])
                      in
