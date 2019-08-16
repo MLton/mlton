@@ -57,6 +57,7 @@ structure Exn =
        * see:
        *  - /mlton/codegen/amd64-codegen/amd64-simplify.fun:elimALRedundant
        *  - /mlton/codegen/c-codegen/c-codegen.fun:outputStatementsFuseOpAndChk
+       *  - /mlton/codegen/llvm-codegen/llvm-codegen.fun:outputStatementsFuseOpAndChk
        *  - /mlton/codegen/x86-codegen/x86-simplify.fun:elimALRedundant
        *)
       val mkOverflow: ('a -> 'b) * ('a -> bool) -> ('a -> 'b) =
