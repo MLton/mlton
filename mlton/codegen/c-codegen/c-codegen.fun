@@ -1134,6 +1134,10 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                in
                   outputStatement s
                end
+            (* Fusing of adjacent `Word<N>_<op>` and `Word{S,U}<N>_<op>CheckP`
+             * primitives depends on the relative order of `!a` and `?a`
+             * in /basis-library/primitive/prim1.sml:mkOverflow
+             *)
             fun outputStatementsFuseOpAndChk statements =
                Vector.foreachi
                (statements, fn (i, s1) =>
