@@ -27,4 +27,7 @@
 typedef uintptr_t ChunkFn_t (CPointer, CPointer, CPointer, uintptr_t);
 typedef ChunkFn_t *ChunkFnPtr_t;
 
+PRIVATE uintptr_t MLton_unreachable();
+PRIVATE uintptr_t Thread_returnToC();
+
 #endif /* #ifndef _C_COMMON_H_ */

@@ -26,6 +26,8 @@ static inline uintptr_t getNextBlockFromStackTop (GC_state s) {
   return *(uintptr_t*)(s->stackTop - GC_RETURNADDRESS_SIZE);
 }
 
+PRIVATE uintptr_t MLton_unreachable() { return -2; }
+
 PRIVATE extern ChunkFnPtr_t const nextChunks[];
 
 static inline void MLton_trampoline (GC_state s, uintptr_t nextBlock, bool mayReturnToC) {
@@ -35,6 +37,7 @@ static inline void MLton_trampoline (GC_state s, uintptr_t nextBlock, bool mayRe
 }
 
 #define MLtonCallFromC()                                                \
+PRIVATE uintptr_t Thread_returnToC() { return -1; }                     \
 static void MLton_callFromC (CPointer localOpArgsResPtr) {              \
         uintptr_t nextBlock;                                            \
         GC_state s = MLton_gcState();                                   \

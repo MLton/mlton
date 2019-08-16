@@ -991,7 +991,8 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                         (push (return, size);
                          flushFrontier ();
                          flushStackTop ();
-                         print "\treturn (uintptr_t)-1;\n")
+                         print "\treturn ";
+                         print (C.call ("Thread_returnToC", [])))
                    | CCall {args, func, return} =>
                         let
                            val CFunction.T {return = returnTy, target, ...} = func
@@ -1047,7 +1048,8 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                               if CFunction.maySwitchThreadsFrom func
                                  then indJump (false, true, NONE)
                                  else (case return of
-                                          NONE => print "\treturn (uintptr_t)-2;\n"
+                                          NONE => (print "\treturn "
+                                                   ; print (C.call ("MLton_unreachable", [])))
                                         | SOME {return, ...} => gotoLabel (return, {tab = true}))
                         in
                            ()

@@ -162,7 +162,6 @@ structure LLVM =
                 Type.Word (WordX.size w))
             fun zero ws = word (WordX.zero ws)
             fun negOne ws = word (WordX.fromIntInf (~1, ws))
-            fun negTwo ws = word (WordX.fromIntInf (~2, ws))
          end
       structure Instr =
          struct
@@ -1355,10 +1354,24 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                      {target =
                                       CFunction.Target.Direct "Thread_returnToC", ...},
                                      return = SOME {return, size = SOME size}, ...} =>
-                        (push (return, size);
-                         flushFrontier ();
-                         flushStackTop ();
-                         $(ret (LLVM.Value.negOne (WordSize.cpointer ()))))
+                        let
+                           val _ = push (return, size)
+                           val _ = flushFrontier ();
+                           val _ = flushStackTop ();
+                           val tmp = newTemp (LLVM.Type.uintptr ())
+                           val fnptr =
+                              LLVM.ModuleContext.addFnDecl
+                              (mc, "@Thread_returnToC",
+                               {argTys = [],
+                                resTy = LLVM.Type.uintptr (),
+                                vis = SOME "hidden"})
+                           val _ = $(call {dst = tmp,
+                                           tail = NONE, cconv = NONE,
+                                           fnptr = fnptr, args = []})
+                           val _ = $(ret tmp)
+                        in
+                           ()
+                        end
                    | Transfer.CCall {args, func, return} =>
                         let
                            val CFunction.T {return = returnTy, target, symbolScope, ...} = func
@@ -1407,7 +1420,22 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                            fnptr = fnptr, args = args})
                            val _ =
                               case return of
-                                 NONE => $(ret (LLVM.Value.negTwo (WordSize.cpointer ())))
+                                 NONE =>
+                                    let
+                                       val tmp = newTemp (LLVM.Type.uintptr ())
+                                       val fnptr =
+                                          LLVM.ModuleContext.addFnDecl
+                                          (mc, "@MLton_unreachable",
+                                           {argTys = [],
+                                            resTy = LLVM.Type.uintptr (),
+                                            vis = SOME "hidden"})
+                                       val _ = $(call {dst = tmp,
+                                                       tail = NONE, cconv = NONE,
+                                                       fnptr = fnptr, args = []})
+                                       val _ = $(ret tmp)
+                                    in
+                                       ()
+                                    end
                                | SOME {return, ...} =>
                                     let
                                        val _ = if CFunction.modifiesFrontier func then cacheFrontier () else ()
