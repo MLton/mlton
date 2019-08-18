@@ -1151,31 +1151,53 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                (case Vector.sub (statements, i + 1) of
                                    s2 as Statement.PrimApp {args = args2, dst = SOME dst2, prim = prim2} =>
                                       if Vector.equals (args1, args2, Operand.equals)
-                                         andalso chk prim2
-                                         then let
-                                                 val name =
-                                                    String.substituteFirst
-                                                    (Prim.toString prim2,
-                                                     {substring = "CheckP",
-                                                      replacement = "AndCheck"})
-                                                 val _ =
-                                                    if !Control.codegenComments > 1
-                                                       then (print "\t/* "
-                                                             ; print (Layout.toString (Statement.layout s1))
-                                                             ; print " */\n"
-                                                             ; print "\t/* "
-                                                             ; print (Layout.toString (Statement.layout s2))
-                                                             ; print " */\n")
-                                                       else ()
-                                                 val _ = print "\t"
-                                                 val _ =
-                                                    print (C.call (name,
-                                                                   Vector.toListMap (args1, fetchOperand) @
-                                                                   [addr (operandToString dst1),
-                                                                    addr (operandToString dst2)]))
-                                              in
-                                                 ()
-                                              end
+                                         then (case chk prim2 of
+                                                  NONE => default ()
+                                                | SOME (ws, {signed}) =>
+                                                     let
+                                                        val name =
+                                                           String.substituteFirst
+                                                           (Prim.toString prim2,
+                                                            {substring = "CheckP",
+                                                             replacement = "AndCheck"})
+                                                        val _ =
+                                                           if !Control.codegenComments > 1
+                                                              then (print "\t/* "
+                                                                    ; print (Layout.toString (Statement.layout s1))
+                                                                    ; print " */\n"
+                                                                    ; print "\t/* "
+                                                                    ; print (Layout.toString (Statement.layout s2))
+                                                                    ; print " */\n")
+                                                              else ()
+                                                        val _ = print "\t{\n"
+                                                        val _ = print "\tWord"
+                                                        val _ = print (if signed then "S" else "U")
+                                                        val _ = print (WordSize.toString ws)
+                                                        val _ = print " w;\n"
+                                                        val _ = print "\tBool b;\n"
+                                                        val _ = print "\t"
+                                                        val _ =
+                                                           print (C.call (name,
+                                                                          Vector.toListMap (args1, fetchOperand) @
+                                                                          ["&w", "&b"]))
+                                                        val _ = print "\t"
+                                                        val _ =
+                                                           print (move {dst = operandToString dst1,
+                                                                        dstIsMem = Operand.isMem dst1,
+                                                                        src = "w",
+                                                                        srcIsMem = false,
+                                                                        ty = Operand.ty dst1})
+                                                        val _ = print "\t"
+                                                        val _ =
+                                                           print (move {dst = operandToString dst2,
+                                                                        dstIsMem = Operand.isMem dst2,
+                                                                        src = "b",
+                                                                        srcIsMem = false,
+                                                                        ty = Operand.ty dst2})
+                                                        val _ = print "\t}\n"
+                                                     in
+                                                        ()
+                                                     end)
                                          else default ()
                                  | _ => default ())
                                handle Subscript => default ()
@@ -1193,9 +1215,11 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                Prim.Name.Word_add ws1 =>
                                   fuse (fn prim2 =>
                                         case Prim.name prim2 of
-                                           Prim.Name.Word_addCheckP (ws2, _) =>
-                                              WordSize.equals (ws1, ws2)
-                                         | _ => false)
+                                           Prim.Name.Word_addCheckP (z as (ws2, _)) =>
+                                              if WordSize.equals (ws1, ws2)
+                                                 then SOME z
+                                                 else NONE
+                                         | _ => NONE)
                              | Prim.Name.Word_addCheckP (ws1, _) =>
                                   skip (fn prim2 =>
                                         case Prim.name prim2 of
@@ -1205,10 +1229,12 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                              | Prim.Name.Word_mul (ws1, {signed = signed1}) =>
                                   fuse (fn prim2 =>
                                         case Prim.name prim2 of
-                                           Prim.Name.Word_mulCheckP (ws2, {signed = signed2}) =>
-                                              WordSize.equals (ws1, ws2)
-                                              andalso Bool.equals (signed1, signed2)
-                                         | _ => false)
+                                           Prim.Name.Word_mulCheckP (z as (ws2, {signed = signed2})) =>
+                                              if WordSize.equals (ws1, ws2)
+                                                 andalso Bool.equals (signed1, signed2)
+                                                 then SOME z
+                                                 else NONE
+                                         | _ => NONE)
                              | Prim.Name.Word_mulCheckP (ws1, {signed = signed1}) =>
                                   skip (fn prim2 =>
                                         case Prim.name prim2 of
@@ -1219,9 +1245,11 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                              | Prim.Name.Word_neg ws1 =>
                                   fuse (fn prim2 =>
                                         case Prim.name prim2 of
-                                           Prim.Name.Word_negCheckP (ws2, _) =>
-                                              WordSize.equals (ws1, ws2)
-                                         | _ => false)
+                                           Prim.Name.Word_negCheckP (z as (ws2, _)) =>
+                                              if WordSize.equals (ws1, ws2)
+                                                 then SOME z
+                                                 else NONE
+                                         | _ => NONE)
                              | Prim.Name.Word_negCheckP (ws1, _) =>
                                   skip (fn prim2 =>
                                         case Prim.name prim2 of
@@ -1231,9 +1259,11 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                              | Prim.Name.Word_sub ws1 =>
                                   fuse (fn prim2 =>
                                         case Prim.name prim2 of
-                                           Prim.Name.Word_subCheckP (ws2, _) =>
-                                              WordSize.equals (ws1, ws2)
-                                         | _ => false)
+                                           Prim.Name.Word_subCheckP (z as (ws2, _)) =>
+                                              if WordSize.equals (ws1, ws2)
+                                                 then SOME z
+                                                 else NONE
+                                         | _ => NONE)
                              | Prim.Name.Word_subCheckP (ws1, _) =>
                                   skip (fn prim2 =>
                                         case Prim.name prim2 of
