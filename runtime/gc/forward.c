@@ -155,7 +155,7 @@ void forwardObjptrIfInNursery (GC_state s, objptr *opp) {
 
   op = *opp;
   p = objptrToPointer (op, s->heap.start);
-  if (p < s->heap.nursery)
+  if ((p < s->heap.nursery) or (p > s->frontier))
     return;
   if (DEBUG_GENERATIONAL)
     fprintf (stderr,
