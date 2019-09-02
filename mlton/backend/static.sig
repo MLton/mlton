@@ -5,13 +5,13 @@
  *)
 
 signature STATIC_STRUCTS = sig
+   structure ObjptrTycon: OBJPTR_TYCON
    structure RealSize: REAL_SIZE
    structure RealX: REAL_X
+   structure Runtime: RUNTIME
    structure WordSize: WORD_SIZE
    structure WordX: WORD_X
    structure WordXVector: WORD_X_VECTOR
-   structure ObjptrTycon: OBJPTR_TYCON
-   structure Runtime: RUNTIME
    sharing RealX.RealSize = RealSize
    sharing WordX.WordSize = WordSize
    sharing WordXVector.WordSize = WordSize
@@ -57,4 +57,3 @@ signature STATIC =
       val map: ('a t * ('a -> 'b)) -> 'b t
       val layout: ('a -> Layout.t) -> 'a t -> Layout.t
    end
-
