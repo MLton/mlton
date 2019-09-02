@@ -240,7 +240,7 @@ structure Type =
           | _ => NONE
 
       val deObjptrs: t -> ObjptrTycon.t vector option =
-         fn t => 
+         fn t =>
          case node t of
             Objptr opts => SOME opts
           | _ => NONE

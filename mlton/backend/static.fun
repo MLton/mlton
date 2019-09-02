@@ -71,12 +71,11 @@ functor Static (S: STATIC_STRUCTS): STATIC =
              ("location", layoutLocation location)]
          end
 
-
       fun object {elems, tycon, location} =
          let
             val header = Runtime.typeIndexToHeader (ObjptrTycon.index tycon)
             val header = WordX.fromIntInf (Word.toIntInf header, WordSize.objptrHeader ())
-            val header =  WordXVector.fromList
+            val header = WordXVector.fromList
                ({elementSize = WordSize.objptrHeader ()}, [header])
          in
             T
@@ -92,7 +91,7 @@ functor Static (S: STATIC_STRUCTS): STATIC =
             val wordSize = WordSize.objptr ()
             val length = WordX.fromIntInf (Int.toIntInf (WordXVector.length data), wordSize)
             val capacity = WordX.zero wordSize
-            val header =  WordXVector.fromList
+            val header = WordXVector.fromList
                ({elementSize = WordSize.objptrHeader ()}, [capacity, length, header])
          in
             T

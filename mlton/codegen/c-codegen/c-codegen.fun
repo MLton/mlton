@@ -396,7 +396,6 @@ fun outputDeclarations
                    | NONE => print (decl ^ ";\n")
              end))
       fun declareHeapStatics () =
-
          (print "static struct GC_objectInit objectInits[] = {\n"
           ; (Vector.foreachi
              (statics, fn (i, (Machine.Static.T {data, header, ...}, g)) =>
@@ -420,25 +419,25 @@ fun outputDeclarations
          (print "static void static_Init() {\n"
           ; (Vector.foreachi
              (statics, fn (i, (Machine.Static.T {data, header, location}, _)) =>
-             let
-                val shouldInit =
-                   (case location of
-                      Machine.Static.Heap => false
-                    | _ => true)
+              let
+                 val shouldInit =
+                    (case location of
+                        Machine.Static.Heap => false
+                      | _ => true)
                     andalso
-                   (case data of
-                      Machine.Static.Data.Empty _ => true
-                    | _ => false)
-                val headerBytes = WordXVector.size header
-             in
-                if shouldInit
-                then C.call ("memcpy",
-                           ["&" ^ staticVar i,
-                            "&" ^ WordXVector.literal header,
-                            C.bytes headerBytes],
-                           print)
-                else ()
-             end))
+                    (case data of
+                        Machine.Static.Data.Empty _ => true
+                      | _ => false)
+                 val headerBytes = WordXVector.size header
+              in
+                 if shouldInit
+                    then C.call ("\tmemcpy",
+                                 ["&" ^ staticVar i,
+                                  "&" ^ WordXVector.literal header,
+                                  C.bytes headerBytes],
+                                 print)
+                    else ()
+              end))
           ; print "};\n")
 
       fun declareReals () =

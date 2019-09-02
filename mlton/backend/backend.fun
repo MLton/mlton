@@ -73,7 +73,6 @@ structure VarOperand =
       val operand: t -> M.Operand.t option =
          fn Allocate {operand, ...} => !operand
           | Const oper => SOME oper
-
    end
 
 structure ByteSet = UniqueSet (val cacheSize: int = 1
@@ -641,7 +640,6 @@ fun toMachine (rssa: Rssa.Program.t) =
          in
             get
          end
-
       fun genFunc (f: Function.t, isMain: bool): unit =
          let
             val f = eliminateDeadCode f

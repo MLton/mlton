@@ -367,7 +367,6 @@ structure WordRep =
           layout o #1, List.layout Statement.layout)
          tuple
 
-
       fun staticTuple (T {components, rep, ...},
                  {src: {index: int} -> WordX.t}): WordX.t =
          let
@@ -1122,6 +1121,7 @@ structure TupleRep =
                Component.tuple (c, {dst = dst, src = src})
           | Indirect pr =>
                ObjptrRep.tuple (pr, {dst = #1 dst, src = src})
+
       val tuple =
          Trace.trace2
          ("PackedRepresentation.TupleRep.tuple",
@@ -1136,7 +1136,6 @@ structure TupleRep =
                Elem (Component.staticTuple (c, {src = src}))
           | Indirect pr =>
                Static (ObjptrRep.staticTuple (pr, {location = location, src = src}))
-
 
       (* TupleRep.make decides how to layout a series of types in an object,
        * or in the case of a sequence, in a sequence element.
@@ -1590,7 +1589,6 @@ structure ConRep =
                end
           | Tag {tag, ...} => (Elem o Static.Data.Word o WordX.resize) (tag, width)
           | Tuple tr => TupleRep.staticTuple (tr, {location = location, src = src})
-
    end
 
 structure Block =

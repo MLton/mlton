@@ -1619,8 +1619,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
       fun translateFunction (f: S.Function.t): Function.t =
          let
             val _ =
-               S.Function.foreachVar (f,
-                  fn (x, t) => setVarInfo (x, {ty = t}))
+               S.Function.foreachVar (f, fn (x, t) => setVarInfo (x, {ty = t}))
             val {args, blocks, name, raises, returns, start, ...} =
                S.Function.dest f
             val _ =
@@ -1796,7 +1795,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                       | S.Exp.Inject {variant, ...} =>
                            copy variant
                       | S.Exp.Object {args, con} =>
-
                            let
                               val location = getLocation (ty, false)
                            in

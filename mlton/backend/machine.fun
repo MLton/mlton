@@ -1015,7 +1015,6 @@ structure Program =
                Vector.sub (objectTypes, ObjptrTycon.index opt)
             open Layout
 
-
             fun checkGlobal (name, global, isOk, layoutVal) =
                let
                   val ty = Global.ty global
@@ -1099,9 +1098,9 @@ structure Program =
                       | Offset {base, offset, ty} =>
                            (checkOperand (base, alloc)
                             ; Type.offsetIsOk {base = Operand.ty base,
-                                                 offset = offset,
-                                                 tyconTy = tyconTy,
-                                                 result = ty})
+                                               offset = offset,
+                                               tyconTy = tyconTy,
+                                               result = ty})
                       | Real _ => true
                       | StackOffset (so as StackOffset.T {offset, ty, ...}) =>
                            Bytes.<= (Bytes.+ (offset, Type.bytes ty), maxFrameSize)
@@ -1139,11 +1138,11 @@ structure Program =
                            (checkOperand (base, alloc)
                             ; checkOperand (index, alloc)
                             ; Type.sequenceOffsetIsOk {base = Operand.ty base,
-                                                         index = Operand.ty index,
-                                                         offset = offset,
-                                                         tyconTy = tyconTy,
-                                                         result = ty,
-                                                         scale = scale})
+                                                       index = Operand.ty index,
+                                                       offset = offset,
+                                                       tyconTy = tyconTy,
+                                                       result = ty,
+                                                       scale = scale})
                       | Static {index, ty, ...} =>
                            0 <= index andalso index < Vector.length statics
                            andalso

@@ -198,8 +198,7 @@ signature RSSA_TREE =
                      main: Function.t,
                      objectTypes: ObjectType.t vector,
                      profileInfo: {sourceMaps: SourceMaps.t,
-                                   getFrameSourceSeqIndex: Label.t -> int option} option
-                     }
+                                   getFrameSourceSeqIndex: Label.t -> int option} option}
 
             val clear: t -> unit
             val checkHandlers: t -> unit

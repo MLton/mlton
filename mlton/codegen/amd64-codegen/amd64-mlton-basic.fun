@@ -280,7 +280,6 @@ struct
        (static_labels, i, fn () => make i)
   end
 
-
   structure Field = Runtime.GCField
   fun make' (offset: int, size, class) =
      let
