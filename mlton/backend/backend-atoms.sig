@@ -37,16 +37,11 @@ signature BACKEND_ATOMS' =
       sharing CType = Type.CType
       sharing Label = Type.Label
       sharing Prim = Type.Prim
-      sharing RealSize = Type.RealSize
-      sharing WordSize = Type.WordSize
-      sharing WordX = Type.WordX
-      sharing WordXVector = Type.WordXVector
-
-      sharing RealSize = Static.RealSize
+      sharing RealSize = Static.RealSize = Type.RealSize
       sharing RealX = Static.RealX
-      sharing WordSize = Static.WordSize
-      sharing WordX = Static.WordX
-      sharing WordXVector = Static.WordXVector
+      sharing WordSize = Static.WordSize = Type.WordSize
+      sharing WordX = Static.WordX = Type.WordX
+      sharing WordXVector = Static.WordXVector = Type.WordXVector
    end
 
 signature BACKEND_ATOMS =
