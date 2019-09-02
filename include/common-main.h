@@ -37,12 +37,12 @@
         s->magic = mg;                                                  \
         s->maxFrameSize = mfs;                                          \
         s->mutatorMarksCards = mmc;                                     \
+        s->objectInits = objectInits;                                   \
+        s->objectInitsLength = cardof(objectInits);                     \
         s->objectTypes = objectTypes;                                   \
         s->objectTypesLength = cardof(objectTypes);                     \
         s->returnAddressToFrameIndex = returnAddressToFrameIndex;       \
         s->saveGlobals = saveGlobals;                                   \
-        s->objectInits = objectInits;                                   \
-        s->objectInitsLength = cardof(objectInits);                     \
         s->sourceMaps.profileLabelInfos = profileLabelInfos;            \
         s->sourceMaps.profileLabelInfosLength = cardof(profileLabelInfos); \
         s->sourceMaps.sourceNames = sourceNames;                        \
