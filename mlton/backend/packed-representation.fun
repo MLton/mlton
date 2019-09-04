@@ -55,9 +55,12 @@ datatype z = datatype Statement.t
 datatype z = datatype Transfer.t
 
 (* Statics may simply become words *)
-datatype 'a staticOrElem =
-   Static of 'a Static.t
- | Elem of 'a Static.Data.elem
+structure StaticOrElem =
+   struct
+      datatype t =
+         Static of Var.t Static.t
+       | Elem of Var.t Static.Data.elem
+   end
 
 structure Type =
    struct
@@ -1130,12 +1133,12 @@ structure TupleRep =
 
       fun staticTuple (tr: t,
                  {location: Static.location,
-                  src: {index: int} -> 'a Static.Data.elem}): 'a staticOrElem =
+                  src: {index: int} -> Var.t Static.Data.elem}): StaticOrElem.t =
          case tr of
             Direct {component = c, ...} =>
-               Elem (Component.staticTuple (c, {src = src}))
+               StaticOrElem.Elem (Component.staticTuple (c, {src = src}))
           | Indirect pr =>
-               Static (ObjptrRep.staticTuple (pr, {location = location, src = src}))
+               StaticOrElem.Static (ObjptrRep.staticTuple (pr, {location = location, src = src}))
 
       (* TupleRep.make decides how to layout a series of types in an object,
        * or in the case of a sequence, in a sequence element.
@@ -1561,9 +1564,9 @@ structure ConRep =
          conApp
 
       fun staticConApp (r: t, {location: Static.location,
-                               src: {index: int} -> 'a Static.Data.elem,
+                               src: {index: int} -> Var.t Static.Data.elem,
                                width: WordSize.t})
-         : 'a staticOrElem =
+         : StaticOrElem.t =
          case r of
             ShiftAndTag {component, tag, ...} =>
                let
@@ -1585,9 +1588,9 @@ structure ConRep =
                   val w = WordX.lshift (w, shift)
                   val mask = WordX.resize (tag, width)
                in
-                  (Elem o Static.Data.Word o WordX.orb) (w, mask)
+                  (StaticOrElem.Elem o Static.Data.Word o WordX.orb) (w, mask)
                end
-          | Tag {tag, ...} => (Elem o Static.Data.Word o WordX.resize) (tag, width)
+          | Tag {tag, ...} => (StaticOrElem.Elem o Static.Data.Word o WordX.resize) (tag, width)
           | Tuple tr => TupleRep.staticTuple (tr, {location = location, src = src})
    end
 
