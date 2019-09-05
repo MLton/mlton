@@ -352,12 +352,12 @@ fun outputDeclarations
                       | Heap => "const static " (* Will just be handed to GC by address *)
                    end
 
-                val structName = concat
+                val decl = concat
                    [ qualifier, "struct { ",
                      headerTypeStr, " header[", headerElems, "]; ",
                      dataDescr,
-                   "}\n"]
-                val decl = concat [structName, " ", staticVar i]
+                     "}\n",
+                     staticVar i ]
              in
                 case dataC of
                      SOME init =>
@@ -378,7 +378,7 @@ fun outputDeclarations
                 case g of
                      NONE => ()
                    | SOME g' =>
-                      (print o concat) ["{ ",
+                      (print o concat) ["\t{ ",
                               C.int (Global.index g'), ", ",
                               C.int headerBytes, ", ",
                               C.int (headerBytes + dataBytes), ", ",
