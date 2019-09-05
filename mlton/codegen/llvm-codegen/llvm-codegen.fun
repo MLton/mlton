@@ -1281,15 +1281,19 @@ fun outputLLVMDeclarations (statics, print) =
                                  else ""
                           end))
         val staticType = getTypeFromPointer "%Pointer"
-        val statics = String.concatV (Vector.mapi (statics,
-            fn (_, (_, SOME _)) => ""
-             | (i, (Static.T {location, ...}, NONE)) =>
-               concat ["@static_", Int.toString i, " = external hidden ",
-                       (case location of
-                            Static.ImmStatic => "constant "
-                          | _ => "global "),
-                        staticType,
-                       "\n"]))
+        val statics =
+           (String.concatV o Vector.mapi)
+           (statics, fn (i, (Static.T {location, ...}, _)) =>
+            let
+               fun doit kw =
+                  concat ["@static_", Int.toString i, " = external hidden ",
+                          kw, " ", staticType, "\n"]
+            in
+               case location of
+                  Static.ImmStatic => doit "constant"
+                | Static.MutStatic => doit "global"
+                | Static.Heap => ""
+            end)
     in
         print (concat [llvmIntrinsics, "\n", mltypes, "\n", ctypes (),
                        "\n", globals, "\n", statics, "\n"])

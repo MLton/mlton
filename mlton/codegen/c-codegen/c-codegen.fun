@@ -1254,9 +1254,11 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
          end
 
       fun declareStatics (prefix: string, print) =
-         Vector.foreachi (statics,
-            fn (i, (Static.T _, _)) =>
-               print (concat [prefix, "PointerAux static_", C.int i, ";\n"]))
+         Vector.foreachi
+         (statics, fn (i, (Static.T {location, ...}, _)) =>
+          case location of
+             Static.Heap => ()
+           | _ => print (concat [prefix, "PointerAux static_", C.int i, ";\n"]))
 
       fun outputChunks chunks =
          let
