@@ -455,7 +455,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                   in
                     (* Native codegens can't handle this;
                      * Dead code may treat small constant
-                     * intInfs are large and take offsets *)
+                     * intInfs as large and take offsets *)
                      if isWord base
                      then bogusOp ty
                      else M.Operand.Offset {base = base,
