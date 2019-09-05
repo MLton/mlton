@@ -57,16 +57,6 @@ structure C =
          call ("\tPush", [bytes size], print)
    end
 
-structure RealSize =
-   struct
-      open RealSize
-
-      fun toC (rs: t): string =
-         case rs of
-            R32 => "32"
-          | R64 => "64"
-   end
-
 structure RealX =
    struct
       open RealX
@@ -93,29 +83,12 @@ structure RealX =
          end
    end
 
-structure WordSize =
-   struct
-      open WordSize
-
-      fun toC (ws: t): string =
-         case prim ws of
-            W8 => "8"
-          | W16 => "16"
-          | W32 => "32"
-          | W64 => "64"
-   end
-
 structure WordX =
    struct
-      local
-         structure Z = WordSize
-      in
-         open WordX
-         structure WordSize = Z
-      end
+      open WordX
 
       fun toC (w: t): string =
-         concat ["(Word", WordSize.toC (size w), ")(",
+         concat ["(Word", WordSize.toString (size w), ")(",
                  toString (w, {suffix = false}), "ull)"]
    end
 
@@ -353,22 +326,20 @@ fun outputDeclarations
                    case data of
                       Static.Data.Object es =>
                          (TObject o List.map) (es,
-                           fn Static.Data.Real r => "Real" ^ RealSize.toC (RealX.size r)
-                            | Static.Data.Word w => "Word" ^ WordSize.toC (WordX.size w)
+                           fn Static.Data.Real r => "Real" ^ RealSize.toString (RealX.size r)
+                            | Static.Data.Word w => "Word" ^ WordSize.toString (WordX.size w)
                             | Static.Data.Address _ => "Pointer")
                     | Static.Data.Vector v =>
-                         TVector ("Word" ^ WordSize.toC (WordXVector.elementSize v), WordXVector.length v)
+                         TVector ("Word" ^ WordSize.toString (WordXVector.elementSize v), WordXVector.length v)
                     | Static.Data.Empty b =>
-                         TVector ("Word" ^ WordSize.toC WordSize.byte, Bytes.toInt b)
+                         TVector ("Word" ^ WordSize.toString WordSize.byte, Bytes.toInt b)
                 val dataDescr =
                    case dataType of
                       TObject strings => (concat o List.mapi) (strings,
                            fn (i, s) => concat [s, " data_", C.int i, "; "])
                     | TVector (str, length) => concat [str, " data[", C.int length, "];"]
-
-
                 val headerElems = Int.toString (WordXVector.length header)
-                val headerTypeStr = "Word" ^ (WordSize.toC o WordSize.objptr) ()
+                val headerTypeStr = "Word" ^ (WordSize.toString o WordSize.objptr) ()
                 val qualifier =
                    let datatype z = datatype Machine.Static.location in
                    case location of
