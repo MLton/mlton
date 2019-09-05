@@ -1693,7 +1693,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 
             fun getObjptrTycon ty =
                let
-                  fun fail () = Error.bug "translateGlobalStatics.makeSequenceHeader"
+                  fun fail () = Error.bug "translateGlobalStatics.getObjptrTycon"
                in
                   case toRtype ty of
                      SOME t =>
