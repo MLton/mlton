@@ -1702,40 +1702,26 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                           | NONE => fail ())
                    | NONE => fail ()
                end
-            fun makeSequenceHeader (tycon, length) =
-               let
-                  val size = WordSize.objptr ()
-               in
-               WordXVector.fromList ({elementSize=size},
-                  [WordX.zero size,
-                   WordX.fromIntInf (Int.toIntInf length, size),
-                   WordX.fromIntInf
-                   (Word.toIntInf (Runtime.typeIndexToHeader (ObjptrTycon.index tycon)),
-                    size)])
-               end
-
             fun makeWordXVector (ty, location, wxv) =
                let
                   val tycon = getObjptrTycon ty
-                  val header = makeSequenceHeader (tycon, WordXVector.length wxv)
                in
-                  (Static o Static.T)
-                  {data=Static.Data.Vector wxv,
-                   header=header, location=location}
+                  (Static o Static.vector)
+                  {data=wxv, tycon=tycon,
+                   location=location}
                end
             fun makeSequence (ty, location, length) =
                let
                   val tycon = getObjptrTycon ty
-                  val header = makeSequenceHeader (tycon, length)
                   val elemSize =
                      case Vector.sub (objectTypes, ObjptrTycon.index tycon) of
                           ObjectType.Sequence {elt, ...} => Type.width elt
                         | _ => Error.bug "translateGlobalStatics.makeSequence: strange sequence tycon"
                   val bytes = Bytes.fromInt (length * Bits.toInt elemSize)
                in
-                  (Static o Static.T)
-                  {data=Static.Data.Empty bytes,
-                   header=header, location=location}
+                  (Static o Static.sequence)
+                  {length=length, tycon=tycon,
+                   totalSize=bytes, location=location}
                end
             fun makeObject (ty, location, {args, con}) =
                static {args=args, con=con,
