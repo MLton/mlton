@@ -20,7 +20,7 @@ size_t sizeofInitialBytesLive (GC_state s) {
   for (i = 0; i < s->objectInitsLength; ++i) {
     dataBytes =
       s->objectInits[i].size;
-    total += align (GC_SEQUENCE_METADATA_SIZE + dataBytes, s->alignment);
+    total += align (dataBytes, s->alignment);
   }
   return total;
 }
