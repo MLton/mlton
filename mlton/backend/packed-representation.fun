@@ -59,7 +59,7 @@ structure StaticOrElem =
    struct
       datatype t =
          Static of Var.t Static.t
-       | Elem of Var.t Static.Data.elem
+       | Elem of Var.t Static.Data.Elem.t
    end
 
 structure Type =
@@ -485,24 +485,24 @@ structure Component =
           List.layout Statement.layout)
          tuple
 
-      fun staticTuple (c: t, {src: {index: int} -> 'a Static.Data.elem})
-         : 'a Static.Data.elem =
+      fun staticTuple (c: t, {src: {index: int} -> 'a Static.Data.Elem.t})
+         : 'a Static.Data.Elem.t =
          case padToPrim c of
             Direct {index, ...} => src {index=index}
           | Word wr =>
                let
                   val src = fn i =>
                      case src i of
-                        Static.Data.Word w => w
+                        Static.Data.Elem.Word w => w
 
-                       | Static.Data.Real r =>
+                       | Static.Data.Elem.Real r =>
                           (case RealX.castToWord r of
                                SOME w => w
                              | NONE => Error.bug
                              "PackedRepresentation.Component.staticTuple: unexpected real")
                        | _ => Error.bug "PackedRepresentation.Component.staticTuple: bad component"
                 in
-                   (Static.Data.Word o WordRep.staticTuple) (wr, {src = src})
+                   (Static.Data.Elem.Word o WordRep.staticTuple) (wr, {src = src})
                 end
    end
 
@@ -1052,7 +1052,7 @@ structure ObjptrRep =
                         then let
                            val padBits = toBits (offset - sumOffset)
                            val pad = (WordX.zero o WordSize.fromBits) padBits
-                        in (offset, Static.Data.Word pad :: acc) end
+                        in (offset, Static.Data.Elem.Word pad :: acc) end
                         else (sumOffset, acc)
                      val sumOffset = sumOffset + Type.bytes (Component.ty component)
                   in
@@ -1066,8 +1066,8 @@ structure ObjptrRep =
          end
 
       fun staticTuple (T {components, tycon, ...},
-                 {location: Static.location,
-                  src: {index: int} -> 'a Static.Data.elem})
+                 {location: Static.Location.t,
+                  src: {index: int} -> 'a Static.Data.Elem.t})
          : 'a Static.t =
          makeStatic {components=components, tycon=tycon,
                      location=location, src=src}
@@ -1132,8 +1132,8 @@ structure TupleRep =
          tuple
 
       fun staticTuple (tr: t,
-                 {location: Static.location,
-                  src: {index: int} -> Var.t Static.Data.elem}): StaticOrElem.t =
+                 {location: Static.Location.t,
+                  src: {index: int} -> Var.t Static.Data.Elem.t}): StaticOrElem.t =
          case tr of
             Direct {component = c, ...} =>
                StaticOrElem.Elem (Component.staticTuple (c, {src = src}))
@@ -1563,8 +1563,8 @@ structure ConRep =
           layout o #1, List.layout Statement.layout)
          conApp
 
-      fun staticConApp (r: t, {location: Static.location,
-                               src: {index: int} -> Var.t Static.Data.elem,
+      fun staticConApp (r: t, {location: Static.Location.t,
+                               src: {index: int} -> Var.t Static.Data.Elem.t,
                                width: WordSize.t})
          : StaticOrElem.t =
          case r of
@@ -1572,8 +1572,8 @@ structure ConRep =
                let
                   val w =
                      (case Component.staticTuple (component, {src=src}) of
-                        Static.Data.Word w => w
-                      | Static.Data.Real r =>
+                        Static.Data.Elem.Word w => w
+                      | Static.Data.Elem.Real r =>
                          (case RealX.castToWord r of
                               SOME w => w
                             | NONE => Error.bug
@@ -1588,9 +1588,9 @@ structure ConRep =
                   val w = WordX.lshift (w, shift)
                   val mask = WordX.resize (tag, width)
                in
-                  (StaticOrElem.Elem o Static.Data.Word o WordX.orb) (w, mask)
+                  (StaticOrElem.Elem o Static.Data.Elem.Word o WordX.orb) (w, mask)
                end
-          | Tag {tag, ...} => (StaticOrElem.Elem o Static.Data.Word o WordX.resize) (tag, width)
+          | Tag {tag, ...} => (StaticOrElem.Elem o Static.Data.Elem.Word o WordX.resize) (tag, width)
           | Tuple tr => TupleRep.staticTuple (tr, {location = location, src = src})
    end
 

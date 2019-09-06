@@ -1648,7 +1648,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
          let
             val statics = ref []
             val keeps = ref []
-            datatype elem = datatype Static.Data.elem
+            datatype elem = datatype Static.Data.Elem.t
             datatype z = datatype PackedRepresentation.StaticOrElem.t
             val {get = globalStatic: Var.t -> Var.t elem option,
                  set = setGlobalStatic, destroy = destGlobalStatics} =
@@ -1684,10 +1684,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                            (S.Prod.dest args, validArg))
                      then
                         if S.Prod.someIsMutable args
-                           then Static.MutStatic
-                        else Static.ImmStatic
+                           then Static.Location.MutStatic
+                        else Static.Location.ImmStatic
                      else
-                        Static.Heap
+                        Static.Location.Heap
                   | _ => Error.bug
                      "translateGlobalStatics.getLocation: non-object"
 
@@ -1737,7 +1737,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                   NONE => pushKeep st
                 | SOME var =>
                   let
-                     datatype location = datatype Static.location
+                     datatype location = datatype Static.Location.t
                      fun copy var' =
                         (setGlobalStatic (var, globalStatic var');
                          pushKeep st)
@@ -1791,7 +1791,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                            | _ => false)
                               (* For objects, there's no reason to statically initalize,
                                * since they're so small and irregular *)
-                              orelse location = Static.Heap
+                              orelse location = Static.Location.Heap
                                  then keep ()
                               else static (makeObject, false, {args=args, con=con})
                            end

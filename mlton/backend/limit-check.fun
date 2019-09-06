@@ -853,8 +853,9 @@ fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileI
           pinned = false,
           src = Operand.Static
             {static=Static.T
-               {data=Static.Data.Object [Static.Data.Word (WordX.one WordSize.bool)],
-                location=Static.MutStatic,
+               {data=Static.Data.Object
+                  [Static.Data.Elem.Word (WordX.one WordSize.bool)],
+                location=Static.Location.MutStatic,
                 metadata=WordXVector.fromList ({elementSize=WordSize.objptr ()}, [])},
              ty=Type.cpointer ()}}
       val block =

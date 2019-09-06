@@ -10,36 +10,38 @@ functor Static (S: STATIC_STRUCTS): STATIC =
       open S
 
       structure Data = struct
-         datatype 'a elem =
-            Address of 'a (* must be statically allocated *)
-          | Word of WordX.t (* must be pointer-sized *)
-          | Real of RealX.t
+         structure Elem = struct
+            datatype 'a t =
+               Address of 'a (* must be statically allocated *)
+             | Word of WordX.t (* must be pointer-sized *)
+             | Real of RealX.t
+
+            fun layout layoutI =
+               let open Layout
+               in fn Address i => layoutI i
+                   | Word w => WordX.layout (w, {suffix=true})
+                   | Real r => RealX.layout (r, {suffix=true})
+               end
+         end
          datatype 'a t =
             Empty of Bytes.t
-          | Object of ('a elem) list
+          | Object of ('a Elem.t) list
           | Vector of WordXVector.t
 
          fun map (t, f) =
             case t of
                  Empty b => Empty b
                | Object es => (Object o List.map) (es,
-                  fn Address a => Address (f a)
-                   | Word wx => Word wx
-                   | Real rx => Real rx)
+                  fn Elem.Address a => Elem.Address (f a)
+                   | Elem.Word wx => Elem.Word wx
+                   | Elem.Real rx => Elem.Real rx)
                | Vector wxv => Vector wxv
-
-         fun layoutElem layoutI =
-            let open Layout
-            in fn Address i => layoutI i
-                | Word w => WordX.layout (w, {suffix=true})
-                | Real r => RealX.layout (r, {suffix=true})
-            end
 
          fun layout layoutI =
             let open Layout
             in fn Empty b => seq [str "Empty ", Bytes.layout b]
                 | Object es => seq [str "Object ",
-                     list (List.map (es, layoutElem layoutI))]
+                     list (List.map (es, Elem.layout layoutI))]
                 | Vector v => seq [str "Vector ", WordXVector.layout v]
             end
 
@@ -48,13 +50,15 @@ functor Static (S: STATIC_STRUCTS): STATIC =
              | Vector v => (WordXVector.elementSize v, WordXVector.length v)
              | Object es => (WordSize.objptr (), List.length es)
       end
-      datatype location =
-         MutStatic (* Mutable static, .data/.bss *)
-       | ImmStatic (* Immutable static, .rodata, must be statically initialized *)
-       | Heap (* Dynamically allocated in main *)
+      structure Location = struct
+         datatype t =
+            MutStatic (* Mutable static, .data/.bss *)
+          | ImmStatic (* Immutable static, .rodata, must be statically initialized *)
+          | Heap (* Dynamically allocated in main *)
+      end
       datatype 'a t =
          T of {data: 'a Data.t,
-               location: location,
+               location: Location.t,
                metadata: WordXVector.t} (* mapped in-order *)
 
       val layoutLocation =

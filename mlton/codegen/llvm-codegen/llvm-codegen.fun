@@ -1290,9 +1290,9 @@ fun outputLLVMDeclarations (statics, print) =
                           kw, " ", staticType, "\n"]
             in
                case location of
-                  Static.ImmStatic => doit "constant"
-                | Static.MutStatic => doit "global"
-                | Static.Heap => ""
+                  Static.Location.ImmStatic => doit "constant"
+                | Static.Location.MutStatic => doit "global"
+                | Static.Location.Heap => ""
             end)
     in
         print (concat [llvmIntrinsics, "\n", mltypes, "\n", ctypes (),

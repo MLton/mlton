@@ -149,9 +149,9 @@ structure Static =
              | Object es =>
                   let
                      val elemToC =
-                        fn Real rx => RealX.toC rx
-                         | Word wx => WordX.toC wx
-                         | Address i => indexToC i
+                        fn Elem.Real rx => RealX.toC rx
+                         | Elem.Word wx => WordX.toC wx
+                         | Elem.Address i => indexToC i
                   in
                      (SOME o String.concatWith)
                      (List.map (es, elemToC),
@@ -326,9 +326,9 @@ fun outputDeclarations
                    case data of
                       Static.Data.Object es =>
                          (TObject o List.map) (es,
-                           fn Static.Data.Real r => "Real" ^ RealSize.toString (RealX.size r)
-                            | Static.Data.Word w => "Word" ^ WordSize.toString (WordX.size w)
-                            | Static.Data.Address _ => "Pointer")
+                           fn Static.Data.Elem.Real r => "Real" ^ RealSize.toString (RealX.size r)
+                            | Static.Data.Elem.Word w => "Word" ^ WordSize.toString (WordX.size w)
+                            | Static.Data.Elem.Address _ => "Pointer")
                     | Static.Data.Vector v =>
                          TVector ("Word" ^ WordSize.toString (WordXVector.elementSize v), WordXVector.length v)
                     | Static.Data.Empty b =>
@@ -341,7 +341,7 @@ fun outputDeclarations
                 val metadataElems = Int.toString (WordXVector.length metadata)
                 val metadataTypeStr = "Word" ^ (WordSize.toString o WordSize.objptr) ()
                 val qualifier =
-                   let datatype z = datatype Machine.Static.location in
+                   let datatype z = datatype Machine.Static.Location.t in
                    case location of
                         MutStatic => ""
                       | ImmStatic =>
@@ -393,7 +393,7 @@ fun outputDeclarations
               let
                  val shouldInit =
                     (case location of
-                        Machine.Static.Heap => false
+                        Machine.Static.Location.Heap => false
                       | _ => true)
                     andalso
                     (case data of
@@ -1257,7 +1257,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
          Vector.foreachi
          (statics, fn (i, (Static.T {location, ...}, _)) =>
           case location of
-             Static.Heap => ()
+             Static.Location.Heap => ()
            | _ => print (concat [prefix, "PointerAux static_", C.int i, ";\n"]))
 
       fun outputChunks chunks =

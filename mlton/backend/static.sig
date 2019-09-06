@@ -23,14 +23,16 @@ signature STATIC =
 
       include STATIC_STRUCTS
       structure Data: sig
-         datatype 'a elem =
-            Address of 'a (* must be statically allocated *)
-          | Word of WordX.t
-          | Real of RealX.t
+         structure Elem: sig
+            datatype 'a t =
+               Address of 'a (* must be statically allocated *)
+             | Word of WordX.t
+             | Real of RealX.t
+         end
 
          datatype 'a t =
             Empty of Bytes.t
-          | Object of ('a elem) list
+          | Object of ('a Elem.t) list
           | Vector of WordXVector.t
 
          val map: ('a t * ('a -> 'b)) -> 'b t
@@ -38,24 +40,27 @@ signature STATIC =
          val size: 'a t -> WordSize.t * int
       end
 
-      datatype location =
-         MutStatic (* Mutable static, .data/.bss *)
-       | ImmStatic (* Immutable static, .rodata *)
-       | Heap (* Dynamically allocated in main *)
+
+      structure Location: sig
+         datatype t =
+            MutStatic (* Mutable static, .data/.bss *)
+          | ImmStatic (* Immutable static, .rodata *)
+          | Heap (* Dynamically allocated in main *)
+      end
       datatype 'a t =
          T of {data: 'a Data.t,
-               location: location,
+               location: Location.t,
                metadata: WordXVector.t} (* mapped in-order *)
 
-      val object: {elems: ('a Data.elem) list,
-                   location: location,
+      val object: {elems: ('a Data.Elem.t) list,
+                   location: Location.t,
                    tycon: ObjptrTycon.t} -> 'a t
       val sequence: {length: int,
-                     location: location,
+                     location: Location.t,
                      totalSize: Bytes.t,
                      tycon: ObjptrTycon.t} -> 'a t
       val vector: {data: WordXVector.t,
-                   location: location,
+                   location: Location.t,
                    tycon: ObjptrTycon.t} -> 'a t
 
       val map: ('a t * ('a -> 'b)) -> 'b t

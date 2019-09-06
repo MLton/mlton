@@ -23,7 +23,7 @@ signature REPRESENTATION =
          sig
             datatype t =
                Static of Rssa.Var.t Rssa.Static.t
-             | Elem of Rssa.Var.t Rssa.Static.Data.elem
+             | Elem of Rssa.Var.t Rssa.Static.Data.Elem.t
          end
 
       val compute:
@@ -49,8 +49,8 @@ signature REPRESENTATION =
                       offset: int} -> Rssa.Statement.t list,
              static: {args: Ssa2.Var.t vector,
                       con: Ssa2.Con.t option,
-                      elem: Ssa2.Var.t -> Rssa.Var.t Rssa.Static.Data.elem,
-                      location: Rssa.Static.location,
+                      elem: Ssa2.Var.t -> Rssa.Var.t Rssa.Static.Data.Elem.t,
+                      location: Rssa.Static.Location.t,
                       objectTy: Ssa2.Type.t} ->
                       StaticOrElem.t,
              toRtype: Ssa2.Type.t -> Rssa.Type.t option,

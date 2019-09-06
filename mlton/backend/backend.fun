@@ -370,7 +370,7 @@ fun toMachine (rssa: Rssa.Program.t) =
 
                    val g =
                       case location of
-                           M.Static.Heap => SOME (M.Global.new ty)
+                           M.Static.Location.Heap => SOME (M.Global.new ty)
                          | _ => NONE
                    val _ = List.push (staticsRef, (static, g))
 
@@ -1155,7 +1155,8 @@ fun toMachine (rssa: Rssa.Program.t) =
                val size = WordXVector.elementSize v
                val tycon = ObjptrTycon.wordVector (WordSize.bits size)
             in
-               (M.Static.vector {data=v, tycon=tycon, location=M.Static.Heap}, SOME g)
+               (M.Static.vector {data=v, tycon=tycon,
+                location=M.Static.Location.Heap}, SOME g)
             end)
       val machine =
          M.Program.T
