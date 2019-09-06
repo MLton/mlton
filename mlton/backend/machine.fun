@@ -294,7 +294,6 @@ structure Operand =
       val rec isDestination =
          fn Cast (z, _) => isDestination z
           | Contents _ => true
-          | GCState => true
           | Global _ => true
           | Offset _ => true
           | SequenceOffset _ => true
