@@ -71,10 +71,18 @@ functor Static (S: STATIC_STRUCTS): STATIC =
              ("location", layoutLocation location)]
          end
 
-      fun object {elems, tycon, location} =
+
+      fun getTyconHeader tycon =
          let
             val header = Runtime.typeIndexToHeader (ObjptrTycon.index tycon)
             val header = WordX.fromIntInf (Word.toIntInf header, WordSize.objptrHeader ())
+         in
+            header
+         end
+
+      fun object {elems, location, tycon} =
+         let
+            val header = getTyconHeader tycon
             val header = WordXVector.fromList
                ({elementSize = WordSize.objptrHeader ()}, [header])
          in
@@ -84,21 +92,28 @@ functor Static (S: STATIC_STRUCTS): STATIC =
              location = location}
          end
 
-      fun vector {data, tycon, location} =
+      fun sequenceMetadata (tycon, length: int) =
          let
-            val header = Runtime.typeIndexToHeader (ObjptrTycon.index tycon)
-            val header = WordX.fromIntInf (Word.toIntInf header, WordSize.objptrHeader ())
-            val wordSize = WordSize.objptr ()
-            val length = WordX.fromIntInf (Int.toIntInf (WordXVector.length data), wordSize)
+            val header = getTyconHeader tycon
+            val wordSize = WordSize.objptrHeader ()
             val capacity = WordX.zero wordSize
-            val header = WordXVector.fromList
-               ({elementSize = WordSize.objptrHeader ()}, [capacity, length, header])
+            val length = WordX.fromIntInf (Int.toIntInf length, wordSize)
          in
-            T
-            {header = header,
-             data = Data.Vector data,
-             location = location}
+            WordXVector.fromList
+               ({elementSize = wordSize}, [capacity, length, header])
          end
+
+
+      fun vector {data, location, tycon} =
+         T {header = sequenceMetadata (tycon, WordXVector.length data),
+            data = Data.Vector data,
+            location = location}
+
+      fun sequence {length, location, totalSize, tycon} =
+         T {header = sequenceMetadata (tycon, length),
+            data = Data.Empty totalSize,
+            location = location}
+
 
 
    end
