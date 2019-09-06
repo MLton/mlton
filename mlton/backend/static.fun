@@ -55,23 +55,24 @@ functor Static (S: STATIC_STRUCTS): STATIC =
             MutStatic (* Mutable static, .data/.bss *)
           | ImmStatic (* Immutable static, .rodata, must be statically initialized *)
           | Heap (* Dynamically allocated in main *)
+
+         val layout =
+            fn MutStatic => Layout.str "MutStatic"
+             | ImmStatic => Layout.str "ImmStatic"
+             | Heap => Layout.str "Heap"
       end
       datatype 'a t =
          T of {data: 'a Data.t,
                location: Location.t,
                metadata: WordXVector.t} (* mapped in-order *)
 
-      val layoutLocation =
-         fn MutStatic => Layout.str "MutStatic"
-          | ImmStatic => Layout.str "ImmStatic"
-          | Heap => Layout.str "Heap"
       fun map (T {data, metadata, location}, f) =
          T {data=Data.map (data, f), metadata=metadata, location=location}
       fun layout layoutI (T {data, metadata, location}) =
          let open Layout
          in record
             [("data", Data.layout layoutI data),
-             ("location", layoutLocation location),
+             ("location", Location.layout location),
              ("metadata", WordXVector.layout metadata)]
          end
 
