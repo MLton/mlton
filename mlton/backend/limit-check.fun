@@ -854,8 +854,8 @@ fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileI
           src = Operand.Static
             {static=Static.T
                {data=Static.Data.Object [Static.Data.Word (WordX.one WordSize.bool)],
-                header=WordXVector.fromList ({elementSize=WordSize.objptr ()}, []),
-                location=Static.MutStatic},
+                location=Static.MutStatic,
+                metadata=WordXVector.fromList ({elementSize=WordSize.objptr ()}, [])},
              ty=Type.cpointer ()}}
       val block =
          Block.T {args = Vector.new0 (),

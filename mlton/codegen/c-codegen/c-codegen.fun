@@ -307,16 +307,16 @@ fun outputDeclarations
          end
       fun staticVar i =
          "static_" ^ Int.toString i
-      fun headerSize i =
-         let val Static.T {header, ...} = (#1 o Vector.sub) (statics, i)
-         in Bytes.toInt (WordXVector.size header) end
+      fun metadataSize i =
+         let val Static.T {metadata, ...} = (#1 o Vector.sub) (statics, i)
+         in Bytes.toInt (WordXVector.size metadata) end
       fun staticAddress i = concat
          ["((Pointer)(&", staticVar i, ") + ",
-          C.int (headerSize i), ")"]
+          C.int (metadataSize i), ")"]
 
       fun declareStatics () =
          (Vector.foreachi
-          (statics, fn (i, (Machine.Static.T {data, header, location}, _)) =>
+          (statics, fn (i, (Machine.Static.T {data, location, metadata}, _)) =>
              let
                 val dataC = Static.Data.toC staticAddress data
                 datatype dataType =
@@ -338,8 +338,8 @@ fun outputDeclarations
                       TObject strings => (concat o List.mapi) (strings,
                            fn (i, s) => concat [s, " data_", C.int i, "; "])
                     | TVector (str, length) => concat [str, " data[", C.int length, "];"]
-                val headerElems = Int.toString (WordXVector.length header)
-                val headerTypeStr = "Word" ^ (WordSize.toString o WordSize.objptr) ()
+                val metadataElems = Int.toString (WordXVector.length metadata)
+                val metadataTypeStr = "Word" ^ (WordSize.toString o WordSize.objptr) ()
                 val qualifier =
                    let datatype z = datatype Machine.Static.location in
                    case location of
@@ -354,7 +354,7 @@ fun outputDeclarations
 
                 val decl = concat
                    [ qualifier, "struct { ",
-                     headerTypeStr, " header[", headerElems, "]; ",
+                     metadataTypeStr, " metadata[", metadataElems, "]; ",
                      dataDescr,
                      "}\n",
                      staticVar i ]
@@ -362,26 +362,26 @@ fun outputDeclarations
                 case dataC of
                      SOME init =>
                        (print o concat)
-                       [decl, " = {", WordXVector.toC header, ", ", init, "};\n"]
+                       [decl, " = {", WordXVector.toC metadata, ", ", init, "};\n"]
                     (* needs code initialization *)
                    | NONE => print (decl ^ ";\n")
              end))
       fun declareHeapStatics () =
          (print "static struct GC_objectInit objectInits[] = {\n"
           ; (Vector.foreachi
-             (statics, fn (i, (Machine.Static.T {data, header, ...}, g)) =>
+             (statics, fn (i, (Machine.Static.T {data, metadata, ...}, g)) =>
              let
                 val (dataWidth, dataSize) = Static.Data.size data
                 val dataBytes = dataSize * (Bytes.toInt (WordSize.bytes dataWidth))
-                val headerBytes = Bytes.toInt (WordXVector.size header)
+                val metadataBytes = Bytes.toInt (WordXVector.size metadata)
              in
                 case g of
                      NONE => ()
                    | SOME g' =>
                       (print o concat) ["\t{ ",
                               C.int (Global.index g'), ", ",
-                              C.int headerBytes, ", ",
-                              C.int (headerBytes + dataBytes), ", ",
+                              C.int metadataBytes, ", ",
+                              C.int (metadataBytes + dataBytes), ", ",
                               "((Pointer) &", staticVar i, ")",
                               " },\n"]
              end))
@@ -389,7 +389,7 @@ fun outputDeclarations
       fun declareStaticInits () =
          (print "static void static_Init() {\n"
           ; (Vector.foreachi
-             (statics, fn (i, (Machine.Static.T {data, header, location}, _)) =>
+             (statics, fn (i, (Machine.Static.T {data, location, metadata}, _)) =>
               let
                  val shouldInit =
                     (case location of
@@ -399,13 +399,13 @@ fun outputDeclarations
                     (case data of
                         Machine.Static.Data.Empty _ => true
                       | _ => false)
-                 val headerBytes = WordXVector.size header
+                 val metadataBytes = WordXVector.size metadata
               in
                  if shouldInit
                     then C.call ("\tmemcpy",
                                  ["&" ^ staticVar i,
-                                  "&" ^ WordXVector.literal header,
-                                  C.bytes headerBytes],
+                                  "&" ^ WordXVector.literal metadata,
+                                  C.bytes metadataBytes],
                                  print)
                     else ()
               end))

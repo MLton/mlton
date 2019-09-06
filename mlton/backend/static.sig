@@ -44,8 +44,8 @@ signature STATIC =
        | Heap (* Dynamically allocated in main *)
       datatype 'a t =
          T of {data: 'a Data.t,
-               header: WordXVector.t, (* mapped in-order *)
-               location: location}
+               location: location,
+               metadata: WordXVector.t} (* mapped in-order *)
 
       val object: {elems: ('a Data.elem) list,
                    location: location,

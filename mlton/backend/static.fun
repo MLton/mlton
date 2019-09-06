@@ -54,21 +54,21 @@ functor Static (S: STATIC_STRUCTS): STATIC =
        | Heap (* Dynamically allocated in main *)
       datatype 'a t =
          T of {data: 'a Data.t,
-               header: WordXVector.t, (* mapped in-order *)
-               location: location}
+               location: location,
+               metadata: WordXVector.t} (* mapped in-order *)
 
       val layoutLocation =
          fn MutStatic => Layout.str "MutStatic"
           | ImmStatic => Layout.str "ImmStatic"
           | Heap => Layout.str "Heap"
-      fun map (T {data, header, location}, f) =
-         T {data=Data.map (data, f), header=header, location=location}
-      fun layout layoutI (T {data, header, location}) =
+      fun map (T {data, metadata, location}, f) =
+         T {data=Data.map (data, f), metadata=metadata, location=location}
+      fun layout layoutI (T {data, metadata, location}) =
          let open Layout
          in record
             [("data", Data.layout layoutI data),
-             ("header", WordXVector.layout header),
-             ("location", layoutLocation location)]
+             ("location", layoutLocation location),
+             ("metadata", WordXVector.layout metadata)]
          end
 
 
@@ -83,13 +83,13 @@ functor Static (S: STATIC_STRUCTS): STATIC =
       fun object {elems, location, tycon} =
          let
             val header = getTyconHeader tycon
-            val header = WordXVector.fromList
+            val metadata = WordXVector.fromList
                ({elementSize = WordSize.objptrHeader ()}, [header])
          in
             T
-            {header = header,
-             data = Data.Object elems,
-             location = location}
+            {data = Data.Object elems,
+             location = location,
+             metadata = metadata}
          end
 
       fun sequenceMetadata (tycon, length: int) =
@@ -105,14 +105,14 @@ functor Static (S: STATIC_STRUCTS): STATIC =
 
 
       fun vector {data, location, tycon} =
-         T {header = sequenceMetadata (tycon, WordXVector.length data),
-            data = Data.Vector data,
-            location = location}
+         T {data = Data.Vector data,
+            location = location,
+            metadata = sequenceMetadata (tycon, WordXVector.length data)}
 
       fun sequence {length, location, totalSize, tycon} =
-         T {header = sequenceMetadata (tycon, length),
-            data = Data.Empty totalSize,
-            location = location}
+         T {data = Data.Empty totalSize,
+            location = location,
+            metadata = sequenceMetadata (tycon, length)}
 
 
 
