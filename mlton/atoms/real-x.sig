@@ -37,7 +37,6 @@ signature REAL_X =
       val castToWord: t -> WordX.t option
       val cos: t -> t option
       val decon: t -> decon option
-      val disableCF: unit -> bool
       val div: t * t -> t option
       val equal: t * t -> bool option
       val equals: t * t -> bool
