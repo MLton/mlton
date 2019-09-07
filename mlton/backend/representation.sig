@@ -52,7 +52,7 @@ signature REPRESENTATION =
                       elem: Ssa2.Var.t -> Rssa.Var.t Rssa.Static.Data.Elem.t,
                       location: Rssa.Static.Location.t,
                       objectTy: Ssa2.Type.t} ->
-                      StaticOrElem.t,
+                      StaticOrElem.t option,
              toRtype: Ssa2.Type.t -> Rssa.Type.t option,
              update: {base: Rssa.Operand.t Ssa2.Base.t,
                       baseTy: Ssa2.Type.t,

@@ -1706,7 +1706,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                let
                   val tycon = getObjptrTycon ty
                in
-                  (Static o Static.vector)
+                  (SOME o Static o Static.vector)
                   {data=wxv, tycon=tycon,
                    location=location}
                end
@@ -1719,7 +1719,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                         | _ => Error.bug "translateGlobalStatics.makeSequence: strange sequence tycon"
                   val bytes = Bytes.fromInt (length * Bits.toInt elemSize)
                in
-                  (Static o Static.sequence)
+                  (SOME o Static o Static.sequence)
                   {length=length, tycon=tycon,
                    totalSize=bytes, location=location}
                end
@@ -1728,7 +1728,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                   elem=fn v =>
                   case globalStatic v of
                      SOME static => static
-
                    | NONE => Error.bug "translateGlobalStatics.makeObject.elem",
                   location=location,
                   objectTy=ty}
@@ -1750,14 +1749,14 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                         (setGlobalStatic (var, SOME (Real r));
                          pushKeep st)
                      fun 'a static (mk: S.Type.t * location * 'a ->
-                                    PackedRepresentation.StaticOrElem.t, isEmpty, a: 'a) =
+                                    PackedRepresentation.StaticOrElem.t option, isEmpty, a: 'a) =
                         let
                            val location = getLocation (ty, isEmpty)
-                           val s = mk (ty, location, a)
+                           val so = mk (ty, location, a)
                            val rty = toRtype ty
                         in
-                           case rty of
-                               SOME rty =>
+                           case (so, rty) of
+                               (SOME s, SOME rty) =>
                                  (case (s, location) of
                                       (* address of heap static not a valid elem *)
                                       (Static s, Heap) =>
@@ -1768,7 +1767,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                     | (Elem e, _) =>
                                        (setGlobalStatic (var, SOME e);
                                         pushKeep st))
-                             | NONE => keep ()
+                             | _ => keep ()
                         end
                   in
                      case exp of

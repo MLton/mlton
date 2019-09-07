@@ -61,6 +61,7 @@ structure StaticOrElem =
          Static of Var.t Static.t
        | Elem of Var.t Static.Data.Elem.t
    end
+exception UnrepresentableStatic
 
 structure Type =
    struct
@@ -494,16 +495,14 @@ structure Component =
                   val src = fn i =>
                      case src i of
                         Static.Data.Elem.Word w => w
-
-                       | Static.Data.Elem.Real r =>
-                          (case RealX.castToWord r of
+                      | Static.Data.Elem.Real r =>
+                           (case RealX.castToWord r of
                                SOME w => w
-                             | NONE => Error.bug
-                             "PackedRepresentation.Component.staticTuple: unexpected real")
-                       | _ => Error.bug "PackedRepresentation.Component.staticTuple: bad component"
-                in
-                   (Static.Data.Elem.Word o WordRep.staticTuple) (wr, {src = src})
-                end
+                             | NONE => raise UnrepresentableStatic)
+                      | _ => Error.bug "PackedRepresentation.Component.staticTuple: bad component"
+               in
+                  (Static.Data.Elem.Word o WordRep.staticTuple) (wr, {src = src})
+               end
    end
 
 structure Unpack =
@@ -1576,8 +1575,7 @@ structure ConRep =
                       | Static.Data.Elem.Real r =>
                          (case RealX.castToWord r of
                               SOME w => w
-                            | NONE => Error.bug
-                            "PackedRepresentation.Component.staticConApp: unexpected real")
+                            | NONE => raise UnrepresentableStatic)
                       | _ => Error.bug "PackedRepresentation.ConRep.staticConApp: bad component")
                   val shift = (WordX.fromIntInf
                                (Bits.toIntInf
@@ -2969,12 +2967,14 @@ fun compute (program as Ssa2.Program.T {datatypes, ...}) =
             val src = makeSrc (args, elem)
             val width = (WordSize.fromBits o Rep.width o Value.get o typeRep) objectTy
          in
-            case con of
-               NONE => TupleRep.staticTuple
-               (tupleRep objectTy, {location = location, src = src})
-             | SOME con => ConRep.staticConApp
-               (conRep con, {location = location, src = src, width = width})
-         end
+            SOME (case con of
+                     NONE =>
+                        TupleRep.staticTuple
+                        (tupleRep objectTy, {location = location, src = src})
+                   | SOME con =>
+                        ConRep.staticConApp
+                        (conRep con, {location = location, src = src, width = width}))
+         end handle UnrepresentableStatic => NONE
    in
       {diagnostic = diagnostic,
        genCase = genCase,
