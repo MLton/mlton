@@ -1783,11 +1783,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                            let
                               val location = getLocation (ty, false)
                            in
-                              if Vector.exists (args, fn v =>
-                                        case globalStatic v of
-                                             NONE => true
-                                           | SOME (Real _) => RealX.disableCF ()
-                                           | _ => false)
+                              if Vector.exists (args, Option.isNone o globalStatic)
                               (* For objects, there's no reason to statically initalize,
                                * since they're so small and irregular *)
                               orelse location = Static.Location.Heap
