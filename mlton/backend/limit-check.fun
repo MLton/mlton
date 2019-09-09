@@ -848,16 +848,24 @@ fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileI
       val {args, blocks, name, raises, returns, start} =
          Function.dest (insert main)
       val newStart = Label.newNoname ()
-      fun define x = Statement.Bind
-         {dst = (x, Type.cpointer ()),
-          pinned = false,
-          src = Operand.Static
-            {static=Static.T
-               {data=Static.Data.Object
-                  [Static.Data.Elem.Word (WordX.one WordSize.bool)],
-                location=Static.Location.MutStatic,
-                metadata=WordXVector.fromList ({elementSize=WordSize.objptr ()}, [])},
-             ty=Type.cpointer ()}}
+
+      val newTycon = ref NONE
+      fun define x =
+         let
+            val refTycon =
+               Ref.memoize (newTycon,
+                  fn () => ObjptrTycon.new ())
+         in
+            Statement.Bind
+               {dst = (x, Type.cpointer ()),
+                pinned = false,
+                src = Operand.Static
+                  {static=Static.object
+                     {elems=[Static.Data.Elem.Word (WordX.one WordSize.bool)],
+                      location=Static.Location.MutStatic,
+                      tycon=refTycon},
+                   ty=Type.cpointer ()}}
+         end
       val block =
          Block.T {args = Vector.new0 (),
                   kind = Kind.Jump,
@@ -873,6 +881,16 @@ fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileI
                                raises = raises,
                                returns = returns,
                                start = newStart}
+      val objectTypes =
+         case !newTycon of
+              NONE => objectTypes
+            | SOME _ => Vector.concat [objectTypes,
+               (Vector.new1 o ObjectType.Normal)
+                  {ty=case !Control.align of
+                           Control.Align4 => Type.bool
+                         | Control.Align8 => (Type.seq o Vector.fromList)
+                            [Type.bool, Type.word WordSize.word32],
+                   hasIdentity=true}]
    in
       Program.T {functions = functions,
                  handlesSignals = handlesSignals,
