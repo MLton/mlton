@@ -64,7 +64,7 @@ functor Static (S: STATIC_STRUCTS): STATIC =
       datatype 'a t =
          T of {data: 'a Data.t,
                location: Location.t,
-               metadata: WordXVector.t} (* mapped in-order *)
+               metadata: WordX.t list} (* mapped in-order *)
 
       fun map (T {data, metadata, location}, f) =
          T {data=Data.map (data, f), metadata=metadata, location=location}
@@ -73,9 +73,12 @@ functor Static (S: STATIC_STRUCTS): STATIC =
          in record
             [("data", Data.layout layoutI data),
              ("location", Location.layout location),
-             ("metadata", WordXVector.layout metadata)]
+             ("metadata", List.layout (fn w => WordX.layout (w, {suffix = true})) metadata)]
          end
 
+      fun metadataSize (T {metadata, ...}) =
+         List.fold (metadata, Bytes.zero, fn (w, b) =>
+                    Bytes.+ (WordSize.bytes (WordX.size w), b))
 
       fun getTyconHeader tycon =
          let
@@ -86,26 +89,17 @@ functor Static (S: STATIC_STRUCTS): STATIC =
          end
 
       fun object {elems, location, tycon} =
-         let
-            val header = getTyconHeader tycon
-            val metadata = WordXVector.fromList
-               ({elementSize = WordSize.objptrHeader ()}, [header])
-         in
-            T
-            {data = Data.Object elems,
-             location = location,
-             metadata = metadata}
-         end
+         T {data = Data.Object elems,
+            location = location,
+            metadata = [getTyconHeader tycon]}
 
       fun sequenceMetadata (tycon, length: int) =
          let
+            val counter = WordX.zero (WordSize.seqIndex ())
+            val length = WordX.fromIntInf (Int.toIntInf length, WordSize.seqIndex ())
             val header = getTyconHeader tycon
-            val wordSize = WordSize.objptrHeader ()
-            val capacity = WordX.zero wordSize
-            val length = WordX.fromIntInf (Int.toIntInf length, wordSize)
          in
-            WordXVector.fromList
-               ({elementSize = wordSize}, [capacity, length, header])
+            [counter, length, header]
          end
 
 

@@ -50,7 +50,7 @@ signature STATIC =
       datatype 'a t =
          T of {data: 'a Data.t,
                location: Location.t,
-               metadata: WordXVector.t} (* mapped in-order *)
+               metadata: WordX.t list} (* mapped in-order *)
 
       val object: {elems: ('a Data.Elem.t) list,
                    location: Location.t,
@@ -64,5 +64,6 @@ signature STATIC =
                    tycon: ObjptrTycon.t} -> 'a t
 
       val map: ('a t * ('a -> 'b)) -> 'b t
+      val metadataSize: 'a t -> Bytes.t
       val layout: ('a -> Layout.t) -> 'a t -> Layout.t
    end

@@ -113,16 +113,6 @@ structure WordXVector =
             case WordSize.prim (elementSize v) of
                W8 => string v
              | _ => vector v
-         fun literal (v: t): string =
-            let
-               fun mkLit (name, init) = concat ["((", name, ")", init, ")"]
-            in
-               case WordSize.prim (elementSize v) of
-                  W8 => mkLit ("Word8[]", string v)
-                | W16 => mkLit ("Word16[]", vector v)
-                | W32 => mkLit ("Word32[]", vector v)
-                | W64 => mkLit ("Word64[]", vector v)
-            end
       end
    end
 
@@ -308,8 +298,7 @@ fun outputDeclarations
       fun staticVar i =
          "static_" ^ Int.toString i
       fun metadataSize i =
-         let val Static.T {metadata, ...} = (#1 o Vector.sub) (statics, i)
-         in Bytes.toInt (WordXVector.size metadata) end
+         Bytes.toInt (Static.metadataSize (#1 (Vector.sub (statics, i))))
       fun staticAddress i = concat
          ["((Pointer)(&", staticVar i, ") + ",
           C.int (metadataSize i), ")"]
@@ -338,8 +327,13 @@ fun outputDeclarations
                       TObject strings => (concat o List.mapi) (strings,
                            fn (i, s) => concat [s, " data_", C.int i, "; "])
                     | TVector (str, length) => concat [str, " data[", C.int length, "];"]
-                val metadataElems = Int.toString (WordXVector.length metadata)
-                val metadataTypeStr = "Word" ^ (WordSize.toString o WordSize.objptr) ()
+                val mdataDescr =
+                   (concat o List.mapi)
+                   (metadata, fn (i, w) =>
+                    concat ["Word", WordSize.toString (WordX.size w),
+                            " meta_", C.int i, "; "])
+                val mdataC =
+                   String.concatWith (List.map (metadata, WordX.toC), ", ")
                 val qualifier =
                    let datatype z = datatype Machine.Static.Location.t in
                    case location of
@@ -353,27 +347,27 @@ fun outputDeclarations
                    end
 
                 val decl = concat
-                   [ qualifier, "struct { ",
-                     metadataTypeStr, " metadata[", metadataElems, "]; ",
+                   [ qualifier, "struct {",
+                     mdataDescr,
                      dataDescr,
                      "}\n",
                      staticVar i ]
              in
                 case dataC of
-                     SOME init =>
+                     SOME dataC =>
                        (print o concat)
-                       [decl, " = {", WordXVector.toC metadata, ", ", init, "};\n"]
+                       [decl, " = {", mdataC, ", ", dataC, "};\n"]
                     (* needs code initialization *)
                    | NONE => print (decl ^ ";\n")
              end))
       fun declareHeapStatics () =
          (print "static struct GC_objectInit objectInits[] = {\n"
           ; (Vector.foreachi
-             (statics, fn (i, (Machine.Static.T {data, metadata, ...}, g)) =>
+             (statics, fn (i, (static as Machine.Static.T {data, ...}, g)) =>
              let
                 val (dataWidth, dataSize) = Static.Data.size data
                 val dataBytes = dataSize * (Bytes.toInt (WordSize.bytes dataWidth))
-                val metadataBytes = Bytes.toInt (WordXVector.size metadata)
+                val metadataBytes = Bytes.toInt (Static.metadataSize static)
              in
                 case g of
                      NONE => ()
@@ -389,7 +383,7 @@ fun outputDeclarations
       fun declareStaticInits () =
          (print "static void static_Init() {\n"
           ; (Vector.foreachi
-             (statics, fn (i, (Machine.Static.T {data, location, metadata}, _)) =>
+             (statics, fn (i, (static as Machine.Static.T {data, location, metadata}, _)) =>
               let
                  val shouldInit =
                     (case location of
@@ -399,12 +393,18 @@ fun outputDeclarations
                     (case data of
                         Machine.Static.Data.Empty _ => true
                       | _ => false)
-                 val metadataBytes = WordXVector.size metadata
+                 val metadataBytes = Machine.Static.metadataSize static
+                 val mdataDescr =
+                    (concat o List.mapi)
+                    (metadata, fn (i, w) =>
+                     concat ["Word", WordSize.toString (WordX.size w),
+                             " meta_", C.int i, "; "])
+                 val mdataC = String.concatWith (List.map (metadata, WordX.toC), ", ")
               in
                  if shouldInit
                     then C.call ("\tmemcpy",
                                  ["&" ^ staticVar i,
-                                  "&" ^ WordXVector.literal metadata,
+                                  concat ["&((struct {", mdataDescr, "}){", mdataC, "})"],
                                   C.bytes metadataBytes],
                                  print)
                     else ()

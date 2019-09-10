@@ -359,7 +359,7 @@ fun toMachine (rssa: Rssa.Program.t) =
           * late and mutable statics can't be unique *)
          val (allStatics, globalStatic) =
             (fn () => Vector.fromListRev (!staticsRef),
-             fn {static as M.Static.T {location, metadata, ...}, ty} =>
+             fn {static as M.Static.T {location, ...}, ty} =>
                 let
                    val static = M.Static.map (static,
                      fn v =>
@@ -374,7 +374,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                          | _ => NONE
                    val _ = List.push (staticsRef, (static, g))
 
-                   val offset = WordXVector.size metadata
+                   val offset = M.Static.metadataSize static
                 in
                    case g of
                         SOME g' => M.Operand.Global g'
