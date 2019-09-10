@@ -148,6 +148,22 @@ structure Static =
                       ", ")
                   end
       end
+
+      fun metadataToC (Static.T {metadata, ...}) =
+         let
+            val decl =
+               String.concatWith
+               (List.mapi (metadata, fn (i, w) =>
+                           concat ["Word", WordSize.toString (WordX.size w),
+                                   " meta_", C.int i]),
+                "; ")
+            val init =
+               String.concatWith
+               (List.map (metadata, WordX.toC),
+                ", ")
+         in
+            {decl = decl, init = init}
+         end
    end
 
 structure Operand =
@@ -305,7 +321,7 @@ fun outputDeclarations
 
       fun declareStatics () =
          (Vector.foreachi
-          (statics, fn (i, (Machine.Static.T {data, location, metadata}, _)) =>
+          (statics, fn (i, (static as Machine.Static.T {data, location, ...}, _)) =>
              let
                 val dataC = Static.Data.toC staticAddress data
                 datatype dataType =
@@ -327,13 +343,8 @@ fun outputDeclarations
                       TObject strings => (concat o List.mapi) (strings,
                            fn (i, s) => concat [s, " data_", C.int i, "; "])
                     | TVector (str, length) => concat [str, " data[", C.int length, "];"]
-                val mdataDescr =
-                   (concat o List.mapi)
-                   (metadata, fn (i, w) =>
-                    concat ["Word", WordSize.toString (WordX.size w),
-                            " meta_", C.int i, "; "])
-                val mdataC =
-                   String.concatWith (List.map (metadata, WordX.toC), ", ")
+                val {decl = mdecl, init = minit} =
+                   Static.metadataToC static
                 val qualifier =
                    let datatype z = datatype Machine.Static.Location.t in
                    case location of
@@ -348,7 +359,7 @@ fun outputDeclarations
 
                 val decl = concat
                    [ qualifier, "struct {",
-                     mdataDescr,
+                     mdecl, "; ",
                      dataDescr,
                      "}\n",
                      staticVar i ]
@@ -356,7 +367,7 @@ fun outputDeclarations
                 case dataC of
                      SOME dataC =>
                        (print o concat)
-                       [decl, " = {", mdataC, ", ", dataC, "};\n"]
+                       [decl, " = {", minit, ", ", dataC, "};\n"]
                     (* needs code initialization *)
                    | NONE => print (decl ^ ";\n")
              end))
@@ -383,7 +394,7 @@ fun outputDeclarations
       fun declareStaticInits () =
          (print "static void static_Init() {\n"
           ; (Vector.foreachi
-             (statics, fn (i, (static as Machine.Static.T {data, location, metadata}, _)) =>
+             (statics, fn (i, (static as Machine.Static.T {data, location, ...}, _)) =>
               let
                  val shouldInit =
                     (case location of
@@ -394,17 +405,13 @@ fun outputDeclarations
                         Machine.Static.Data.Empty _ => true
                       | _ => false)
                  val metadataBytes = Machine.Static.metadataSize static
-                 val mdataDescr =
-                    (concat o List.mapi)
-                    (metadata, fn (i, w) =>
-                     concat ["Word", WordSize.toString (WordX.size w),
-                             " meta_", C.int i, "; "])
-                 val mdataC = String.concatWith (List.map (metadata, WordX.toC), ", ")
+                 val {decl = mdecl, init = minit} =
+                    Static.metadataToC static
               in
                  if shouldInit
                     then C.call ("\tmemcpy",
                                  ["&" ^ staticVar i,
-                                  concat ["&((struct {", mdataDescr, "}){", mdataC, "})"],
+                                  concat ["&((struct {", mdecl, "}){", minit, "})"],
                                   C.bytes metadataBytes],
                                  print)
                     else ()
