@@ -59,9 +59,9 @@ signature STATIC =
       val object: {elems: ('a Data.Elem.t) list,
                    location: Location.t,
                    tycon: ObjptrTycon.t} -> 'a t
-      val sequence: {length: int,
+      val sequence: {eltSize: Bytes.t,
+                     length: int,
                      location: Location.t,
-                     totalSize: Bytes.t,
                      tycon: ObjptrTycon.t} -> 'a t
       val vector: {data: WordXVector.t,
                    location: Location.t,

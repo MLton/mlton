@@ -116,11 +116,13 @@ functor Static (S: STATIC_STRUCTS): STATIC =
             location = location,
             metadata = sequenceMetadata (tycon, WordXVector.length data)}
 
-      fun sequence {length, location, totalSize, tycon} =
-         T {data = Data.Empty totalSize,
-            location = location,
-            metadata = sequenceMetadata (tycon, length)}
-
-
+      fun sequence {eltSize, length, location, tycon} =
+         let
+            val dataSize = Bytes.fromInt (length * Bytes.toInt eltSize)
+         in
+            T {data = Data.Empty dataSize,
+               location = location,
+               metadata = sequenceMetadata (tycon, length)}
+         end
 
    end

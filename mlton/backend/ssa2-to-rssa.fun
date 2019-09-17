@@ -1665,32 +1665,18 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                   | Control.Static =>
                        not (isMutable andalso Option.exists (toRtype elt, Type.isObjptr))
                   | Control.None => false
-            fun validCon con =
-              case (con,
-                    !Control.staticAllocObjects,
-                    !Control.staticAllocVectors) of
-                   (S.ObjectCon.Con _, true, _) => true
-                 | (S.ObjectCon.Tuple, true, _) => true
-                 | (S.ObjectCon.Sequence, _, true) => true
-                 | _ => false
             fun getLocation (ty, isEmpty) =
                case S.Type.dest ty of
-                    (* Important: isMutable is a proxy for hasIdentity,
-                     * so we need to preserve it even if there are no fields *)
-                    S.Type.Object {args, con} =>
-                     if validCon con andalso
-                        (isEmpty orelse
-                           Vector.forall
-                           (S.Prod.dest args, validArg))
-                     then
-                        if S.Prod.someIsMutable args
-                           then Static.Location.MutStatic
-                        else Static.Location.ImmStatic
-                     else
-                        Static.Location.Heap
-                  | _ => Error.bug
-                     "translateGlobalStatics.getLocation: non-object"
-
+                  S.Type.Object {args, ...} =>
+                     (* Important: isMutable is a proxy for hasIdentity,
+                      * so we need to preserve it even if there are no fields
+                      *)
+                     if isEmpty orelse Vector.forall (S.Prod.dest args, validArg)
+                     then if S.Prod.someIsMutable args
+                             then Static.Location.MutStatic
+                             else Static.Location.ImmStatic
+                     else Static.Location.Heap
+                | _ => Error.bug "translateGlobalStatics.getLocation: non-object"
             fun getObjptrTycon ty =
                let
                   fun fail () = Error.bug "translateGlobalStatics.getObjptrTycon"
@@ -1702,35 +1688,38 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                           | NONE => fail ())
                    | NONE => fail ()
                end
-            fun makeWordXVector (ty, location, wxv) =
+            fun makeWordXVector {data, location, ty} =
                let
                   val tycon = getObjptrTycon ty
                in
-                  (SOME o Static o Static.vector)
-                  {data=wxv, tycon=tycon,
-                   location=location}
+                  (Static o Static.vector)
+                  {data = data,
+                   location = location,
+                   tycon = tycon}
                end
-            fun makeSequence (ty, location, length) =
+            fun makeSequence {length, location, ty} =
                let
                   val tycon = getObjptrTycon ty
-                  val elemSize =
+                  val eltSize =
                      case Vector.sub (objectTypes, ObjptrTycon.index tycon) of
-                          ObjectType.Sequence {elt, ...} => Type.width elt
-                        | _ => Error.bug "translateGlobalStatics.makeSequence: strange sequence tycon"
-                  val bytes = Bytes.fromInt (length * Bits.toInt elemSize)
+                        ObjectType.Sequence {elt, ...} => Bits.toBytes (Type.width elt)
+                      | _ => Error.bug "translateGlobalStatics.makeSequence: strange sequence tycon"
                in
-                  (SOME o Static o Static.sequence)
-                  {length=length, tycon=tycon,
-                   totalSize=bytes, location=location}
+                  (Static o Static.sequence)
+                  {eltSize = eltSize,
+                   length = length,
+                   location = location,
+                   tycon = tycon}
                end
-            fun makeObject (ty, location, {args, con}) =
-               static {args=args, con=con,
-                  elem=fn v =>
-                  case globalStatic v of
-                     SOME static => static
-                   | NONE => Error.bug "translateGlobalStatics.makeObject.elem",
-                  location=location,
-                  objectTy=ty}
+            fun makeObject {args, con, location, ty} =
+               static {args = args,
+                       con = con,
+                       elem = (fn v =>
+                               case globalStatic v of
+                                  SOME static => static
+                                | NONE => Error.bug "translateGlobalStatics.makeObject.elem"),
+                       location = location,
+                       objectTy = ty}
             fun translateBind (st, {exp, ty, var}) =
                case var of
                   NONE => pushKeep st
@@ -1748,59 +1737,73 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                      fun real r =
                         (setGlobalStatic (var, SOME (Real r));
                          pushKeep st)
-                     fun 'a static (mk: S.Type.t * location * 'a ->
-                                    PackedRepresentation.StaticOrElem.t option, isEmpty, a: 'a) =
-                        let
-                           val location = getLocation (ty, isEmpty)
-                           val so = mk (ty, location, a)
-                           val rty = toRtype ty
-                        in
-                           case (so, rty) of
-                               (SOME s, SOME rty) =>
-                                 (case (s, location) of
-                                      (* address of heap static not a valid elem *)
-                                      (Static s, Heap) =>
-                                       pushStatic (var, ty, rty, s)
-                                    | (Static s, _) =>
-                                       (setGlobalStatic (var, SOME (Address var));
-                                        pushStatic (var, ty, rty, s))
-                                    | (Elem e, _) =>
-                                       (setGlobalStatic (var, SOME e);
-                                        pushKeep st))
-                             | _ => keep ()
-                        end
+                     fun 'a static (soe: PackedRepresentation.StaticOrElem.t) =
+                        case toRtype ty of
+                           SOME rty =>
+                              (case soe of
+                                  Static s =>
+                                     (case Static.location s of
+                                         Heap =>
+                                            (* address of heap static not a valid elem *)
+                                            pushStatic (var, ty, rty, s)
+                                       | _ =>
+                                            (setGlobalStatic (var, SOME (Address var));
+                                             pushStatic (var, ty, rty, s)))
+                                | Elem e =>
+                                     (setGlobalStatic (var, SOME e);
+                                      pushKeep st))
+                         | _ => keep ()
                   in
                      case exp of
                         S.Exp.Const c =>
                            (case c of
-                               Const.WordVector wxv => static (makeWordXVector, false, wxv)
+                               Const.WordVector wxv =>
+                                  if !Control.staticAllocWordVectorConsts
+                                     then static (makeWordXVector {data = wxv,
+                                                                   location = Static.Location.ImmStatic,
+                                                                   ty = ty})
+                                     else keep ()
                              | Const.Word w => word w
                              | Const.Real r => real r
                              | _ => keep ())
                       | S.Exp.Inject {variant, ...} =>
                            copy variant
                       | S.Exp.Object {args, con} =>
-                           let
-                              val location = getLocation (ty, false)
-                           in
-                              if Vector.exists (args, Option.isNone o globalStatic)
-                              (* For objects, there's no reason to statically initalize,
-                               * since they're so small and irregular *)
-                              orelse location = Static.Location.Heap
-                                 then keep ()
-                              else static (makeObject, false, {args=args, con=con})
-                           end
+                           (case !Control.staticInitObjects of
+                               NONE => keep ()
+                             | SOME staticInitHeapObjects =>
+                                  if Vector.exists (args, Option.isNone o globalStatic)
+                                     then keep ()
+                                     else let
+                                             val location = getLocation (ty, false)
+                                          in
+                                             if location <> Static.Location.Heap
+                                                orelse staticInitHeapObjects
+                                                then case makeObject {args = args,
+                                                                      con = con,
+                                                                      location = location,
+                                                                      ty = ty} of
+                                                        NONE => keep ()
+                                                      | SOME soe => static soe
+                                                else ()
+                                           end)
                       | S.Exp.PrimApp {args, prim, ...} =>
                            (case Prim.name prim of
                                Prim.Name.Array_alloc _ =>
-                               let
-                                  val length = (globalStatic o Vector.first) args
-                               in
-                                  case (length, !Control.staticAllocArrays) of
-                                     (SOME (Word l), true) =>
-                                        static (makeSequence, WordX.isZero l, WordX.toInt l)
-                                   | _ => keep ()
-                               end
+                                  let
+                                     val length = (globalStatic o Vector.first) args
+                                  in
+                                     case (length, !Control.staticInitArrays) of
+                                        (SOME (Word l), true) =>
+                                           let
+                                              val location = getLocation (ty, WordX.isZero l)
+                                           in
+                                              static (makeSequence {length = WordX.toInt l,
+                                                                    location = location,
+                                                                    ty = ty})
+                                           end
+                                      | _ => keep ()
+                                  end
                              | _ => keep ())
                       | S.Exp.Var v => copy v
                       | S.Exp.Select _ => keep ()

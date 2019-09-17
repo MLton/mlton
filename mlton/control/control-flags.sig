@@ -400,9 +400,9 @@ signature CONTROL_FLAGS =
        | Static
        | None
       val staticAllocInternalPtrs: staticAllocInternalPtrs ref
-      val staticAllocArrays: bool ref
-      val staticAllocObjects: bool ref
-      val staticAllocVectors: bool ref
+      val staticAllocWordVectorConsts: bool ref
+      val staticInitArrays: bool ref
+      val staticInitObjects: bool option ref
 
       (* List of pass names to stop at. *)
       val stopPasses: Regexp.Compiled.t list ref
