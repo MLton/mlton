@@ -52,6 +52,10 @@ signature STATIC =
                location: Location.t,
                metadata: WordX.t list} (* mapped in-order *)
 
+      val data: 'a t -> 'a Data.t
+      val location: 'a t -> Location.t
+      val metadata: 'a t -> WordX.t list
+
       val object: {elems: ('a Data.Elem.t) list,
                    location: Location.t,
                    tycon: ObjptrTycon.t} -> 'a t

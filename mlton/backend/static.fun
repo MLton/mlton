@@ -66,6 +66,14 @@ functor Static (S: STATIC_STRUCTS): STATIC =
                location: Location.t,
                metadata: WordX.t list} (* mapped in-order *)
 
+      local
+         fun mk sel (T r) = sel r
+      in
+         fun data s = mk #data s
+         fun location s = mk #location s
+         fun metadata s = mk #metadata s
+      end
+
       fun map (T {data, metadata, location}, f) =
          T {data=Data.map (data, f), metadata=metadata, location=location}
       fun layout layoutI (T {data, metadata, location}) =
