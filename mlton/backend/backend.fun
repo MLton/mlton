@@ -328,59 +328,83 @@ fun toMachine (rssa: Rssa.Program.t) =
          varOperand
       (* Hash tables for uniquifying globals. *)
       local
+         val allStatics = ref []
+         val staticsCounter = Counter.new 0
+      in
+         (* Doesn't likely need uniquifying, since they're introduced
+          * late and mutable statics can't be unique.
+          *)
+         val (allStatics, globalStatic) =
+            (fn () => Vector.fromListRev (!allStatics),
+             fn {static as M.Static.T {location, ...}, ty} =>
+             let
+                val static =
+                   M.Static.map
+                   (static, fn v =>
+                    case varOperandOpt v of
+                       SOME (M.Operand.Static {index, ...}) => index
+                     | _ => Error.bug "Backend.globalStatic: invalid referrent")
+                val i = Counter.next staticsCounter
+                val g =
+                   case location of
+                      M.Static.Location.Heap => SOME (M.Global.new ty)
+                    | _ => NONE
+                val _ = List.push (allStatics, (static, g))
+             in
+                case g of
+                   SOME g' => M.Operand.Global g'
+                 | NONE => M.Operand.Static {index = i,
+                                             offset = M.Static.metadataSize static,
+                                             ty = ty}
+             end)
+      end
+      local
          fun 'a make {equals: 'a * 'a -> bool,
                       hash: 'a -> word,
-                      ty: 'a -> Type.t} =
+                      oper: 'a -> M.Operand.t} =
             let
-               val table: ('a, M.Global.t) HashTable.t =
+               val table: ('a, M.Operand.t) HashTable.t =
                   HashTable.new {equals = equals, hash = hash}
                fun get (value: 'a): M.Operand.t =
-                  M.Operand.Global
-                  (HashTable.lookupOrInsert
-                   (table, value, fn () =>
-                    M.Global.new (ty value)))
-               fun all () = HashTable.toList table
+                  HashTable.lookupOrInsert
+                  (table, value, fn () => oper value)
             in
-               (all, get)
+               get
             end
-
-         val staticsRef = ref []
-         val staticsCount = Counter.new 0
       in
-         val (allReals, globalReal) =
-            make {equals = RealX.equals,
-                  hash = RealX.hash,
-                  ty = Type.real o RealX.size}
-         val (allVectors, globalVector) =
+         local
+            val allReals = ref []
+         in
+            val globalReal =
+               make {equals = RealX.equals,
+                     hash = RealX.hash,
+                     oper = fn r => let
+                                       val g = M.Global.new (Type.real (RealX.size r))
+                                    in
+                                       List.push (allReals, (r, g))
+                                       ; M.Operand.Global g
+                                    end}
+            val allReals = fn () => !allReals
+         end
+
+         val globalWordVector =
             make {equals = WordXVector.equals,
                   hash = WordXVector.hash,
-                  ty = Type.ofWordXVector}
-         (* Doesn't likely need uniquifying, since they're introduced
-          * late and mutable statics can't be unique *)
-         val (allStatics, globalStatic) =
-            (fn () => Vector.fromListRev (!staticsRef),
-             fn {static as M.Static.T {location, ...}, ty} =>
-                let
-                   val static = M.Static.map (static,
-                     fn v =>
-                        case varOperandOpt v of
-                             SOME (M.Operand.Static {index, ...}) => index
-                           | _ => Error.bug "Backend.globalStatic: invalid referrent")
-                   val i = Counter.next staticsCount
-
-                   val g =
-                      case location of
-                           M.Static.Location.Heap => SOME (M.Global.new ty)
-                         | _ => NONE
-                   val _ = List.push (staticsRef, (static, g))
-
-                   val offset = M.Static.metadataSize static
-                in
-                   case g of
-                        SOME g' => M.Operand.Global g'
-                      | NONE => M.Operand.Static
-                         {index=i, offset=offset, ty=ty}
-                end)
+                  oper = fn wxv => let
+                                      val eltSize = WordXVector.elementSize wxv
+                                      val ty = Type.wordVector eltSize
+                                      val tycon = ObjptrTycon.wordVector (WordSize.bits eltSize)
+                                      val location =
+                                         if !Control.staticAllocWordVectorConsts
+                                            then M.Static.Location.ImmStatic
+                                            else M.Static.Location.Heap
+                                   in
+                                      globalStatic
+                                      {static = M.Static.vector {data = wxv,
+                                                                 location = location,
+                                                                 tycon = tycon},
+                                       ty = ty}
+                                   end}
       end
       fun constOperand (c: Const.t): M.Operand.t =
          let
@@ -392,7 +416,7 @@ fun toMachine (rssa: Rssa.Program.t) =
              | Null => M.Operand.Null
              | Real r => globalReal r
              | Word w => M.Operand.Word w
-             | WordVector v => globalVector v
+             | WordVector v => globalWordVector v
          end
       fun parallelMove {dsts: M.Operand.t vector,
                         srcs: M.Operand.t vector}: M.Statement.t vector =
@@ -590,7 +614,7 @@ fun toMachine (rssa: Rssa.Program.t) =
       val bugTransfer = fn () =>
          M.Transfer.CCall
          {args = (Vector.new1
-                  (globalVector
+                  (globalWordVector
                    (WordXVector.fromString
                     "backend thought control shouldn't reach here"))),
           func = Type.BuiltInCFunction.bug (),
@@ -1148,16 +1172,6 @@ fun toMachine (rssa: Rssa.Program.t) =
            end))
       val maxFrameSize = Bytes.alignWord32 maxFrameSize
 
-      (* Until statics added to rssa *)
-      val vectorStatics = Vector.fromListMap (allVectors (),
-         fn (v, g) =>
-            let
-               val size = WordXVector.elementSize v
-               val tycon = ObjptrTycon.wordVector (WordSize.bits size)
-            in
-               (M.Static.vector {data=v, tycon=tycon,
-                location=M.Static.Location.Heap}, SOME g)
-            end)
       val machine =
          M.Program.T
          {chunks = chunks,
@@ -1169,7 +1183,7 @@ fun toMachine (rssa: Rssa.Program.t) =
           objectTypes = objectTypes,
           reals = allReals (),
           sourceMaps = sourceMaps,
-          statics = Vector.concat [allStatics (), vectorStatics] }
+          statics = allStatics ()}
    in
       machine
    end

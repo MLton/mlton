@@ -268,7 +268,7 @@ fun declareGlobals (prefix: string, print) =
              val s = CType.toString t
              val n = Global.numberOfType t
           in
-             if n > 0
+             if n > 0 orelse CType.equals (t, CType.Objptr)
                 then print (concat [prefix, s, " global", s, " [", C.int n, "];\n"])
                 else ()
           end)
