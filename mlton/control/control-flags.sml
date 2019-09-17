@@ -1217,18 +1217,28 @@ val staticAllocInternalPtrs =
             default = Static,
             toString = StaticAlloc.Objptrs.toString}
 
-val staticAllocWordVectorConsts =
-   control {name = "staticAllocWordVectorConsts",
-            default = true,
-            toString = Bool.toString}
 val staticInitArrays =
    control {name = "staticInitArrays",
             default = true,
             toString = Bool.toString}
+val staticAllocArrays =
+   control {name = "staticAllocArrays",
+            default = true,
+            toString = Bool.toString}
+
 val staticInitObjects =
    control {name = "staticInitObjects",
             default = SOME false,
             toString = Option.toString Bool.toString}
+val staticAllocObjects =
+   control {name = "staticAllocObjects",
+            default = true,
+            toString = Bool.toString}
+
+val staticAllocWordVectorConsts =
+   control {name = "staticAllocWordVectorConsts",
+            default = true,
+            toString = Bool.toString}
 
 structure SplitTypesBool =
    struct

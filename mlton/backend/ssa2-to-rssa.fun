@@ -1665,13 +1665,13 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                   | Control.Static =>
                        not (isMutable andalso Option.exists (toRtype elt, Type.isObjptr))
                   | Control.None => false
-            fun getLocation (ty, isEmpty) =
+            fun getLocation (ty, staticAlloc, isEmpty) =
                case S.Type.dest ty of
                   S.Type.Object {args, ...} =>
                      (* Important: isMutable is a proxy for hasIdentity,
                       * so we need to preserve it even if there are no fields
                       *)
-                     if isEmpty orelse Vector.forall (S.Prod.dest args, validArg)
+                     if staticAlloc andalso (isEmpty orelse Vector.forall (S.Prod.dest args, validArg))
                      then if S.Prod.someIsMutable args
                              then Static.Location.MutStatic
                              else Static.Location.ImmStatic
@@ -1775,7 +1775,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                   if Vector.exists (args, Option.isNone o globalStatic)
                                      then keep ()
                                      else let
-                                             val location = getLocation (ty, false)
+                                             val location = getLocation (ty, !Control.staticAllocObjects, false)
                                           in
                                              if location <> Static.Location.Heap
                                                 orelse staticInitHeapObjects
@@ -1796,7 +1796,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                      case (length, !Control.staticInitArrays) of
                                         (SOME (Word l), true) =>
                                            let
-                                              val location = getLocation (ty, WordX.isZero l)
+                                              val location = getLocation (ty, !Control.staticAllocArrays, WordX.isZero l)
                                            in
                                               static (makeSequence {length = WordX.toInt l,
                                                                     location = location,

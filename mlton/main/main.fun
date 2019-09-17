@@ -843,6 +843,9 @@ fun makeOptions {usage} =
                    Result.Yes () => ()
                  | Result.No s' => usage (concat ["invalid -ssa2-passes arg: ", s']))
           | NONE => Error.bug "ssa2 optimization passes missing")),
+       (Expert, "static-alloc-arrays", " {true|false}",
+        "Allow arrays to be statically allocated",
+        boolRef staticAllocArrays),
        (Expert, "static-alloc-internal-ptrs", " {all|static|none}",
         "which pointers to allow in statically allocated values",
         SpaceString (fn s =>
@@ -853,6 +856,9 @@ fun makeOptions {usage} =
                        | "static" => Control.Static
                        | _ => usage (concat ["invalid ",
                        "-static-alloc-internal-ptrs flag: ", s])))),
+       (Expert, "static-alloc-objects", " {true|false}",
+        "Allow objects to be statically allocated",
+        boolRef staticAllocObjects),
        (Expert, "static-alloc-wordvector-consts", " {true|false}",
         "Allow word-vector constants (strings) to be statically allocated",
         boolRef staticAllocWordVectorConsts),
