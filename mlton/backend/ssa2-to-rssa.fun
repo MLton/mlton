@@ -1785,7 +1785,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                                       ty = ty} of
                                                         NONE => keep ()
                                                       | SOME soe => static soe
-                                                else ()
+                                                else keep ()
                                            end)
                       | S.Exp.PrimApp {args, prim, ...} =>
                            (case Prim.name prim of
