@@ -46,9 +46,9 @@ functor Static (S: STATIC_STRUCTS): STATIC =
             end
 
          val size =
-            fn Empty bytes => (WordSize.word8, Bytes.toInt bytes)
-             | Vector v => (WordXVector.elementSize v, WordXVector.length v)
-             | Object es => (WordSize.objptr (), List.length es)
+            fn Empty bytes => bytes
+             | Vector v => Bytes.fromInt (Bytes.toInt (WordSize.bytes (WordXVector.elementSize v)) * WordXVector.length v)
+             | Object es => Bytes.fromInt (Bytes.toInt (WordSize.bytes (WordSize.objptr ())) * List.length es)
       end
       structure Location = struct
          datatype t =
@@ -84,6 +84,7 @@ functor Static (S: STATIC_STRUCTS): STATIC =
              ("metadata", List.layout (fn w => WordX.layout (w, {suffix = true})) metadata)]
          end
 
+      fun dataSize (T {data, ...}) = Data.size data
       fun metadataSize (T {metadata, ...}) =
          List.fold (metadata, Bytes.zero, fn (w, b) =>
                     Bytes.+ (WordSize.bytes (WordX.size w), b))

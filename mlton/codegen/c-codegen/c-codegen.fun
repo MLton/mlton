@@ -374,10 +374,9 @@ fun outputDeclarations
       fun declareHeapStatics () =
          (print "static struct GC_objectInit objectInits[] = {\n"
           ; (Vector.foreachi
-             (statics, fn (i, (static as Machine.Static.T {data, ...}, g)) =>
+             (statics, fn (i, (static, g)) =>
              let
-                val (dataWidth, dataSize) = Static.Data.size data
-                val dataBytes = dataSize * (Bytes.toInt (WordSize.bytes dataWidth))
+                val dataBytes = Bytes.toInt (Static.dataSize static)
                 val metadataBytes = Bytes.toInt (Static.metadataSize static)
              in
                 case g of
