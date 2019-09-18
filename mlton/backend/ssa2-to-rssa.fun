@@ -1650,7 +1650,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
             val keeps = ref []
             datatype elem = datatype Static.Data.Elem.t
             datatype z = datatype PackedRepresentation.StaticOrElem.t
-            val {get = globalStatic: Var.t -> Var.t elem option,
+            val {get = globalStatic: Var.t -> Var.t elem option option,
                  set = setGlobalStatic, destroy = destGlobalStatics} =
                Property.destGetSetOnce
                (Var.plist, Property.initConst NONE)
@@ -1716,8 +1716,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                        con = con,
                        elem = (fn v =>
                                case globalStatic v of
-                                  SOME static => static
-                                | NONE => Error.bug "translateGlobalStatics.makeObject.elem"),
+                                  SOME (SOME static) => static
+                                | _ => Error.bug "translateGlobalStatics.makeObject.elem"),
                        location = location,
                        objectTy = ty}
             fun translateBind (st, {exp, ty, var}) =
@@ -1732,10 +1732,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                      fun keep () =
                         pushKeep st
                      fun word w =
-                        (setGlobalStatic (var, SOME (Word w));
+                        (setGlobalStatic (var, SOME (SOME (Word w)));
                          pushKeep st)
                      fun real r =
-                        (setGlobalStatic (var, SOME (Real r));
+                        (setGlobalStatic (var, SOME (SOME (Real r)));
                          pushKeep st)
                      fun 'a static (soe: PackedRepresentation.StaticOrElem.t) =
                         case toRtype ty of
@@ -1747,12 +1747,13 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                             (* address of heap static not a valid elem *)
                                             pushStatic (var, ty, rty, s)
                                        | _ =>
-                                            (setGlobalStatic (var, SOME (Address var));
+                                            (setGlobalStatic (var, SOME (SOME (Address var)));
                                              pushStatic (var, ty, rty, s)))
                                 | Elem e =>
-                                     (setGlobalStatic (var, SOME e);
+                                     (setGlobalStatic (var, SOME (SOME e));
                                       pushKeep st))
-                         | _ => keep ()
+                         | _ => (setGlobalStatic (var, SOME NONE);
+                                 keep ())
                   in
                      case exp of
                         S.Exp.Const c =>
@@ -1794,7 +1795,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                      val length = (globalStatic o Vector.first) args
                                   in
                                      case (length, !Control.staticInitArrays) of
-                                        (SOME (Word l), true) =>
+                                        (SOME (SOME (Word l)), true) =>
                                            let
                                               val location = getLocation (ty, !Control.staticAllocArrays, WordX.isZero l)
                                            in
@@ -1806,7 +1807,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                   end
                              | Prim.Name.MLton_bogus =>
                                   (case toRtype ty of
-                                      NONE => keep ()
+                                      NONE => (setGlobalStatic (var, SOME NONE)
+                                               ; keep ())
                                     | SOME ty => (case Type.deReal ty of
                                                      NONE => word (Type.bogusWord ty)
                                                    | SOME s => real (RealX.zero s)))
