@@ -35,11 +35,9 @@ void initObjects (GC_state s) {
   inits = s->objectInits;
   frontier = s->frontier;
   for (i = 0; i < s->objectInitsLength; i++) {
-
     objectSize = align (inits[i].size, s->alignment);
     assert (objectSize <= (size_t)(s->heap.start + s->heap.size - frontier));
     memcpy (frontier, inits[i].words, inits[i].size);
-
     s->globals[inits[i].globalIndex] =
       pointerToObjptr(frontier + inits[i].headerOffset, s->heap.start);
     frontier = frontier + objectSize;
