@@ -13,15 +13,13 @@
 
 size_t sizeofInitialBytesLive (GC_state s) {
   uint32_t i;
-  size_t dataBytes;
   size_t total;
 
   total = 0;
   for (i = 0; i < s->objectInitsLength; ++i) {
-    dataBytes =
-      s->objectInits[i].size;
-    total += align (dataBytes, s->alignment);
+    total += align (s->objectInits[i].size, s->alignment);
   }
+  total += sizeofStackWithMetaData (s, sizeofStackInitialReserved (s)) + sizeofThread (s);
   return total;
 }
 
