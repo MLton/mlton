@@ -1726,34 +1726,26 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                 | SOME var =>
                   let
                      datatype location = datatype Static.Location.t
-                     fun copy var' =
-                        (setGlobalStatic (var, globalStatic var');
-                         pushKeep st)
-                     fun keep () =
-                        pushKeep st
-                     fun word w =
-                        (setGlobalStatic (var, SOME (SOME (Word w)));
-                         pushKeep st)
-                     fun real r =
-                        (setGlobalStatic (var, SOME (SOME (Real r)));
-                         pushKeep st)
-                     fun 'a static (soe: PackedRepresentation.StaticOrElem.t) =
+                     fun keep () = pushKeep st
+                     fun keepWithStatic'' s =
+                        (setGlobalStatic (var, s)
+                         ; keep ())
+                     fun copy var' = keepWithStatic'' (globalStatic var')
+                     fun keepWithStatic' s = keepWithStatic'' (SOME s)
+                     fun keepWithStatic s = keepWithStatic' (SOME s)
+                     fun word w = keepWithStatic (Word w)
+                     fun real r = keepWithStatic (Real r)
+                     fun static (soe: PackedRepresentation.StaticOrElem.t) =
                         case toRtype ty of
                            SOME rty =>
                               (case soe of
                                   Static s =>
-                                     (case Static.location s of
-                                         Heap =>
-                                            (* address of heap static not a valid elem *)
-                                            pushStatic (var, ty, rty, s)
-                                       | _ =>
-                                            (setGlobalStatic (var, SOME (SOME (Address var)));
-                                             pushStatic (var, ty, rty, s)))
-                                | Elem e =>
-                                     (setGlobalStatic (var, SOME (SOME e));
-                                      pushKeep st))
-                         | _ => (setGlobalStatic (var, SOME NONE);
-                                 keep ())
+                                     (pushStatic (var, ty, rty, s);
+                                      case Static.location s of
+                                         Heap => () (* address of heap static not a valid elem *)
+                                       | _ => setGlobalStatic (var, SOME (SOME (Address var))))
+                                | Elem e => keepWithStatic e)
+                         | _ => keepWithStatic' NONE
                   in
                      case exp of
                         S.Exp.Const c =>
@@ -1807,8 +1799,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                   end
                              | Prim.Name.MLton_bogus =>
                                   (case toRtype ty of
-                                      NONE => (setGlobalStatic (var, SOME NONE)
-                                               ; keep ())
+                                      NONE => keepWithStatic' NONE
                                     | SOME ty => (case Type.deReal ty of
                                                      NONE => word (Type.bogusWord ty)
                                                    | SOME s => real (RealX.zero s)))
