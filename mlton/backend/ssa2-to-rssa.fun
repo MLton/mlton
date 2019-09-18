@@ -1804,6 +1804,12 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                            end
                                       | _ => keep ()
                                   end
+                             | Prim.Name.MLton_bogus =>
+                                  (case toRtype ty of
+                                      NONE => keep ()
+                                    | SOME ty => (case Type.deReal ty of
+                                                     NONE => word (Type.bogusWord ty)
+                                                   | SOME s => real (RealX.zero s)))
                              | _ => keep ())
                       | S.Exp.Var v => copy v
                       | S.Exp.Select _ => keep ()
