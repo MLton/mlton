@@ -1802,6 +1802,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                            end
                                       | _ => keep ()
                                   end
+                             | Prim.Name.Array_toVector => copy (Vector.first args)
                              | Prim.Name.MLton_bogus =>
                                   (case toRtype ty of
                                       NONE => keepWithStatic' NONE
