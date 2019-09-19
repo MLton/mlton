@@ -1746,19 +1746,24 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                        | _ => setGlobalStatic (var, SOME (SOME (Address var))))
                                 | Elem e => keepWithStatic e)
                          | _ => keepWithStatic' NONE
+                     fun wordxvector wxv =
+                        if !Control.staticAllocWordVectorConsts
+                           then static (makeWordXVector {data = wxv,
+                                                         location = Static.Location.ImmStatic,
+                                                         ty = ty})
+                           else keep ()
                   in
                      case exp of
                         S.Exp.Const c =>
                            (case c of
-                               Const.WordVector wxv =>
-                                  if !Control.staticAllocWordVectorConsts
-                                     then static (makeWordXVector {data = wxv,
-                                                                   location = Static.Location.ImmStatic,
-                                                                   ty = ty})
-                                     else keep ()
-                             | Const.Word w => word w
+                               Const.IntInf i =>
+                                  (case Const.IntInfRep.fromIntInf i of
+                                      Const.IntInfRep.Big wxv => wordxvector wxv
+                                    | Const.IntInfRep.Small w => word w)
+                             | Const.Null => word (WordX.zero (WordSize.cpointer ()))
                              | Const.Real r => real r
-                             | _ => keep ())
+                             | Const.Word w => word w
+                             | Const.WordVector wxv => wordxvector wxv)
                       | S.Exp.Inject {variant, ...} =>
                            copy variant
                       | S.Exp.Object {args, con} =>
