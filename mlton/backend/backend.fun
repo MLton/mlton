@@ -751,8 +751,10 @@ fun toMachine (rssa: Rssa.Program.t) =
                                                    set (z, casts)
                                               | VarOperand.Allocate _ =>
                                                    normal ())
-                                       | R.Operand.Static s =>
-                                            set (globalStatic s, casts)
+                                       | R.Operand.Static (s as {static, ...}) =>
+                                            if M.Static.location static <> M.Static.Location.Heap
+                                               then set (globalStatic s, casts)
+                                               else normal ()
                                        | _ => normal ()
                                 in
                                    loop (src, [])
