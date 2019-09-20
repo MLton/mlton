@@ -1,6 +1,6 @@
 language: generic
 
-dist: xenial
+dist: bionic
 osx_image: xcode11
 
 addons:
