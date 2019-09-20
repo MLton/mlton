@@ -1,6 +1,4 @@
-language: generic
-
-dist: xenial
+language: minimal
 
 addons:
   apt:
@@ -11,16 +9,22 @@ addons:
 matrix:
   include:
   - os:   linux
+    dist: bionic
     env:  CC=gcc    MLTON_COMPILE_ARGS="-codegen amd64"  REGRESSION=true
   - os:   linux
+    dist: bionic
     env:  CC=gcc    MLTON_COMPILE_ARGS="-codegen c"      REGRESSION=false
   - os:   linux
+    dist: bionic
     env:  CC=clang  MLTON_COMPILE_ARGS="-codegen c"      REGRESSION=false
   - os:   linux
+    dist: bionic
     env:  CC=clang  MLTON_COMPILE_ARGS="-codegen llvm"   REGRESSION=false
   - os: osx
+    osx_image: xcode11
     env:  CC=clang  MLTON_COMPILE_ARGS="-codegen amd64"  REGRESSION=false
   - os: osx
+    osx_image: xcode11
     env:  CC=clang  MLTON_COMPILE_ARGS="-codegen c"      REGRESSION=false
 
 script:

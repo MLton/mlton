@@ -16,8 +16,10 @@ llc -version
 echo
 fi
 
+MLTON_RUNTIME_ARGS="ram-slop 0.90"
+
 echo "Building MLton..."
-make CC="$CC" MLTON_COMPILE_ARGS="$MLTON_COMPILE_ARGS" all
+make CC="$CC" OLD_MLTON_RUNTIME_ARGS="$MLTON_RUNTIME_ARGS" MLTON_RUNTIME_ARGS="$MLTON_RUNTIME_ARGS" MLTON_COMPILE_ARGS="$MLTON_COMPILE_ARGS" all
 
 if [ "$REGRESSION" == "true" ]; then
 echo "Running regression tests..."

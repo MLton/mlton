@@ -64,8 +64,8 @@ $(MLTON_OUTPUT): $(SOURCES)
 	$(MAKE) control/version.sml
 	@echo 'Compiling mlton'
 	"$(RUN_MLTON)" \
-		@MLton $(RUN_MLTON_RUNTIME_ARGS) $(RUN_MLTON_RUNTIME_XARGS) gc-summary -- \
-		$(RUN_MLTON_COMPILE_ARGS) $(RUN_MLTON_COMPILE_XARGS) -verbose 2	\
+		@MLton $(RUN_MLTON_RUNTIME_XARGS) $(RUN_MLTON_RUNTIME_ARGS) gc-summary -- \
+		$(RUN_MLTON_COMPILE_XARGS) -verbose 2 $(RUN_MLTON_COMPILE_ARGS)	\
 		-target $(TARGET) -output $(MLTON_OUTPUT)			\
 		$(MLTON_MLB)
 
@@ -122,8 +122,8 @@ def-use: mlton.def-use
 
 mlton.def-use: $(SOURCES)
 	"$(RUN_MLTON)" \
-		@MLton $(RUN_MLTON_RUNTIME_ARGS) $(RUN_MLTON_RUNTIME_XARGS) --	\
-		$(RUN_MLTON_COMPILE_ARGS) $(RUN_MLTON_COMPILE_XARGS) -verbose 0	\
+		@MLton $(RUN_MLTON_RUNTIME_XARGS) $(RUN_MLTON_RUNTIME_ARGS) --	\
+		$(RUN_MLTON_COMPILE_XARGS) -verbose 0 $(RUN_MLTON_COMPILE_ARGS)	\
 		-stop tc -prefer-abs-paths true -show-def-use mlton.def-use	\
 		$(MLTON_MLB)
 
