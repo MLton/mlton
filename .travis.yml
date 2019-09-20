@@ -1,6 +1,7 @@
 language: generic
 
 dist: xenial
+osx_image: xcode11
 
 addons:
   apt:
