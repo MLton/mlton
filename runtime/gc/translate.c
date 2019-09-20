@@ -19,9 +19,13 @@ void translateObjptr (GC_state s,
   from = s->translateState.from;
   to = s->translateState.to;
   p = objptrToPointer (*opp, from);
-  p = (p - from) + to;
-  *opp = pointerToObjptr (p, to);
+  if ((from <= p) and
+      (p < from + s->translateState.size)) {
+    p = (p - from) + to;
+    *opp = pointerToObjptr (p, to);
+  }
 }
+
 
 /* translateHeap (s, from, to, size)
  */
@@ -39,6 +43,7 @@ void translateHeap (GC_state s, pointer from, pointer to, size_t size) {
              (uintptr_t)from);
   s->translateState.from = from;
   s->translateState.to = to;
+  s->translateState.size = size;
   /* Translate globals and heap. */
   foreachGlobalObjptr (s, translateObjptr);
   limit = to + size;

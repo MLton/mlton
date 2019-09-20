@@ -110,7 +110,7 @@ struct
                      maxFrameSize, 
                      objectTypes, 
                      reals, 
-                     vectors, ...} =
+                     statics, ...} =
                   program
               in
                 val program =
@@ -124,7 +124,7 @@ struct
                    objectTypes = objectTypes, 
                    reals = reals, 
                    sourceMaps = getSourceMaps (),
-                   vectors = vectors}
+                   statics = statics}
               end
               val {print, done, ...} = makeC ()
               val additionalMainArgs =

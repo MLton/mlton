@@ -328,47 +328,84 @@ fun toMachine (rssa: Rssa.Program.t) =
          varOperand
       (* Hash tables for uniquifying globals. *)
       local
+         val allStatics = ref []
+         val staticsCounter = Counter.new 0
+      in
+         (* Doesn't likely need uniquifying, since they're introduced
+          * late and mutable statics can't be unique.
+          *)
+         val (allStatics, globalStatic) =
+            (fn () => Vector.fromListRev (!allStatics),
+             fn {static as M.Static.T {location, ...}, ty} =>
+             let
+                val static =
+                   M.Static.map
+                   (static, fn v =>
+                    case varOperandOpt v of
+                       SOME (M.Operand.Static {index, ...}) => index
+                     | _ => Error.bug "Backend.globalStatic: invalid referrent")
+                val i = Counter.next staticsCounter
+                val g =
+                   case location of
+                      M.Static.Location.Heap => SOME (M.Global.new ty)
+                    | _ => NONE
+                val _ = List.push (allStatics, (static, g))
+             in
+                case g of
+                   SOME g' => M.Operand.Global g'
+                 | NONE => M.Operand.Static {index = i,
+                                             offset = M.Static.metadataSize static,
+                                             ty = ty}
+             end)
+      end
+      local
          fun 'a make {equals: 'a * 'a -> bool,
                       hash: 'a -> word,
-                      ty: 'a -> Type.t} =
+                      oper: 'a -> M.Operand.t} =
             let
-               val table: ('a, M.Global.t) HashTable.t =
+               val table: ('a, M.Operand.t) HashTable.t =
                   HashTable.new {equals = equals, hash = hash}
                fun get (value: 'a): M.Operand.t =
-                  M.Operand.Global
-                  (HashTable.lookupOrInsert
-                   (table, value, fn () =>
-                    M.Global.new (ty value)))
-               fun all () =
-                  HashTable.foldi
-                  (table, [], fn (value, global, ac) =>
-                   (global, value) :: ac)
+                  HashTable.lookupOrInsert
+                  (table, value, fn () => oper value)
             in
-               (all, get)
+               get
             end
       in
-         val (allReals, globalReal) =
-            make {equals = RealX.equals,
-                  hash = RealX.hash,
-                  ty = Type.real o RealX.size}
-         val (allVectors, globalVector) =
+         local
+            val allReals = ref []
+         in
+            val globalReal =
+               make {equals = RealX.equals,
+                     hash = RealX.hash,
+                     oper = fn r => let
+                                       val g = M.Global.new (Type.real (RealX.size r))
+                                    in
+                                       List.push (allReals, (r, g))
+                                       ; M.Operand.Global g
+                                    end}
+            val allReals = fn () => !allReals
+         end
+
+         val globalWordVector =
             make {equals = WordXVector.equals,
                   hash = WordXVector.hash,
-                  ty = Type.ofWordXVector}
+                  oper = fn wxv => let
+                                      val eltSize = WordXVector.elementSize wxv
+                                      val ty = Type.wordVector eltSize
+                                      val tycon = ObjptrTycon.wordVector (WordSize.bits eltSize)
+                                      val location =
+                                         if !Control.staticAllocWordVectorConsts
+                                            then M.Static.Location.ImmStatic
+                                            else M.Static.Location.Heap
+                                   in
+                                      globalStatic
+                                      {static = M.Static.vector {data = wxv,
+                                                                 location = location,
+                                                                 tycon = tycon},
+                                       ty = ty}
+                                   end}
       end
-      fun bogusOp (t: Type.t): M.Operand.t =
-         case Type.deReal t of
-            NONE => let
-                       val bogusWord =
-                          M.Operand.Word
-                          (WordX.zero
-                           (WordSize.fromBits (Type.width t)))
-                    in
-                       case Type.deWord t of
-                          NONE => M.Operand.Cast (bogusWord, t)
-                        | SOME _ => bogusWord
-                    end
-          | SOME s => globalReal (RealX.zero s)
       fun constOperand (c: Const.t): M.Operand.t =
          let
             datatype z = datatype Const.t
@@ -379,7 +416,7 @@ fun toMachine (rssa: Rssa.Program.t) =
              | Null => M.Operand.Null
              | Real r => globalReal r
              | Word w => M.Operand.Word w
-             | WordVector v => globalVector v
+             | WordVector v => globalWordVector v
          end
       fun parallelMove {dsts: M.Operand.t vector,
                         srcs: M.Operand.t vector}: M.Statement.t vector =
@@ -410,6 +447,24 @@ fun toMachine (rssa: Rssa.Program.t) =
       val exnStackOp = runtimeOp GCField.ExnStack
       val stackBottomOp = runtimeOp GCField.StackBottom
       val stackTopOp = runtimeOp GCField.StackTop
+
+      val rec isWord =
+         fn M.Operand.Word _ => true
+          | M.Operand.Cast (z, _) => isWord z
+          | _ => false
+      fun bogusOp (t: Type.t): M.Operand.t =
+         case Type.deReal t of
+            NONE => let
+                       val bogusWord =
+                          M.Operand.Word
+                          (WordX.zero
+                           (WordSize.fromBits (Type.width t)))
+                    in
+                       case Type.deWord t of
+                          NONE => M.Operand.Cast (bogusWord, t)
+                        | SOME _ => bogusWord
+                    end
+          | SOME s => globalReal (RealX.zero s)
       fun translateOperand (oper: R.Operand.t): M.Operand.t =
          let
             datatype z = datatype R.Operand.t
@@ -422,11 +477,14 @@ fun toMachine (rssa: Rssa.Program.t) =
                   let
                      val base = translateOperand base
                   in
-                     if M.Operand.isLocation base
-                        then M.Operand.Offset {base = base,
-                                               offset = offset,
-                                               ty = ty}
-                     else bogusOp ty
+                    (* Native codegens can't handle this;
+                     * Dead code may treat small constant
+                     * intInfs as large and take offsets *)
+                     if isWord base
+                     then bogusOp ty
+                     else M.Operand.Offset {base = base,
+                                            offset = offset,
+                                            ty = ty}
                   end
              | ObjptrTycon opt =>
                   M.Operand.Word
@@ -439,14 +497,16 @@ fun toMachine (rssa: Rssa.Program.t) =
                   let
                      val base = translateOperand base
                   in
-                     if M.Operand.isLocation base
-                        then M.Operand.SequenceOffset {base = base,
-                                                        index = translateOperand index,
-                                                        offset = offset,
-                                                        scale = scale,
-                                                        ty = ty}
-                     else bogusOp ty
+                     if isWord base
+                     then bogusOp ty
+                     else M.Operand.SequenceOffset
+                              {base = base,
+                               index = translateOperand index,
+                               offset = offset,
+                               scale = scale,
+                               ty = ty}
                   end
+             | Static s => globalStatic s
              | Var {var, ...} => varOperand var
          end
       fun translateOperands ops = Vector.map (ops, translateOperand)
@@ -461,9 +521,15 @@ fun toMachine (rssa: Rssa.Program.t) =
          in
             case s of
                Bind {dst = (var, _), src, ...} =>
-                  Vector.new1
-                  (M.Statement.move {dst = varOperand var,
-                                     src = translateOperand src})
+                  let
+                     val oper = varOperand var
+                  in
+                     if M.Operand.isDestination oper
+                     then Vector.new1
+                        (M.Statement.move {dst = oper,
+                                           src = translateOperand src})
+                     else Vector.new0 () (* Destination already propagated *)
+                  end
              | Move {dst, src} =>
                   Vector.new1
                   (M.Statement.move {dst = translateOperand dst,
@@ -548,7 +614,7 @@ fun toMachine (rssa: Rssa.Program.t) =
       val bugTransfer = fn () =>
          M.Transfer.CCall
          {args = (Vector.new1
-                  (globalVector
+                  (globalWordVector
                    (WordXVector.fromString
                     "backend thought control shouldn't reach here"))),
           func = Type.BuiltInCFunction.bug (),
@@ -659,39 +725,40 @@ fun toMachine (rssa: Rssa.Program.t) =
                           fun normal () = R.Statement.foreachDef (s, newVarInfo)
                        in
                           case s of
-                             R.Statement.Bind {dst = (var, _), isMutable, src} =>
-                                if isMutable
-                                   then normal ()
-                                else
-                                   let
-                                      fun set (z: M.Operand.t,
-                                               casts: Type.t list) =
-                                         let
-                                            val z =
-                                               List.fold
-                                               (casts, z, fn (t, z) =>
-                                                M.Operand.Cast (z, t))
-                                         in
-                                            setVarInfo
-                                            (var, {operand = VarOperand.Const z,
-                                                   ty = M.Operand.ty z})
-                                         end
-                                      fun loop (z: R.Operand.t, casts) =
-                                         case z of
-                                            R.Operand.Cast (z, t) =>
-                                               loop (z, t :: casts)
-                                          | R.Operand.Const c =>
-                                               set (constOperand c, casts)
-                                          | R.Operand.Var {var = var', ...} =>
-                                               (case #operand (varInfo var') of
-                                                   VarOperand.Const z =>
-                                                      set (z, casts)
-                                                 | VarOperand.Allocate _ =>
-                                                      normal ())
-                                          | _ => normal ()
-                                   in
-                                      loop (src, [])
-                                   end
+                             R.Statement.Bind {dst = (var, _), src, ...} =>
+                                let
+                                   fun set (z: M.Operand.t,
+                                            casts: Type.t list) =
+                                      let
+                                         val z =
+                                            List.fold
+                                            (casts, z, fn (t, z) =>
+                                             M.Operand.Cast (z, t))
+                                      in
+                                         setVarInfo
+                                         (var, {operand = VarOperand.Const z,
+                                                ty = M.Operand.ty z})
+                                      end
+                                   fun loop (z: R.Operand.t, casts) =
+                                      case z of
+                                         R.Operand.Cast (z, t) =>
+                                            loop (z, t :: casts)
+                                       | R.Operand.Const c =>
+                                            set (constOperand c, casts)
+                                       | R.Operand.Var {var = var', ...} =>
+                                            (case #operand (varInfo var') of
+                                                VarOperand.Const z =>
+                                                   set (z, casts)
+                                              | VarOperand.Allocate _ =>
+                                                   normal ())
+                                       | R.Operand.Static (s as {static, ...}) =>
+                                            if M.Static.location static <> M.Static.Location.Heap
+                                               then set (globalStatic s, casts)
+                                               else normal ()
+                                       | _ => normal ()
+                                in
+                                   loop (src, [])
+                                end
                            | _ => normal ()
                        end)
                 in
@@ -1106,6 +1173,7 @@ fun toMachine (rssa: Rssa.Program.t) =
               max
            end))
       val maxFrameSize = Bytes.alignWord32 maxFrameSize
+
       val machine =
          M.Program.T
          {chunks = chunks,
@@ -1117,7 +1185,7 @@ fun toMachine (rssa: Rssa.Program.t) =
           objectTypes = objectTypes,
           reals = allReals (),
           sourceMaps = sourceMaps,
-          vectors = allVectors ()}
+          statics = allStatics ()}
    in
       machine
    end

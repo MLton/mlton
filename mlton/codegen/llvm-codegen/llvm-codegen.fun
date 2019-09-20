@@ -629,7 +629,17 @@ and getOperandValue (cxt, operand) =
           | Operand.Real real => ("", (llrs o RealX.size) real, RealX.toString (real, {suffix = false}))
           | Operand.SequenceOffset _ => loadOperand ()
           | Operand.StackOffset _ => loadOperand ()
-          | Operand.StackTop => loadOperand()
+          | Operand.StackTop => loadOperand ()
+          | Operand.Static {index, ty, offset} =>
+               let
+                  val llvmTy = llty ty
+                  val temp = nextLLVMTemp ()
+                  val name = "@static_" ^ Int.toString index
+                  val idx = llbytes offset
+                  val gep = mkgep (temp, llvmTy, name, [("i32", idx)])
+               in
+                  (gep, llvmTy, temp)
+               end
           | Operand.Temporary  _ => loadOperand ()
           | Operand.Word word => ("", (llws o WordX.size) word, llwordx word)
     end
@@ -1258,7 +1268,7 @@ fun outputBlock (cxt, block) =
         concat [blockLabel, dopop, blockBody, blockTransfer, "\n"]
     end
 
-fun outputLLVMDeclarations print =
+fun outputLLVMDeclarations (statics, print) =
     let
         val globals = concat (List.map (CType.all, fn t =>
                           let
@@ -1270,9 +1280,23 @@ fun outputLLVMDeclarations print =
                                               llint n, " x %", s, "]\n"]
                                  else ""
                           end))
+        val staticType = getTypeFromPointer "%Pointer"
+        val statics =
+           (String.concatV o Vector.mapi)
+           (statics, fn (i, (Static.T {location, ...}, _)) =>
+            let
+               fun doit kw =
+                  concat ["@static_", Int.toString i, " = external hidden ",
+                          kw, " ", staticType, "\n"]
+            in
+               case location of
+                  Static.Location.ImmStatic => doit "constant"
+                | Static.Location.MutStatic => doit "global"
+                | Static.Location.Heap => ""
+            end)
     in
         print (concat [llvmIntrinsics, "\n", mltypes, "\n", ctypes (),
-                       "\n", globals, "\n"])
+                       "\n", globals, "\n", statics, "\n"])
     end
 
 fun outputChunkFn (cxt, chunk, print) =
@@ -1371,7 +1395,8 @@ fun outputChunks (cxt, chunks,
         val () = HashTable.removeAll (operScopes, fn _ => true)
         val () = Metadata.reset ()
         val { done, print, file=_ } = outputLL ()
-        val () = outputLLVMDeclarations print
+        val Program.T {statics, ...} = program
+        val () = outputLLVMDeclarations (statics, print)
         val () = print "\n"
         val () = let
                     fun declareChunk (Chunk.T {chunkLabel, ...}) =

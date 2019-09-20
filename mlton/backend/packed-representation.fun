@@ -27,9 +27,11 @@ in
    structure ObjptrTycon = ObjptrTycon
    structure Prim = Prim
    structure RealSize = RealSize
+   structure RealX = RealX
    structure Runtime = Runtime
    structure Scale = Scale
    structure Statement = Statement
+   structure Static = Static
    structure Switch = Switch
    structure Transfer = Transfer
    structure Type = Type
@@ -51,6 +53,15 @@ end
 datatype z = datatype Operand.t
 datatype z = datatype Statement.t
 datatype z = datatype Transfer.t
+
+(* Statics may simply become words *)
+structure StaticOrElem =
+   struct
+      datatype t =
+         Static of Var.t Static.t
+       | Elem of Var.t Static.Data.Elem.t
+   end
+exception UnrepresentableStatic
 
 structure Type =
    struct
@@ -347,7 +358,7 @@ structure WordRep =
                   NONE => []
                 | SOME src =>
                      [Bind {dst = (dstVar, dstTy),
-                            isMutable = false,
+                            pinned = false,
                             src = src}]
                      :: statements
          in
@@ -359,6 +370,33 @@ structure WordRep =
          ("PackedRepresentation.WordRep.tuple",
           layout o #1, List.layout Statement.layout)
          tuple
+
+      fun staticTuple (T {components, rep, ...},
+                 {src: {index: int} -> WordX.t}): WordX.t =
+         let
+            val (_,word) =
+               Vector.fold
+               (components,
+                  (Bits.zero, (WordX.zero o WordSize.fromBits o Rep.width) rep),
+                fn ({index, rep, ...}, (shift,word)) =>
+                if index < 0
+                   then (Bits.+ (shift, Rep.width rep), word)
+                else let
+                   val src = src {index=index}
+                   val src = WordX.resize (src, WordX.size word)
+                   val src =
+                      if Bits.equals (shift, Bits.zero)
+                         then src
+                         else
+                            WordX.lshift (src, (WordX.fromIntInf
+                            (Bits.toIntInf shift, WordSize.shiftArg)))
+                in
+                   (Bits.+ (shift, Rep.width rep),
+                    WordX.orb (src, word))
+                end)
+         in
+            word
+         end
    end
 
 structure Component =
@@ -435,7 +473,7 @@ structure Component =
                      Statement.resize (src {index = index}, #2 dst)
                in
                   ss @ [Bind {dst = dst,
-                              isMutable = false,
+                              pinned = false,
                               src = src}]
                end
           | Word wr => WordRep.tuple (wr, {dst = dst, src = src})
@@ -447,6 +485,24 @@ structure Component =
           fn {dst = (dst, _), ...} => Var.layout dst,
           List.layout Statement.layout)
          tuple
+
+      fun staticTuple (c: t, {src: {index: int} -> 'a Static.Data.Elem.t})
+         : 'a Static.Data.Elem.t =
+         case padToPrim c of
+            Direct {index, ...} => src {index=index}
+          | Word wr =>
+               let
+                  val src = fn i =>
+                     case src i of
+                        Static.Data.Elem.Word w => w
+                      | Static.Data.Elem.Real r =>
+                           (case RealX.castToWord r of
+                               SOME w => w
+                             | NONE => raise UnrepresentableStatic)
+                      | _ => Error.bug "PackedRepresentation.Component.staticTuple: bad component"
+               in
+                  (Static.Data.Elem.Word o WordRep.staticTuple) (wr, {src = src})
+               end
    end
 
 structure Unpack =
@@ -502,7 +558,7 @@ structure Unpack =
                   end
          in
             ss1 @ ss2 @ ss3 @ [Bind {dst = (dst, dstTy),
-                                     isMutable = false,
+                                     pinned = false,
                                      src = src}]
          end
 
@@ -657,7 +713,7 @@ structure Select =
                   val (src, ss') = Statement.resize (src, dstTy)
                in
                   ss @ ss' @ [Bind {dst = (dst, dstTy),
-                                    isMutable = false,
+                                    pinned = false,
                                     src = src}]
                end
          in
@@ -680,7 +736,7 @@ structure Select =
                                         ty = ty}
                   in
                      ss @ (Bind {dst = (tmpVar, ty),
-                                 isMutable = false,
+                                 pinned = false,
                                  src = src}
                            :: Unpack.select (rest, {dst = dst, src = tmpOp}))
                   end
@@ -981,6 +1037,39 @@ structure ObjptrRep =
          ("PackedRepresentation.ObjptrRep.tuple",
           layout, Var.layout o #dst, List.layout Statement.layout)
          tuple
+
+      fun makeStatic {components, tycon, location, src} =
+         let
+            val (_, elems) =
+               Vector.fold
+              (components, (Bytes.zero, []),
+               fn ({component, offset}, (sumOffset, acc)) =>
+                  let
+                     open Bytes
+                     val (sumOffset, acc) =
+                        if sumOffset < offset
+                        then let
+                           val padBits = toBits (offset - sumOffset)
+                           val pad = (WordX.zero o WordSize.fromBits) padBits
+                        in (offset, Static.Data.Elem.Word pad :: acc) end
+                        else (sumOffset, acc)
+                     val sumOffset = sumOffset + Type.bytes (Component.ty component)
+                  in
+                     (sumOffset,
+                      Component.staticTuple (component, {src=src}) :: acc)
+                  end)
+            val elems = List.rev elems
+         in
+            Static.object {elems=elems, tycon=tycon,
+                           location=location}
+         end
+
+      fun staticTuple (T {components, tycon, ...},
+                 {location: Static.Location.t,
+                  src: {index: int} -> 'a Static.Data.Elem.t})
+         : 'a Static.t =
+         makeStatic {components=components, tycon=tycon,
+                     location=location, src=src}
    end
 
 structure TupleRep =
@@ -1040,6 +1129,15 @@ structure TupleRep =
          ("PackedRepresentation.TupleRep.tuple",
           layout, Var.layout o #1 o #dst, List.layout Statement.layout)
          tuple
+
+      fun staticTuple (tr: t,
+                 {location: Static.Location.t,
+                  src: {index: int} -> Var.t Static.Data.Elem.t}): StaticOrElem.t =
+         case tr of
+            Direct {component = c, ...} =>
+               StaticOrElem.Elem (Component.staticTuple (c, {src = src}))
+          | Indirect pr =>
+               StaticOrElem.Static (ObjptrRep.staticTuple (pr, {location = location, src = src}))
 
       (* TupleRep.make decides how to layout a series of types in an object,
        * or in the case of a sequence, in a sequence element.
@@ -1439,7 +1537,7 @@ structure ConRep =
                                              (Operand.ty tmp))))
                   val (s2, tmp) = Statement.orb (tmp, mask)
                   val s3 = Bind {dst = (dstVar, dstTy),
-                                 isMutable = false,
+                                 pinned = false,
                                  src = tmp}
                in
                   component @ [s1, s2, s3]
@@ -1453,7 +1551,7 @@ structure ConRep =
                                            (Type.width dstTy)))
                in
                   [Bind {dst = (dstVar, dstTy),
-                         isMutable = false,
+                         pinned = false,
                          src = src}]
                end
           | Tuple tr => TupleRep.tuple (tr, {dst = dst, src = src})
@@ -1463,6 +1561,35 @@ structure ConRep =
          ("PackedRepresentation.ConRep.conApp",
           layout o #1, List.layout Statement.layout)
          conApp
+
+      fun staticConApp (r: t, {location: Static.Location.t,
+                               src: {index: int} -> Var.t Static.Data.Elem.t,
+                               width: WordSize.t})
+         : StaticOrElem.t =
+         case r of
+            ShiftAndTag {component, tag, ...} =>
+               let
+                  val w =
+                     (case Component.staticTuple (component, {src=src}) of
+                        Static.Data.Elem.Word w => w
+                      | Static.Data.Elem.Real r =>
+                         (case RealX.castToWord r of
+                              SOME w => w
+                            | NONE => raise UnrepresentableStatic)
+                      | _ => Error.bug "PackedRepresentation.ConRep.staticConApp: bad component")
+                  val shift = (WordX.fromIntInf
+                               (Bits.toIntInf
+                                (WordSize.bits
+                                 (WordX.size tag)),
+                               WordSize.shiftArg))
+                  val w = WordX.resize (w, width)
+                  val w = WordX.lshift (w, shift)
+                  val mask = WordX.resize (tag, width)
+               in
+                  (StaticOrElem.Elem o Static.Data.Elem.Word o WordX.orb) (w, mask)
+               end
+          | Tag {tag, ...} => (StaticOrElem.Elem o Static.Data.Elem.Word o WordX.resize) (tag, width)
+          | Tuple tr => TupleRep.staticTuple (tr, {location = location, src = src})
    end
 
 structure Block =
@@ -2782,6 +2909,7 @@ fun compute (program as Ssa2.Program.T {datatypes, ...}) =
          ("PackedRepresentation.tupleRep",
           S.Type.layout, TupleRep.layout)
          tupleRep
+
       fun object {args, con, dst, objectTy, oper} =
          let
             val src = makeSrc (args, oper)
@@ -2833,12 +2961,27 @@ fun compute (program as Ssa2.Program.T {datatypes, ...}) =
                                        value = value})
                end
           | _ => Error.bug "PackedRepresentation.update: non-object"
+
+      fun static {args, con, elem, location, objectTy} =
+         let
+            val src = makeSrc (args, elem)
+            val width = (WordSize.fromBits o Rep.width o Value.get o typeRep) objectTy
+         in
+            SOME (case con of
+                     NONE =>
+                        TupleRep.staticTuple
+                        (tupleRep objectTy, {location = location, src = src})
+                   | SOME con =>
+                        ConRep.staticConApp
+                        (conRep con, {location = location, src = src, width = width}))
+         end handle UnrepresentableStatic => NONE
    in
       {diagnostic = diagnostic,
        genCase = genCase,
        object = object,
        objectTypes = objectTypes,
        select = select,
+       static = static,
        toRtype = toRtype,
        update = update}
    end

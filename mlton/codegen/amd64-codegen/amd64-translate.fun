@@ -72,15 +72,25 @@ struct
       fun getOp0 v =
          get #1 0 v
 
+      local
+         fun fromSizes (sizes, origin) =
+            (#1 o Vector.mapAndFold)
+            (sizes, 0, fn (size,offset) =>
+             (((amd64.Operand.memloc o amd64.MemLoc.shift)
+               {origin = origin,
+                disp = amd64.Immediate.int offset,
+                scale = amd64.Scale.One,
+                size = size}, size), offset + amd64.Size.toBytes size))
+      in
       val rec toAMD64Operand : t -> (amd64.Operand.t * amd64.Size.t) vector =
          fn SequenceOffset {base, index, offset, scale, ty}
             => let
                   val base = toAMD64Operand base
-                  val _ = Assert.assert("amd64Translate.Operand.toAMD64Operand: Array/base",
+                  val _ = Assert.assert("amd64Translate.Operand.toAMD64Operand: SequenceOffset/base",
                                         fn () => Vector.length base = 1)
                   val base = getOp0 base
                   val index = toAMD64Operand index
-                  val _ = Assert.assert("amd64Translate.Operand.toAMD64Operand: Array/index",
+                  val _ = Assert.assert("amd64Translate.Operand.toAMD64Operand: SequenceOffset/index",
                                        fn () => Vector.length index = 1)
                   val index = getOp0 index
                   val scale =
@@ -91,25 +101,40 @@ struct
                       | Scale.Eight => amd64.Scale.Eight
                   val ty = Type.toCType ty
                   val origin =
-                     case (amd64.Operand.deMemloc base,
+                     case (amd64.Operand.deImmediate base,
+                           amd64.Operand.deMemloc base,
                            amd64.Operand.deImmediate index,
                            amd64.Operand.deMemloc index) of
-                        (SOME base, SOME index, _) =>
-                           amd64.MemLoc.simple 
+                        (SOME base, _, SOME index, _) =>
+                           amd64.MemLoc.imm
                            {base = base,
                             index = index,
                             scale = scale,
                             size = amd64.Size.BYTE,
                             class = amd64MLton.Classes.Heap}
-                      | (SOME base, _, SOME index) =>
-                           amd64.MemLoc.complex 
+                      | (SOME base, _, _, SOME index) =>
+                           amd64.MemLoc.basic
+                           {base = base,
+                            index = index,
+                            scale = scale,
+                            size = amd64.Size.BYTE,
+                            class = amd64MLton.Classes.Heap}
+                      | (_, SOME base, SOME index, _) =>
+                           amd64.MemLoc.simple
+                           {base = base,
+                            index = index,
+                            scale = scale,
+                            size = amd64.Size.BYTE,
+                            class = amd64MLton.Classes.Heap}
+                      | (_, SOME base, _, SOME index) =>
+                           amd64.MemLoc.complex
                            {base = base,
                             index = index,
                             scale = scale,
                             size = amd64.Size.BYTE,
                             class = amd64MLton.Classes.Heap}
                       | _ => Error.bug (concat ["amd64Translate.Operand.toAMD64Operand: ",
-                                                "strange Offset: base: ",
+                                                "strange SequenceOffset: base: ",
                                                 amd64.Operand.toString base,
                                                 " index: ",
                                                 amd64.Operand.toString index])
@@ -123,13 +148,7 @@ struct
                               size = amd64.Size.BYTE}
                   val sizes = amd64.Size.fromCType ty
                in
-                  (#1 o Vector.mapAndFold)
-                  (sizes, 0, fn (size,offset) =>
-                   (((amd64.Operand.memloc o amd64.MemLoc.shift)
-                     {origin = origin,
-                      disp = amd64.Immediate.int offset,
-                      scale = amd64.Scale.One,
-                      size = size}, size), offset + amd64.Size.toBytes size))
+                  fromSizes (sizes, origin)
                end
           | Cast (z, _) => toAMD64Operand z
           | Contents {oper, ty} =>
@@ -154,13 +173,7 @@ struct
                                          amd64.Operand.toString base])    
                   val sizes = amd64.Size.fromCType ty
                in
-                  (#1 o Vector.mapAndFold)
-                  (sizes, 0, fn (size,offset) =>
-                   (((amd64.Operand.memloc o amd64.MemLoc.shift)
-                     {origin = origin,
-                      disp = amd64.Immediate.int offset,
-                      scale = amd64.Scale.One,
-                      size = size}, size), offset + amd64.Size.toBytes size))
+                  fromSizes (sizes, origin)
                end
           | Frontier => 
                let 
@@ -186,33 +199,35 @@ struct
                end
           | Offset {base, offset, ty} =>
                let
-                  val offset = Bytes.toInt offset
+                 val offset = Bytes.toInt offset
                  val ty = Type.toCType ty
                  val base = toAMD64Operand base
                  val _ = Assert.assert("amd64Translate.Operand.toAMD64Operand: Offset/base",
                                        fn () => Vector.length base = 1)
                  val base = getOp0 base
                  val origin =
-                   case amd64.Operand.deMemloc base of
-                     SOME base =>
-                       amd64.MemLoc.simple 
-                       {base = base,
-                        index = amd64.Immediate.int offset,
-                        scale = amd64.Scale.One,
-                        size = amd64.Size.BYTE,
-                        class = amd64MLton.Classes.Heap}
-                   | _ => Error.bug (concat ["amd64Translate.Operand.toAMD64Operand: ",
-                                             "strange Offset: base: ",
-                                             amd64.Operand.toString base])
-                  val sizes = amd64.Size.fromCType ty
+                    case (amd64.Operand.deImmediate base,
+                          amd64.Operand.deMemloc base) of
+                       (SOME base, _) =>
+                          amd64.MemLoc.imm
+                          {base = base,
+                           index = amd64.Immediate.int offset,
+                           scale = amd64.Scale.One,
+                           size = amd64.Size.BYTE,
+                           class = amd64MLton.Classes.Heap}
+                     | (_, SOME base) =>
+                          amd64.MemLoc.simple
+                          {base = base,
+                           index = amd64.Immediate.int offset,
+                           scale = amd64.Scale.One,
+                           size = amd64.Size.BYTE,
+                           class = amd64MLton.Classes.Heap}
+                     | _ => Error.bug (concat ["amd64Translate.Operand.toAMD64Operand: ",
+                                               "strange Offset: base: ",
+                                               amd64.Operand.toString base])
+                 val sizes = amd64.Size.fromCType ty
                in
-                  (#1 o Vector.mapAndFold)
-                  (sizes, 0, fn (size,offset) =>
-                   (((amd64.Operand.memloc o amd64.MemLoc.shift)
-                     {origin = origin,
-                      disp = amd64.Immediate.int offset,
-                      scale = amd64.Scale.One,
-                      size = size}, size), offset + amd64.Size.toBytes size))
+                  fromSizes (sizes, origin)
                end
           | Real _ => Error.bug "amd64Translate.Operand.toAMD64Operand: Real unimplemented"
           | StackOffset (StackOffset.T {offset, ty}) =>
@@ -228,13 +243,15 @@ struct
                       class = amd64MLton.Classes.Stack}
                   val sizes = amd64.Size.fromCType ty
                in
-                  (#1 o Vector.mapAndFold)
-                  (sizes, 0, fn (size,offset) =>
-                   (((amd64.Operand.memloc o amd64.MemLoc.shift)
-                     {origin = origin,
-                      disp = amd64.Immediate.int offset,
-                      scale = amd64.Scale.One,
-                      size = size}, size), offset + amd64.Size.toBytes size))
+                  fromSizes (sizes, origin)
+               end
+          | Static {index, offset, ...} =>
+               let
+                  val offset = Bytes.toInt offset
+                  val base = amd64.Immediate.labelPlusInt
+                        (amd64MLton.static_label index, offset)
+               in
+                  Vector.new1 (amd64.Operand.immediate base, amd64MLton.pointerSize)
                end
           | StackTop => 
                let 
@@ -256,13 +273,7 @@ struct
                       class = amd64MLton.Classes.Locals}
                   val sizes = amd64.Size.fromCType ty
                in
-                  (#1 o Vector.mapAndFold)
-                  (sizes, 0, fn (size,offset) =>
-                   (((amd64.Operand.memloc o amd64.MemLoc.shift)
-                     {origin = origin,
-                      disp = amd64.Immediate.int offset,
-                      scale = amd64.Scale.One,
-                      size = size}, size), offset + amd64.Size.toBytes size))
+                  fromSizes (sizes, origin)
                end
           | Word w =>
                let
@@ -275,6 +286,7 @@ struct
                    | W32 => single amd64.Size.LONG
                    | W64 => single amd64.Size.QUAD
                end
+      end
     end
 
   type transInfo = amd64MLton.transInfo

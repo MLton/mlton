@@ -72,15 +72,25 @@ struct
       fun getOp0 v =
          get #1 0 v
 
+      local
+         fun fromSizes (sizes, origin) =
+            (#1 o Vector.mapAndFold)
+            (sizes, 0, fn (size,offset) =>
+             (((x86.Operand.memloc o x86.MemLoc.shift)
+               {origin = origin,
+                disp = x86.Immediate.int offset,
+                scale = x86.Scale.One,
+                size = size}, size), offset + x86.Size.toBytes size))
+      in
       val rec toX86Operand : t -> (x86.Operand.t * x86.Size.t) vector =
          fn SequenceOffset {base, index, offset, scale, ty}
             => let
                   val base = toX86Operand base
-                  val _ = Assert.assert("x86Translate.Operand.toX86Operand: Array/base",
+                  val _ = Assert.assert("x86Translate.Operand.toX86Operand: SequenceOffset/base",
                                         fn () => Vector.length base = 1)
                   val base = getOp0 base
                   val index = toX86Operand index
-                  val _ = Assert.assert("x86Translate.Operand.toX86Operand: Array/index",
+                  val _ = Assert.assert("x86Translate.Operand.toX86Operand: SequenceOffset/index",
                                        fn () => Vector.length index = 1)
                   val index = getOp0 index
                   val scale =
@@ -91,25 +101,40 @@ struct
                       | Scale.Eight => x86.Scale.Eight
                   val ty = Type.toCType ty
                   val origin =
-                     case (x86.Operand.deMemloc base,
+                     case (x86.Operand.deImmediate base,
+                           x86.Operand.deMemloc base,
                            x86.Operand.deImmediate index,
                            x86.Operand.deMemloc index) of
-                        (SOME base, SOME index, _) =>
-                           x86.MemLoc.simple 
+                        (SOME base, _, SOME index, _) =>
+                           x86.MemLoc.imm
                            {base = base,
                             index = index,
                             scale = scale,
                             size = x86.Size.BYTE,
                             class = x86MLton.Classes.Heap}
-                      | (SOME base, _, SOME index) =>
-                           x86.MemLoc.complex 
+                      | (SOME base, _, _, SOME index) =>
+                           x86.MemLoc.basic
+                           {base = base,
+                            index = index,
+                            scale = scale,
+                            size = x86.Size.BYTE,
+                            class = x86MLton.Classes.Heap}
+                      | (_, SOME base, SOME index, _) =>
+                           x86.MemLoc.simple
+                           {base = base,
+                            index = index,
+                            scale = scale,
+                            size = x86.Size.BYTE,
+                            class = x86MLton.Classes.Heap}
+                      | (_, SOME base, _, SOME index) =>
+                           x86.MemLoc.complex
                            {base = base,
                             index = index,
                             scale = scale,
                             size = x86.Size.BYTE,
                             class = x86MLton.Classes.Heap}
                       | _ => Error.bug (concat ["x86Translate.Operand.toX86Operand: ",
-                                                "strange Offset: base: ",
+                                                "strange SequenceOffset: base: ",
                                                 x86.Operand.toString base,
                                                 " index: ",
                                                 x86.Operand.toString index])
@@ -123,13 +148,7 @@ struct
                               size = x86.Size.BYTE}
                   val sizes = x86.Size.fromCType ty
                in
-                  (#1 o Vector.mapAndFold)
-                  (sizes, 0, fn (size,offset) =>
-                   (((x86.Operand.memloc o x86.MemLoc.shift)
-                     {origin = origin,
-                      disp = x86.Immediate.int offset,
-                      scale = x86.Scale.One,
-                      size = size}, size), offset + x86.Size.toBytes size))
+                 fromSizes (sizes, origin)
                end
           | Cast (z, _) => toX86Operand z
           | Contents {oper, ty} =>
@@ -154,13 +173,7 @@ struct
                                          x86.Operand.toString base])    
                   val sizes = x86.Size.fromCType ty
                in
-                  (#1 o Vector.mapAndFold)
-                  (sizes, 0, fn (size,offset) =>
-                   (((x86.Operand.memloc o x86.MemLoc.shift)
-                     {origin = origin,
-                      disp = x86.Immediate.int offset,
-                      scale = x86.Scale.One,
-                      size = size}, size), offset + x86.Size.toBytes size))
+                  fromSizes (sizes, origin)
                end
           | Frontier => 
                let 
@@ -193,26 +206,28 @@ struct
                                        fn () => Vector.length base = 1)
                  val base = getOp0 base
                  val origin =
-                   case x86.Operand.deMemloc base of
-                     SOME base =>
-                       x86.MemLoc.simple 
-                       {base = base,
-                        index = x86.Immediate.int offset,
-                        scale = x86.Scale.One,
-                        size = x86.Size.BYTE,
-                        class = x86MLton.Classes.Heap}
-                   | _ => Error.bug (concat ["x86Translate.Operand.toX86Operand: ",
-                                             "strange Offset: base: ",
-                                             x86.Operand.toString base])
-                  val sizes = x86.Size.fromCType ty
+                    case (x86.Operand.deImmediate base,
+                          x86.Operand.deMemloc base) of
+                       (SOME base, _) =>
+                          x86.MemLoc.imm
+                          {base = base,
+                           index = x86.Immediate.int offset,
+                           scale = x86.Scale.One,
+                           size = x86.Size.BYTE,
+                           class = x86MLton.Classes.Heap}
+                     | (_, SOME base) =>
+                          x86.MemLoc.simple
+                          {base = base,
+                           index = x86.Immediate.int offset,
+                           scale = x86.Scale.One,
+                           size = x86.Size.BYTE,
+                           class = x86MLton.Classes.Heap}
+                     | _ => Error.bug (concat ["x86Translate.Operand.toX86Operand: ",
+                                               "strange Offset: base: ",
+                                               x86.Operand.toString base])
+                 val sizes = x86.Size.fromCType ty
                in
-                  (#1 o Vector.mapAndFold)
-                  (sizes, 0, fn (size,offset) =>
-                   (((x86.Operand.memloc o x86.MemLoc.shift)
-                     {origin = origin,
-                      disp = x86.Immediate.int offset,
-                      scale = x86.Scale.One,
-                      size = size}, size), offset + x86.Size.toBytes size))
+                  fromSizes (sizes, origin)
                end
           | Real _ => Error.bug "x86Translate.Operand.toX86Operand: Real unimplemented"
           | StackOffset (StackOffset.T {offset, ty}) =>
@@ -228,13 +243,15 @@ struct
                       class = x86MLton.Classes.Stack}
                   val sizes = x86.Size.fromCType ty
                in
-                  (#1 o Vector.mapAndFold)
-                  (sizes, 0, fn (size,offset) =>
-                   (((x86.Operand.memloc o x86.MemLoc.shift)
-                     {origin = origin,
-                      disp = x86.Immediate.int offset,
-                      scale = x86.Scale.One,
-                      size = size}, size), offset + x86.Size.toBytes size))
+                  fromSizes (sizes, origin)
+               end
+           | Static {index, offset, ...} =>
+               let
+                  val offset = Bytes.toInt offset
+                  val base = x86.Immediate.labelPlusInt
+                        (x86MLton.static_label index, offset)
+               in
+                  Vector.new1 (x86.Operand.immediate base, x86MLton.pointerSize)
                end
           | StackTop => 
                let 
@@ -256,13 +273,7 @@ struct
                       class = x86MLton.Classes.Locals}
                   val sizes = x86.Size.fromCType ty
                in
-                  (#1 o Vector.mapAndFold)
-                  (sizes, 0, fn (size,offset) =>
-                   (((x86.Operand.memloc o x86.MemLoc.shift)
-                     {origin = origin,
-                      disp = x86.Immediate.int offset,
-                      scale = x86.Scale.One,
-                      size = size}, size), offset + x86.Size.toBytes size))
+                  fromSizes (sizes, origin)
                end
           | Word w =>
                let
@@ -286,6 +297,7 @@ struct
                             (x86.Operand.immediate_word hi, x86.Size.LONG))
                         end
                end
+      end
     end
 
   type transInfo = x86MLton.transInfo

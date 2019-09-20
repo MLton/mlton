@@ -520,8 +520,8 @@ fun restoreFunction {main: Function.t}
              val tupleDst = (dstVar, dstTy)
           in
            case st of
-                Statement.Bind {src, isMutable, ...} =>
-                   Statement.Bind {dst=tupleDst, isMutable=isMutable, src=src}
+                Statement.Bind {src, pinned, ...} =>
+                   Statement.Bind {dst=tupleDst, pinned=pinned, src=src}
               | Statement.Move {src, ...} =>
                    Statement.Move {dst=Operand.Var dst, src=src}
               | Statement.Object {header, size, ...} =>

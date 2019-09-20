@@ -50,6 +50,8 @@ structure Operand =
                             offset: Bytes.t,
                             scale: Scale.t,
                             ty: Type.t}
+       | Static of {static: Var.t Static.t,
+                    ty: Type.t}
        | Var of {var: Var.t,
                  ty: Type.t}
 
@@ -80,6 +82,7 @@ structure Operand =
           | ObjptrTycon _ => Type.objptrHeader ()
           | Runtime z => Type.ofGCField z
           | SequenceOffset {ty, ...} => ty
+          | Static {ty, ...} => ty
           | Var {ty, ...} => ty
 
       fun layout (z: t): Layout.t =
@@ -101,6 +104,9 @@ structure Operand =
                   seq [str (concat ["X", Type.name ty, " "]),
                        tuple [layout base, layout index, Scale.layout scale,
                               Bytes.layout offset]]
+             | Static {static, ...} =>
+                  Layout.seq [Layout.str "Static ",
+                  Static.layout (fn v => Layout.seq [Layout.str "&", Var.layout v]) static]
              | Var {var, ...} => Var.layout var
          end
 
@@ -172,7 +178,7 @@ structure Statement =
    struct
       datatype t =
          Bind of {dst: Var.t * Type.t,
-                  isMutable: bool,
+                  pinned: bool,
                   src: Operand.t}
        | Move of {dst: Operand.t,
                   src: Operand.t}
@@ -232,9 +238,9 @@ structure Statement =
                Operand.replaceVar (z, f)
          in
             case s of
-               Bind {dst, isMutable, src} =>
+               Bind {dst, pinned, src} =>
                   Bind {dst = dst,
-                        isMutable = isMutable,
+                        pinned = pinned,
                         src = oper src}
              | Move {dst, src} => Move {dst = oper dst, src = oper src}
              | Object _ => s
@@ -840,7 +846,7 @@ structure Function =
                                     Vector.map2
                                     (formals, args, fn (dst, src) =>
                                      Bind {dst = dst,
-                                           isMutable = false,
+                                           pinned = false,
                                            src = src})
                               in
                                  expand (statements :: binds :: ss, replaceTransfer transfer)
@@ -1071,8 +1077,8 @@ structure Program =
                       ; SOME s)
                in
                   case s of
-                     Bind {dst = (dst, dstTy), isMutable, src} =>
-                        if isMutable
+                     Bind {dst = (dst, dstTy), pinned, src} =>
+                        if pinned
                            then keep ()
                         else
                            let
@@ -1617,6 +1623,7 @@ structure Program =
                                                         tyconTy = tyconTy,
                                                         result = ty,
                                                         scale = scale})
+                       | Static {ty, ...} => Type.isCPointer ty orelse Type.isObjptr ty
                        | Var {ty, var} => Type.isSubtype (varType var, ty)
                 in
                    Err.check ("operand", ok, fn () => Operand.layout x)

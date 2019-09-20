@@ -238,8 +238,12 @@ fun insertFunction (f: Function.t,
                                val global = Var.newNoname ()
                                val _ = List.push (extraGlobals, global)
                                val global =
-                                  Operand.Var {var = global,
-                                               ty = Type.bool}
+                                  Operand.Offset
+                                  {base=Operand.Var
+                                     {var = global,
+                                      ty = Type.cpointer ()},
+                                   offset=Bytes.zero,
+                                   ty=Type.bool}
                                val dontCollect' = Label.newNoname ()
                                val _ =
                                   List.push
@@ -844,17 +848,30 @@ fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileI
       val {args, blocks, name, raises, returns, start} =
          Function.dest (insert main)
       val newStart = Label.newNoname ()
+
+      val newTycon = ref NONE
+      fun define x =
+         let
+            val refTycon =
+               Ref.memoize (newTycon,
+                  fn () => ObjptrTycon.new ())
+         in
+            Statement.Bind
+               {dst = (x, Type.cpointer ()),
+                pinned = false,
+                src = Operand.Static
+                  {static=Static.object
+                     {elems=[Static.Data.Elem.Word (WordX.one WordSize.bool)],
+                      location=Static.Location.MutStatic,
+                      tycon=refTycon},
+                   ty=Type.cpointer ()}}
+         end
       val block =
          Block.T {args = Vector.new0 (),
                   kind = Kind.Jump,
                   label = newStart,
                   statements = (Vector.fromListMap
-                                (!extraGlobals, fn x =>
-                                 Statement.Bind
-                                 {dst = (x, Type.bool),
-                                  isMutable = true,
-                                  src = Operand.cast (Operand.bool true,
-                                                      Type.bool)})),
+                                (!extraGlobals, define)),
                   transfer = Transfer.Goto {args = Vector.new0 (),
                                             dst = start}}
       val blocks = Vector.concat [Vector.new1 block, blocks]
@@ -864,6 +881,16 @@ fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileI
                                raises = raises,
                                returns = returns,
                                start = newStart}
+      val objectTypes =
+         case !newTycon of
+              NONE => objectTypes
+            | SOME _ => Vector.concat [objectTypes,
+               (Vector.new1 o ObjectType.Normal)
+                  {ty=case !Control.align of
+                           Control.Align4 => Type.bool
+                         | Control.Align8 => (Type.seq o Vector.fromList)
+                            [Type.bool, Type.word WordSize.word32],
+                   hasIdentity=true}]
    in
       Program.T {functions = functions,
                  handlesSignals = handlesSignals,

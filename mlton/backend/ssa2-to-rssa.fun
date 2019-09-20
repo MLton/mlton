@@ -652,7 +652,7 @@ fun convertWordX (w: WordX.t): WordX.t =
 fun convert (program as S.Program.T {functions, globals, main, ...},
              {codegenImplementsPrim: Rssa.Type.t Rssa.Prim.t -> bool}): Rssa.Program.t =
    let
-      val {diagnostic, genCase, object, objectTypes, select, toRtype, update} =
+      val {diagnostic, genCase, object, objectTypes, select, static, toRtype, update} =
          PackedRepresentation.compute program
       val objectTypes = Vector.concat [ObjectType.basic (), objectTypes]
       val () =
@@ -960,7 +960,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                            NONE => none ()
                          | SOME ty =>
                               add (Bind {dst = (valOf var, ty),
-                                         isMutable = false,
+                                         pinned = false,
                                          src = f ty})
                      fun move (src: Operand.t) = maybeMove (fn _ => src)
                   in
@@ -1182,7 +1182,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                  ty = Type.objptrHeader ()}),
                                          src = ObjptrTycon arrOpt},
                                         Bind {dst = (valOf var, arrTy),
-                                              isMutable = false,
+                                              pinned = false,
                                               src = Operand.cast (rawarr, arrTy)})
                                     end
                                | Array_toVector =>
@@ -1202,7 +1202,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                  ty = Type.objptrHeader ()}),
                                          src = ObjptrTycon vecOpt},
                                         Bind {dst = (valOf var, vecTy),
-                                              isMutable = false,
+                                              pinned = false,
                                               src = Operand.cast (sequence, vecTy)})
                                     end
                                | Array_uninit =>
@@ -1642,38 +1642,243 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                           returns = transTypes returns,
                           start = start}
          end
+      fun translateGlobalStatics statements
+         : (Var.t * Type.t * Var.t Static.t) vector * S.Statement.t vector
+         =
+         let
+            val statics = ref []
+            val keeps = ref []
+            datatype elem = datatype Static.Data.Elem.t
+            datatype z = datatype PackedRepresentation.StaticOrElem.t
+            val {get = globalStatic: Var.t -> Var.t elem option option,
+                 set = setGlobalStatic, destroy = destGlobalStatics} =
+               Property.destGetSetOnce
+               (Var.plist, Property.initConst NONE)
+            fun pushStatic (v, ty, rty, s) =
+               (setVarInfo (v, {ty=ty});
+                List.push (statics, (v, rty, s)))
+            fun pushKeep st = List.push (keeps, st)
+
+            fun validArg {elt, isMutable} =
+               case !Control.staticAllocInternalPtrs of
+                    Control.All => true
+                  | Control.Static =>
+                       not (isMutable andalso Option.exists (toRtype elt, Type.isObjptr))
+                  | Control.None => false
+            fun getLocation (ty, staticAlloc, isEmpty) =
+               case S.Type.dest ty of
+                  S.Type.Object {args, ...} =>
+                     (* Important: isMutable is a proxy for hasIdentity,
+                      * so we need to preserve it even if there are no fields
+                      *)
+                     if staticAlloc andalso (isEmpty orelse Vector.forall (S.Prod.dest args, validArg))
+                     then if S.Prod.someIsMutable args
+                             then Static.Location.MutStatic
+                             else Static.Location.ImmStatic
+                     else Static.Location.Heap
+                | _ => Error.bug "translateGlobalStatics.getLocation: non-object"
+            fun getObjptrTycon ty =
+               let
+                  fun fail () = Error.bug "translateGlobalStatics.getObjptrTycon"
+               in
+                  case toRtype ty of
+                     SOME t =>
+                        (case Type.deObjptr t of
+                            SOME tycon => tycon
+                          | NONE => fail ())
+                   | NONE => fail ()
+               end
+            fun makeWordXVector {data, location, ty} =
+               let
+                  val tycon = getObjptrTycon ty
+               in
+                  (Static o Static.vector)
+                  {data = data,
+                   location = location,
+                   tycon = tycon}
+               end
+            fun makeSequence {length, location, ty} =
+               let
+                  val tycon = getObjptrTycon ty
+                  val eltSize =
+                     case Vector.sub (objectTypes, ObjptrTycon.index tycon) of
+                        ObjectType.Sequence {elt, ...} => Bits.toBytes (Type.width elt)
+                      | _ => Error.bug "translateGlobalStatics.makeSequence: strange sequence tycon"
+               in
+                  (Static o Static.sequence)
+                  {eltSize = eltSize,
+                   length = length,
+                   location = location,
+                   tycon = tycon}
+               end
+            fun makeObject {args, con, location, ty} =
+               static {args = args,
+                       con = con,
+                       elem = (fn v =>
+                               case globalStatic v of
+                                  SOME (SOME static) => static
+                                | _ => Error.bug "translateGlobalStatics.makeObject.elem"),
+                       location = location,
+                       objectTy = ty}
+            fun translateBind (st, {exp, ty, var}) =
+               case var of
+                  NONE => pushKeep st
+                | SOME var =>
+                  let
+                     datatype location = datatype Static.Location.t
+                     fun keep () = pushKeep st
+                     fun keepWithStatic'' s =
+                        (setGlobalStatic (var, s)
+                         ; keep ())
+                     fun copy var' = keepWithStatic'' (globalStatic var')
+                     fun keepWithStatic' s = keepWithStatic'' (SOME s)
+                     fun keepWithStatic s = keepWithStatic' (SOME s)
+                     fun word w = keepWithStatic (Word w)
+                     fun real r = keepWithStatic (Real r)
+                     fun static (soe: PackedRepresentation.StaticOrElem.t) =
+                        case toRtype ty of
+                           SOME rty =>
+                              (case soe of
+                                  Static s =>
+                                     (pushStatic (var, ty, rty, s);
+                                      case Static.location s of
+                                         Heap => () (* address of heap static not a valid elem *)
+                                       | _ => setGlobalStatic (var, SOME (SOME (Address var))))
+                                | Elem e => keepWithStatic e)
+                         | _ => keepWithStatic' NONE
+                     fun wordxvector wxv =
+                        if !Control.staticAllocWordVectorConsts
+                           then static (makeWordXVector {data = wxv,
+                                                         location = Static.Location.ImmStatic,
+                                                         ty = ty})
+                           else keep ()
+                  in
+                     case exp of
+                        S.Exp.Const c =>
+                           (case c of
+                               Const.IntInf i =>
+                                  (case Const.IntInfRep.fromIntInf i of
+                                      Const.IntInfRep.Big wxv => wordxvector wxv
+                                    | Const.IntInfRep.Small w => word w)
+                             | Const.Null => word (WordX.zero (WordSize.cpointer ()))
+                             | Const.Real r => real r
+                             | Const.Word w => word w
+                             | Const.WordVector wxv => wordxvector wxv)
+                      | S.Exp.Inject {variant, ...} =>
+                           copy variant
+                      | S.Exp.Object {args, con} =>
+                           (case !Control.staticInitObjects of
+                               NONE => keep ()
+                             | SOME staticInitHeapObjects =>
+                                  if Vector.exists (args, Option.isNone o globalStatic)
+                                     then keep ()
+                                     else let
+                                             val location = getLocation (ty, !Control.staticAllocObjects, false)
+                                          in
+                                             if location <> Static.Location.Heap
+                                                orelse staticInitHeapObjects
+                                                then case makeObject {args = args,
+                                                                      con = con,
+                                                                      location = location,
+                                                                      ty = ty} of
+                                                        NONE => keep ()
+                                                      | SOME soe => static soe
+                                                else keep ()
+                                           end)
+                      | S.Exp.PrimApp {args, prim, ...} =>
+                           (case Prim.name prim of
+                               Prim.Name.Array_alloc _ =>
+                                  let
+                                     val length = (globalStatic o Vector.first) args
+                                  in
+                                     case (length, !Control.staticInitArrays) of
+                                        (SOME (SOME (Word l)), true) =>
+                                           let
+                                              val location = getLocation (ty, !Control.staticAllocArrays, WordX.isZero l)
+                                           in
+                                              static (makeSequence {length = WordX.toInt l,
+                                                                    location = location,
+                                                                    ty = ty})
+                                           end
+                                      | _ => keep ()
+                                  end
+                             | Prim.Name.Array_toVector => copy (Vector.first args)
+                             | Prim.Name.MLton_bogus =>
+                                  (case toRtype ty of
+                                      NONE => keepWithStatic' NONE
+                                    | SOME ty => (case Type.deReal ty of
+                                                     NONE => word (Type.bogusWord ty)
+                                                   | SOME s => real (RealX.zero s)))
+                             | _ => keep ())
+                      | S.Exp.Var v => copy v
+                      | S.Exp.Select _ => keep ()
+                  end
+
+            val translateStatement =
+               fn s as S.Statement.Bind b => translateBind (s, b)
+                | st => pushKeep st
+
+            val _ = Vector.foreach (statements, translateStatement)
+            val _ = destGlobalStatics ()
+         in
+            (Vector.fromListRev (!statics), Vector.fromListRev (!keeps))
+         end
+
+
       val main =
           let
              val start = Label.newNoname ()
              val bug = Label.newNoname ()
+             val (statics, globalStatements) = translateGlobalStatics globals
+             val {args, blocks, name, raises, returns, start} =
+             (Function.dest o translateFunction)
+                (S.Function.profile
+                 (S.Function.new
+                  {args = Vector.new0 (),
+                   blocks = (Vector.new2
+                             (S.Block.T
+                              {label = start,
+                               args = Vector.new0 (),
+                               statements = globalStatements,
+                               transfer = (S.Transfer.Call
+                                           {args = Vector.new0 (),
+                                            func = main,
+                                            return =
+                                            S.Return.NonTail
+                                            {cont = bug,
+                                             handler = S.Handler.Dead}})},
+                              S.Block.T
+                              {label = bug,
+                               args = Vector.new0 (),
+                               statements = Vector.new0 (),
+                               transfer = S.Transfer.Bug})),
+                   mayInline = false, (* doesn't matter *)
+                   name = Func.newNoname (),
+                   raises = NONE,
+                   returns = NONE,
+                   start = start},
+                  S.SourceInfo.main))
+             val staticLabel = Label.newNoname ()
+             val staticBlock = Block.T
+               {args=Vector.new0 (),
+                kind=Kind.Jump,
+                label=staticLabel,
+                statements=Vector.map
+                  (statics, fn (v, rty, static) =>
+                  Statement.Bind
+                  {dst=(v, rty),
+                   pinned=false,
+                   src=Operand.Static {static=static, ty=rty}}),
+                transfer=Transfer.Goto {args=Vector.new0 (), dst=start}}
           in
-             translateFunction
-             (S.Function.profile
-              (S.Function.new
-               {args = Vector.new0 (),
-                blocks = (Vector.new2
-                          (S.Block.T
-                           {label = start,
-                            args = Vector.new0 (),
-                            statements = globals,
-                            transfer = (S.Transfer.Call
-                                        {args = Vector.new0 (),
-                                         func = main,
-                                         return =
-                                         S.Return.NonTail
-                                         {cont = bug,
-                                          handler = S.Handler.Dead}})},
-                           S.Block.T
-                           {label = bug,
-                            args = Vector.new0 (),
-                            statements = Vector.new0 (),
-                            transfer = S.Transfer.Bug})),
-                mayInline = false, (* doesn't matter *)
-                name = Func.newNoname (),
-                raises = NONE,
-                returns = NONE,
-                start = start},
-               S.SourceInfo.main))
+             Function.new
+             {args=args,
+              blocks=Vector.concat
+              [Vector.new1 staticBlock, blocks],
+              name=name,
+              raises=raises,
+              returns=returns,
+              start=staticLabel}
           end
       val functions = List.revMap (functions, translateFunction)
       val p = Program.T {functions = functions,

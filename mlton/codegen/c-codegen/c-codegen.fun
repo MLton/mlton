@@ -88,16 +88,8 @@ structure WordX =
       open WordX
 
       fun toC (w: t): string =
-         let
-            fun doit s =
-               concat ["(Word", s, ")(", toString (w, {suffix = false}), "ull)"]
-         in
-            case WordSize.prim (size w) of
-               W8 => doit "8"
-             | W16 => doit "16"
-             | W32 => doit "32"
-             | W64 => doit "64"
-         end
+         concat ["(Word", WordSize.toString (size w), ")(",
+                 toString (w, {suffix = false}), "ull)"]
    end
 
 structure WordXVector =
@@ -109,21 +101,68 @@ structure WordXVector =
          structure WordX = Z
       end
 
-      fun toC (v: t): string =
-         let
-            fun string () =
-               concat ["(pointer)",
-                       C.string (String.implode (toListMap (v, WordX.toChar)))]
-            fun vector s =
-               concat ["(pointer)((Word", s, "[]){",
-                       String.concatWith (toListMap (v, WordX.toC), ","),
-                       "})"]
-         in
+      local
+         fun string v =
+            concat [C.string (String.implode (toListMap (v, WordX.toChar)))]
+         fun vector v =
+            concat ["{",
+                    String.concatWith (toListMap (v, WordX.toC), ","),
+                    "}"]
+      in
+         fun toC (v: t): string =
             case WordSize.prim (elementSize v) of
-               W8 => string ()
-             | W16 => vector "16"
-             | W32 => vector "32"
-             | W64 => vector "64"
+               W8 => string v
+             | _ => vector v
+      end
+   end
+
+structure Static =
+   struct
+      local
+         structure RealX' = RealX
+         structure WordX' = WordX
+         structure WordXVector' = WordXVector
+      in
+         open Static
+         structure RealX = RealX'
+         structure WordX = WordX'
+         structure WordXVector = WordXVector'
+      end
+
+      structure Data =
+      struct
+         open Data
+
+         fun toC indexToC =
+            fn Empty _ => NONE
+             | Vector v => SOME (WordXVector.toC v)
+             | Object es =>
+                  let
+                     val elemToC =
+                        fn Elem.Real rx => RealX.toC rx
+                         | Elem.Word wx => WordX.toC wx
+                         | Elem.Address i => indexToC i
+                  in
+                     (SOME o String.concatWith)
+                     (List.map (es, elemToC),
+                      ", ")
+                  end
+      end
+
+      fun metadataToC (Static.T {metadata, ...}) =
+         let
+            val decl =
+               String.concatWith
+               (List.mapi (metadata, fn (i, w) =>
+                           concat ["Word", WordSize.toString (WordX.size w),
+                                   " meta_", C.int i]),
+                "; ")
+            val init =
+               String.concatWith
+               (List.map (metadata, WordX.toC),
+                ", ")
+         in
+            {decl = decl, init = init}
          end
    end
 
@@ -229,7 +268,7 @@ fun declareGlobals (prefix: string, print) =
              val s = CType.toString t
              val n = Global.numberOfType t
           in
-             if n > 0
+             if n > 0 orelse CType.equals (t, CType.Objptr)
                 then print (concat [prefix, s, " global", s, " [", C.int n, "];\n"])
                 else ()
           end)
@@ -243,7 +282,7 @@ fun outputDeclarations
     print: string -> unit,
     program = (Program.T
                {frameInfos, frameOffsets, maxFrameSize,
-                objectTypes, reals, sourceMaps, vectors, ...}),
+                objectTypes, reals, sourceMaps, statics, ...}),
     rest: unit -> unit
     }: unit =
    let
@@ -272,23 +311,115 @@ fun outputDeclarations
          in
             ()
          end
-      fun declareVectors () =
-         (print "BeginVectorInits\n"
-          ; (List.foreach
-             (vectors, fn (g, v) =>
-              (C.callNoSemi ("VectorInitElem",
-                             [C.int (Bytes.toInt
-                                     (WordSize.bytes
-                                      (WordXVector.elementSize v))),
-                              C.int (Global.index g),
-                              C.int (WordXVector.length v),
-                              WordXVector.toC v],
-                             print)
-                 ; print "\n")))
-          ; print "EndVectorInits\n")
+      fun staticVar i =
+         "static_" ^ Int.toString i
+      fun metadataSize i =
+         Bytes.toInt (Static.metadataSize (#1 (Vector.sub (statics, i))))
+      fun staticAddress i = concat
+         ["((Pointer)(&", staticVar i, ") + ",
+          C.int (metadataSize i), ")"]
+
+      fun declareStatics () =
+         (Vector.foreachi
+          (statics, fn (i, (static as Machine.Static.T {data, location, ...}, _)) =>
+             let
+                val dataC = Static.Data.toC staticAddress data
+                datatype dataType =
+                   TObject of string list
+                 | TVector of string * int
+                val dataType =
+                   case data of
+                      Static.Data.Object es =>
+                         (TObject o List.map) (es,
+                           fn Static.Data.Elem.Real r => "Real" ^ RealSize.toString (RealX.size r)
+                            | Static.Data.Elem.Word w => "Word" ^ WordSize.toString (WordX.size w)
+                            | Static.Data.Elem.Address _ => "Pointer")
+                    | Static.Data.Vector v =>
+                         TVector ("Word" ^ WordSize.toString (WordXVector.elementSize v), WordXVector.length v)
+                    | Static.Data.Empty b =>
+                         TVector ("Word" ^ WordSize.toString WordSize.byte, Bytes.toInt b)
+                val dataDescr =
+                   case dataType of
+                      TObject strings => (concat o List.mapi) (strings,
+                           fn (i, s) => concat [s, " data_", C.int i, "; "])
+                    | TVector (str, length) => concat [str, " data[", C.int length, "];"]
+                val {decl = mdecl, init = minit} =
+                   Static.metadataToC static
+                val qualifier =
+                   let datatype z = datatype Machine.Static.Location.t in
+                   case location of
+                        MutStatic => ""
+                      | ImmStatic =>
+                           (case data of
+                                (* Requires initialization, and is likely an array anyway *)
+                                Machine.Static.Data.Empty _ => ""
+                              | _ => "const ")
+                      | Heap => "const static " (* Will just be handed to GC by address *)
+                   end
+
+                val decl = concat
+                   [ qualifier, "struct {",
+                     mdecl, "; ",
+                     dataDescr,
+                     "}\n",
+                     staticVar i ]
+             in
+                case dataC of
+                     SOME dataC =>
+                       (print o concat)
+                       [decl, " = {", minit, ", ", dataC, "};\n"]
+                    (* needs code initialization *)
+                   | NONE => print (decl ^ ";\n")
+             end))
+      fun declareHeapStatics () =
+         (print "static struct GC_objectInit objectInits[] = {\n"
+          ; (Vector.foreachi
+             (statics, fn (i, (static, g)) =>
+             let
+                val dataBytes = Bytes.toInt (Static.dataSize static)
+                val metadataBytes = Bytes.toInt (Static.metadataSize static)
+             in
+                case g of
+                     NONE => ()
+                   | SOME g' =>
+                      (print o concat) ["\t{ ",
+                              C.int (Global.index g'), ", ",
+                              C.int metadataBytes, ", ",
+                              C.int (metadataBytes + dataBytes), ", ",
+                              "((Pointer) &", staticVar i, ")",
+                              " },\n"]
+             end))
+          ; print "};\n")
+      fun declareStaticInits () =
+         (print "static void static_Init() {\n"
+          ; (Vector.foreachi
+             (statics, fn (i, (static as Machine.Static.T {data, location, ...}, _)) =>
+              let
+                 val shouldInit =
+                    (case location of
+                        Machine.Static.Location.Heap => false
+                      | _ => true)
+                    andalso
+                    (case data of
+                        Machine.Static.Data.Empty _ => true
+                      | _ => false)
+                 val metadataBytes = Machine.Static.metadataSize static
+                 val {decl = mdecl, init = minit} =
+                    Static.metadataToC static
+              in
+                 if shouldInit
+                    then C.call ("\tmemcpy",
+                                 ["&" ^ staticVar i,
+                                  concat ["&((struct {", mdecl, "}){", minit, "})"],
+                                  C.bytes metadataBytes],
+                                 print)
+                    else ()
+              end))
+          ; print "};\n")
+
       fun declareReals () =
          (print "static void real_Init() {\n"
-          ; List.foreach (reals, fn (g, r) =>
+          ; List.foreach (reals, fn (r, g) =>
                           print (concat ["\tglobalReal",
                                          RealSize.toString (RealX.size r),
                                          "[", C.int (Global.index g), "] = ",
@@ -476,7 +607,9 @@ fun outputDeclarations
       outputIncludes (includes, print); print "\n"
       ; declareGlobals ("PRIVATE ", print); print "\n"
       ; declareLoadSaveGlobals (); print "\n"
-      ; declareVectors (); print "\n"
+      ; declareStatics (); print "\n"
+      ; declareHeapStatics (); print "\n"
+      ; declareStaticInits (); print "\n"
       ; declareReals (); print "\n"
       ; declareFrameInfos (); print "\n"
       ; declareObjectTypes (); print "\n"
@@ -568,7 +701,7 @@ fun declareFFI (chunks, print) =
       ; if !empty then () else print "\n"
    end
 
-fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
+fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...},
             outputC: unit -> {file: File.t,
                               print: string -> unit,
                               done: unit -> unit}} =
@@ -741,6 +874,8 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                        C.bytes offset]]
              | StackOffset s => StackOffset.toString s
              | StackTop => "StackTop"
+             | Static {index, offset, ty} =>
+                  concat ["M", C.args [Type.toC ty, C.int index, C.bytes offset]]
              | Temporary t =>
                   concat [Type.name (Temporary.ty t), "_",
                           Int.toString (Temporary.index t)]
@@ -1124,6 +1259,13 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
             ; C.callNoSemi ("EndChunk", [chunkLabelIndexAsString chunkLabel, C.bool (!Control.chunkTailCall)], print); print "\n\n"
          end
 
+      fun declareStatics (prefix: string, print) =
+         Vector.foreachi
+         (statics, fn (i, (Static.T {location, ...}, _)) =>
+          case location of
+             Static.Location.Heap => ()
+           | _ => print (concat [prefix, "PointerAux static_", C.int i, ";\n"]))
+
       fun outputChunks chunks =
          let
             val {done, print, ...} = outputC ()
@@ -1140,6 +1282,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
             outputIncludes (["c-chunk.h"], print); print "\n"
             ; outputOffsets (); print "\n"
             ; declareGlobals ("PRIVATE extern ", print); print "\n"
+            ; declareStatics ("PRIVATE extern ", print); print "\n"
             ; declareNextChunks (chunks, print); print "\n"
             ; declareFFI (chunks, print)
             ; List.foreach (chunks, fn chunk => outputChunkFn (chunk, print))

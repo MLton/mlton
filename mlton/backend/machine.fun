@@ -181,6 +181,9 @@ structure Operand =
                             ty: Type.t}
        | StackOffset of StackOffset.t
        | StackTop
+       | Static of {index: int,
+                    offset: Bytes.t,
+                    ty: Type.t}
        | Temporary of Temporary.t
        | Word of WordX.t
 
@@ -197,6 +200,7 @@ structure Operand =
         | SequenceOffset {ty, ...} => ty
         | StackOffset s => StackOffset.ty s
         | StackTop => Type.cpointer ()
+        | Static {ty, ...} => ty
         | Temporary t => Temporary.ty t
         | Word w => Type.ofWordX w
 
@@ -231,6 +235,10 @@ structure Operand =
                        constrain ty]
              | StackOffset so => StackOffset.layout so
              | StackTop => str "<StackTop>"
+             | Static {index, offset, ty} =>
+                  seq [str "M",
+                       tuple [Int.layout index, Type.layout ty,
+                              Bytes.layout offset]]
              | Temporary t => Temporary.layout t
              | Word w => WordX.layout (w, {suffix = true})
          end
@@ -253,6 +261,11 @@ structure Operand =
               SequenceOffset {base = b', index = i', ...}) =>
                 equals (b, b') andalso equals (i, i')
            | (StackOffset so, StackOffset so') => StackOffset.equals (so, so')
+           | (Static {index = i, offset = j, ty = t},
+              Static {index = i', offset = j', ty = t'}) =>
+              i = i'
+              andalso Bytes.equals (j, j')
+              andalso Type.equals (t, t')
            | (Temporary t, Temporary t') => Temporary.equals (t, t')
            | (Word w, Word w') => WordX.equals (w, w')
            | _ => false
@@ -273,14 +286,14 @@ structure Operand =
                   inter base orelse inter index
              | (StackOffset so, StackOffset so') =>
                   StackOffset.interfere (so, so')
+             | (Static {index, ...}, Static {index=index', ...}) => index = index'
              | (Temporary t, Temporary t') => Temporary.equals (t, t')
              | _ => false
          end
 
-      val rec isLocation =
-         fn Cast (z, _) => isLocation z
+      val rec isDestination =
+         fn Cast (z, _) => isDestination z
           | Contents _ => true
-          | GCState => true
           | Global _ => true
           | Offset _ => true
           | SequenceOffset _ => true
@@ -761,9 +774,9 @@ structure Program =
                                 label: Label.t},
                          maxFrameSize: Bytes.t,
                          objectTypes: ObjectType.t vector,
-                         reals: (Global.t * RealX.t) list,
+                         reals: (RealX.t * Global.t) list,
                          sourceMaps: SourceMaps.t option,
-                         vectors: (Global.t * WordXVector.t) list}
+                         statics: (int Static.t * Global.t option) vector}
 
       fun clear (T {chunks, sourceMaps, ...}) =
          (List.foreach (chunks, Chunk.clear)
@@ -771,7 +784,7 @@ structure Program =
 
       fun layouts (T {chunks, frameInfos, frameOffsets, handlesSignals,
                       main = {label, ...},
-                      maxFrameSize, objectTypes, sourceMaps, ...},
+                      maxFrameSize, objectTypes, sourceMaps, statics, ...},
                    output': Layout.t -> unit) =
          let
             open Layout
@@ -790,6 +803,15 @@ structure Program =
             ; Vector.foreachi (objectTypes, fn (i, ty) =>
                                output (seq [str "opt_", Int.layout i,
                                             str " = ", ObjectType.layout ty]))
+            ; output (str "\n")
+            ; output (str "Statics:")
+            ; Vector.foreachi (statics, fn (i, (s, g)) => (output o seq)
+                     [str "static_", Int.layout i,
+                      str " = ",
+                      Static.layout (fn i => seq [str "&static_", Int.layout i]) s,
+                      case g of
+                         SOME g' => seq [str " -> ", Global.layout g']
+                       | NONE => empty])
             ; output (str "\n")
             ; List.foreach (chunks, fn chunk => Chunk.layouts (chunk, output))
          end
@@ -822,7 +844,7 @@ structure Program =
 
       fun shuffle (T {chunks, frameInfos, frameOffsets,
                       handlesSignals, main, maxFrameSize,
-                      objectTypes, reals, sourceMaps, vectors}) =
+                      objectTypes, reals, sourceMaps, statics}) =
          let
             fun shuffle v =
                let
@@ -851,7 +873,7 @@ structure Program =
                objectTypes = objectTypes,
                reals = reals,
                sourceMaps = sourceMaps,
-               vectors = vectors}
+               statics = statics}
          end
 
       structure Alloc =
@@ -891,7 +913,7 @@ structure Program =
       fun typeCheck (program as
                      T {chunks, frameInfos, frameOffsets,
                         maxFrameSize, objectTypes, sourceMaps, reals,
-                        vectors, ...}) =
+                        statics, ...}) =
          let
             val (checkProfileLabel, finishCheckProfileLabel) =
                Err.check'
@@ -991,26 +1013,31 @@ structure Program =
             fun tyconTy (opt: ObjptrTycon.t): ObjectType.t =
                Vector.sub (objectTypes, ObjptrTycon.index opt)
             open Layout
-            fun globals (name, gs, isOk, layout) =
+
+            fun checkGlobal (name, global, isOk, layoutVal) =
+               let
+                  val ty = Global.ty global
+                  open Layout
+               in
+                  Err.check
+                  (name,
+                   fn () => isOk ty,
+                   fn () => seq [layoutVal (), str ": ", Type.layout ty])
+               end
+            val _ =
                List.foreach
-               (gs, fn (g, s) =>
-                let
-                   val ty = Global.ty g
-                in
-                   Err.check
-                   (concat ["global ", name],
-                    fn () => isOk (ty, s),
-                    fn () => seq [layout s, str ": ", Type.layout ty])
-                end)
+               (reals, fn (r, g) => checkGlobal
+                  ("global real", g,
+                   fn t => Type.equals (t, Type.real (RealX.size r)),
+                   fn () => RealX.layout (r, {suffix=true})))
             val _ =
-               globals ("real", reals,
-                        fn (t, r) => Type.equals (t, Type.real (RealX.size r)),
-                        fn r => RealX.layout (r, {suffix = true}))
-            val _ =
-               globals ("vector", vectors,
-                        fn (t, v) =>
-                        Type.equals (t, Type.ofWordXVector v),
-                        WordXVector.layout)
+               Vector.foreach
+               (statics, fn (s, g) =>
+                  case g of
+                       NONE => ()
+                     | SOME g' =>
+                        checkGlobal ("static", g',
+                        Type.isObjptr, fn () => Static.layout Int.layout s))
             (* Check for no duplicate labels. *)
             local
                val {get, ...} =
@@ -1069,12 +1096,10 @@ structure Program =
                       | Null => true
                       | Offset {base, offset, ty} =>
                            (checkOperand (base, alloc)
-                            ; (Operand.isLocation base
-                               andalso
-                               (Type.offsetIsOk {base = Operand.ty base,
-                                                 offset = offset,
-                                                 tyconTy = tyconTy,
-                                                 result = ty})))
+                            ; Type.offsetIsOk {base = Operand.ty base,
+                                               offset = offset,
+                                               tyconTy = tyconTy,
+                                               result = ty})
                       | Real _ => true
                       | StackOffset (so as StackOffset.T {offset, ty, ...}) =>
                            Bytes.<= (Bytes.+ (offset, Type.bytes ty), maxFrameSize)
@@ -1111,14 +1136,16 @@ structure Program =
                       | SequenceOffset {base, index, offset, scale, ty} =>
                            (checkOperand (base, alloc)
                             ; checkOperand (index, alloc)
-                            ; (Operand.isLocation base
-                               andalso
-                               (Type.sequenceOffsetIsOk {base = Operand.ty base,
-                                                         index = Operand.ty index,
-                                                         offset = offset,
-                                                         tyconTy = tyconTy,
-                                                         result = ty,
-                                                         scale = scale})))
+                            ; Type.sequenceOffsetIsOk {base = Operand.ty base,
+                                                       index = Operand.ty index,
+                                                       offset = offset,
+                                                       tyconTy = tyconTy,
+                                                       result = ty,
+                                                       scale = scale})
+                      | Static {index, ty, ...} =>
+                           0 <= index andalso index < Vector.length statics
+                           andalso
+                           (Type.isCPointer ty orelse Type.isObjptr ty)
                       | StackTop => true
                       | Temporary t => Alloc.doesDefine (alloc, Live.Temporary t)
                       | Word _ => true
@@ -1234,7 +1261,7 @@ structure Program =
                            val _ = checkOperand (dst, alloc)
                         in
                            if Type.isSubtype (Operand.ty src, Operand.ty dst)
-                              andalso Operand.isLocation dst
+                              andalso Operand.isDestination dst
                               then SOME alloc
                            else NONE
                         end

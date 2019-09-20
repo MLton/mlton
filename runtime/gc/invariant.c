@@ -74,6 +74,12 @@ bool invariantForGC (GC_state s) {
   }
   assert (s->secondaryHeap.start == NULL 
           or s->heap.size == s->secondaryHeap.size);
+  /* The following checks are disabled,
+   * because objptrs to static objects * fail `isObjptrInFromSpace`.
+   * if an efficient `isObjptrStatic` predicate were available,
+   * then these checks could be re-enabled.
+   */
+  if (FALSE) {
   /* Check that all pointers are into from space. */
   foreachGlobalObjptr (s, assertIsObjptrInFromSpace);
   pointer back = s->heap.start + s->heap.oldGenSize;
@@ -85,6 +91,7 @@ bool invariantForGC (GC_state s) {
     fprintf (stderr, "Checking nursery.\n");
   foreachObjptrInRange (s, s->heap.nursery, &s->frontier, 
                         assertIsObjptrInFromSpace, FALSE);
+  }
   /* Current thread. */
   GC_stack stack = getStackCurrent(s);
   assert (isStackReservedAligned (s, stack->reserved));

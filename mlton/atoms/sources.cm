@@ -26,6 +26,7 @@ signature PRIM_CONS
 signature PRIM_TYCONS
 signature PROFILE_LABEL
 signature REAL_SIZE
+signature REAL_X
 signature RECORD
 signature SYMBOL
 signature TYCON

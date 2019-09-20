@@ -48,6 +48,8 @@ struct GC_state {
   uint32_t maxFrameSize;
   bool mutatorMarksCards;
   GC_objectHashTable objectHashTable;
+  struct GC_objectInit *objectInits;
+  uint32_t objectInitsLength;
   GC_objectType objectTypes; /* Array of object types. */
   uint32_t objectTypesLength; /* Cardinality of objectTypes array. */
   struct GC_profiling profiling;
@@ -64,8 +66,6 @@ struct GC_state {
   pointer stackBottom; /* Bottom of stack in current thread. */
   struct GC_sysvals sysvals;
   struct GC_translateState translateState;
-  struct GC_vectorInit *vectorInits;
-  uint32_t vectorInitsLength;
   GC_weak weaks; /* Linked list of (live) weak pointers */
 };
 

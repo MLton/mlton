@@ -36,7 +36,7 @@ val _ =
                  List.tabulate (4, fn i => i + 1), fn l =>
                  chk (foldl (op +) 0 l, 10))
     ; printSize ("a string of length 10", NONE,
-                 "0123456789", fn s =>
+                 CharVector.tabulate (10, fn i => chr (ord #"0" + i)), fn s =>
                  chk (CharVector.foldl (fn (c,s) => ord c + s) 0 s,  525))
     ; printSize ("an int array of length 10", NONE,
                  Array.tabulate (10, fn i => i), fn a =>
