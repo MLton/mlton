@@ -26,6 +26,7 @@ signature MLTON =
       val share: 'a -> unit
       val shareAll: unit -> unit
       val size: 'a -> IntInf.int
+      val sizeAll: 'a -> IntInf.int
 
       structure Array: MLTON_ARRAY
 (*       structure BinIO: MLTON_BIN_IO *)

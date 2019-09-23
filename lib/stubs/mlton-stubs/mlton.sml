@@ -72,6 +72,7 @@ structure MLton: MLTON =
       val share = fn _ => raise Fail "share"
       val shareAll = fn _ => raise Fail "shareAll"
       val size: 'a -> IntInf.int = fn _ => ~1
+      val sizeAll: 'a -> IntInf.int = fn _ => ~1
 
       structure Array =
          struct

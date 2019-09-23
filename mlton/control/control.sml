@@ -419,6 +419,10 @@ fun translatePass {arg: 'a,
                                 message (verb, fn () => tgtStats res))
             val _ = message (verb, PropertyList.stats)
             val _ = message (verb, HashSet.stats)
+            val _ = message (verb, fn () =>
+                             Layout.str (concat ["live data = ",
+                                                 IntInf.toCommaString (MLton.sizeAll ()),
+                                                 " bytes"]))
             val _ = unindent ()
          end
       in
