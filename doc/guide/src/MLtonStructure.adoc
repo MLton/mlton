@@ -17,6 +17,7 @@ structure MLton:
       val share: 'a -> unit
       val shareAll: unit -> unit
       val size: 'a -> IntInf.int
+      val sizeAll: 'a -> IntInf.int
 
       structure Array: MLTON_ARRAY
       structure BinIO: MLTON_BIN_IO
@@ -142,6 +143,11 @@ collection, and takes time proportional to the size of the heap.
 returns the amount of heap space (in bytes) taken by the value of `x`,
 including all objects reachable from `x` by following pointers.  It
 takes time proportional to the size of `x`.  See below for an example.
+
+* `sizeAll ()`
++
+returns the amount of heap space (in bytes) taken by all reachable
+live data.  It takes time proportional to the size of live data.
 
 
 == <!Anchor(size)>Example of `MLton.size` ==

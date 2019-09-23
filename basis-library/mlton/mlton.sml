@@ -30,6 +30,9 @@ fun shareAll () =
 fun size x =
    C_Size.toLargeInt (Primitive.MLton.size x)
 
+fun sizeAll () =
+   C_Size.toLargeInt (Primitive.MLton.sizeAll (Primitive.MLton.GCState.gcState ()))
+
 (* fun cleanAtExit () = let open Cleaner in clean atExit end *)
 
 val debug = Primitive.Controls.debug
