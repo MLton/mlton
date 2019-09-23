@@ -1,4 +1,4 @@
-/* Copyright (C) 2010,2012,2016 Matthew Fluet.
+/* Copyright (C) 2010,2012,2016,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -379,14 +379,20 @@ void majorMarkCompactGC (GC_state s) {
              uintmaxToCommaString(s->heap.size));
   }
   currentStack = getStackCurrent (s);
+  s->markState.mode = MARK_MODE;
+  s->markState.size = 0;
   if (s->hashConsDuringGC) {
     s->lastMajorStatistics.bytesHashConsed = 0;
     s->cumulativeStatistics.numHashConsGCs++;
     s->objectHashTable = allocHashTable (s);
-    foreachGlobalObjptr (s, dfsMarkWithHashConsWithLinkWeaks);
-    freeHashTable (s->objectHashTable);
+    s->markState.shouldHashCons = TRUE;
   } else {
-    foreachGlobalObjptr (s, dfsMarkWithoutHashConsWithLinkWeaks);
+    s->markState.shouldHashCons = FALSE;
+  }
+  s->markState.shouldLinkWeaks = TRUE;
+  foreachGlobalObjptr (s, dfsMarkObjptr);
+  if (s->hashConsDuringGC) {
+    freeHashTable (s->objectHashTable);
   }
   updateWeaksForMarkCompact (s);
   foreachGlobalObjptr (s, threadInternalObjptr);

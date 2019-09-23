@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -12,10 +13,16 @@ size_t GC_size (GC_state s, pointer root) {
   enter (s); /* update stack in heap, in case it is reached */
   if (DEBUG_SIZE)
     fprintf (stderr, "GC_size marking\n");
-  res = dfsMarkByMode (s, root, MARK_MODE, FALSE, FALSE);
+  s->markState.mode = MARK_MODE;
+  s->markState.size = 0;
+  s->markState.shouldHashCons = FALSE;
+  s->markState.shouldLinkWeaks = FALSE;
+  dfsMark (s, root);
+  res = s->markState.size;
   if (DEBUG_SIZE)
     fprintf (stderr, "GC_size unmarking\n");
-  dfsMarkByMode (s, root, UNMARK_MODE, FALSE, FALSE);
+  s->markState.mode = UNMARK_MODE;
+  dfsMark (s, root);
   leave(s);
   
   return res;

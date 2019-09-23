@@ -26,23 +26,24 @@ bool isPointerMarkedByMode (pointer p, GC_markMode m) {
   }
 }
 
-/* dfsMarkByMode (s, r, m, shc, slw)
+/* dfsMark (s, r)
  *
  * Sets all the mark bits in the object graph pointed to by r.
  *
- * If m is MARK_MODE, it sets the bits to 1.
- * If m is UNMARK_MODE, it sets the bits to 0.
+ * If s->markState.markMode is MARK_MODE, it sets the bits to 1.
+ * If s->markState.markMode is UNMARK_MODE, it sets the bits to 0.
  *
- * If shc, it hash-conses the objects marked.
+ * If s->markState.shouldHashCons, it hash-conses the objects marked.
  *
- * If slw, it links the weak objects marked.
+ * If s->markState.shouldLinkWeaks, it links the weak objects marked.
  *
- * It returns the total size in bytes of the objects marked.
+ * It adds to s->markState.size the total size in bytes of the objects marked.
  */
-size_t dfsMarkByMode (GC_state s, pointer root,
-                      GC_markMode mode,
-                      bool shouldHashCons,
-                      bool shouldLinkWeaks) {
+void dfsMark (GC_state s, pointer root) {
+  GC_markMode mode = s->markState.mode;
+  bool shouldHashCons = s->markState.shouldHashCons;
+  bool shouldLinkWeaks = s->markState.shouldLinkWeaks;
+
   GC_header mark; /* Used to set or clear the mark bit. */
   size_t size; /* Total number of bytes marked. */
   pointer cur; /* The current object being marked. */
@@ -64,10 +65,10 @@ size_t dfsMarkByMode (GC_state s, pointer root,
   GC_frameOffsets frameOffsets;
 
   if (not isPointerInHeap (s, root))
-    return 0;
+    return;
   if (isPointerMarkedByMode (root, mode))
     /* Object has already been marked. */
-    return 0;
+    return;
   mark = (MARK_MODE == mode) ? MARK_MASK : 0;
   size = 0;
   cur = root;
@@ -307,8 +308,10 @@ ret:
     fprintf (stderr, "return  cur = "FMTPTR"  prev = "FMTPTR"\n",
              (uintptr_t)cur, (uintptr_t)prev);
   assert (isPointerMarkedByMode (cur, mode));
-  if (NULL == prev)
-    return size;
+  if (NULL == prev) {
+    s->markState.size += size;
+    return;
+  }
   next = cur;
   cur = prev;
   headerp = getHeaderp (cur);
@@ -362,16 +365,9 @@ ret:
   assert (FALSE);
 }
 
-void dfsMarkWithHashConsWithLinkWeaks (GC_state s, objptr *opp) {
+void dfsMarkObjptr (GC_state s, objptr *opp) {
   pointer p;
 
   p = objptrToPointer (*opp, s->heap.start);
-  dfsMarkByMode (s, p, MARK_MODE, TRUE, TRUE);
-}
-
-void dfsMarkWithoutHashConsWithLinkWeaks (GC_state s, objptr *opp) {
-  pointer p;
-
-  p = objptrToPointer (*opp, s->heap.start);
-  dfsMarkByMode (s, p, MARK_MODE, FALSE, TRUE);
+  dfsMark (s, p);
 }

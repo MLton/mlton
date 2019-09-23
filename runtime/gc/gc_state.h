@@ -45,6 +45,7 @@ struct GC_state {
   pointer limitPlusSlop; /* limit + GC_HEAP_LIMIT_SLOP */
   int (*loadGlobals)(FILE *f); /* loads the globals from the file. */
   uint32_t magic; /* The magic number for this executable. */
+  struct GC_markState markState;
   uint32_t maxFrameSize;
   bool mutatorMarksCards;
   GC_objectHashTable objectHashTable;
