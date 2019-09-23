@@ -1,4 +1,4 @@
-(* Copyright (C) 2017 Matthew Fluet.
+(* Copyright (C) 2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -31,7 +31,7 @@ fun stats () =
       align
       (List.map (prims, fn {tycon = c, ...} =>
                  seq [layout c, str " size is ",
-                      Int.layout (MLton.size c),
+                      IntInf.layout (MLton.size c),
                       str " plist length is ",
                       Int.layout (PropertyList.length (plist c))]))
    end

@@ -2055,10 +2055,9 @@ datatype t =
 
 fun sizeMessage (E: t): Layout.t =
    let
-      val size = MLton.size
       open Layout
    in
-      record [("total", Int.layout (size E))]
+      record [("total", IntInf.layout (MLton.size E))]
    end
 (* quell unused warning *)
 val _ = sizeMessage

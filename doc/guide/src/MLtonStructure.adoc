@@ -16,7 +16,7 @@ structure MLton:
       val isMLton: bool
       val share: 'a -> unit
       val shareAll: unit -> unit
-      val size: 'a -> int
+      val size: 'a -> IntInf.int
 
       structure Array: MLTON_ARRAY
       structure BinIO: MLTON_BIN_IO
@@ -157,15 +157,16 @@ Compile and run as usual.
 ----
 % mlton size.sml
 % ./size
-The size of an int list of length 4 is 48 bytes.
-The size of a string of length 10 is 24 bytes.
-The size of an int array of length 10 is 52 bytes.
-The size of a double array of length 10 is 92 bytes.
-The size of an array of length 10 of 2-ples of ints is 92 bytes.
+The size of a char is 0 bytes.
+The size of an int list of length 4 is 96 bytes.
+The size of a string of length 10 is 40 bytes.
+The size of an int array of length 10 is 64 bytes.
+The size of a double array of length 10 is 104 bytes.
+The size of an array of length 10 of 2-ples of ints is 104 bytes.
 The size of a useless function is 0 bytes.
-The size of a continuation option ref is 4544 bytes.
+The size of a continuation option ref is 5016 bytes.
 13
-The size of a continuation option ref is 8 bytes.
+The size of a continuation option ref is 16 bytes.
 ----
 
 Note that sizes are dependent upon the target platform and compiler

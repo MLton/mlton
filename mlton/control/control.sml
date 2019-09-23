@@ -272,7 +272,7 @@ datatype 'a display =
 fun 'a sizeMessage (name: string, a: 'a): Layout.t =
    let open Layout
    in str (concat [name, " size = ",
-                   Int.toCommaString (MLton.size a), " bytes"])
+                   IntInf.toCommaString (MLton.size a), " bytes"])
    end
 
 val diagnosticWriter: (Layout.t -> unit) option ref = ref NONE

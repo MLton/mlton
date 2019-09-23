@@ -1,31 +1,38 @@
-fun 'a printSize (name: string, value: 'a): unit=
+fun 'a printSize (name: string, value: 'a, use: 'a -> unit): unit=
    (print "The size of "
     ; print name
     ; print " is "
-    ; print (Int.toString (MLton.size value))
-    ; print " bytes.\n")
+    ; print (IntInf.toString (MLton.size value))
+    ; print " bytes.\n"
+    ; use value)
+
+fun chk (x, y) =
+   if x = y
+      then ()
+      else raise Fail "bug"
 
 val l = [1, 2, 3, 4]
 
 val _ =
-   (
-    printSize ("an int list of length 4", l)
-    ; printSize ("a string of length 10", "0123456789")
-    ; printSize ("an int array of length 10", Array.tabulate (10, fn _ => 0))
+   (printSize ("a char", #"c", fn _ => ())
+    ; printSize ("an int list of length 4",
+                 List.tabulate (4, fn i => i + 1), fn l =>
+                 chk (foldl (op +) 0 l, 10))
+    ; printSize ("a string of length 10",
+                 CharVector.tabulate (10, fn i => chr (ord #"0" + i)), fn s =>
+                 chk (CharVector.foldl (fn (c,s) => ord c + s) 0 s,  525))
+    ; printSize ("an int array of length 10",
+                 Array.tabulate (10, fn i => i), fn a =>
+                 chk (Array.foldl (op +) 0 a, 45))
     ; printSize ("a double array of length 10",
-                 Array.tabulate (10, fn _ => 0.0))
+                 Array.tabulate (10, real), fn a =>
+                 chk (Real.floor (Array.foldl (op +) 0.0 a), 45))
     ; printSize ("an array of length 10 of 2-ples of ints",
-                 Array.tabulate (10, fn i => (i, i + 1)))
-    ; printSize ("a useless function", fn _ => 13)
+                 Array.tabulate (10, fn i => (i, i + 1)), fn a =>
+                 chk (Array.foldl (fn ((a,b),s) => a + b + s) 0 a, 100))
+    ; printSize ("a useless function",
+                 fn _ => 13, fn f => ())
     )
-
-(* This is here so that the list is "useful".
- * If it were removed, then the optimizer (remove-unused-constructors)
- * would remove l entirely.
- *)
-val _ = if 10 = foldl (op +) 0 l
-           then ()
-        else raise Fail "bug"
 
 local
    open MLton.Cont
@@ -37,9 +44,8 @@ in
        | SOME i => print (concat [Int.toString i, "\n"])
 end
 
-val _ = printSize ("a continuation option ref", rc)
-
-val _ =
-   case !rc of
-      NONE => ()
-    | SOME k => (rc := NONE; MLton.Cont.throw (k, SOME 13))
+val _ = printSize ("a continuation option ref",
+                   rc, fn rc =>
+                   case !rc of
+                      NONE => ()
+                    | SOME k => (rc := NONE; MLton.Cont.throw (k, SOME 13)))

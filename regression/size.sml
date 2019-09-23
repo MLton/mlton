@@ -1,4 +1,4 @@
-fun 'a printSize (name: string, min_max: (int * int) option,
+fun 'a printSize (name: string, min_max: (IntInf.int * IntInf.int) option,
                   value: 'a, use: 'a -> unit): unit =
    (print "The size of "
     ; print name
@@ -8,17 +8,17 @@ fun 'a printSize (name: string, min_max: (int * int) option,
       in
          case min_max of
             NONE => (print " = "
-                     ; print (Int.toString size)
+                     ; print (IntInf.toString size)
                      ; print " bytes.\n")
           | SOME (min, max) =>
                if min <= size andalso size <= max
                   then (print " >= "
-                        ; print (Int.toString min)
+                        ; print (IntInf.toString min)
                         ; print " bytes and <= "
-                        ; print (Int.toString max)
+                        ; print (IntInf.toString max)
                         ; print " bytes.\n")
                   else (print " = "
-                        ; print (Int.toString size)
+                        ; print (IntInf.toString size)
                         ; print " bytes.\n")
       end
     ; use value)
