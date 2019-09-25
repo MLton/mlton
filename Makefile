@@ -216,7 +216,7 @@ tools-clean:
 
 .PHONY: debugged
 debugged:
-	$(MAKE) -C "$(SRC)/mlton" MLTON_OUTPUT=$(MLTON_OUTPUT).debug \
+	$(MAKE) -C "$(SRC)/mlton" MLTON_NAME="$(MLTON_NAME) (debug)" MLTON_OUTPUT=$(MLTON_OUTPUT).debug \
 		MLTON_COMPILE_ARGS="$(MLTON_COMPILE_ARGS) -debug true -const 'Exn.keepHistory true' -profile-val true -const 'MLton.debug true' -disable-pass 'deepFlatten'"
 	$(CP) "$(SRC)/mlton/$(MLTON_OUTPUT).debug$(EXE)" "$(LIB)/"
 	$(SED) -e 's/$(MLTON_OUTPUT)/$(MLTON_OUTPUT).debug/' \
@@ -225,7 +225,7 @@ debugged:
 	chmod u+x "$(BIN)/$(MLTON).debug"
 
 define PROFILED_TEMPLATE
-	$(MAKE) -C "$(SRC)/mlton" MLTON_OUTPUT=$(MLTON_OUTPUT).$(1) \
+	$(MAKE) -C "$(SRC)/mlton" MLTON_NAME="$(MLTON_NAME) (profile-$(1))" MLTON_OUTPUT=$(MLTON_OUTPUT).$(1) \
 		MLTON_COMPILE_ARGS="$(MLTON_COMPILE_ARGS) -profile $(1)"
 	$(CP) "$(SRC)/mlton/$(MLTON_OUTPUT).$(1)$(EXE)" "$(LIB)/"
 	$(SED) -e "s/$(MLTON_OUTPUT)/$(MLTON_OUTPUT).$(1)/" \
@@ -253,7 +253,7 @@ profiled-time:
 
 .PHONY: traced
 traced:
-	$(MAKE) -C "$(SRC)/mlton" MLTON_OUTPUT=$(MLTON_OUTPUT).trace \
+	$(MAKE) -C "$(SRC)/mlton" MLTON_NAME="$(MLTON_NAME) (trace)" MLTON_OUTPUT=$(MLTON_OUTPUT).trace \
 		MLTON_COMPILE_ARGS="$(MLTON_COMPILE_ARGS) -const 'Exn.keepHistory true' -profile-val true -const 'MLton.debug true' -disable-pass 'deepFlatten'"
 	$(CP) "$(SRC)/mlton/$(MLTON_OUTPUT).trace$(EXE)" "$(LIB)/"
 	$(SED) -e 's/$(MLTON_OUTPUT)/$(MLTON_OUTPUT).trace/' \
