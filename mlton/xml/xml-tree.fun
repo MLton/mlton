@@ -667,6 +667,48 @@ structure Exp =
       (* quell unused warning *)
       val _ = size
 
+      fun dropProfile (e: t): t =
+         let
+            fun dropProfileExp (Exp {decs, result}) =
+               Exp {decs = List.keepAllMap (decs, dropProfileDec),
+                    result = result}
+            and dropProfilePrimExp e =
+               case e of
+                  Case {test, cases, default} =>
+                     Case {test = test,
+                           cases = Cases.map (cases, dropProfileExp),
+                           default = Option.map (default, dropProfileExp)}
+                | Handle {try, catch, handler} =>
+                     Handle {try = dropProfileExp try,
+                             catch = catch,
+                             handler = dropProfileExp handler}
+                | Lambda lambda => Lambda (dropProfileLambda lambda)
+                | _ => e
+            and dropProfileDec d =
+               case d of
+                  Exception arg_con => SOME (Exception arg_con)
+                | Fun {decs, tyvars} =>
+                     SOME (Fun {decs = Vector.map
+                                (decs, fn {lambda, ty, var} =>
+                                 {lambda = dropProfileLambda lambda,
+                                  ty = ty, var = var}),
+                                tyvars = tyvars})
+                | MonoVal {exp = Profile _, ...} => NONE
+                | MonoVal {exp, ty, var} =>
+                     SOME (MonoVal {exp = dropProfilePrimExp exp,
+                                    ty = ty, var = var})
+                | PolyVal {exp, ty, tyvars, var} =>
+                     SOME (PolyVal {exp = dropProfileExp exp, ty = ty,
+                                    tyvars = tyvars, var = var})
+            and dropProfileLambda (Lam {arg, argType, body, mayInline, plist}) =
+               Lam {arg = arg, argType = argType,
+                    body = dropProfileExp body,
+                    mayInline = mayInline,
+                    plist = plist}
+         in
+            dropProfileExp e
+         end
+
       fun clear (e: t): unit =
          let open PrimExp
             fun clearTyvars ts = Vector.foreach (ts, Tyvar.clear)
@@ -1120,6 +1162,11 @@ structure Program =
          in
             parseProgram <* (mlSpaces *> (failing next <|> fail "end of file"))
          end
+
+      fun dropProfile (T {datatypes, body}) =
+         (Control.profile := Control.ProfileNone
+          ; T {datatypes = datatypes,
+               body = Exp.dropProfile body})
 
       fun clear (T {datatypes, body, ...}) =
          (Vector.foreach (datatypes, fn {tycon, tyvars, cons} =>
