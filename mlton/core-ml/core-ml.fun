@@ -506,12 +506,85 @@ structure Dec =
    struct
       datatype t = datatype dec
 
+      fun dropProfile d =
+         let
+            fun loopExp e =
+               let
+                  fun mk node = Exp.make (node, Exp.ty e)
+               in
+                  case Exp.node e of
+                     App (e1, e2) => mk (App (loopExp e1, loopExp e2))
+                   | Case {ctxt, kind, nest, matchDiags, noMatch, region, rules, test} =>
+                        mk (Case {ctxt = ctxt,
+                                  kind = kind,
+                                  nest = nest,
+                                  matchDiags = matchDiags,
+                                  noMatch = noMatch,
+                                  region = region,
+                                  rules = Vector.map (rules, fn {exp, layPat, pat, regionPat} =>
+                                                      {exp = loopExp exp,
+                                                       layPat = layPat,
+                                                       pat = pat,
+                                                       regionPat = regionPat}),
+                                  test = loopExp test})
+                   | Con _ => e
+                   | Const _ => e
+                   | EnterLeave (exp, _) => loopExp exp
+                   | Handle {catch, handler, try} =>
+                        mk (Handle {catch = catch,
+                                    handler = loopExp handler,
+                                    try = loopExp try})
+                   | Lambda lambda => mk (Lambda (loopLambda lambda))
+                   | Let (decs, exp) => mk (Let (Vector.map (decs, loopDec), loopExp exp))
+                   | List exps => mk (List (Vector.map (exps, loopExp)))
+                   | PrimApp {args, prim, targs} =>
+                        mk (PrimApp {args = Vector.map (args, loopExp),
+                                     prim = prim,
+                                     targs = targs})
+                   | Raise exp => mk (Raise (loopExp exp))
+                   | Record r => mk (Record (Record.map (r, loopExp)))
+                   | Seq exps => mk (Seq (Vector.map (exps, loopExp)))
+                   | Var _ => e
+                   | Vector exps => mk (Vector (Vector.map (exps, loopExp)))
+               end
+            and loopDec d =
+               case d of
+                  Datatype _ => d
+                | Exception _ => d
+                | Fun {decs, tyvars} =>
+                     Fun {decs = Vector.map (decs, fn {lambda, var} =>
+                                             {lambda = loopLambda lambda,
+                                              var = var}),
+                          tyvars = tyvars}
+                | Val {matchDiags, rvbs, tyvars, vbs} =>
+                     Val {matchDiags = matchDiags,
+                          rvbs = Vector.map (rvbs, fn {lambda, var} =>
+                                             {lambda = loopLambda lambda,
+                                              var = var}),
+                          tyvars = tyvars,
+                          vbs = Vector.map (vbs, fn {ctxt, exp, layPat, nest, pat, regionPat} =>
+                                            {ctxt = ctxt,
+                                             exp = loopExp exp,
+                                             layPat = layPat,
+                                             nest = nest,
+                                             pat = pat,
+                                             regionPat = regionPat})}
+            and loopLambda (Lam {arg, argType, body, mayInline}) =
+               Lam {arg = arg, argType = argType, body = loopExp body, mayInline = mayInline}
+         in
+            loopDec d
+         end
       val layout = layoutDec
    end
 
 structure Program =
    struct
       datatype t = T of {decs: Dec.t vector}
+
+
+      fun dropProfile (T {decs}) =
+         (Control.profile := Control.ProfileNone
+          ; T {decs = Vector.map (decs, Dec.dropProfile)})
 
       fun layouts (T {decs, ...}, output') =
          let
