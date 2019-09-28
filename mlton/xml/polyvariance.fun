@@ -435,7 +435,16 @@ val transform =
                        val p =
                           Control.simplifyPass
                           {arg = p,
-                           doit = fn p => shrink (transform (p, hofo, small, product)),
+                           doit = fn p => (Control.diagnostics
+                                           (fn layout =>
+                                            layout (let
+                                                       open Layout
+                                                    in
+                                                       seq [str "duplicate",
+                                                            Int.layout (n+1),
+                                                            str ":"]
+                                                    end))
+                                           ; shrink (transform (p, hofo, small, product))),
                            execute = true,
                            keepIL = false,
                            name = concat ["duplicate", Int.toString (n + 1)],
