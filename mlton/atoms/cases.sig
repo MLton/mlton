@@ -23,6 +23,7 @@ signature CASES =
        | Word of WordSize.t * (WordX.t * 'a) vector
 
       val equals: ('con, 'a) t * ('con, 'a) t * ('con * 'con -> bool) * ('a * 'a -> bool) -> bool
+      val exists: ('con, 'a) t * ('a -> bool) -> bool
       val fold: ('con, 'a) t * 'b * ('a * 'b -> 'b) -> 'b
       val forall: ('con, 'a) t * ('a -> bool) -> bool
       val foreach': ('con, 'a) t * ('a -> unit) * ('con -> unit) -> unit
