@@ -508,6 +508,24 @@ structure Exp =
          let
             datatype z = datatype Dec.t
             datatype z = datatype PrimExp.t
+
+            fun mayRaiseExp e = List.exists (decs e, mayRaiseDec)
+            and mayRaisePrimExp e =
+               case e of
+                  App _ => true
+                | Case {cases, default, ...} =>
+                     Cases.exists (cases, mayRaiseExp)
+                     orelse
+                     Option.fold (default, false, mayRaiseExp o #1)
+                | Handle {handler, ...} =>
+                     mayRaiseExp handler
+                | Raise _ => true
+                | _ => false
+            and mayRaiseDec d =
+               case d of
+                  MonoVal {exp, ...} => mayRaisePrimExp exp
+                | _ => false
+
             fun prof f =
                MonoVal {exp = Profile (f si),
                         ty = Type.unit,
@@ -546,10 +564,12 @@ structure Exp =
                             [prof ProfileExp.Leave]]
             val try = make {decs = decs, result = result}
          in
-            fromPrimExp (Handle {catch = (exn, Type.exn),
-                                 handler = handler,
-                                 try = try},
-                         ty)
+            if mayRaiseExp e
+               then fromPrimExp (Handle {catch = (exn, Type.exn),
+                                         handler = handler,
+                                         try = try},
+                                 ty)
+               else try
          end
 
       (*------------------------------------*)
