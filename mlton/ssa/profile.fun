@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a HPND-style license.
@@ -23,6 +24,32 @@ fun addProfileFunction (f: Function.t) =
       val enterF = fn () => Statement.profile enterF
       val leaveF = ProfileExp.Leave siF
       val leaveF = fn () => Statement.profile leaveF
+      val start =
+         if Vector.exists
+            (blocks, fn Block.T {transfer, ...} =>
+             Exn.withEscape
+             (fn escape =>
+              (Transfer.foreachLabel
+               (transfer, fn l =>
+                if Label.equals (l, start)
+                   then escape true
+                   else ())
+               ; false)))
+            then let
+                    val newStart = Label.new start
+                    val _ =
+                       List.push
+                       (extraBlocks,
+                        Block.T
+                        {args = Vector.new0 (),
+                         label = newStart,
+                         statements = Vector.new1 (enterF ()),
+                         transfer = Transfer.Goto {dst = start,
+                                                   args = Vector.new0 ()}})
+                 in
+                    newStart
+                 end
+            else start
       val blocks =
          Vector.map
          (blocks, fn Block.T {args, label, statements, transfer} =>
@@ -51,7 +78,7 @@ fun addProfileFunction (f: Function.t) =
              val enterStmts =
                 if Label.equals (label, start)
                    then enterFL ()
-                else enterL ()
+                   else enterL ()
              fun doitLF () = (leaveLF (), transfer)
              fun doitL () = (leaveL (), transfer)
              fun doit () = (Vector.new0 (), transfer)
