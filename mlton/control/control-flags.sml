@@ -1127,6 +1127,10 @@ val profile = control {name = "profile",
                        default = ProfileNone,
                        toString = Profile.toString}
 
+val profileBlock = control {name = "profile block",
+                            default = false,
+                            toString = Bool.toString}
+
 val profileBranch = control {name = "profile branch",
                              default = false,
                              toString = Bool.toString}

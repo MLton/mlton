@@ -361,6 +361,8 @@ signature CONTROL_FLAGS =
        | ProfileTimeLabel
       val profile: profile ref
 
+      val profileBlock: bool ref
+
       val profileBranch: bool ref
 
       val profileC: Regexp.Compiled.t list ref

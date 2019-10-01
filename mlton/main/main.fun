@@ -736,6 +736,9 @@ fun makeOptions {usage} =
                             | "time-label" => ProfileTimeLabel
                             | _ => usage (concat
                                           ["invalid -profile arg: ", s]))))),
+       (Expert, "profile-block", " {false|true}",
+        "profile IL blocks in addition to IL functions",
+        boolRef profileBlock),
        (Normal, "profile-branch", " {false|true}",
         "profile branches in addition to functions",
         boolRef profileBranch),
