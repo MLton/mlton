@@ -33,6 +33,14 @@ MLTON_MLB := mlton-stubs.mlb
 endif
 endif
 
+## When self-compiling the current MLton sources with `Zone` enabled,
+## the resulting compiler exhibits a space leak; see MLton/mlton#334
+ifeq ($(RUN_MLTON_VERSION), $(firstword $(sort $(RUN_MLTON_VERSION) 20170629)))
+RUN_MLTON_COMPILE_XARGS += -drop-pass zone
+else ifeq ($(RUN_MLTON_VERSION), $(firstword $(sort $(RUN_MLTON_VERSION) 20191003)))
+RUN_MLTON_COMPILE_XARGS += -disable-pass zone
+endif
+
 FRONT_END_SOURCES :=		\
 	front-end/ml.lex.sml	\
 	front-end/ml.grm.sig	\
