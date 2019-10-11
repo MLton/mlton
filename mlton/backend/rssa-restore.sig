@@ -17,6 +17,7 @@ signature RSSA_RESTORE =
       include RSSA_RESTORE_STRUCTS
 
       val restoreFunction:
-         {main: Function.t} -> Function.t -> Function.t
+         {main: Function.t} -> {main: Function.t,
+                                restore: Function.t -> Function.t}
       val restore: Program.t -> Program.t
    end

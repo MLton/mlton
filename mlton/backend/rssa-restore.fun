@@ -30,12 +30,6 @@
 functor RssaRestore (S: RSSA_RESTORE_STRUCTS): RSSA_RESTORE =
 struct
 
-structure Control =
-   struct
-      open Control
-      fun diagnostics _ = ()
-   end
-
 open S
 open Transfer
 
@@ -106,6 +100,7 @@ structure Cardinality =
     val makeOne = makeMid
     val isMany = isTop
     val makeMany = makeTop
+    val whenMany = whenTop
 
     val inc: t -> unit
       = fn c => if isZero c
@@ -147,6 +142,7 @@ structure VarInfo =
     fun addDefSite (T {defSites, ...}, l) = List.push(defSites, l)
     fun addUseSite (T {useSites, ...}, l) = List.push(useSites, l)
     val violates = Cardinality.isMany o defs
+    fun whenViolates (T {defs, ...}, th) = Cardinality.whenMany (defs, th)
 
     fun new (): t = T {defs = Cardinality.new (),
                        index = ref ~1,
@@ -166,12 +162,9 @@ fun restoreFunction {main: Function.t}
   = let
       exception NoViolations
 
-      val {get = varInfo: Var.t -> VarInfo.t, ...}
+      val {get = varInfo: Var.t -> VarInfo.t, rem = remVarInfo, ...}
         = Property.get
           (Var.plist, Property.initFun (fn _ => VarInfo.new ()))
-
-      val _ = Function.foreachDef (main,
-        fn (var, ty) => VarInfo.ty (varInfo var) := ty)
 
       val {get = labelInfo: Label.t -> LabelInfo.t, ...}
         = Property.get
@@ -204,7 +197,8 @@ fun restoreFunction {main: Function.t}
             {addPost = fn th => List.push (post, th),
              post = fn () => List.foreach(!post, fn th => th ())}
           end
-    in
+
+      val restore =
       fn (f: Function.t) =>
       let
         val {args, blocks, name, returns, raises, start} = Function.dest f
@@ -694,27 +688,45 @@ fun restoreFunction {main: Function.t}
         f
       end
       handle NoViolations => f
+
+      val main = restore main
+
+      (* check for violations in main/globals *)
+      fun addDef (x, ty)
+        = let
+             val () = remVarInfo x
+            val vi = varInfo x
+          in
+            VarInfo.ty vi := ty ;
+            VarInfo.addDef vi ;
+            VarInfo.whenViolates
+            (vi, fn () => Error.bug "RssaRestore.restore: violation in main/globals")
+          end
+      val _ = Function.foreachDef (main, addDef)
+    in
+       {main = main,
+        restore = restore}
     end
 
 val traceRestoreFunction
-  = Trace.trace ("RestoreR.restoreFunction",
+  = Trace.trace ("RssaRestore.restoreFunction",
                  Func.layout o Function.name,
                  Func.layout o Function.name)
 
 val restoreFunction
   = fn main =>
     let
-      val r = restoreFunction main
+      val {main, restore} = restoreFunction main
     in
-      fn f => traceRestoreFunction r f
+      {main = main, restore = fn f => traceRestoreFunction restore f}
    end
 
 fun restore (Program.T {functions, handlesSignals, main, objectTypes, profileInfo})
   = let
-      val r = restoreFunction {main=main}
+      val {main, restore} = restoreFunction {main = main}
     in
       Program.T {handlesSignals = handlesSignals,
-                 functions = List.map (functions, r),
+                 functions = List.revMap (functions, restore),
                  main = main,
                  objectTypes = objectTypes,
                  profileInfo = profileInfo}
