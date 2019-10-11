@@ -211,7 +211,6 @@ signature RSSA_TREE =
             val layouts: t * (Layout.t -> unit) -> unit
             val layoutStats: t -> Layout.t
             val orderFunctions: t -> t
-            val shrink: t -> t
             val shuffle: t -> t
             val toFile: {display: t Control.display, style: Control.style, suffix: string}
             val typeCheck: t -> unit
