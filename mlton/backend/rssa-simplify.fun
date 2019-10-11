@@ -32,15 +32,15 @@ fun simplify p =
    let
       val rssaPasses = rssaPasses
       (* RSSA type check is too slow to run by default. *)
-      (* val () = Control.trace (Control.Pass, "rssaTypeCheck") Program.typeCheck p *)
+      (* val () = Control.trace (Control.Pass, "rssaTypeCheck") typeCheck p *)
       val p =
          Control.simplifyPasses
          {arg = p,
           passes = rssaPasses,
           stats = Program.layoutStats,
           toFile = Program.toFile,
-          typeCheck = Program.typeCheck}
-      (* val () = Control.trace (Control.Pass, "rssaTypeCheck") Program.typeCheck p *)
+          typeCheck = typeCheck}
+      (* val () = Control.trace (Control.Pass, "rssaTypeCheck") typeCheck p *)
    in
       p
    end

@@ -7,14 +7,14 @@
  * See the file MLton-LICENSE for details.
  *)
 
-signature RSSA_SHRINK_STRUCTS =
+signature RSSA_TYPE_CHECK_STRUCTS =
    sig
-      include RSSA_TYPE_CHECK
+      include RSSA_TREE
    end
 
-signature RSSA_SHRINK =
+signature RSSA_TYPE_CHECK =
    sig
-      include RSSA_SHRINK_STRUCTS
+      include RSSA_TYPE_CHECK_STRUCTS
 
-      val shrink: Program.t -> Program.t
+      val typeCheck: Program.t -> unit
    end

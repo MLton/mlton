@@ -32,6 +32,8 @@ local
 
    rssa-tree.sig
    rssa-tree.fun
+   rssa-type-check.sig
+   rssa-type-check.fun
    rssa-shrink.sig
    rssa-shrink.fun
    rssa-live.sig
