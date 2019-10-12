@@ -16,5 +16,8 @@ signature RSSA_SHRINK =
    sig
       include RSSA_SHRINK_STRUCTS
 
+      val shrinkFunction:
+         {main: Function.t} -> {main: unit -> Function.t,
+                                shrink: Function.t -> Function.t}
       val shrink: Program.t -> Program.t
    end
