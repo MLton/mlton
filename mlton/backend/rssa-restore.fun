@@ -673,7 +673,7 @@ fun restoreFunction {main: Function.t}
                 val args = args
                 val post = post
               end
-              val _ = Tree.traverse (Function.dominatorTree f, visitBlock)
+              val _ = Tree.traverse (dt, visitBlock)
               val _ = post ()
             in
               Function.new {args = args,
