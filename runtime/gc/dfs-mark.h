@@ -28,6 +28,6 @@ struct GC_markState {
 static inline bool isPointerMarked (pointer p);
 static inline bool isPointerMarkedByMode (pointer p, GC_markMode m);
 static void dfsMark (GC_state s, pointer root);
-static void dfsMarkObjptr (GC_state s, objptr *root);
+static void dfsMarkObjptr (GC_state s, objptr *root, void *env);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

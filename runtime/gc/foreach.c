@@ -7,16 +7,16 @@
  * See the file MLton-LICENSE for details.
  */
 
-void callIfIsObjptr (GC_state s, GC_foreachObjptrFun f, objptr *opp) {
+void callIfIsObjptr (GC_state s, GC_foreachObjptrClosure f, objptr *opp) {
   if (isObjptr (*opp))
-    f (s, opp);
+    f->fun (s, opp, f->env);
 }
 
 /* foreachGlobalObjptr (s, f)
  * 
  * Apply f to each global object pointer into the heap. 
  */
-void foreachGlobalObjptr (GC_state s, GC_foreachObjptrFun f) {
+void foreachGlobalObjptr (GC_state s, GC_foreachObjptrClosure f) {
   for (unsigned int i = 0; i < s->globalsLength; ++i) {
     if (DEBUG_DETAILED)
       fprintf (stderr, "foreachGlobal %u\n", i);
@@ -39,7 +39,7 @@ void foreachGlobalObjptr (GC_state s, GC_foreachObjptrFun f) {
  * If skipWeaks, then the object pointer in weak objects is skipped.
  */
 pointer foreachObjptrInObject (GC_state s, pointer p,
-                               GC_foreachObjptrFun f, bool skipWeaks) {
+                               GC_foreachObjptrClosure f, bool skipWeaks) {
   GC_header header;
   uint16_t bytesNonObjptrs;
   uint16_t numObjptrs;
@@ -167,7 +167,7 @@ pointer foreachObjptrInObject (GC_state s, pointer p,
  */
 
 pointer foreachObjptrInRange (GC_state s, pointer front, pointer *back,
-                              GC_foreachObjptrFun f, bool skipWeaks) {
+                              GC_foreachObjptrClosure f, bool skipWeaks) {
   pointer b;
 
   assert (isFrontierAligned (s, front));
@@ -195,7 +195,7 @@ pointer foreachObjptrInRange (GC_state s, pointer front, pointer *back,
 
 
 /* Apply f to the frame index of each frame in the current thread's stack. */
-void foreachStackFrame (GC_state s, GC_foreachStackFrameFun f) {
+void foreachStackFrame (GC_state s, GC_foreachStackFrameClosure f) {
   pointer bottom;
   GC_frameIndex frameIndex;
   GC_frameInfo frameInfo;
@@ -217,7 +217,7 @@ void foreachStackFrame (GC_state s, GC_foreachStackFrameFun f) {
     unless (frameIndex < s->frameInfosLength)
       die ("top = "FMTPTR"  returnAddress = "FMTRA"  frameIndex = "FMTFI"\n",
            (uintptr_t)top, (uintptr_t)returnAddress, frameIndex);
-    f (s, frameIndex);
+    f->fun (s, frameIndex, f->env);
     frameInfo = &(s->frameInfos[frameIndex]);
     assert (frameInfo->size > 0);
   }

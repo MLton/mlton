@@ -8,7 +8,8 @@
  */
 
 #if ASSERT
-void assertIsObjptrInFromSpace (GC_state s, objptr *opp) {
+void assertIsObjptrInFromSpace (GC_state s, objptr *opp,
+                                __attribute__((unused)) void *env) {
   assert (isObjptrInFromSpace (s, *opp));
   unless (isObjptrInFromSpace (s, *opp)) {
     displayGCState (s, stderr);
@@ -81,16 +82,18 @@ bool invariantForGC (GC_state s) {
    */
   if (FALSE) {
   /* Check that all pointers are into from space. */
-  foreachGlobalObjptr (s, assertIsObjptrInFromSpace);
+  struct GC_foreachObjptrClosure assertIsObjptrInFromSpaceClosure =
+    {.fun = assertIsObjptrInFromSpace, .env = NULL};
+  foreachGlobalObjptr (s, &assertIsObjptrInFromSpaceClosure);
   pointer back = s->heap.start + s->heap.oldGenSize;
   if (DEBUG_DETAILED)
     fprintf (stderr, "Checking old generation.\n");
   foreachObjptrInRange (s, alignFrontier (s, s->heap.start), &back, 
-                        assertIsObjptrInFromSpace, FALSE);
+                        &assertIsObjptrInFromSpaceClosure, FALSE);
   if (DEBUG_DETAILED)
     fprintf (stderr, "Checking nursery.\n");
   foreachObjptrInRange (s, s->heap.nursery, &s->frontier, 
-                        assertIsObjptrInFromSpace, FALSE);
+                        &assertIsObjptrInFromSpaceClosure, FALSE);
   }
   /* Current thread. */
   GC_stack stack = getStackCurrent(s);

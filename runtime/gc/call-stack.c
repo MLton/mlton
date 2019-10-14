@@ -7,33 +7,43 @@
  * See the file MLton-LICENSE for details.
  */
 
-void numStackFramesAux (GC_state s, 
-                        __attribute__ ((unused)) GC_frameIndex i) {
-  s->callStackState.numStackFrames++;
+void numStackFramesAux (__attribute__ ((unused)) GC_state s,
+                        __attribute__ ((unused)) GC_frameIndex i,
+                        GC_callStackState callStackState) {
+  callStackState->numStackFrames++;
+}
+void numStackFramesFun (GC_state s, GC_frameIndex i, void *env) {
+  numStackFramesAux (s, i, env);
 }
 
 uint32_t GC_numStackFrames (GC_state s) {
-  s->callStackState.numStackFrames = 0;
-  foreachStackFrame (s, numStackFramesAux);
+  struct GC_callStackState callStackState = {.numStackFrames = 0, .callStack = NULL};
+  struct GC_foreachStackFrameClosure numStackFramesClosure =
+    {.fun = numStackFramesFun, .env = &callStackState};
+  foreachStackFrame (s, &numStackFramesClosure);
   if (DEBUG_CALL_STACK)
-    fprintf (stderr, "%"PRIu32" = GC_numStackFrames\n", 
-             s->callStackState.numStackFrames);
-  return s->callStackState.numStackFrames;
+    fprintf (stderr, "%"PRIu32" = GC_numStackFrames\n",
+             callStackState.numStackFrames);
+  return callStackState.numStackFrames;
 }
 
-void callStackAux (GC_state s, GC_frameIndex i) {
-  if (DEBUG_CALL_STACK)
-    fprintf (stderr, "callStackAux ("FMTFI")\n", i);
-  s->callStackState.callStack[s->callStackState.numStackFrames] = i;
-  s->callStackState.numStackFrames++;
+void callStackAux (__attribute__ ((unused)) GC_state s,
+                   GC_frameIndex i,
+                   GC_callStackState callStackState) {
+  callStackState->callStack[callStackState->numStackFrames] = i;
+  callStackState->numStackFrames++;
+}
+void callStackFun (GC_state s, GC_frameIndex i, void *env) {
+  callStackAux (s, i, env);
 }
 
 void GC_callStack (GC_state s, pointer p) {
   if (DEBUG_CALL_STACK)
     fprintf (stderr, "GC_callStack\n");
-  s->callStackState.numStackFrames = 0;
-  s->callStackState.callStack = (uint32_t*)p;
-  foreachStackFrame (s, callStackAux);
+  struct GC_callStackState callStackState = {.numStackFrames = 0, .callStack = (uint32_t*)p};
+  struct GC_foreachStackFrameClosure callStackClosure =
+    {.fun = callStackFun, .env = &callStackState};
+  foreachStackFrame (s, &callStackClosure);
 }
 
 uint32_t* GC_frameIndexSourceSeq (GC_state s, GC_frameIndex frameIndex) {

@@ -1,4 +1,4 @@
-/* Copyright (C) 2012 Matthew Fluet.
+/* Copyright (C) 2012,2019 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -88,7 +88,7 @@ static inline GC_profileStack getProfileStackInfo (GC_state s, GC_profileMasterI
 static inline void addToStackForProfiling (GC_state s, GC_profileMasterIndex i);
 static inline void enterSourceForProfiling (GC_state s, GC_profileMasterIndex i);
 static inline void enterForProfiling (GC_state s, GC_sourceSeqIndex sourceSeqIndex);
-static inline void enterFrameForProfiling (GC_state s, GC_frameIndex i);
+static inline void enterFrameForProfiling (GC_state s, GC_frameIndex i, void *env);
 
 static inline void removeFromStackForProfiling (GC_state s, GC_profileMasterIndex i);
 static inline void leaveSourceForProfiling (GC_state s, GC_profileMasterIndex i);

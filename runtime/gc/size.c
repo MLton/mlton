@@ -30,21 +30,24 @@ size_t GC_size (GC_state s, pointer root) {
 
 size_t GC_sizeAll (GC_state s) {
   size_t res;
+  struct GC_foreachObjptrClosure dfsMarkObjptrClosure;
 
   enter (s); /* update stack in heap, in case it is reached */
+  dfsMarkObjptrClosure.fun = dfsMarkObjptr;
+  dfsMarkObjptrClosure.env = NULL;
   if (DEBUG_SIZE)
     fprintf (stderr, "GC_sizeAll marking\n");
   s->markState.mode = MARK_MODE;
   s->markState.size = 0;
   s->markState.shouldHashCons = FALSE;
   s->markState.shouldLinkWeaks = FALSE;
-  foreachGlobalObjptr (s, dfsMarkObjptr);
+  foreachGlobalObjptr (s, &dfsMarkObjptrClosure);
   res = s->markState.size;
   if (DEBUG_SIZE)
     fprintf (stderr, "GC_sizeAll unmarking\n");
   s->markState.mode = UNMARK_MODE;
   s->markState.size = 0;
-  foreachGlobalObjptr (s, dfsMarkObjptr);
+  foreachGlobalObjptr (s, &dfsMarkObjptrClosure);
   leave(s);
 
   return res;

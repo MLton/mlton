@@ -365,7 +365,7 @@ ret:
   assert (FALSE);
 }
 
-void dfsMarkObjptr (GC_state s, objptr *opp) {
+void dfsMarkObjptr (GC_state s, objptr *opp, __attribute__((unused)) void *env) {
   pointer p;
 
   p = objptrToPointer (*opp, s->heap.start);
