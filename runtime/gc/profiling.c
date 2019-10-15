@@ -96,9 +96,12 @@ void enterForProfiling (GC_state s, GC_sourceSeqIndex sourceSeqIndex) {
   }
 }
 
-void enterFrameForProfiling (GC_state s, GC_frameIndex i,
+void enterFrameForProfiling (GC_state s,
+                             __attribute__((unused)) GC_frameIndex frameIndex,
+                             GC_frameInfo frameInfo,
+                             __attribute__((unused)) pointer frameTop,
                              __attribute__((unused)) void *env) {
-  enterForProfiling (s, s->frameInfos[i].sourceSeqIndex);
+  enterForProfiling (s, frameInfo->sourceSeqIndex);
 }
 
 void GC_profileEnter (GC_state s) {

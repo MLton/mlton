@@ -88,7 +88,11 @@ static inline GC_profileStack getProfileStackInfo (GC_state s, GC_profileMasterI
 static inline void addToStackForProfiling (GC_state s, GC_profileMasterIndex i);
 static inline void enterSourceForProfiling (GC_state s, GC_profileMasterIndex i);
 static inline void enterForProfiling (GC_state s, GC_sourceSeqIndex sourceSeqIndex);
-static inline void enterFrameForProfiling (GC_state s, GC_frameIndex i, void *env);
+static inline void enterFrameForProfiling (GC_state s,
+                                           GC_frameIndex frameIndex,
+                                           GC_frameInfo frameInfo,
+                                           pointer frameTop,
+                                           void *env);
 
 static inline void removeFromStackForProfiling (GC_state s, GC_profileMasterIndex i);
 static inline void leaveSourceForProfiling (GC_state s, GC_profileMasterIndex i);

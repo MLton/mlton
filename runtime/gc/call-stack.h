@@ -18,10 +18,26 @@ typedef struct GC_callStackState {
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-static inline void numStackFramesAux (GC_state s, GC_frameIndex i, GC_callStackState callStackState);
-static inline void numStackFramesFun (GC_state s, GC_frameIndex i, void *env);
-static inline void callStackAux (GC_state s, GC_frameIndex i,  GC_callStackState callStackState);
-static inline void callStackFun (GC_state s, GC_frameIndex i, void *env);
+static inline void numStackFramesAux (GC_state s,
+                                      GC_frameIndex frameIndex,
+                                      GC_frameInfo frameInfo,
+                                      pointer frameTop,
+                                      GC_callStackState callStackState);
+static inline void numStackFramesFun (GC_state s,
+                                      GC_frameIndex frameIndex,
+                                      GC_frameInfo frameInfo,
+                                      pointer frameTop,
+                                      void *env);
+static inline void callStackAux (GC_state s,
+                                 GC_frameIndex frameIndex,
+                                 GC_frameInfo frameInfo,
+                                 pointer frameTop,
+                                 GC_callStackState callStackState);
+static inline void callStackFun (GC_state s,
+                                 GC_frameIndex frameIndex,
+                                 GC_frameInfo frameInfo,
+                                 pointer frameTop,
+                                 void *env);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
 

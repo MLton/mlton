@@ -8,12 +8,18 @@
  */
 
 void numStackFramesAux (__attribute__ ((unused)) GC_state s,
-                        __attribute__ ((unused)) GC_frameIndex i,
+                        __attribute__ ((unused)) GC_frameIndex frameIndex,
+                        __attribute__ ((unused)) GC_frameInfo frameInfo,
+                        __attribute__ ((unused)) pointer frameTop,
                         GC_callStackState callStackState) {
   callStackState->numStackFrames++;
 }
-void numStackFramesFun (GC_state s, GC_frameIndex i, void *env) {
-  numStackFramesAux (s, i, env);
+void numStackFramesFun (GC_state s,
+                        GC_frameIndex frameIndex,
+                        GC_frameInfo frameInfo,
+                        pointer frameTop,
+                        void *env) {
+  numStackFramesAux (s, frameIndex, frameInfo, frameTop, env);
 }
 
 uint32_t GC_numStackFrames (GC_state s) {
@@ -28,13 +34,19 @@ uint32_t GC_numStackFrames (GC_state s) {
 }
 
 void callStackAux (__attribute__ ((unused)) GC_state s,
-                   GC_frameIndex i,
+                   GC_frameIndex frameIndex,
+                   __attribute__ ((unused)) GC_frameInfo frameInfo,
+                   __attribute__ ((unused)) pointer frameTop,
                    GC_callStackState callStackState) {
-  callStackState->callStack[callStackState->numStackFrames] = i;
+  callStackState->callStack[callStackState->numStackFrames] = frameIndex;
   callStackState->numStackFrames++;
 }
-void callStackFun (GC_state s, GC_frameIndex i, void *env) {
-  callStackAux (s, i, env);
+void callStackFun (GC_state s,
+                   GC_frameIndex frameIndex,
+                   GC_frameInfo frameInfo,
+                   pointer frameTop,
+                   void *env) {
+  callStackAux (s, frameIndex, frameInfo, frameTop, env);
 }
 
 void GC_callStack (GC_state s, pointer p) {

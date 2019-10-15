@@ -208,7 +208,8 @@ void foreachStackFrame (GC_state s, GC_foreachStackFrameClosure f) {
   if (DEBUG_PROFILE)
     fprintf (stderr, "  bottom = "FMTPTR"  top = "FMTPTR".\n",
              (uintptr_t)bottom, (uintptr_t)s->stackTop);
-  for (top = s->stackTop; top > bottom; top -= frameInfo->size) {
+  top = s->stackTop;
+  while (top > bottom) {
     returnAddress = *((GC_returnAddress*)(top - GC_RETURNADDRESS_SIZE));
     frameIndex = getFrameIndexFromReturnAddress (s, returnAddress);
     if (DEBUG_PROFILE)
@@ -217,9 +218,10 @@ void foreachStackFrame (GC_state s, GC_foreachStackFrameClosure f) {
     unless (frameIndex < s->frameInfosLength)
       die ("top = "FMTPTR"  returnAddress = "FMTRA"  frameIndex = "FMTFI"\n",
            (uintptr_t)top, (uintptr_t)returnAddress, frameIndex);
-    f->fun (s, frameIndex, f->env);
     frameInfo = &(s->frameInfos[frameIndex]);
     assert (frameInfo->size > 0);
+    top -= frameInfo->size;
+    f->fun (s, frameIndex, frameInfo, top, f->env);
   }
   if (DEBUG_PROFILE)
     fprintf (stderr, "done foreachStackFrame\n");

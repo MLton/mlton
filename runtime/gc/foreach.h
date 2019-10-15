@@ -46,7 +46,7 @@ static inline pointer foreachObjptrInRange (GC_state s, pointer front, pointer *
                                             GC_foreachObjptrClosure f, bool skipWeaks);
 
 
-typedef void (*GC_foreachStackFrameFun) (GC_state s, GC_frameIndex i, void *env);
+typedef void (*GC_foreachStackFrameFun) (GC_state s, GC_frameIndex i, GC_frameInfo frameInfo, pointer frameTop, void *env);
 
 typedef struct GC_foreachStackFrameClosure {
   GC_foreachStackFrameFun fun;
