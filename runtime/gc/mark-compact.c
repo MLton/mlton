@@ -382,19 +382,20 @@ void majorMarkCompactGC (GC_state s) {
              uintmaxToCommaString(s->heap.size));
   }
   currentStack = getStackCurrent (s);
-  s->markState.mode = MARK_MODE;
-  s->markState.size = 0;
+  struct GC_markState markState;
+  markState.mode = MARK_MODE;
+  markState.size = 0;
   if (s->hashConsDuringGC) {
     s->lastMajorStatistics.bytesHashConsed = 0;
     s->cumulativeStatistics.numHashConsGCs++;
     s->objectHashTable = allocHashTable (s);
-    s->markState.shouldHashCons = TRUE;
+    markState.shouldHashCons = TRUE;
   } else {
-    s->markState.shouldHashCons = FALSE;
+    markState.shouldHashCons = FALSE;
   }
-  s->markState.shouldLinkWeaks = TRUE;
+  markState.shouldLinkWeaks = TRUE;
   struct GC_foreachObjptrClosure dfsMarkObjptrClosure =
-    {.fun = dfsMarkObjptr, .env = NULL};
+    {.fun = dfsMarkObjptrFun, .env = &markState};
   foreachGlobalObjptr (s, &dfsMarkObjptrClosure);
   if (s->hashConsDuringGC) {
     freeHashTable (s->objectHashTable);

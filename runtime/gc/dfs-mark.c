@@ -26,23 +26,23 @@ bool isPointerMarkedByMode (pointer p, GC_markMode m) {
   }
 }
 
-/* dfsMark (s, r)
+/* dfsMark (s, r, markState)
  *
  * Sets all the mark bits in the object graph pointed to by r.
  *
- * If s->markState.markMode is MARK_MODE, it sets the bits to 1.
- * If s->markState.markMode is UNMARK_MODE, it sets the bits to 0.
+ * If markState->markMode is MARK_MODE, it sets the bits to 1.
+ * If markState->markMode is UNMARK_MODE, it sets the bits to 0.
  *
- * If s->markState.shouldHashCons, it hash-conses the objects marked.
+ * If markState->shouldHashCons, it hash-conses the objects marked.
  *
- * If s->markState.shouldLinkWeaks, it links the weak objects marked.
+ * If markState->shouldLinkWeaks, it links the weak objects marked.
  *
- * It adds to s->markState.size the total size in bytes of the objects marked.
+ * It adds to markState.size the total size in bytes of the objects marked.
  */
-void dfsMark (GC_state s, pointer root) {
-  GC_markMode mode = s->markState.mode;
-  bool shouldHashCons = s->markState.shouldHashCons;
-  bool shouldLinkWeaks = s->markState.shouldLinkWeaks;
+void dfsMark (GC_state s, pointer root, GC_markState markState) {
+  GC_markMode mode = markState->mode;
+  bool shouldHashCons = markState->shouldHashCons;
+  bool shouldLinkWeaks = markState->shouldLinkWeaks;
 
   GC_header mark; /* Used to set or clear the mark bit. */
   size_t size; /* Total number of bytes marked. */
@@ -309,7 +309,7 @@ ret:
              (uintptr_t)cur, (uintptr_t)prev);
   assert (isPointerMarkedByMode (cur, mode));
   if (NULL == prev) {
-    s->markState.size += size;
+    markState->size += size;
     return;
   }
   next = cur;
@@ -365,9 +365,13 @@ ret:
   assert (FALSE);
 }
 
-void dfsMarkObjptr (GC_state s, objptr *opp, __attribute__((unused)) void *env) {
+void dfsMarkObjptr (GC_state s, objptr *opp, GC_markState markState) {
   pointer p;
 
   p = objptrToPointer (*opp, s->heap.start);
-  dfsMark (s, p);
+  dfsMark (s, p, markState);
+}
+
+void dfsMarkObjptrFun (GC_state s, objptr *opp, void *env) {
+  dfsMarkObjptr(s, opp, env);
 }

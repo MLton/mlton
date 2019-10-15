@@ -10,6 +10,7 @@
 void GC_share (GC_state s, pointer object) {
   size_t bytesExamined;
   size_t bytesHashConsed;
+  struct GC_markState markState;
 
   enter (s); /* update stack in heap, in case it is reached */
   if (DEBUG_SHARE)
@@ -17,18 +18,18 @@ void GC_share (GC_state s, pointer object) {
   if (DEBUG_SHARE or s->controls.messages)
     s->lastMajorStatistics.bytesHashConsed = 0;
   // Don't hash cons during the first round of marking.
-  s->markState.mode = MARK_MODE;
-  s->markState.size = 0;
-  s->markState.shouldHashCons = FALSE;
-  s->markState.shouldLinkWeaks = FALSE;
-  dfsMark (s, object);
-  bytesExamined = s->markState.size;
+  markState.mode = MARK_MODE;
+  markState.size = 0;
+  markState.shouldHashCons = FALSE;
+  markState.shouldLinkWeaks = FALSE;
+  dfsMark (s, object, &markState);
+  bytesExamined = markState.size;
   s->objectHashTable = allocHashTable (s);
   // Hash cons during the second round of (un)marking.
-  s->markState.mode = UNMARK_MODE;
-  s->markState.size = 0;
-  s->markState.shouldHashCons = TRUE;
-  dfsMark (s, object);
+  markState.mode = UNMARK_MODE;
+  markState.size = 0;
+  markState.shouldHashCons = TRUE;
+  dfsMark (s, object, &markState);
   freeHashTable (s->objectHashTable);
   bytesHashConsed = s->lastMajorStatistics.bytesHashConsed;
   s->cumulativeStatistics.bytesHashConsed += bytesHashConsed;

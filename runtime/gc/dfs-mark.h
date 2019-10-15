@@ -14,12 +14,12 @@ typedef enum {
   UNMARK_MODE,
 } GC_markMode;
 
-struct GC_markState {
+typedef struct GC_markState {
   GC_markMode mode;
   bool shouldHashCons;
   bool shouldLinkWeaks;
   size_t size;
-};
+} *GC_markState;
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */
 
@@ -27,7 +27,8 @@ struct GC_markState {
 
 static inline bool isPointerMarked (pointer p);
 static inline bool isPointerMarkedByMode (pointer p, GC_markMode m);
-static void dfsMark (GC_state s, pointer root);
-static void dfsMarkObjptr (GC_state s, objptr *root, void *env);
+static void dfsMark (GC_state s, pointer root, GC_markState markState);
+static void dfsMarkObjptr (GC_state s, objptr *root, GC_markState markState);
+static void dfsMarkObjptrFun (GC_state s, objptr *root, void *env);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
