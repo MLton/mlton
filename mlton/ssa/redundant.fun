@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2012 Matthew Fluet.
+(* Copyright (C) 2009,2012,2019 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -195,7 +195,7 @@ structure Element:
       val refine = fn r =>
          if Vector.length r > 1 then List.push (todo, r) else ()
       val fixedPoint = fn () =>
-         fixedPoint (!todo)
+         fixedPoint (!todo before todo := [])
    end
 
 structure Class = Element.Class
