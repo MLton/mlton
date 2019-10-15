@@ -689,7 +689,7 @@ structure Function =
             open Dot
             val g = Graph.new ()
             fun newNode () = Graph.newNode g
-            val {get = labelNode, ...} =
+            val {get = labelNode, rem = remLabelNode, ...} =
                Property.get
                (Label.plist, Property.initFun (fn _ => newNode ()))
             val {get = nodeInfo: unit Node.t -> Block.t,
@@ -700,13 +700,17 @@ structure Function =
                Vector.foreach
                (blocks, fn b as Block.T {label, ...}=>
                 setNodeInfo (labelNode label, b))
+            fun destroyLabelNode () =
+               Vector.foreach (blocks, remLabelNode o Block.label)
          in
-            (g, labelNode, nodeInfo)
+            (g, {labelNode = labelNode,
+                 destroyLabelNode = destroyLabelNode,
+                 nodeInfo = nodeInfo})
          end
 
       fun dominatorTree (t as T {blocks, start, ...}): Block.t Tree.t =
          let
-            val (g, labelNode, nodeInfo) = overlayGraph t
+            val (g, {labelNode, destroyLabelNode, nodeInfo}) = overlayGraph t
             val _ =
                Vector.foreach
                (blocks, fn Block.T {transfer, label = from, ...} =>
@@ -715,11 +719,12 @@ structure Function =
                  ignore (Graph.addEdge (g, {from = labelNode from, to = labelNode to}))))
          in
             Graph.dominatorTree (g, {root = labelNode start, nodeValue = nodeInfo})
+            before destroyLabelNode ()
          end
 
       fun loopForest (t as T {blocks, start, ...}, predicate) =
          let
-            val (g, labelNode, nodeInfo) = overlayGraph t
+            val (g, {labelNode, destroyLabelNode, nodeInfo}) = overlayGraph t
             val _ =
                Vector.foreach
                (blocks, fn from as Block.T {transfer, label, ...} =>
@@ -730,6 +735,7 @@ structure Function =
                     else ignore (Graph.addEdge (g, {from = labelNode start, to = labelNode to}))))
          in
             Graph.loopForestSteensgaard (g, {root = labelNode start, nodeValue = nodeInfo})
+            before destroyLabelNode ()
          end
 
       fun dropProfile (f: t): t =
