@@ -10,8 +10,8 @@
 #if (defined (MLTON_GC_INTERNAL_TYPES))
 
 typedef struct GC_callStackState {
-  uint32_t numStackFrames;
-  uint32_t *callStack;
+  uint32_t index;
+  uint32_t *frameIndices;
 } *GC_callStackState;
 
 #endif /* (defined (MLTON_GC_INTERNAL_TYPES)) */

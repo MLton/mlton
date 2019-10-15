@@ -38,8 +38,8 @@ void callStackAux (__attribute__ ((unused)) GC_state s,
                    __attribute__ ((unused)) GC_frameInfo frameInfo,
                    __attribute__ ((unused)) pointer frameTop,
                    GC_callStackState callStackState) {
-  callStackState->callStack[callStackState->numStackFrames] = frameIndex;
-  callStackState->numStackFrames++;
+  callStackState->frameIndices[callStackState->index] = frameIndex;
+  callStackState->index++;
 }
 void callStackFun (GC_state s,
                    GC_frameIndex frameIndex,
@@ -52,7 +52,7 @@ void callStackFun (GC_state s,
 void GC_callStack (GC_state s, pointer p) {
   if (DEBUG_CALL_STACK)
     fprintf (stderr, "GC_callStack\n");
-  struct GC_callStackState callStackState = {.numStackFrames = 0, .callStack = (uint32_t*)p};
+  struct GC_callStackState callStackState = {.index = 0, .frameIndices = (uint32_t*)p};
   struct GC_foreachStackFrameClosure callStackClosure =
     {.fun = callStackFun, .env = &callStackState};
   foreachStackFrame (s, &callStackClosure);
