@@ -98,6 +98,7 @@ structure Type =
                            Int.layout (HashSet.size table)],
                       Control.sizeMessage ("types hash table", lookup)]
             end
+         fun resetTable () = HashSet.reset table
       end
 
       val newHash = Random.word

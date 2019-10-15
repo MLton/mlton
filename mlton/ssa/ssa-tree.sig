@@ -61,6 +61,7 @@ signature SSA_TREE =
             val plist: t -> PropertyList.t
             val real: RealSize.t -> t
             val reff: t -> t
+            val resetTable: unit -> unit
             val thread: t
             val tuple: t vector -> t
             val vector: t -> t
