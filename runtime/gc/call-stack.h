@@ -22,7 +22,7 @@ static inline void numStackFramesAux (GC_state s,
                                       GC_frameIndex frameIndex,
                                       GC_frameInfo frameInfo,
                                       pointer frameTop,
-                                      GC_callStackState callStackState);
+                                      uint32_t *numStackFrames);
 static inline void numStackFramesFun (GC_state s,
                                       GC_frameIndex frameIndex,
                                       GC_frameInfo frameInfo,

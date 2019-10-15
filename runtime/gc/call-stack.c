@@ -11,8 +11,8 @@ void numStackFramesAux (__attribute__ ((unused)) GC_state s,
                         __attribute__ ((unused)) GC_frameIndex frameIndex,
                         __attribute__ ((unused)) GC_frameInfo frameInfo,
                         __attribute__ ((unused)) pointer frameTop,
-                        GC_callStackState callStackState) {
-  callStackState->numStackFrames++;
+                        uint32_t *numStackFrames) {
+  *numStackFrames += 1;
 }
 void numStackFramesFun (GC_state s,
                         GC_frameIndex frameIndex,
@@ -23,14 +23,14 @@ void numStackFramesFun (GC_state s,
 }
 
 uint32_t GC_numStackFrames (GC_state s) {
-  struct GC_callStackState callStackState = {.numStackFrames = 0, .callStack = NULL};
+  uint32_t numStackFrames = 0;
   struct GC_foreachStackFrameClosure numStackFramesClosure =
-    {.fun = numStackFramesFun, .env = &callStackState};
+    {.fun = numStackFramesFun, .env = &numStackFrames};
   foreachStackFrame (s, &numStackFramesClosure);
   if (DEBUG_CALL_STACK)
     fprintf (stderr, "%"PRIu32" = GC_numStackFrames\n",
-             callStackState.numStackFrames);
-  return callStackState.numStackFrames;
+             numStackFrames);
+  return numStackFrames;
 }
 
 void callStackAux (__attribute__ ((unused)) GC_state s,
