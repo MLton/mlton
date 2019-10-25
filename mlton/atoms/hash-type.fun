@@ -1,4 +1,4 @@
-(* Copyright (C) 2017 Matthew Fluet.
+(* Copyright (C) 2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -111,13 +111,13 @@ structure Type =
                                     fn () => T {hash = hash,
                                                 plist = PropertyList.new (),
                                                 tree = tr})
-
          fun stats () =
             let open Layout
             in align [seq [str "num types in hash table = ",
                            Int.layout (HashSet.size table)],
-                      Control.sizeMessage ("types hash table", table)]
+                      Control.sizeMessage ("types hash table", lookup)]
             end
+         fun resetTable () = HashSet.reset table
       end
 
       fun var a = lookup (Tyvar.hash a, Var a)

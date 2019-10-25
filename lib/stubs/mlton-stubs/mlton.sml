@@ -1,4 +1,4 @@
-(* Copyright (C) 2013 Matthew Fluet.
+(* Copyright (C) 2013,2019 Matthew Fluet.
  * Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -71,7 +71,8 @@ structure MLton: MLTON =
       val safe = true
       val share = fn _ => raise Fail "share"
       val shareAll = fn _ => raise Fail "shareAll"
-      val size = MLton.size
+      val size: 'a -> IntInf.int = fn _ => ~1
+      val sizeAll: 'a -> IntInf.int = fn _ => ~1
 
       structure Array =
          struct

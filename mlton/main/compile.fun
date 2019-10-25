@@ -700,7 +700,7 @@ fun mkCompile {outputC, outputLL, outputS} =
                 srcToFile = SOME Ssa2.Program.toFile,
                 tgtStats = SOME Rssa.Program.layoutStats,
                 tgtToFile = SOME Rssa.Program.toFile,
-                tgtTypeCheck = SOME Rssa.Program.typeCheck}
+                tgtTypeCheck = SOME Rssa.typeCheck}
          in
             rssa
          end
@@ -713,7 +713,7 @@ fun mkCompile {outputC, outputLL, outputS} =
           name = "rssaSimplify",
           stats = Rssa.Program.layoutStats,
           toFile = Rssa.Program.toFile,
-          typeCheck = Rssa.Program.typeCheck}
+          typeCheck = Rssa.typeCheck}
       fun toMachine rssa =
          let
             val machine =

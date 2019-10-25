@@ -26,7 +26,7 @@ val ssa2PassesDefault =
    {name = "deepFlatten", doit = DeepFlatten.transform2, execute = true} ::
    {name = "refFlatten", doit = RefFlatten.transform2, execute = true} ::
    {name = "removeUnused5", doit = RemoveUnused2.transform2, execute = true} ::
-   {name = "zone", doit = Zone.transform2, execute = true} ::
+   {name = "zone", doit = Zone.transform2, execute = false} ::
    nil
 
 val ssa2PassesMinimal =

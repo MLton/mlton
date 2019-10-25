@@ -136,6 +136,7 @@ signature RSSA_TREE =
 
             datatype frameStyle = None | OffsetsAndSize | SizeOnly
             val frameStyle: t -> frameStyle
+            val layout: t -> Layout.t
          end
 
       structure Block:
@@ -201,7 +202,6 @@ signature RSSA_TREE =
                                    getFrameSourceSeqIndex: Label.t -> int option} option}
 
             val clear: t -> unit
-            val checkHandlers: t -> unit
             (* dfs (p, v) visits the functions in depth-first order, applying v f
              * for function f to yield v', then visiting b's descendents,
              * then applying v' ().
@@ -211,9 +211,7 @@ signature RSSA_TREE =
             val layouts: t * (Layout.t -> unit) -> unit
             val layoutStats: t -> Layout.t
             val orderFunctions: t -> t
-            val shrink: t -> t
             val shuffle: t -> t
             val toFile: {display: t Control.display, style: Control.style, suffix: string}
-            val typeCheck: t -> unit
          end
    end

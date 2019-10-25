@@ -114,10 +114,10 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
                               Property.initRaise ("live info", Label.layout))
       val {get = varInfo: Var.t -> {defined: LiveInfo.t option ref,
                                     used: LiveInfo.t list ref},
-           rem = removeVarInfo, ...} =
-         Property.get (Var.plist,
-                       Property.initFun (fn _ => {defined = ref NONE,
-                                                  used = ref []}))
+           destroy = destroyVarInfo, ...} =
+         Property.destGet (Var.plist,
+                           Property.initFun (fn _ => {defined = ref NONE,
+                                                      used = ref []}))
       datatype 'a defuse = Def of LiveInfo.t | Use of 'a * LiveInfo.t
       val handlerCodeDefUses: Label.t defuse list ref = ref []
       val handlerLinkDefUses: unit defuse list ref = ref []
@@ -253,7 +253,7 @@ fun live (function, {shouldConsider: Var.t -> bool}) =
       val processVar =
          Trace.trace ("Live.processVar", Var.layout, Unit.layout) processVar
       val _ = List.foreach (!allVars, processVar)
-      val _ = Function.foreachDef (function, fn (x, _) => removeVarInfo x)
+      val () = destroyVarInfo ()
       (* handler code and link slots are harder; in particular, they don't
        * satisfy the SSA invariant -- there are multiple definitions;
        * furthermore, a def and use in a block does not mean that the def 

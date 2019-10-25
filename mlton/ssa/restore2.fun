@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2017 Matthew Fluet.
+(* Copyright (C) 2009,2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -623,7 +623,7 @@ fun restoreFunction {globals: Statement.t vector}
                 val args = args
                 val post = post
               end
-              val _ = Tree.traverse (Function.dominatorTree f, visitBlock)
+              val _ = Tree.traverse (dt, visitBlock)
               val _ = post ()
             in
               Function.new {args = args,

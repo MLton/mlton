@@ -1,6 +1,6 @@
 (* Access the current stack in the heap via a MLton.size object trace. *)
 val rt : MLton.Thread.Runnable.t option ref = ref NONE
-val rs : int ref = ref 0
+val rs : IntInf.int ref = ref 0
 
 fun stats () =
    let

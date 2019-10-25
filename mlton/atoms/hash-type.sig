@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -54,6 +55,7 @@ signature HASH_TYPE =
              destroy: unit -> unit}
       val ofConst: Const.t -> t
       val plist: t -> PropertyList.t
+      val resetTable: unit -> unit
       val stats: unit -> Layout.t
       val string: t (* synonym for word8Vector *)
       (* substitute (t, [(a1, t1), ..., (an, tn)]) performs simultaneous

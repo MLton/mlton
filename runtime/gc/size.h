@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -9,5 +10,6 @@
 #if (defined (MLTON_GC_INTERNAL_BASIS))
 
 PRIVATE size_t GC_size (GC_state s, pointer root);
+PRIVATE size_t GC_sizeAll (GC_state s);
 
 #endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */

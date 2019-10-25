@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -9,7 +9,6 @@
 structure MLton =
    struct
       val isMLton = false
-      val size : 'a -> int = fn _ => ~1
       structure Exn =
          struct
             val history = SMLofNJ.exnHistory

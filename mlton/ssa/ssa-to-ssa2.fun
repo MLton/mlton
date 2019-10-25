@@ -320,6 +320,7 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
                        functions = functions,
                        globals = globals,
                        main = main}
+      val _ = S.Type.resetTable ()
    in
       S2.shrink program
    end

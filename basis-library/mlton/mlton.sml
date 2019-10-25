@@ -1,4 +1,4 @@
-(* Copyright (C) 2010,2013,2016-2017 Matthew Fluet.
+(* Copyright (C) 2010,2013,2016-2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -28,7 +28,10 @@ fun shareAll () =
     ; GC.collect ())
 
 fun size x =
-   C_Size.toInt (Primitive.MLton.size x)
+   C_Size.toLargeInt (Primitive.MLton.size x)
+
+fun sizeAll () =
+   C_Size.toLargeInt (Primitive.MLton.sizeAll (Primitive.MLton.GCState.gcState ()))
 
 (* fun cleanAtExit () = let open Cleaner in clean atExit end *)
 

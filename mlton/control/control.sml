@@ -272,7 +272,7 @@ datatype 'a display =
 fun 'a sizeMessage (name: string, a: 'a): Layout.t =
    let open Layout
    in str (concat [name, " size = ",
-                   Int.toCommaString (MLton.size a), " bytes"])
+                   IntInf.toCommaString (MLton.size a), " bytes"])
    end
 
 val diagnosticWriter: (Layout.t -> unit) option ref = ref NONE
@@ -419,6 +419,10 @@ fun translatePass {arg: 'a,
                                 message (verb, fn () => tgtStats res))
             val _ = message (verb, PropertyList.stats)
             val _ = message (verb, HashSet.stats)
+            val _ = message (verb, fn () =>
+                             Layout.str (concat ["live data = ",
+                                                 IntInf.toCommaString (MLton.sizeAll ()),
+                                                 " bytes"]))
             val _ = unindent ()
          end
       in

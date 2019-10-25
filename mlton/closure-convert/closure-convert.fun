@@ -1144,6 +1144,7 @@ fun closureConvert
       val _ = destroyConvertType ()
       val _ = Value.destroy ()
       val _ = Ssa.Program.clear program
+      val _ = Stype.resetTable ()
    in
       program
    end

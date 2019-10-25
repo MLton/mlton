@@ -652,7 +652,7 @@ fun convertWordX (w: WordX.t): WordX.t =
 fun convert (program as S.Program.T {functions, globals, main, ...},
              {codegenImplementsPrim: Rssa.Type.t Rssa.Prim.t -> bool}): Rssa.Program.t =
    let
-      val {diagnostic, genCase, object, objectTypes, select, static, toRtype, update} =
+      val {destroy = destroyRepresentation, diagnostic, genCase, object, objectTypes, select, static, toRtype, update} =
          PackedRepresentation.compute program
       val objectTypes = Vector.concat [ObjectType.basic (), objectTypes]
       val () =
@@ -1887,6 +1887,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                          objectTypes = Vector.concat [objectTypes, Vector.fromListRev (!newObjectTypes)],
                          profileInfo = NONE}
       val _ = Program.clear p
+      val _ = S.Type.resetTable ()
+      val _ = destroyRepresentation ()
    in
       p
    end

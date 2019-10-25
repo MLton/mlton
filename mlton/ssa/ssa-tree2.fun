@@ -212,13 +212,13 @@ structure Type =
                                     fn () => T {hash = hash,
                                                 plist = PropertyList.new (),
                                                 tree = tr})
-
          fun stats () =
             let open Layout
             in align [seq [str "num types in hash table = ",
                            Int.layout (HashSet.size table)],
                       Control.sizeMessage ("types hash table", lookup)]
             end
+         fun resetTable () = HashSet.reset table
       end
 
       val newHash = Random.word
