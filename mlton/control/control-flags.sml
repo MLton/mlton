@@ -1061,12 +1061,41 @@ fun optFuelAvailAndUse () =
  *)
 val _ = optFuelAvailAndUse
 
-val optimizationPasses:
-   {il: string, set: string -> unit Result.t, get: unit -> string} list ref =
-   control {name = "optimizationPasses",
-            default = [],
-            toString = List.toString 
-                       (fn {il,get,...} => concat ["<",il,"::",get (),">"])}
+(* Control IL-specific optimization passes *)
+structure OptimizationPasses =
+   struct
+      val optPasses: {il: string, passes: string} list ref =
+         control {name = "optimizationPasses",
+                  default = [],
+                  toString = List.toString (fn {il, passes} =>
+                                            concat ["<",il,"::",passes,">"])}
+      val optPassesSets: {il: string, set: string -> unit Result.t} list ref =
+         ref []
+
+      fun register {il, set} =
+         let
+            val set = fn passes =>
+               (optPasses := List.map (!optPasses, fn z =>
+                                       if String.equals (il, #il z)
+                                          then {il = il, passes = passes}
+                                          else z)
+                ; set passes)
+         in
+            List.push (optPassesSets, {il = il, set = set})
+         end
+
+      fun set {il, passes} =
+         case List.peek (!optPassesSets, fn z => String.equals (il, #il z)) of
+            NONE => Error.bug (concat ["Control.OptimizationPasses.set: ", il, " not found"])
+          | SOME {set, ...} => set passes
+      fun setAll passes =
+         List.foldr (!optPassesSets, Result.Yes (), fn ({il, set}, res) =>
+                     case res of
+                        Result.No s => Result.No s
+                      | Result.Yes () => (case set passes of
+                                             Result.No s => Result.No (concat [s, " (for ", il, ")"])
+                                           | Result.Yes () => Result.Yes ()))
+   end
 
 val polyvariance =
    control {name = "polyvariance",
