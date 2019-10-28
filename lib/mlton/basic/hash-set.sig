@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019 Matthew Fluet.
+(* Copyright (C) 2009 Matthew Fluet.
  * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -41,8 +41,6 @@ signature HASH_SET =
       val remove: 'a t * word * ('a -> bool) -> unit
       (* removeAll (s, p) removes all entries from s that satisfy predicate p. *)
       val removeAll: 'a t * ('a -> bool) -> unit
-      val reset: 'a t -> unit
-      val resetOfSize: 'a t * {size: int} -> unit
       val size: 'a t -> int
       val stats: unit -> Layout.t
       val stats': 'a t -> Layout.t

@@ -1887,7 +1887,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                          objectTypes = Vector.concat [objectTypes, Vector.fromListRev (!newObjectTypes)],
                          profileInfo = NONE}
       val _ = Program.clear p
-      val _ = S.Type.resetTable ()
    in
       p
    end
