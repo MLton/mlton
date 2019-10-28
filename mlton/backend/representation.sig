@@ -28,8 +28,7 @@ signature REPRESENTATION =
 
       val compute:
          Ssa2.Program.t
-         -> {destroy: unit -> unit,
-             diagnostic: unit -> unit,
+         -> {diagnostic: unit -> unit,
              genCase: {cases: {con: Ssa2.Con.t,
                                dst: Rssa.Label.t,
                                dstHasArg: bool} vector,
