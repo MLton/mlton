@@ -1,5 +1,6 @@
 language: shell
 os: linux
+arch: amd64
 
 addons:
   apt:
@@ -11,21 +12,27 @@ jobs:
   include:
   - os:   linux
     dist: bionic
+    arch: amd64
     env:  CC=gcc    MLTON_COMPILE_ARGS="-codegen amd64"  REGRESSION=true
   - os:   linux
     dist: bionic
+    arch: amd64
     env:  CC=gcc    MLTON_COMPILE_ARGS="-codegen c"      REGRESSION=false
   - os:   linux
     dist: bionic
+    arch: amd64
     env:  CC=clang  MLTON_COMPILE_ARGS="-codegen c"      REGRESSION=false
   - os:   linux
     dist: bionic
+    arch: amd64
     env:  CC=clang  MLTON_COMPILE_ARGS="-codegen llvm"   REGRESSION=false
   - os: osx
     osx_image: xcode11
+    arch: amd64
     env:  CC=clang  MLTON_COMPILE_ARGS="-codegen amd64"  REGRESSION=false
   - os: osx
     osx_image: xcode11
+    arch: amd64
     env:  CC=clang  MLTON_COMPILE_ARGS="-codegen c"      REGRESSION=false
 
 script:
