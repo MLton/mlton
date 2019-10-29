@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019 Matthew Fluet.
+(* Copyright (C) 2009 Matthew Fluet.
  * Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -33,15 +33,6 @@ fun new {hash} = newWithBuckets {hash = hash,
 fun newOfSize {hash, size} =
    newWithBuckets {hash = hash,
                    numBuckets = 4 * Int.roundUpToPowerOfTwo size}
-
-fun 'a resetWithBuckets (T {buckets, mask, numItems, ...}, {numBuckets: int}): unit =
-   (buckets := Array.new (numBuckets, [])
-    ; mask := Word.fromInt numBuckets - 0w1
-    ; numItems := 0)
-
-fun reset s = resetWithBuckets (s, {numBuckets = initialSize})
-
-fun resetOfSize (s, {size}) = resetWithBuckets (s, {numBuckets = 4 * Int.roundUpToPowerOfTwo size})
 
 fun size (T {numItems, ...}) = !numItems
 

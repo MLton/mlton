@@ -133,23 +133,16 @@ in
         end))
 end
 
-val sxmlPassesString = ref "default"
-val sxmlPassesGet = fn () => !sxmlPassesString
-val sxmlPassesSet = fn s =>
-   let
-      val _ = sxmlPassesString := s
-   in
-      case s of
-         "default" => (sxmlPasses := sxmlPassesDefault
-                       ; Result.Yes ())
-       | "cpsTransform" => (sxmlPasses := sxmlPassesCpsTransform
-                            ; Result.Yes ())
-       | "minimal" => (sxmlPasses := sxmlPassesMinimal
-                       ; Result.Yes ())
-       | _ => sxmlPassesSetCustom s
-   end
-val _ = List.push (Control.optimizationPasses,
-                   {il = "sxml", get = sxmlPassesGet, set = sxmlPassesSet})
+fun sxmlPassesSet s =
+   case s of
+      "default" => (sxmlPasses := sxmlPassesDefault
+                    ; Result.Yes ())
+    | "cpsTransform" => (sxmlPasses := sxmlPassesCpsTransform
+                         ; Result.Yes ())
+    | "minimal" => (sxmlPasses := sxmlPassesMinimal
+                    ; Result.Yes ())
+    | _ => sxmlPassesSetCustom s
+val _ = Control.OptimizationPasses.register {il = "sxml", set = sxmlPassesSet}
 
 fun simplify p =
    let

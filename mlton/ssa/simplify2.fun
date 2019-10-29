@@ -75,21 +75,14 @@ in
         end))
 end
 
-val ssa2PassesString = ref "default"
-val ssa2PassesGet = fn () => !ssa2PassesString
-val ssa2PassesSet = fn s =>
-   let
-      val _ = ssa2PassesString := s
-   in
-      case s of
-         "default" => (ssa2Passes := ssa2PassesDefault
-                       ; Result.Yes ())
-       | "minimal" => (ssa2Passes := ssa2PassesMinimal
-                       ; Result.Yes ())
-       | _ => ssa2PassesSetCustom s
-   end
-val _ = List.push (Control.optimizationPasses,
-                   {il = "ssa2", get = ssa2PassesGet, set = ssa2PassesSet})
+fun ssa2PassesSet s =
+   case s of
+      "default" => (ssa2Passes := ssa2PassesDefault
+                    ; Result.Yes ())
+    | "minimal" => (ssa2Passes := ssa2PassesMinimal
+                    ; Result.Yes ())
+    | _ => ssa2PassesSetCustom s
+val _ = Control.OptimizationPasses.register {il = "ssa2", set = ssa2PassesSet}
 
 fun simplify p =
    let

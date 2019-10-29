@@ -328,9 +328,15 @@ signature CONTROL_FLAGS =
 
       val optFuelAvailAndUse: unit -> bool
 
-      val optimizationPasses:
-         {il: string, set: string -> unit Result.t, get: unit -> string} list ref
-      
+      (* Control IL-specific optimization passes *)
+      structure OptimizationPasses:
+         sig
+            val register: {il: string,
+                           set: string -> unit Result.t} -> unit
+            val set: {il: string, passes: string} -> unit Result.t
+            val setAll: string -> unit Result.t
+         end
+
       val positionIndependent : bool ref
 
       (* Only duplicate big functions when

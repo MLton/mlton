@@ -61,21 +61,14 @@ in
         end))
 end
 
-val xmlPassesString = ref "default"
-val xmlPassesGet = fn () => !xmlPassesString
-val xmlPassesSet = fn s =>
-   let
-      val _ = xmlPassesString := s
-   in
-      case s of
-         "default" => (xmlPasses := xmlPassesDefault
-                       ; Result.Yes ())
-       | "minimal" => (xmlPasses := xmlPassesMinimal
-                       ; Result.Yes ())
-       | _ => xmlPassesSetCustom s
-   end
-val _ = List.push (Control.optimizationPasses,
-                   {il = "xml", get = xmlPassesGet, set = xmlPassesSet})
+fun xmlPassesSet s =
+   case s of
+      "default" => (xmlPasses := xmlPassesDefault
+                    ; Result.Yes ())
+    | "minimal" => (xmlPasses := xmlPassesMinimal
+                    ; Result.Yes ())
+    | _ => xmlPassesSetCustom s
+val _ = Control.OptimizationPasses.register {il = "xml", set = xmlPassesSet}
 
 fun simplify p =
    let

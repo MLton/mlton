@@ -2580,8 +2580,7 @@ fun compute (program as Ssa2.Program.T {datatypes, ...}) =
          ("PackedRepresentation.setSequenceRep",
           S.Type.layout, TupleRep.layout, Unit.layout)
          setSequenceRep
-      val {get = tyconRep: Tycon.t -> tyconRepAndCons,
-           set = setTyconRep, ...} =
+      val {get = tyconRep: Tycon.t -> tyconRepAndCons, set = setTyconRep, ...} =
          Property.getSetOnce (Tycon.plist,
                               Property.initRaise ("tyconRep", Tycon.layout))
       (* Initialize the datatypes. *)
@@ -2638,9 +2637,8 @@ fun compute (program as Ssa2.Program.T {datatypes, ...}) =
       val delayedObjectTypes
          : (unit -> (ObjptrTycon.t * ObjectType.t) option) list ref =
          ref []
-      val {get = typeRep: S.Type.t -> Rep.t Value.t,
-           destroy = destroyTypeRep, ...} =
-         Property.destGet
+      val {get = typeRep: S.Type.t -> Rep.t Value.t, ...} =
+         Property.get
          (S.Type.plist,
           Property.initRec
           (fn (t, typeRep: S.Type.t -> Rep.t Value.t) =>
@@ -2978,12 +2976,7 @@ fun compute (program as Ssa2.Program.T {datatypes, ...}) =
                         (conRep con, {location = location, src = src, width = width}))
          end handle UnrepresentableStatic => NONE
    in
-      {destroy = fn () => (Vector.foreach
-                           (datatypes, fn {cons, tycon, ...} =>
-                            (Vector.foreach (cons, Con.clear o #con)
-                             ; Tycon.clear tycon))
-                           ; destroyTypeRep ()),
-       diagnostic = diagnostic,
+      {diagnostic = diagnostic,
        genCase = genCase,
        object = object,
        objectTypes = objectTypes,
