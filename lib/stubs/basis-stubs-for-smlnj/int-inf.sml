@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -10,10 +10,12 @@
 functor FixIntInf(PIntInf: sig include INT_INF end) : INT_INF =
    struct
       open PIntInf
+
       local
-         structure FIntInf = FixInt(struct open PIntInf end)
+         (* SML/NJ uses lower instead of upper case. *)
+         val toUpper = String.translate (Char.toString o Char.toUpper)
       in
-         open FIntInf
+         fun fmt r w = toUpper (PIntInf.fmt r w)
       end
 
       (* SML/NJ doesn't properly shift IntInf.int values. *)
@@ -36,3 +38,4 @@ functor FixIntInf(PIntInf: sig include INT_INF end) : INT_INF =
    end
 
 structure IntInf = FixIntInf(struct open Pervasive.IntInf end)
+structure LargeInt: INTEGER = IntInf

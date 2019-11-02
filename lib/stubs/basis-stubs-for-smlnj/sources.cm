@@ -84,6 +84,5 @@ pack-word64.sml
 
 ieee-real.sml
 int-inf.sml
-int.sml
 pack-real32.sml
 real.sml
