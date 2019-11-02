@@ -13,7 +13,9 @@ library($/basis.cm) - (
                        signature IEEE_REAL
                        signature REAL
 
+#if SMLNJ_VERSION < 110 || (SMLNJ_VERSION == 110 && SMLNJ_MINOR_VERSION < 83)
                        structure Char
+#endif
                        structure FixedInt
                        structure IEEEReal
                        structure Int
@@ -37,14 +39,20 @@ library($/basis.cm) - (
                        structure Word8
                        structure Word32
                        structure Word64
+#if SMLNJ_VERSION < 110 || (SMLNJ_VERSION == 110 && SMLNJ_MINOR_VERSION < 83)
                        structure String
+#endif
                        structure SysWord
                       )
 
 signature IEEE_REAL
 signature REAL
 
+#if SMLNJ_VERSION < 110 || (SMLNJ_VERSION == 110 && SMLNJ_MINOR_VERSION < 83)
 structure Char
+structure String
+#endif
+
 structure FixedInt
 structure IEEEReal
 structure Int
@@ -61,7 +69,6 @@ structure Position
 structure Real
 structure Real32
 structure Real64
-structure String
 structure SysWord
 structure Word
 structure Word8
@@ -73,10 +80,13 @@ is
 $/basis.cm
 pervasive.cm
 
+#if SMLNJ_VERSION < 110 || (SMLNJ_VERSION == 110 && SMLNJ_MINOR_VERSION < 83)
 char.sml
+string.sml
+#endif
+
 ieee-real.sml
 int-inf.sml
 int.sml
 real.sml
-string.sml
 word.sml
