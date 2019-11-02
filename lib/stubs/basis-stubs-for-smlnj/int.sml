@@ -16,13 +16,7 @@ functor FixInt(PInt: sig include INTEGER end) : INTEGER =
          val toUpper = String.translate (Char.toString o Char.toUpper)
       in
          fun fmt r w = toUpper (PInt.fmt r w)
-         fun toString w = toUpper (PInt.toString w)
       end
    end
 
-structure FixedInt = FixInt(struct open Pervasive.FixedInt end)
-structure Int = FixInt(struct open Pervasive.Int end)
-structure Int32 = FixInt(struct open Pervasive.Int32 end)
-structure Int64 = FixInt(struct open Pervasive.Int64 end)
 structure LargeInt = FixInt(struct open Pervasive.LargeInt end)
-structure Position = FixInt(struct open Pervasive.Position end)

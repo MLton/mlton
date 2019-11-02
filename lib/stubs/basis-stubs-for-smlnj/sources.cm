@@ -16,11 +16,7 @@ library($/basis.cm) - (
 #if SMLNJ_VERSION < 110 || (SMLNJ_VERSION == 110 && SMLNJ_MINOR_VERSION < 83)
                        structure Char
 #endif
-                       structure FixedInt
                        structure IEEEReal
-                       structure Int
-                       structure Int32
-                       structure Int64
                        structure IntInf
                        structure LargeInt
                        structure LargeReal
@@ -30,7 +26,6 @@ library($/basis.cm) - (
                        structure PackReal64Little
                        structure PackWord64Big
                        structure PackWord64Little
-                       structure Position
                        structure Real
                        structure Real32
                        structure Real64
@@ -47,11 +42,7 @@ structure Char
 structure String
 #endif
 
-structure FixedInt
 structure IEEEReal
-structure Int
-structure Int32
-structure Int64
 structure IntInf
 structure LargeInt
 structure LargeReal
@@ -59,7 +50,6 @@ structure PackReal32Big
 structure PackReal32Little
 structure PackReal64Little
 structure PackWord64Little
-structure Position
 structure Real
 structure Real32
 structure Real64
