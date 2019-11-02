@@ -82,7 +82,9 @@ string.sml
 pack-word64.sml
 #endif
 
-ieee-real.sml
 int-inf.sml
-pack-real32.sml
+
+ieee-real.sml
 real.sml
+
+pack-real32.sml
