@@ -7,26 +7,6 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor FixWord(PWord: sig include WORD end) : WORD =
-   struct
-      open PWord
-
-      local
-         (* SML/NJ uses lower instead of upper case. *)
-         val toUpper = String.translate (Char.toString o Char.toUpper)
-      in
-         fun fmt r w = toUpper (PWord.fmt r w)
-         fun toString w = toUpper (PWord.toString w)
-      end
-   end
-
-structure LargeWord = FixWord(struct open Pervasive.LargeWord end)
-structure Word = FixWord(struct open Pervasive.Word end)
-structure Word8 = FixWord(struct open Pervasive.Word8 end)
-structure Word32 = FixWord(struct open Pervasive.Word32 end)
-structure Word64 = FixWord(struct open Pervasive.Word64 end)
-structure SysWord = FixWord(struct open Pervasive.SysWord end)
-
 (* Dummy implementation that will not be used at run-time. *)
 structure PackWord64Big : PACK_WORD = struct
    val bytesPerElem = 0

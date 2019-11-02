@@ -24,7 +24,6 @@ library($/basis.cm) - (
                        structure IntInf
                        structure LargeInt
                        structure LargeReal
-                       structure LargeWord
                        structure PackReal32Big
                        structure PackReal64Big
                        structure PackReal32Little
@@ -35,14 +34,9 @@ library($/basis.cm) - (
                        structure Real
                        structure Real32
                        structure Real64
-                       structure Word
-                       structure Word8
-                       structure Word32
-                       structure Word64
 #if SMLNJ_VERSION < 110 || (SMLNJ_VERSION == 110 && SMLNJ_MINOR_VERSION < 83)
                        structure String
 #endif
-                       structure SysWord
                       )
 
 signature IEEE_REAL
@@ -61,7 +55,7 @@ structure Int64
 structure IntInf
 structure LargeInt
 structure LargeReal
-structure LargeWord
+structure PackReal32Big
 structure PackReal32Little
 structure PackReal64Little
 structure PackWord64Little
@@ -69,11 +63,6 @@ structure Position
 structure Real
 structure Real32
 structure Real64
-structure SysWord
-structure Word
-structure Word8
-structure Word32
-structure Word64
 
 is
 
