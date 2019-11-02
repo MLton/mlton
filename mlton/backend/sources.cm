@@ -7,7 +7,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-Group
+Library
 
 signature MACHINE
 signature REP_TYPE

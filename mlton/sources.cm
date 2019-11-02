@@ -6,7 +6,11 @@
  * See the file MLton-LICENSE for details.
  *)
 
-Group is
+Library
+
+structure Main
+
+is
 
 main/sources.cm
 

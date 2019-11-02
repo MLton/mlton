@@ -7,7 +7,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-Group
+Library
 
 functor FrontEnd
 functor MLBFrontEnd

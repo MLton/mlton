@@ -6,7 +6,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-Group
+Library
 
 functor ClosureConvert
 
