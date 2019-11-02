@@ -13,7 +13,7 @@ library($/basis.cm) - (
                        signature IEEE_REAL
                        signature REAL
 
-#if SMLNJ_VERSION < 110 || (SMLNJ_VERSION == 110 && SMLNJ_MINOR_VERSION < 83)
+#if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 83)
                        structure Char
 #endif
                        structure IEEEReal
@@ -22,18 +22,18 @@ library($/basis.cm) - (
                        structure LargeReal
                        structure PackReal32Big
                        structure PackReal32Little
-#if SMLNJ_VERSION < 110 || (SMLNJ_VERSION == 110 && SMLNJ_MINOR_VERSION < 79)
+#if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 79)
                        structure PackReal64Big
                        structure PackReal64Little
 #endif
-#if SMLNJ_VERSION < 110 || (SMLNJ_VERSION == 110 && SMLNJ_MINOR_VERSION < 91)
+#if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 91)
                        structure PackWord64Big
                        structure PackWord64Little
 #endif
                        structure Real
                        structure Real32
                        structure Real64
-#if SMLNJ_VERSION < 110 || (SMLNJ_VERSION == 110 && SMLNJ_MINOR_VERSION < 83)
+#if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 83)
                        structure String
 #endif
                       )
@@ -41,7 +41,7 @@ library($/basis.cm) - (
 signature IEEE_REAL
 signature REAL
 
-#if SMLNJ_VERSION < 110 || (SMLNJ_VERSION == 110 && SMLNJ_MINOR_VERSION < 83)
+#if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 83)
 structure Char
 structure String
 #endif
@@ -52,11 +52,11 @@ structure LargeInt
 structure LargeReal
 structure PackReal32Big
 structure PackReal32Little
-#if SMLNJ_VERSION < 110 || (SMLNJ_VERSION == 110 && SMLNJ_MINOR_VERSION < 79)
+#if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 79)
 structure PackReal64Big
 structure PackReal64Little
 #endif
-#if SMLNJ_VERSION < 110 || (SMLNJ_VERSION == 110 && SMLNJ_MINOR_VERSION < 91)
+#if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 91)
 structure PackWord64Big
 structure PackWord64Little
 #endif
@@ -69,16 +69,16 @@ is
 $/basis.cm
 pervasive.cm
 
-#if SMLNJ_VERSION < 110 || (SMLNJ_VERSION == 110 && SMLNJ_MINOR_VERSION < 79)
+#if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 79)
 pack-real64.sml
 #endif
 
-#if SMLNJ_VERSION < 110 || (SMLNJ_VERSION == 110 && SMLNJ_MINOR_VERSION < 83)
+#if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 83)
 char.sml
 string.sml
 #endif
 
-#if SMLNJ_VERSION < 110 || (SMLNJ_VERSION == 110 && SMLNJ_MINOR_VERSION < 91)
+#if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 91)
 pack-word64.sml
 #endif
 

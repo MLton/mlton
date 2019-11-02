@@ -150,7 +150,7 @@ smlnj-mlton: $(FRONT_END_SOURCES)
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo '#set CM.Control.verbose false;';				\
-		echo '#set CM.Control.warn_obsolete false;';			\
+		echo '#set CM.Control.warn_obsolete true;';			\
 		echo 'Control.polyEqWarn := false;';				\
 		echo 'local';							\
 		echo 'fun loop 0 = () | loop n = (CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server" ^ (Int.toString n), pathtrans = NONE, pref = 0}; loop (n - 1));'; \
