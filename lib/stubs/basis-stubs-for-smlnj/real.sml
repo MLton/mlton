@@ -109,28 +109,18 @@ functor FixReal(PReal: sig include PERVASIVE_REAL val zero : real end) : REAL =
          val toDecimal = toGoodDA o toDecimal
       end
 
-      (* SML/NJ doesn't support EXACT
-       * and doesn't include a leading "~" for ~0.0.
-       *)
+      (* SML/NJ doesn't support EXACT. *)
       fun fmt f =
-         let
-            val fmt =
-               PReal.fmt
-               (let
-                   datatype z = datatype StringCvt.realfmt
-                in
-                   case f of
-                      EXACT => StringCvt.GEN NONE
-                    | FIX io => StringCvt.FIX io
-                    | GEN io => StringCvt.GEN io
-                    | SCI io => StringCvt.SCI io
-                end)
-         in
-            fn r =>
-            if == (zero, r) andalso signBit r
-               then "~" ^ (fmt r)
-            else fmt r
-         end
+         PReal.fmt
+         (let
+             datatype z = datatype StringCvt.realfmt
+          in
+             case f of
+                EXACT => StringCvt.GEN NONE
+              | FIX io => StringCvt.FIX io
+              | GEN io => StringCvt.GEN io
+              | SCI io => StringCvt.SCI io
+          end)
 
       (* SML/NJ doesn't handle "[+~-]?(inf|infinity|nan)"
        * and raises Overflow on large exponents.
