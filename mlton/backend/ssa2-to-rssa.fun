@@ -1828,14 +1828,13 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
       val main =
           let
              val start = Label.newNoname ()
-             val bug = Label.newNoname ()
              val (statics, globalStatements) = translateGlobalStatics globals
              val {args, blocks, name, raises, returns, start} =
              (Function.dest o translateFunction)
                 (S.Function.profile
                  (S.Function.new
                   {args = Vector.new0 (),
-                   blocks = (Vector.new2
+                  blocks = (Vector.new1
                              (S.Block.T
                               {label = start,
                                args = Vector.new0 (),
@@ -1843,42 +1842,34 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                transfer = (S.Transfer.Call
                                            {args = Vector.new0 (),
                                             func = main,
-                                            return =
-                                            S.Return.NonTail
-                                            {cont = bug,
-                                             handler = S.Handler.Dead}})},
-                              S.Block.T
-                              {label = bug,
-                               args = Vector.new0 (),
-                               statements = Vector.new0 (),
-                               transfer = S.Transfer.Bug})),
+                                           return = S.Return.Tail})})),
                    mayInline = false, (* doesn't matter *)
-                   name = Func.newNoname (),
+                  name = Func.newString "initGlobals",
                    raises = NONE,
                    returns = NONE,
                    start = start},
                   S.SourceInfo.main))
-             val staticLabel = Label.newNoname ()
-             val staticBlock = Block.T
-               {args=Vector.new0 (),
-                kind=Kind.Jump,
-                label=staticLabel,
-                statements=Vector.map
+            val staticLabel = Label.newString "initStatics"
+            val staticBlock =
+               Block.T
+               {args = Vector.new0 (),
+                kind = Kind.Jump,
+                label = staticLabel,
+                statements = (Vector.map
                   (statics, fn (v, rty, static) =>
                   Statement.Bind
-                  {dst=(v, rty),
-                   pinned=false,
-                   src=Operand.Static {static=static, ty=rty}}),
-                transfer=Transfer.Goto {args=Vector.new0 (), dst=start}}
+                               {dst = (v, rty),
+                                pinned = false,
+                                src = Operand.Static {static = static, ty = rty}})),
+                transfer = Transfer.Goto {args = Vector.new0 (), dst = start}}
           in
              Function.new
-             {args=args,
-              blocks=Vector.concat
-              [Vector.new1 staticBlock, blocks],
-              name=name,
-              raises=raises,
-              returns=returns,
-              start=staticLabel}
+             {args = args,
+              blocks = Vector.concat [Vector.new1 staticBlock, blocks],
+              name = name,
+              raises = raises,
+              returns =returns,
+              start = staticLabel}
           end
       val functions = List.revMap (functions, translateFunction)
       val p = Program.T {functions = functions,
