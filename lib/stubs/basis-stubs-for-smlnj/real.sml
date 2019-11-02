@@ -122,10 +122,37 @@ functor FixReal(PReal: sig include PERVASIVE_REAL val zero : real end) : REAL =
               | SCI io => StringCvt.SCI io
           end)
 
-      (* SML/NJ doesn't handle "[+~-]?(inf|infinity|nan)"
-       * and raises Overflow on large exponents.
-       *)
-      fun fromString s =
+      val fromString = PReal.fromString
+      (* SML/NJ raises Overflow on large exponents. *)
+      (* Fixed in SML/NJ 110.83. *)
+      val fromString = fn s =>
+         (case SOME (fromString s) handle Overflow => NONE of
+             NONE =>
+                let
+                   val manexp =
+                      String.tokens
+                      (fn c => c = #"e" orelse c = #"E")
+                      s
+                   fun isNeg s =
+                      String.sub (s, 0) = #"~"
+                      orelse String.sub (s, 0) = #"+"
+                   fun isNonzero s =
+                      CharVector.exists
+                      (fn c => Char.<= (#"1", c) andalso Char.<= (c, #"9"))
+                      s
+                in
+                   case manexp of
+                      [man,exp] =>
+                         if isNeg exp
+                            then SOME zero
+                         else if isNonzero man
+                            then SOME posInf
+                         else SOME zero
+                     | _ => NONE
+                end
+           | SOME ro => ro)
+      (* SML/NJ doesn't handle "[+~-]?(inf|infinity|nan)". *)
+      val fromString = fn s =>
          case s of
             "inf" => SOME posInf
           | "infinity" => SOME posInf
@@ -139,32 +166,7 @@ functor FixReal(PReal: sig include PERVASIVE_REAL val zero : real end) : REAL =
           | "+nan" => SOME (negInf + posInf)
           | "~nan" => SOME (negInf + posInf)
           | "-nan" => SOME (negInf + posInf)
-          | _ =>
-               (case SOME (PReal.fromString s) handle Overflow => NONE of
-                   NONE =>
-                      let
-                         val manexp =
-                            String.tokens
-                            (fn c => c = #"e" orelse c = #"E")
-                            s
-                         fun isNeg s =
-                            String.sub (s, 0) = #"~"
-                            orelse String.sub (s, 0) = #"+"
-                         fun isNonzero s =
-                            CharVector.exists
-                            (fn c => Char.<= (#"1", c) andalso Char.<= (c, #"9"))
-                            s
-                      in
-                         case manexp of
-                            [man,exp] =>
-                               if isNeg exp
-                                  then SOME zero
-                               else if isNonzero man
-                                  then SOME posInf
-                               else SOME zero
-                           | _ => NONE
-                      end
-                 | SOME ro => ro)
+          | _ => fromString s
    end
 
 structure LargeReal = FixReal(struct open Pervasive.LargeReal val zero : real = 0.0 end)
