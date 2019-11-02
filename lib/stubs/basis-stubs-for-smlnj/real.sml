@@ -82,6 +82,7 @@ functor FixReal(PReal: sig include PERVASIVE_REAL val zero : real end) : REAL =
    struct
       open PReal
 
+      (* SML/NJ uses an old version of datatype IEEEReal.float_class. *)
       local
          datatype z = datatype IEEEReal.float_class
          structure P = Pervasive.IEEEReal
