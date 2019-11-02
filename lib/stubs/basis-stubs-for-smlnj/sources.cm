@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 2002-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -17,7 +17,6 @@ library($/basis.cm) - (
                        structure FixedInt
                        structure IEEEReal
                        structure Int
-                       structure Int31
                        structure Int32
                        structure Int64
                        structure IntInf
@@ -36,7 +35,6 @@ library($/basis.cm) - (
                        structure Real64
                        structure Word
                        structure Word8
-                       structure Word31
                        structure Word32
                        structure Word64
                        structure String
@@ -50,7 +48,6 @@ structure Char
 structure FixedInt
 structure IEEEReal
 structure Int
-structure Int31
 structure Int32
 structure Int64
 structure IntInf
@@ -68,7 +65,6 @@ structure String
 structure SysWord
 structure Word
 structure Word8
-structure Word31
 structure Word32
 structure Word64
 

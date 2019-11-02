@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -23,7 +23,6 @@ functor FixWord(PWord: sig include WORD end) : WORD =
 structure LargeWord = FixWord(struct open Pervasive.LargeWord end)
 structure Word = FixWord(struct open Pervasive.Word end)
 structure Word8 = FixWord(struct open Pervasive.Word8 end)
-structure Word31 = FixWord(struct open Pervasive.Word31 end)
 structure Word32 = FixWord(struct open Pervasive.Word32 end)
 structure Word64 = FixWord(struct open Pervasive.Word64 end)
 structure SysWord = FixWord(struct open Pervasive.SysWord end)
