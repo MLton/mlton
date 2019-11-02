@@ -9,7 +9,7 @@
 
 (* Dummy implementation that will not be used at run-time. *)
 structure PackWord64Big : PACK_WORD = struct
-   val bytesPerElem = 0
+   val bytesPerElem = 8
    val isBigEndian = true
    fun subVec _ = raise Fail "PackWord64Big.subVec"
    fun subVecX _ = raise Fail "PackWord64Big.subVecX"
@@ -19,7 +19,7 @@ structure PackWord64Big : PACK_WORD = struct
 end
 (* Dummy implementation that will not be used at run-time. *)
 structure PackWord64Little : PACK_WORD = struct
-   val bytesPerElem = 0
+   val bytesPerElem = 8
    val isBigEndian = false
    fun subVec _ = raise Fail "PackWord64Little.subVec"
    fun subVecX _ = raise Fail "PackWord64Little.subVecX"

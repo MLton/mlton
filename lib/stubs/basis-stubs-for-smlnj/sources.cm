@@ -24,8 +24,10 @@ library($/basis.cm) - (
                        structure PackReal64Big
                        structure PackReal32Little
                        structure PackReal64Little
+#if SMLNJ_VERSION < 110 || (SMLNJ_VERSION == 110 && SMLNJ_MINOR_VERSION < 91)
                        structure PackWord64Big
                        structure PackWord64Little
+#endif
                        structure Real
                        structure Real32
                        structure Real64
@@ -49,7 +51,10 @@ structure LargeReal
 structure PackReal32Big
 structure PackReal32Little
 structure PackReal64Little
+#if SMLNJ_VERSION < 110 || (SMLNJ_VERSION == 110 && SMLNJ_MINOR_VERSION < 91)
+structure PackWord64Big
 structure PackWord64Little
+#endif
 structure Real
 structure Real32
 structure Real64
@@ -64,8 +69,11 @@ char.sml
 string.sml
 #endif
 
+#if SMLNJ_VERSION < 110 || (SMLNJ_VERSION == 110 && SMLNJ_MINOR_VERSION < 91)
+pack-word64.sml
+#endif
+
 ieee-real.sml
 int-inf.sml
 int.sml
 real.sml
-word.sml
