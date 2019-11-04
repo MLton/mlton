@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -27,9 +28,10 @@ void loadWorldFromFILE (GC_state s, FILE *f) {
               s->heap.oldGenSize);
   setCardMapAndCrossMap (s);
   fread_safe (s->heap.start, 1, s->heap.oldGenSize, f);
-  if ((*(s->loadGlobals)) (f) != 0) diee("couldn't load globals");
-  // unless (EOF == fgetc (file))
-  //  die ("Invalid world: junk at end of file.");
+  if ((*(s->loadGlobals)) (f) != 0)
+    diee ("Invalid world: failed to load globals.");
+  unless (EOF == fgetc (f))
+    die ("Invalid world: unexpected data at end of file.");
   /* translateHeap must occur after loading the heap and globals,
    * since it changes pointers in all of them.
    */
@@ -49,7 +51,7 @@ void loadWorldFromFileName (GC_state s, const char *fileName) {
 }
 
 /* Don't use 'safe' functions, because we don't want the ML program to die.
- * Instead, check return values, and propogate them up to SML for an exception.
+ * Instead, check return values, and propagate them up to SML for an exception.
  */
 int saveWorldToFILE (GC_state s, FILE *f) {
   char buf[128];
