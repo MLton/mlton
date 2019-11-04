@@ -5,6 +5,8 @@ The size of an int array of length 10 is = 56 bytes.
 The size of a double array of length 10 is = 96 bytes.
 The size of an array of length 10 of 2-ples of ints is = 96 bytes.
 The size of a useless function is = 0 bytes.
+The size of an int list option (SOME) is = 72 bytes.
+The size of an int list option (NONE) is = 0 bytes.
 The size of a continuation option ref is >= 4000 bytes and <= 6000 bytes.
 13
 The size of a continuation option ref is = 8 bytes.

@@ -49,7 +49,20 @@ val _ =
                  chk (Array.foldl (fn ((a,b),s) => a + b + s) 0 a, 100))
     ; printSize ("a useless function", NONE,
                  fn _ => 13, fn f => ())
-    )
+    ; let
+         val l = List.tabulate (8, fn i =>
+                                if i mod 2 = 1
+                                   then NONE
+                                   else SOME (List.tabulate (i, fn i => i + 1)))
+      in
+         ()
+         ; printSize ("an int list option (SOME)", NONE,
+                      List.nth (l, 4), fn lo =>
+                      chk (case lo of NONE => 0 | SOME l => foldl (op +) 0 l, 10))
+         ; printSize ("an int list option (NONE)", NONE,
+                      List.nth (l, 5), fn lo =>
+                      chk (case lo of NONE => 0 | SOME l => foldl (op +) 0 l, 0))
+      end)
    
 local
    open MLton.Cont
