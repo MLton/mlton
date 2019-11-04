@@ -17,6 +17,10 @@ void loadWorldFromFILE (GC_state s, FILE *f) {
   magic = readUint32 (f);
   unless (s->magic == magic)
     die ("Invalid world: wrong magic number.");
+  unless ((uintptr_t)MLton_gcState == (uintptr_t)(readPointer (f)))
+    die ("Invalid world: wrong code address; load-world incompatible with PIE and/or ASLR");
+  unless ((pointer)s == readPointer (f))
+    die ("Invalid world: wrong static-data address; load-world incompatible with PIE and/or ASLR");
   start = readPointer (f);
   s->heap.oldGenSize = readSize (f);
   s->atomicState = readUint32 (f);
@@ -56,6 +60,7 @@ void loadWorldFromFileName (GC_state s, const char *fileName) {
 int saveWorldToFILE (GC_state s, FILE *f) {
   char buf[128];
   size_t len;
+  uintptr_t gcStateFn;
 
   if (DEBUG_WORLD)
     fprintf (stderr, "saveWorldToFILE\n");
@@ -69,6 +74,9 @@ int saveWorldToFILE (GC_state s, FILE *f) {
 
   if (fwrite (buf, 1, len, f) != len) return -1;
   if (fwrite (&s->magic, sizeof(uint32_t), 1, f) != 1) return -1;
+  gcStateFn = (uintptr_t)MLton_gcState;
+  if (fwrite (&gcStateFn, sizeof(uintptr_t), 1, f) != 1) return -1;
+  if (fwrite (&s, sizeof(uintptr_t), 1, f) != 1) return -1;
   if (fwrite (&s->heap.start, sizeof(uintptr_t), 1, f) != 1) return -1;
   if (fwrite (&s->heap.oldGenSize, sizeof(size_t), 1, f) != 1) return -1;
 
