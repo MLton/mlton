@@ -10,6 +10,9 @@
 size_t GC_size (GC_state s, pointer root) {
   struct GC_markState markState;
   size_t res;
+
+  if (not isPointer (root))
+    return 0;
   
   enter (s); /* update stack in heap, in case it is reached */
   if (DEBUG_SIZE)
