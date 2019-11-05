@@ -40,7 +40,10 @@ structure Main =
                   then ac
                else loop (i - 1, ac + valOf (peek l))
             val n = loop (10000000, 0)
-            val _ = print (concat [Int.toString n, "\n"])
+            val _ =
+               if n <> 130000000
+                  then raise Fail "bug"
+                  else ()
          in ()
          end
 
