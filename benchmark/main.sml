@@ -1,4 +1,4 @@
-(* Copyright (C) 2013,2014 Matthew Fluet.
+(* Copyright (C) 2013,2014,2019 Matthew Fluet.
  * Copyright (C) 2009 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
@@ -122,6 +122,7 @@ val benchCounts: (string * int) list =
    ("smith-normal-form", 192):: (* 41.93 sec *)
    ("string-concat", 768):: (* 93.94 sec *)
    ("tailfib", 512):: (* 35.36 sec *)
+   ("tailmerge", 24576):: (* 42.48 sec *)
    ("tak", 24):: (* 44.71 sec *)
    ("tensor", 6):: (* 34.63 sec *)
    ("tsp", 16):: (* 36.91 sec *)
