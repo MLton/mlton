@@ -156,6 +156,7 @@ structure LLVM =
             fun real r =
                (RealX.toString (r, {suffix = false}),
                 Type.Real (RealX.size r))
+            fun fnegZero rs = ("-0.0", Type.Real rs)
             (* fun undef ty = ("undef", ty) *)
             fun word w =
                (IntInf.toString (WordX.toIntInf w),
@@ -649,12 +650,24 @@ fun primApp (prim: 'a Prim.t): ({args: LLVM.Value.t list,
        | Real_mulsub rs => SOME (fn {args, mc, newTemp, $} =>
             let
                fun mk args = {args = args, mc = mc, newTemp = newTemp, $ = $}
-               val tmp = realNary ("fneg", rs) (mk [nth (args, 2)])
+               val tmp =
+                 if false
+                    then realNary ("fneg", rs) (mk [nth (args, 2)])
+                    else realNary ("fsub", rs) (mk [LLVM.Value.fnegZero rs, nth (args, 2)])
                val res = realMath ("fma", rs) (mk [nth (args, 0), nth (args, 1), tmp])
             in
                res
             end)
-       | Real_neg rs => SOME (realNary ("fneg", rs))
+       | Real_neg rs => SOME (fn {args, mc, newTemp, $} =>
+            let
+               fun mk args = {args = args, mc = mc, newTemp = newTemp, $ = $}
+               val res =
+                 if false
+                    then realNary ("fneg", rs) (mk [nth (args, 0)])
+                    else realNary ("fsub", rs) (mk [LLVM.Value.fnegZero rs, nth (args, 0)])
+            in
+               res
+            end)
        | Real_qequal rs => SOME (realCompare ("ueq", rs))
        | Real_rndToReal (_, rs) => SOME (conv (fpresize, LLVM.Type.Real rs))
        | Real_rndToWord (_, ws, {signed}) => SOME (conv (if signed then fptosi else fptoui, LLVM.Type.Word ws))
