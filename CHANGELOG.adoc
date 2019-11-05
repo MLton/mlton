@@ -2,11 +2,63 @@
 
 == Version YYYYMMDD
 
-Here are the changes from versoin 20180206 to version YYYYMMDD.
+Here are the changes from version 20180206 to version YYYYMMDD.
 
 === Summary
 
 === Details
+
+* 2019-11-05
+  ** Change `OS.IO.poll` to not be restarted when interrupted by a
+  signal.  (This is consistent with `Socket.select`.)
+
+* 2019-11-04
+  ** Detect and report incompatible use of ASLR/PIE on `load-world`.
+  ** Fix bugs in `MLton.size` and `MLton.share`; calling `MLton.size`
+  or `MLton.share` with a non-pointer variant of an object type that
+  could be represented by either a pointer or a non-pointer (e.g., the
+  `NONE` variant of an `int list option`) would segfault.
+
+* 2019-10-25
+  ** Fix a number of instances of excessive live data during compilation.
+  ** Disabled `Zone` SSA optimization pass by default; the `Zone` pass
+  is known to not be safe-for-space.
+  ** Added `MLton.sizeAll: unit -> IntInf.int` that returns the size
+  of reachable live data.
+  ** Changed `MLton.size`'s type from `'a -> int` to
+  `'a -> IntInf.int`, because with 64-bit systems, the size of a
+  single object can exceed that representable by a signed 32-bit
+  integer.
+
+* 2019-09-19
+  ** Statically allocate and initialize some global objects.  See
+  https://github.com/MLton/mlton/pull/328 for details.  Undertaken by
+  Jason Carr at RIT supported by NSF CISE Research Infrastructure
+  (CRI) award.
+
+* 2019-07-18
+  ** Add `-llvm-aamd {none|tbaa}` to control including alias-analysis
+  metadata when compiling with LLVM.  See
+  https://github.com/MLton/mlton/pull/324 for details.  Undertaken by
+  Jason Carr at RIT supported by NSF CISE Research Infrastructure
+  (CRI) award.
+
+* 2019-06-21
+  ** Improved parser combinator library (`structure Parse`) in the
+  MLton Library.  Undertaken by Jason Carr at RIT supported by NSF
+  CISE Research Infrastructure (CRI) award.
+
+* 2019-06-19
+  ** Raise values from raiser to handler via the ML stack.  See
+  https://github.com/MLton/mlton/pull/321 for details.
+
+* 2019-06-17
+  ** Various updates to `Makefile`s.  See `Makefile.config` for common
+  and user-customizable configuration.
+
+* 2019-06-07
+  ** Refactor pass infrastructure. See
+  https://github.com/MLton/mlton/pull/313 for details.
 
 * 2019-05-31
   ** Add new `BounceVars` RSSA optimization pass to split the live
