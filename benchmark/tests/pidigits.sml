@@ -100,7 +100,7 @@ struct
        | _ => usage name
 end
 (*
-val _ = OS.Process.exit (Main.main (CommandLine.name (), CommandLine.arguments ()))
+val _ = OS.Process.exit (MainShootout.main (CommandLine.name (), CommandLine.arguments ()))
 *)
 
 structure MainBenchmark =
