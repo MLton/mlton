@@ -18,11 +18,12 @@ else
 fi
 
 
-minTime="75.0"
-
-bench="string-concat vector-concat"
+minTime="30.0"
 
 cd tests
+
+bench=$(for p in $(ls *.sml); do echo $(basename $p .sml); done)
+
 for prog in $bench; do
     case "$prog" in
         "fxp")
