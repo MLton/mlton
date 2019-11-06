@@ -21,6 +21,10 @@ static void catcher (__attribute__ ((unused)) int signo,
         GC_handleSigProf ((code_pointer) ucp->uc_mcontext.mc_rip);
 #elif (defined (__i386__))
         GC_handleSigProf ((code_pointer) ucp->uc_mcontext.mc_eip);
+#elif (defined (__arm__))
+        GC_handleSigProf ((code_pointer) ucp->uc_mcontext.__gregs[_REG_PC]);
+#elif (defined (__aarch64__))
+        GC_handleSigProf ((code_pointer) ucp->uc_mcontext.mc_gpregs.gp_elr);
 #else
 #error Profiling handler is missing for this architecture
 #endif

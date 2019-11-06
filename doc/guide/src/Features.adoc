@@ -9,6 +9,7 @@ MLton has the following features.
 
 ** <:RunningOnARM:ARM>:
 *** <:RunningOnLinux:Linux> (Debian)
+*** <:RunningOnFreeBSD:FreeBSD>
 
 ** <:RunningOnAlpha:Alpha>:
 *** <:RunningOnLinux:Linux> (Debian)
