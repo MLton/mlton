@@ -752,8 +752,8 @@ fun aamd (oper, mc) =
                LLVM.ModuleContext.addMetaData
                (mc, LLVM.MetaData.node [LLVM.MetaData.string s,
                                         LLVM.MetaData.id domain])
-            val (global,gcstate,heap,other,stack) =
-               (scope "Global", scope "GCState", scope "Heap", scope "Other", scope "Stack")
+            val (gcstate,global,heap,other,stack,static) =
+               (scope "GCState", scope "Global", scope "Heap", scope "Other", scope "Stack", scope "Static")
             val scopes = [global,gcstate,heap,other,stack]
             fun scope s =
                let
@@ -783,11 +783,12 @@ fun aamd (oper, mc) =
                    * then read from the stack via a `StackOffset` by the handler.
                    *)
                   scope stack
+             | Operand.Static _ => scope static
              | Operand.StackTop => NONE (* alloca *)
              | Operand.Temporary _ => NONE (* alloca *)
              | _ => NONE (* not lvalue *)
          end
-    | Control.LLVMAliasAnalysisMetaData.TBAA {gcstate, global, heap, other, stack} =>
+    | Control.LLVMAliasAnalysisMetaData.TBAA {gcstate, global, heap, other, stack, static} =>
          let
             fun tbaa path =
                let
@@ -946,11 +947,32 @@ fun aamd (oper, mc) =
                             tbaa path
                          end)
              | Operand.StackTop => NONE (* alloca *)
+             | Operand.Static {index, offset, ty} =>
+                  (case static of
+                      NONE => NONE
+                    | SOME {cty = doCTy, index = doIndex, offset = doOffset} =>
+                         let
+                            val path = ["Static"]
+                            val path =
+                               if doIndex
+                                  then (Int.toString index)::path
+                                  else path
+                            val path =
+                               if doCTy
+                                  then (CType.name (Type.toCType ty))::path
+                                  else path
+                            val path =
+                               if doOffset
+                                  then (Bytes.toString offset)::path
+                                  else path
+                         in
+                            tbaa path
+                         end)
              | Operand.Temporary _ => NONE (* alloca *)
              | _ => NONE (* not lvalue *)
          end
 
-fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
+fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...},
             outputC: unit -> {file: File.t,
                               print: string -> unit,
                               done: unit -> unit},
@@ -1019,6 +1041,21 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
       fun temporaryVarC (ct: CType.t, index: int): LLVM.Value.t =
          (temporaryName (ct, index), LLVM.Type.Pointer (LLVM.Type.fromCType ct))
       fun temporaryVar (t, index) = temporaryVarC (Type.toCType t, index)
+      fun staticName index: string =
+         concat ["@static_", Int.toString index]
+      fun staticVal (index, mc): LLVM.Value.t =
+         let
+            val name = staticName index
+            val (Static.T {location, ...}, _) = Vector.sub (statics, index)
+            val const =
+               case location of
+                  Static.Location.ImmStatic => true
+                | Static.Location.MutStatic => false
+                | Static.Location.Heap => Error.bug "LLVMCodegen.staticVal"
+            val ty = LLVM.Type.word8
+         in
+            LLVM.ModuleContext.addGlobDecl (mc, name, {const = const, ty = ty, vis = SOME "hidden"})
+         end
 
       val gcState = ("%gcState", LLVM.Type.cpointer)
       local
@@ -1175,6 +1212,18 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                    | Operand.SequenceOffset _ => load ()
                    | Operand.StackOffset _ => load ()
                    | Operand.StackTop => load ()
+                   | Operand.Static {index, ty, offset} =>
+                        let
+                           val tmp = newTemp LLVM.Type.cpointer
+                           val res = newTemp (Type.toLLVMType ty)
+                           val _ = $(gep {dst = tmp, src = staticVal (index, mc),
+                                          args = [LLVM.Value.word
+                                                  (WordX.fromBytes
+                                                   (offset, WordSize.word32))]})
+                           val _ = $(cast {dst = res, src = tmp})
+                        in
+                           res
+                        end
                    | Operand.Temporary _ => load ()
                    | Operand.Word w => LLVM.Value.word w
                end

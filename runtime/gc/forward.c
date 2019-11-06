@@ -1,4 +1,4 @@
-/* Copyright (C) 2012,2016 Matthew Fluet.
+/* Copyright (C) 2012,2016,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -8,18 +8,18 @@
  */
 
 #if ASSERT
-bool isPointerInToSpace (GC_state s, pointer p) {
-  return (not (isPointer (p))
-          or (s->forwardState.toStart <= p and p < s->forwardState.toLimit));
+bool isPointerInToSpace (__attribute__((unused)) GC_state s, pointer p, GC_forwardState forwardState) {
+ return (not (isPointer (p))
+          or (forwardState->toStart <= p and p < forwardState->toLimit));
 }
 
-bool isObjptrInToSpace (GC_state s, objptr op) {
+bool isObjptrInToSpace (__attribute__((unused)) GC_state s, objptr op, GC_forwardState forwardState) {
   pointer p;
 
   if (not (isObjptr (op)))
     return TRUE;
-  p = objptrToPointer (op, s->forwardState.toStart);
-  return isPointerInToSpace (s, p);
+  p = objptrToPointer (op, forwardState->toStart);
+  return isPointerInToSpace (s, p, forwardState);
 }
 #endif
 
@@ -51,7 +51,7 @@ bool hasFwdPtr (pointer p) {
  * Forwards the object pointed to by *opp and updates *opp to point to
  * the new object.
  */
-void forwardObjptr (GC_state s, objptr *opp) {
+void forwardObjptr (GC_state s, objptr *opp, GC_forwardState forwardState) {
   objptr op;
   pointer p;
 
@@ -107,21 +107,21 @@ void forwardObjptr (GC_state s, objptr *opp) {
       skip = stack->reserved - stack->used;
     }
     size = metaDataBytes + objectBytes;
-    assert (s->forwardState.back + size + skip <= s->forwardState.toLimit);
+    assert (forwardState->back + size + skip <= forwardState->toLimit);
     /* Copy the object. */
-    GC_memcpy (p - metaDataBytes, s->forwardState.back, size);
+    GC_memcpy (p - metaDataBytes, forwardState->back, size);
     /* If the object has a valid weak pointer, link it into the weaks
      * for update after the copying GC is done.
      */
     if ((WEAK_TAG == tag) and (numObjptrs == 1)) {
       GC_weak w;
 
-      w = (GC_weak)(s->forwardState.back + GC_NORMAL_METADATA_SIZE + offsetofWeak (s));
+      w = (GC_weak)(forwardState->back + GC_NORMAL_METADATA_SIZE + offsetofWeak (s));
       if (DEBUG_WEAK)
         fprintf (stderr, "forwarding weak "FMTPTR" ",
                  (uintptr_t)w);
       if (isObjptr (w->objptr)
-          and (not s->forwardState.amInMinorGC
+          and (not forwardState->amInMinorGC
                or isObjptrInNursery (s, w->objptr))) {
         if (DEBUG_WEAK)
           fprintf (stderr, "linking\n");
@@ -133,12 +133,12 @@ void forwardObjptr (GC_state s, objptr *opp) {
       }
     }
     /* Store the forwarding pointer in the old object header. */
-    *(getFwdPtrp(p)) = pointerToObjptr (s->forwardState.back + metaDataBytes,
-                                        s->forwardState.toStart);
+    *(getFwdPtrp(p)) = pointerToObjptr (forwardState->back + metaDataBytes,
+                                        forwardState->toStart);
     assert (hasFwdPtr(p));
     /* Update the back of the queue. */
-    s->forwardState.back += size + skip;
-    assert (isAligned ((size_t)s->forwardState.back + GC_NORMAL_METADATA_SIZE,
+    forwardState->back += size + skip;
+    assert (isAligned ((size_t)forwardState->back + GC_NORMAL_METADATA_SIZE,
                        s->alignment));
   }
   *opp = getFwdPtr(p);
@@ -146,27 +146,50 @@ void forwardObjptr (GC_state s, objptr *opp) {
     fprintf (stderr,
              "forwardObjptr --> *opp = "FMTPTR"\n",
              (uintptr_t)*opp);
-  assert (isObjptrInToSpace (s, *opp));
+  assert (isObjptrInToSpace (s, *opp, forwardState));
 }
 
-void forwardObjptrIfInNursery (GC_state s, objptr *opp) {
+void forwardObjptrIfInNursery (GC_state s, objptr *opp, GC_forwardState forwardState) {
   objptr op;
   pointer p;
 
   op = *opp;
   p = objptrToPointer (op, s->heap.start);
-  if (p < s->heap.nursery)
+  if ((p < s->heap.nursery) or (p > s->frontier))
     return;
   if (DEBUG_GENERATIONAL)
     fprintf (stderr,
              "forwardObjptrIfInNursery  opp = "FMTPTR"  op = "FMTOBJPTR"  p = "FMTPTR"\n",
              (uintptr_t)opp, op, (uintptr_t)p);
   assert (s->heap.nursery <= p and p < s->limitPlusSlop);
-  forwardObjptr (s, opp);
+  forwardObjptr (s, opp, forwardState);
+}
+void forwardObjptrIfInNurseryFun (GC_state s, objptr *opp, void *env) {
+  forwardObjptrIfInNursery(s, opp, env);
+}
+
+void forwardObjptrIfInHeap (GC_state s, objptr *opp, GC_forwardState forwardState) {
+  objptr op;
+  pointer p;
+
+  op = *opp;
+  p = objptrToPointer (op, s->heap.start);
+
+  if ((p < s->heap.start) or (p > s->frontier))
+    return;
+  if (DEBUG_DETAILED)
+    fprintf (stderr,
+             "forwardObjptrIfInHeap  opp = "FMTPTR"  op = "FMTOBJPTR"  p = "FMTPTR"\n",
+             (uintptr_t)opp, op, (uintptr_t)p);
+  assert (s->heap.start <= p and p < s->limitPlusSlop);
+  forwardObjptr (s, opp, forwardState);
+}
+void forwardObjptrIfInHeapFun (GC_state s, objptr *opp, void *env) {
+  forwardObjptrIfInHeap(s, opp, env);
 }
 
 /* Walk through all the cards and forward all intergenerational pointers. */
-void forwardInterGenerationalObjptrs (GC_state s) {
+void forwardInterGenerationalObjptrs (GC_state s, GC_forwardState forwardState) {
   GC_cardMapElem *cardMap;
   GC_crossMapElem *crossMap;
   pointer oldGenStart, oldGenEnd;
@@ -174,6 +197,9 @@ void forwardInterGenerationalObjptrs (GC_state s) {
   size_t cardIndex, maxCardIndex;
   pointer cardStart, cardEnd;
   pointer objectStart;
+
+  struct GC_foreachObjptrClosure forwardObjptrIfInNurseryClosure =
+    {.fun = forwardObjptrIfInNurseryFun, .env = forwardState};
 
   if (DEBUG_GENERATIONAL)
     fprintf (stderr, "Forwarding inter-generational pointers.\n");
@@ -218,7 +244,7 @@ checkCard:
      * weaks, since the weak pointer will never be into the nursery.
      */
     objectStart = foreachObjptrInRange (s, objectStart, &cardEnd,
-                                        forwardObjptrIfInNursery, FALSE);
+                                        &forwardObjptrIfInNurseryClosure, FALSE);
     s->cumulativeStatistics.bytesScannedMinor += (uintmax_t)(objectStart - lastObject);
     if (objectStart == oldGenEnd)
       goto done;

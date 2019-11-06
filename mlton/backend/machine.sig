@@ -76,12 +76,15 @@ signature MACHINE =
                                   ty: Type.t}
              | StackOffset of StackOffset.t
              | StackTop
+             | Static of {index: int,
+                          offset: Bytes.t,
+                          ty: Type.t}
              | Temporary of Temporary.t
              | Word of WordX.t
 
             val equals: t * t -> bool
             val interfere: t * t -> bool
-            val isLocation: t -> bool
+            val isDestination: t -> bool
             val layout: t -> Layout.t
             val stackOffset: {offset: Bytes.t, ty: Type.t} -> t
             val gcField: Runtime.GCField.t -> t
@@ -232,6 +235,7 @@ signature MACHINE =
             val chunkLabel: t -> ChunkLabel.t
          end
 
+
       structure Program:
          sig
             datatype t =
@@ -243,9 +247,9 @@ signature MACHINE =
                             label: Label.t},
                      maxFrameSize: Bytes.t,
                      objectTypes: Type.ObjectType.t vector,
-                     reals: (Global.t * RealX.t) list,
+                     reals: (RealX.t * Global.t) list,
                      sourceMaps: SourceMaps.t option,
-                     vectors: (Global.t * WordXVector.t) list}
+                     statics: (int Static.t * Global.t option) vector}
 
             val clearLabelNames: t -> unit
             val layouts: t * (Layout.t -> unit) -> unit

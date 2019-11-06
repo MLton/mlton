@@ -663,16 +663,9 @@ fun makeOptions {usage} =
         Int (fn n => optFuel := SOME n)),
        (Expert, "opt-passes", " {default|minimal}", "level of optimizations",
         SpaceString (fn s =>
-                     let
-                        fun err s =
-                           usage (concat ["invalid -opt-passes flag: ", s])
-                     in
-                        List.foreach
-                        (!optimizationPasses, fn {il,set,...} =>
-                         case set s of
-                            Result.Yes () => ()
-                          | Result.No s' => err (concat [s', "(for ", il, ")"]))
-                     end)),
+                     case Control.OptimizationPasses.setAll s of
+                        Result.No s => usage (concat ["invalid -opt-passes flag: ", s])
+                      | Result.Yes () => ())),
        (Normal, "output", " <file>", "name of output file",
         SpaceString (fn s => output := SOME s)),
        (Expert, "polyvariance", " {true|false}", "use polyvariance",
@@ -745,6 +738,9 @@ fun makeOptions {usage} =
                             | "time-label" => ProfileTimeLabel
                             | _ => usage (concat
                                           ["invalid -profile arg: ", s]))))),
+       (Expert, "profile-block", " {false|true}",
+        "profile IL blocks in addition to IL functions",
+        boolRef profileBlock),
        (Normal, "profile-branch", " {false|true}",
         "profile branches in addition to functions",
         boolRef profileBranch),
@@ -835,23 +831,46 @@ fun makeOptions {usage} =
        (Expert, "ssa-passes", " <passes>", "ssa optimization passes",
         SpaceString
         (fn s =>
-         case List.peek (!Control.optimizationPasses,
-                         fn {il, ...} => String.equals ("ssa", il)) of
-            SOME {set, ...} =>
-               (case set s of
-                   Result.Yes () => ()
-                 | Result.No s' => usage (concat ["invalid -ssa-passes arg: ", s']))
-          | NONE => Error.bug "ssa optimization passes missing")),
+         case Control.OptimizationPasses.set {il = "ssa", passes = s} of
+            Result.Yes () => ()
+          | Result.No s => usage (concat ["invalid -ssa-passes arg: ", s]))),
        (Expert, "ssa2-passes", " <passes>", "ssa2 optimization passes",
         SpaceString
         (fn s =>
-         case List.peek (!Control.optimizationPasses,
-                         fn {il, ...} => String.equals ("ssa2", il)) of
-            SOME {set, ...} =>
-               (case set s of
-                   Result.Yes () => ()
-                 | Result.No s' => usage (concat ["invalid -ssa2-passes arg: ", s']))
-          | NONE => Error.bug "ssa2 optimization passes missing")),
+         case Control.OptimizationPasses.set {il = "ssa2", passes = s} of
+            Result.Yes () => ()
+          | Result.No s => usage (concat ["invalid -ssa2-passes arg: ", s]))),
+       (Expert, "static-alloc-arrays", " {true|false}",
+        "Allow arrays to be statically allocated",
+        boolRef staticAllocArrays),
+       (Expert, "static-alloc-internal-ptrs", " {all|static|none}",
+        "which pointers to allow in statically allocated values",
+        SpaceString (fn s =>
+                     staticAllocInternalPtrs :=
+                     (case s of
+                         "all" => Control.All
+                       | "none" => Control.None
+                       | "static" => Control.Static
+                       | _ => usage (concat ["invalid ",
+                       "-static-alloc-internal-ptrs flag: ", s])))),
+       (Expert, "static-alloc-objects", " {true|false}",
+        "Allow objects to be statically allocated",
+        boolRef staticAllocObjects),
+       (Expert, "static-alloc-wordvector-consts", " {true|false}",
+        "Allow word-vector constants (strings) to be statically allocated",
+        boolRef staticAllocWordVectorConsts),
+       (Expert, "static-init-arrays", " {true|false}",
+        "Allow arrays to be statically initialized",
+        boolRef staticInitArrays),
+       (Expert, "static-init-objects", " {none|staticAllocOnly|all}",
+        "Allow objects to be statically initialized",
+        SpaceString
+        (fn s =>
+         staticInitObjects := (case s of
+                                  "none" => NONE
+                                | "staticAllocOnly" => SOME false
+                                | "all" => SOME true
+                                | _ => usage (concat ["invalid -static-init-objects arg: ", s])))),
        (Normal, "stop", " {f|g|o|tc}", "when to stop",
         SpaceString
         (fn s =>
@@ -871,13 +890,9 @@ fun makeOptions {usage} =
        (Expert, "sxml-passes", " <passes>", "sxml optimization passes",
         SpaceString
         (fn s =>
-         case List.peek (!Control.optimizationPasses,
-                         fn {il, ...} => String.equals ("sxml", il)) of
-            SOME {set, ...} =>
-               (case set s of
-                   Result.Yes () => ()
-                 | Result.No s' => usage (concat ["invalid -sxml-passes arg: ", s']))
-          | NONE => Error.bug "sxml optimization passes missing")),
+         case Control.OptimizationPasses.set {il = "sxml", passes = s} of
+            Result.Yes () => ()
+          | Result.No s => usage (concat ["invalid -sxml-passes arg: ", s]))),
        (Normal, "target",
         concat [" {",
                 (case targetMap () of
@@ -953,13 +968,9 @@ fun makeOptions {usage} =
        (Expert, "xml-passes", " <passes>", "xml optimization passes",
         SpaceString
         (fn s =>
-         case List.peek (!Control.optimizationPasses,
-                         fn {il, ...} => String.equals ("xml", il)) of
-            SOME {set, ...} =>
-               (case set s of
-                   Result.Yes () => ()
-                 | Result.No s' => usage (concat ["invalid -xml-passes arg: ", s']))
-          | NONE => Error.bug "xml optimization passes missing")),
+         case Control.OptimizationPasses.set {il = "xml", passes = s} of
+            Result.Yes () => ()
+          | Result.No s => usage (concat ["invalid -xml-passes arg: ", s]))),
        (Expert, "zone-cut-depth", " <n>", "zone cut depth",
         intRef zoneCutDepth)
        ],

@@ -28,12 +28,10 @@ struct GC_state {
   uint32_t atomicState;
   objptr callFromCHandlerThread; /* Handler for exported C calls (in heap). */
   pointer callFromCOpArgsResPtr; /* Pass op, args, and res from exported C call */
-  struct GC_callStackState callStackState;
   bool canMinor; /* TRUE iff there is space for a minor gc. */
   struct GC_controls controls;
   struct GC_cumulativeStatistics cumulativeStatistics;
   objptr currentThread; /* Currently executing thread (in heap). */
-  struct GC_forwardState forwardState;
   GC_frameInfo frameInfos; /* Array of frame infos. */
   uint32_t frameInfosLength; /* Cardinality of frameInfos array. */
   struct GC_generationalMaps generationalMaps;
@@ -48,6 +46,8 @@ struct GC_state {
   uint32_t maxFrameSize;
   bool mutatorMarksCards;
   GC_objectHashTable objectHashTable;
+  struct GC_objectInit *objectInits;
+  uint32_t objectInitsLength;
   GC_objectType objectTypes; /* Array of object types. */
   uint32_t objectTypesLength; /* Cardinality of objectTypes array. */
   struct GC_profiling profiling;
@@ -63,9 +63,6 @@ struct GC_state {
   struct GC_sourceMaps sourceMaps;
   pointer stackBottom; /* Bottom of stack in current thread. */
   struct GC_sysvals sysvals;
-  struct GC_translateState translateState;
-  struct GC_vectorInit *vectorInits;
-  uint32_t vectorInitsLength;
   GC_weak weaks; /* Linked list of (live) weak pointers */
 };
 

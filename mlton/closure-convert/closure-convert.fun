@@ -179,7 +179,12 @@ structure LambdaInfo =
                ty: Type.t option ref
                }
 
-      fun frees (T {frees, ...}) = !frees
+      local
+         fun mk sel (T r) = sel r
+      in
+         val frees = ! o mk #frees
+         val name = mk #name
+      end
    end
 
 structure VarInfo =
@@ -505,8 +510,13 @@ fun closureConvert
                      val cons =
                         Vector.fromListMap
                         (Lambdas.toList ls, fn l =>
-                         {lambda = Value.Lambda.dest l,
-                          con = Con.newString "Env"})
+                         let
+                            val lambda = Value.Lambda.dest l
+                            val name = LambdaInfo.name (lambdaInfo lambda)
+                            val con = Con.newString (Func.originalName name ^ "Env")
+                         in
+                            {lambda = lambda, con = con}
+                         end)
                      val ty = Type.datatypee tycon
                      val info = {ty = ty, cons = cons}
                      val _ = r := SOME info

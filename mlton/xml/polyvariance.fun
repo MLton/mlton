@@ -70,8 +70,16 @@ fun lambdaSize (Program.T {body, ...}): Lambda.t -> int =
                      | SOME e => loopExp (e, n)),
                    loopExp)
                end
-          | Handle {try, handler, ...} =>
-               loopExp (try, loopExp (handler, n + 1))
+          | Handle {try, catch = (catchVar, _), handler} =>
+               (case Exp.dest handler of
+                   {decs = [MonoVal {exp = Profile (ProfileExp.Leave _), ...},
+                            MonoVal {var = raiseVar, exp = Raise {exn = exnVar, ...}, ...}],
+                    result = resultVar} =>
+                      if VarExp.equals (VarExp.mono catchVar, exnVar)
+                         andalso VarExp.equals (VarExp.mono raiseVar, resultVar)
+                         then loopExp (try, n - 1)
+                         else loopExp (try, loopExp (handler, n + 1))
+                  | _ => loopExp (try, loopExp (handler, n + 1)))
           | Lambda l => loopLambda (l, n + 1)
           | Profile _ => n
           | _ => n + 1
@@ -435,7 +443,16 @@ val transform =
                        val p =
                           Control.simplifyPass
                           {arg = p,
-                           doit = fn p => shrink (transform (p, hofo, small, product)),
+                           doit = fn p => (Control.diagnostics
+                                           (fn layout =>
+                                            layout (let
+                                                       open Layout
+                                                    in
+                                                       seq [str "duplicate",
+                                                            Int.layout (n+1),
+                                                            str ":"]
+                                                    end))
+                                           ; shrink (transform (p, hofo, small, product))),
                            execute = true,
                            keepIL = false,
                            name = concat ["duplicate", Int.toString (n + 1)],

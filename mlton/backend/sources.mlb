@@ -20,6 +20,8 @@ local
    object-type.sig
    rep-type.sig
    rep-type.fun
+   static.sig
+   static.fun
 
    backend-atoms.sig
    backend-atoms.fun
@@ -30,6 +32,10 @@ local
 
    rssa-tree.sig
    rssa-tree.fun
+   rssa-type-check.sig
+   rssa-type-check.fun
+   rssa-shrink.sig
+   rssa-shrink.fun
    rssa-live.sig
    rssa-live.fun
    rssa-restore.sig

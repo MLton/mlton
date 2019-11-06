@@ -1,4 +1,4 @@
-/* Copyright (C) 2010,2012,2016 Matthew Fluet.
+/* Copyright (C) 2010,2012,2016,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -45,13 +45,17 @@ void copyForThreadInternal (pointer dst, pointer src) {
   }
 }
 
-void threadInternalObjptr (GC_state s, objptr *opp) {
+void threadInternalObjptr (GC_state s, objptr *opp,
+                           __attribute__((unused)) void *env) {
   objptr opop;
   pointer p;
   GC_header *headerp;
 
   opop = pointerToObjptr ((pointer)opp, s->heap.start);
   p = objptrToPointer (*opp, s->heap.start);
+  if (not isPointerInHeap (s, p))
+      return;
+
   if (FALSE)
     fprintf (stderr,
              "threadInternal opp = "FMTPTR"  p = "FMTPTR"  header = "FMTHDR"\n",
@@ -182,7 +186,9 @@ thread:
       gap += skipGap;
       front += size + skipFront;
       endOfLastMarked = front;
-      foreachObjptrInObject (s, p, threadInternalObjptr, FALSE);
+      struct GC_foreachObjptrClosure threadInternalObjptrClosure =
+        {.fun = threadInternalObjptr, .env = NULL};
+      foreachObjptrInObject (s, p, &threadInternalObjptrClosure, FALSE);
       goto updateObject;
     } else {
       /* It's not marked. */
@@ -196,6 +202,7 @@ thread:
     objptr newObjptr;
 
     assert (not (GC_VALID_HEADER_MASK & header));
+    assert (isPointerInHeap (s, (pointer)headerp));
     /* It's a pointer.  This object must be live.  Fix all the forward
      * pointers to it, store its header, then thread its internal
      * pointers.
@@ -327,6 +334,7 @@ unmark:
     objptr newObjptr;
 
     assert (not (GC_VALID_HEADER_MASK & header));
+    assert (isPointerInHeap (s, (pointer)headerp));
     /* It's a pointer.  This object must be live.  Fix all the
      * backward pointers to it.  Then unmark it.
      */
@@ -374,17 +382,28 @@ void majorMarkCompactGC (GC_state s) {
              uintmaxToCommaString(s->heap.size));
   }
   currentStack = getStackCurrent (s);
+  struct GC_markState markState;
+  markState.mode = MARK_MODE;
+  markState.size = 0;
   if (s->hashConsDuringGC) {
     s->lastMajorStatistics.bytesHashConsed = 0;
     s->cumulativeStatistics.numHashConsGCs++;
     s->objectHashTable = allocHashTable (s);
-    foreachGlobalObjptr (s, dfsMarkWithHashConsWithLinkWeaks);
-    freeHashTable (s->objectHashTable);
+    markState.shouldHashCons = TRUE;
   } else {
-    foreachGlobalObjptr (s, dfsMarkWithoutHashConsWithLinkWeaks);
+    markState.shouldHashCons = FALSE;
+  }
+  markState.shouldLinkWeaks = TRUE;
+  struct GC_foreachObjptrClosure dfsMarkObjptrClosure =
+    {.fun = dfsMarkObjptrFun, .env = &markState};
+  foreachGlobalObjptr (s, &dfsMarkObjptrClosure);
+  if (s->hashConsDuringGC) {
+    freeHashTable (s->objectHashTable);
   }
   updateWeaksForMarkCompact (s);
-  foreachGlobalObjptr (s, threadInternalObjptr);
+  struct GC_foreachObjptrClosure threadInternalObjptrClosure =
+    {.fun = threadInternalObjptr, .env = NULL};
+  foreachGlobalObjptr (s, &threadInternalObjptrClosure);
   updateForwardPointersForMarkCompact (s, currentStack);
   updateBackwardPointersAndSlideForMarkCompact (s, currentStack);
   bytesHashConsed = s->lastMajorStatistics.bytesHashConsed;

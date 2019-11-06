@@ -292,7 +292,8 @@ signature CONTROL_FLAGS =
                         global: {cty: bool, index: bool} option,
                         heap: {cty: bool, kind: bool, offset: bool, tycon: bool} option,
                         other: bool,
-                        stack: {offset: bool} option}
+                        stack: {offset: bool} option,
+                        static: {cty: bool, index: bool, offset: bool} option}
             val toString: t -> string
             val fromString: string -> t option
          end
@@ -354,9 +355,15 @@ signature CONTROL_FLAGS =
 
       val optFuelAvailAndUse: unit -> bool
 
-      val optimizationPasses:
-         {il: string, set: string -> unit Result.t, get: unit -> string} list ref
-      
+      (* Control IL-specific optimization passes *)
+      structure OptimizationPasses:
+         sig
+            val register: {il: string,
+                           set: string -> unit Result.t} -> unit
+            val set: {il: string, passes: string} -> unit Result.t
+            val setAll: string -> unit Result.t
+         end
+
       val positionIndependent : bool ref
 
       (* Only duplicate big functions when
@@ -386,6 +393,8 @@ signature CONTROL_FLAGS =
        | ProfileTimeField
        | ProfileTimeLabel
       val profile: profile ref
+
+      val profileBlock: bool ref
 
       val profileBranch: bool ref
 
@@ -420,6 +429,20 @@ signature CONTROL_FLAGS =
        | Smart (* split only when smaller than two, default *)
        | Always
       val splitTypesBool: splitTypesBool ref
+
+      datatype staticAllocInternalPtrs =
+         All
+       | Static
+       | None
+      val staticAllocInternalPtrs: staticAllocInternalPtrs ref
+
+      val staticInitArrays: bool ref
+      val staticAllocArrays: bool ref
+
+      val staticInitObjects: bool option ref
+      val staticAllocObjects: bool ref
+
+      val staticAllocWordVectorConsts: bool ref
 
       (* List of pass names to stop at. *)
       val stopPasses: Regexp.Compiled.t list ref

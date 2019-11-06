@@ -1,4 +1,4 @@
-/* Copyright (C) 2010 Matthew Fluet.
+/* Copyright (C) 2010,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -11,16 +11,25 @@
 /*                          translateHeap                           */
 /* ---------------------------------------------------------------- */
 
-void translateObjptr (GC_state s, 
-                      objptr *opp) {
+typedef struct GC_translateState {
+  pointer from;
+  pointer to;
+  size_t size;
+} *GC_translateState;
+
+void translateFun (__attribute__((unused)) GC_state s, objptr *opp, void *env) {
+  GC_translateState translateState = env;
   pointer p;
   pointer from, to;
 
-  from = s->translateState.from;
-  to = s->translateState.to;
+  from = translateState->from;
+  to = translateState->to;
   p = objptrToPointer (*opp, from);
-  p = (p - from) + to;
-  *opp = pointerToObjptr (p, to);
+  if ((from <= p) and
+      (p < from + translateState->size)) {
+    p = (p - from) + to;
+    *opp = pointerToObjptr (p, to);
+  }
 }
 
 /* translateHeap (s, from, to, size)
@@ -37,10 +46,10 @@ void translateHeap (GC_state s, pointer from, pointer to, size_t size) {
              uintmaxToCommaString(size),
              (uintptr_t)to,
              (uintptr_t)from);
-  s->translateState.from = from;
-  s->translateState.to = to;
+  struct GC_translateState translateState = {.from = from, .to = to, .size = size};
+  struct GC_foreachObjptrClosure translateClosure = {.fun = translateFun, .env = &translateState};
   /* Translate globals and heap. */
-  foreachGlobalObjptr (s, translateObjptr);
+  foreachGlobalObjptr (s, &translateClosure);
   limit = to + size;
-  foreachObjptrInRange (s, alignFrontier (s, to), &limit, translateObjptr, FALSE);
+  foreachObjptrInRange (s, alignFrontier (s, to), &limit, &translateClosure, FALSE);
 }

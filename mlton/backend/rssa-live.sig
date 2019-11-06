@@ -9,7 +9,7 @@
 
 signature RSSA_LIVE_STRUCTS =
    sig
-      include RSSA_TREE
+      include RSSA_SHRINK
    end
 
 signature RSSA_LIVE =

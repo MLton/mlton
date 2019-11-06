@@ -30,26 +30,20 @@ structure MLtonCallStack =
          if not keep
             then []
          else
-            let
-               val skip = Array.length a - 1
-            in
-               Array.foldri
-               (fn (i, frameIndex, ac) =>
-                if i >= skip
-                   then ac
-                else
-                   let
-                      val p = frameIndexSourceSeq (gcState (), frameIndex)
-                      val max = Int32.toInt (Pointer.getInt32 (p, 0))
-                      fun loop (j, ac) =
-                         if j > max
-                            then ac
-                         else loop (j + 1,
-                                    CUtil.C_String.toString (sourceName (gcState (), Pointer.getWord32 (p, j)))
-                                    :: ac)
-                   in
-                      loop (1, ac)
-                   end)
-               [] a
-            end
+            Array.foldr
+            (fn (frameIndex, ac) =>
+             let
+                val p = frameIndexSourceSeq (gcState (), frameIndex)
+                val max = Int32.toInt (Pointer.getInt32 (p, 0))
+                fun loop (j, ac) =
+                   if j > max
+                      then ac
+                      else loop (j + 1,
+                                 CUtil.C_String.toString
+                                 (sourceName (gcState (), Pointer.getWord32 (p, j)))
+                                 :: ac)
+             in
+                loop (1, ac)
+             end)
+            [] a
    end

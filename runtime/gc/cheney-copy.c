@@ -1,4 +1,4 @@
-/* Copyright (C) 2012,2016 Matthew Fluet.
+/* Copyright (C) 2012,2016,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -47,6 +47,8 @@ void swapHeapsForCheneyCopy (GC_state s) {
 
 void majorCheneyCopyGC (GC_state s) {
   size_t bytesCopied;
+  struct GC_forwardState forwardState;
+  struct GC_foreachObjptrClosure forwardObjptrIfInHeapClosure;
   struct rusage ru_start;
   pointer toStart;
 
@@ -54,7 +56,6 @@ void majorCheneyCopyGC (GC_state s) {
   if (detailedGCTime (s))
     startTiming (&ru_start);
   s->cumulativeStatistics.numCopyingGCs++;
-  s->forwardState.amInMinorGC = FALSE;
   if (DEBUG or s->controls.messages) {
     fprintf (stderr, 
              "[GC: Starting major Cheney-copy;]\n");
@@ -67,8 +68,6 @@ void majorCheneyCopyGC (GC_state s) {
              (uintptr_t)(s->secondaryHeap.start), 
              uintmaxToCommaString(s->secondaryHeap.size));
   }
-  s->forwardState.toStart = s->secondaryHeap.start;
-  s->forwardState.toLimit = s->secondaryHeap.start + s->secondaryHeap.size;
   assert (s->secondaryHeap.start != (pointer)NULL);
   /* The next assert ensures there is enough space for the copy to
    * succeed.  It does not assert 
@@ -77,11 +76,17 @@ void majorCheneyCopyGC (GC_state s) {
    */
   assert (s->secondaryHeap.size >= s->heap.oldGenSize);
   toStart = alignFrontier (s, s->secondaryHeap.start);
-  s->forwardState.back = toStart;
-  foreachGlobalObjptr (s, forwardObjptr);
-  foreachObjptrInRange (s, toStart, &s->forwardState.back, forwardObjptr, TRUE);
+  forwardState.amInMinorGC = FALSE;
+  forwardState.toStart = s->secondaryHeap.start;
+  forwardState.toLimit = s->secondaryHeap.start + s->secondaryHeap.size;
+  forwardState.back = toStart;
+  forwardObjptrIfInHeapClosure.fun = forwardObjptrIfInHeapFun;
+  forwardObjptrIfInHeapClosure.env = &forwardState;
+  foreachGlobalObjptr (s, &forwardObjptrIfInHeapClosure);
+  foreachObjptrInRange (s, toStart, &forwardState.back,
+                        &forwardObjptrIfInHeapClosure, TRUE);
   updateWeaksForCheneyCopy (s);
-  s->secondaryHeap.oldGenSize = (size_t)(s->forwardState.back - s->secondaryHeap.start);
+  s->secondaryHeap.oldGenSize = (size_t)(forwardState.back - s->secondaryHeap.start);
   bytesCopied = s->secondaryHeap.oldGenSize;
   s->cumulativeStatistics.bytesCopied += bytesCopied;
   swapHeapsForCheneyCopy (s);
@@ -101,6 +106,8 @@ void majorCheneyCopyGC (GC_state s) {
 void minorCheneyCopyGC (GC_state s) {
   size_t bytesAllocated;
   size_t bytesCopied;
+  struct GC_forwardState forwardState;
+  struct GC_foreachObjptrClosure forwardObjptrIfInNurseryClosure;
   struct rusage ru_start;
 
   if (DEBUG_GENERATIONAL)
@@ -117,7 +124,6 @@ void minorCheneyCopyGC (GC_state s) {
     if (detailedGCTime (s))
       startTiming (&ru_start);
     s->cumulativeStatistics.numMinorGCs++;
-    s->forwardState.amInMinorGC = TRUE;
     if (DEBUG_GENERATIONAL or s->controls.messages) {
       fprintf (stderr, 
                "[GC: Starting minor Cheney-copy;]\n");
@@ -126,20 +132,23 @@ void minorCheneyCopyGC (GC_state s) {
                (uintptr_t)(s->heap.nursery),
                uintmaxToCommaString(bytesAllocated));
     }
-    s->forwardState.toStart = s->heap.start + s->heap.oldGenSize;
-    assert (isFrontierAligned (s, s->forwardState.toStart));
-    s->forwardState.toLimit = s->forwardState.toStart + bytesAllocated;
     assert (invariantForGC (s));
-    s->forwardState.back = s->forwardState.toStart;
+    forwardState.amInMinorGC = TRUE;
+    forwardState.toStart = s->heap.start + s->heap.oldGenSize;
+    forwardState.toLimit = forwardState.toStart + bytesAllocated;
+    forwardState.back = forwardState.toStart;
+    forwardObjptrIfInNurseryClosure.fun = forwardObjptrIfInNurseryFun;
+    forwardObjptrIfInNurseryClosure.env = &forwardState;
+    assert (isFrontierAligned (s, forwardState.toStart));
     /* Forward all globals.  Would like to avoid doing this once all
      * the globals have been assigned.
      */
-    foreachGlobalObjptr (s, forwardObjptrIfInNursery);
-    forwardInterGenerationalObjptrs (s);
-    foreachObjptrInRange (s, s->forwardState.toStart, &s->forwardState.back, 
-                          forwardObjptrIfInNursery, TRUE);
+    foreachGlobalObjptr (s, &forwardObjptrIfInNurseryClosure);
+    forwardInterGenerationalObjptrs (s, &forwardState);
+    foreachObjptrInRange (s, forwardState.toStart, &forwardState.back,
+                          &forwardObjptrIfInNurseryClosure, TRUE);
     updateWeaksForCheneyCopy (s);
-    bytesCopied = (size_t)(s->forwardState.back - s->forwardState.toStart);
+    bytesCopied = (size_t)(forwardState.back - forwardState.toStart);
     s->cumulativeStatistics.bytesCopiedMinor += bytesCopied;
     s->heap.oldGenSize += bytesCopied;
     s->lastMajorStatistics.numMinorGCs++;

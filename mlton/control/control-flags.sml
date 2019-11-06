@@ -1045,20 +1045,22 @@ structure LLVMAliasAnalysisMetaData =
                   global: {cty: bool, index: bool} option,
                   heap: {cty: bool, kind: bool, offset: bool, tycon: bool} option,
                   other: bool,
-                  stack: {offset: bool} option}
+                  stack: {offset: bool} option,
+                  static: {cty: bool, index: bool, offset: bool} option}
 
       val tbaaDefault =
          TBAA {gcstate = SOME {offset = false},
                global = SOME {cty = false, index = false},
                heap = SOME {cty = false, kind = false, offset = false, tycon = false},
                other = true,
-               stack = SOME {offset = false}}
+               stack = SOME {offset = false},
+               static = SOME {cty = false, index = false, offset = false}}
 
       fun toString aamd =
          case aamd of
             None => "none"
           | Scope => "scope"
-          | TBAA {gcstate, global, heap, other, stack} =>
+          | TBAA {gcstate, global, heap, other, stack, static} =>
                let
                   open Layout
                in
@@ -1085,7 +1087,13 @@ structure LLVMAliasAnalysisMetaData =
                      ("stack",
                       Option.layout (fn {offset} =>
                                      record [("offset", Bool.layout offset)])
-                      stack)]))
+                      stack),
+                     ("static",
+                      Option.layout (fn {cty, index, offset} =>
+                                     record [("cty", Bool.layout cty),
+                                             ("index", Bool.layout index),
+                                             ("offset", Bool.layout offset)])
+                      static)]))
                end
       fun fromString s =
          let
@@ -1115,7 +1123,13 @@ structure LLVMAliasAnalysisMetaData =
                          nfield ("other", bool) >>= (fn other =>
                          nfield ("stack", option (cbrack (ffield ("offset", bool) >>= (fn offset =>
                                                           pure {offset = offset})))) >>= (fn stack =>
-                         pure (TBAA {gcstate = gcstate, global = global, heap = heap, other = other, stack = stack})))))))
+                         nfield ("static", option (cbrack (ffield ("cty", bool) >>= (fn cty =>
+                                                           nfield ("index", bool) >>= (fn index =>
+                                                           nfield ("offset", bool) >>= (fn offset =>
+                                                           pure {cty = cty,
+                                                                 index = index,
+                                                                 offset = offset})))))) >>= (fn static =>
+                         pure (TBAA {gcstate = gcstate, global = global, heap = heap, other = other, stack = stack, static = static}))))))))
                 <|>
                 pure tbaaDefault)]
                <* failing next
@@ -1223,12 +1237,41 @@ fun optFuelAvailAndUse () =
  *)
 val _ = optFuelAvailAndUse
 
-val optimizationPasses:
-   {il: string, set: string -> unit Result.t, get: unit -> string} list ref =
-   control {name = "optimizationPasses",
-            default = [],
-            toString = List.toString 
-                       (fn {il,get,...} => concat ["<",il,"::",get (),">"])}
+(* Control IL-specific optimization passes *)
+structure OptimizationPasses =
+   struct
+      val optPasses: {il: string, passes: string} list ref =
+         control {name = "optimizationPasses",
+                  default = [],
+                  toString = List.toString (fn {il, passes} =>
+                                            concat ["<",il,"::",passes,">"])}
+      val optPassesSets: {il: string, set: string -> unit Result.t} list ref =
+         ref []
+
+      fun register {il, set} =
+         let
+            val set = fn passes =>
+               (optPasses := List.map (!optPasses, fn z =>
+                                       if String.equals (il, #il z)
+                                          then {il = il, passes = passes}
+                                          else z)
+                ; set passes)
+         in
+            List.push (optPassesSets, {il = il, set = set})
+         end
+
+      fun set {il, passes} =
+         case List.peek (!optPassesSets, fn z => String.equals (il, #il z)) of
+            NONE => Error.bug (concat ["Control.OptimizationPasses.set: ", il, " not found"])
+          | SOME {set, ...} => set passes
+      fun setAll passes =
+         List.foldr (!optPassesSets, Result.Yes (), fn ({il, set}, res) =>
+                     case res of
+                        Result.No s => Result.No s
+                      | Result.Yes () => (case set passes of
+                                             Result.No s => Result.No (concat [s, " (for ", il, ")"])
+                                           | Result.Yes () => Result.Yes ()))
+   end
 
 val polyvariance =
    control {name = "polyvariance",
@@ -1288,6 +1331,10 @@ datatype profile = datatype Profile.t
 val profile = control {name = "profile",
                        default = ProfileNone,
                        toString = Profile.toString}
+
+val profileBlock = control {name = "profile block",
+                            default = false,
+                            toString = Bool.toString}
 
 val profileBranch = control {name = "profile branch",
                              default = false,
@@ -1356,6 +1403,51 @@ val showDefUse = control {name = "show def-use",
 val showTypes = control {name = "show types",
                          default = true,
                          toString = Bool.toString}
+
+structure StaticAlloc =
+   struct
+      structure Objptrs =
+      struct
+         datatype t =
+            All
+          | Static
+          | None
+
+         val toString = fn
+            All => "All"
+          | Static => "Static"
+          | None => "None"
+      end
+
+   end
+datatype staticAllocInternalPtrs = datatype StaticAlloc.Objptrs.t
+val staticAllocInternalPtrs =
+   control {name = "staticAllocInternalPtrs",
+            default = Static,
+            toString = StaticAlloc.Objptrs.toString}
+
+val staticInitArrays =
+   control {name = "staticInitArrays",
+            default = true,
+            toString = Bool.toString}
+val staticAllocArrays =
+   control {name = "staticAllocArrays",
+            default = true,
+            toString = Bool.toString}
+
+val staticInitObjects =
+   control {name = "staticInitObjects",
+            default = SOME false,
+            toString = Option.toString Bool.toString}
+val staticAllocObjects =
+   control {name = "staticAllocObjects",
+            default = true,
+            toString = Bool.toString}
+
+val staticAllocWordVectorConsts =
+   control {name = "staticAllocWordVectorConsts",
+            default = true,
+            toString = Bool.toString}
 
 structure SplitTypesBool =
    struct

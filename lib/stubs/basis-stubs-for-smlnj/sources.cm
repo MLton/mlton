@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 2002-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -13,74 +13,78 @@ library($/basis.cm) - (
                        signature IEEE_REAL
                        signature REAL
 
+#if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 83)
                        structure Char
-                       structure FixedInt
+#endif
                        structure IEEEReal
-                       structure Int
-                       structure Int31
-                       structure Int32
-                       structure Int64
                        structure IntInf
                        structure LargeInt
                        structure LargeReal
-                       structure LargeWord
                        structure PackReal32Big
-                       structure PackReal64Big
                        structure PackReal32Little
+#if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 79)
+                       structure PackReal64Big
                        structure PackReal64Little
+#endif
+#if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 91)
                        structure PackWord64Big
                        structure PackWord64Little
-                       structure Position
+#endif
                        structure Real
                        structure Real32
                        structure Real64
-                       structure Word
-                       structure Word8
-                       structure Word31
-                       structure Word32
-                       structure Word64
+#if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 83)
                        structure String
-                       structure SysWord
+#endif
                       )
 
 signature IEEE_REAL
 signature REAL
 
+#if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 83)
 structure Char
-structure FixedInt
+structure String
+#endif
+
 structure IEEEReal
-structure Int
-structure Int31
-structure Int32
-structure Int64
 structure IntInf
 structure LargeInt
 structure LargeReal
-structure LargeWord
+structure PackReal32Big
 structure PackReal32Little
+#if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 79)
+structure PackReal64Big
 structure PackReal64Little
+#endif
+#if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 91)
+structure PackWord64Big
 structure PackWord64Little
-structure Position
+#endif
 structure Real
 structure Real32
 structure Real64
-structure String
-structure SysWord
-structure Word
-structure Word8
-structure Word31
-structure Word32
-structure Word64
 
 is
 
 $/basis.cm
 pervasive.cm
 
+#if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 79)
+pack-real64.sml
+#endif
+
+#if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 83)
 char.sml
-ieee-real.sml
-int-inf.sml
-int.sml
-real.sml
 string.sml
-word.sml
+#endif
+
+#if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 91)
+pack-word64.sml
+#endif
+
+int-inf.sml
+
+ieee-real.sml
+real.sml
+
+pack-real32.sml

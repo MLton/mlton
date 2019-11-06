@@ -16,11 +16,12 @@ signature BACKEND_ATOMS' =
       structure ObjectType: OBJECT_TYPE
       structure ObjptrTycon: OBJPTR_TYCON
       structure Runtime: RUNTIME
+      structure Static: STATIC
       structure Type: REP_TYPE
 
       sharing ObjectType = Type.ObjectType
-      sharing ObjptrTycon = ObjectType.ObjptrTycon = Type.ObjptrTycon
-      sharing Runtime = ObjectType.Runtime = Type.Runtime
+      sharing ObjptrTycon = ObjectType.ObjptrTycon = Static.ObjptrTycon = Type.ObjptrTycon
+      sharing Runtime = ObjectType.Runtime = Static.Runtime = Type.Runtime
 
       (* SML/NJ bug:
        *
@@ -36,10 +37,11 @@ signature BACKEND_ATOMS' =
       sharing CType = Type.CType
       sharing Label = Type.Label
       sharing Prim = Type.Prim
-      sharing RealSize = Type.RealSize
-      sharing WordSize = Type.WordSize
-      sharing WordX = Type.WordX
-      sharing WordXVector = Type.WordXVector
+      sharing RealSize = Static.RealSize = Type.RealSize
+      sharing RealX = Static.RealX
+      sharing WordSize = Static.WordSize = Type.WordSize
+      sharing WordX = Static.WordX = Type.WordX
+      sharing WordXVector = Static.WordXVector = Type.WordXVector
    end
 
 signature BACKEND_ATOMS =
@@ -52,5 +54,6 @@ signature BACKEND_ATOMS =
       sharing ObjectType = BackendAtoms.ObjectType
       sharing ObjptrTycon = BackendAtoms.ObjptrTycon
       sharing Runtime = BackendAtoms.Runtime
+      sharing Static = BackendAtoms.Static
       sharing Type = BackendAtoms.Type
    end

@@ -87,6 +87,15 @@ functor Cases (S: CASES_STRUCTS): CASES =
              | Word (_, l) => doit l
          end
 
+      fun exists (c: ('con, 'a) t, f: 'a -> bool): bool =
+         let
+            fun doit l = Vector.exists (l, fn (_, x) => f x)
+         in
+            case c of
+               Con l => doit l
+             | Word (_, l) => doit l
+         end
+
       fun length (c: ('con, 'a) t): int = fold (c, 0, fn (_, i) => i + 1)
 
       fun foreach (c, f) = fold (c, (), fn (x, ()) => f x)

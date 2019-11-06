@@ -10,6 +10,7 @@ structure Main =
                   let
                      val sum = Vector.foldl (fn ((a, b), c) =>
                                              a + b + c handle Overflow => 0) 0 v
+                     val _ = if 1105694191 <> sum then raise Fail "bug" else ()
                   in
                      loop (n - 1)
                   end
@@ -17,4 +18,3 @@ structure Main =
             loop n
          end
    end
-

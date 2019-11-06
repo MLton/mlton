@@ -400,8 +400,11 @@ int GC_init (GC_state s, int argc, char **argv) {
     assert (invariantForMutator (s, TRUE, FALSE));
   } else {
     loadWorldFromFileName (s, worldFile);
-    if (s->profiling.isOn and s->profiling.stack)
-      foreachStackFrame (s, enterFrameForProfiling);
+    if (s->profiling.isOn and s->profiling.stack) {
+      struct GC_foreachStackFrameClosure enterFrameForProfilingClosure =
+        {.fun = enterFrameForProfiling, .env = NULL};
+      foreachStackFrame (s, &enterFrameForProfilingClosure);
+    }
     assert (invariantForMutator (s, TRUE, TRUE));
   }
   s->amInGC = FALSE;

@@ -37,15 +37,15 @@ typedef struct GC_heap {
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-static inline bool isPointerInOldGen (GC_state s, pointer p);
-static inline bool isPointerInNursery (GC_state s, pointer p);
-#if ASSERT
-static inline bool isObjptrInOldGen (GC_state s, objptr op);
-#endif
-static inline bool isObjptrInNursery (GC_state s, objptr op);
-#if ASSERT
 static inline bool isObjptrInFromSpace (GC_state s, objptr op);
-#endif
+static inline bool isObjptrInHeap (GC_state s, objptr op);
+static inline bool isObjptrInNursery (GC_state s, objptr op);
+static inline bool isObjptrInOldGen (GC_state s, objptr op);
+static inline bool isPointerInFromSpace (GC_state s, pointer p);
+static inline bool isPointerInHeap (GC_state s, pointer p);
+static inline bool isPointerInNursery (GC_state s, pointer p);
+static inline bool isPointerInOldGen (GC_state s, pointer p);
+
 static inline bool hasHeapBytesFree (GC_state s, size_t oldGen, size_t nursery);
 static inline bool isHeapInit (GC_heap h);
 

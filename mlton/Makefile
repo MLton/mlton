@@ -33,6 +33,14 @@ MLTON_MLB := mlton-stubs.mlb
 endif
 endif
 
+## When self-compiling the current MLton sources with `Zone` enabled,
+## the resulting compiler exhibits a space leak; see MLton/mlton#334
+ifeq ($(RUN_MLTON_VERSION), $(firstword $(sort $(RUN_MLTON_VERSION) 20170629)))
+RUN_MLTON_COMPILE_XARGS += -drop-pass zone
+else ifeq ($(RUN_MLTON_VERSION), $(firstword $(sort $(RUN_MLTON_VERSION) 20191003)))
+RUN_MLTON_COMPILE_XARGS += -disable-pass zone
+endif
+
 FRONT_END_SOURCES :=		\
 	front-end/ml.lex.sml	\
 	front-end/ml.grm.sig	\
@@ -64,8 +72,8 @@ $(MLTON_OUTPUT): $(SOURCES)
 	$(MAKE) control/version.sml
 	@echo 'Compiling mlton'
 	"$(RUN_MLTON)" \
-		@MLton $(RUN_MLTON_RUNTIME_ARGS) $(RUN_MLTON_RUNTIME_XARGS) gc-summary -- \
-		$(RUN_MLTON_COMPILE_ARGS) $(RUN_MLTON_COMPILE_XARGS) -verbose 2	\
+		@MLton $(RUN_MLTON_RUNTIME_XARGS) $(RUN_MLTON_RUNTIME_ARGS) gc-summary -- \
+		$(RUN_MLTON_COMPILE_XARGS) -verbose 2 $(RUN_MLTON_COMPILE_ARGS)	\
 		-target $(TARGET) -output $(MLTON_OUTPUT)			\
 		$(MLTON_MLB)
 
@@ -120,10 +128,10 @@ mlton-stubs.mlb: $(shell "$(RUN_MLTON)" -stop f ../lib/stubs/mlton-stubs/sources
 .PHONY: def-use
 def-use: mlton.def-use
 
-mlton.def-use: $(SOURCES)
+mlton.def-use: $(SOURCES) control/version.sml
 	"$(RUN_MLTON)" \
-		@MLton $(RUN_MLTON_RUNTIME_ARGS) $(RUN_MLTON_RUNTIME_XARGS) --	\
-		$(RUN_MLTON_COMPILE_ARGS) $(RUN_MLTON_COMPILE_XARGS) -verbose 0	\
+		@MLton $(RUN_MLTON_RUNTIME_XARGS) $(RUN_MLTON_RUNTIME_ARGS) --	\
+		$(RUN_MLTON_COMPILE_XARGS) -verbose 0 $(RUN_MLTON_COMPILE_ARGS)	\
 		-stop tc -prefer-abs-paths true -show-def-use mlton.def-use	\
 		$(MLTON_MLB)
 
@@ -142,7 +150,7 @@ smlnj-mlton: $(FRONT_END_SOURCES)
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo '#set CM.Control.verbose false;';				\
-		echo '#set CM.Control.warn_obsolete false;';			\
+		echo '#set CM.Control.warn_obsolete true;';			\
 		echo 'Control.polyEqWarn := false;';				\
 		echo 'local';							\
 		echo 'fun loop 0 = () | loop n = (CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server" ^ (Int.toString n), pathtrans = NONE, pref = 0}; loop (n - 1));'; \

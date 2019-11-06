@@ -22,10 +22,6 @@
 #define DeclareProfileLabel(l)                  \
         extern char l __attribute__ ((weak))
 
-#define BeginVectorInits static struct GC_vectorInit vectorInits[] = {
-#define VectorInitElem(es, gi, l, w) { es, gi, l, w },
-#define EndVectorInits };
-
 #define LoadArray(a, f) do { if (fread (a, sizeof(*a), cardof(a), f) != cardof(a)) return -1; } while (0)
 #define SaveArray(a, f) do { if (fwrite(a, sizeof(*a), cardof(a), f) != cardof(a)) return -1; } while (0)
 
@@ -41,12 +37,12 @@
         s->magic = mg;                                                  \
         s->maxFrameSize = mfs;                                          \
         s->mutatorMarksCards = mmc;                                     \
+        s->objectInits = objectInits;                                   \
+        s->objectInitsLength = cardof(objectInits);                     \
         s->objectTypes = objectTypes;                                   \
         s->objectTypesLength = cardof(objectTypes);                     \
         s->returnAddressToFrameIndex = returnAddressToFrameIndex;       \
         s->saveGlobals = saveGlobals;                                   \
-        s->vectorInits = vectorInits;                                   \
-        s->vectorInitsLength = cardof(vectorInits);                     \
         s->sourceMaps.profileLabelInfos = profileLabelInfos;            \
         s->sourceMaps.profileLabelInfosLength = cardof(profileLabelInfos); \
         s->sourceMaps.sourceNames = sourceNames;                        \

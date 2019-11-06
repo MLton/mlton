@@ -457,10 +457,22 @@ fun shrinkOnce (Program.T {datatypes, body}) =
                       Value.ConApp {con = con, targs = targs, arg = arg})
                   end
              | Const c => nonExpansiveValue (fn () => (), Value.Const c)
-             | Handle {try, catch, handler} =>
-                  expansive (Handle {try = shrinkExp try,
-                                     catch = catch,
-                                     handler = shrinkExp handler})
+             | Handle {try, catch as (catchVar, _), handler} =>
+                  let
+                     val handler = shrinkExp handler
+                     fun doit () =
+                        expansive (Handle {try = shrinkExp try,
+                                           catch = catch,
+                                           handler = handler})
+                  in
+                     case Exp.dest handler of
+                        {decs = [MonoVal {var = raiseVar, exp = Raise {exn = exnVar, ...}, ...}], result = resultVar} =>
+                           if VarExp.equals (VarExp.mono catchVar, exnVar)
+                              andalso VarExp.equals (VarExp.mono raiseVar, resultVar)
+                              then expression try
+                              else doit ()
+                      | _ => doit ()
+                  end
              | Lambda l =>
                   let val isInlined = ref false
                   in nonExpansive

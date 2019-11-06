@@ -100,6 +100,9 @@ signature X86_MLTON_BASIC =
     val local_base : x86.CType.t -> x86.Label.t
     val global_base : x86.CType.t -> x86.Label.t
 
+    (* Machine statics *)
+    val static_label: int -> x86.Label.t
+
     (* gcState relative locations defined in gc.h *)
     val gcState_label: x86.Label.t
     val gcState_offset: {offset: int, ty: x86.CType.t} -> x86.Operand.t

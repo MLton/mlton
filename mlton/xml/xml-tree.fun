@@ -508,6 +508,24 @@ structure Exp =
          let
             datatype z = datatype Dec.t
             datatype z = datatype PrimExp.t
+
+            fun mayRaiseExp e = List.exists (decs e, mayRaiseDec)
+            and mayRaisePrimExp e =
+               case e of
+                  App _ => true
+                | Case {cases, default, ...} =>
+                     Cases.exists (cases, mayRaiseExp)
+                     orelse
+                     Option.fold (default, false, mayRaiseExp o #1)
+                | Handle {handler, ...} =>
+                     mayRaiseExp handler
+                | Raise _ => true
+                | _ => false
+            and mayRaiseDec d =
+               case d of
+                  MonoVal {exp, ...} => mayRaisePrimExp exp
+                | _ => false
+
             fun prof f =
                MonoVal {exp = Profile (f si),
                         ty = Type.unit,
@@ -546,10 +564,12 @@ structure Exp =
                             [prof ProfileExp.Leave]]
             val try = make {decs = decs, result = result}
          in
-            fromPrimExp (Handle {catch = (exn, Type.exn),
-                                 handler = handler,
-                                 try = try},
-                         ty)
+            if mayRaiseExp e
+               then fromPrimExp (Handle {catch = (exn, Type.exn),
+                                         handler = handler,
+                                         try = try},
+                                 ty)
+               else try
          end
 
       (*------------------------------------*)
@@ -666,6 +686,48 @@ structure Exp =
       val size = Trace.trace ("XmlTree.Exp.size", Layout.ignore, Int.layout) size
       (* quell unused warning *)
       val _ = size
+
+      fun dropProfile (e: t): t =
+         let
+            fun dropProfileExp (Exp {decs, result}) =
+               Exp {decs = List.keepAllMap (decs, dropProfileDec),
+                    result = result}
+            and dropProfilePrimExp e =
+               case e of
+                  Case {test, cases, default} =>
+                     Case {test = test,
+                           cases = Cases.map (cases, dropProfileExp),
+                           default = Option.map (default, dropProfileExp)}
+                | Handle {try, catch, handler} =>
+                     Handle {try = dropProfileExp try,
+                             catch = catch,
+                             handler = dropProfileExp handler}
+                | Lambda lambda => Lambda (dropProfileLambda lambda)
+                | _ => e
+            and dropProfileDec d =
+               case d of
+                  Exception arg_con => SOME (Exception arg_con)
+                | Fun {decs, tyvars} =>
+                     SOME (Fun {decs = Vector.map
+                                (decs, fn {lambda, ty, var} =>
+                                 {lambda = dropProfileLambda lambda,
+                                  ty = ty, var = var}),
+                                tyvars = tyvars})
+                | MonoVal {exp = Profile _, ...} => NONE
+                | MonoVal {exp, ty, var} =>
+                     SOME (MonoVal {exp = dropProfilePrimExp exp,
+                                    ty = ty, var = var})
+                | PolyVal {exp, ty, tyvars, var} =>
+                     SOME (PolyVal {exp = dropProfileExp exp, ty = ty,
+                                    tyvars = tyvars, var = var})
+            and dropProfileLambda (Lam {arg, argType, body, mayInline, plist}) =
+               Lam {arg = arg, argType = argType,
+                    body = dropProfileExp body,
+                    mayInline = mayInline,
+                    plist = plist}
+         in
+            dropProfileExp e
+         end
 
       fun clear (e: t): unit =
          let open PrimExp
@@ -1120,6 +1182,11 @@ structure Program =
          in
             parseProgram <* (mlSpaces *> (failing next <|> fail "end of file"))
          end
+
+      fun dropProfile (T {datatypes, body}) =
+         (Control.profile := Control.ProfileNone
+          ; T {datatypes = datatypes,
+               body = Exp.dropProfile body})
 
       fun clear (T {datatypes, body, ...}) =
          (Vector.foreach (datatypes, fn {tycon, tyvars, cons} =>

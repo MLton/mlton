@@ -170,6 +170,10 @@ for f in *.sml; do
                 extraFlags[${#extraFlags[@]}]="-runtime"
                 extraFlags[${#extraFlags[@]}]="mark-compact-ratio 1.001 copy-ratio 1.001 live-ratio 1.001"
         ;;
+        world*)
+                extraFlags[${#extraFlags[@]}]="-link-opt"
+                extraFlags[${#extraFlags[@]}]="-no-pie"
+        ;;
         esac
 
         mlb="$f.mlb"

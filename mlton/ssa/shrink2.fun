@@ -816,7 +816,7 @@ fun shrinkFunction {globals: Statement.t vector} =
                                      fn (i, Position.Formal i') => i = i'
                                       | _ => false)
                                  val m = labelMeaning cont
-                                 fun nonTail () =
+                                 fun nonTail handler =
                                     let
                                        val () = forceMeaningBlock m
                                        val handler =
@@ -836,33 +836,35 @@ fun shrinkFunction {globals: Statement.t vector} =
                                  fun tail statements =
                                     (deleteLabelMeaning m
                                      ; (statements, Return.Tail))
-                                 fun cont handlerEta =
+                                 fun cont (handler, handlerEta) =
                                     case LabelMeaning.aux m of
                                        LabelMeaning.Bug =>
                                           (case handlerEta of
-                                              NONE => nonTail ()
+                                              NONE => nonTail handler
                                             | SOME canMove => tail canMove)
                                      | LabelMeaning.Return {args, canMove} =>
                                           if isEta (m, args)
                                              then tail canMove
-                                          else nonTail ()
-                                     | _ => nonTail ()
-
+                                          else nonTail handler
+                                     | _ => nonTail handler
                               in
                                  case handler of
-                                    Handler.Caller => cont NONE
-                                  | Handler.Dead => cont NONE
+                                    Handler.Caller => cont (handler, NONE)
+                                  | Handler.Dead => cont (handler, NONE)
                                   | Handler.Handle l =>
                                        let
                                           val m = labelMeaning l
                                        in
                                           case LabelMeaning.aux m of
-                                             LabelMeaning.Bug => cont NONE
+                                             LabelMeaning.Bug => cont (handler, NONE)
                                            | LabelMeaning.Raise {args, canMove} =>
                                                 if isEta (m, args)
-                                                   then cont (SOME canMove)
-                                                else nonTail ()
-                                           | _ => nonTail ()
+                                                   then cont (if List.isEmpty canMove
+                                                                 then Handler.Caller
+                                                                 else handler,
+                                                              SOME canMove)
+                                                else nonTail handler
+                                           | _ => nonTail handler
                                        end
                               end
                          | _ => ([], return)

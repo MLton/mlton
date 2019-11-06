@@ -1,4 +1,5 @@
-/* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+/* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -9,6 +10,10 @@
 void GC_share (GC_state s, pointer object) {
   size_t bytesExamined;
   size_t bytesHashConsed;
+  struct GC_markState markState;
+
+  if (not isPointer (object))
+    return;
 
   enter (s); /* update stack in heap, in case it is reached */
   if (DEBUG_SHARE)
@@ -16,10 +21,18 @@ void GC_share (GC_state s, pointer object) {
   if (DEBUG_SHARE or s->controls.messages)
     s->lastMajorStatistics.bytesHashConsed = 0;
   // Don't hash cons during the first round of marking.
-  bytesExamined = dfsMarkByMode (s, object, MARK_MODE, FALSE, FALSE);
+  markState.mode = MARK_MODE;
+  markState.size = 0;
+  markState.shouldHashCons = FALSE;
+  markState.shouldLinkWeaks = FALSE;
+  dfsMark (s, object, &markState);
+  bytesExamined = markState.size;
   s->objectHashTable = allocHashTable (s);
   // Hash cons during the second round of (un)marking.
-  dfsMarkByMode (s, object, UNMARK_MODE, TRUE, FALSE);
+  markState.mode = UNMARK_MODE;
+  markState.size = 0;
+  markState.shouldHashCons = TRUE;
+  dfsMark (s, object, &markState);
   freeHashTable (s->objectHashTable);
   bytesHashConsed = s->lastMajorStatistics.bytesHashConsed;
   s->cumulativeStatistics.bytesHashConsed += bytesHashConsed;

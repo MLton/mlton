@@ -35,6 +35,8 @@ signature RSSA_TREE =
                                   offset: Bytes.t,
                                   scale: Scale.t,
                                   ty: Type.t}
+             | Static of {static: Var.t Static.t,
+                          ty: Type.t}
              | Var of {ty: Type.t,
                        var: Var.t}
 
@@ -53,7 +55,7 @@ signature RSSA_TREE =
          sig
             datatype t =
                Bind of {dst: Var.t * Type.t,
-                        isMutable: bool,
+                        pinned: bool,
                         src: Operand.t}
              | Move of {dst: Operand.t,
                         src: Operand.t}
@@ -135,6 +137,7 @@ signature RSSA_TREE =
 
             datatype frameStyle = None | OffsetsAndSize | SizeOnly
             val frameStyle: t -> frameStyle
+            val layout: t -> Layout.t
          end
 
       structure Block:
@@ -200,7 +203,6 @@ signature RSSA_TREE =
                                    getFrameSourceSeqIndex: Label.t -> int option} option}
 
             val clear: t -> unit
-            val checkHandlers: t -> unit
             (* dfs (p, v) visits the functions in depth-first order, applying v f
              * for function f to yield v', then visiting b's descendents,
              * then applying v' ().
@@ -212,9 +214,7 @@ signature RSSA_TREE =
             val orderFunctions: t -> t
             val rflow: t -> (Func.t -> {raisesTo: Label.t list,
                                         returnsTo: Label.t list})
-            val shrink: t -> t
             val shuffle: t -> t
             val toFile: {display: t Control.display, style: Control.style, suffix: string}
-            val typeCheck: t -> unit
          end
    end

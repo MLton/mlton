@@ -7,7 +7,7 @@
  * See the file MLton-LICENSE for details.
  *)
 
-Group
+Library
 
 functor amd64Codegen
 functor CCodegen

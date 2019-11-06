@@ -82,6 +82,7 @@ PUBLIC int MLton_main (int argc, char* argv[]) {                        \
         Initialize (s, al, mg, mfs, mmc, pk, ps);                       \
         if (s->amOriginal) {                                            \
                 real_Init();                                            \
+                static_Init();                                            \
                 jump = (pointer)&ml;                                    \
         } else {                                                        \
                 jump = getJumpFromStackTop (s);                         \
@@ -98,6 +99,7 @@ PUBLIC void LIB_OPEN(LIBNAME) (int argc, char* argv[]) {                \
         Initialize (s, al, mg, mfs, mmc, pk, ps);                       \
         if (s->amOriginal) {                                            \
                 real_Init();                                            \
+                static_Init();                                            \
                 jump = (pointer)&ml;                                    \
         } else {                                                        \
                 jump = getJumpFromStackTop (s);                         \

@@ -26,10 +26,10 @@ struct GC_intInfInit {
 };
 
 /* GC_init allocates a collection of sequences in the heap. */
-struct GC_vectorInit {
-  size_t elementSize;
+struct GC_objectInit {
   uint32_t globalIndex;
-  GC_sequenceLength length;
+  size_t headerOffset;
+  size_t size;
   pointer words;
 };
 
@@ -38,7 +38,7 @@ struct GC_vectorInit {
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
 static inline size_t sizeofInitialBytesLive (GC_state s);
-static void initVectors (GC_state s);
+static void initObjects (GC_state s);
 static void initWorld (GC_state s);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

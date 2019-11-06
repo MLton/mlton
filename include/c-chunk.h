@@ -32,6 +32,7 @@
 /* ------------------------------------------------- */
 
 #define G(ty, i) (global##ty [i])
+#define M(ty, i, o) ((ty)(&static_##i + (o)))
 #define O(ty, b, o) (*(ty*)((b) + (o)))
 #define S(ty, i) (*(ty*)(StackTop + (i)))
 #define T(ty, i) T ## ty ## _ ## i

@@ -19,6 +19,13 @@ signature REPRESENTATION =
    sig
       include REPRESENTATION_STRUCTS
 
+      structure StaticOrElem:
+         sig
+            datatype t =
+               Static of Rssa.Var.t Rssa.Static.t
+             | Elem of Rssa.Var.t Rssa.Static.Data.Elem.t
+         end
+
       val compute:
          Ssa2.Program.t
          -> {diagnostic: unit -> unit,
@@ -30,16 +37,22 @@ signature REPRESENTATION =
                        tycon: Ssa2.Tycon.t} -> (Rssa.Statement.t list
                                                 * Rssa.Transfer.t
                                                 * Rssa.Block.t list),
-             object: {args: 'a vector,
+             object: {args: Ssa2.Var.t vector,
                       con: Ssa2.Con.t option,
                       dst: Rssa.Var.t * Rssa.Type.t,
                       objectTy: Ssa2.Type.t,
-                      oper: 'a -> Rssa.Operand.t} -> Rssa.Statement.t list,
+                      oper: Ssa2.Var.t -> Rssa.Operand.t} -> Rssa.Statement.t list,
              objectTypes: (Rssa.ObjptrTycon.t * Rssa.ObjectType.t) vector,
              select: {base: Rssa.Operand.t Ssa2.Base.t,
                       baseTy: Ssa2.Type.t,
                       dst: Rssa.Var.t * Rssa.Type.t,
                       offset: int} -> Rssa.Statement.t list,
+             static: {args: Ssa2.Var.t vector,
+                      con: Ssa2.Con.t option,
+                      elem: Ssa2.Var.t -> Rssa.Var.t Rssa.Static.Data.Elem.t,
+                      location: Rssa.Static.Location.t,
+                      objectTy: Ssa2.Type.t} ->
+                      StaticOrElem.t option,
              toRtype: Ssa2.Type.t -> Rssa.Type.t option,
              update: {base: Rssa.Operand.t Ssa2.Base.t,
                       baseTy: Ssa2.Type.t,

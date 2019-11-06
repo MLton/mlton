@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -82,6 +82,7 @@ functor FixReal(PReal: sig include PERVASIVE_REAL val zero : real end) : REAL =
    struct
       open PReal
 
+      (* SML/NJ uses an old version of datatype IEEEReal.float_class. *)
       local
          datatype z = datatype IEEEReal.float_class
          structure P = Pervasive.IEEEReal
@@ -109,33 +110,50 @@ functor FixReal(PReal: sig include PERVASIVE_REAL val zero : real end) : REAL =
          val toDecimal = toGoodDA o toDecimal
       end
 
-      (* SML/NJ doesn't support EXACT
-       * and doesn't include a leading "~" for ~0.0.
-       *)
+      (* SML/NJ doesn't support EXACT. *)
       fun fmt f =
-         let
-            val fmt =
-               PReal.fmt
-               (let
-                   datatype z = datatype StringCvt.realfmt
-                in
-                   case f of
-                      EXACT => StringCvt.GEN NONE
-                    | FIX io => StringCvt.FIX io
-                    | GEN io => StringCvt.GEN io
-                    | SCI io => StringCvt.SCI io
-                end)
-         in
-            fn r =>
-            if == (zero, r) andalso signBit r
-               then "~" ^ (fmt r)
-            else fmt r
-         end
+         PReal.fmt
+         (let
+             datatype z = datatype StringCvt.realfmt
+          in
+             case f of
+                EXACT => StringCvt.GEN NONE
+              | FIX io => StringCvt.FIX io
+              | GEN io => StringCvt.GEN io
+              | SCI io => StringCvt.SCI io
+          end)
 
-      (* SML/NJ doesn't handle "[+~-]?(inf|infinity|nan)"
-       * and raises Overflow on large exponents.
-       *)
-      fun fromString s =
+      val fromString = PReal.fromString
+      (* SML/NJ raises Overflow on large exponents. *)
+      (* Fixed in SML/NJ 110.83. *)
+      val fromString = fn s =>
+         (case SOME (fromString s) handle Overflow => NONE of
+             NONE =>
+                let
+                   val manexp =
+                      String.tokens
+                      (fn c => c = #"e" orelse c = #"E")
+                      s
+                   fun isNeg s =
+                      String.sub (s, 0) = #"~"
+                      orelse String.sub (s, 0) = #"+"
+                   fun isNonzero s =
+                      CharVector.exists
+                      (fn c => Char.<= (#"1", c) andalso Char.<= (c, #"9"))
+                      s
+                in
+                   case manexp of
+                      [man,exp] =>
+                         if isNeg exp
+                            then SOME zero
+                         else if isNonzero man
+                            then SOME posInf
+                         else SOME zero
+                     | _ => NONE
+                end
+           | SOME ro => ro)
+      (* SML/NJ doesn't handle "[+~-]?(inf|infinity|nan)". *)
+      val fromString = fn s =>
          case s of
             "inf" => SOME posInf
           | "infinity" => SOME posInf
@@ -149,81 +167,10 @@ functor FixReal(PReal: sig include PERVASIVE_REAL val zero : real end) : REAL =
           | "+nan" => SOME (negInf + posInf)
           | "~nan" => SOME (negInf + posInf)
           | "-nan" => SOME (negInf + posInf)
-          | _ =>
-               (case SOME (PReal.fromString s) handle Overflow => NONE of
-                   NONE =>
-                      let
-                         val manexp =
-                            String.tokens
-                            (fn c => c = #"e" orelse c = #"E")
-                            s
-                         fun isNeg s =
-                            String.sub (s, 0) = #"~"
-                            orelse String.sub (s, 0) = #"+"
-                         fun isNonzero s =
-                            CharVector.exists
-                            (fn c => Char.<= (#"1", c) andalso Char.<= (c, #"9"))
-                            s
-                      in
-                         case manexp of
-                            [man,exp] =>
-                               if isNeg exp
-                                  then SOME zero
-                               else if isNonzero man
-                                  then SOME posInf
-                               else SOME zero
-                           | _ => NONE
-                      end
-                 | SOME ro => ro)
+          | _ => fromString s
    end
 
 structure LargeReal = FixReal(struct open Pervasive.LargeReal val zero : real = 0.0 end)
 structure Real = FixReal(struct open Pervasive.Real val zero : real = 0.0 end)
 structure Real64 = FixReal(struct open Pervasive.Real64 val zero : real = 0.0 end)
 structure Real32 = Real64
-
-(* Dummy implementation that will not be used at run-time. *)
-structure PackReal32Big : PACK_REAL where type real = Real32.real = struct
-   type real = Real32.real
-   val bytesPerElem = 0
-   val isBigEndian = false
-   fun toBytes _ = raise Fail "PackReal32Big.toBytes"
-   fun fromBytes _ = raise Fail "PackReal32Big.fromBytes"
-   fun subVec _ = raise Fail "PackReal32Big.subVec"
-   fun subArr _ = raise Fail "PackReal32Big.subArr"
-   fun update _ = raise Fail "PackReal32Big.update"
-end
-(* Dummy implementation that will not be used at run-time. *)
-structure PackReal32Little : PACK_REAL where type real = Real32.real = struct
-   type real = Real32.real
-   val bytesPerElem = 0
-   val isBigEndian = false
-   fun toBytes _ = raise Fail "PackReal32Little.toBytes"
-   fun fromBytes _ = raise Fail "PackReal32Little.fromBytes"
-   fun subVec _ = raise Fail "PackReal32Little.subVec"
-   fun subArr _ = raise Fail "PackReal32Little.subArr"
-   fun update _ = raise Fail "PackReal32Little.update"
-end
-
-(* Dummy implementation that will not be used at run-time. *)
-structure PackReal64Big : PACK_REAL where type real = Real64.real  = struct
-   type real = Real64.real
-   val bytesPerElem = 0
-   val isBigEndian = false
-   fun toBytes _ = raise Fail "PackReal64Big.toBytes"
-   fun fromBytes _ = raise Fail "PackReal64Big.fromBytes"
-   fun subVec _ = raise Fail "PackReal64Big.subVec"
-   fun subArr _ = raise Fail "PackReal64Big.subArr"
-   fun update _ = raise Fail "PackReal64Big.update"
-end
-(* Dummy implementation that will not be used at run-time. *)
-structure PackReal64Little : PACK_REAL where type real = Real64.real  = struct
-   type real = Real64.real
-   val bytesPerElem = 0
-   val isBigEndian = false
-   fun toBytes _ = raise Fail "PackReal64Little.toBytes"
-   fun fromBytes _ = raise Fail "PackReal64Little.fromBytes"
-   fun subVec _ = raise Fail "PackReal64Little.subVec"
-   fun subArr _ = raise Fail "PackReal64Little.subArr"
-   fun update _ = raise Fail "PackReal64Little.update"
-end

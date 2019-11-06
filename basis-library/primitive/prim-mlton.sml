@@ -15,6 +15,13 @@ open Primitive
 
 structure MLton = struct
 
+structure GCState =
+   struct
+      type t = Pointer.t
+
+      val gcState = _prim "GC_state": unit -> t;
+   end
+
 val bug = _prim "MLton_bug": String8.string -> unit;
 val eq = _prim "MLton_eq": 'a * 'a -> bool;
 val equal = _prim "MLton_equal": 'a * 'a -> bool;
@@ -24,16 +31,10 @@ val hash = _prim "MLton_hash": 'a -> Word32.word;
 (* val serialize = _prim "MLton_serialize": 'a ref -> Word8Vector.vector; *)
 val share = _prim "MLton_share": 'a -> unit;
 val size = _prim "MLton_size": 'a -> C_Size.t;
+val sizeAll = _import "GC_sizeAll" runtime private: GCState.t -> C_Size.t;
 
 val installSignalHandler =
    _prim "MLton_installSignalHandler": unit -> unit;
-
-structure GCState =
-   struct
-      type t = Pointer.t
-
-      val gcState = _prim "GC_state": unit -> t;
-   end
 
 structure Align =
    struct

@@ -263,8 +263,13 @@ structure Test =
         if n < BLOCK_COUNT then
           loop (n+1,MD5.update (s,block))
         else s
+      val s = loop (0,MD5.init)
+      val hash = MD5.final s
+      val _ = print (concat [MD5.toHexString hash, "\n"])
     in
-       loop (0,MD5.init)
+       if MD5.toHexString hash <> "766a2bb5d24bddae466c572bcabca3ee"
+          then raise Fail "bug"
+          else ()
     end
   end
 

@@ -1,4 +1,4 @@
-fun 'a printSize (name: string, min_max: (int * int) option,
+fun 'a printSize (name: string, min_max: (IntInf.int * IntInf.int) option,
                   value: 'a, use: 'a -> unit): unit =
    (print "The size of "
     ; print name
@@ -8,17 +8,17 @@ fun 'a printSize (name: string, min_max: (int * int) option,
       in
          case min_max of
             NONE => (print " = "
-                     ; print (Int.toString size)
+                     ; print (IntInf.toString size)
                      ; print " bytes.\n")
           | SOME (min, max) =>
                if min <= size andalso size <= max
                   then (print " >= "
-                        ; print (Int.toString min)
+                        ; print (IntInf.toString min)
                         ; print " bytes and <= "
-                        ; print (Int.toString max)
+                        ; print (IntInf.toString max)
                         ; print " bytes.\n")
                   else (print " = "
-                        ; print (Int.toString size)
+                        ; print (IntInf.toString size)
                         ; print " bytes.\n")
       end
     ; use value)
@@ -36,7 +36,7 @@ val _ =
                  List.tabulate (4, fn i => i + 1), fn l =>
                  chk (foldl (op +) 0 l, 10))
     ; printSize ("a string of length 10", NONE,
-                 "0123456789", fn s =>
+                 CharVector.tabulate (10, fn i => chr (ord #"0" + i)), fn s =>
                  chk (CharVector.foldl (fn (c,s) => ord c + s) 0 s,  525))
     ; printSize ("an int array of length 10", NONE,
                  Array.tabulate (10, fn i => i), fn a =>
@@ -49,7 +49,20 @@ val _ =
                  chk (Array.foldl (fn ((a,b),s) => a + b + s) 0 a, 100))
     ; printSize ("a useless function", NONE,
                  fn _ => 13, fn f => ())
-    )
+    ; let
+         val l = List.tabulate (8, fn i =>
+                                if i mod 2 = 1
+                                   then NONE
+                                   else SOME (List.tabulate (i, fn i => i + 1)))
+      in
+         ()
+         ; printSize ("an int list option (SOME)", NONE,
+                      List.nth (l, 4), fn lo =>
+                      chk (case lo of NONE => 0 | SOME l => foldl (op +) 0 l, 10))
+         ; printSize ("an int list option (NONE)", NONE,
+                      List.nth (l, 5), fn lo =>
+                      chk (case lo of NONE => 0 | SOME l => foldl (op +) 0 l, 0))
+      end)
    
 local
    open MLton.Cont
