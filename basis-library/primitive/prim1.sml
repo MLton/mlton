@@ -53,7 +53,7 @@ structure Exn =
       exception Subscript
 
       (* Fusing of adjacent `Word<N>_<op>` and `Word{S,U}<N>_<op>CheckP` primitives
-       * by the codegens depends on the relative order of `!a` and `?a`;
+       * by the codegens may depend on the relative order of `!a` and `?a`;
        * see:
        *  - /mlton/codegen/amd64-codegen/amd64-simplify.fun:elimALRedundant
        *  - /mlton/codegen/c-codegen/c-codegen.fun:outputStatementsFuseOpAndChk
