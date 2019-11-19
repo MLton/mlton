@@ -1567,9 +1567,26 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                                            prim = Prim.cpointerAdd})
                          ; rtrans raisesTo)
                    | Transfer.Return {returnsTo} => rtrans returnsTo
-                   | Transfer.Switch (Switch.T {cases, default, test, ...}) =>
+                   | Transfer.Switch (Switch.T {cases, default, expect, test, ...}) =>
                         let
                            val test = operandToRValue test
+                           val test =
+                              case expect of
+                                 NONE => test
+                               | SOME w =>
+                                    let
+                                       val ws = WordX.size w
+                                       val wty = LLVM.Type.Word ws
+                                       val name = concat ["@llvm.expect.i", WordSize.toString ws]
+                                       val fnptr =
+                                          LLVM.ModuleContext.addFnDecl
+                                          (mc, name, {argTys = [wty, wty], resTy = wty, vis = NONE})
+                                       val tmp = newTemp wty
+                                       val args = [test, LLVM.Value.word w]
+                                       val _ = $(call {dst = tmp, tail = NONE, cconv = NONE, fnptr = fnptr, args = args})
+                                    in
+                                       tmp
+                                    end
                            val (default, extra) =
                               case default of
                                  SOME d => (d, fn () => ())
