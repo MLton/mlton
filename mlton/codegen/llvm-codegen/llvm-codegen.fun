@@ -436,6 +436,8 @@ structure LLVM =
             fun addMetaData (T {metaData, ...}, md) =
                HashTable.lookupOrInsert
                (metaData, md, fn () => "!" ^ Int.toString (HashTable.size metaData))
+            fun intrinsic (mc, name, {argTys, resTy}) =
+               addFnDecl (mc, "@llvm." ^ name, {argTys = argTys, resTy = resTy, vis = NONE})
          end
    end
 
@@ -472,8 +474,6 @@ fun primApp (prim: 'a Prim.t): ({args: LLVM.Value.t list,
    let
       open LLVM.Instr
       val nth = List.nth
-      fun intrinsic (name, argTys, resTy, mc) =
-         LLVM.ModuleContext.addFnDecl (mc, "@llvm." ^ name, {argTys = argTys, resTy = resTy, vis = NONE})
       fun compare oper {args, mc = _, newTemp, $} =
          let
             val tmp = newTemp LLVM.Type.bool
@@ -507,7 +507,7 @@ fun primApp (prim: 'a Prim.t): ({args: LLVM.Value.t list,
             val atys = List.map (args, #2)
             val rty = LLVM.Type.Real rs
             val name = concat [oper, ".f", RealSize.toString rs]
-            val fnptr = intrinsic (name, atys, rty, mc)
+            val fnptr = LLVM.ModuleContext.intrinsic (mc, name, {argTys = atys, resTy = rty})
             val res = newTemp rty
             val _ = $(call {dst = res, tail = NONE, cconv = NONE, fnptr = fnptr, args = args})
          in
@@ -532,7 +532,7 @@ fun primApp (prim: 'a Prim.t): ({args: LLVM.Value.t list,
             val wty = LLVM.Type.Word ws
             val sty = LLVM.Type.Struct (false, [wty, LLVM.Type.bool])
             val name = concat [oper, ".with.overflow.i", WordSize.toString ws]
-            val fnptr = intrinsic (name, atys, sty, mc)
+            val fnptr = LLVM.ModuleContext.intrinsic (mc, name, {argTys = atys, resTy = sty})
             val tmps = newTemp sty
             val tmpb = newTemp LLVM.Type.bool
             val res = newTemp (LLVM.Type.Word WordSize.bool)
@@ -559,7 +559,7 @@ fun primApp (prim: 'a Prim.t): ({args: LLVM.Value.t list,
             val atys = [wty, wty, wty]
             val rty = wty
             val name = concat [oper, ".i", WordSize.toString ws]
-            val fnptr = intrinsic (name, atys, rty, mc)
+            val fnptr = LLVM.ModuleContext.intrinsic (mc, name, {argTys = atys, resTy = rty})
             val arg1 = newTemp wty
             val res = newTemp wty
             val _ = $(resize {dst = arg1, src = nth (args, 1), signed = false})
@@ -708,8 +708,6 @@ fun primAppOpAndCheck {args: LLVM.Value.t list,
                        $ : LLVM.Instr.t -> unit}: LLVM.Value.t * LLVM.Value.t =
    let
       open LLVM.Instr
-      fun intrinsic (name, argTys, resTy, mc) =
-         LLVM.ModuleContext.addFnDecl (mc, "@llvm." ^ name, {argTys = argTys, resTy = resTy, vis = NONE})
       fun doit' (oper, ws, fargs) =
          let
             val args = fargs args
@@ -717,7 +715,7 @@ fun primAppOpAndCheck {args: LLVM.Value.t list,
             val wty = LLVM.Type.Word ws
             val sty = LLVM.Type.Struct (false, [wty, LLVM.Type.bool])
             val name = concat [oper, ".with.overflow.i", WordSize.toString ws]
-            val fnptr = intrinsic (name, atys, sty, mc)
+            val fnptr = LLVM.ModuleContext.intrinsic (mc, name, {argTys = atys, resTy = sty})
             val tmps = newTemp sty
             val res1 = newTemp wty
             val tmpb = newTemp LLVM.Type.bool
@@ -1577,10 +1575,10 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                                     let
                                        val ws = WordX.size w
                                        val wty = LLVM.Type.Word ws
-                                       val name = concat ["@llvm.expect.i", WordSize.toString ws]
+                                       val name = concat ["expect.i", WordSize.toString ws]
                                        val fnptr =
-                                          LLVM.ModuleContext.addFnDecl
-                                          (mc, name, {argTys = [wty, wty], resTy = wty, vis = NONE})
+                                          LLVM.ModuleContext.intrinsic
+                                          (mc, name, {argTys = [wty, wty], resTy = wty})
                                        val tmp = newTemp wty
                                        val args = [test, LLVM.Value.word w]
                                        val _ = $(call {dst = tmp, tail = NONE, cconv = NONE, fnptr = fnptr, args = args})
