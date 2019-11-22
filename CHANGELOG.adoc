@@ -8,6 +8,10 @@ Here are the changes from version 20180206 to version YYYYMMDD.
 
 === Details
 
+* 2019-11-22
+  ** Many updates and improvements to C and LLVM codegens.  See
+  https://github.com/MLton/mlton/pull/351 for details.
+
 * 2019-11-05
   ** Change `OS.IO.poll` to not be restarted when interrupted by a
   signal.  (This is consistent with `Socket.select`.)
