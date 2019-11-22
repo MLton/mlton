@@ -22,7 +22,22 @@ static GC_frameIndex returnAddressToFrameIndex (GC_returnAddress ra) {
         return (GC_frameIndex)ra;
 }
 
+static inline uintptr_t getNextBlockFromStackTop (GC_state s) {
+  return *(uintptr_t*)(s->stackTop - GC_RETURNADDRESS_SIZE);
+}
+
+PRIVATE uintptr_t MLton_unreachable() { return -2; }
+
+PRIVATE extern ChunkFnPtr_t const nextChunks[];
+
+static inline void MLton_trampoline (GC_state s, uintptr_t nextBlock, bool mayReturnToC) {
+        do {
+                nextBlock = (*(nextChunks[nextBlock]))(s, s->stackTop, s->frontier, nextBlock);
+        } while (!mayReturnToC || nextBlock != (uintptr_t)-1);
+}
+
 #define MLtonCallFromC()                                                \
+PRIVATE uintptr_t Thread_returnToC() { return -1; }                     \
 static void MLton_callFromC (CPointer localOpArgsResPtr) {              \
         uintptr_t nextBlock;                                            \
         GC_state s = MLton_gcState();                                   \
@@ -35,10 +50,8 @@ static void MLton_callFromC (CPointer localOpArgsResPtr) {              \
                 s->limit = s->limitPlusSlop - GC_HEAP_LIMIT_SLOP;       \
         /* Switch to the C Handler thread. */                           \
         GC_switchToThread (s, GC_getCallFromCHandlerThread (s), 0);     \
-        nextBlock = *(uintptr_t*)(s->stackTop - GC_RETURNADDRESS_SIZE); \
-        do {                                                            \
-                nextBlock = (*(nextChunks[nextBlock]))(s, s->stackTop, s->frontier, nextBlock); \
-        } while (nextBlock != (uintptr_t)-1);                           \
+        nextBlock = getNextBlockFromStackTop (s);                       \
+        MLton_trampoline (s, nextBlock, TRUE);                          \
         s->atomicState += 1;                                            \
         GC_switchToThread (s, GC_getSavedThread (s), 0);                \
         s->atomicState -= 1;                                            \
@@ -60,16 +73,13 @@ PUBLIC int MLton_main (int argc, char* argv[]) {                        \
                 nextBlock = ml;                                         \
         } else {                                                        \
                 /* Return to the saved world */                         \
-                nextBlock = *(uintptr_t*)(s->stackTop - GC_RETURNADDRESS_SIZE); \
+                nextBlock = getNextBlockFromStackTop (s);               \
         }                                                               \
-        /* Trampoline */                                                \
-        do {                                                            \
-                nextBlock = (*(nextChunks[nextBlock]))(s, s->stackTop, s->frontier, nextBlock); \
-        } while (1);                                                    \
+        MLton_trampoline (s, nextBlock, FALSE);                         \
         return 1;                                                       \
 }
 
-#define MLtonLibrary(al, mg, mfs, mmc, pk, ps, mc, ml)                  \
+#define MLtonLibrary(al, mg, mfs, mmc, pk, ps, ml)                      \
 PUBLIC void LIB_OPEN(LIBNAME) (int argc, char* argv[]) {                \
         uintptr_t nextBlock;                                            \
         GC_state s = MLton_gcState();                                   \
@@ -80,20 +90,15 @@ PUBLIC void LIB_OPEN(LIBNAME) (int argc, char* argv[]) {                \
                 nextBlock = ml;                                         \
         } else {                                                        \
                 /* Return to the saved world */                         \
-                nextBlock = *(uintptr_t*)(s->stackTop - GC_RETURNADDRESS_SIZE); \
+                nextBlock = getNextBlockFromStackTop (s);               \
         }                                                               \
-        /* Trampoline */                                                \
-        do {                                                            \
-                nextBlock = (*(nextChunks[nextBlock]))(s, s->stackTop, s->frontier, nextBlock); \
-        } while (nextBlock != (uintptr_t)-1);                           \
+        MLton_trampoline (s, nextBlock, TRUE);                          \
 }                                                                       \
 PUBLIC void LIB_CLOSE(LIBNAME) () {                                     \
         uintptr_t nextBlock;                                            \
         GC_state s = MLton_gcState();                                   \
-        nextBlock = *(uintptr_t*)(s->stackTop - GC_RETURNADDRESS_SIZE); \
-        do {                                                            \
-                nextBlock = (*(nextChunks[nextBlock]))(s, s->stackTop, s->frontier, nextBlock); \
-        } while (nextBlock != (uintptr_t)-1);                           \
+        nextBlock = getNextBlockFromStackTop (s);                       \
+        MLton_trampoline (s, nextBlock, TRUE);                          \
         GC_done(s);                                                     \
 }
 

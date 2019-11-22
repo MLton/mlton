@@ -60,8 +60,6 @@ signature MACHINE =
          sig
             datatype t =
                Cast of t * Type.t
-             | Contents of {oper: t,
-                            ty: Type.t}
              | Frontier
              | GCState
              | Global of Global.t
@@ -89,6 +87,7 @@ signature MACHINE =
             val isDestination: t -> bool
             val layout: t -> Layout.t
             val stackOffset: {offset: Bytes.t, ty: Type.t} -> t
+            val gcField: Runtime.GCField.t -> t
             val toString: t -> string
             val ty: t -> Type.t
          end
@@ -117,7 +116,6 @@ signature MACHINE =
               *)
                Move of {dst: Operand.t,
                         src: Operand.t}
-             | Noop
              | PrimApp of {args: Operand.t vector,
                            dst: Operand.t option,
                            prim: Type.t Prim.t}
@@ -125,10 +123,7 @@ signature MACHINE =
 
             val foldOperands: t * 'a * (Operand.t * 'a -> 'a) -> 'a
             val layout: t -> Layout.t
-            val move: {dst: Operand.t, src: Operand.t} -> t
-            (* Error if dsts and srcs aren't of same length. *)
-            val moves: {dsts: Operand.t vector,
-                        srcs: Operand.t vector} -> t vector
+            val move: {dst: Operand.t, src: Operand.t} -> t option
             val object: {dst: Operand.t, header: word, size: Bytes.t} -> t vector
          end
 
@@ -145,8 +140,8 @@ signature MACHINE =
                                  handler: Label.t option (* must be kind Handler*),
                                  size: Bytes.t} option}
              | Goto of Label.t (* must be kind Jump *)
-             | Raise
-             | Return
+             | Raise of {raisesTo: Label.t list}
+             | Return of {returnsTo: Label.t list}
              | Switch of Switch.t
 
             val foldOperands: t * 'a * (Operand.t * 'a -> 'a) -> 'a

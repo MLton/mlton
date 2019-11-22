@@ -37,11 +37,23 @@ signature CONTROL_FLAGS =
       structure Chunkify:
          sig
             datatype t = Coalesce of {limit: int}
+                       | Func
                        | One
-                       | PerFunc
+                       | Simple of {mainFns: bool,
+                                    sccC: bool,
+                                    sccR: bool,
+                                    singC: bool,
+                                    singR: bool}
+            val toString: t -> string
+            val fromString: string -> t option
          end
       val chunkify: Chunkify.t ref
 
+      val chunkJumpTable: bool ref
+      val chunkMayRToSelfOpt: bool ref
+      val chunkMustRToOtherOpt: bool ref
+      val chunkMustRToSelfOpt: bool ref
+      val chunkMustRToSingOpt: bool ref
       val chunkTailCall: bool ref
 
       val closureConvertGlobalize: bool ref
@@ -61,6 +73,12 @@ signature CONTROL_FLAGS =
       datatype codegen = datatype Codegen.t
 
       val codegen: Codegen.t ref
+
+      (* whether or not to use comments in codegen *)
+      val codegenComments: int ref
+
+      (* whether or not to fuse `op` and `opCheckP` primitives in codegen *)
+      val codegenFuseOpAndChk: bool ref
 
       val contifyIntoMain: bool ref
 
@@ -202,6 +220,8 @@ signature CONTROL_FLAGS =
        | Every
       val gcCheck: gcCheck ref
 
+      val gcExpect: bool option ref
+
       val globalizeArrays: bool ref
 
       val globalizeRefs: bool ref
@@ -265,11 +285,21 @@ signature CONTROL_FLAGS =
 
       structure LLVMAliasAnalysisMetaData:
          sig
-            datatype t = None | TBAA
+            datatype t =
+               None
+             | Scope
+             | TBAA of {gcstate: {offset: bool} option,
+                        global: {cty: bool, index: bool} option,
+                        heap: {cty: bool, kind: bool, offset: bool, tycon: bool} option,
+                        other: bool,
+                        stack: {offset: bool} option,
+                        static: {cty: bool, index: bool, offset: bool} option}
             val toString: t -> string
             val fromString: string -> t option
          end
       val llvmAAMD: LLVMAliasAnalysisMetaData.t ref
+
+      val llvmCC10: bool ref
 
       (* Limit the code growth loop unrolling/unswitching will allow. *)
       val loopUnrollLimit: int ref
@@ -287,9 +317,6 @@ signature CONTROL_FLAGS =
 
       structure Native:
          sig
-            (* whether or not to use comments in native codegen *)
-            val commented: int ref
-
             (* whether to eliminate redundant AL ops in native codegen *)
             val elimALRedundant: bool ref
 

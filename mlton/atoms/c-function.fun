@@ -189,16 +189,18 @@ datatype z = datatype Target.t
 datatype 'a t = T of {args: 'a vector,
                       convention: Convention.t,
                       kind: Kind.t,
+                      inline: bool,
                       prototype: CType.t vector * CType.t option,
                       return: 'a,
                       symbolScope: SymbolScope.t,
                       target: Target.t}
 
-fun layout (T {args, convention, kind, prototype, return, symbolScope, target, ...},
+fun layout (T {args, convention, inline, kind, prototype, return, symbolScope, target, ...},
             layoutType) =
    Layout.record
    [("args", Vector.layout layoutType args),
     ("convention", Convention.layout convention),
+    ("inline", Bool.layout inline),
     ("kind", Kind.layout kind),
     ("prototype", (fn (args,ret) => 
                    Layout.record
@@ -215,6 +217,7 @@ fun parse parseType =
       T <$>
       cbrack (ffield ("args", vector parseType) >>= (fn args =>
               nfield ("convention", Convention.parse) >>= (fn convention =>
+              nfield ("inline", bool) >>= (fn inline =>
               nfield ("kind", Kind.parse) >>= (fn kind =>
               nfield ("prototype", cbrack (ffield ("args", vector CType.parse) >>= (fn args =>
                                            nfield ("res", option CType.parse) >>= (fn res =>
@@ -222,9 +225,9 @@ fun parse parseType =
               nfield ("return", parseType) >>= (fn return =>
               nfield ("symbolScope", SymbolScope.parse) >>= (fn symbolScope =>
               nfield ("target", Target.parse) >>= (fn target =>
-              pure {args = args, convention = convention,
+              pure {args = args, convention = convention, inline = inline,
                     kind = kind, prototype = prototype, return = return,
-                    symbolScope = symbolScope, target = target}))))))))
+                    symbolScope = symbolScope, target = target})))))))))
    end
 
 local
@@ -251,10 +254,11 @@ val _ = (modifiesFrontier, readsStackTop, writesStackTop)
 
 fun equals (f, f') = Target.equals (target f, target f')
 
-fun map (T {args, convention, kind, prototype, return, symbolScope, target},
+fun map (T {args, convention, inline, kind, prototype, return, symbolScope, target},
          f) =
    T {args = Vector.map (args, f),
       convention = convention,
+      inline = inline,
       kind = kind,
       prototype = prototype,
       return = f return,
@@ -285,14 +289,14 @@ fun isOk (T {kind, return, ...},
 fun vanilla {args, name, prototype, return} =
    T {args = args,
       convention = Convention.Cdecl,
+      inline = false,
       kind = Kind.Impure,
       prototype = prototype,
       return = return,
       symbolScope = SymbolScope.Private,
       target = Direct name}
 
-fun cPrototype (T {convention, prototype = (args, return), symbolScope, target, 
-                   ...}) =
+fun cPrototype (T {convention, inline, prototype = (args, return), symbolScope, target, ...}) =
    let
       val convention =
          if convention <> Convention.Cdecl
@@ -305,6 +309,7 @@ fun cPrototype (T {convention, prototype = (args, return), symbolScope, target,
             SymbolScope.External => "EXTERNAL "
           | SymbolScope.Private => "PRIVATE "
           | SymbolScope.Public => "PUBLIC "
+      val inline = if inline then "inline " else ""
       val name = 
          case target of
             Direct name => name
@@ -317,7 +322,7 @@ fun cPrototype (T {convention, prototype = (args, return), symbolScope, target,
             NONE => "void"
           | SOME t => CType.toString t
    in
-      concat [symbolScope, return, convention, name,
+      concat [symbolScope, inline, return, convention, name,
               " (",
               concat (List.separate (Vector.toListMap (args, arg), ", ")),
               ")"]

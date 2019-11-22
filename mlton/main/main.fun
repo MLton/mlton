@@ -275,32 +275,29 @@ fun makeOptions {usage} =
        (Expert, "cc-opt-quote", " <opt>", "pass (quoted) option to C compiler",
         SpaceString
         (fn s => List.push (ccOpts, {opt = s, pred = OptPred.Yes}))),
-       (Expert, "chunkify", " {coalesce<n>|func|one}", "set chunkify stategy",
-        SpaceString (fn s =>
-                     explicitChunkify
-                     := SOME (case s of
-                                 "func" => Chunkify.PerFunc
-                               | "one" => Chunkify.One
-                               | _ => let
-                                         val usage = fn () =>
-                                            usage (concat ["invalid -chunkify flag: ", s])
-                                      in
-                                         if String.hasPrefix (s, {prefix = "coalesce"})
-                                            then let
-                                                    val s = String.dropPrefix (s, 8)
-                                                 in
-                                                    if String.forall (s, Char.isDigit)
-                                                       then (case Int.fromString s of
-                                                                NONE => usage ()
-                                                              | SOME n =>
-                                                                   Chunkify.Coalesce
-                                                                   {limit = n})
-                                                       else usage ()
-                                                 end
-                                            else usage ()
-                                      end))),
+       (Expert, "chunkify", " {coalesce<n>|func|one|simple}", "set chunkify stategy",
+        SpaceString
+        (fn s =>
+         explicitChunkify := (case Chunkify.fromString s of
+                                 SOME chunkify => SOME chunkify
+                               | NONE => usage (concat ["invalid -chunkify flag: ", s])))),
        (Expert, "chunk-batch", " <n>", "batch c files at size ~n",
         Int (fn n => chunkBatch := n)),
+       (Expert, "chunk-jump-table", " {false|true}",
+        "whether to use explicit jump table for chunk entry switch",
+        Bool (fn b => chunkJumpTable := b)),
+       (Expert, "chunk-may-rto-self-opt", " {true|false}",
+        "whether to optimize return/raise that may transfer to self chunk",
+        Bool (fn b => chunkMayRToSelfOpt := b)),
+       (Expert, "chunk-must-rto-other-opt", " {true|false}",
+        "whether to optimize return/raise that must transfer to one other chunk",
+        Bool (fn b => chunkMustRToOtherOpt := b)),
+       (Expert, "chunk-must-rto-self-opt", " {true|false}",
+        "whether to optimize return/raise that must transfer to self chunk",
+        Bool (fn b => chunkMustRToSelfOpt := b)),
+       (Expert, "chunk-must-rto-sing-opt", " {true|false}",
+        "whether to optimize return/raise that must transfer to a single label",
+        Bool (fn b => chunkMustRToSingOpt := b)),
        (Expert, "chunk-tail-call", " {false|true}",
         "whether to use tail calls for interchunk transfers",
         Bool (fn b => chunkTailCall := b)),
@@ -333,6 +330,10 @@ fun makeOptions {usage} =
                                           s = Control.Codegen.toString cg) of
                                        SOME cg => Explicit cg
                                      | NONE => usage (concat ["invalid -codegen flag: ", s]))))),
+       (Expert, "codegen-comments", " <n>", "level of comments  (0)",
+        intRef codegenComments),
+       (Expert, "codegen-fuse-op-and-chk", " {false|true}", "fuse `op` and `opCheckP` primitives in codegen",
+        boolRef codegenFuseOpAndChk),
        (Normal, "const", " '<name> <value>'", "set compile-time constant",
         SpaceString (fn s =>
                      case String.tokens (s, Char.isSpace) of
@@ -457,6 +458,14 @@ fun makeOptions {usage} =
                        | "first" => First
                        | "every" => Every
                        | _ => usage (concat ["invalid -gc-check flag: ", s])))),
+       (Expert, "gc-expect", " {none|false|true}", "GC expect",
+        SpaceString (fn s =>
+                     gcExpect :=
+                     (case s of
+                         "false" => SOME false
+                       | "none" => NONE
+                       | "true" => SOME true
+                       | _ => usage (concat ["invalid -gc-expect flag: ", s])))),
        (Expert, "globalize-arrays", " {false|true}", "globalize arrays",
         boolRef globalizeArrays),
        (Expert, "globalize-refs", " {true|false}", "globalize refs",
@@ -583,6 +592,8 @@ fun makeOptions {usage} =
          llvmAAMD := (case LLVMAliasAnalysisMetaData.fromString s of
                          SOME aamd => aamd
                        | NONE => usage (concat ["invalid -llvm-aamd flag: ", s])))),
+       (Expert, "llvm-cc10", " {false|true}", "use llvm 'cc10' for interchunk transfers",
+        boolRef llvmCC10),
        (Expert, "llvm-llc", " <llc>", "path to llvm .bc -> .o compiler",
         SpaceString (fn s => llvm_llc := s)),
        (Normal, "llvm-llc-opt", " <opt>", "pass option to llvm compiler",
@@ -623,8 +634,6 @@ fun makeOptions {usage} =
                                 [case parseMlbPathVar s of
                                     NONE => Error.bug ("strange mlb path var: " ^ s)
                                   | SOME v => v])),
-       (Expert, "native-commented", " <n>", "level of comments  (0)",
-        intRef Native.commented),
        (Expert, "native-al-redundant", "{true|false}",
         "eliminate redundant AL ops",
         boolRef Native.elimALRedundant),
@@ -1159,14 +1168,7 @@ fun commandLine (args: string list): unit =
              then opt :: ac
           else ac)
       val asOpts = addTargetOpts asOpts
-      val asOpts = if !debug
-                      then "-Wa,-g" :: asOpts
-                      else asOpts
       val ccOpts = addTargetOpts ccOpts
-      val ccOpts = ("-I" ^ targetIncDir) :: ccOpts
-      val ccOpts = if !debug
-                      then "-g" :: "-DASSERT=1" :: ccOpts
-                      else ccOpts
       val linkOpts = addTargetOpts linkOpts
       val linkOpts = if !debugRuntime then
                      "-lmlton-gdb" :: "-lgdtoa-gdb" :: linkOpts
@@ -1212,10 +1214,10 @@ fun commandLine (args: string list): unit =
          chunkify :=
          (case !explicitChunkify of
              NONE => (case !codegen of
-                         AMD64Codegen => Chunkify.PerFunc
+                         AMD64Codegen => Chunkify.Func
                        | CCodegen => Chunkify.Coalesce {limit = 4096}
                        | LLVMCodegen => Chunkify.Coalesce {limit = 4096}
-                       | X86Codegen => Chunkify.PerFunc
+                       | X86Codegen => Chunkify.Func
                        )
            | SOME c => c)
       val _ = if not (!Control.codegen = X86Codegen) andalso !Native.IEEEFP
@@ -1375,7 +1377,6 @@ fun commandLine (args: string list): unit =
                         atMLtons :=
                         Vector.fromList
                         (tokenize (rev ("--" :: (!runtimeArgs))))
-                     val (ccDebug, asDebug) = (["-g", "-DASSERT=1"], "-Wa,-g")
                      fun compileO (inputs: File.t list): unit =
                         let
                            val output =
@@ -1475,11 +1476,13 @@ fun commandLine (args: string list): unit =
                              List.concat
                              [tl cc,
                               [ "-c" ],
+                              if !debug
+                              then [ "-g", "-DASSERT=1" ] else [],
                               if !format = Executable
                               then [] else [ "-DLIBNAME=" ^ !libname ],
                               if positionIndependent
                               then [ "-fPIC", "-DPIC" ] else [],
-                              if !debug then ccDebug else [],
+                              [ "-I" ^ targetIncDir ],
                               ccOpts,
                               ["-o", output],
                               [input]])
@@ -1495,7 +1498,7 @@ fun commandLine (args: string list): unit =
                             List.concat
                             [tl cc,
                              ["-c"],
-                             if !debug then [asDebug] else [],
+                             if !debug then [ "-Wa,-g" ] else [],
                              asOpts,
                              ["-o", output],
                              [input]])
@@ -1525,8 +1528,10 @@ fun commandLine (args: string list): unit =
                            System.system
                            (llvm_llc,
                             List.concat
-                            [llvm_llcOpts,
-                             ["-filetype=obj"],
+                            [["-filetype=obj"],
+                             if positionIndependent
+                             then [ "-relocation-model=pic" ] else [],
+                             llvm_llcOpts,
                              ["-o", output],
                              [optBC]])
                      in

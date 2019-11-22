@@ -1,4 +1,4 @@
-/* Copyright (C) 2012,2016 Matthew Fluet.
+/* Copyright (C) 2012,2016,2019 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -7,7 +7,7 @@
  * See the file MLton-LICENSE for details.
  */
 
-const char* objectTypeTagToString (GC_objectTypeTag tag) {
+const char * objectTypeTagToString (GC_objectTypeTag tag) {
   switch (tag) {
   case SEQUENCE_TAG:
     return "SEQUENCE";

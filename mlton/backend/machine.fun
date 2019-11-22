@@ -12,7 +12,7 @@ struct
 
 open S
 
-structure ChunkLabel = Id (val noname = "ChunkLabel")
+structure ChunkLabel = Id (val noname = "Chunk")
 
 structure Temporary =
    struct
@@ -163,8 +163,6 @@ structure Operand =
    struct
       datatype t =
          Cast of t * Type.t
-       | Contents of {oper: t,
-                      ty: Type.t}
        | Frontier
        | GCState
        | Global of Global.t
@@ -189,7 +187,6 @@ structure Operand =
 
     val ty =
        fn Cast (_, ty) => ty
-        | Contents {ty, ...} => ty
         | Frontier => Type.cpointer ()
         | GCState => Type.gcState ()
         | Global g => Global.ty g
@@ -215,9 +212,6 @@ structure Operand =
             case z of
                Cast (z, ty) =>
                   seq [str "Cast ", tuple [layout z, Type.layout ty]]
-             | Contents {oper, ty} =>
-                  seq [str (concat ["C", Type.name ty, " "]),
-                       paren (layout oper)]
              | Frontier => str "<Frontier>"
              | GCState => str "<GCState>"
              | Global g => Global.layout g
@@ -248,8 +242,6 @@ structure Operand =
     val rec equals =
          fn (Cast (z, t), Cast (z', t')) =>
                 Type.equals (t, t') andalso equals (z, z')
-           | (Contents {oper = z, ...}, Contents {oper = z', ...}) =>
-                equals (z, z')
            | (GCState, GCState) => true
            | (Global g, Global g') => Global.equals (g, g')
            | (Label l, Label l') => Label.equals (l, l')
@@ -270,6 +262,11 @@ structure Operand =
            | (Word w, Word w') => WordX.equals (w, w')
            | _ => false
 
+      fun gcField field =
+         Offset {base = GCState,
+                 offset = Runtime.GCField.offset field,
+                 ty = Type.ofGCField field}
+
       val stackOffset = StackOffset o StackOffset.T
 
       fun interfere (write: t, read: t): bool =
@@ -279,7 +276,6 @@ structure Operand =
             case (read, write) of
                (Cast (z, _), _) => interfere (write, z)
              | (_, Cast (z, _)) => interfere (z, read)
-             | (Contents {oper, ...}, _) => inter oper
              | (Global g, Global g') => Global.equals (g, g')
              | (Offset {base, ...}, _) => inter base
              | (SequenceOffset {base, index, ...}, _) =>
@@ -293,7 +289,6 @@ structure Operand =
 
       val rec isDestination =
          fn Cast (z, _) => isDestination z
-          | Contents _ => true
           | Global _ => true
           | Offset _ => true
           | SequenceOffset _ => true
@@ -311,7 +306,6 @@ structure Statement =
       datatype t =
          Move of {dst: Operand.t,
                   src: Operand.t}
-       | Noop
        | PrimApp of {args: Operand.t vector,
                      dst: Operand.t option,
                      prim: Type.t Prim.t}
@@ -325,7 +319,6 @@ structure Statement =
                   mayAlign
                   [seq [Operand.layout dst, str " ="],
                    indent (Operand.layout src, 2)]
-             | Noop => str "Noop"
              | PrimApp {args, dst, prim, ...} =>
                   let
                      val rest =
@@ -345,21 +338,16 @@ structure Statement =
 
       fun move (arg as {dst, src}) =
          if Operand.equals (dst, src)
-            then Noop
-         else Move arg
+            then NONE
+         else SOME (Move arg)
 
       val move =
          Trace.trace ("Machine.Statement.move",
                       fn {dst, src} =>
                       Layout.record [("dst", Operand.layout dst),
                                      ("src", Operand.layout src)],
-                      layout)
+                      Option.layout layout)
          move
-
-      fun moves {srcs, dsts} =
-         Vector.fromListRev
-         (Vector.fold2 (srcs, dsts, [], fn (src, dst, ac)  =>
-                        move {src = src, dst = dst} :: ac))
 
       fun object {dst, header, size} =
          let
@@ -470,8 +458,8 @@ structure Transfer =
                            handler: Label.t option,
                            size: Bytes.t} option}
        | Goto of Label.t
-       | Raise
-       | Return
+       | Raise of {raisesTo: Label.t list}
+       | Return of {returnsTo: Label.t list}
        | Switch of Switch.t
 
       fun layout t =
@@ -501,8 +489,12 @@ structure Transfer =
                                          ("size", Bytes.layout size)])
                                 return)]]
              | Goto l => seq [str "Goto ", Label.layout l]
-             | Raise => str "Raise"
-             | Return => str "Return "
+             | Raise {raisesTo} =>
+                  seq [str "Raise ",
+                       record [("raisesTo", List.layout Label.layout raisesTo)]]
+             | Return {returnsTo} =>
+                  seq [str "Return ",
+                       record [("returnsTo", List.layout Label.layout returnsTo)]]
              | Switch s => Switch.layout s
          end
 
@@ -1078,9 +1070,6 @@ structure Program =
                                {from = Operand.ty z,
                                 to = t,
                                 tyconTy = tyconTy}))
-                      | Contents {oper, ...} =>
-                           (checkOperand (oper, alloc)
-                            ; Type.isCPointer (Operand.ty oper))
                       | Frontier => true
                       | GCState => true
                       | Global _ =>
@@ -1265,7 +1254,6 @@ structure Program =
                               then SOME alloc
                            else NONE
                         end
-                   | Noop => SOME alloc
                    | PrimApp {args, dst, prim, ...} =>
                         let
                            val _ = checkOperands (args, alloc)
@@ -1483,11 +1471,11 @@ structure Program =
                                   return = return,
                                   returns = returns}
                    | Goto l => jump l
-                   | Raise =>
+                   | Raise _ =>
                         (case raises of
                             NONE => false
                           | SOME live => liveIsOk (live, alloc))
-                   | Return =>
+                   | Return _ =>
                         (case returns of
                             NONE => false
                           | SOME live => liveIsOk (live, alloc))

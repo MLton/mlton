@@ -24,6 +24,7 @@ signature WORD_X =
       val compare: t * t * {signed: bool} -> order
       val div: t * t * {signed: bool} -> t
       val equals: t * t -> bool
+      val fromBytes: Bytes.t * WordSize.t -> t
       val fromChar: char -> t (* returns a word of size 8 *)
       val fromIntInf: IntInf.t * WordSize.t -> t
       val ge: t * t * {signed: bool} -> bool

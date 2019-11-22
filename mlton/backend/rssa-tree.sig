@@ -119,6 +119,7 @@ signature RSSA_TREE =
             val foreachLabel: t * (Label.t -> unit) -> unit
             val foreachUse: t * (Var.t -> unit) -> unit
             val ifBool: Operand.t * {falsee: Label.t, truee: Label.t} -> t
+            val ifBoolE: Operand.t * bool option * {falsee: Label.t, truee: Label.t} -> t
             (* in ifZero, the operand should be of type defaultWord *)
             val ifZero: Operand.t * {falsee: Label.t, truee: Label.t} -> t
             val layout: t -> Layout.t
@@ -211,6 +212,8 @@ signature RSSA_TREE =
             val layouts: t * (Layout.t -> unit) -> unit
             val layoutStats: t -> Layout.t
             val orderFunctions: t -> t
+            val rflow: t -> (Func.t -> {raisesTo: Label.t list,
+                                        returnsTo: Label.t list})
             val shuffle: t -> t
             val toFile: {display: t Control.display, style: Control.style, suffix: string}
          end

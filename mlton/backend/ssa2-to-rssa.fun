@@ -59,6 +59,7 @@ structure CFunction =
       val copyCurrentThread = fn () =>
          T {args = Vector.new1 (Type.gcState ()),
             convention = Cdecl,
+            inline = false,
             kind = Kind.Runtime {bytesNeeded = NONE,
                                  ensuresBytesFree = NONE,
                                  mayGC = true,
@@ -76,6 +77,7 @@ structure CFunction =
       val copyThread = fn () =>
          T {args = Vector.new2 (Type.gcState (), Type.thread ()),
             convention = Cdecl,
+            inline = false,
             kind = Kind.Runtime {bytesNeeded = NONE,
                                  ensuresBytesFree = NONE,
                                  mayGC = true,
@@ -96,6 +98,7 @@ structure CFunction =
       val halt = fn () =>
          T {args = Vector.new2 (Type.gcState (), Type.cint ()),
             convention = Cdecl,
+            inline = false,
             kind = Kind.Runtime {bytesNeeded = NONE,
                                  ensuresBytesFree = NONE,
                                  mayGC = true,
@@ -115,6 +118,7 @@ structure CFunction =
                                 Type.seqIndex (),
                                 Type.objptrHeader ()),
             convention = Cdecl,
+            inline = false,
             kind = Kind.Runtime {bytesNeeded = NONE,
                                  ensuresBytesFree = SOME 1,
                                  mayGC = true,
@@ -140,6 +144,7 @@ structure CFunction =
                                 Type.seqIndex (),
                                 Type.seqIndex ()),
             convention = Cdecl,
+            inline = false,
             kind = Kind.Runtime {bytesNeeded = NONE,
                                  ensuresBytesFree = NONE,
                                  mayGC = false,
@@ -162,6 +167,7 @@ structure CFunction =
       val returnToC = fn () =>
          T {args = Vector.new0 (),
             convention = Cdecl,
+            inline = false,
             kind = Kind.Runtime {bytesNeeded = NONE,
                                  ensuresBytesFree = NONE,
                                  mayGC = true,
@@ -179,6 +185,7 @@ structure CFunction =
       val threadSwitchTo = fn () =>
          T {args = Vector.new3 (Type.gcState (), Type.thread (), Type.csize ()),
             convention = Cdecl,
+            inline = false,
             kind = Kind.Runtime {bytesNeeded = NONE,
                                  ensuresBytesFree = SOME 2,
                                  mayGC = true,
@@ -199,6 +206,7 @@ structure CFunction =
       fun weakCanGet {arg} =
          T {args = Vector.new2 (Type.gcState (), arg),
             convention = Cdecl,
+            inline = false,
             kind = Kind.Runtime {bytesNeeded = NONE,
                                  ensuresBytesFree = NONE,
                                  mayGC = false,
@@ -217,6 +225,7 @@ structure CFunction =
       fun weakGet {arg, return} =
          T {args = Vector.new2 (Type.gcState (), arg),
             convention = Cdecl,
+            inline = false,
             kind = Kind.Runtime {bytesNeeded = NONE,
                                  ensuresBytesFree = NONE,
                                  mayGC = false,
@@ -235,6 +244,7 @@ structure CFunction =
       fun weakNew {arg, return} =
          T {args = Vector.new3 (Type.gcState (), Type.objptrHeader (), arg),
             convention = Cdecl,
+            inline = false,
             kind = Kind.Runtime {bytesNeeded = NONE,
                                  ensuresBytesFree = NONE,
                                  mayGC = true,
@@ -254,6 +264,7 @@ structure CFunction =
       val worldSave = fn () =>
          T {args = Vector.new2 (Type.gcState (), Type.string ()),
             convention = Cdecl,
+            inline = false,
             kind = Kind.Runtime {bytesNeeded = NONE,
                                  ensuresBytesFree = NONE,
                                  mayGC = true,
@@ -271,6 +282,7 @@ structure CFunction =
       fun share t =
          T {args = Vector.new2 (Type.gcState (), t),
             convention = Cdecl,
+            inline = false,
             kind = Kind.Runtime {bytesNeeded = NONE,
                                  ensuresBytesFree = NONE,
                                  mayGC = true, (* MLton.share works by tracing an object.
@@ -292,6 +304,7 @@ structure CFunction =
       fun size t =
          T {args = Vector.new2 (Type.gcState (), t),
             convention = Cdecl,
+            inline = false,
             kind = Kind.Runtime {bytesNeeded = NONE,
                                  ensuresBytesFree = NONE,
                                  mayGC = true, (* MLton.size works by tracing an object.
@@ -318,6 +331,7 @@ structure CFunction =
                                           Type.intInf (),
                                           Type.csize ()),
                       convention = Cdecl,
+                      inline = false,
                       kind = CFunction.Kind.Runtime {bytesNeeded = SOME 3,
                                                      ensuresBytesFree = NONE,
                                                      mayGC = false,
@@ -340,6 +354,7 @@ structure CFunction =
                                           Type.intInf (),
                                           Type.intInf ()),
                       convention = Cdecl,
+                      inline = false,
                       kind = CFunction.Kind.Runtime {bytesNeeded = NONE,
                                                      ensuresBytesFree = NONE,
                                                      mayGC = false,
@@ -361,6 +376,7 @@ structure CFunction =
                                           Type.shiftArg,
                                           Type.csize ()),
                       convention = Cdecl,
+                      inline = false,
                       kind = CFunction.Kind.Runtime {bytesNeeded = SOME 3,
                                                      ensuresBytesFree = NONE,
                                                      mayGC = false,
@@ -384,6 +400,7 @@ structure CFunction =
                                           Type.word WordSize.word32,
                                           Type.csize ()),
                       convention = Cdecl,
+                      inline = false,
                       kind = CFunction.Kind.Runtime {bytesNeeded = SOME 3,
                                                      ensuresBytesFree = NONE,
                                                      mayGC = false,
@@ -405,6 +422,7 @@ structure CFunction =
                                           Type.intInf (),
                                           Type.csize ()),
                       convention = Cdecl,
+                      inline = false,
                       kind = CFunction.Kind.Runtime {bytesNeeded = SOME 2,
                                                      ensuresBytesFree = NONE,
                                                      mayGC = false,
@@ -764,6 +782,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                    (Switch.T
                     {cases = cases,
                      default = default,
+                     expect = NONE,
                      size = convertWordSize s,
                      test = varOp test}))
                end

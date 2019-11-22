@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 2002-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -30,6 +30,7 @@ signature SWITCH =
          T of {(* Cases are in increasing order of word. *)
                cases: (WordX.t * Label.t) vector,
                default: Label.t option,
+               expect: WordX.t option,
                size: WordSize.t,
                test: Use.t}
 

@@ -12,6 +12,7 @@ signature SCALE =
 
       val fromBytes: Bytes.t -> t option
       val layout: t -> Layout.t
+      val toBytes: t -> Bytes.t
       val toString: t -> string
    end
 
@@ -37,5 +38,11 @@ val fromInt: int -> t option =
 
 val fromBytes: Bytes.t -> t option =
    fromInt o Bytes.toInt
+
+val toBytes: t -> Bytes.t =
+   fn One => Bytes.fromInt 1
+    | Two => Bytes.fromInt 2
+    | Four => Bytes.fromInt 4
+    | Eight => Bytes.fromInt 8
 
 end

@@ -134,6 +134,8 @@ fun eliminateDeadCode (f: R.Function.t): R.Function.t =
 fun toMachine (rssa: Rssa.Program.t) =
    let
       val R.Program.T {functions, handlesSignals, main, objectTypes, profileInfo} = rssa
+      (* returnsTo and raisesTo info *)
+      val rflow = R.Program.rflow rssa
       (* Chunk info *)
       val {get = labelChunk, set = setLabelChunk, ...} =
          Property.getSetOnce (Label.plist,
@@ -440,10 +442,7 @@ fun toMachine (rssa: Rssa.Program.t) =
          case field of
             GCField.Frontier => M.Operand.Frontier
           | GCField.StackTop => M.Operand.StackTop
-          | _ => 
-               M.Operand.Offset {base = M.Operand.GCState,
-                                 offset = GCField.offset field,
-                                 ty = Type.ofGCField field}
+          | _ => M.Operand.gcField field
       val exnStackOp = runtimeOp GCField.ExnStack
       val stackBottomOp = runtimeOp GCField.StackBottom
       val stackTopOp = runtimeOp GCField.StackTop
@@ -518,22 +517,25 @@ fun toMachine (rssa: Rssa.Program.t) =
             fun handlerOffset () = #handlerOffset (valOf handlersInfo)
             fun linkOffset () = #linkOffset (valOf handlersInfo)
             datatype z = datatype R.Statement.t
+            fun move arg =
+               case M.Statement.move arg of
+                  NONE => Vector.new0 ()
+                | SOME move => Vector.new1 move
          in
             case s of
                Bind {dst = (var, _), src, ...} =>
+                  (* CHECK *)
                   let
                      val oper = varOperand var
                   in
                      if M.Operand.isDestination oper
-                     then Vector.new1
-                        (M.Statement.move {dst = oper,
-                                           src = translateOperand src})
-                     else Vector.new0 () (* Destination already propagated *)
+                        then move {dst = oper,
+                                   src = translateOperand src}
+                        else Vector.new0 () (* Destination already propagated *)
                   end
              | Move {dst, src} =>
-                  Vector.new1
-                  (M.Statement.move {dst = translateOperand dst,
-                                     src = translateOperand src})
+                  move {dst = translateOperand dst,
+                        src = translateOperand src}
              | Object {dst, header, size} =>
                   M.Statement.object {dst = varOperand (#1 dst),
                                       header = header,
@@ -555,14 +557,11 @@ fun toMachine (rssa: Rssa.Program.t) =
              | SetExnStackLocal =>
                   (* ExnStack = stackTop + (handlerOffset + LABEL_SIZE) - StackBottom; *)
                   let
-                     val tmp1 =
+                     val tmp =
                         M.Operand.Temporary
                         (Temporary.new (Type.cpointer (), NONE))
-                     val tmp2 =
-                        M.Operand.Temporary
-                        (Temporary.new (Type.csize (), NONE))
                   in
-                     Vector.new3
+                     Vector.new2
                      (M.Statement.PrimApp
                       {args = (Vector.new2
                                (stackTopOp,
@@ -571,38 +570,32 @@ fun toMachine (rssa: Rssa.Program.t) =
                                  (Int.toIntInf
                                   (Bytes.toInt
                                    (Bytes.+ (handlerOffset (), Runtime.labelSize ()))),
-                                  WordSize.cpointer ())))),
-                       dst = SOME tmp1,
+                                  WordSize.cptrdiff ())))),
+                       dst = SOME tmp,
                        prim = Prim.cpointerAdd},
                       M.Statement.PrimApp
-                      {args = Vector.new2 (tmp1, stackBottomOp),
-                       dst = SOME tmp2,
-                       prim = Prim.cpointerDiff},
-                      M.Statement.move
-                      {dst = exnStackOp,
-                       src = M.Operand.Cast (tmp2, Type.exnStack ())})
+                      {args = Vector.new2 (tmp, stackBottomOp),
+                       dst = SOME exnStackOp,
+                       prim = Prim.cpointerDiff})
                   end
              | SetExnStackSlot =>
-                  (* ExnStack = *(size_t* )(stackTop + linkOffset); *)
-                  Vector.new1
-                  (M.Statement.move
-                   {dst = exnStackOp,
-                    src = M.Operand.stackOffset {offset = linkOffset (),
-                                                 ty = Type.exnStack ()}})
+                  (* ExnStack = *(ptrdiff_t* )(stackTop + linkOffset); *)
+                  move
+                  {dst = exnStackOp,
+                   src = M.Operand.stackOffset {offset = linkOffset (),
+                                                ty = Type.exnStack ()}}
              | SetHandler h =>
                   (* *(uintptr_t)(stackTop + handlerOffset) = h; *)
-                  Vector.new1
-                  (M.Statement.move
-                   {dst = M.Operand.stackOffset {offset = handlerOffset (),
-                                                 ty = Type.label h},
-                    src = M.Operand.Label h})
+                  move
+                  {dst = M.Operand.stackOffset {offset = handlerOffset (),
+                                                ty = Type.label h},
+                   src = M.Operand.Label h}
              | SetSlotExnStack =>
-                  (* *(size_t* )(stackTop + linkOffset) = ExnStack; *)
-                  Vector.new1
-                  (M.Statement.move
-                   {dst = M.Operand.stackOffset {offset = linkOffset (),
-                                                 ty = Type.exnStack ()},
-                    src = exnStackOp})
+                  (* *(ptrdiff_t* )(stackTop + linkOffset) = ExnStack; *)
+                  move
+                  {dst = M.Operand.stackOffset {offset = linkOffset (),
+                                                ty = Type.exnStack ()},
+                   src = exnStackOp}
              | _ => Error.bug (concat
                                ["Backend.genStatement: strange statement: ",
                                 R.Statement.toString s])
@@ -669,6 +662,7 @@ fun toMachine (rssa: Rssa.Program.t) =
             val f = eliminateDeadCode f
             val {args, blocks, name, raises, returns, start, ...} =
                Function.dest f
+            val {raisesTo, returnsTo} = rflow name
             val (returnLives, returnOperands) =
                case returns of
                   NONE => (NONE, NONE)
@@ -926,7 +920,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                                                  ty = ty})
                         in
                            if Vector.isEmpty srcs
-                              then (Vector.new0 (), M.Transfer.Raise)
+                              then (Vector.new0 (), M.Transfer.Raise {raisesTo = raisesTo})
                               else (Vector.concat
                                     [Vector.new1
                                      (M.Statement.PrimApp
@@ -935,15 +929,15 @@ fun toMachine (rssa: Rssa.Program.t) =
                                        prim = Prim.cpointerAdd}),
                                      parallelMove {dsts = dsts,
                                                    srcs = translateOperands srcs}],
-                                    M.Transfer.Raise)
+                                    M.Transfer.Raise {raisesTo = raisesTo})
                         end
                    | R.Transfer.Return xs =>
                         (parallelMove {dsts = valOf returnOperands,
                                        srcs = translateOperands xs},
-                         M.Transfer.Return)
+                         M.Transfer.Return {returnsTo = returnsTo})
                    | R.Transfer.Switch switch =>
                         let
-                           val R.Switch.T {cases, default, size, test} =
+                           val R.Switch.T {cases, default, expect, size, test} =
                               switch
                         in
                            simple
@@ -957,6 +951,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                                   (M.Switch.T
                                    {cases = cases,
                                     default = default,
+                                    expect = expect,
                                     size = size,
                                     test = translateOperand test}))
                         end
@@ -1153,7 +1148,6 @@ fun toMachine (rssa: Rssa.Program.t) =
                        SequenceOffset {base, index, ...} =>
                           doOperand (base, doOperand (index, max))
                      | Cast (z, _) => doOperand (z, max)
-                     | Contents {oper, ...} => doOperand (oper, max)
                      | Offset {base, ...} => doOperand (base, max)
                      | StackOffset (StackOffset.T {offset, ty}) =>
                           Bytes.max (Bytes.+ (offset, Type.bytes ty), max)

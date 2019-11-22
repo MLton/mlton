@@ -22,8 +22,8 @@
 #define DeclareProfileLabel(l)                  \
         extern char l __attribute__ ((weak))
 
-#define LoadArray(a, f) if (fread (a, sizeof(*a), cardof(a), f) != cardof(a)) return -1;
-#define SaveArray(a, f) if (fwrite(a, sizeof(*a), cardof(a), f) != cardof(a)) return -1;
+#define LoadArray(a, f) do { if (fread (a, sizeof(*a), cardof(a), f) != cardof(a)) return -1; } while (0)
+#define SaveArray(a, f) do { if (fwrite(a, sizeof(*a), cardof(a), f) != cardof(a)) return -1; } while (0)
 
 #define Initialize(s, al, mg, mfs, mmc, pk, ps)                         \
         s->alignment = al;                                              \

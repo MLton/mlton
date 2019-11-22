@@ -1,4 +1,4 @@
-(* Copyright (C) 2012,2013 Matthew Fluet.
+(* Copyright (C) 2012,2013,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -103,6 +103,7 @@ open Primitive
 
 structure Real32 : PRIM_REAL =
    struct
+      open PrimitiveFFI.Real32
       open Real32
 
       val realSize : Int32.int = 32
@@ -113,24 +114,21 @@ structure Real32 : PRIM_REAL =
       structure Math =
          struct
             type real = real
+            open Math
 
             val acos = _prim "Real32_Math_acos": real -> real;
             val asin = _prim "Real32_Math_asin": real -> real;
             val atan = _prim "Real32_Math_atan": real -> real;
             val atan2 = _prim "Real32_Math_atan2": real * real -> real;
             val cos = _prim "Real32_Math_cos": real -> real;
-            val cosh = _import "Real32_Math_cosh" private: real -> real;
-            val e = #1 _symbol "Real32_Math_e" private: real GetSet.t; ()
+            val e = eGet ()
             val exp = _prim "Real32_Math_exp": real -> real;
             val ln = _prim "Real32_Math_ln": real -> real;
             val log10 = _prim "Real32_Math_log10": real -> real;
-            val pi = #1 _symbol "Real32_Math_pi" private: real GetSet.t; ()
-            val pow = _import "Real32_Math_pow" private: real * real -> real;
+            val pi = piGet ()
             val sin = _prim "Real32_Math_sin": real -> real;
-            val sinh = _import "Real32_Math_sinh" private: real -> real;
             val sqrt = _prim "Real32_Math_sqrt": real -> real;
             val tan = _prim "Real32_Math_tan": real -> real;
-            val tanh = _import "Real32_Math_tanh" private: real -> real;
          end
 
       val * = _prim "Real32_mul": real * real -> real;
@@ -145,15 +143,8 @@ structure Real32 : PRIM_REAL =
       val == = _prim "Real32_equal": real * real -> bool;
       val ?= = _prim "Real32_qequal": real * real -> bool;
       val abs = _prim "Real32_abs": real -> real;
-      val frexp = _import "Real32_frexp" private: real * C_Int.t ref -> real;
-      val gdtoa = _import "Real32_gdtoa" private: real * C_Int.t * C_Int.t * C_Int.t * C_Int.t ref -> C_String.t;
       val ldexp = _prim "Real32_ldexp": real * C_Int.t -> real;
-      val modf = _import "Real32_modf" private: real * real ref -> real;
       val round = _prim "Real32_round": real -> real;
-      val realCeil = _import "Real32_realCeil" private: real -> real;
-      val realFloor = _import "Real32_realFloor" private: real -> real;
-      val realTrunc = _import "Real32_realTrunc" private: real -> real;
-      val strtor = _import "Real32_strtor" private: NullString8.t * C_Int.t -> real;
 
       val fromInt8Unsafe = _prim "WordS8_rndToReal32": Int8.int -> real;
       val fromInt16Unsafe = _prim "WordS16_rndToReal32": Int16.int -> real;
@@ -193,6 +184,7 @@ structure Real32 =
 
 structure Real64 : PRIM_REAL =
    struct
+      open PrimitiveFFI.Real64
       open Real64
 
       val realSize : Int32.int = 64
@@ -203,24 +195,21 @@ structure Real64 : PRIM_REAL =
       structure Math =
          struct
             type real = real
+            open Math
 
             val acos = _prim "Real64_Math_acos": real -> real;
             val asin = _prim "Real64_Math_asin": real -> real;
             val atan = _prim "Real64_Math_atan": real -> real;
             val atan2 = _prim "Real64_Math_atan2": real * real -> real;
             val cos = _prim "Real64_Math_cos": real -> real;
-            val cosh = _import "Real64_Math_cosh" private: real -> real;
-            val e = #1 _symbol "Real64_Math_e" private: real GetSet.t; ()
+            val e = eGet ()
             val exp = _prim "Real64_Math_exp": real -> real;
             val ln = _prim "Real64_Math_ln": real -> real;
             val log10 = _prim "Real64_Math_log10": real -> real;
-            val pi = #1 _symbol "Real64_Math_pi" private: real GetSet.t; ()
-            val pow = _import "Real64_Math_pow" private: real * real -> real;
+            val pi = piGet ()
             val sin = _prim "Real64_Math_sin": real -> real;
-            val sinh = _import "Real64_Math_sinh" private: real -> real;
             val sqrt = _prim "Real64_Math_sqrt": real -> real;
             val tan = _prim "Real64_Math_tan": real -> real;
-            val tanh = _import "Real64_Math_tanh" private: real -> real;
          end
 
       val * = _prim "Real64_mul": real * real -> real;
@@ -235,15 +224,8 @@ structure Real64 : PRIM_REAL =
       val == = _prim "Real64_equal": real * real -> bool;
       val ?= = _prim "Real64_qequal": real * real -> bool;
       val abs = _prim "Real64_abs": real -> real;
-      val frexp = _import "Real64_frexp" private: real * C_Int.t ref -> real;
-      val gdtoa = _import "Real64_gdtoa" private: real * C_Int.t * C_Int.t * C_Int.t * C_Int.t ref -> C_String.t;
       val ldexp = _prim "Real64_ldexp": real * C_Int.t -> real;
-      val modf = _import "Real64_modf" private: real * real ref -> real;
       val round = _prim "Real64_round": real -> real;
-      val realCeil = _import "Real64_realCeil" private: real -> real;
-      val realFloor = _import "Real64_realFloor" private: real -> real;
-      val realTrunc = _import "Real64_realTrunc" private: real -> real;
-      val strtor = _import "Real64_strtor" private: NullString8.t * C_Int.t -> real;
 
       val fromInt8Unsafe = _prim "WordS8_rndToReal64": Int8.int -> real;
       val fromInt16Unsafe = _prim "WordS16_rndToReal64": Int16.int -> real;

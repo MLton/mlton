@@ -10,17 +10,24 @@
 #ifndef _C_COMMON_H_
 #define _C_COMMON_H_
 
+#ifndef TRUE
+#define TRUE 1
+#endif
+
+#ifndef FALSE
+#define FALSE 0
+#endif
+
 #ifndef DEBUG_CCODEGEN
 #define DEBUG_CCODEGEN FALSE
 #endif
 
 #include "export.h"
 
-#define ChunkName(n) Chunk ## n
+typedef uintptr_t ChunkFn_t (CPointer, CPointer, CPointer, uintptr_t);
+typedef ChunkFn_t *ChunkFnPtr_t;
 
-#define DeclareChunk(n)                         \
-        PRIVATE uintptr_t ChunkName(n)(CPointer gcState, CPointer stackTop, CPointer frontier, uintptr_t nextBlock)
-
-#define Chunkp(n) &(ChunkName(n))
+PRIVATE uintptr_t MLton_unreachable();
+PRIVATE uintptr_t Thread_returnToC();
 
 #endif /* #ifndef _C_COMMON_H_ */

@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2012,2015,2017 Matthew Fluet.
+(* Copyright (C) 2009-2012,2015,2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1137,6 +1137,19 @@ fun parseIEAttributesConvention (attributes: ImportExportAttribute.t list)
            | _ => NONE)
     | _ => NONE
 
+val isIEAttributeInline =
+   fn ImportExportAttribute.Inline => true
+    | _ => false
+
+fun parseIEAttributesInline (attributes: ImportExportAttribute.t list)
+    : bool option =
+   case attributes of
+      [] => SOME false
+    | [a] => (case a of
+                 ImportExportAttribute.Inline => SOME true
+               | _ => NONE)
+    | _ => NONE
+
 val isIEAttributeKind =
    fn ImportExportAttribute.Impure => true
     | ImportExportAttribute.Pure => true
@@ -1224,6 +1237,20 @@ fun import {attributes: ImportExportAttribute.t list,
                      NONE => (invalidAttributes ()
                               ; Convention.Cdecl)
                    | SOME c => c
+               val inline =
+                  List.keepAll (attributes, isIEAttributeInline)
+               val inline =
+                  case name of
+                     NONE =>
+                        (if List.isEmpty inline
+                            then ()
+                            else invalidAttributes ()
+                         ; false)
+                   | SOME _ =>
+                        (case parseIEAttributesInline inline of
+                            NONE => (invalidAttributes ()
+                                     ; false)
+                          | SOME i => i)
                val kind =
                   List.keepAll (attributes, isIEAttributeKind)
                val kind =
@@ -1265,6 +1292,7 @@ fun import {attributes: ImportExportAttribute.t list,
                                                  [Vector.new1 addrTy, args]
                                       end,
                                convention = convention,
+                               inline = inline,
                                kind = kind,
                                prototype = (Vector.map (args, #ctype),
                                             Option.map (result, #ctype)),

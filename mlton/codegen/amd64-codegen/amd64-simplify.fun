@@ -3246,6 +3246,10 @@ struct
         val (callback,elimALRedundant_msg)
           = make_callback_msg "elimALRedundant"
       in
+        (* Fusing of adjacent `Word<N>_<op>` and `Word{S,U}<N>_<op>CheckP`
+         * primitives depends on the relative order of `!a` and `?a`
+         * in /basis-library/primitive/prim1.sml:mkOverflow
+         *)
         val elimALRedundant : optimization
           = {template = template,
              rewriter = rewriter,

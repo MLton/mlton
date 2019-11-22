@@ -151,30 +151,6 @@ struct
                   fromSizes (sizes, origin)
                end
           | Cast (z, _) => toAMD64Operand z
-          | Contents {oper, ty} =>
-               let
-                  val ty = Type.toCType ty
-                  val base = toAMD64Operand oper
-                  val _ = Assert.assert("amd64Translate.Operand.toAMD64Operand: Contents/base",
-                                        fn () => Vector.length base = 1)
-                  val base = getOp0 base
-                  val origin =
-                     case amd64.Operand.deMemloc base of
-                        SOME base =>
-                           amd64.MemLoc.simple 
-                           {base = base,
-                            index = amd64.Immediate.zero,
-                            scale = amd64.Scale.One,
-                            size = amd64.Size.BYTE,
-                            class = amd64MLton.Classes.Heap}
-                      | _ => Error.bug (concat
-                                        ["amd64Translate.Operand.toAMD64Operand: ",
-                                         "strange Contents: base: ",
-                                         amd64.Operand.toString base])    
-                  val sizes = amd64.Size.fromCType ty
-               in
-                  fromSizes (sizes, origin)
-               end
           | Frontier => 
                let 
                   val frontier = amd64MLton.gcState_frontierContentsOperand ()
@@ -398,7 +374,7 @@ struct
       open Machine.Statement
 
       fun comments statement
-        = if !Control.Native.commented > 0
+        = if !Control.codegenComments > 0
             then let
                    val comment = (Layout.toString o layout) statement
                  in
@@ -422,9 +398,7 @@ struct
       fun toAMD64Blocks {statement,
                        transInfo as {...} : transInfo}
         = (case statement
-             of Noop
-              => AppendList.empty
-              | Move {src, dst}
+             of Move {src, dst}
               => let
                    val (comment_begin,
                         comment_end) = comments statement
@@ -594,7 +568,7 @@ struct
               => switch(test, amd64.Transfer.Cases.word cases, l))
 
       fun comments transfer
-        = if !Control.Native.commented > 0
+        = if !Control.codegenComments > 0
             then let
                    val comment = (Layout.toString o layout) transfer
                  in
@@ -623,7 +597,7 @@ struct
                                                           size = Option.map (size, Bytes.toInt)}),
                                     transInfo = transInfo})
                  end
-              | Return
+              | Return _
               => AppendList.append
                  (comments transfer,
                   AppendList.single
@@ -645,7 +619,7 @@ struct
                                  case amd64.Operand.deMemloc operand of
                                     SOME memloc => amd64.MemLocSet.add(live, memloc)
                                   | NONE => live))})}))
-              | Raise
+              | Raise _
               => AppendList.append
                  (comments transfer,
                   AppendList.single
@@ -727,7 +701,7 @@ struct
                   amd64.Block.mkBlock'
                   {entry = NONE,
                    statements 
-                   = if !Control.Native.commented > 0
+                   = if !Control.codegenComments > 0
                        then let
                               val comment =
                                  concat ["Live: ",

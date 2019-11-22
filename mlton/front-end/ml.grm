@@ -8,7 +8,7 @@
  * See the file NJ-LICENSE for details.
  *)
 
-(* Copyright (C) 2008,2009,2014-2017 Matthew Fluet.
+(* Copyright (C) 2008,2009,2014-2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1085,6 +1085,7 @@ ieattributes
             "cdecl" => PrimKind.ImportExportAttribute.Cdecl :: ieattributes
           | "external" => PrimKind.ImportExportAttribute.External :: ieattributes
           | "impure" => PrimKind.ImportExportAttribute.Impure :: ieattributes
+          | "inline" => PrimKind.ImportExportAttribute.Inline :: ieattributes
           | "private" => PrimKind.ImportExportAttribute.Private :: ieattributes
           | "public" => PrimKind.ImportExportAttribute.Public :: ieattributes
           | "pure" => PrimKind.ImportExportAttribute.Pure :: ieattributes

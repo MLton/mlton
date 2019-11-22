@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet.
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a HPND-style license.
@@ -12,6 +13,7 @@ signature BOOL =
       val compare: t * t -> Relation.t
       val equals: t * t -> bool
       val fromString: string -> t option
+      val hash: t -> word
       val layout: t -> Layout.t
       val not: t -> t
       val toString: t -> string

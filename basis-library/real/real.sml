@@ -1,4 +1,4 @@
-(* Copyright (C) 2011-2014,2017 Matthew Fluet.
+(* Copyright (C) 2011-2014,2017,2019 Matthew Fluet.
  * Copyright (C) 2003-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -179,16 +179,7 @@ functor Real (structure W: WORD_EXTRA
 
       fun isNormal r = class r = NORMAL
 
-      val op ?= =
-         if MLton.Codegen.isAMD64 orelse MLton.Codegen.isLLVM orelse MLton.Codegen.isX86
-            then R.?=
-         else
-            fn (x, y) =>
-            case (class x, class y) of
-               (NAN, _) => true
-             | (_, NAN) => true
-             | (ZERO, ZERO) => true
-             | _ => R.== (x, y)
+      val op ?= = R.?=
 
       fun min (x, y) =
          if x <= y then x

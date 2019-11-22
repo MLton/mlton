@@ -100,6 +100,8 @@ end
 
 fun equals (w, w') = WordSize.equals (size w, size w') andalso value w = value w'
 
+fun fromBytes (b, ws) = make (Bytes.toIntInf b, ws)
+
 fun fromChar (c: Char.t) = make (Int.toIntInf (Char.toInt c), WordSize.byte)
 
 val fromIntInf = make

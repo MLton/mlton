@@ -33,11 +33,11 @@ structure C =
       fun args (ss: string list): string =
          concat ("(" :: List.separate (ss, ", ") @ [")"])
 
-      fun callNoSemi (f: string, xs: string list, print: string -> unit): unit =
-         (print f; print " "; print (args xs))
+      fun callNoSemi (f: string, xs: string list): string =
+         concat [f, " ", args xs]
 
-      fun call (f, xs, print) =
-         (callNoSemi (f, xs, print); print ";\n")
+      fun call (f, xs) =
+         concat [f, " ", args xs, ";\n"]
 
       fun int (i: int) =
          if i >= 0
@@ -52,9 +52,6 @@ structure C =
          end
 
       fun word (w: Word.t) = "0x" ^ Word.toString w
-
-      fun push (size: Bytes.t, print) =
-         call ("\tPush", [bytes size], print)
    end
 
 structure RealX =
@@ -173,7 +170,6 @@ structure Operand =
       fun isMem (z: t): bool =
          case z of
             Cast (z, _) => isMem z
-          | Contents _ => true
           | Offset _ => true
           | SequenceOffset _ => true
           | StackOffset _ => true
@@ -216,11 +212,12 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Real_muladd _ => true
        | Real_mulsub _ => true
        | Real_neg _ => true
-       | Real_qequal _ => false
+       | Real_qequal _ => true
        | Real_rndToReal _ => true
        | Real_rndToWord _ => true
        | Real_round _ => true
        | Real_sub _ => true
+       | Thread_returnToC => false
        | Word_add _ => true
        | Word_addCheckP _ => true
        | Word_andb _ => true
@@ -248,7 +245,7 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | Word_sub _ => true
        | Word_subCheckP _ => true
        | Word_xorb _ => true
-       | _ => false
+       | _ => Error.bug ("CCodegen.implementsPrim: " ^ Prim.toString p)
    end
 
 fun outputIncludes (includes, print) =
@@ -256,11 +253,9 @@ fun outputIncludes (includes, print) =
                                     print i;
                                     print ">\n"))
 
-fun declareProfileLabel (l, print) =
-   C.call ("DeclareProfileLabel", [ProfileLabel.toString l], print)
-
 fun declareGlobals (prefix: string, print) =
    let
+      fun prints ss = List.foreach (ss, print)
       val _ =
          List.foreach
          (CType.all, fn t =>
@@ -269,7 +264,7 @@ fun declareGlobals (prefix: string, print) =
              val n = Global.numberOfType t
           in
              if n > 0 orelse CType.equals (t, CType.Objptr)
-                then print (concat [prefix, s, " global", s, " [", C.int n, "];\n"])
+                then prints [prefix, s, " global", s, " [", C.int n, "];\n"]
                 else ()
           end)
    in
@@ -286,6 +281,7 @@ fun outputDeclarations
     rest: unit -> unit
     }: unit =
    let
+      fun prints ss = List.foreach (ss, print)
       fun declareExports () =
          Ffi.declareExports {print = print}
       fun declareLoadSaveGlobals () =
@@ -295,22 +291,23 @@ fun outputDeclarations
                 ; (List.foreach
                    (CType.all, fn t =>
                     if Global.numberOfType t > 0
-                       then print (concat ["\tSaveArray (global",
-                                           CType.toString t, ", f);\n"])
-                          else ()))
+                       then prints ["\tSaveArray (global",
+                                    CType.toString t, ", f);\n"]
+                       else ()))
                 ; print "\treturn 0;\n}\n")
             val _ =
                (print "static int loadGlobals (FILE *f) {\n"
                 ; (List.foreach
                    (CType.all, fn t =>
                     if Global.numberOfType t > 0
-                       then print (concat ["\tLoadArray (global",
-                                           CType.toString t, ", f);\n"])
+                       then prints ["\tLoadArray (global",
+                                    CType.toString t, ", f);\n"]
                        else ()))
                 ; print "\treturn 0;\n}\n")
          in
             ()
          end
+
       fun staticVar i =
          "static_" ^ Int.toString i
       fun metadataSize i =
@@ -318,7 +315,6 @@ fun outputDeclarations
       fun staticAddress i = concat
          ["((Pointer)(&", staticVar i, ") + ",
           C.int (metadataSize i), ")"]
-
       fun declareStatics () =
          (Vector.foreachi
           (statics, fn (i, (static as Machine.Static.T {data, location, ...}, _)) =>
@@ -408,11 +404,10 @@ fun outputDeclarations
                     Static.metadataToC static
               in
                  if shouldInit
-                    then C.call ("\tmemcpy",
-                                 ["&" ^ staticVar i,
-                                  concat ["&((struct {", mdecl, "}){", minit, "})"],
-                                  C.bytes metadataBytes],
-                                 print)
+                    then print (C.call ("\tmemcpy",
+                                        ["&" ^ staticVar i,
+                                         concat ["&((struct {", mdecl, "}){", minit, "})"],
+                                         C.bytes metadataBytes]))
                     else ()
               end))
           ; print "};\n")
@@ -420,10 +415,10 @@ fun outputDeclarations
       fun declareReals () =
          (print "static void real_Init() {\n"
           ; List.foreach (reals, fn (r, g) =>
-                          print (concat ["\tglobalReal",
-                                         RealSize.toString (RealX.size r),
-                                         "[", C.int (Global.index g), "] = ",
-                                         RealX.toC r, ";\n"]))
+                          prints ["\tglobalReal",
+                                  RealSize.toString (RealX.size r),
+                                  "[", C.int (Global.index g), "] = ",
+                                  RealX.toC r, ";\n"])
           ; print "}\n")
       fun declareArray (ty: string,
                         name: string,
@@ -451,11 +446,11 @@ fun outputDeclarations
       fun declareFrameInfos () =
          (Vector.foreachi
           (frameOffsets, fn (i, fo) =>
-           declareArray ("uint16_t", concat ["frameOffsets", C.int i],
+           declareArray ("const uint16_t", concat ["frameOffsets", C.int i],
                          {firstElemLen = true, oneline = true},
                          FrameOffsets.offsets fo,
                          fn (_, offset) => C.bytes offset))
-          ; declareArray ("struct GC_frameInfo", "frameInfos",
+          ; declareArray ("const struct GC_frameInfo", "frameInfos",
                           {firstElemLen = false, oneline = false},
                           frameInfos, fn (_, fi) =>
                           concat ["{",
@@ -467,12 +462,12 @@ fun outputDeclarations
                                           | SOME ssi => C.int ssi),
                                   "}"]))
       fun declareAtMLtons () =
-         declareArray ("char*", "atMLtons",
+         declareArray ("char *", "atMLtons",
                        {firstElemLen = false, oneline = true},
                        !Control.atMLtons, fn (_, s) => C.string s)
       fun declareObjectTypes () =
          declareArray
-         ("struct GC_objectType", "objectTypes",
+         ("const struct GC_objectType", "objectTypes",
           {firstElemLen = false, oneline = false},
           objectTypes, fn (_, ty) =>
           let
@@ -554,19 +549,18 @@ fun outputDeclarations
                 | Control.ProfileTimeField => "PROFILE_TIME_FIELD"
                 | Control.ProfileTimeLabel => "PROFILE_TIME_LABEL"
          in
-            C.callNoSemi (case !Control.format of
-                             Control.Archive => "MLtonLibrary"
-                           | Control.Executable => "MLtonMain"
-                           | Control.LibArchive => "MLtonLibrary"
-                           | Control.Library => "MLtonLibrary",
-                          [C.int align,
-                           C.word magic,
-                           C.bytes maxFrameSize,
-                           C.bool (!Control.markCards),
-                           profile,
-                           C.bool (!Control.profileStack)]
-                          @ additionalMainArgs,
-                          print)
+            print (C.callNoSemi (case !Control.format of
+                                    Control.Archive => "MLtonLibrary"
+                                  | Control.Executable => "MLtonMain"
+                                  | Control.LibArchive => "MLtonLibrary"
+                                  | Control.Library => "MLtonLibrary",
+                                 [C.int align,
+                                  C.word magic,
+                                  C.bytes maxFrameSize,
+                                  C.bool (!Control.markCards),
+                                  profile,
+                                  C.bool (!Control.profileStack)]
+                                  @ additionalMainArgs))
             ; print "\n"
          end
       fun declareMain () =
@@ -575,6 +569,8 @@ fun outputDeclarations
          else ()
       fun declareSourceMaps () =
          let
+            fun declareProfileLabel (l, print) =
+               print (C.call ("DeclareProfileLabel", [ProfileLabel.toString l]))
             fun doit (SourceMaps.T {profileLabelInfos, sourceNames, sourceSeqs, sources}) =
                (Vector.foreach (profileLabelInfos, fn {profileLabel, ...} =>
                                 declareProfileLabel (profileLabel, print))
@@ -583,17 +579,17 @@ fun outputDeclarations
                                 profileLabelInfos, fn (_, {profileLabel, sourceSeqIndex}) =>
                                 concat ["{(pointer)&", ProfileLabel.toString profileLabel, ", ",
                                         C.int sourceSeqIndex, "}"])
-                ; declareArray ("char*", "sourceNames",
+                ; declareArray ("const char * const", "sourceNames",
                                 {firstElemLen = false, oneline = false},
                                 sourceNames, fn (_, s) => C.string s)
                 ; Vector.foreachi (sourceSeqs, fn (i, ss) =>
-                                   declareArray ("GC_sourceIndex", concat ["sourceSeq", C.int i],
+                                   declareArray ("const GC_sourceIndex", concat ["sourceSeq", C.int i],
                                                  {firstElemLen = true, oneline = true},
                                                  ss, fn (_, {sourceIndex}) => C.int sourceIndex))
-                ; declareArray ("uint32_t*", "sourceSeqs",
+                ; declareArray ("const uint32_t * const", "sourceSeqs",
                                 {firstElemLen = false, oneline = false},
                                 sourceSeqs, fn (i, _) => concat ["sourceSeq", Int.toString i])
-                ; declareArray ("struct GC_source", "sources",
+                ; declareArray ("const struct GC_source", "sources",
                                 {firstElemLen = false, oneline = false},
                                 sources, fn (_, {sourceNameIndex, successorSourceSeqIndex}) =>
                                 concat ["{ ", Int.toString sourceNameIndex, ", ",
@@ -679,7 +675,7 @@ fun declareFFI (chunks, print) =
                 | _ => ())
            val _ =
               case transfer of
-                 Transfer.CCall {func, return, ...} =>
+                 Transfer.CCall {func, ...} =>
                     let
                        datatype z = datatype CFunction.Target.t
                        val CFunction.T {target, ...} = func
@@ -688,10 +684,7 @@ fun declareFFI (chunks, print) =
                           Direct "Thread_returnToC" => ()
                         | Direct name =>
                              doit (name, fn () =>
-                                   concat [case return of
-                                              NONE => "NORETURN "
-                                            | SOME _ => "",
-                                           CFunction.cPrototype func, ";\n"])
+                                   concat [CFunction.cPrototype func, ";\n"])
                         | Indirect => ()
                     end
                | _ => ()
@@ -706,11 +699,6 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                               print: string -> unit,
                               done: unit -> unit}} =
    let
-      val numChunks = List.length chunks
-      val {get = chunkLabelInfo: ChunkLabel.t -> {index: int},
-           set = setChunkLabelInfo, ...} =
-         Property.getSetOnce
-         (ChunkLabel.plist, Property.initRaise ("CCodegen.chunkLabelInfo", ChunkLabel.layout))
       val {get = labelInfo: Label.t -> {block: Block.t,
                                         chunkLabel: ChunkLabel.t,
                                         index: int option,
@@ -720,82 +708,61 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
          (Label.plist, Property.initRaise ("CCodeGen.labelInfo", Label.layout))
       val nextChunks = Array.new (Vector.length frameInfos, NONE)
       val _ =
-         List.foreachi
-         (chunks, fn (i, Chunk.T {blocks, chunkLabel, ...}) =>
-          (setChunkLabelInfo (chunkLabel, {index = i});
-           Vector.foreach
-           (blocks, fn block as Block.T {kind, label, ...} =>
-            let
-               val index =
-                  case Kind.frameInfoOpt kind of
-                     NONE => NONE
-                   | SOME fi =>
-                        let
-                           val index = FrameInfo.index fi
-                        in
-                           if Kind.isEntry kind
-                              then Array.update (nextChunks, index, SOME label)
-                              else ()
-                           ; SOME index
-                        end
-            in
-               setLabelInfo (label, {block = block,
-                                     chunkLabel = chunkLabel,
-                                     index = index,
-                                     marked = ref false})
-            end)))
+         List.foreach
+         (chunks, fn Chunk.T {blocks, chunkLabel, ...} =>
+          Vector.foreach
+          (blocks, fn block as Block.T {kind, label, ...} =>
+           let
+              val index =
+                 case Kind.frameInfoOpt kind of
+                    NONE => NONE
+                  | SOME fi =>
+                       let
+                          val index = FrameInfo.index fi
+                       in
+                          if Kind.isEntry kind
+                             then Array.update (nextChunks, index, SOME label)
+                             else ()
+                          ; SOME index
+                       end
+           in
+              setLabelInfo (label, {block = block,
+                                    chunkLabel = chunkLabel,
+                                    index = index,
+                                    marked = ref false})
+           end))
       val nextChunks = Vector.keepAllMap (Vector.fromArray nextChunks, fn lo => lo)
       val labelChunk = #chunkLabel o labelInfo
-      val labelIndex = #index o labelInfo
+      val labelIndex = valOf o #index o labelInfo
       fun labelIndexAsString (l, {pretty}) =
          let
-            val s = C.int (valOf (labelIndex l))
+            val s = C.int (labelIndex l)
          in
             if pretty
                then concat ["/* ", Label.toString l, " */ ", s]
                else s
          end
-      val chunkLabelIndex = #index o chunkLabelInfo
-      val chunkLabelIndexAsString = C.int o chunkLabelIndex
 
-      fun declareChunk (chunkLabel, print) =
-         C.call ("DeclareChunk",
-                 [chunkLabelIndexAsString chunkLabel],
-                 print)
-      fun defineNextChunks print =
-         (List.foreach (chunks, fn Chunk.T {chunkLabel, ...} =>
-                        declareChunk (chunkLabel, print))
-          ; print "PRIVATE uintptr_t (*nextChunks["
-          ; print (C.int (Vector.length nextChunks))
-          ; print "]) (CPointer, CPointer, CPointer, uintptr_t) = {\n"
-          ; Vector.foreachi
-            (nextChunks, fn (i, label) =>
-             let
-                val {chunkLabel, ...} = labelInfo label
-             in
-                print "\t"
-                ; print "/* "
-                ; print (C.int i)
-                ; print ": */ "
-                ; print "/* "
-                ; print (Label.toString label)
-                ; print " */ "
-                ; C.callNoSemi ("Chunkp",
-                                [chunkLabelIndexAsString chunkLabel],
-                                print)
-                ; print ",\n"
-             end)
-          ; print "};\n")
+      val amTimeProfiling =
+         !Control.profile = Control.ProfileTimeField
+         orelse !Control.profile = Control.ProfileTimeLabel
+
+      fun declareChunk (chunkLabel, print: string -> unit) =
+         (print "PRIVATE extern ChunkFn_t "
+          ; print (ChunkLabel.toString chunkLabel)
+          ; print ";\n")
       fun declareNextChunks (chunks, print) =
          let
-            val seen = Array.new (numChunks, false)
+            val {destroy, get} =
+               Property.destGet
+               (ChunkLabel.plist, Property.initFun (fn _ => ref false))
             val declareChunk = fn chunkLabel =>
                let
-                  val index = chunkLabelIndex chunkLabel
+                  val seen = get chunkLabel
                in
-                  if Array.sub (seen, index)
+                  if !seen
                      then ()
-                     else (Array.update (seen, index, true)
+                     else (seen := true
                            ; declareChunk (chunkLabel, print))
                end
          in
@@ -807,8 +774,13 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                  case transfer of
                     Transfer.Call {label, ...} =>
                        declareChunk (labelChunk label)
+                  | Transfer.Raise {raisesTo, ...} =>
+                       List.foreach (raisesTo, declareChunk o labelChunk)
+                  | Transfer.Return {returnsTo, ...} =>
+                       List.foreach (returnsTo, declareChunk o labelChunk)
                   |  _ => ())))
-            ; print "PRIVATE extern uintptr_t (*nextChunks[]) (CPointer, CPointer, CPointer, uintptr_t);\n"
+            ; destroy ()
+            ; print "PRIVATE extern const ChunkFnPtr_t nextChunks[];\n"
          end
 
       val handleMisaligned =
@@ -846,14 +818,15 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                    | (true, false) => store ({dst = dst, src = src}, ty)
                    | (true, true) => move' ({dst = dst, src = src}, ty))
             else concat [dst, " = ", src, ";\n"]
+
+      fun creturnName (ct: CType.t): string = concat ["CReturn", CType.name ct]
+      fun temporaryName (ct, i) =
+         concat ["T", C.args [CType.name ct, Int.toString i]]
       local
          datatype z = datatype Operand.t
          fun toString (z: Operand.t): string =
             case z of
                Cast (z, ty) => concat ["(", Type.toC ty, ")", toString z]
-             | Contents {oper, ty} =>
-                  concat ["C", C.args [Type.toC ty,
-                                       toString oper]]
              | Frontier => "Frontier"
              | GCState => "GCState"
              | Global g =>
@@ -877,48 +850,33 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
              | Static {index, offset, ty} =>
                   concat ["M", C.args [Type.toC ty, C.int index, C.bytes offset]]
              | Temporary t =>
-                  concat [Type.name (Temporary.ty t), "_",
-                          Int.toString (Temporary.index t)]
+                  temporaryName (Type.toCType (Temporary.ty t), Temporary.index t)
              | Word w => WordX.toC w
       in
          val operandToString = toString
       end
+      val chunkArgs = [Operand.GCState, Operand.StackTop, Operand.Frontier]
       fun fetchOperand (z: Operand.t): string =
          if handleMisaligned (Operand.ty z) andalso Operand.isMem z
             then fetch (operandToString z, Operand.ty z)
             else operandToString z
-      fun creturn (t: Type.t): string =
-         concat ["CReturn", CType.name (Type.toCType t)]
-
-      val amTimeProfiling =
-         !Control.profile = Control.ProfileTimeField
-         orelse !Control.profile = Control.ProfileTimeLabel
 
       fun outputChunkFn (Chunk.T {chunkLabel, blocks, tempsMax, ...}, print) =
          let
-            fun declareCReturns () =
-               List.foreach
-               (CType.all, fn t =>
-                let
-                   val s = CType.toString t
-                in
-                   print (concat ["\tUNUSED ", s, " CReturn", CType.name t, ";\n"])
-                end)
-            fun declareTemporaries () =
-               List.foreach
-               (CType.all, fn t =>
-                let
-                   val pre = concat ["\t", CType.toString t, " ",
-                                     CType.name t, "_"]
-                in
-                   Int.for (0, 1 + tempsMax t, fn i =>
-                            print (concat [pre, C.int i, ";\n"]))
-                end)
-            fun pop (fi: FrameInfo.t) =
-               (C.push (Bytes.~ (FrameInfo.size fi), print)
-                ; if amTimeProfiling
-                     then print "\tFlushStackTop();\n"
-                     else ())
+            val selfChunk = chunkLabel
+
+            fun prints ss = List.foreach (ss, print)
+            fun declareVar' (name, ty, unused, init) =
+               (print "\t"
+                ; if unused then print "UNUSED " else ()
+                ; print ty
+                ; print " "
+                ; print name
+                ; case init of NONE => () | SOME v => (print " = "; print v)
+                ; print ";\n")
+            fun declareVar (name, ct, unused, init) =
+               declareVar' (name, CType.toString ct, unused, init)
+
             fun outputStatement s =
                let
                   datatype z = datatype Statement.t
@@ -931,7 +889,6 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                                         src = operandToString src,
                                         srcIsMem = Operand.isMem src,
                                         ty = Operand.ty dst}))
-                   | Noop => ()
                    | PrimApp {args, dst, prim} =>
                         let
                            fun call (): string =
@@ -957,32 +914,50 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                                               srcIsMem = false,
                                               ty = Operand.ty dst})
                         end
-                   | ProfileLabel l =>
-                        (print "\t"
-                         ; C.call ("ProfileLabel", [ProfileLabel.toString l], print))
+                   | ProfileLabel _ => Error.bug "CCodegen.outputStatement: ProfileLabel"
                end
-            fun push (return: Label.t, size: Bytes.t) =
-               (print "\t"
-                ; print (move {dst = (StackOffset.toString
-                                      (StackOffset.T
-                                       {offset = Bytes.- (size, Runtime.labelSize ()),
-                                        ty = Type.label return})),
-                               dstIsMem = true,
-                               src = labelIndexAsString (return, {pretty = true}),
-                               srcIsMem = false,
-                               ty = Type.label return})
-                ; C.push (size, print)
+            local
+               fun mk (dst, src) () =
+                  outputStatement (Statement.Move {dst = dst, src = src})
+               val stackTop = Operand.StackTop
+               val gcStateStackTop = Operand.gcField GCField.StackTop
+               val frontier = Operand.Frontier
+               val gcStateFrontier = Operand.gcField GCField.Frontier
+            in
+               val cacheStackTop = mk (stackTop, gcStateStackTop)
+               val flushStackTop = mk (gcStateStackTop, stackTop)
+               val cacheFrontier = mk (frontier, gcStateFrontier)
+               val flushFrontier = mk (gcStateFrontier, frontier)
+            end
+            (* StackTop += size *)
+            fun adjStackTop (size: Bytes.t) =
+               (outputStatement (Statement.PrimApp
+                                 {args = Vector.new2
+                                         (Operand.StackTop,
+                                          Operand.Word
+                                          (WordX.fromBytes
+                                           (size,
+                                            WordSize.cptrdiff ()))),
+                                  dst = SOME Operand.StackTop,
+                                  prim = Prim.cpointerAdd})
                 ; if amTimeProfiling
-                     then print "\tFlushStackTop();\n"
+                     then flushStackTop ()
                      else ())
+            fun pop (fi: FrameInfo.t) =
+               adjStackTop (Bytes.~ (FrameInfo.size fi))
+            fun push (return: Label.t, size: Bytes.t) =
+               (outputStatement (Statement.Move
+                                 {dst = Operand.stackOffset
+                                        {offset = Bytes.- (size, Runtime.labelSize ()),
+                                         ty = Type.label return},
+                                  src = Operand.Label return})
+                ; adjStackTop size)
             fun copyArgs (args: Operand.t vector): string list * (unit -> unit) =
                let
                   fun usesStack z =
                      case z of
                         Operand.Cast (z, _) =>
                            (usesStack z)
-                      | Operand.Contents {oper, ...} =>
-                           (usesStack oper)
                       | Operand.Offset {base, ...} =>
                            (usesStack base)
                       | Operand.SequenceOffset {base, index, ...} =>
@@ -997,23 +972,17 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                            val nextTmp = Counter.generator 0
                            val args =
                               Vector.toListMap
-                              (args, fn z =>
-                               if usesStack z
+                              (args, fn arg =>
+                               if usesStack arg
                                   then
                                      let
-                                        val ty = Operand.ty z
-                                        val tmp =
-                                           concat ["tmp",
-                                                   Int.toString (nextTmp ())]
-                                        val _ =
-                                           print
-                                           (concat
-                                            ["\t", Type.toC ty, " ", tmp, " = ",
-                                             fetchOperand z, ";\n"])
+                                        val ty = Operand.ty arg
+                                        val tmp = concat ["tmp", Int.toString (nextTmp ())]
+                                        val _ = declareVar (tmp, Type.toCType ty, false, SOME (fetchOperand arg))
                                      in
                                         tmp
                                      end
-                               else fetchOperand z)
+                               else fetchOperand arg)
                         in
                            (args, fn () => print "\t}\n")
                         end
@@ -1021,10 +990,132 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                         fn () => ())
                end
             fun gotoLabel (l, {tab}) =
-               print (concat [if tab then "\tgoto " else "goto ", Label.toString l, ";\n"])
+               prints [if tab then "\tgoto " else "goto ", Label.toString l, ";\n"]
+            (* LeaveChunk(nextChunk, nextBlock)
+                 if (TailCall) {
+                   return nextChunk(gcState, stackTop, frontier, nextBlock);
+                 } else {
+                   flushFrontier();
+                   flushStackTop();
+                   return nextBlock;
+                }
+            *)
+            fun leaveChunk (nextChunk, nextBlock) =
+               if !Control.chunkTailCall
+                  then (print "\treturn "
+                        ; print (C.call (nextChunk,
+                                         List.map (chunkArgs, operandToString)
+                                         @ [nextBlock])))
+                  else (flushFrontier ()
+                        ; flushStackTop ()
+                        ; print "\treturn "
+                        ; print nextBlock
+                        ; print ";\n")
+            (* IndJump(mustReturnToSelf, mayReturnToSelf, mustReturnToOther)
+                 nextBlock = *(uintptr_t* )(StackTop - sizeof(uintptr_t));
+                 if (mustReturnToSelf) {
+                   goto doSwitchNextBlock;
+                 } else {
+                   ChunkFnPtr_t nextChunk = nextChunks[nextBlock];
+                   if (mayReturnToSelf && (nextChunk == selfChunk)) {
+                     goto doSwitchNextBlock;
+                   }
+                   if (mustReturnToOther != NULL) {
+                     LeaveChunk( *mustReturnToOther, nextBlock);
+                   } else {
+                     LeaveChunk( *nextChunk, nextBlock);
+                   }
+                }
+            *)
+            fun indJump (mustReturnToSelf, mayReturnToSelf, mustReturnToOther) =
+               let
+                  val _ = print "\tnextBlock = "
+                  val _ = print (operandToString
+                                 (Operand.stackOffset
+                                  {offset = Bytes.~ (Runtime.labelSize ()),
+                                   ty = Type.label (Label.newNoname ())}))
+                  val _ = print ";\n"
+               in
+                  if mustReturnToSelf
+                     then print "\tgoto doSwitchNextBlock;\n"
+                     else let
+                             val doNextChunk =
+                                Promise.delay
+                                (fn () =>
+                                 print "\tnextChunk = nextChunks[nextBlock];\n")
+                             val _ =
+                                if mayReturnToSelf
+                                   then (Promise.force doNextChunk
+                                         ; print "\tif (nextChunk == &"
+                                         ; print (ChunkLabel.toString selfChunk)
+                                         ; print ") { goto doSwitchNextBlock; }\n")
+                                   else ()
+                             val _ =
+                                case mustReturnToOther of
+                                   NONE => (Promise.force doNextChunk; leaveChunk ("(*nextChunk)", "nextBlock"))
+                                 | SOME dstChunk => leaveChunk (ChunkLabel.toString dstChunk, "nextBlock")
+                          in
+                             ()
+                          end
+               end
             fun outputTransfer t =
                let
                   datatype z = datatype Transfer.t
+                  fun jump label =
+                     let
+                        val dstChunk = labelChunk label
+                     in
+                        if ChunkLabel.equals (dstChunk, selfChunk)
+                           then gotoLabel (label, {tab = true})
+                           else leaveChunk (ChunkLabel.toString dstChunk,
+                                            labelIndexAsString (label, {pretty = true}))
+                     end
+                  fun rtrans rsTo =
+                     let
+                        val mustRToOne =
+                           case rsTo of
+                              [] => NONE
+                            | l::rsTo =>
+                                 if List.forall (rsTo, fn l' => Label.equals (l, l'))
+                                    then SOME l
+                                    else NONE
+                        fun isSelf c = ChunkLabel.equals (selfChunk, c)
+                        val rsTo =
+                           List.fold
+                           (rsTo, [], fn (l, cs) =>
+                            let
+                               val c = labelChunk l
+                            in
+                               if List.contains (cs, c, ChunkLabel.equals)
+                                  then cs
+                                  else c::cs
+                            end)
+                        val mayRToSelf = List.exists (rsTo, isSelf)
+                        val (mustRToSelf, mustRToOther) =
+                           case List.revKeepAll (rsTo, not o isSelf) of
+                              [] => (true, NONE)
+                            | c::rsTo =>
+                                 (false,
+                                  if List.forall (rsTo, fn c' => ChunkLabel.equals (c, c'))
+                                     then SOME c
+                                     else NONE)
+                     in
+                        case (!Control.chunkMustRToSingOpt, mustRToOne) of
+                           (true, SOME dst) => jump dst
+                         | _ =>
+                              indJump (!Control.chunkMustRToSelfOpt andalso mustRToSelf,
+                                       !Control.chunkMayRToSelfOpt andalso mayRToSelf,
+                                       if (!Control.chunkMustRToOtherOpt andalso
+                                           (!Control.chunkMayRToSelfOpt orelse not mayRToSelf))
+                                          then mustRToOther
+                                          else NONE)
+                     end
+                  val _ =
+                     if !Control.codegenComments > 0
+                        then (print "\t/* "
+                              ; print (Layout.toString (Transfer.layout t))
+                              ; print " */\n")
+                        else ()
                in
                   case t of
                      CCall {func =
@@ -1033,13 +1124,13 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                              CFunction.Target.Direct "Thread_returnToC", ...},
                             return = SOME {return, size = SOME size}, ...} =>
                         (push (return, size);
-                         print "\tFlushFrontier ();\n";
-                         print "\tFlushStackTop ();\n";
-                         print "\tThread_returnToC ();\n")
+                         flushFrontier ();
+                         flushStackTop ();
+                         print "\treturn ";
+                         print (C.call ("Thread_returnToC", [])))
                    | CCall {args, func, return} =>
                         let
-                           val CFunction.T {return = returnTy,
-                                            target, ...} = func
+                           val CFunction.T {return = returnTy, target, ...} = func
                            val (args, afterCall) =
                               case return of
                                  NONE =>
@@ -1055,23 +1146,17 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                                     in
                                        res
                                     end
-                           val _ =
-                              if CFunction.modifiesFrontier func
-                                 then print "\tFlushFrontier ();\n"
-                              else ()
-                           val _ =
-                              if CFunction.readsStackTop func
-                                 then print "\tFlushStackTop ();\n"
-                              else ()
+                           val _ = if CFunction.modifiesFrontier func then flushFrontier () else ()
+                           val _ = if CFunction.readsStackTop func then flushStackTop () else ()
                            val _ = print "\t"
                            val _ =
                               if Type.isUnit returnTy
                                  then ()
-                              else print (concat [creturn returnTy, " = "])
+                              else prints [creturnName (Type.toCType returnTy), " = "]
                            datatype z = datatype CFunction.Target.t
                            val _ =
                               case target of
-                                 Direct name => C.call (name, args, print)
+                                 Direct name => print (C.call (name, args))
                                | Indirect =>
                                     let
                                        val (fptr,args) =
@@ -1083,54 +1168,55 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                                                   CFunction.cPointerType func,
                                                   " ", fptr, "))"]
                                     in
-                                       C.call (name, args, print)
+                                       print (C.call (name, args))
                                     end
                            val _ = afterCall ()
                            val _ =
                               if CFunction.modifiesFrontier func
-                                 then print "\tCacheFrontier ();\n"
+                                 then cacheFrontier ()
                               else ()
                            val _ =
                               if CFunction.writesStackTop func
-                                 then print "\tCacheStackTop ();\n"
+                                 then cacheStackTop ()
                               else ()
                            val _ =
                               if CFunction.maySwitchThreadsFrom func
-                                 then print "\tReturn();\n"
-                              else (case return of
-                                       NONE => print "\tUnreachable ();\n"
-                                     | SOME {return, ...} => gotoLabel (return, {tab = true}))
+                                 then indJump (false, true, NONE)
+                                 else (case return of
+                                          NONE => (print "\treturn "
+                                                   ; print (C.call ("MLton_unreachable", [])))
+                                        | SOME {return, ...} => gotoLabel (return, {tab = true}))
                         in
                            ()
                         end
                    | Call {label, return, ...} =>
-                        let
-                           val dstChunk = labelChunk label
-                           val _ =
-                              case return of
-                                 NONE => ()
-                               | SOME {return, size, ...} =>
-                                    push (return, size)
-                        in
-                           if ChunkLabel.equals (chunkLabel, dstChunk)
-                              then C.call ("\tNearCall",
-                                           [Label.toString label],
-                                           print)
-                              else C.call ("\tFarCall",
-                                           [chunkLabelIndexAsString dstChunk,
-                                            labelIndexAsString (label, {pretty = true}),
-                                            C.bool (!Control.chunkTailCall)],
-                                           print)
-                        end
+                        (Option.app (return, fn {return, size, ...} => push (return, size))
+                         ; jump label)
                    | Goto dst => gotoLabel (dst, {tab = true})
-                   | Raise => C.call ("\tRaise", [], print)
-                   | Return => C.call ("\tReturn", [], print)
-                   | Switch switch =>
+                   | Raise {raisesTo} =>
+                        (outputStatement (Statement.PrimApp
+                                          {args = Vector.new2
+                                                  (Operand.gcField GCField.StackBottom,
+                                                   Operand.gcField GCField.ExnStack),
+                                           dst = SOME Operand.StackTop,
+                                           prim = Prim.cpointerAdd})
+                         ; rtrans raisesTo)
+                   | Return {returnsTo} => rtrans returnsTo
+                   | Switch (Switch.T {cases, default, expect, test, ...}) =>
                         let
-                           val Switch.T {cases, default, test, ...} = switch
                            val test = operandToString test
+                           val test =
+                              case expect of
+                                 NONE => test
+                               | SOME w => concat ["Expect (", test, ", ", WordX.toC w, ")"]
                            fun bnz (lnz, lz) =
-                              C.call ("\tBNZ", [test, Label.toString lnz, Label.toString lz], print)
+                              (print "\tif ("
+                               ; print test
+                               ; print ") goto "
+                               ; print (Label.toString lnz)
+                               ; print "; else goto "
+                               ; print (Label.toString lz)
+                               ; print ";\n")
                            fun switch () =
                               (print "\tswitch ("
                                ; print test
@@ -1142,12 +1228,12 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                                                        ; gotoLabel (l, {tab = false})))
                                ; print "\tdefault: "
                                ; (case default of
-                                     NONE => print "\tUnreachable();\n"
+                                     NONE => print (C.call ("Unreachable", []))
                                    | SOME default => gotoLabel (default, {tab = false}))
                                ; print "\t}\n")
                         in
                            case (Vector.length cases, default) of
-                              (0, NONE) => Error.bug "CCodegen.outputTransfers: Switch"
+                              (0, NONE) => Error.bug "CCodegen.outputTransfer: Switch"
                             | (0, SOME ld) => gotoLabel (ld, {tab = true})
                             | (1, NONE) => gotoLabel (#2 (Vector.sub (cases, 0)), {tab = true})
                             | (1, SOME ld) =>
@@ -1172,9 +1258,160 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                             | _ => switch ()
                         end
                end
+            val outputStatement = fn s =>
+               let
+                  val _ =
+                     if !Control.codegenComments > 1
+                        then (print "\t/* "
+                              ; print (Layout.toString (Statement.layout s))
+                              ; print " */\n")
+                        else ()
+               in
+                  outputStatement s
+               end
+            (* Fusing of adjacent `Word<N>_<op>` and `Word{S,U}<N>_<op>CheckP`
+             * primitives *does not* depend on the relative order of `!a` and `?a`
+             * in /basis-library/primitive/prim1.sml:mkOverflow
+             *)
+            fun outputStatementsFuseOpAndChk statements =
+               (ignore o Vector.foldi)
+               (statements, false, fn (i, s1, skip) =>
+                let
+                   fun default () = (outputStatement s1; false)
+                in
+                   if skip then false else
+                   case s1 of
+                      Statement.PrimApp {args = args1, dst = SOME dst1, prim = prim1} =>
+                         let
+                            fun fuse chk =
+                               (case Vector.sub (statements, i + 1) of
+                                   s2 as Statement.PrimApp {args = args2, dst = SOME dst2, prim = prim2} =>
+                                      if Vector.equals (args1, args2, Operand.equals)
+                                         then (case chk prim2 of
+                                                  NONE => default ()
+                                                | SOME (prim, (ws, {signed})) =>
+                                                     let
+                                                        val name =
+                                                           String.substituteFirst
+                                                           (Prim.toString prim,
+                                                            {substring = "CheckP",
+                                                             replacement = "AndCheck"})
+                                                        val _ =
+                                                           if !Control.codegenComments > 1
+                                                              then (print "\t/* "
+                                                                    ; print (Layout.toString (Statement.layout s1))
+                                                                    ; print " */\n"
+                                                                    ; print "\t/* "
+                                                                    ; print (Layout.toString (Statement.layout s2))
+                                                                    ; print " */\n")
+                                                              else ()
+                                                        val _ = print "\t{\n"
+                                                        val _ = print "\tWord"
+                                                        val _ = print (if signed then "S" else "U")
+                                                        val _ = print (WordSize.toString ws)
+                                                        val _ = print " w;\n"
+                                                        val _ = print "\tBool b;\n"
+                                                        val _ = print "\t"
+                                                        val _ =
+                                                           print (C.call (name,
+                                                                          Vector.toListMap (args1, fetchOperand) @
+                                                                          ["&w", "&b"]))
+                                                        val _ = print "\t"
+                                                        val _ =
+                                                           print (move {dst = operandToString dst1,
+                                                                        dstIsMem = Operand.isMem dst1,
+                                                                        src = "w",
+                                                                        srcIsMem = false,
+                                                                        ty = Operand.ty dst1})
+                                                        val _ = print "\t"
+                                                        val _ =
+                                                           print (move {dst = operandToString dst2,
+                                                                        dstIsMem = Operand.isMem dst2,
+                                                                        src = "b",
+                                                                        srcIsMem = false,
+                                                                        ty = Operand.ty dst2})
+                                                        val _ = print "\t}\n"
+                                                     in
+                                                        true
+                                                     end)
+                                         else default ()
+                                 | _ => default ())
+                               handle Subscript => default ()
+                         in
+                            case Prim.name prim1 of
+                               Prim.Name.Word_add ws1 =>
+                                  fuse (fn prim2 =>
+                                        case Prim.name prim2 of
+                                           Prim.Name.Word_addCheckP (z as (ws2, _)) =>
+                                              if WordSize.equals (ws1, ws2)
+                                                 then SOME (prim2, z)
+                                                 else NONE
+                                         | _ => NONE)
+                             | Prim.Name.Word_addCheckP (z as (ws1, _)) =>
+                                  fuse (fn prim2 =>
+                                        case Prim.name prim2 of
+                                           Prim.Name.Word_add ws2 =>
+                                              if WordSize.equals (ws1, ws2)
+                                                 then SOME (prim1, z)
+                                                 else NONE
+                                         | _ => NONE)
+                             | Prim.Name.Word_mul (ws1, {signed = signed1}) =>
+                                  fuse (fn prim2 =>
+                                        case Prim.name prim2 of
+                                           Prim.Name.Word_mulCheckP (z as (ws2, {signed = signed2})) =>
+                                              if WordSize.equals (ws1, ws2)
+                                                 andalso Bool.equals (signed1, signed2)
+                                                 then SOME (prim2, z)
+                                                 else NONE
+                                         | _ => NONE)
+                             | Prim.Name.Word_mulCheckP (z as (ws1, {signed = signed1})) =>
+                                  fuse (fn prim2 =>
+                                        case Prim.name prim2 of
+                                           Prim.Name.Word_mul (ws2, {signed = signed2}) =>
+                                              if WordSize.equals (ws1, ws2)
+                                                 andalso Bool.equals (signed1, signed2)
+                                                 then SOME (prim1, z)
+                                                 else NONE
+                                         | _ => NONE)
+                             | Prim.Name.Word_neg ws1 =>
+                                  fuse (fn prim2 =>
+                                        case Prim.name prim2 of
+                                           Prim.Name.Word_negCheckP (z as (ws2, _)) =>
+                                              if WordSize.equals (ws1, ws2)
+                                                 then SOME (prim2, z)
+                                                 else NONE
+                                         | _ => NONE)
+                             | Prim.Name.Word_negCheckP (z as (ws1, _)) =>
+                                  fuse (fn prim2 =>
+                                        case Prim.name prim2 of
+                                           Prim.Name.Word_neg ws2 =>
+                                              if WordSize.equals (ws1, ws2)
+                                                 then SOME (prim1, z)
+                                                 else NONE
+                                         | _ => NONE)
+                             | Prim.Name.Word_sub ws1 =>
+                                  fuse (fn prim2 =>
+                                        case Prim.name prim2 of
+                                           Prim.Name.Word_subCheckP (z as (ws2, _)) =>
+                                              if WordSize.equals (ws1, ws2)
+                                                 then SOME (prim2, z)
+                                                 else NONE
+                                         | _ => NONE)
+                             | Prim.Name.Word_subCheckP (z as (ws1, _)) =>
+                                  fuse (fn prim2 =>
+                                        case Prim.name prim2 of
+                                           Prim.Name.Word_sub ws2 =>
+                                              if WordSize.equals (ws1, ws2)
+                                                 then SOME (prim1, z)
+                                                 else NONE
+                                         | _ => NONE)
+                             | _ => default ()
+                         end
+                    | _ => default ()
+                end)
             fun outputBlock (Block.T {kind, label, statements, transfer, ...}) =
                let
-                  val _ = print (concat [Label.toString label, ":\n"])
+                  val _ = prints [Label.toString label, ":\n"]
                   val _ =
                      case kind of
                         Kind.Cont {frameInfo, ...} => pop frameInfo
@@ -1186,19 +1423,21 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                                    val x = Live.toOperand x
                                    val ty = Operand.ty x
                                 in
-                                   print
-                                   (concat
-                                    ["\t",
-                                     move {dst = operandToString x,
-                                           dstIsMem = Operand.isMem x,
-                                           src = creturn ty,
-                                           srcIsMem = false,
-                                           ty = ty}])
+                                   print "\t"
+                                   ; (print o move)
+                                     {dst = operandToString x,
+                                      dstIsMem = Operand.isMem x,
+                                      src = creturnName (Type.toCType ty),
+                                      srcIsMem = false,
+                                      ty = ty}
                                 end)))
                       | Kind.Func _ => ()
                       | Kind.Handler {frameInfo, ...} => pop frameInfo
                       | Kind.Jump => ()
-                  val _ = Vector.foreach (statements, outputStatement)
+                  val _ =
+                     if !Control.codegenFuseOpAndChk
+                        then outputStatementsFuseOpAndChk statements
+                        else Vector.foreach (statements, outputStatement)
                   val _ = outputTransfer transfer
                   val _ = print "\n"
                in
@@ -1220,43 +1459,76 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                                  Option.app (return, visit o #return)
                             | Call _ => ()
                             | Goto dst => visit dst
-                            | Raise => ()
-                            | Return => ()
+                            | Raise _ => ()
+                            | Return _ => ()
                             | Switch (Switch.T {cases, default, ...}) =>
                                  (Vector.foreach (cases, visit o #2);
                                   Option.app (default, visit)))
                end
-            fun declareProfileLabels () =
+            val entries =
                let
-                  val empty = ref true
+                  val entries = ref []
+                  val _ =
+                     Vector.foreach
+                     (blocks, fn Block.T {kind, label, ...} =>
+                      if Kind.isEntry kind
+                         then (List.push (entries, (label, labelIndex label))
+                               ; visit label)
+                         else ())
                in
-                  Vector.foreach
-                  (blocks, fn Block.T {statements, ...} =>
-                   Vector.foreach
-                   (statements, fn s =>
-                    case s of
-                       Statement.ProfileLabel l => (empty := false
-                                                    ; declareProfileLabel (l, print))
-                     | _ => ()))
-                  ; if !empty then () else print "\n"
+                  List.insertionSort (!entries, fn ((_, i1), (_, i2)) => i1 <= i2)
                end
+
+            val _ = print "PRIVATE uintptr_t "
+            val _ = print (C.callNoSemi (ChunkLabel.toString chunkLabel,
+                                         List.map
+                                         (chunkArgs, fn oper =>
+                                          concat ["UNUSED ",
+                                                  CType.toString (Type.toCType (Operand.ty oper)),
+                                                  " ",
+                                                  operandToString oper])
+                                         @ ["uintptr_t nextBlock"]))
+            val _ = print " {\n\n"
+
+            val _ = declareVar' ("nextChunk", "ChunkFnPtr_t", true, NONE)
+            val _ = List.foreach (CType.all, fn t => declareVar (creturnName t, t, true, NONE))
+            val _ = List.foreach (CType.all, fn t =>
+                                  Int.for (0, 1 + tempsMax t, fn i =>
+                                           declareVar (temporaryName (t, i), t, false, NONE)))
+            val _ = print "\n"
+            val _ = print "doSwitchNextBlock: UNUSED;\n"
+            val _ =
+               if !Control.chunkJumpTable
+                  then (print "\tstatic void* const nextLabels["
+                        ; print (C.int (List.length entries))
+                        ; print "] = {\n"
+                        ; List.foreach
+                          (entries, fn (label, index) =>
+                           (print "\t/* "
+                            ; print (C.int index)
+                            ; print " */ &&"
+                            ; print (Label.toString label)
+                            ; print ",\n"))
+                        ; print "\t};\n"
+                        ; print "\tgoto *nextLabels[nextBlock - "
+                        ; print (C.int (#2 (List.first entries)))
+                        ; print "];\n\n")
+                  else (print "\tswitch (nextBlock) {\n"
+                        ; List.foreach
+                          (entries, fn (label, index) =>
+                           (print "\tcase "
+                            ; print (C.int index)
+                            ; print ": goto "
+                            ; print (Label.toString label)
+                            ; print ";\n"))
+                        ; print "\tdefault: Unreachable();\n"
+                        ; print "\t}\n\n")
+            val _ = List.foreach (List.rev (!dfsBlocks), outputBlock)
+            val _ = print "} /* "
+            val _ = print (ChunkLabel.toString chunkLabel)
+            val _ = print " */\n\n"
          in
-            declareProfileLabels ()
-            ; C.callNoSemi ("Chunk", [chunkLabelIndexAsString chunkLabel], print); print "\n"
-            ; declareCReturns (); print "\n"
-            ; declareTemporaries (); print "\n"
-            ; C.callNoSemi ("ChunkSwitch", [chunkLabelIndexAsString chunkLabel], print); print "\n"
-            ; Vector.foreach (blocks, fn Block.T {kind, label, ...} =>
-                              if Kind.isEntry kind
-                                 then (print "case "
-                                       ; print (labelIndexAsString (label, {pretty = false}))
-                                       ; print ": "
-                                       ; gotoLabel (label, {tab = false})
-                                       ; visit label)
-                              else ())
-            ; print "EndChunkSwitch\n\n"
-            ; List.foreach (List.rev (!dfsBlocks), outputBlock)
-            ; C.callNoSemi ("EndChunk", [chunkLabelIndexAsString chunkLabel, C.bool (!Control.chunkTailCall)], print); print "\n\n"
+            ()
          end
 
       fun declareStatics (prefix: string, print) =
@@ -1269,18 +1541,8 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
       fun outputChunks chunks =
          let
             val {done, print, ...} = outputC ()
-            fun outputOffsets () =
-               List.foreach
-               ([("ExnStackOffset", GCField.ExnStack),
-                 ("FrontierOffset", GCField.Frontier),
-                 ("StackBottomOffset", GCField.StackBottom),
-                 ("StackTopOffset", GCField.StackTop)],
-                fn (name, f) =>
-                print (concat ["#define ", name, " ",
-                               Bytes.toString (GCField.offset f), "\n"]))
          in
             outputIncludes (["c-chunk.h"], print); print "\n"
-            ; outputOffsets (); print "\n"
             ; declareGlobals ("PRIVATE extern ", print); print "\n"
             ; declareStatics ("PRIVATE extern ", print); print "\n"
             ; declareNextChunks (chunks, print); print "\n"
@@ -1288,35 +1550,53 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
             ; List.foreach (chunks, fn chunk => outputChunkFn (chunk, print))
             ; done ()
          end
-      val chunks =
+      val chunksWithSizes =
          List.revMap
          (chunks, fn chunk as Chunk.T {blocks, ...} =>
           (chunk,
            Vector.fold
            (blocks, 0, fn (Block.T {statements, ...}, n) =>
             n + Vector.length statements + 1)))
-      fun batch (chunks, acc, n) =
-         case chunks of
+      fun batch (chunksWithSizes, acc, n) =
+         case chunksWithSizes of
             [] => outputChunks acc
-          | (chunk, s)::chunks' =>
+          | (chunk, s)::chunksWithSizes' =>
                let
                   val m = n + s
                in
                   if List.isEmpty acc orelse m <= !Control.chunkBatch
-                     then batch (chunks', chunk::acc, m)
+                     then batch (chunksWithSizes', chunk::acc, m)
                      else (outputChunks acc;
-                           batch (chunks, [], 0))
+                           batch (chunksWithSizes, [], 0))
                end
-      val () = batch (chunks, [], 0)
+      val () = batch (chunksWithSizes, [], 0)
 
       val {print, done, ...} = outputC ()
+      fun defineNextChunks () =
+         (List.foreach (chunks, fn Chunk.T {chunkLabel, ...} =>
+                        declareChunk (chunkLabel, print))
+          ; print "PRIVATE const ChunkFnPtr_t nextChunks["
+          ; print (C.int (Vector.length nextChunks))
+          ; print "] = {\n"
+          ; Vector.foreachi
+            (nextChunks, fn (i, label) =>
+             (print "\t"
+              ; print "/* "
+              ; print (C.int i)
+              ; print ": */ "
+              ; print "/* "
+              ; print (Label.toString label)
+              ; print " */ &("
+              ; print (ChunkLabel.toString (labelChunk label))
+              ; print "),\n"))
+          ; print "};\n")
       val _ =
          outputDeclarations
          {additionalMainArgs = [labelIndexAsString (#label main, {pretty = true})],
           includes = ["c-main.h"],
           program = program,
           print = print,
-          rest = fn () => defineNextChunks print}
+          rest = defineNextChunks}
       val _ = done ()
    in
       ()

@@ -15,12 +15,12 @@ GC_sourceSeqIndex getCachedStackTopFrameSourceSeqIndex (GC_state s) {
   return s->frameInfos[i].sourceSeqIndex;
 }
 
-char* getSourceName (GC_state s, GC_sourceIndex i) {
+const char * getSourceName (GC_state s, GC_sourceIndex i) {
   assert (i < s->sourceMaps.sourcesLength);
   return s->sourceMaps.sourceNames[s->sourceMaps.sources[i].sourceNameIndex];
 }
 
-char* GC_sourceName (GC_state s, GC_sourceIndex i) {
+const char * GC_sourceName (GC_state s, GC_sourceIndex i) {
   return getSourceName (s, i);
 }
 
@@ -101,7 +101,7 @@ void showSources (GC_state s) {
              s->sourceMaps.sources[i].successorSourceSeqIndex);
   fprintf (stdout, "%"PRIu32"\n", s->sourceMaps.sourceSeqsLength);
   for (i = 0; i < s->sourceMaps.sourceSeqsLength; i++) {
-    uint32_t *sourceSeq;
+    const uint32_t *sourceSeq;
 
     sourceSeq = s->sourceMaps.sourceSeqs[i];
     for (j = 1; j <= sourceSeq[0]; j++)

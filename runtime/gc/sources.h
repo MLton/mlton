@@ -27,9 +27,9 @@ typedef uint32_t GC_sourceIndex;
 #define UNKNOWN_SOURCE_INDEX  0
 #define GC_SOURCE_INDEX       1
 
-typedef struct GC_source {
-  GC_sourceNameIndex sourceNameIndex;
-  GC_sourceSeqIndex successorSourceSeqIndex;
+typedef const struct GC_source {
+  const GC_sourceNameIndex sourceNameIndex;
+  const GC_sourceSeqIndex successorSourceSeqIndex;
 } *GC_source;
 
 typedef struct GC_profileLabelInfo {
@@ -49,25 +49,25 @@ struct GC_sourceMaps {
    * names corresponding to the code pointer; only used with
    * ProfileTimeLabel.
    */
-  struct GC_profileLabelInfo *profileLabelInfos;
+  GC_profileLabelInfo profileLabelInfos;
   uint32_t profileLabelInfosLength;
   /* sourceNames is an array of cardinality sourceNamesLength;
    * the collection of source names from the program.
    */
-  char **sourceNames;
+  const char * const *sourceNames;
   uint32_t sourceNamesLength;
   /* sourceSeqs is an array of cardinality sourceSeqsLength;
    * each entry describes a sequence of source names as a length
    * followed by the sequence of indices into sources.
    */
-  uint32_t **sourceSeqs;
+  const uint32_t * const *sourceSeqs;
   uint32_t sourceSeqsLength;
   /* sources is an array of cardinality sourcesLength;
    * each entry describes a source name and successor sources as
    * the pair of an index into sourceNames and an index into
    * sourceSeqs.
    */
-  struct GC_source *sources;
+  GC_source sources;
   uint32_t sourcesLength;
 };
 
@@ -77,7 +77,7 @@ struct GC_sourceMaps {
 
 static inline GC_sourceSeqIndex getCachedStackTopFrameSourceSeqIndex (GC_state s);
 
-static inline char* getSourceName (GC_state s, GC_sourceIndex i);
+static inline const char * getSourceName (GC_state s, GC_sourceIndex i);
 
 #if HAS_TIME_PROFILING
 static inline int compareProfileLabelInfos (const void *v1, const void *v2);
@@ -92,6 +92,6 @@ static void showSources (GC_state s);
 
 #if (defined (MLTON_GC_INTERNAL_BASIS))
 
-PRIVATE char* GC_sourceName (GC_state s, GC_sourceIndex i);
+PRIVATE const char * GC_sourceName (GC_state s, GC_sourceIndex i);
 
 #endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */

@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2019 Matthew Fluet
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -23,7 +24,7 @@ signature PARALLEL_MOVE =
           (* Are two temporaries the same. *)
           equals: 'temporary * 'temporary -> bool,
           (* How to create a move statement. *)
-          move: {src: 'temporary, dst: 'temporary} -> 'statement,
+          move: {src: 'temporary, dst: 'temporary} -> 'statement option,
           (* The moves to occur. *)
           moves: {src: 'temporary, dst: 'temporary} list,
           (* Would writing the write invalidate the read? *)

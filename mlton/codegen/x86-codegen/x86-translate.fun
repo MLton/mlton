@@ -151,30 +151,6 @@ struct
                  fromSizes (sizes, origin)
                end
           | Cast (z, _) => toX86Operand z
-          | Contents {oper, ty} =>
-               let
-                  val ty = Type.toCType ty
-                  val base = toX86Operand oper
-                  val _ = Assert.assert("x86Translate.Operand.toX86Operand: Contents/base",
-                                        fn () => Vector.length base = 1)
-                  val base = getOp0 base
-                  val origin =
-                     case x86.Operand.deMemloc base of
-                        SOME base =>
-                           x86.MemLoc.simple 
-                           {base = base,
-                            index = x86.Immediate.zero,
-                            scale = x86.Scale.One,
-                            size = x86.Size.BYTE,
-                            class = x86MLton.Classes.Heap}
-                      | _ => Error.bug (concat
-                                        ["x86Translate.Operand.toX86Operand: ",
-                                         "strange Contents: base: ",
-                                         x86.Operand.toString base])    
-                  val sizes = x86.Size.fromCType ty
-               in
-                  fromSizes (sizes, origin)
-               end
           | Frontier => 
                let 
                   val frontier = x86MLton.gcState_frontierContentsOperand ()
@@ -199,7 +175,7 @@ struct
                end
           | Offset {base, offset, ty} =>
                let
-                  val offset = Bytes.toInt offset
+                 val offset = Bytes.toInt offset
                  val ty = Type.toCType ty
                  val base = toX86Operand base
                  val _ = Assert.assert("x86Translate.Operand.toX86Operand: Offset/base",
@@ -409,7 +385,7 @@ struct
       open Machine.Statement
 
       fun comments statement
-        = if !Control.Native.commented > 0
+        = if !Control.codegenComments > 0
             then let
                    val comment = (Layout.toString o layout) statement
                  in
@@ -433,9 +409,7 @@ struct
       fun toX86Blocks {statement,
                        transInfo as {...} : transInfo}
         = (case statement
-             of Noop
-              => AppendList.empty
-              | Move {src, dst}
+             of Move {src, dst}
               => let
                    val (comment_begin,
                         comment_end) = comments statement
@@ -606,7 +580,7 @@ struct
               => switch(test, x86.Transfer.Cases.word cases, l))
 
       fun comments transfer
-        = if !Control.Native.commented > 0
+        = if !Control.codegenComments > 0
             then let
                    val comment = (Layout.toString o layout) transfer
                  in
@@ -635,7 +609,7 @@ struct
                                                           size = Option.map (size, Bytes.toInt)}),
                                     transInfo = transInfo})
                  end
-              | Return
+              | Return _
               => AppendList.append
                  (comments transfer,
                   AppendList.single
@@ -657,7 +631,7 @@ struct
                                  case x86.Operand.deMemloc operand of
                                     SOME memloc => x86.MemLocSet.add(live, memloc)
                                   | NONE => live))})}))
-              | Raise
+              | Raise _
               => AppendList.append
                  (comments transfer,
                   AppendList.single
@@ -739,7 +713,7 @@ struct
                   x86.Block.mkBlock'
                   {entry = NONE,
                    statements 
-                   = if !Control.Native.commented > 0
+                   = if !Control.codegenComments > 0
                        then let
                               val comment =
                                  concat ["Live: ",

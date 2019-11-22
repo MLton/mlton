@@ -878,7 +878,7 @@ struct
 
         val (comment_begin,
              comment_end)
-          = if !Control.Native.commented > 0
+          = if !Control.codegenComments > 0
               then let
                      val comment = primName
                    in 
@@ -1724,7 +1724,7 @@ struct
     = let
         val CFunction.T {convention, target, ...} = func
         val comment_begin
-          = if !Control.Native.commented > 0
+          = if !Control.codegenComments > 0
               then AppendList.single 
                    (x86.Block.mkBlock'
                     {entry = NONE,
@@ -1772,7 +1772,7 @@ struct
                 transfer = NONE})
             end
         val comment_end
-          = if !Control.Native.commented > 0
+          = if !Control.codegenComments > 0
               then AppendList.single 
                    (x86.Block.mkBlock'
                     {entry = NONE,

@@ -65,19 +65,93 @@ structure Chunkify =
    struct
       datatype t =
          Coalesce of {limit: int}
+       | Func
        | One
-       | PerFunc
+       | Simple of {mainFns: bool,
+                    sccC: bool,
+                    sccR: bool,
+                    singC: bool,
+                    singR: bool}
 
-      val toString =
-         fn One => "one"
-          | PerFunc => "per function"
-          | Coalesce {limit} => concat ["coalesce ", Int.toString limit]
+      val simpleDefault =
+         Simple {mainFns = true,
+                 sccC = true,
+                 sccR = true,
+                 singC = true,
+                 singR = true}
+
+      fun toString c =
+         case c of
+            Coalesce {limit} => concat ["coalesce", Int.toString limit]
+          | Func => "func"
+          | One => "one"
+          | Simple {mainFns, sccC, sccR, singC, singR} =>
+               let
+                  open Layout
+               in
+                  toString
+                  (namedRecord
+                   ("simple",
+                    [("mainFns", Bool.layout mainFns),
+                     ("sccC", Bool.layout sccC),
+                     ("sccR", Bool.layout sccR),
+                     ("singC", Bool.layout singC),
+                     ("singR", Bool.layout singR)]))
+               end
+      fun fromString s =
+         let
+            open Parse
+            infix 1 <|> >>=
+            infix  3 <*> <* *>
+            infixr 4 <$> <$$> <$$$> <$$$$> <$ <$?>
+            val p =
+               any
+               [str "coalesce" *>
+                (peek (nextSat Char.isDigit) *>
+                 fromScan (Function.curry Int.scan StringCvt.DEC)) >>= (fn limit =>
+                pure (Coalesce {limit = limit})),
+                str "func" *> pure Func,
+                str "one" *> pure One,
+                str "simple" *>
+                (cbrack (ffield ("mainFns", bool) >>= (fn mainFns =>
+                         nfield ("sccC", bool) >>= (fn sccC =>
+                         nfield ("sccR", bool) >>= (fn sccR =>
+                         nfield ("singC", bool) >>= (fn singC =>
+                         nfield ("singR", bool) >>= (fn singR =>
+                         pure (Simple {mainFns = mainFns,
+                                       sccC = sccC,
+                                       sccR = sccR,
+                                       singC = singC,
+                                       singR = singR})))))))
+                 <|>
+                 pure simpleDefault)]
+               <* failing next
+         in
+            case parseString (p, s) of
+               No _ => NONE
+             | Yes c => SOME c
+         end
    end
 
 val chunkify = control {name = "chunkify",
                         default = Chunkify.Coalesce {limit = 4096},
                         toString = Chunkify.toString}
 
+val chunkJumpTable = control {name = "chunkJumpTable",
+                              default = false,
+                              toString = Bool.toString}
+val chunkMayRToSelfOpt = control {name = "chunkMayRToSelfOpt",
+                                  default = true,
+                                  toString = Bool.toString}
+val chunkMustRToOtherOpt = control {name = "chunkMustRToOtherOpt",
+                                    default = true,
+                                    toString = Bool.toString}
+val chunkMustRToSelfOpt = control {name = "chunkMustRToSelfOpt",
+                                   default = true,
+                                   toString = Bool.toString}
+val chunkMustRToSingOpt = control {name = "chunkMustRToSingOpt",
+                                   default = true,
+                                   toString = Bool.toString}
 val chunkTailCall = control {name = "chunkTailCall",
                              default = true,
                              toString = Bool.toString}
@@ -112,6 +186,14 @@ datatype codegen = datatype Codegen.t
 val codegen = control {name = "codegen",
                        default = Codegen.X86Codegen,
                        toString = Codegen.toString}
+
+val codegenComments = control {name = "codegen comments",
+                               default = 0,
+                               toString = Int.toString}
+
+val codegenFuseOpAndChk = control {name = "fuse `op` and `opCheckP` primitives in codegen",
+                                   default = false,
+                                   toString = Bool.toString}
 
 val contifyIntoMain = control {name = "contifyIntoMain",
                                default = false,
@@ -828,6 +910,10 @@ val gcCheck = control {name = "gc check",
                        default = Limit,
                        toString = GcCheck.toString}
 
+val gcExpect = control {name = "gc check expect",
+                        default = NONE,
+                        toString = Option.toString Bool.toString}
+
 val globalizeArrays = control {name = "globalize arrays",
                                default = false,
                                toString = Bool.toString}
@@ -952,22 +1038,116 @@ val libname = ref ""
 
 structure LLVMAliasAnalysisMetaData =
    struct
-      datatype t = None | TBAA
+      datatype t =
+         None
+       | Scope
+       | TBAA of {gcstate: {offset: bool} option,
+                  global: {cty: bool, index: bool} option,
+                  heap: {cty: bool, kind: bool, offset: bool, tycon: bool} option,
+                  other: bool,
+                  stack: {offset: bool} option,
+                  static: {cty: bool, index: bool, offset: bool} option}
+
+      val tbaaDefault =
+         TBAA {gcstate = SOME {offset = false},
+               global = SOME {cty = false, index = false},
+               heap = SOME {cty = false, kind = false, offset = false, tycon = false},
+               other = true,
+               stack = SOME {offset = false},
+               static = SOME {cty = false, index = false, offset = false}}
+
       fun toString aamd =
          case aamd of
             None => "none"
-          | TBAA => "tbaa"
+          | Scope => "scope"
+          | TBAA {gcstate, global, heap, other, stack, static} =>
+               let
+                  open Layout
+               in
+                  toString
+                  (namedRecord
+                   ("tbaa",
+                    [("gcstate",
+                      Option.layout (fn {offset} =>
+                                     record [("offset", Bool.layout offset)])
+                      gcstate),
+                     ("global",
+                      Option.layout (fn {cty, index} =>
+                                     record [("cty", Bool.layout cty),
+                                             ("index", Bool.layout index)])
+                      global),
+                     ("heap",
+                      Option.layout (fn {cty, kind, offset, tycon} =>
+                                     record [("cty", Bool.layout cty),
+                                             ("kind", Bool.layout kind),
+                                             ("offset", Bool.layout offset),
+                                             ("tycon", Bool.layout tycon)])
+                      heap),
+                     ("other", Bool.layout other),
+                     ("stack",
+                      Option.layout (fn {offset} =>
+                                     record [("offset", Bool.layout offset)])
+                      stack),
+                     ("static",
+                      Option.layout (fn {cty, index, offset} =>
+                                     record [("cty", Bool.layout cty),
+                                             ("index", Bool.layout index),
+                                             ("offset", Bool.layout offset)])
+                      static)]))
+               end
       fun fromString s =
-         case s of
-            "none" => SOME None
-          | "tbaa" => SOME TBAA
-          | _ => NONE
+         let
+            open Parse
+            infix 1 <|> >>=
+            infix  3 <*> <* *>
+            infixr 4 <$> <$$> <$$$> <$$$$> <$ <$?>
+            val p =
+               any
+               [kw "none" *> pure None,
+                kw "scope" *> pure Scope,
+                kw "tbaa" *>
+                (cbrack (ffield ("gcstate", option (cbrack (ffield ("offset", bool) >>= (fn offset =>
+                                                            pure {offset = offset})))) >>= (fn gcstate =>
+                         nfield ("global", option (cbrack (ffield ("cty", bool) >>= (fn cty =>
+                                                           nfield ("index", bool) >>= (fn index =>
+                                                           pure {cty = cty,
+                                                                 index = index}))))) >>= (fn global =>
+                         nfield ("heap", option (cbrack (ffield ("cty", bool) >>= (fn cty =>
+                                                         nfield ("kind", bool) >>= (fn kind =>
+                                                         nfield ("offset", bool) >>= (fn offset =>
+                                                         nfield ("tycon", bool) >>= (fn tycon =>
+                                                         pure {cty = cty,
+                                                               kind = kind,
+                                                               offset = offset,
+                                                               tycon = tycon}))))))) >>= (fn heap =>
+                         nfield ("other", bool) >>= (fn other =>
+                         nfield ("stack", option (cbrack (ffield ("offset", bool) >>= (fn offset =>
+                                                          pure {offset = offset})))) >>= (fn stack =>
+                         nfield ("static", option (cbrack (ffield ("cty", bool) >>= (fn cty =>
+                                                           nfield ("index", bool) >>= (fn index =>
+                                                           nfield ("offset", bool) >>= (fn offset =>
+                                                           pure {cty = cty,
+                                                                 index = index,
+                                                                 offset = offset})))))) >>= (fn static =>
+                         pure (TBAA {gcstate = gcstate, global = global, heap = heap, other = other, stack = stack, static = static}))))))))
+                <|>
+                pure tbaaDefault)]
+               <* failing next
+         in
+            case parseString (p, s) of
+               No _ => NONE
+             | Yes c => SOME c
+         end
    end
 
 val llvmAAMD =
-      control {name = "llvmTBAA",
+      control {name = "llvmAAMD",
                default = LLVMAliasAnalysisMetaData.None,
                toString = LLVMAliasAnalysisMetaData.toString}
+
+val llvmCC10 = control {name = "llvm 'cc10'",
+                        default = false,
+                        toString = Bool.toString}
 
 val loopUnrollLimit = control {name = "loop unrolling limit",
                                 default = 150,
@@ -994,10 +1174,6 @@ val mlbPathVars =
 
 structure Native =
    struct
-      val commented = control {name = "native commented",
-                               default = 0,
-                               toString = Int.toString}
-
       val elimALRedundant = control {name = "elim AL redundant",
                                      default = true,
                                      toString = Bool.toString}

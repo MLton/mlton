@@ -52,6 +52,14 @@ structure Exn =
       exception Span
       exception Subscript
 
+      (* Fusing of adjacent `Word<N>_<op>` and `Word{S,U}<N>_<op>CheckP` primitives
+       * by the codegens may depend on the relative order of `!a` and `?a`;
+       * see:
+       *  - /mlton/codegen/amd64-codegen/amd64-simplify.fun:elimALRedundant
+       *  - /mlton/codegen/c-codegen/c-codegen.fun:outputStatementsFuseOpAndChk
+       *  - /mlton/codegen/llvm-codegen/llvm-codegen.fun:outputStatementsFuseOpAndChk
+       *  - /mlton/codegen/x86-codegen/x86-simplify.fun:elimALRedundant
+       *)
       val mkOverflow: ('a -> 'b) * ('a -> bool) -> ('a -> 'b) =
         fn (!, ?) => fn a =>
           let val r = ! a

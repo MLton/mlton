@@ -175,6 +175,7 @@ fun insertFunction (f: Function.t,
                      val cfunc =
                         CFunction.T {args = Vector.new0 (),
                                      convention = CFunction.Convention.Cdecl,
+                                     inline = false,
                                      kind = CFunction.Kind.Runtime {bytesNeeded = NONE,
                                                                     ensuresBytesFree = NONE,
                                                                     mayGC = false,
@@ -217,9 +218,8 @@ fun insertFunction (f: Function.t,
                                      (args, fn (j, arg) =>
                                       if i = j
                                          then Operand.word
-                                              (WordX.fromIntInf
-                                               (Bytes.toIntInf
-                                                (ensureFree (valOf return)),
+                                              (WordX.fromBytes
+                                               (ensureFree (valOf return),
                                                 WordSize.csize ()))
                                          else arg),
                               func = func,
@@ -254,9 +254,11 @@ fun insertFunction (f: Function.t,
                                     label = dontCollect',
                                     statements = Vector.new0 (),
                                     transfer =
-                                    Transfer.ifBool
-                                    (global, {falsee = dontCollect,
-                                              truee = collect})})
+                                    Transfer.ifBoolE
+                                    (global,
+                                     !Control.gcExpect,
+                                     {falsee = dontCollect,
+                                      truee = collect})})
                             in
                                (dontCollect',
                                 Vector.new1
@@ -329,8 +331,9 @@ fun insertFunction (f: Function.t,
                                          dst = SOME (res, Type.bool),
                                          prim = prim}
                    val transfer =
-                      Transfer.ifBool
+                      Transfer.ifBoolE
                       (Operand.Var {var = res, ty = Type.bool},
+                       !Control.gcExpect,
                        {falsee = dontCollect,
                         truee = collect})
                 in
@@ -424,14 +427,8 @@ fun insertFunction (f: Function.t,
                  else
                     let
                        val bytes =
-                          let
-                             val bytes =
-                                WordX.fromIntInf
-                                (Bytes.toIntInf bytes,
-                                 WordSize.csize ())
-                          in
-                             SOME bytes
-                          end handle Overflow => NONE
+                          SOME (WordX.fromBytes (bytes, WordSize.csize ()))
+                          handle Overflow => NONE
                     in
                        case bytes of
                           NONE => gotoHeapCheckTooLarge ()
@@ -465,9 +462,7 @@ fun insertFunction (f: Function.t,
                             val extraBytes =
                                let
                                   val extraBytes =
-                                     WordX.fromIntInf
-                                     (Bytes.toIntInf extraBytes,
-                                      WordSize.csize ())
+                                     WordX.fromBytes (extraBytes, WordSize.csize ())
                                in
                                   SOME extraBytes
                                end handle Overflow => NONE
@@ -492,8 +487,9 @@ fun insertFunction (f: Function.t,
                                      prim = Prim.wordAddCheckP
                                             (WordSize.csize (),
                                              {signed = false})}),
-                                   Transfer.ifBool
+                                   Transfer.ifBoolE
                                    (Operand.Var {var = test, ty = Type.bool},
+                                    !Control.gcExpect,
                                     {falsee = heapCheck (false,
                                                          Operand.Var
                                                          {var = bytes,

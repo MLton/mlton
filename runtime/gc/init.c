@@ -376,7 +376,7 @@ int GC_init (GC_state s, int argc, char **argv) {
     uint32_t i;
     for (i = 0; i < s->frameInfosLength; i++) {
       uint32_t j;
-      uint32_t *sourceSeq;
+      const uint32_t *sourceSeq;
       fprintf (stderr, "%"PRIu32"\n", i);
       sourceSeq = s->sourceMaps.sourceSeqs[s->frameInfos[i].sourceSeqIndex];
       for (j = 1; j <= sourceSeq[0]; j++)
