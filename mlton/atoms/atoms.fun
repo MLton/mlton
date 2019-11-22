@@ -57,9 +57,11 @@ structure Atoms =
             fun newNoname () = newString "L"
          end
 
+      structure CSymbolScope = CSymbolScope ()
       structure CType = CType (structure RealSize = RealSize
                                structure WordSize = WordSize)
-      structure CFunction = CFunction (structure CType = CType)
+      structure CFunction = CFunction (structure SymbolScope = CSymbolScope
+                                       structure CType = CType)
       structure Ffi = Ffi (structure CFunction = CFunction
                            structure CType = CType)
 

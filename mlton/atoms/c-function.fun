@@ -131,30 +131,6 @@ structure Kind =
       end
    end
 
-structure SymbolScope =
-   struct
-      datatype t =
-         External
-       | Private
-       | Public
-
-      val all = [External, Private, Public]
-
-      val toString =
-         fn External => "external"
-          | Private => "private"
-          | Public => "public"
-
-      val layout = Layout.str o toString
-
-      val parse =
-         let
-            open Parse
-         in
-            any (List.map (all, fn ss => kw (toString ss) *> pure ss))
-         end
-   end
-
 structure Target =
    struct
       datatype t =

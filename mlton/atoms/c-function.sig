@@ -9,6 +9,7 @@
 signature C_FUNCTION_STRUCTS = 
    sig
       structure CType: C_TYPE
+      structure SymbolScope: C_SYMBOL_SCOPE
    end
 
 signature C_FUNCTION = 
@@ -70,15 +71,6 @@ signature C_FUNCTION =
             val modifiesFrontier: t -> bool
             val readsStackTop: t -> bool
             val writesStackTop: t -> bool
-         end
-
-      structure SymbolScope:
-         sig
-            datatype t = External | Private | Public
-
-            val layout: t -> Layout.t
-            val toString: t -> string
-            val parse: t Parse.t
          end
 
       structure Target:

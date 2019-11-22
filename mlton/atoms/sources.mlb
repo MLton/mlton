@@ -60,6 +60,8 @@ local
    label.sig
    c-type.sig
    c-type.fun
+   c-symbol-scope.sig
+   c-symbol-scope.fun
    c-function.sig
    c-function.fun
    ffi.sig
