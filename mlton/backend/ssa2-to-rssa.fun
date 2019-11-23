@@ -1267,6 +1267,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                     in
                                        move (Operand.bool isNop)
                                     end
+                               | CFunction f => simpleCCall f
                                | CPointer_getCPointer => cpointerGet ()
                                | CPointer_getObjptr => cpointerGet ()
                                | CPointer_getReal _ => cpointerGet ()
@@ -1275,7 +1276,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                | CPointer_setObjptr => cpointerSet ()
                                | CPointer_setReal _ => cpointerSet ()
                                | CPointer_setWord _ => cpointerSet ()
-                               | FFI f => simpleCCall f
                                | GC_collect =>
                                     ccall
                                     {args = (Vector.new3

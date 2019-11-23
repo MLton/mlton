@@ -50,7 +50,7 @@ struct
          | CPointer_lt => true
          | CPointer_sub => true
          | CPointer_toWord => true
-         | FFI_Symbol _ => true
+         | CSymbol _ => true
          | Real_Math_acos _ => false
          | Real_Math_asin _ => false
          | Real_Math_atan _ => false
@@ -795,7 +795,7 @@ struct
              | CPointer_lt => cmp Instruction.B
              | CPointer_sub => binal Instruction.SUB
              | CPointer_toWord => mov ()
-             | FFI_Symbol (CSymbol.T {name, symbolScope, ...})
+             | CSymbol (CSymbol.T {name, symbolScope, ...})
              => let
                    datatype z = datatype CSymbolScope.t
                    datatype z = datatype Control.Format.t

@@ -1305,7 +1305,7 @@ fun import {attributes: ImportExportAttribute.t list,
                                             NONE => Indirect
                                           | SOME name => Direct name)}
             in
-               Prim.ffi func
+               Prim.cfunction func
             end
    end
 
@@ -1345,9 +1345,9 @@ local
                   cty: CType.t option,
                   symbolScope: SymbolScope.t }: Cexp.t =
       primApp {args = Vector.new0 (),
-               prim = Prim.ffiSymbol (CSymbol.T {name = name,
-                                                 cty = cty,
-                                                 symbolScope = symbolScope}),
+               prim = Prim.csymbol (CSymbol.T {name = name,
+                                               cty = cty,
+                                               symbolScope = symbolScope}),
                result = expandedPtrTy}
 
    fun mkFetch {ctypeCbTy, isBool,

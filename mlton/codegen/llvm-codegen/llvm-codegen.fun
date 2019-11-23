@@ -606,7 +606,7 @@ fun primApp (prim: 'a Prim.t): ({args: LLVM.Value.t list,
                res
             end)
        | CPointer_toWord => SOME (conv (ptrtoint, LLVM.Type.uintptr ()))
-       | FFI_Symbol (CSymbol.T {name, cty, symbolScope}) => SOME (fn {args = _, mc, newTemp, $} =>
+       | CSymbol (CSymbol.T {name, cty, symbolScope}) => SOME (fn {args = _, mc, newTemp, $} =>
             let
                val name = "@" ^ name
                val ty =

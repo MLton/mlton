@@ -193,7 +193,7 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
                | Prim.Name.Weak_new => refPrim TypeInfo.Weak args
                | Prim.Name.MLton_equal => equalPrim args
                | Prim.Name.MLton_eq => equalPrim args
-               | Prim.Name.FFI (CFunction.T {args=cargs, ...}) =>
+               | Prim.Name.CFunction (CFunction.T {args=cargs, ...}) =>
                   let
                      (* for the C methods, we need false -> 0 and true -> 1 so they have to remain bools *)
                      val _ = Vector.foreach2 (args, cargs, fn (arg, carg) =>
@@ -284,7 +284,7 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
                                     deWeak = Type.deWeak}})
                      val newPrim =
                         case Prim.name prim of
-                           Prim.Name.FFI (cfunc as CFunction.T {args=_, return=_,
+                           Prim.Name.CFunction (cfunc as CFunction.T {args=_, return=_,
                                  convention, inline, kind, prototype, symbolScope, target}) =>
                               let
                                  val newArgs = argTys
@@ -297,7 +297,7 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
                                             symbolScope=symbolScope, target=target}
                                       | _ => cfunc
                               in
-                                 Prim.ffi newCFunc
+                                 Prim.cfunction newCFunc
                               end
                          | _ => prim
                   in

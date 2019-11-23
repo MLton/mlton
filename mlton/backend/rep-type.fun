@@ -615,17 +615,17 @@ fun checkPrimApp {args, prim, result} =
       fun wordShift s = done ([wordOrBitsOrSeq s, shiftArg], SOME (wordOrBitsOrSeq s))
    in
       case Prim.name prim of
-         CPointer_add => done ([cpointer, cptrdiff], SOME cpointer)
+         CFunction f => done (Vector.toListMap (CFunction.args f,
+                                                fn t' => fn t => equals (t', t)),
+                              SOME (fn t => equals (t, CFunction.return f)))
+       | CPointer_add => done ([cpointer, cptrdiff], SOME cpointer)
        | CPointer_diff => done ([cpointer, cpointer], SOME cptrdiff)
        | CPointer_equal => done ([cpointer, cpointer], SOME bool)
        | CPointer_fromWord => done ([csize], SOME cpointer)
        | CPointer_lt => done ([cpointer, cpointer], SOME bool)
        | CPointer_sub => done ([cpointer, cptrdiff], SOME cpointer)
        | CPointer_toWord => done ([cpointer], SOME csize)
-       | FFI f => done (Vector.toListMap (CFunction.args f, 
-                                          fn t' => fn t => equals (t', t)),
-                        SOME (fn t => equals (t, CFunction.return f)))
-       | FFI_Symbol _ => done ([], SOME cpointer)
+       | CSymbol _ => done ([], SOME cpointer)
        | MLton_touch => done ([objptr], NONE)
        | Real_Math_acos s => realUnary s
        | Real_Math_asin s => realUnary s

@@ -188,7 +188,7 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | CPointer_lt => true
        | CPointer_sub => true
        | CPointer_toWord => true
-       | FFI_Symbol _ => true
+       | CSymbol _ => true
        | Real_Math_acos _ => true
        | Real_Math_asin _ => true
        | Real_Math_atan _ => true
@@ -657,7 +657,7 @@ fun declareFFI (chunks, print) =
                case s of
                   Statement.PrimApp {prim, ...} =>
                      (case Prim.name prim of
-                         Prim.Name.FFI_Symbol (CSymbol.T {cty, name, symbolScope}) =>
+                         Prim.Name.CSymbol (CSymbol.T {cty, name, symbolScope}) =>
                             doit
                             (name, fn () =>
                              concat [case symbolScope of
@@ -897,7 +897,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                                C.args (Vector.toListMap (args, fetchOperand))]
                            fun app (): string =
                               case Prim.name prim of
-                                 Prim.Name.FFI_Symbol (CSymbol.T {name, ...}) =>
+                                 Prim.Name.CSymbol (CSymbol.T {name, ...}) =>
                                     concat
                                     ["((",CType.toString CType.CPointer,
                                      ")(&", name, "))"]

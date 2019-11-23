@@ -44,6 +44,7 @@ datatype 'a t =
  | Array_uninit (* to rssa *)
  | Array_uninitIsNop (* to rssa *)
  | Array_update (* to ssa2 *)
+ | CFunction of 'a CFunction.t (* to rssa *)
  | CPointer_add (* codegen *)
  | CPointer_diff (* codegen *)
  | CPointer_equal (* codegen *)
@@ -59,11 +60,10 @@ datatype 'a t =
  | CPointer_setWord of WordSize.t (* to rssa *)
  | CPointer_sub (* codegen *)
  | CPointer_toWord (* codegen *)
+ | CSymbol of CSymbol.t (* codegen *)
  | Exn_extra (* implement exceptions *)
  | Exn_name (* implement exceptions *)
  | Exn_setExtendExtra (* implement exceptions *)
- | FFI of 'a CFunction.t (* to rssa *)
- | FFI_Symbol of CSymbol.t (* codegen *)
  | GC_collect (* to rssa (as runtime C fn) *)
  | GC_state (* to rssa (as operand) *)
  | IntInf_add (* to rssa (as runtime C fn) *)
@@ -233,6 +233,7 @@ fun toString (n: 'a t): string =
        | Array_uninit => "Array_uninit"
        | Array_uninitIsNop => "Array_uninitIsNop"
        | Array_update => "Array_update"
+       | CFunction f => (CFunction.Target.toString o CFunction.target) f
        | CPointer_add => "CPointer_add"
        | CPointer_diff => "CPointer_diff"
        | CPointer_equal => "CPointer_equal"
@@ -248,11 +249,10 @@ fun toString (n: 'a t): string =
        | CPointer_setWord s => cpointerSet ("Word", WordSize.toString s)
        | CPointer_sub => "CPointer_sub"
        | CPointer_toWord => "CPointer_toWord"
+       | CSymbol (CSymbol.T {name, ...}) => name
        | Exn_extra => "Exn_extra"
        | Exn_name => "Exn_name"
        | Exn_setExtendExtra => "Exn_setExtendExtra"
-       | FFI f => (CFunction.Target.toString o CFunction.target) f
-       | FFI_Symbol (CSymbol.T {name, ...}) => name
        | GC_collect => "GC_collect"
        | GC_state => "GC_state"
        | IntInf_add => "IntInf_add"
@@ -373,8 +373,8 @@ fun layout p = Layout.str (toString p)
 
 fun layoutFull (p, layoutX) =
    case p of
-      FFI f => Layout.seq [Layout.str "FFI ", CFunction.layout (f, layoutX)]
-    | FFI_Symbol s => Layout.seq [Layout.str "FFI_Symbol ", CSymbol.layout s]
+      CFunction f => Layout.seq [Layout.str "CFunction ", CFunction.layout (f, layoutX)]
+    | CSymbol s => Layout.seq [Layout.str "CSymbol ", CSymbol.layout s]
     | p => layout p
 
 val equals: 'a t * 'a t -> bool =
@@ -388,6 +388,7 @@ val equals: 'a t * 'a t -> bool =
     | (Array_uninit, Array_uninit) => true
     | (Array_uninitIsNop, Array_uninitIsNop) => true
     | (Array_update, Array_update) => true
+    | (CFunction f, CFunction f') => CFunction.equals (f, f')
     | (CPointer_add, CPointer_add) => true
     | (CPointer_diff, CPointer_diff) => true
     | (CPointer_equal, CPointer_equal) => true
@@ -403,11 +404,10 @@ val equals: 'a t * 'a t -> bool =
     | (CPointer_setWord s, CPointer_setWord s') => WordSize.equals (s, s')
     | (CPointer_sub, CPointer_sub) => true
     | (CPointer_toWord, CPointer_toWord) => true
+    | (CSymbol s, CSymbol s') => CSymbol.equals (s, s')
     | (Exn_extra, Exn_extra) => true
     | (Exn_name, Exn_name) => true
     | (Exn_setExtendExtra, Exn_setExtendExtra) => true
-    | (FFI f, FFI f') => CFunction.equals (f, f')
-    | (FFI_Symbol s, FFI_Symbol s') => CSymbol.equals (s, s')
     | (GC_collect, GC_collect) => true
     | (GC_state, GC_state) => true
     | (IntInf_add, IntInf_add) => true
@@ -566,6 +566,7 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | Array_uninit => Array_uninit
     | Array_uninitIsNop => Array_uninitIsNop
     | Array_update => Array_update
+    | CFunction func => CFunction (CFunction.map (func, f))
     | CPointer_add => CPointer_add
     | CPointer_diff => CPointer_diff
     | CPointer_equal => CPointer_equal
@@ -581,11 +582,10 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | CPointer_setWord z => CPointer_setWord z
     | CPointer_sub => CPointer_sub
     | CPointer_toWord => CPointer_toWord
+    | CSymbol sym => CSymbol sym
     | Exn_extra => Exn_extra
     | Exn_name => Exn_name
     | Exn_setExtendExtra => Exn_setExtendExtra
-    | FFI func => FFI (CFunction.map (func, f))
-    | FFI_Symbol sym => FFI_Symbol sym
     | GC_collect => GC_collect
     | GC_state => GC_state
     | IntInf_add => IntInf_add
@@ -707,6 +707,7 @@ val arrayUpdate = Array_update
 val assign = Ref_assign
 val bogus = MLton_bogus
 val bug = MLton_bug
+val cfunction = CFunction
 val cpointerAdd = CPointer_add
 val cpointerDiff = CPointer_diff
 val cpointerEqual = CPointer_equal
@@ -747,11 +748,10 @@ fun cpointerSet ctype =
    end
 val cpointerSub = CPointer_sub
 val cpointerToWord = CPointer_toWord
+val csymbol = CSymbol
 val deref = Ref_deref
 val eq = MLton_eq
 val equal = MLton_equal
-val ffi = FFI
-val ffiSymbol = FFI_Symbol
 val hash = MLton_hash
 val intInfToVector = IntInf_toVector
 val intInfToWord = IntInf_toWord
@@ -816,6 +816,10 @@ val kind: 'a t -> Kind.t =
        | Array_uninit => SideEffect
        | Array_uninitIsNop => Functional
        | Array_update => SideEffect
+       | CFunction (CFunction.T {kind, ...}) => (case kind of
+                                                    CFunction.Kind.Impure => SideEffect
+                                                  | CFunction.Kind.Pure => Functional
+                                                  | CFunction.Kind.Runtime _ => SideEffect)
        | CPointer_add => Functional
        | CPointer_diff => Functional
        | CPointer_equal => Functional
@@ -831,14 +835,10 @@ val kind: 'a t -> Kind.t =
        | CPointer_setWord _ => SideEffect
        | CPointer_sub => Functional
        | CPointer_toWord => Functional
+       | CSymbol _ => Functional
        | Exn_extra => Functional
        | Exn_name => Functional
        | Exn_setExtendExtra => SideEffect
-       | FFI (CFunction.T {kind, ...}) => (case kind of
-                                              CFunction.Kind.Impure => SideEffect
-                                            | CFunction.Kind.Pure => Functional
-                                            | CFunction.Kind.Runtime _ => SideEffect)
-       | FFI_Symbol _ => Functional
        | GC_collect => SideEffect
        | GC_state => DependsOnState
        | IntInf_add => Functional
@@ -1184,8 +1184,8 @@ fun parse () = fromString <$?> (spaces *> name)
 fun parseFull parseX =
    name >>= (fn pname =>
    case pname of
-      "FFI_Symbol" => FFI_Symbol <$> CSymbol.parse
-    | "FFI" => FFI <$> CFunction.parse parseX
+      "CSymbol" => CSymbol <$> CSymbol.parse
+    | "CFunction" => CFunction <$> CFunction.parse parseX
     | _ => (case fromString pname of
                NONE => fail "prim"
              | SOME p => pure p))
@@ -1315,6 +1315,8 @@ fun 'a checkApp (prim: 'a t,
             oneTarg (fn t => (oneArg (array t), bool))
        | Array_update =>
             oneTarg (fn t => (threeArgs (array t, seqIndex, t), unit))
+       | CFunction f =>
+            noTargs (fn () => (nArgs (CFunction.args f), CFunction.return f))
        | CPointer_add =>
             noTargs (fn () => (twoArgs (cpointer, cptrdiff), cpointer))
        | CPointer_diff =>
@@ -1344,12 +1346,10 @@ fun 'a checkApp (prim: 'a t,
        | CPointer_sub =>
             noTargs (fn () => (twoArgs (cpointer, cptrdiff), cpointer))
        | CPointer_toWord => noTargs (fn () => (oneArg cpointer, csize))
+       | CSymbol _ => noTargs (fn () => (noArgs, cpointer))
        | Exn_extra => oneTarg (fn t => (oneArg exn, t))
        | Exn_name => noTargs (fn () => (oneArg exn, string))
        | Exn_setExtendExtra => oneTarg (fn t => (oneArg (arrow (t, t)), unit))
-       | FFI f =>
-            noTargs (fn () => (nArgs (CFunction.args f), CFunction.return f))
-       | FFI_Symbol _ => noTargs (fn () => (noArgs, cpointer))
        | GC_collect => noTargs (fn () => (noArgs, unit))
        | GC_state => noTargs (fn () => (noArgs, cpointer))
        | IntInf_add => intInfBinary ()
