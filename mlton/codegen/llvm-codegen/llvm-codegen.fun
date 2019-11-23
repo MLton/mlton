@@ -606,7 +606,7 @@ fun primApp (prim: 'a Prim.t): ({args: LLVM.Value.t list,
                res
             end)
        | CPointer_toWord => SOME (conv (ptrtoint, LLVM.Type.uintptr ()))
-       | FFI_Symbol {name, cty, symbolScope} => SOME (fn {args = _, mc, newTemp, $} =>
+       | FFI_Symbol (CSymbol.T {name, cty, symbolScope}) => SOME (fn {args = _, mc, newTemp, $} =>
             let
                val name = "@" ^ name
                val ty =
@@ -615,9 +615,9 @@ fun primApp (prim: 'a Prim.t): ({args: LLVM.Value.t list,
                    | SOME ty => LLVM.Type.fromCType ty
                val vis =
                   case symbolScope of
-                     CFunction.SymbolScope.External => "default"
-                   | CFunction.SymbolScope.Private => "hidden"
-                   | CFunction.SymbolScope.Public => "default"
+                     CSymbolScope.External => "default"
+                   | CSymbolScope.Private => "hidden"
+                   | CSymbolScope.Public => "default"
                val globptr =
                   LLVM.ModuleContext.addGlobDecl
                   (mc, name, {const = false, ty = ty, vis = SOME vis})

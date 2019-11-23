@@ -17,6 +17,8 @@ struct
      open Machine
   in
      structure CFunction = CFunction
+     structure CSymbol = CSymbol
+     structure CSymbolScope = CSymbolScope
      structure RealSize = RealSize
      structure Prim = Prim
      structure WordSize = WordSize
@@ -793,9 +795,9 @@ struct
              | CPointer_lt => cmp Instruction.B
              | CPointer_sub => binal Instruction.SUB
              | CPointer_toWord => mov ()
-             | FFI_Symbol {name, symbolScope, ...}
+             | FFI_Symbol (CSymbol.T {name, symbolScope, ...})
              => let
-                   datatype z = datatype CFunction.SymbolScope.t
+                   datatype z = datatype CSymbolScope.t
                    datatype z = datatype Control.Format.t
                    datatype z = datatype MLton.Platform.OS.t
 

@@ -60,6 +60,8 @@ structure Atoms =
       structure CSymbolScope = CSymbolScope ()
       structure CType = CType (structure RealSize = RealSize
                                structure WordSize = WordSize)
+      structure CSymbol = CSymbol (structure CSymbolScope = CSymbolScope
+                                   structure CType = CType)
       structure CFunction = CFunction (structure SymbolScope = CSymbolScope
                                        structure CType = CType)
       structure Ffi = Ffi (structure CFunction = CFunction
@@ -69,6 +71,7 @@ structure Atoms =
                                structure WordX = WordX)
 
       structure Prim = Prim (structure CFunction = CFunction
+                             structure CSymbol = CSymbol
                              structure CType = CType
                              structure Con = Con
                              structure Const = Const

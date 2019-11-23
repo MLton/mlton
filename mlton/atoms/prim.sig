@@ -10,6 +10,7 @@
 signature PRIM_STRUCTS = 
    sig
       structure CFunction: C_FUNCTION
+      structure CSymbol: C_SYMBOL
       structure CType: C_TYPE
       structure Con: CON
       structure Const: CONST
@@ -55,9 +56,7 @@ signature PRIM =
              | Exn_name (* implement exceptions *)
              | Exn_setExtendExtra (* implement exceptions *)
              | FFI of 'a CFunction.t (* to rssa *)
-             | FFI_Symbol of {name: string,
-                              cty: CType.t option,
-                              symbolScope: CFunction.SymbolScope.t } (* codegen *)
+             | FFI_Symbol of CSymbol.t (* codegen *)
              | GC_collect (* to rssa (as runtime C fn) *)
              | GC_state (* to rssa (as operand) *)
              | IntInf_add (* to rssa (as runtime C fn) *)
@@ -262,9 +261,7 @@ signature PRIM =
                                           deVector: 'b -> 'b,
                                           deWeak: 'b -> 'b}} -> 'b vector
       val ffi: 'a CFunction.t -> 'a t
-      val ffiSymbol: {name: string, 
-                      cty: CType.t option, 
-                      symbolScope: CFunction.SymbolScope.t } -> 'a t
+      val ffiSymbol: CSymbol.t -> 'a t
       val fromString: string -> 'a t option
       val hash: 'a t (* polymorphic hash *)
       val intInfToWord: 'a t

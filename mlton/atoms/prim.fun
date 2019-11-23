@@ -63,9 +63,7 @@ datatype 'a t =
  | Exn_name (* implement exceptions *)
  | Exn_setExtendExtra (* implement exceptions *)
  | FFI of 'a CFunction.t (* to rssa *)
- | FFI_Symbol of {name: string, 
-                  cty: CType.t option, 
-                  symbolScope: CFunction.SymbolScope.t } (* codegen *)
+ | FFI_Symbol of CSymbol.t (* codegen *)
  | GC_collect (* to rssa (as runtime C fn) *)
  | GC_state (* to rssa (as operand) *)
  | IntInf_add (* to rssa (as runtime C fn) *)
@@ -254,7 +252,7 @@ fun toString (n: 'a t): string =
        | Exn_name => "Exn_name"
        | Exn_setExtendExtra => "Exn_setExtendExtra"
        | FFI f => (CFunction.Target.toString o CFunction.target) f
-       | FFI_Symbol {name, ...} => name
+       | FFI_Symbol (CSymbol.T {name, ...}) => name
        | GC_collect => "GC_collect"
        | GC_state => "GC_state"
        | IntInf_add => "IntInf_add"
@@ -376,12 +374,7 @@ fun layout p = Layout.str (toString p)
 fun layoutFull (p, layoutX) =
    case p of
       FFI f => Layout.seq [Layout.str "FFI ", CFunction.layout (f, layoutX)]
-    | FFI_Symbol {name, cty, symbolScope} =>
-         Layout.seq [Layout.str "FFI_Symbol ",
-                     Layout.record
-                     [("name", Layout.str name),
-                      ("cty", Option.layout CType.layout cty),
-                      ("symbolScope", CFunction.SymbolScope.layout symbolScope)]]
+    | FFI_Symbol s => Layout.seq [Layout.str "FFI_Symbol ", CSymbol.layout s]
     | p => layout p
 
 val equals: 'a t * 'a t -> bool =
@@ -414,7 +407,7 @@ val equals: 'a t * 'a t -> bool =
     | (Exn_name, Exn_name) => true
     | (Exn_setExtendExtra, Exn_setExtendExtra) => true
     | (FFI f, FFI f') => CFunction.equals (f, f')
-    | (FFI_Symbol {name = n, ...}, FFI_Symbol {name = n', ...}) => n = n'
+    | (FFI_Symbol s, FFI_Symbol s') => CSymbol.equals (s, s')
     | (GC_collect, GC_collect) => true
     | (GC_state, GC_state) => true
     | (IntInf_add, IntInf_add) => true
@@ -592,8 +585,7 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | Exn_name => Exn_name
     | Exn_setExtendExtra => Exn_setExtendExtra
     | FFI func => FFI (CFunction.map (func, f))
-    | FFI_Symbol {name, cty, symbolScope} => 
-        FFI_Symbol {name = name, cty = cty, symbolScope = symbolScope}
+    | FFI_Symbol sym => FFI_Symbol sym
     | GC_collect => GC_collect
     | GC_state => GC_state
     | IntInf_add => IntInf_add
@@ -1192,11 +1184,7 @@ fun parse () = fromString <$?> (spaces *> name)
 fun parseFull parseX =
    name >>= (fn pname =>
    case pname of
-      "FFI_Symbol" => FFI_Symbol <$>
-                      cbrack (ffield ("name", name) >>= (fn name =>
-                              nfield ("cty", option CType.parse) >>= (fn cty =>
-                              nfield ("symbolScope", CFunction.SymbolScope.parse) >>= (fn symbolScope =>
-                              pure {name = name, cty = cty, symbolScope = symbolScope}))))
+      "FFI_Symbol" => FFI_Symbol <$> CSymbol.parse
     | "FFI" => FFI <$> CFunction.parse parseX
     | _ => (case fromString pname of
                NONE => fail "prim"

@@ -650,14 +650,14 @@ fun declareFFI (chunks, print) =
        Vector.foreach
        (blocks, fn Block.T {statements, transfer, ...} =>
         let
-           datatype z = datatype CFunction.SymbolScope.t
+           datatype z = datatype CSymbolScope.t
            val _ =
               Vector.foreach
               (statements, fn s =>
                case s of
                   Statement.PrimApp {prim, ...} =>
                      (case Prim.name prim of
-                         Prim.Name.FFI_Symbol {name, cty, symbolScope} =>
+                         Prim.Name.FFI_Symbol (CSymbol.T {cty, name, symbolScope}) =>
                             doit
                             (name, fn () =>
                              concat [case symbolScope of
@@ -897,7 +897,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                                C.args (Vector.toListMap (args, fetchOperand))]
                            fun app (): string =
                               case Prim.name prim of
-                                 Prim.Name.FFI_Symbol {name, ...} =>
+                                 Prim.Name.FFI_Symbol (CSymbol.T {name, ...}) =>
                                     concat
                                     ["((",CType.toString CType.CPointer,
                                      ")(&", name, "))"]

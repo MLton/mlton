@@ -14,6 +14,7 @@ signature C_SYMBOL_SCOPE =
 
       datatype t = External | Private | Public
 
+      val equals: t * t -> bool
       val layout: t -> Layout.t
       val toString: t -> string
       val parse: t Parse.t

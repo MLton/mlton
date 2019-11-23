@@ -18,6 +18,7 @@ signature ATOMS' =
       structure AdmitsEquality: ADMITS_EQUALITY
       structure Cases: CASES
       structure CFunction: C_FUNCTION
+      structure CSymbol: C_SYMBOL
       structure CSymbolScope: C_SYMBOL_SCOPE
       structure CType: C_TYPE
       structure CharSize: CHAR_SIZE
@@ -50,8 +51,9 @@ signature ATOMS' =
 
       sharing AdmitsEquality = Tycon.AdmitsEquality
       sharing CFunction = Ffi.CFunction = Prim.CFunction
-      sharing CSymbolScope = CFunction.SymbolScope
-      sharing CType = CFunction.CType = Ffi.CType = Prim.CType
+      sharing CSymbol = Prim.CSymbol
+      sharing CSymbolScope = CFunction.SymbolScope = CSymbol.CSymbolScope
+      sharing CType = CFunction.CType = CSymbol.CType = Ffi.CType = Prim.CType
       sharing CharSize = Tycon.CharSize
       sharing Con = Prim.Con
       sharing Const = Prim.Const
@@ -87,6 +89,7 @@ signature ATOMS =
        *)
       sharing AdmitsEquality = Atoms.AdmitsEquality
       sharing CFunction = Atoms.CFunction
+      sharing CSymbol = Atoms.CSymbol
       sharing CSymbolScope = Atoms.CSymbolScope
       sharing CType = Atoms.CType
       sharing CharSize = Atoms.CharSize

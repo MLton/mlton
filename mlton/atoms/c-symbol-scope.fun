@@ -14,6 +14,12 @@ datatype t =
  | Private
  | Public
 
+val equals =
+   fn (External, External) => true
+    | (Private, Private) => true
+    | (Public, Public) => true
+    | _ => false
+
 val all = [External, Private, Public]
 
 val toString =

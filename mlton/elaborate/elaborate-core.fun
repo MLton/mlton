@@ -127,14 +127,15 @@ local
    open CoreML
 in
    structure CFunction = CFunction
+   structure CKind = CFunction.Kind
+   structure CSymbol = CSymbol
+   structure SymbolScope = CSymbolScope
    structure CType = CType
    structure CharSize = CharSize
-   structure Convention  = CFunction.Convention
-   structure SymbolScope  = CFunction.SymbolScope
-   structure CKind = CFunction.Kind
    structure Con = Con
    structure Const = Const
    structure ConstType = Const.ConstType
+   structure Convention = CFunction.Convention
    structure Cdec = Dec
    structure Cexp = Exp
    structure Ffi = Ffi
@@ -1344,9 +1345,9 @@ local
                   cty: CType.t option,
                   symbolScope: SymbolScope.t }: Cexp.t =
       primApp {args = Vector.new0 (),
-               prim = Prim.ffiSymbol {name = name,
-                                      cty = cty,
-                                      symbolScope = symbolScope},
+               prim = Prim.ffiSymbol (CSymbol.T {name = name,
+                                                 cty = cty,
+                                                 symbolScope = symbolScope}),
                result = expandedPtrTy}
 
    fun mkFetch {ctypeCbTy, isBool,
