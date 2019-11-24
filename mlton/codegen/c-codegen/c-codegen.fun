@@ -358,9 +358,10 @@ fun outputDeclarations
                       then ()
                       else (r := true; print (declare ()))
                 end
-             fun doitCSymbol (CSymbol.T {name, symbolScope, ...}) =
+             fun doitCSymbol (CSymbol.T {name, cty, symbolScope}) =
                 let
                    datatype z = datatype CSymbolScope.t
+                   val cty = Option.fold (cty, CType.Word8, #1)
                 in
                    doit
                    (name, fn () =>
@@ -368,7 +369,9 @@ fun outputDeclarations
                                External => "EXTERNAL "
                              | Private => "PRIVATE "
                              | Public => "PUBLIC ",
-                            "extern void ",
+                            "extern ",
+                            CType.toString cty,
+                            " ",
                             name,
                             ";\n"])
                end
@@ -712,6 +715,7 @@ fun declareFFI (chunks, print) =
       fun doitCSymbol (CSymbol.T {cty, name, symbolScope}) =
          let
             datatype z = datatype CSymbolScope.t
+            val cty = Option.fold (cty, CType.Word8, #1)
          in
             doit
             (name, fn () =>
@@ -720,9 +724,7 @@ fun declareFFI (chunks, print) =
                       | Private => "PRIVATE "
                       | Public => "PUBLIC ",
                      "extern ",
-                     case cty of
-                        SOME x => CType.toString x
-                      | NONE => "void",
+                     CType.toString cty,
                      " ",
                      name,
                      ";\n"])
