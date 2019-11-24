@@ -51,7 +51,7 @@ signature ATOMS' =
 
       sharing AdmitsEquality = Tycon.AdmitsEquality
       sharing CFunction = Ffi.CFunction = Prim.CFunction
-      sharing CSymbol = Prim.CSymbol
+      sharing CSymbol = Const.CSymbol
       sharing CSymbolScope = CFunction.SymbolScope = CSymbol.CSymbolScope
       sharing CType = CFunction.CType = CSymbol.CType = Ffi.CType = Prim.CType
       sharing CharSize = Tycon.CharSize

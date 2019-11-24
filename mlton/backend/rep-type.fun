@@ -628,7 +628,6 @@ fun checkPrimApp {args, prim, result} =
        | CPointer_lt => done ([cpointer, cpointer], SOME bool)
        | CPointer_sub => done ([cpointer, cptrdiff], SOME cpointer)
        | CPointer_toWord => done ([cpointer], SOME csize)
-       | CSymbol _ => done ([], SOME cpointer)
        | MLton_touch => done ([objptr], NONE)
        | Real_Math_acos s => realUnary s
        | Real_Math_asin s => realUnary s

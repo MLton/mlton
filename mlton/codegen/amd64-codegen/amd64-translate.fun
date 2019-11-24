@@ -22,6 +22,8 @@ struct
   local
      open Machine
   in
+     structure CSymbol = CSymbol
+     structure CSymbolScope = CSymbolScope
      structure Const = Const
      structure Label = Label
      structure Live = Live
@@ -152,6 +154,79 @@ struct
                   fromSizes (sizes, origin)
                end
           | Cast (z, _) => toAMD64Operand z
+          | Const (Const.CSymbol (CSymbol.T {name, symbolScope, ...})) =>
+               let
+                  datatype z = datatype CSymbolScope.t
+                  datatype z = datatype Control.Format.t
+                  datatype z = datatype MLton.Platform.OS.t
+
+                  val label = fn () => Label.fromString name
+
+                  (* how to access an imported label's address *)
+                  (* windows coff will add another leading _ to label *)
+                  val coff = fn () => Label.fromString ("_imp__" ^ name)
+                  val macho = fn () => Label.fromString (name ^ "@GOTPCREL")
+                  val elf = fn () => Label.fromString (name ^ "@GOTPCREL")
+
+                  val importLabel = fn () =>
+                     case !Control.Target.os of
+                        Cygwin => coff ()
+                      | Darwin => macho ()
+                      | MinGW => coff ()
+                      | _ => elf ()
+
+                  val direct = fn () =>
+                     Vector.new1
+                     (amd64.Operand.immediate_label (label ()),
+                      amd64.Size.QUAD)
+                  val indirect = fn () =>
+                     Vector.new1
+                     (amd64.Operand.memloc_label (importLabel ()),
+                      amd64.Size.QUAD)
+               in
+                  case (symbolScope,
+                        !Control.Target.os,
+                        !Control.positionIndependent) of
+                   (* As long as the symbol is private (this means it is not
+                    * exported to code outside this text segment), then
+                    * RIP-relative addressing works on every OS/format.
+                    *)
+                     (Private, _, _) => direct ()
+                   (* When linking an executable, ELF and darwin-x86_64 use
+                    * a special trick to "simplify" the code. All exported
+                    * functions and symbols have pointers that correspond to
+                    * to the executable. Function pointers point to the
+                    * automatically created PLT entry in the executable.
+                    * Variables are copied/relocated into the executable bss.
+                    * This means that direct access is fine for executable
+                    * and archive formats. (It also means direct access is
+                    * NOT fine for a library, even if it defines the symbol)
+                    *
+                    * On ELF&darwin, a public symbol must be accessed via
+                    * the GOT. This is because the final value may not be
+                    * in this text segment. If the executable uses it, then
+                    * the unique C address resides in the executable's
+                    * text segment. The loader does this by creating a PLT
+                    * proxy or copying values to the executable text segment.
+                    *)
+                   | (Public, _, true) => indirect ()
+                   | (Public, _, false) => direct ()
+                   (* On windows, the address is the point of definition. So
+                    * we must use an indirect lookup even in executables.
+                    *)
+                   | (External, MinGW, _) => indirect ()
+                   | (External, Cygwin, _) => indirect ()
+                   (* When compiling to a library, we need to access external
+                    * symbols via some address that is updated by the loader.
+                    * That address resides within our data segment, and can
+                    * be easily referenced using RIP-relative addressing.
+                    * This trick is used on every platform MLton supports.
+                    * Windows rewrites __imp__name symbols in our segment.
+                    * ELF and darwin-x86_64 rewrite name@GOTPCREL.
+                    *)
+                   | (External, _, true) => indirect ()
+                   | (External, _, false) => direct ()
+               end
           | Const Const.Null =>
                Vector.new1 (amd64.Operand.immediate_zero, amd64MLton.wordSize)
           | Const (Const.Word w) =>

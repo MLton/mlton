@@ -10,7 +10,6 @@
 signature PRIM_STRUCTS = 
    sig
       structure CFunction: C_FUNCTION
-      structure CSymbol: C_SYMBOL
       structure CType: C_TYPE
       structure Con: CON
       structure Const: CONST
@@ -53,7 +52,6 @@ signature PRIM =
              | CPointer_setWord of WordSize.t (* to rssa *)
              | CPointer_sub (* codegen *)
              | CPointer_toWord (* codegen *)
-             | CSymbol of CSymbol.t (* codegen *)
              | Exn_extra (* implement exceptions *)
              | Exn_name (* implement exceptions *)
              | Exn_setExtendExtra (* implement exceptions *)
@@ -250,7 +248,6 @@ signature PRIM =
       val cpointerSet: CType.t -> 'a t 
       val cpointerSub: 'a t
       val cpointerToWord: 'a t
-      val csymbol: CSymbol.t -> 'a t
       val deref: 'a t
       val eq: 'a t    (* pointer equality *)
       val equal: 'a t (* polymorphic equality *)

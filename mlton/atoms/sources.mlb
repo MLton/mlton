@@ -27,6 +27,14 @@ local
    word-x-vector.fun
    real-x.sig
    real-x.fun
+   c-symbol-scope.sig
+   c-symbol-scope.fun
+   c-type.sig
+   c-type.fun
+   c-symbol.sig
+   c-symbol.fun
+   c-function.sig
+   c-function.fun
    const-type.sig
    const-type.fun
    const.sig
@@ -58,14 +66,6 @@ local
    var.fun
    func.sig
    label.sig
-   c-symbol-scope.sig
-   c-symbol-scope.fun
-   c-type.sig
-   c-type.fun
-   c-function.sig
-   c-function.fun
-   c-symbol.sig
-   c-symbol.fun
    ffi.sig
    ffi.fun
    cases.sig

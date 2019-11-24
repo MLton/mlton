@@ -1344,11 +1344,11 @@ local
                   name: string,
                   cty: CType.t option,
                   symbolScope: SymbolScope.t }: Cexp.t =
-      primApp {args = Vector.new0 (),
-               prim = Prim.csymbol (CSymbol.T {name = name,
-                                               cty = cty,
-                                               symbolScope = symbolScope}),
-               result = expandedPtrTy}
+      Cexp.make (Cexp.Const
+                 (fn () => Const.csymbol (CSymbol.T {name = name,
+                                                     cty = cty,
+                                                     symbolScope = symbolScope})),
+                 expandedPtrTy)
 
    fun mkFetch {ctypeCbTy, isBool,
                 expandedCbTy,

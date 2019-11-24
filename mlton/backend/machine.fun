@@ -187,6 +187,7 @@ structure Operand =
 
     val ty =
        fn Cast (_, ty) => ty
+        | Const (Const.CSymbol _) => Type.cpointer ()
         | Const Const.Null => Type.cpointer ()
         | Const (Const.Real r) => Type.ofRealX r
         | Const (Const.Word w) => Type.ofWordX w

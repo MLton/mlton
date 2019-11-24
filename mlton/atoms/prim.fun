@@ -60,7 +60,6 @@ datatype 'a t =
  | CPointer_setWord of WordSize.t (* to rssa *)
  | CPointer_sub (* codegen *)
  | CPointer_toWord (* codegen *)
- | CSymbol of CSymbol.t (* codegen *)
  | Exn_extra (* implement exceptions *)
  | Exn_name (* implement exceptions *)
  | Exn_setExtendExtra (* implement exceptions *)
@@ -249,7 +248,6 @@ fun toString (n: 'a t): string =
        | CPointer_setWord s => cpointerSet ("Word", WordSize.toString s)
        | CPointer_sub => "CPointer_sub"
        | CPointer_toWord => "CPointer_toWord"
-       | CSymbol (CSymbol.T {name, ...}) => name
        | Exn_extra => "Exn_extra"
        | Exn_name => "Exn_name"
        | Exn_setExtendExtra => "Exn_setExtendExtra"
@@ -374,7 +372,6 @@ fun layout p = Layout.str (toString p)
 fun layoutFull (p, layoutX) =
    case p of
       CFunction f => Layout.seq [Layout.str "CFunction ", CFunction.layout (f, layoutX)]
-    | CSymbol s => Layout.seq [Layout.str "CSymbol ", CSymbol.layout s]
     | p => layout p
 
 val equals: 'a t * 'a t -> bool =
@@ -404,7 +401,6 @@ val equals: 'a t * 'a t -> bool =
     | (CPointer_setWord s, CPointer_setWord s') => WordSize.equals (s, s')
     | (CPointer_sub, CPointer_sub) => true
     | (CPointer_toWord, CPointer_toWord) => true
-    | (CSymbol s, CSymbol s') => CSymbol.equals (s, s')
     | (Exn_extra, Exn_extra) => true
     | (Exn_name, Exn_name) => true
     | (Exn_setExtendExtra, Exn_setExtendExtra) => true
@@ -582,7 +578,6 @@ val map: 'a t * ('a -> 'b) -> 'b t =
     | CPointer_setWord z => CPointer_setWord z
     | CPointer_sub => CPointer_sub
     | CPointer_toWord => CPointer_toWord
-    | CSymbol sym => CSymbol sym
     | Exn_extra => Exn_extra
     | Exn_name => Exn_name
     | Exn_setExtendExtra => Exn_setExtendExtra
@@ -748,7 +743,6 @@ fun cpointerSet ctype =
    end
 val cpointerSub = CPointer_sub
 val cpointerToWord = CPointer_toWord
-val csymbol = CSymbol
 val deref = Ref_deref
 val eq = MLton_eq
 val equal = MLton_equal
@@ -835,7 +829,6 @@ val kind: 'a t -> Kind.t =
        | CPointer_setWord _ => SideEffect
        | CPointer_sub => Functional
        | CPointer_toWord => Functional
-       | CSymbol _ => Functional
        | Exn_extra => Functional
        | Exn_name => Functional
        | Exn_setExtendExtra => SideEffect
@@ -1184,8 +1177,7 @@ fun parse () = fromString <$?> (spaces *> name)
 fun parseFull parseX =
    name >>= (fn pname =>
    case pname of
-      "CSymbol" => CSymbol <$> CSymbol.parse
-    | "CFunction" => CFunction <$> CFunction.parse parseX
+      "CFunction" => CFunction <$> CFunction.parse parseX
     | _ => (case fromString pname of
                NONE => fail "prim"
              | SOME p => pure p))
@@ -1346,7 +1338,6 @@ fun 'a checkApp (prim: 'a t,
        | CPointer_sub =>
             noTargs (fn () => (twoArgs (cpointer, cptrdiff), cpointer))
        | CPointer_toWord => noTargs (fn () => (oneArg cpointer, csize))
-       | CSymbol _ => noTargs (fn () => (noArgs, cpointer))
        | Exn_extra => oneTarg (fn t => (oneArg exn, t))
        | Exn_name => noTargs (fn () => (oneArg exn, string))
        | Exn_setExtendExtra => oneTarg (fn t => (oneArg (arrow (t, t)), unit))

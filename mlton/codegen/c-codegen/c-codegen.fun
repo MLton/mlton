@@ -128,14 +128,17 @@ structure Const =
 
       fun toCType (c: t): CType.t =
          case c of
-            Null => CType.cpointer
+            CSymbol _ => CType.cpointer
+          | Null => CType.cpointer
           | Real r => RealX.toCType r
           | Word w => WordX.toCType w
           | _ => Error.bug "CCodegen.Const.toC"
 
       fun toC (c: t): string =
          case c of
-            Null => "NULL"
+            CSymbol (CSymbol.T {name, ...}) =>
+               concat ["((", CType.toString CType.cpointer, ")(&", name, "))"]
+          | Null => "NULL"
           | Real r => RealX.toC r
           | Word w => WordX.toC w
           | _ => Error.bug "CCodegen.Const.toC"
@@ -218,7 +221,6 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | CPointer_lt => true
        | CPointer_sub => true
        | CPointer_toWord => true
-       | CSymbol _ => true
        | Real_Math_acos _ => true
        | Real_Math_asin _ => true
        | Real_Math_atan _ => true
@@ -346,7 +348,43 @@ fun outputDeclarations
          ["((Pointer)(&", staticVar i, ") + ",
           C.int (metadataSize i), ")"]
       fun declareStatics () =
-         (Vector.foreachi
+         (let
+             val seen = String.memoize (fn _ => ref false)
+             fun doit (name: string, declare: unit -> string): unit =
+                let
+                   val r = seen name
+                in
+                   if !r
+                      then ()
+                      else (r := true; print (declare ()))
+                end
+             fun doitCSymbol (CSymbol.T {name, symbolScope, ...}) =
+                let
+                   datatype z = datatype CSymbolScope.t
+                in
+                   doit
+                   (name, fn () =>
+                    concat [case symbolScope of
+                               External => "EXTERNAL "
+                             | Private => "PRIVATE "
+                             | Public => "PUBLIC ",
+                            "extern void ",
+                            name,
+                            ";\n"])
+               end
+          in
+             Vector.foreach
+             (statics, fn (Machine.Static.T {data, ...}, _) =>
+              case data of
+                 Static.Data.Object es =>
+                    List.foreach (es, fn e =>
+                                  case e of
+                                     Static.Data.Elem.Const (Const.CSymbol sym) =>
+                                        doitCSymbol sym
+                                   | _ => ())
+                    | _ => ())
+          end;
+          Vector.foreachi
           (statics, fn (i, (static as Machine.Static.T {data, location, ...}, _)) =>
              let
                 val dataC = Static.Data.toC staticAddress data
@@ -671,35 +709,43 @@ fun declareFFI (chunks, print) =
                then ()
             else (r := true; empty := false; print (declare ()))
          end
+      fun doitCSymbol (CSymbol.T {cty, name, symbolScope}) =
+         let
+            datatype z = datatype CSymbolScope.t
+         in
+            doit
+            (name, fn () =>
+             concat [case symbolScope of
+                        External => "EXTERNAL "
+                      | Private => "PRIVATE "
+                      | Public => "PUBLIC ",
+                     "extern ",
+                     case cty of
+                        SOME x => CType.toString x
+                      | NONE => "void",
+                     " ",
+                     name,
+                     ";\n"])
+         end
+      fun doitOperand z =
+         case z of
+            Operand.Cast (z, _) => doitOperand z
+          | Operand.Const (Const.CSymbol sym) => doitCSymbol sym
+          | Operand.Offset {base, ...} => doitOperand base
+          | Operand.SequenceOffset {base, index, ...} =>
+               (doitOperand base; doitOperand index)
+          | _ => ()
    in
       List.foreach
       (chunks, fn Chunk.T {blocks, ...} =>
        Vector.foreach
        (blocks, fn Block.T {statements, transfer, ...} =>
         let
-           datatype z = datatype CSymbolScope.t
            val _ =
               Vector.foreach
               (statements, fn s =>
-               case s of
-                  Statement.PrimApp {prim, ...} =>
-                     (case Prim.name prim of
-                         Prim.Name.CSymbol (CSymbol.T {cty, name, symbolScope}) =>
-                            doit
-                            (name, fn () =>
-                             concat [case symbolScope of
-                                        External => "EXTERNAL "
-                                      | Private => "PRIVATE "
-                                      | Public => "PUBLIC ",
-                                     "extern ",
-                                     case cty of
-                                        SOME x => CType.toString x
-                                      | NONE => "void",
-                                     " ",
-                                     name,
-                                     ";\n"])
-                       | _ => ())
-                | _ => ())
+               Statement.foldOperands
+               (s, (), doitOperand o #1))
            val _ =
               case transfer of
                  Transfer.CCall {func, ...} =>
@@ -715,6 +761,9 @@ fun declareFFI (chunks, print) =
                         | Indirect => ()
                     end
                | _ => ()
+           val () =
+              Transfer.foldOperands
+              (transfer, (), doitOperand o #1)
         in
            ()
         end))
@@ -917,25 +966,18 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                    | PrimApp {args, dst, prim} =>
                         let
                            fun call (): string =
-                              concat
-                              [Prim.toString prim, " ",
-                               C.args (Vector.toListMap (args, fetchOperand))]
-                           fun app (): string =
-                              case Prim.name prim of
-                                 Prim.Name.CSymbol (CSymbol.T {name, ...}) =>
-                                    concat
-                                    ["((",CType.toString CType.CPointer,
-                                     ")(&", name, "))"]
-                               | _ => call ()
+                              C.callNoSemi
+                              (Prim.toString prim,
+                               Vector.toListMap (args, fetchOperand))
                            val _ = print "\t"
                         in
                            case dst of
-                              NONE => (print (app ())
+                              NONE => (print (call ())
                                        ; print ";\n")
                             | SOME dst =>
                                  print (move {dst = operandToString dst,
                                               dstIsMem = Operand.isMem dst,
-                                              src = app (),
+                                              src = call (),
                                               srcIsMem = false,
                                               ty = Operand.ty dst})
                         end

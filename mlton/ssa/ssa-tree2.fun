@@ -288,7 +288,8 @@ structure Type =
             datatype z = datatype Const.t
          in
             case c of
-               IntInf _ => intInf
+               CSymbol _ => cpointer
+             | IntInf _ => intInf
              | Null => cpointer
              | Real r => real (RealX.size r)
              | Word w => word (WordX.size w)
