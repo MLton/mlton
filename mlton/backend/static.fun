@@ -13,15 +13,16 @@ functor Static (S: STATIC_STRUCTS): STATIC =
          structure Elem = struct
             datatype 'a t =
                Address of 'a (* must be statically allocated *)
-             | Word of WordX.t (* must be pointer-sized *)
-             | Real of RealX.t
+             | Const of Const.t
 
             fun layout layoutI =
                let open Layout
                in fn Address i => layoutI i
-                   | Word w => WordX.layout (w, {suffix=true})
-                   | Real r => RealX.layout (r, {suffix=true})
+                   | Const c => Const.layout c
                end
+
+            fun word w = Const (Const.word w)
+            fun real r = Const (Const.real r)
          end
          datatype 'a t =
             Empty of Bytes.t
@@ -33,8 +34,7 @@ functor Static (S: STATIC_STRUCTS): STATIC =
                  Empty b => Empty b
                | Object es => (Object o List.map) (es,
                   fn Elem.Address a => Elem.Address (f a)
-                   | Elem.Word wx => Elem.Word wx
-                   | Elem.Real rx => Elem.Real rx)
+                   | Elem.Const c => Elem.Const c)
                | Vector wxv => Vector wxv
 
          fun layout layoutI =

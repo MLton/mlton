@@ -5,17 +5,17 @@
  *)
 
 signature STATIC_STRUCTS = sig
+   structure Const: CONST
    structure ObjptrTycon: OBJPTR_TYCON
-   structure RealSize: REAL_SIZE
    structure RealX: REAL_X
    structure Runtime: RUNTIME
    structure WordSize: WORD_SIZE
    structure WordX: WORD_X
    structure WordXVector: WORD_X_VECTOR
-   sharing RealX.RealSize = RealSize
-   sharing WordX.WordSize = WordSize
-   sharing WordXVector.WordSize = WordSize
-   sharing WordXVector.WordX = WordX
+   sharing RealX = Const.RealX
+   sharing WordSize = WordX.WordSize = WordXVector.WordSize
+   sharing WordX = Const.WordX = WordXVector.WordX
+   sharing WordXVector = Const.WordXVector
 end
 
 signature STATIC =
@@ -26,8 +26,10 @@ signature STATIC =
          structure Elem: sig
             datatype 'a t =
                Address of 'a (* must be statically allocated *)
-             | Word of WordX.t
-             | Real of RealX.t
+             | Const of Const.t
+
+            val word: WordX.t -> 'a t
+            val real: RealX.t -> 'a t
          end
 
          datatype 'a t =

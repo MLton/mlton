@@ -58,6 +58,7 @@ structure RealX =
    struct
       open RealX
 
+      fun toCType r = CType.real (size r)
       fun toC (r: t): string =
          let
             (* The main difference between SML reals and C floats/doubles is that
@@ -84,18 +85,19 @@ structure WordX =
    struct
       open WordX
 
+      fun toCType w = CType.word (size w, {signed = false})
       fun toC (w: t): string =
-         concat ["(Word", WordSize.toString (size w), ")(",
+         concat ["(", CType.toString (toCType w), ")(",
                  toString (w, {suffix = false}), "ull)"]
    end
 
 structure WordXVector =
    struct
       local
-         structure Z = WordX
+         structure WordX' = WordX
       in
          open WordXVector
-         structure WordX = Z
+         structure WordX = WordX'
       end
 
       local
@@ -113,15 +115,41 @@ structure WordXVector =
       end
    end
 
-structure Static =
+structure Const =
    struct
       local
          structure RealX' = RealX
          structure WordX' = WordX
+      in
+         open Const
+         structure RealX = RealX'
+         structure WordX = WordX'
+      end
+
+      fun toCType (c: t): CType.t =
+         case c of
+            Null => CType.cpointer
+          | Real r => RealX.toCType r
+          | Word w => WordX.toCType w
+          | _ => Error.bug "CCodegen.Const.toC"
+
+      fun toC (c: t): string =
+         case c of
+            Null => "NULL"
+          | Real r => RealX.toC r
+          | Word w => WordX.toC w
+          | _ => Error.bug "CCodegen.Const.toC"
+   end
+
+structure Static =
+   struct
+      local
+         structure Const' = Const
+         structure WordX' = WordX
          structure WordXVector' = WordXVector
       in
          open Static
-         structure RealX = RealX'
+         structure Const = Const'
          structure WordX = WordX'
          structure WordXVector = WordXVector'
       end
@@ -130,20 +158,22 @@ structure Static =
       struct
          open Data
 
+         structure Elem =
+            struct
+               open Elem
+
+               val toCType =
+                  fn Address _ => CType.objptr
+                   | Const c => Const.toCType c
+               fun toC indexToC =
+                  fn Address i => indexToC i
+                   | Const c => Const.toC c
+            end
+
          fun toC indexToC =
             fn Empty _ => NONE
              | Vector v => SOME (WordXVector.toC v)
-             | Object es =>
-                  let
-                     val elemToC =
-                        fn Elem.Real rx => RealX.toC rx
-                         | Elem.Word wx => WordX.toC wx
-                         | Elem.Address i => indexToC i
-                  in
-                     (SOME o String.concatWith)
-                     (List.map (es, elemToC),
-                      ", ")
-                  end
+             | Object es => (SOME o String.concatWith) (List.map (es, Elem.toC indexToC), ", ")
       end
 
       fun metadataToC (Static.T {metadata, ...}) =
@@ -151,7 +181,7 @@ structure Static =
             val decl =
                String.concatWith
                (List.mapi (metadata, fn (i, w) =>
-                           concat ["Word", WordSize.toString (WordX.size w),
+                           concat [CType.toString (WordX.toCType w),
                                    " meta_", C.int i]),
                 "; ")
             val init =
@@ -326,10 +356,7 @@ fun outputDeclarations
                 val dataType =
                    case data of
                       Static.Data.Object es =>
-                         (TObject o List.map) (es,
-                           fn Static.Data.Elem.Real r => "Real" ^ RealSize.toString (RealX.size r)
-                            | Static.Data.Elem.Word w => "Word" ^ WordSize.toString (WordX.size w)
-                            | Static.Data.Elem.Address _ => "Pointer")
+                         (TObject o List.map) (es, CType.toString o Static.Data.Elem.toCType)
                     | Static.Data.Vector v =>
                          TVector ("Word" ^ WordSize.toString (WordXVector.elementSize v), WordXVector.length v)
                     | Static.Data.Empty b =>

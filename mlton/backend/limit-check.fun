@@ -857,7 +857,7 @@ fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileI
                 pinned = false,
                 src = Operand.Static
                   {static=Static.object
-                     {elems=[Static.Data.Elem.Word (WordX.one WordSize.bool)],
+                     {elems=[Static.Data.Elem.word (WordX.one WordSize.bool)],
                       location=Static.Location.MutStatic,
                       tycon=refTycon},
                    ty=Type.cpointer ()}}
