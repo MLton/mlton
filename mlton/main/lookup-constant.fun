@@ -92,7 +92,7 @@ fun build (constants, out) =
          "#include \"platform.h\"",
          "struct GC_state gcState;",
          "",
-         "int main (int argc, char **argv) {"],
+         "int main (void) {"],
         List.revMap
         (constants, fn {name, value, ty} =>
          let

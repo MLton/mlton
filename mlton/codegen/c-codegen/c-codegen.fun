@@ -50,8 +50,6 @@ structure C =
          let val quote = "\"" (* " *)
          in concat [quote, String.escapeC s, quote]
          end
-
-      fun word (w: Word.t) = "0x" ^ Word.toString w
    end
 
 structure RealX =
@@ -182,11 +180,11 @@ structure Static =
       fun metadataToC (Static.T {metadata, ...}) =
          let
             val decl =
-               String.concatWith
-               (List.mapi (metadata, fn (i, w) =>
-                           concat [CType.toString (WordX.toCType w),
-                                   " meta_", C.int i]),
-                "; ")
+               (concat o List.mapi)
+               (metadata, fn (i, w) =>
+                concat [if i > 0 then " " else "",
+                        CType.toString (WordX.toCType w),
+                        " meta_", C.int i, ";"])
             val init =
                String.concatWith
                (List.map (metadata, WordX.toC),
@@ -318,8 +316,12 @@ fun outputDeclarations
          Ffi.declareExports {print = print}
       fun declareLoadSaveGlobals () =
          let
+            val unused =
+               List.forall (CType.all, fn t => Global.numberOfType t = 0)
             val _ =
-               (print "static int saveGlobals (FILE *f) {\n"
+               (print "static int saveGlobals ("
+                ; if unused then print "__attribute__ ((unused))" else ()
+                ; print " FILE *f) {\n"
                 ; (List.foreach
                    (CType.all, fn t =>
                     if Global.numberOfType t > 0
@@ -328,7 +330,9 @@ fun outputDeclarations
                        else ()))
                 ; print "\treturn 0;\n}\n")
             val _ =
-               (print "static int loadGlobals (FILE *f) {\n"
+               (print "static int loadGlobals ("
+                ; if unused then print "__attribute__ ((unused))" else ()
+                ; print " FILE *f) {\n"
                 ; (List.foreach
                    (CType.all, fn t =>
                     if Global.numberOfType t > 0
@@ -358,9 +362,10 @@ fun outputDeclarations
                       then ()
                       else (r := true; print (declare ()))
                 end
-             fun doitCSymbol (CSymbol.T {name, symbolScope, ...}) =
+             fun doitCSymbol (CSymbol.T {name, cty, symbolScope}) =
                 let
                    datatype z = datatype CSymbolScope.t
+                   val cty = Option.fold (cty, CType.Word8, #1)
                 in
                    doit
                    (name, fn () =>
@@ -368,7 +373,9 @@ fun outputDeclarations
                                External => "EXTERNAL "
                              | Private => "PRIVATE "
                              | Public => "PUBLIC ",
-                            "extern void ",
+                            "extern ",
+                            CType.toString cty,
+                            " ",
                             name,
                             ";\n"])
                end
@@ -419,16 +426,20 @@ fun outputDeclarations
                    end
 
                 val decl = concat
-                   [ qualifier, "struct {",
-                     mdecl, "; ",
-                     dataDescr,
-                     "}\n",
-                     staticVar i ]
+                   [ qualifier, "struct {", mdecl,
+                     if not (String.isEmpty mdecl) andalso not (String.isEmpty dataDescr)
+                        then " "
+                        else "",
+                     dataDescr, "}\n", staticVar i ]
              in
                 case dataC of
                      SOME dataC =>
                        (print o concat)
-                       [decl, " = {", minit, ", ", dataC, "};\n"]
+                       [decl, " = {", minit,
+                        if not (String.isEmpty minit) andalso not (String.isEmpty dataC)
+                           then ", "
+                           else "",
+                        dataC, "};\n"]
                     (* needs code initialization *)
                    | NONE => print (decl ^ ";\n")
              end))
@@ -598,10 +609,13 @@ fun outputDeclarations
                let
                   val version = String.hash Version.version
                   val random = Random.word ()
+                  val magic =
+                     Word.orb
+                     (Word.<< (version, Word.fromInt (Word.wordSize - 8)),
+                      Word.>> (random, Word.fromInt 8))
                in
-                  Word.orb
-                  (Word.<< (version, Word.fromInt (Word.wordSize - 8)),
-                   Word.>> (random, Word.fromInt 8))
+                  WordX.fromIntInf
+                  (Word.toIntInf magic, WordSize.word32)
                end
             val profile =
                case !Control.profile of
@@ -620,7 +634,7 @@ fun outputDeclarations
                                   | Control.LibArchive => "MLtonLibrary"
                                   | Control.Library => "MLtonLibrary",
                                  [C.int align,
-                                  C.word magic,
+                                  WordX.toC magic,
                                   C.bytes maxFrameSize,
                                   C.bool (!Control.markCards),
                                   profile,
@@ -712,6 +726,7 @@ fun declareFFI (chunks, print) =
       fun doitCSymbol (CSymbol.T {cty, name, symbolScope}) =
          let
             datatype z = datatype CSymbolScope.t
+            val cty = Option.fold (cty, CType.Word8, #1)
          in
             doit
             (name, fn () =>
@@ -720,9 +735,7 @@ fun declareFFI (chunks, print) =
                       | Private => "PRIVATE "
                       | Public => "PUBLIC ",
                      "extern ",
-                     case cty of
-                        SOME x => CType.toString x
-                      | NONE => "void",
+                     CType.toString cty,
                      " ",
                      name,
                      ";\n"])
