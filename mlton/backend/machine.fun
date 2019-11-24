@@ -163,15 +163,14 @@ structure Operand =
    struct
       datatype t =
          Cast of t * Type.t
+       | Const of Const.t
        | Frontier
        | GCState
        | Global of Global.t
        | Label of Label.t
-       | Null
        | Offset of {base: t,
                     offset: Bytes.t,
                     ty: Type.t}
-       | Real of RealX.t
        | SequenceOffset of {base: t,
                             index: t,
                             offset: Bytes.t,
@@ -183,23 +182,25 @@ structure Operand =
                     offset: Bytes.t,
                     ty: Type.t}
        | Temporary of Temporary.t
-       | Word of WordX.t
+
+    val word = Const o Const.Word
 
     val ty =
        fn Cast (_, ty) => ty
+        | Const Const.Null => Type.cpointer ()
+        | Const (Const.Real r) => Type.ofRealX r
+        | Const (Const.Word w) => Type.ofWordX w
+        | Const _ => Error.bug "Machine.Operand.ty: Const"
         | Frontier => Type.cpointer ()
         | GCState => Type.gcState ()
         | Global g => Global.ty g
         | Label l => Type.label l
-        | Null => Type.cpointer ()
         | Offset {ty, ...} => ty
-        | Real r => Type.real (RealX.size r)
         | SequenceOffset {ty, ...} => ty
         | StackOffset s => StackOffset.ty s
         | StackTop => Type.cpointer ()
         | Static {ty, ...} => ty
         | Temporary t => Temporary.ty t
-        | Word w => Type.ofWordX w
 
     fun layout (z: t): Layout.t =
          let
@@ -212,16 +213,15 @@ structure Operand =
             case z of
                Cast (z, ty) =>
                   seq [str "Cast ", tuple [layout z, Type.layout ty]]
+             | Const c => Const.layout c
              | Frontier => str "<Frontier>"
              | GCState => str "<GCState>"
              | Global g => Global.layout g
              | Label l => Label.layout l
-             | Null => str "NULL"
              | Offset {base, offset, ty} =>
                   seq [str (concat ["O", Type.name ty, " "]),
                        tuple [layout base, Bytes.layout offset],
                        constrain ty]
-             | Real r => RealX.layout (r, {suffix = true})
              | SequenceOffset {base, index, offset, scale, ty} =>
                   seq [str (concat ["X", Type.name ty, " "]),
                        tuple [layout base, layout index, Scale.layout scale,
@@ -234,7 +234,6 @@ structure Operand =
                        tuple [Int.layout index, Type.layout ty,
                               Bytes.layout offset]]
              | Temporary t => Temporary.layout t
-             | Word w => WordX.layout (w, {suffix = true})
          end
 
     val toString = Layout.toString o layout
@@ -242,13 +241,13 @@ structure Operand =
     val rec equals =
          fn (Cast (z, t), Cast (z', t')) =>
                 Type.equals (t, t') andalso equals (z, z')
+           | (Const c, Const c') => Const.equals (c, c')
            | (GCState, GCState) => true
            | (Global g, Global g') => Global.equals (g, g')
            | (Label l, Label l') => Label.equals (l, l')
            | (Offset {base = b, offset = i, ...},
               Offset {base = b', offset = i', ...}) =>
                 equals (b, b') andalso Bytes.equals (i, i')
-           | (Real r, Real r') => RealX.equals (r, r')
            | (SequenceOffset {base = b, index = i, ...},
               SequenceOffset {base = b', index = i', ...}) =>
                 equals (b, b') andalso equals (i, i')
@@ -259,7 +258,6 @@ structure Operand =
               andalso Bytes.equals (j, j')
               andalso Type.equals (t, t')
            | (Temporary t, Temporary t') => Temporary.equals (t, t')
-           | (Word w, Word w') => WordX.equals (w, w')
            | _ => false
 
       fun gcField field =
@@ -353,12 +351,12 @@ structure Statement =
          let
             datatype z = datatype Operand.t
             fun bytes (b: Bytes.t): Operand.t =
-               Word (WordX.fromIntInf (Bytes.toIntInf b, WordSize.csize ()))
+               Operand.word (WordX.fromIntInf (Bytes.toIntInf b, WordSize.csize ()))
             val metaDataSize = Runtime.normalMetaDataSize ()
             val headerOffset = Runtime.headerOffset ()
             val header =
-               Word (WordX.fromIntInf (Word.toIntInf header,
-                                       WordSize.objptrHeader ()))
+               Operand.word (WordX.fromIntInf (Word.toIntInf header,
+                                               WordSize.objptrHeader ()))
             val temp = Temporary (Temporary.new (Type.cpointer (), NONE))
          in
             Vector.new4
@@ -1070,6 +1068,7 @@ structure Program =
                                {from = Operand.ty z,
                                 to = t,
                                 tyconTy = tyconTy}))
+                      | Const _ => true
                       | Frontier => true
                       | GCState => true
                       | Global _ =>
@@ -1082,14 +1081,12 @@ structure Program =
                            (let val _ = labelBlock l
                             in true
                             end handle _ => false)
-                      | Null => true
                       | Offset {base, offset, ty} =>
                            (checkOperand (base, alloc)
                             ; Type.offsetIsOk {base = Operand.ty base,
                                                offset = offset,
                                                tyconTy = tyconTy,
                                                result = ty})
-                      | Real _ => true
                       | StackOffset (so as StackOffset.T {offset, ty, ...}) =>
                            Bytes.<= (Bytes.+ (offset, Type.bytes ty), maxFrameSize)
                            andalso Alloc.doesDefine (alloc, Live.StackOffset so)
@@ -1137,7 +1134,6 @@ structure Program =
                            (Type.isCPointer ty orelse Type.isObjptr ty)
                       | StackTop => true
                       | Temporary t => Alloc.doesDefine (alloc, Live.Temporary t)
-                      | Word _ => true
                in
                   Err.check ("operand", ok, fn () => Operand.layout x)
                end

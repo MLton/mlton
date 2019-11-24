@@ -854,18 +854,17 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
          fun toString (z: Operand.t): string =
             case z of
                Cast (z, ty) => concat ["(", Type.toC ty, ")", toString z]
+             | Const c => Const.toC c
              | Frontier => "Frontier"
              | GCState => "GCState"
              | Global g =>
                   concat ["G", C.args [Type.toC (Global.ty g),
                                        Int.toString (Global.index g)]]
              | Label l => labelIndexAsString (l, {pretty = true})
-             | Null => "NULL"
              | Offset {base, offset, ty} =>
                   concat ["O", C.args [Type.toC ty,
                                        toString base,
                                        C.bytes offset]]
-             | Real r => RealX.toC r
              | SequenceOffset {base, index, offset, scale, ty} =>
                   concat ["X", C.args [Type.toC ty,
                                        toString base,
@@ -878,7 +877,6 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                   concat ["M", C.args [Type.toC ty, C.int index, C.bytes offset]]
              | Temporary t =>
                   temporaryName (Type.toCType (Temporary.ty t), Temporary.index t)
-             | Word w => WordX.toC w
       in
          val operandToString = toString
       end
@@ -961,7 +959,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                (outputStatement (Statement.PrimApp
                                  {args = Vector.new2
                                          (Operand.StackTop,
-                                          Operand.Word
+                                          Operand.word
                                           (WordX.fromBytes
                                            (size,
                                             WordSize.cptrdiff ()))),

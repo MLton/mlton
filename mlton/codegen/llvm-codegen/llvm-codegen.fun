@@ -1200,13 +1200,15 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                         in
                            res
                         end
+                   | Operand.Const Const.Null => LLVM.Value.null
+                   | Operand.Const (Const.Real r) => LLVM.Value.real r
+                   | Operand.Const (Const.Word w) => LLVM.Value.word w
+                   | Operand.Const _ => Error.bug "LLVMCodegen.operandToRValue: Const"
                    | Operand.Frontier => load ()
                    | Operand.GCState => gcState
                    | Operand.Global _ => load ()
                    | Operand.Label label => labelIndexValue label
-                   | Operand.Null => LLVM.Value.null
                    | Operand.Offset _ => load ()
-                   | Operand.Real r => LLVM.Value.real r
                    | Operand.SequenceOffset _ => load ()
                    | Operand.StackOffset _ => load ()
                    | Operand.StackTop => load ()
@@ -1223,7 +1225,6 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                            res
                         end
                    | Operand.Temporary _ => load ()
-                   | Operand.Word w => LLVM.Value.word w
                end
             fun operandsToRValues opers =
                (List.rev o Vector.fold)
@@ -1279,7 +1280,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                (outputStatement (Statement.PrimApp
                                  {args = Vector.new2
                                          (Operand.StackTop,
-                                          Operand.Word
+                                          Operand.word
                                           (WordX.fromBytes
                                            (size,
                                             WordSize.cptrdiff ()))),

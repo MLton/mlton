@@ -22,6 +22,7 @@ struct
   local
      open Machine
   in
+     structure Const = Const
      structure Label = Label
      structure Live = Live
      structure Scale = Scale
@@ -151,6 +152,31 @@ struct
                  fromSizes (sizes, origin)
                end
           | Cast (z, _) => toX86Operand z
+          | Const Const.Null =>
+               Vector.new1 (x86.Operand.immediate_zero, x86MLton.wordSize)
+          | Const (Const.Word w) =>
+               let
+                  fun single size =
+                     Vector.new1 (x86.Operand.immediate_word w, size)
+               in
+                  case WordSize.prim (WordX.size w) of
+                     W8 => single x86.Size.BYTE
+                   | W16 => single x86.Size.WORD
+                   | W32 => single x86.Size.LONG
+                   | W64 =>
+                        let
+                           val lo = WordX.resize (w, WordSize.word32)
+                           val w = WordX.rshift (w,
+                                                 WordX.fromIntInf (32, WordSize.word64),
+                                                 {signed = true})
+                           val hi = WordX.resize (w, WordSize.word32)
+                        in
+                           Vector.new2
+                           ((x86.Operand.immediate_word lo, x86.Size.LONG),
+                            (x86.Operand.immediate_word hi, x86.Size.LONG))
+                        end
+               end
+          | Const _ => Error.bug "x86Translate.Operand.toX86Operand: Const"
           | Frontier => 
                let 
                   val frontier = x86MLton.gcState_frontierContentsOperand ()
@@ -163,8 +189,6 @@ struct
           | Global g => Global.toX86Operand g
           | Label l => 
                Vector.new1 (x86.Operand.immediate_label l, x86MLton.pointerSize)
-          | Null => 
-               Vector.new1 (x86.Operand.immediate_zero, x86MLton.wordSize)
           | Offset {base = GCState, offset, ty} =>
                let
                   val offset = Bytes.toInt offset
@@ -205,7 +229,6 @@ struct
                in
                   fromSizes (sizes, origin)
                end
-          | Real _ => Error.bug "x86Translate.Operand.toX86Operand: Real unimplemented"
           | StackOffset (StackOffset.T {offset, ty}) =>
                let
                   val offset = Bytes.toInt offset
@@ -250,28 +273,6 @@ struct
                   val sizes = x86.Size.fromCType ty
                in
                   fromSizes (sizes, origin)
-               end
-          | Word w =>
-               let
-                  fun single size =
-                     Vector.new1 (x86.Operand.immediate_word w, size)
-               in
-                  case WordSize.prim (WordX.size w) of
-                     W8 => single x86.Size.BYTE
-                   | W16 => single x86.Size.WORD
-                   | W32 => single x86.Size.LONG
-                   | W64 =>
-                        let
-                           val lo = WordX.resize (w, WordSize.word32)
-                           val w = WordX.rshift (w, 
-                                                 WordX.fromIntInf (32, WordSize.word64),
-                                                 {signed = true})
-                           val hi = WordX.resize (w, WordSize.word32)
-                        in
-                           Vector.new2
-                           ((x86.Operand.immediate_word lo, x86.Size.LONG),
-                            (x86.Operand.immediate_word hi, x86.Size.LONG))
-                        end
                end
       end
     end

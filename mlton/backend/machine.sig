@@ -60,15 +60,14 @@ signature MACHINE =
          sig
             datatype t =
                Cast of t * Type.t
+             | Const of Const.t
              | Frontier
              | GCState
              | Global of Global.t
              | Label of Label.t
-             | Null
              | Offset of {base: t,
                           offset: Bytes.t,
                           ty: Type.t}
-             | Real of RealX.t
              | SequenceOffset of {base: t,
                                   index: t,
                                   offset: Bytes.t,
@@ -80,7 +79,6 @@ signature MACHINE =
                           offset: Bytes.t,
                           ty: Type.t}
              | Temporary of Temporary.t
-             | Word of WordX.t
 
             val equals: t * t -> bool
             val interfere: t * t -> bool
@@ -90,6 +88,7 @@ signature MACHINE =
             val gcField: Runtime.GCField.t -> t
             val toString: t -> string
             val ty: t -> Type.t
+            val word: WordX.t -> t
          end
       sharing Operand = Switch.Use
 

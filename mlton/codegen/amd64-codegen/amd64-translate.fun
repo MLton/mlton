@@ -22,6 +22,7 @@ struct
   local
      open Machine
   in
+     structure Const = Const
      structure Label = Label
      structure Live = Live
      structure Scale = Scale
@@ -151,6 +152,20 @@ struct
                   fromSizes (sizes, origin)
                end
           | Cast (z, _) => toAMD64Operand z
+          | Const Const.Null =>
+               Vector.new1 (amd64.Operand.immediate_zero, amd64MLton.wordSize)
+          | Const (Const.Word w) =>
+               let
+                  fun single size =
+                     Vector.new1 (amd64.Operand.immediate_word w, size)
+               in
+                  case WordSize.prim (WordX.size w) of
+                     W8 => single amd64.Size.BYTE
+                   | W16 => single amd64.Size.WORD
+                   | W32 => single amd64.Size.LONG
+                   | W64 => single amd64.Size.QUAD
+               end
+          | Const _ => Error.bug "amd64Translate.Operand.toAMD64Operand: Const"
           | Frontier => 
                let 
                   val frontier = amd64MLton.gcState_frontierContentsOperand ()
@@ -163,8 +178,6 @@ struct
           | Global g => Global.toAMD64Operand g
           | Label l => 
                Vector.new1 (amd64.Operand.immediate_label l, amd64MLton.pointerSize)
-          | Null => 
-               Vector.new1 (amd64.Operand.immediate_zero, amd64MLton.wordSize)
           | Offset {base = GCState, offset, ty} =>
                let
                   val offset = Bytes.toInt offset
@@ -205,7 +218,6 @@ struct
                in
                   fromSizes (sizes, origin)
                end
-          | Real _ => Error.bug "amd64Translate.Operand.toAMD64Operand: Real unimplemented"
           | StackOffset (StackOffset.T {offset, ty}) =>
                let
                   val offset = Bytes.toInt offset
@@ -250,17 +262,6 @@ struct
                   val sizes = amd64.Size.fromCType ty
                in
                   fromSizes (sizes, origin)
-               end
-          | Word w =>
-               let
-                  fun single size =
-                     Vector.new1 (amd64.Operand.immediate_word w, size)
-               in
-                  case WordSize.prim (WordX.size w) of
-                     W8 => single amd64.Size.BYTE
-                   | W16 => single amd64.Size.WORD
-                   | W32 => single amd64.Size.LONG
-                   | W64 => single amd64.Size.QUAD
                end
       end
     end
