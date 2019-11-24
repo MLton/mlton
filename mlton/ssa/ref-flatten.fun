@@ -473,7 +473,7 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                   in
                      res
                   end
-             | FFI _ =>
+             | CFunction _ =>
                   (* Some imports, like Real64.modf, take ref cells that can not
                    * be flattened.
                    *)

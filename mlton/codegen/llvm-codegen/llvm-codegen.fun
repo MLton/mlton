@@ -606,26 +606,6 @@ fun primApp (prim: 'a Prim.t): ({args: LLVM.Value.t list,
                res
             end)
        | CPointer_toWord => SOME (conv (ptrtoint, LLVM.Type.uintptr ()))
-       | FFI_Symbol {name, cty, symbolScope} => SOME (fn {args = _, mc, newTemp, $} =>
-            let
-               val name = "@" ^ name
-               val ty =
-                  case cty of
-                     NONE => LLVM.Type.Word WordSize.word8
-                   | SOME ty => LLVM.Type.fromCType ty
-               val vis =
-                  case symbolScope of
-                     CFunction.SymbolScope.External => "default"
-                   | CFunction.SymbolScope.Private => "hidden"
-                   | CFunction.SymbolScope.Public => "default"
-               val globptr =
-                  LLVM.ModuleContext.addGlobDecl
-                  (mc, name, {const = false, ty = ty, vis = SOME vis})
-               val res = newTemp LLVM.Type.cpointer
-               val _ = $(bitcast {dst = res, src = globptr})
-            in
-               res
-            end)
        | Real_Math_acos _ => NONE
        | Real_Math_asin _ => NONE
        | Real_Math_atan _ => NONE
@@ -1200,13 +1180,35 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                         in
                            res
                         end
+                   | Operand.Const (Const.CSymbol (CSymbol.T {name, cty, symbolScope})) =>
+                        let
+                           val name = "@" ^ name
+                           val ty =
+                              case cty of
+                                 NONE => LLVM.Type.Word WordSize.word8
+                               | SOME ty => LLVM.Type.fromCType ty
+                           val vis =
+                              case symbolScope of
+                                 CSymbolScope.External => "default"
+                               | CSymbolScope.Private => "hidden"
+                               | CSymbolScope.Public => "default"
+                           val globptr =
+                              LLVM.ModuleContext.addGlobDecl
+                              (mc, name, {const = false, ty = ty, vis = SOME vis})
+                           val res = newTemp LLVM.Type.cpointer
+                           val _ = $(bitcast {dst = res, src = globptr})
+                        in
+                           res
+                        end
+                   | Operand.Const Const.Null => LLVM.Value.null
+                   | Operand.Const (Const.Real r) => LLVM.Value.real r
+                   | Operand.Const (Const.Word w) => LLVM.Value.word w
+                   | Operand.Const _ => Error.bug "LLVMCodegen.operandToRValue: Const"
                    | Operand.Frontier => load ()
                    | Operand.GCState => gcState
                    | Operand.Global _ => load ()
                    | Operand.Label label => labelIndexValue label
-                   | Operand.Null => LLVM.Value.null
                    | Operand.Offset _ => load ()
-                   | Operand.Real r => LLVM.Value.real r
                    | Operand.SequenceOffset _ => load ()
                    | Operand.StackOffset _ => load ()
                    | Operand.StackTop => load ()
@@ -1223,7 +1225,6 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                            res
                         end
                    | Operand.Temporary _ => load ()
-                   | Operand.Word w => LLVM.Value.word w
                end
             fun operandsToRValues opers =
                (List.rev o Vector.fold)
@@ -1279,7 +1280,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                (outputStatement (Statement.PrimApp
                                  {args = Vector.new2
                                          (Operand.StackTop,
-                                          Operand.Word
+                                          Operand.word
                                           (WordX.fromBytes
                                            (size,
                                             WordSize.cptrdiff ()))),

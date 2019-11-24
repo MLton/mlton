@@ -415,10 +415,9 @@ fun toMachine (rssa: Rssa.Program.t) =
             case c of
                IntInf _ =>
                   Error.bug "Backend.constOperand: IntInf"
-             | Null => M.Operand.Null
              | Real r => globalReal r
-             | Word w => M.Operand.Word w
              | WordVector v => globalWordVector v
+             | _ => M.Operand.Const c
          end
       fun parallelMove {dsts: M.Operand.t vector,
                         srcs: M.Operand.t vector}: M.Statement.t vector =
@@ -448,14 +447,14 @@ fun toMachine (rssa: Rssa.Program.t) =
       val stackTopOp = runtimeOp GCField.StackTop
 
       val rec isWord =
-         fn M.Operand.Word _ => true
+         fn M.Operand.Const (Const.Word _) => true
           | M.Operand.Cast (z, _) => isWord z
           | _ => false
       fun bogusOp (t: Type.t): M.Operand.t =
          case Type.deReal t of
             NONE => let
                        val bogusWord =
-                          M.Operand.Word
+                          M.Operand.word
                           (WordX.zero
                            (WordSize.fromBits (Type.width t)))
                     in
@@ -486,7 +485,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                                             ty = ty}
                   end
              | ObjptrTycon opt =>
-                  M.Operand.Word
+                  M.Operand.word
                   (WordX.fromIntInf
                    (Word.toIntInf (Runtime.typeIndexToHeader
                                    (ObjptrTycon.index opt)),
@@ -565,7 +564,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                      (M.Statement.PrimApp
                       {args = (Vector.new2
                                (stackTopOp,
-                                M.Operand.Word
+                                M.Operand.word
                                 (WordX.fromIntInf
                                  (Int.toIntInf
                                   (Bytes.toInt

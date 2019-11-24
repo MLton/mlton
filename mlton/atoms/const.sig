@@ -9,6 +9,7 @@
 
 signature CONST_STRUCTS = 
    sig
+      structure CSymbol: C_SYMBOL
       structure RealX: REAL_X
       structure WordX: WORD_X
       structure WordXVector: WORD_X_VECTOR
@@ -32,12 +33,14 @@ signature CONST =
          end
 
       datatype t =
-         IntInf of IntInf.t
+         CSymbol of CSymbol.t
+       | IntInf of IntInf.t
        | Null
        | Real of RealX.t
        | Word of WordX.t
        | WordVector of WordXVector.t
 
+      val csymbol: CSymbol.t -> t
       val deWord: t -> WordX.t
       val deWordOpt: t -> WordX.t option
       val equals: t * t -> bool

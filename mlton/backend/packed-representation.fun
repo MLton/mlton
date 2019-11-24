@@ -19,6 +19,7 @@ open S
 local
    open Rssa
 in
+   structure Const = Const
    structure Block = Block
    structure Kind = Kind
    structure Label = Label
@@ -494,14 +495,14 @@ structure Component =
                let
                   val src = fn i =>
                      case src i of
-                        Static.Data.Elem.Word w => w
-                      | Static.Data.Elem.Real r =>
+                        Static.Data.Elem.Const (Const.Word w) => w
+                      | Static.Data.Elem.Const (Const.Real r) =>
                            (case RealX.castToWord r of
                                SOME w => w
                              | NONE => raise UnrepresentableStatic)
                       | _ => Error.bug "PackedRepresentation.Component.staticTuple: bad component"
                in
-                  (Static.Data.Elem.Word o WordRep.staticTuple) (wr, {src = src})
+                  (Static.Data.Elem.word o WordRep.staticTuple) (wr, {src = src})
                end
    end
 
@@ -1051,7 +1052,7 @@ structure ObjptrRep =
                         then let
                            val padBits = toBits (offset - sumOffset)
                            val pad = (WordX.zero o WordSize.fromBits) padBits
-                        in (offset, Static.Data.Elem.Word pad :: acc) end
+                        in (offset, Static.Data.Elem.word pad :: acc) end
                         else (sumOffset, acc)
                      val sumOffset = sumOffset + Type.bytes (Component.ty component)
                   in
@@ -1571,8 +1572,8 @@ structure ConRep =
                let
                   val w =
                      (case Component.staticTuple (component, {src=src}) of
-                        Static.Data.Elem.Word w => w
-                      | Static.Data.Elem.Real r =>
+                        Static.Data.Elem.Const (Const.Word w) => w
+                      | Static.Data.Elem.Const (Const.Real r) =>
                          (case RealX.castToWord r of
                               SOME w => w
                             | NONE => raise UnrepresentableStatic)
@@ -1586,9 +1587,9 @@ structure ConRep =
                   val w = WordX.lshift (w, shift)
                   val mask = WordX.resize (tag, width)
                in
-                  (StaticOrElem.Elem o Static.Data.Elem.Word o WordX.orb) (w, mask)
+                  (StaticOrElem.Elem o Static.Data.Elem.word o WordX.orb) (w, mask)
                end
-          | Tag {tag, ...} => (StaticOrElem.Elem o Static.Data.Elem.Word o WordX.resize) (tag, width)
+          | Tag {tag, ...} => (StaticOrElem.Elem o Static.Data.Elem.word o WordX.resize) (tag, width)
           | Tuple tr => TupleRep.staticTuple (tr, {location = location, src = src})
    end
 

@@ -36,6 +36,7 @@ signature PRIM =
              | Array_uninit (* to rssa *)
              | Array_uninitIsNop (* to rssa *)
              | Array_update (* to ssa2 *)
+             | CFunction of 'a CFunction.t (* to rssa *)
              | CPointer_add (* codegen *)
              | CPointer_diff (* codegen *)
              | CPointer_equal (* codegen *)
@@ -54,10 +55,6 @@ signature PRIM =
              | Exn_extra (* implement exceptions *)
              | Exn_name (* implement exceptions *)
              | Exn_setExtendExtra (* implement exceptions *)
-             | FFI of 'a CFunction.t (* to rssa *)
-             | FFI_Symbol of {name: string,
-                              cty: CType.t option,
-                              symbolScope: CFunction.SymbolScope.t } (* codegen *)
              | GC_collect (* to rssa (as runtime C fn) *)
              | GC_state (* to rssa (as operand) *)
              | IntInf_add (* to rssa (as runtime C fn) *)
@@ -225,6 +222,7 @@ signature PRIM =
       val assign: 'a t
       val bogus: 'a t
       val bug: 'a t
+      val cfunction: 'a CFunction.t -> 'a t
       val checkApp: 'a t * {args: 'a vector,
                             result: 'a,
                             targs: 'a vector,
@@ -261,10 +259,6 @@ signature PRIM =
                                           deRef: 'b -> 'b,
                                           deVector: 'b -> 'b,
                                           deWeak: 'b -> 'b}} -> 'b vector
-      val ffi: 'a CFunction.t -> 'a t
-      val ffiSymbol: {name: string, 
-                      cty: CType.t option, 
-                      symbolScope: CFunction.SymbolScope.t } -> 'a t
       val fromString: string -> 'a t option
       val hash: 'a t (* polymorphic hash *)
       val intInfToWord: 'a t

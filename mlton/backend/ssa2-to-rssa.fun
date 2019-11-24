@@ -1267,6 +1267,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                     in
                                        move (Operand.bool isNop)
                                     end
+                               | CFunction f => simpleCCall f
                                | CPointer_getCPointer => cpointerGet ()
                                | CPointer_getObjptr => cpointerGet ()
                                | CPointer_getReal _ => cpointerGet ()
@@ -1275,7 +1276,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                | CPointer_setObjptr => cpointerSet ()
                                | CPointer_setReal _ => cpointerSet ()
                                | CPointer_setWord _ => cpointerSet ()
-                               | FFI f => simpleCCall f
                                | GC_collect =>
                                     ccall
                                     {args = (Vector.new3
@@ -1752,8 +1752,9 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                      fun copy var' = keepWithStatic'' (globalStatic var')
                      fun keepWithStatic' s = keepWithStatic'' (SOME s)
                      fun keepWithStatic s = keepWithStatic' (SOME s)
-                     fun word w = keepWithStatic (Word w)
-                     fun real r = keepWithStatic (Real r)
+                     fun const c = keepWithStatic (Const c)
+                     fun word w = const (Const.Word w)
+                     fun real r = const (Const.Real r)
                      fun static (soe: PackedRepresentation.StaticOrElem.t) =
                         case toRtype ty of
                            SOME rty =>
@@ -1778,11 +1779,9 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                Const.IntInf i =>
                                   (case Const.IntInfRep.fromIntInf i of
                                       Const.IntInfRep.Big wxv => wordxvector wxv
-                                    | Const.IntInfRep.Small w => word w)
-                             | Const.Null => word (WordX.zero (WordSize.cpointer ()))
-                             | Const.Real r => real r
-                             | Const.Word w => word w
-                             | Const.WordVector wxv => wordxvector wxv)
+                                    | Const.IntInfRep.Small w => const (Const.Word w))
+                             | Const.WordVector wxv => wordxvector wxv
+                             | _ => const c)
                       | S.Exp.Inject {variant, ...} =>
                            copy variant
                       | S.Exp.Object {args, con} =>
@@ -1811,7 +1810,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                      val length = (globalStatic o Vector.first) args
                                   in
                                      case (length, !Control.staticInitArrays) of
-                                        (SOME (SOME (Word l)), true) =>
+                                        (SOME (SOME (Const (Const.Word l))), true) =>
                                            let
                                               val location = getLocation (ty, !Control.staticAllocArrays, WordX.isZero l)
                                            in

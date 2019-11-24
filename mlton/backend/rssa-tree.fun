@@ -65,9 +65,10 @@ structure Operand =
                   datatype z = datatype Const.t
                in
                   case c of
-                     IntInf _ => Type.intInf ()
+                     CSymbol _ => Type.cpointer ()
+                   | IntInf _ => Type.intInf ()
                    | Null => Type.cpointer ()
-                   | Real r => Type.real (RealX.size r)
+                   | Real r => Type.ofRealX r
                    | Word w => Type.ofWordX w
                    | WordVector v => Type.ofWordXVector v
                end

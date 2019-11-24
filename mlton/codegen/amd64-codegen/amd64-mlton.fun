@@ -48,7 +48,6 @@ struct
          | CPointer_lt => true
          | CPointer_sub => true
          | CPointer_toWord => true
-         | FFI_Symbol _ => true
          | Real_Math_acos _ => false
          | Real_Math_asin _ => false
          | Real_Math_atan _ => false
@@ -793,93 +792,6 @@ struct
              | CPointer_lt => cmp Instruction.B
              | CPointer_sub => binal Instruction.SUB
              | CPointer_toWord => mov ()
-             | FFI_Symbol {name, symbolScope, ...}
-             => let
-                   datatype z = datatype CFunction.SymbolScope.t
-                   datatype z = datatype Control.Format.t
-                   datatype z = datatype MLton.Platform.OS.t
-
-                   val (dst, dstsize) = getDst1 ()
-                   val label = fn () => Label.fromString name
-                   
-                   (* how to access an imported label's address *)
-                   (* windows coff will add another leading _ to label *)
-                   val coff = fn () => Label.fromString ("_imp__" ^ name)
-                   val macho = fn () => Label.fromString (name ^ "@GOTPCREL")
-                   val elf = fn () => Label.fromString (name ^ "@GOTPCREL")
-                   
-                   val importLabel = fn () =>
-                      case !Control.Target.os of
-                         Cygwin => coff ()
-                       | Darwin => macho ()
-                       | MinGW => coff ()
-                       | _ => elf ()
-                   
-                   val direct = fn () =>
-                      AppendList.fromList
-                      [Block.mkBlock'
-                       {entry = NONE,
-                        statements =
-                        [Assembly.instruction_lea
-                         {dst = dst,
-                          src = Operand.memloc_label (label ()),
-                          size = dstsize}],
-                        transfer = NONE}]
-                   
-                   val indirect = fn () =>
-                      AppendList.fromList
-                      [Block.mkBlock'
-                       {entry = NONE,
-                        statements =
-                        [Assembly.instruction_mov
-                         {dst = dst,
-                          src = Operand.memloc_label (importLabel ()),
-                          size = dstsize}],
-                        transfer = NONE}]
-                in
-                   case (symbolScope, 
-                         !Control.Target.os, 
-                         !Control.positionIndependent) of
-                    (* As long as the symbol is private (this means it is not
-                     * exported to code outside this text segment), then 
-                     * RIP-relative addressing works on every OS/format. 
-                     *)
-                      (Private, _, _) => direct ()
-                    (* When linking an executable, ELF and darwin-x86_64 use 
-                     * a special trick to "simplify" the code. All exported
-                     * functions and symbols have pointers that correspond to
-                     * to the executable. Function pointers point to the 
-                     * automatically created PLT entry in the executable.
-                     * Variables are copied/relocated into the executable bss.
-                     * This means that direct access is fine for executable
-                     * and archive formats. (It also means direct access is
-                     * NOT fine for a library, even if it defines the symbol)
-                     * 
-                     * On ELF&darwin, a public symbol must be accessed via
-                     * the GOT. This is because the final value may not be
-                     * in this text segment. If the executable uses it, then
-                     * the unique C address resides in the executable's
-                     * text segment. The loader does this by creating a PLT
-                     * proxy or copying values to the executable text segment.
-                     *)
-                    | (Public, _, true) => indirect ()
-                    | (Public, _, false) => direct ()
-                    (* On windows, the address is the point of definition. So
-                     * we must use an indirect lookup even in executables.
-                     *)
-                    | (External, MinGW, _) => indirect ()
-                    | (External, Cygwin, _) => indirect ()
-                    (* When compiling to a library, we need to access external
-                     * symbols via some address that is updated by the loader.
-                     * That address resides within our data segment, and can
-                     * be easily referenced using RIP-relative addressing.
-                     * This trick is used on every platform MLton supports.
-                     * Windows rewrites __imp__name symbols in our segment.
-                     * ELF and darwin-x86_64 rewrite name@GOTPCREL.
-                     *)
-                    | (External, _, true) => indirect ()
-                    | (External, _, false) => direct ()
-                end
              | Real_Math_sqrt _ => sse_unas Instruction.SSE_SQRTS
              | Real_abs s =>
                 let

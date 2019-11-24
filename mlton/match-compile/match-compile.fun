@@ -566,7 +566,8 @@ fun unhandledConsts {consts = cs: Const.t vector, isChar, isInt}: Example.t opti
       datatype z = datatype Const.t
    in
       case Vector.first cs of
-         IntInf _ =>
+         CSymbol _ => Error.bug "MatchCompile.unhandledConsts: CSymbol"
+       | IntInf _ =>
             let
                fun extract c =
                   case c of

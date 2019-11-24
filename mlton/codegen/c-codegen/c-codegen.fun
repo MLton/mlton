@@ -58,6 +58,7 @@ structure RealX =
    struct
       open RealX
 
+      fun toCType r = CType.real (size r)
       fun toC (r: t): string =
          let
             (* The main difference between SML reals and C floats/doubles is that
@@ -84,18 +85,19 @@ structure WordX =
    struct
       open WordX
 
+      fun toCType w = CType.word (size w, {signed = false})
       fun toC (w: t): string =
-         concat ["(Word", WordSize.toString (size w), ")(",
+         concat ["(", CType.toString (toCType w), ")(",
                  toString (w, {suffix = false}), "ull)"]
    end
 
 structure WordXVector =
    struct
       local
-         structure Z = WordX
+         structure WordX' = WordX
       in
          open WordXVector
-         structure WordX = Z
+         structure WordX = WordX'
       end
 
       local
@@ -113,15 +115,44 @@ structure WordXVector =
       end
    end
 
-structure Static =
+structure Const =
    struct
       local
          structure RealX' = RealX
          structure WordX' = WordX
+      in
+         open Const
+         structure RealX = RealX'
+         structure WordX = WordX'
+      end
+
+      fun toCType (c: t): CType.t =
+         case c of
+            CSymbol _ => CType.cpointer
+          | Null => CType.cpointer
+          | Real r => RealX.toCType r
+          | Word w => WordX.toCType w
+          | _ => Error.bug "CCodegen.Const.toC"
+
+      fun toC (c: t): string =
+         case c of
+            CSymbol (CSymbol.T {name, ...}) =>
+               concat ["((", CType.toString CType.cpointer, ")(&", name, "))"]
+          | Null => "NULL"
+          | Real r => RealX.toC r
+          | Word w => WordX.toC w
+          | _ => Error.bug "CCodegen.Const.toC"
+   end
+
+structure Static =
+   struct
+      local
+         structure Const' = Const
+         structure WordX' = WordX
          structure WordXVector' = WordXVector
       in
          open Static
-         structure RealX = RealX'
+         structure Const = Const'
          structure WordX = WordX'
          structure WordXVector = WordXVector'
       end
@@ -130,20 +161,22 @@ structure Static =
       struct
          open Data
 
+         structure Elem =
+            struct
+               open Elem
+
+               val toCType =
+                  fn Address _ => CType.objptr
+                   | Const c => Const.toCType c
+               fun toC indexToC =
+                  fn Address i => indexToC i
+                   | Const c => Const.toC c
+            end
+
          fun toC indexToC =
             fn Empty _ => NONE
              | Vector v => SOME (WordXVector.toC v)
-             | Object es =>
-                  let
-                     val elemToC =
-                        fn Elem.Real rx => RealX.toC rx
-                         | Elem.Word wx => WordX.toC wx
-                         | Elem.Address i => indexToC i
-                  in
-                     (SOME o String.concatWith)
-                     (List.map (es, elemToC),
-                      ", ")
-                  end
+             | Object es => (SOME o String.concatWith) (List.map (es, Elem.toC indexToC), ", ")
       end
 
       fun metadataToC (Static.T {metadata, ...}) =
@@ -151,7 +184,7 @@ structure Static =
             val decl =
                String.concatWith
                (List.mapi (metadata, fn (i, w) =>
-                           concat ["Word", WordSize.toString (WordX.size w),
+                           concat [CType.toString (WordX.toCType w),
                                    " meta_", C.int i]),
                 "; ")
             val init =
@@ -188,7 +221,6 @@ fun implementsPrim (p: 'a Prim.t): bool =
        | CPointer_lt => true
        | CPointer_sub => true
        | CPointer_toWord => true
-       | FFI_Symbol _ => true
        | Real_Math_acos _ => true
        | Real_Math_asin _ => true
        | Real_Math_atan _ => true
@@ -316,7 +348,43 @@ fun outputDeclarations
          ["((Pointer)(&", staticVar i, ") + ",
           C.int (metadataSize i), ")"]
       fun declareStatics () =
-         (Vector.foreachi
+         (let
+             val seen = String.memoize (fn _ => ref false)
+             fun doit (name: string, declare: unit -> string): unit =
+                let
+                   val r = seen name
+                in
+                   if !r
+                      then ()
+                      else (r := true; print (declare ()))
+                end
+             fun doitCSymbol (CSymbol.T {name, symbolScope, ...}) =
+                let
+                   datatype z = datatype CSymbolScope.t
+                in
+                   doit
+                   (name, fn () =>
+                    concat [case symbolScope of
+                               External => "EXTERNAL "
+                             | Private => "PRIVATE "
+                             | Public => "PUBLIC ",
+                            "extern void ",
+                            name,
+                            ";\n"])
+               end
+          in
+             Vector.foreach
+             (statics, fn (Machine.Static.T {data, ...}, _) =>
+              case data of
+                 Static.Data.Object es =>
+                    List.foreach (es, fn e =>
+                                  case e of
+                                     Static.Data.Elem.Const (Const.CSymbol sym) =>
+                                        doitCSymbol sym
+                                   | _ => ())
+                    | _ => ())
+          end;
+          Vector.foreachi
           (statics, fn (i, (static as Machine.Static.T {data, location, ...}, _)) =>
              let
                 val dataC = Static.Data.toC staticAddress data
@@ -326,10 +394,7 @@ fun outputDeclarations
                 val dataType =
                    case data of
                       Static.Data.Object es =>
-                         (TObject o List.map) (es,
-                           fn Static.Data.Elem.Real r => "Real" ^ RealSize.toString (RealX.size r)
-                            | Static.Data.Elem.Word w => "Word" ^ WordSize.toString (WordX.size w)
-                            | Static.Data.Elem.Address _ => "Pointer")
+                         (TObject o List.map) (es, CType.toString o Static.Data.Elem.toCType)
                     | Static.Data.Vector v =>
                          TVector ("Word" ^ WordSize.toString (WordXVector.elementSize v), WordXVector.length v)
                     | Static.Data.Empty b =>
@@ -644,35 +709,43 @@ fun declareFFI (chunks, print) =
                then ()
             else (r := true; empty := false; print (declare ()))
          end
+      fun doitCSymbol (CSymbol.T {cty, name, symbolScope}) =
+         let
+            datatype z = datatype CSymbolScope.t
+         in
+            doit
+            (name, fn () =>
+             concat [case symbolScope of
+                        External => "EXTERNAL "
+                      | Private => "PRIVATE "
+                      | Public => "PUBLIC ",
+                     "extern ",
+                     case cty of
+                        SOME x => CType.toString x
+                      | NONE => "void",
+                     " ",
+                     name,
+                     ";\n"])
+         end
+      fun doitOperand z =
+         case z of
+            Operand.Cast (z, _) => doitOperand z
+          | Operand.Const (Const.CSymbol sym) => doitCSymbol sym
+          | Operand.Offset {base, ...} => doitOperand base
+          | Operand.SequenceOffset {base, index, ...} =>
+               (doitOperand base; doitOperand index)
+          | _ => ()
    in
       List.foreach
       (chunks, fn Chunk.T {blocks, ...} =>
        Vector.foreach
        (blocks, fn Block.T {statements, transfer, ...} =>
         let
-           datatype z = datatype CFunction.SymbolScope.t
            val _ =
               Vector.foreach
               (statements, fn s =>
-               case s of
-                  Statement.PrimApp {prim, ...} =>
-                     (case Prim.name prim of
-                         Prim.Name.FFI_Symbol {name, cty, symbolScope} =>
-                            doit
-                            (name, fn () =>
-                             concat [case symbolScope of
-                                        External => "EXTERNAL "
-                                      | Private => "PRIVATE "
-                                      | Public => "PUBLIC ",
-                                     "extern ",
-                                     case cty of
-                                        SOME x => CType.toString x
-                                      | NONE => "void",
-                                     " ",
-                                     name,
-                                     ";\n"])
-                       | _ => ())
-                | _ => ())
+               Statement.foldOperands
+               (s, (), doitOperand o #1))
            val _ =
               case transfer of
                  Transfer.CCall {func, ...} =>
@@ -688,6 +761,9 @@ fun declareFFI (chunks, print) =
                         | Indirect => ()
                     end
                | _ => ()
+           val () =
+              Transfer.foldOperands
+              (transfer, (), doitOperand o #1)
         in
            ()
         end))
@@ -827,18 +903,17 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
          fun toString (z: Operand.t): string =
             case z of
                Cast (z, ty) => concat ["(", Type.toC ty, ")", toString z]
+             | Const c => Const.toC c
              | Frontier => "Frontier"
              | GCState => "GCState"
              | Global g =>
                   concat ["G", C.args [Type.toC (Global.ty g),
                                        Int.toString (Global.index g)]]
              | Label l => labelIndexAsString (l, {pretty = true})
-             | Null => "NULL"
              | Offset {base, offset, ty} =>
                   concat ["O", C.args [Type.toC ty,
                                        toString base,
                                        C.bytes offset]]
-             | Real r => RealX.toC r
              | SequenceOffset {base, index, offset, scale, ty} =>
                   concat ["X", C.args [Type.toC ty,
                                        toString base,
@@ -851,7 +926,6 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                   concat ["M", C.args [Type.toC ty, C.int index, C.bytes offset]]
              | Temporary t =>
                   temporaryName (Type.toCType (Temporary.ty t), Temporary.index t)
-             | Word w => WordX.toC w
       in
          val operandToString = toString
       end
@@ -892,25 +966,18 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                    | PrimApp {args, dst, prim} =>
                         let
                            fun call (): string =
-                              concat
-                              [Prim.toString prim, " ",
-                               C.args (Vector.toListMap (args, fetchOperand))]
-                           fun app (): string =
-                              case Prim.name prim of
-                                 Prim.Name.FFI_Symbol {name, ...} =>
-                                    concat
-                                    ["((",CType.toString CType.CPointer,
-                                     ")(&", name, "))"]
-                               | _ => call ()
+                              C.callNoSemi
+                              (Prim.toString prim,
+                               Vector.toListMap (args, fetchOperand))
                            val _ = print "\t"
                         in
                            case dst of
-                              NONE => (print (app ())
+                              NONE => (print (call ())
                                        ; print ";\n")
                             | SOME dst =>
                                  print (move {dst = operandToString dst,
                                               dstIsMem = Operand.isMem dst,
-                                              src = app (),
+                                              src = call (),
                                               srcIsMem = false,
                                               ty = Operand.ty dst})
                         end
@@ -934,7 +1001,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                (outputStatement (Statement.PrimApp
                                  {args = Vector.new2
                                          (Operand.StackTop,
-                                          Operand.Word
+                                          Operand.word
                                           (WordX.fromBytes
                                            (size,
                                             WordSize.cptrdiff ()))),

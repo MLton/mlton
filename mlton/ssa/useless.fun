@@ -676,7 +676,7 @@ fun transform (program: Program.t): Program.t =
                         (deground result, fn () =>
                          Useful.makeUseful (arrayUseful (arg 0)))
                    | Array_update => update ()
-                   | FFI _ =>
+                   | CFunction _ =>
                         (Vector.foreach (args, deepMakeUseful);
                          deepMakeUseful result)
                    | MLton_eq =>
