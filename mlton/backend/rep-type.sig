@@ -14,14 +14,15 @@ signature REP_TYPE_STRUCTS =
       structure ObjptrTycon: OBJPTR_TYCON
       structure Prim: PRIM
       structure RealSize: REAL_SIZE
+      structure RealX: REAL_X
       structure Runtime: RUNTIME
       structure WordSize: WORD_SIZE
       structure WordX: WORD_X
       structure WordXVector: WORD_X_VECTOR
       sharing CFunction = Prim.CFunction
-      sharing RealSize = Prim.RealSize
+      sharing RealSize = Prim.RealSize = RealX.RealSize
       sharing WordSize = Prim.WordSize = WordX.WordSize
-      sharing WordX = WordXVector.WordX
+      sharing WordX = RealX.WordX = WordXVector.WordX
    end
 
 signature REP_TYPE =
@@ -67,6 +68,7 @@ signature REP_TYPE =
       val layout: t -> Layout.t
       val name: t -> string (* simple one letter abbreviation *)
       val ofGCField: Runtime.GCField.t -> t
+      val ofRealX: RealX.t -> t
       val ofWordXVector: WordXVector.t -> t
       val ofWordX: WordX.t -> t
       val offsetIsOk: {base: t,

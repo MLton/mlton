@@ -151,6 +151,9 @@ structure Type =
       val zero: Bits.t -> t = bits
 
 
+      val ofRealX: RealX.t -> t =
+         fn r => real (RealX.size r)
+
       val ofWordX: WordX.t -> t = 
          fn w => word (WordX.size w)
 

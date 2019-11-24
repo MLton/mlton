@@ -19,6 +19,7 @@ structure BackendAtoms =
                                    structure ObjptrTycon = ObjptrTycon
                                    structure Prim = Prim
                                    structure RealSize = RealSize
+                                   structure RealX = RealX
                                    structure Runtime = Runtime
                                    structure WordSize = WordSize
                                    structure WordX = WordX
