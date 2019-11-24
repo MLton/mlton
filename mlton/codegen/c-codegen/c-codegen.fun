@@ -316,8 +316,12 @@ fun outputDeclarations
          Ffi.declareExports {print = print}
       fun declareLoadSaveGlobals () =
          let
+            val unused =
+               List.forall (CType.all, fn t => Global.numberOfType t = 0)
             val _ =
-               (print "static int saveGlobals (FILE *f) {\n"
+               (print "static int saveGlobals ("
+                ; if unused then print "__attribute__ ((unused))" else ()
+                ; print " FILE *f) {\n"
                 ; (List.foreach
                    (CType.all, fn t =>
                     if Global.numberOfType t > 0
@@ -326,7 +330,9 @@ fun outputDeclarations
                        else ()))
                 ; print "\treturn 0;\n}\n")
             val _ =
-               (print "static int loadGlobals (FILE *f) {\n"
+               (print "static int loadGlobals ("
+                ; if unused then print "__attribute__ ((unused))" else ()
+                ; print " FILE *f) {\n"
                 ; (List.foreach
                    (CType.all, fn t =>
                     if Global.numberOfType t > 0
