@@ -50,8 +50,6 @@ structure C =
          let val quote = "\"" (* " *)
          in concat [quote, String.escapeC s, quote]
          end
-
-      fun word (w: Word.t) = "0x" ^ Word.toString w
    end
 
 structure RealX =
@@ -605,10 +603,13 @@ fun outputDeclarations
                let
                   val version = String.hash Version.version
                   val random = Random.word ()
+                  val magic =
+                     Word.orb
+                     (Word.<< (version, Word.fromInt (Word.wordSize - 8)),
+                      Word.>> (random, Word.fromInt 8))
                in
-                  Word.orb
-                  (Word.<< (version, Word.fromInt (Word.wordSize - 8)),
-                   Word.>> (random, Word.fromInt 8))
+                  WordX.fromIntInf
+                  (Word.toIntInf magic, WordSize.word32)
                end
             val profile =
                case !Control.profile of
@@ -627,7 +628,7 @@ fun outputDeclarations
                                   | Control.LibArchive => "MLtonLibrary"
                                   | Control.Library => "MLtonLibrary",
                                  [C.int align,
-                                  C.word magic,
+                                  WordX.toC magic,
                                   C.bytes maxFrameSize,
                                   C.bool (!Control.markCards),
                                   profile,
