@@ -182,11 +182,11 @@ structure Static =
       fun metadataToC (Static.T {metadata, ...}) =
          let
             val decl =
-               String.concatWith
-               (List.mapi (metadata, fn (i, w) =>
-                           concat [CType.toString (WordX.toCType w),
-                                   " meta_", C.int i]),
-                "; ")
+               (concat o List.mapi)
+               (metadata, fn (i, w) =>
+                concat [if i > 0 then " " else "",
+                        CType.toString (WordX.toCType w),
+                        " meta_", C.int i, ";"])
             val init =
                String.concatWith
                (List.map (metadata, WordX.toC),
@@ -422,16 +422,20 @@ fun outputDeclarations
                    end
 
                 val decl = concat
-                   [ qualifier, "struct {",
-                     mdecl, "; ",
-                     dataDescr,
-                     "}\n",
-                     staticVar i ]
+                   [ qualifier, "struct {", mdecl,
+                     if not (String.isEmpty mdecl) andalso not (String.isEmpty dataDescr)
+                        then " "
+                        else "",
+                     dataDescr, "}\n", staticVar i ]
              in
                 case dataC of
                      SOME dataC =>
                        (print o concat)
-                       [decl, " = {", minit, ", ", dataC, "};\n"]
+                       [decl, " = {", minit,
+                        if not (String.isEmpty minit) andalso not (String.isEmpty dataC)
+                           then ", "
+                           else "",
+                        dataC, "};\n"]
                     (* needs code initialization *)
                    | NONE => print (decl ^ ";\n")
              end))
