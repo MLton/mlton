@@ -40,7 +40,7 @@ signature BACKEND_ATOMS' =
       sharing Prim = Type.Prim
       sharing RealSize = Type.RealSize
       sharing RealX = Static.RealX = Type.RealX
-      sharing WordSize = Static.WordSize = Type.WordSize
+      sharing WordSize = ObjptrTycon.WordSize = Static.WordSize = Type.WordSize
       sharing WordX = Static.WordX = Type.WordX
       sharing WordXVector = Static.WordXVector = Type.WordXVector
    end

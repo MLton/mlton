@@ -395,7 +395,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                   oper = fn wxv => let
                                       val eltSize = WordXVector.elementSize wxv
                                       val ty = Type.wordVector eltSize
-                                      val tycon = ObjptrTycon.wordVector (WordSize.bits eltSize)
+                                      val tycon = ObjptrTycon.wordVector eltSize
                                       val location =
                                          if !Control.staticAllocWordVectorConsts
                                             then M.Static.Location.ImmStatic

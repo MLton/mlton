@@ -21,7 +21,7 @@ signature REP_TYPE_STRUCTS =
       structure WordXVector: WORD_X_VECTOR
       sharing CFunction = Prim.CFunction
       sharing RealSize = Prim.RealSize = RealX.RealSize
-      sharing WordSize = Prim.WordSize = WordX.WordSize
+      sharing WordSize = ObjptrTycon.WordSize = Prim.WordSize = WordX.WordSize
       sharing WordX = RealX.WordX = WordXVector.WordX
    end
 

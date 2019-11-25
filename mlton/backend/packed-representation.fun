@@ -2742,19 +2742,9 @@ fun compute (program as Ssa2.Program.T {datatypes, ...}) =
                                        else
                                           (case S.Type.dest elt of
                                               S.Type.Word s =>
-                                                 let
-                                                    val nBits = WordSize.bits s
-                                                    val nInt = Bits.toInt nBits
-                                                 in
-                                                    if nInt = 8
-                                                       orelse nInt = 16
-                                                       orelse nInt = 32
-                                                       orelse nInt = 64
-                                                       then
-                                                          now
-                                                          (ObjptrTycon.wordVector nBits)
+                                                 if isSome (WordSize.primOpt s)
+                                                    then now (ObjptrTycon.wordVector s)
                                                     else delay ()
-                                                 end
                                             | _ => delay ())
                                     end
                            in

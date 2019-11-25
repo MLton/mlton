@@ -139,7 +139,7 @@ structure Type =
       val word32: t = word WordSize.word32
 
       val wordVector: WordSize.t -> t = 
-         objptr o ObjptrTycon.wordVector o WordSize.bits
+         objptr o ObjptrTycon.wordVector
 
       val word8Vector: unit -> t =  fn () => 
          wordVector WordSize.word8
@@ -485,23 +485,19 @@ structure ObjectType =
        *)
       val basic = fn () => 
          let
-            fun wordVec i =
-               let
-                  val b = Bits.fromInt i
-               in
-                  (ObjptrTycon.wordVector b,
-                   Sequence {hasIdentity = false,
-                             elt = Type.word (WordSize.fromBits b)})
-               end
+            fun wordVec ws =
+               (ObjptrTycon.wordVector ws,
+                Sequence {hasIdentity = false,
+                          elt = Type.word ws})
          in
             Vector.fromList
             [(ObjptrTycon.stack, stack),
              (ObjptrTycon.thread, thread ()),
              (ObjptrTycon.weakGone, Weak NONE),
-             wordVec 8,
-             wordVec 32,
-             wordVec 16,
-             wordVec 64]
+             wordVec WordSize.word8,
+             wordVec WordSize.word32,
+             wordVec WordSize.word16,
+             wordVec WordSize.word64]
          end
 
       local
