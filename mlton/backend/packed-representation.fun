@@ -2745,6 +2745,8 @@ fun compute (program as Ssa2.Program.T {datatypes, ...}) =
                                                  if isSome (WordSize.primOpt s)
                                                     then now (ObjptrTycon.wordVector s)
                                                     else delay ()
+                                            | S.Type.Real s =>
+                                                 now (ObjptrTycon.realVector s)
                                             | _ => delay ())
                                     end
                            in

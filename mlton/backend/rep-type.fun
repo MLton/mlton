@@ -478,6 +478,8 @@ structure ObjectType =
        * STACK_TYPE_INDEX,
        * THREAD_TYPE_INDEX,
        * WEAK_GONE_TYPE_INDEX,
+       * REAL32_VECTOR_TYPE_INDEX,
+       * REAL64_VECTOR_TYPE_INDEX,
        * WORD8_VECTOR_TYPE_INDEX,
        * WORD16_VECTOR_TYPE_INDEX,
        * WORD32_VECTOR_TYPE_INDEX.
@@ -485,6 +487,10 @@ structure ObjectType =
        *)
       val basic = fn () => 
          let
+            fun realVec rs =
+               (ObjptrTycon.realVector rs,
+                Sequence {hasIdentity = false,
+                          elt = Type.real rs})
             fun wordVec ws =
                (ObjptrTycon.wordVector ws,
                 Sequence {hasIdentity = false,
@@ -494,6 +500,8 @@ structure ObjectType =
             [(ObjptrTycon.stack, stack),
              (ObjptrTycon.thread, thread ()),
              (ObjptrTycon.weakGone, Weak NONE),
+             realVec RealSize.R32,
+             realVec RealSize.R64,
              wordVec WordSize.word8,
              wordVec WordSize.word32,
              wordVec WordSize.word16,

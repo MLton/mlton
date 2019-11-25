@@ -8,6 +8,7 @@
 
 signature OBJPTR_TYCON_STRUCTS =
    sig
+      structure RealSize: REAL_SIZE
       structure WordSize: WORD_SIZE
    end
 
@@ -33,5 +34,6 @@ signature OBJPTR_TYCON =
       val stack: t
       val thread: t
       val weakGone: t
+      val realVector: RealSize.t -> t
       val wordVector: WordSize.t -> t
    end

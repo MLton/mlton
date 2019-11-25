@@ -45,6 +45,16 @@ val thread = new ()
 val weakGone = new ()
 
 local
+   val real32Vector = new ()
+   val real64Vector = new ()
+in
+   fun realVector (rs: RealSize.t): t =
+      case rs of
+         RealSize.R32 => real32Vector
+       | RealSize.R64 => real64Vector
+end
+
+local
    val word8Vector = new ()
    val word16Vector = new ()
    val word32Vector = new ()
