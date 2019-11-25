@@ -290,11 +290,14 @@ fun declareGlobals (prefix: string, print) =
          List.foreach
          (CType.all, fn t =>
           let
-             val s = CType.toString t
              val n = Global.numberOfType t
           in
-             if n > 0 orelse CType.equals (t, CType.Objptr)
-                then prints [prefix, s, " global", s, " [", C.int n, "];\n"]
+             if n > 0
+                then let
+                        val s = CType.toString t
+                     in
+                        prints [prefix, s, " global", s, " [", C.int n, "];\n"]
+                     end
                 else ()
           end)
    in
@@ -314,6 +317,42 @@ fun outputDeclarations
       fun prints ss = List.foreach (ss, print)
       fun declareExports () =
          Ffi.declareExports {print = print}
+
+      fun declareGlobals () =
+         List.foreach
+         (CType.all, fn t =>
+          let
+             val n = Global.numberOfType t
+             fun doit init =
+                let
+                   val s = CType.toString t
+                in
+                   prints ["PRIVATE ", s, " global", s, "[", C.int n, "]"]
+                   ; Option.app (init, fn vs => (print " = {"
+                                                 ; List.foreachi (vs, fn (i,v) => (if i > 0
+                                                                                      then print ", "
+                                                                                      else ()
+                                                                                   ; print v))
+                                                 ; print "}"))
+                   ; print ";\n"
+                end
+             fun doitReal rs =
+                (doit o SOME o List.tabulate)
+                (n, fn i =>
+                 case List.peek (reals, fn (r, g) =>
+                                 RealSize.equals (rs, RealX.size r)
+                                 andalso Int.equals (i, Global.index g)) of
+                    NONE => RealX.toC (RealX.zero rs)
+                  | SOME (r, _) => RealX.toC r)
+          in
+             case (n > 0, t) of
+                (_, CType.Objptr) => doit NONE
+              | (true, CType.Real32) => doitReal RealSize.R32
+              | (true, CType.Real64) => doitReal RealSize.R64
+              | (true, _) => doit NONE
+              | _ => ()
+          end)
+
       fun declareLoadSaveGlobals () =
          let
             val unused =
@@ -488,14 +527,6 @@ fun outputDeclarations
               end))
           ; print "};\n")
 
-      fun declareReals () =
-         (print "static void real_Init() {\n"
-          ; List.foreach (reals, fn (r, g) =>
-                          prints ["\tglobalReal",
-                                  RealSize.toString (RealX.size r),
-                                  "[", C.int (Global.index g), "] = ",
-                                  RealX.toC r, ";\n"])
-          ; print "}\n")
       fun declareArray (ty: string,
                         name: string,
                         {firstElemLen: bool, oneline: bool},
@@ -680,12 +711,11 @@ fun outputDeclarations
          end
    in
       outputIncludes (includes, print); print "\n"
-      ; declareGlobals ("PRIVATE ", print); print "\n"
+      ; declareGlobals (); print "\n"
       ; declareLoadSaveGlobals (); print "\n"
       ; declareStatics (); print "\n"
       ; declareHeapStatics (); print "\n"
       ; declareStaticInits (); print "\n"
-      ; declareReals (); print "\n"
       ; declareFrameInfos (); print "\n"
       ; declareObjectTypes (); print "\n"
       ; declareSourceMaps (); print "\n"
