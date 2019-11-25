@@ -121,6 +121,13 @@ fun isInRange (s, i, sg) =
 
 datatype prim = W8 | W16 | W32 | W64
 
+fun fromPrim p =
+   case p of
+      W8 => word8
+    | W16 => word16
+    | W32 => word32
+    | W64 => word64
+
 fun primOpt (s: t): prim option =
    case Bits.toInt (bits s) of
       8 => SOME W8

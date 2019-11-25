@@ -15,6 +15,7 @@ signature WORD_SIZE =
       include WORD_SIZE_STRUCTS
 
       type t
+      datatype prim = W8 | W16 | W32 | W64
 
       val all: t list
       val bits: t -> Bits.t
@@ -31,6 +32,7 @@ signature WORD_SIZE =
       val csize: unit -> t
       val equals: t * t -> bool
       val fromBits: Bits.t -> t
+      val fromPrim: prim -> t
       val hash: t -> word
       val isInRange: t * IntInf.t * {signed: bool} -> bool
       val max: t * {signed: bool} -> IntInf.t
@@ -39,7 +41,7 @@ signature WORD_SIZE =
       val objptr: unit -> t
       val objptrHeader: unit -> t
       val parse: t Parse.t
-      datatype prim = W8 | W16 | W32 | W64
+      val primOpt: t -> prim option
       val prim: t -> prim
       val prims: t list
       val roundUpToPrim: t -> t
