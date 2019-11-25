@@ -1,4 +1,4 @@
-(* Copyright (C) 2012,2013 Matthew Fluet.
+(* Copyright (C) 2012,2013,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -20,11 +20,9 @@ local
       val () = check (R1.Math.atan2, R2.Math.atan2)
       val () = check (R1.Math.cos, R2.Math.cos)
       val () = check (R1.Math.cosh, R2.Math.cosh)
-      val () = check (fn () => R1.Math.e, R2.Math.eGet)
       val () = check (R1.Math.exp, R2.Math.exp)
       val () = check (R1.Math.ln, R2.Math.ln)
       val () = check (R1.Math.log10, R2.Math.log10)
-      val () = check (fn () => R1.Math.pi, R2.Math.piGet)
       val () = check (R1.Math.pow, R2.Math.pow)
       val () = check (R1.Math.sin, R2.Math.sin)
       val () = check (R1.Math.sinh, R2.Math.sinh)
@@ -61,11 +59,9 @@ local
       val () = check (R1.Math.atan2, R2.Math.atan2)
       val () = check (R1.Math.cos, R2.Math.cos)
       val () = check (R1.Math.cosh, R2.Math.cosh)
-      val () = check (fn () => R1.Math.e, R2.Math.eGet)
       val () = check (R1.Math.exp, R2.Math.exp)
       val () = check (R1.Math.ln, R2.Math.ln)
       val () = check (R1.Math.log10, R2.Math.log10)
-      val () = check (fn () => R1.Math.pi, R2.Math.piGet)
       val () = check (R1.Math.pow, R2.Math.pow)
       val () = check (R1.Math.sin, R2.Math.sin)
       val () = check (R1.Math.sinh, R2.Math.sinh)
