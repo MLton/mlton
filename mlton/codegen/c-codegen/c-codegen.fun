@@ -58,25 +58,14 @@ structure RealX =
 
       fun toCType r = CType.real (size r)
       fun toC (r: t): string =
-         let
-            (* The main difference between SML reals and C floats/doubles is that
-             * SML uses "~" while C uses "-".
-             *)
-            val s =
-               String.translate (toString (r, {suffix = false}),
-                                 fn #"~" => "-" | c => String.fromChar c)
-            (* Also, inf is spelled INFINITY and nan is NAN in C. *)
-            val s =
-               case s of
-                  "-inf" => "-INFINITY"
-                | "inf"  => "INFINITY"
-                | "nan"  => "NAN"
-                | other  => other
-         in
-            case size r of
-               R32 => concat ["(Real32)", s]
-             | R64 => s
-         end
+         (* SML uses "inf" and "nan", C uses "INFINITY" and "NAN" *)
+         case toString (r, {suffix = false}) of
+            "~inf" => "-INFINITY"
+          | "inf"  => "INFINITY"
+          | "nan"  => "NAN"
+          | s => concat ["(", CType.toString (toCType r), ")(",
+                         (* SML uses "~", C uses "-" *)
+                         String.translate (s, fn #"~" => "-" | c => String.fromChar c), ")"]
    end
 
 structure WordX =
