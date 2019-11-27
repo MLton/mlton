@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -8,6 +8,8 @@
 
 signature OBJPTR_TYCON_STRUCTS =
    sig
+      structure RealSize: REAL_SIZE
+      structure WordSize: WORD_SIZE
    end
 
 signature OBJPTR_TYCON =
@@ -32,5 +34,6 @@ signature OBJPTR_TYCON =
       val stack: t
       val thread: t
       val weakGone: t
-      val wordVector: Bits.t -> t
+      val realVector: RealSize.t -> t
+      val wordVector: WordSize.t -> t
    end

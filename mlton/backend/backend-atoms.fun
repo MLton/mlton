@@ -11,7 +11,8 @@ structure BackendAtoms =
    struct
       open S
 
-      structure ObjptrTycon = ObjptrTycon ()
+      structure ObjptrTycon = ObjptrTycon (structure RealSize = RealSize
+                                           structure WordSize = WordSize)
       structure Runtime = Runtime ()
       structure RepType = RepType (structure CFunction = CFunction
                                    structure CType = CType

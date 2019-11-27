@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -45,17 +45,27 @@ val thread = new ()
 val weakGone = new ()
 
 local
+   val real32Vector = new ()
+   val real64Vector = new ()
+in
+   fun realVector (rs: RealSize.t): t =
+      case rs of
+         RealSize.R32 => real32Vector
+       | RealSize.R64 => real64Vector
+end
+
+local
    val word8Vector = new ()
    val word16Vector = new ()
    val word32Vector = new ()
    val word64Vector = new ()
 in
-   fun wordVector (b: Bits.t): t =
-      case Bits.toInt b of
-         8 => word8Vector
-       | 16 => word16Vector
-       | 32 => word32Vector
-       | 64 => word64Vector
+   fun wordVector (ws: WordSize.t): t =
+      case WordSize.primOpt ws of
+         SOME WordSize.W8 => word8Vector
+       | SOME WordSize.W16 => word16Vector
+       | SOME WordSize.W32 => word32Vector
+       | SOME WordSize.W64 => word64Vector
        | _ => Error.bug "ObjptrTycon.wordVector"
 end
 

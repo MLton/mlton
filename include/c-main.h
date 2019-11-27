@@ -68,7 +68,6 @@ PUBLIC int MLton_main (int argc, char* argv[]) {                        \
         GC_state s = MLton_gcState();                                   \
         Initialize (s, al, mg, mfs, mmc, pk, ps);                       \
         if (s->amOriginal) {                                            \
-                real_Init();                                            \
                 static_Init();                                          \
                 nextBlock = ml;                                         \
         } else {                                                        \
@@ -85,7 +84,6 @@ PUBLIC void LIB_OPEN(LIBNAME) (int argc, char* argv[]) {                \
         GC_state s = MLton_gcState();                                   \
         Initialize (s, al, mg, mfs, mmc, pk, ps);                       \
         if (s->amOriginal) {                                            \
-                real_Init();                                            \
                 static_Init();                                          \
                 nextBlock = ml;                                         \
         } else {                                                        \
