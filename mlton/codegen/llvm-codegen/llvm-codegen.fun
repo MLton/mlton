@@ -154,8 +154,17 @@ structure LLVM =
             fun label l = label' (Label.toString l)
             val null = ("null", Type.Pointer Type.word8)
             fun real r =
-               (RealX.toString (r, {suffix = false}),
-                Type.Real (RealX.size r))
+               let
+                  val s = RealX.toString (r, {suffix = false})
+                  val s =
+                     case s of
+                        "~inf" => "0xFFF0000000000000"
+                      | "inf" => "0x7FF0000000000000"
+                      | "nan" => "0xFFF8000000000000"
+                      | _ => String.translate (s, fn #"~" => "-" | c => String.fromChar c)
+               in
+                  (s, Type.Real (RealX.size r))
+               end
             fun fnegZero rs = ("-0.0", Type.Real rs)
             (* fun undef ty = ("undef", ty) *)
             fun word w =
