@@ -12,12 +12,12 @@ struct
    structure TypeInfo = struct
       datatype heapType = Array | Ref | Vector | Weak
       datatype t = Unchanged of Type.t
-                 | Fresh of (Tycon.t * con list ref) Equatable.t
+                 | Fresh of {cons: con list ref, hash: word, tycon: Tycon.t} Equatable.t
                  | Tuple of t vector
                  | Heap of (t * heapType)
       and con = ConData of Con.t * (t vector)
 
-      fun layoutFresh (ty, cons) =
+      fun layoutFresh {tycon=ty, cons=cons, ...} =
          Layout.fill [Tycon.layout ty, Layout.str " # ",
                       Ref.layout (List.layout (fn ConData (con, _) => Con.layout con)) cons]
       and layout (t: t) =
@@ -32,11 +32,10 @@ struct
                                               | Vector => Layout.str " vector"
                                               | Weak => Layout.str " weak"]
 
-      fun hashFresh eq : word = Tycon.hash (#1 (Equatable.value eq))
       and hash (t : t) : word =
          case t of
               Unchanged ty => Type.hash ty
-            | Fresh eq => hashFresh eq
+            | Fresh eq => #hash (Equatable.value eq)
             | Tuple vect => Hash.vectorMap(vect, hash)
             | Heap (t,htype) => Hash.combine (hash t,
                (case htype of
@@ -60,7 +59,7 @@ struct
               Fresh eq => eq
             | _ => Error.bug "SplitTypes.TypeInfo.deFresh"
 
-      fun mergeFresh coerceList ((tycon1, cons1), (tycon2, cons2)) =
+      fun mergeFresh coerceList ({tycon=tycon1, cons=cons1, hash=hash1}, {tycon=tycon2, cons=cons2, ...}) =
          let
             val tycon =
                if Tycon.equals (tycon1, tycon2)
@@ -77,7 +76,7 @@ struct
                      | NONE => List.push (cons, conData)
                end)
          in
-            (tycon, cons)
+            {tycon=tycon, cons=cons, hash=hash1}
          end
       fun coerce (from, to) =
          case (from, to) of
@@ -103,9 +102,11 @@ struct
                  Error.bug (Layout.toString (Layout.fill [
                  Layout.str "SplitTypes.TypeInfo.coerce: Strange coercion: ",
                  layout from, Layout.str " coerced to ", layout to ]))
+      fun newFresh (tycon, cons) =
+        Equatable.new {tycon=tycon, cons=ref cons, hash=Random.word ()}
       fun fromType (ty: Type.t) =
          case Type.dest ty of
-              Type.Datatype tycon => Fresh (Equatable.new (tycon, ref []))
+              Type.Datatype tycon => Fresh (newFresh (tycon, []))
             | Type.Tuple ts => Tuple (Vector.map (ts, fromType))
             | Type.Array t => Heap (fromType t, Array)
             | Type.Ref t => Heap (fromType t, Ref)
@@ -113,7 +114,7 @@ struct
             | Type.Weak t => Heap (fromType t, Weak)
             | _ => Unchanged ty
       fun fromCon {con: Con.t, args: t vector, tycon: Tycon.t} =
-         Fresh (Equatable.new (tycon, ref [ConData (con, args)]))
+         Fresh (newFresh (tycon, [ConData (con, args)]))
       fun fromTuple (vect: t vector) = Tuple vect
       fun const (c: Const.t): t = fromType (Type.ofConst c)
 
@@ -221,14 +222,14 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
            useFromTypeOnBinds = true }
 
       val tyconMap =
-         HashTable.new {hash=TypeInfo.hashFresh, equals=Equatable.equals}
+         HashTable.new {hash=(#hash o Equatable.value), equals=Equatable.equals}
 
       (* Always map the prim boolean to bool *)
       val _ = HashTable.lookupOrInsert (tyconMap, TypeInfo.deFresh primBoolInfo, fn () => primBoolTycon)
 
       fun getTy typeInfo =
          let
-            fun pickTycon (tycon, cons) =
+            fun pickTycon {tycon, cons, ...} =
                case (Tycon.equals (tycon, primBoolTycon), !Control.splitTypesBool) of
                     (true, Control.Always) => Tycon.new tycon
                   | (true, Control.Never) => tycon
@@ -329,7 +330,7 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
                               case (default, value test) of
                                    (SOME _, TypeInfo.Fresh eq) =>
                                        let
-                                          val cons = (! o #2 o Equatable.value) eq
+                                          val cons = (! o #cons o Equatable.value) eq
                                        in
                                           if Vector.length cases' < List.length cons
                                              then default
@@ -397,10 +398,10 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
                      if Tycon.equals (tycon, primBoolTycon)
                      then NONE
                      else let
-                             val (_, consRef) = Equatable.value eq
+                             val {cons, ...} = Equatable.value eq
                           in
                              SOME (Datatype.T
-                             {cons=reifyCons (!consRef, tycon), tycon=tycon})
+                             {cons=reifyCons (!cons, tycon), tycon=tycon})
                           end))))
          end
 
