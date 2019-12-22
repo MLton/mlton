@@ -59,7 +59,7 @@ struct
               Fresh eq => eq
             | _ => Error.bug "SplitTypes.TypeInfo.deFresh"
 
-      fun mergeFresh coerceList ({tycon=tycon1, cons=cons1, hash=hash1}, {tycon=tycon2, cons=cons2, ...}) =
+      fun mergeFresh coerceList ({tycon=tycon1, cons=cons1, hash=hash1}, {tycon=tycon2, cons=cons2, hash=_}) =
          let
             val tycon =
                if Tycon.equals (tycon1, tycon2)
@@ -229,7 +229,7 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
 
       fun getTy typeInfo =
          let
-            fun pickTycon {tycon, cons, ...} =
+            fun pickTycon {tycon, cons, hash = _} =
                case (Tycon.equals (tycon, primBoolTycon), !Control.splitTypesBool) of
                     (true, Control.Always) => Tycon.new tycon
                   | (true, Control.Never) => tycon
