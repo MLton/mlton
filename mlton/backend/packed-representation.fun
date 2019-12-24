@@ -1006,10 +1006,9 @@ structure ObjptrRep =
                  {dst = dst: Var.t,
                   src: {index: int} -> Operand.t}) =
          let
-            val object = Var {ty = ty, var = dst}
-            val stores =
-               Vector.foldr
-               (components, [], fn ({component, offset}, ac) =>
+            val (pre, init) =
+               Vector.fold
+               (components, ([], []), fn ({component, offset}, (pre, init)) =>
                 let
                    val tmpVar = Var.newNoname ()
                    val tmpTy = Component.ty component
@@ -1018,19 +1017,19 @@ structure ObjptrRep =
                                        {dst = (tmpVar, tmpTy), src = src})
                 in
                    if List.isEmpty statements
-                      then ac
-                      else statements
-                           @ (Move {dst = Offset {base = object,
-                                                  offset = offset,
-                                                  ty = tmpTy},
-                                    src = Var {ty = tmpTy, var = tmpVar}}
-                              :: ac)
+                      then (pre, init)
+                      else (statements :: pre,
+                            {offset = offset,
+                             src = Var {ty = tmpTy, var = tmpVar},
+                             ty = tmpTy} :: init)
                 end)
          in
-            Object {dst = (dst, ty),
-                    header = Runtime.typeIndexToHeader (ObjptrTycon.index tycon),
-                    size = Bytes.+ (Type.bytes componentsTy, Runtime.normalMetaDataSize ())}
-            :: stores
+            List.concatRev
+            ([Object {dst = (dst, ty),
+                      header = Runtime.typeIndexToHeader (ObjptrTycon.index tycon),
+                      init = Vector.fromListRev init,
+                      size = Bytes.+ (Type.bytes componentsTy, Runtime.normalMetaDataSize ())}]
+             :: pre)
          end
 
       val tuple =

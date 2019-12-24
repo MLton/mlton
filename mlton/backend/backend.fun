@@ -535,10 +535,23 @@ fun toMachine (rssa: Rssa.Program.t) =
              | Move {dst, src} =>
                   move {dst = translateOperand dst,
                         src = translateOperand src}
-             | Object {dst, header, size} =>
-                  M.Statement.object {dst = varOperand (#1 dst),
-                                      header = header,
-                                      size = size}
+             | Object {dst, header, init, size} =>
+                  let
+                     val dst = varOperand (#1 dst)
+                     val init =
+                        Vector.toListMap
+                        (init, fn {src, offset, ty} =>
+                         move {dst = M.Operand.Offset {base = dst,
+                                                       offset = offset,
+                                                       ty = ty},
+                               src = translateOperand src})
+                  in
+                     Vector.concat
+                     (M.Statement.object {dst = dst,
+                                          header = header,
+                                          size = size}
+                      :: init)
+                  end
              | PrimApp {dst, prim, args} =>
                   let
                      datatype z = datatype Prim.Name.t

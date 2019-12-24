@@ -61,7 +61,10 @@ signature RSSA_TREE =
                         src: Operand.t}
              | Object of {dst: Var.t * Type.t,
                           header: word,
-                          size: Bytes.t (* including header *)}
+                          init: {offset: Bytes.t,
+                                 src: Operand.t,
+                                 ty: Type.t} vector,
+                          size: Bytes.t (* including metadata *)}
              | PrimApp of {args: Operand.t vector,
                            dst: (Var.t * Type.t) option,
                            prim: Type.t Prim.t}

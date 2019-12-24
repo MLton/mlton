@@ -518,8 +518,8 @@ fun restoreFunction {main: Function.t}
                    Statement.Bind {dst=tupleDst, pinned=pinned, src=src}
               | Statement.Move {src, ...} =>
                    Statement.Move {dst=Operand.Var dst, src=src}
-              | Statement.Object {header, size, ...} =>
-                   Statement.Object {dst=tupleDst, header=header, size=size}
+              | Statement.Object {header, init, size, ...} =>
+                   Statement.Object {dst=tupleDst, init=init, header=header, size=size}
               | Statement.PrimApp {args, prim, ...} =>
                    Statement.PrimApp {args=args, dst=SOME tupleDst, prim=prim}
               | _ => st

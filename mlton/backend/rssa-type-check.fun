@@ -451,6 +451,26 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, ...}) 
       fun statementOk (s: Statement.t): bool =
          let
             datatype z = datatype Statement.t
+            fun initOk (init, mkDst, size) =
+               Exn.withEscape
+               (fn esc =>
+                let
+                   val next =
+                      Vector.fold
+                      (init, Bytes.zero, fn ({offset, src, ty}, next) =>
+                       let
+                          val dst = mkDst {offset = offset, ty = ty}
+                          val move = Move {dst = dst, src = src}
+                       in
+                          if Bytes.>= (offset, next)
+                             andalso
+                             statementOk move
+                             then Bytes.+ (offset, Type.bytes ty)
+                             else esc false
+                       end)
+                in
+                   Bytes.<= (next, size)
+                end)
          in
             case s of
                Bind {src, dst = (_, dstTy), ...} =>
@@ -461,8 +481,9 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, ...}) 
                    ; checkOperand src
                    ; (Type.isSubtype (Operand.ty src, Operand.ty dst)
                       andalso Operand.isLocation dst))
-             | Object {dst = (_, ty), header, size} =>
+             | Object {dst = (dst, ty), header, init, size} =>
                   let
+                     val dst = Operand.Var {ty = ty, var = dst}
                      val tycon =
                         ObjptrTycon.fromIndex
                         (Runtime.headerToTypeIndex header)
@@ -482,7 +503,18 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, ...}) 
                             Bytes.equals
                             (size, Bytes.+ (Runtime.normalMetaDataSize (),
                                             Type.bytes ty))
-                        | _ => false)
+                            andalso
+                            let
+                               val size = Type.bytes ty
+                               fun mkDst {offset, ty} =
+                                  Operand.Offset
+                                  {base = dst,
+                                   offset = offset,
+                                   ty = ty}
+                            in
+                               initOk (init, mkDst, size)
+                            end
+                       | _ => false)
                   end
              | PrimApp {args, dst, prim} =>
                   (Vector.foreach (args, checkOperand)

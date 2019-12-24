@@ -172,6 +172,9 @@ structure Statement =
                   src: Operand.t}
        | Object of {dst: Var.t * Type.t,
                     header: word,
+                    init: {offset: Bytes.t,
+                           src: Operand.t,
+                           ty: Type.t} vector,
                     size: Bytes.t}
        | PrimApp of {args: Operand.t vector,
                      dst: (Var.t * Type.t) option,
@@ -191,7 +194,9 @@ structure Statement =
             case s of
                Bind {dst = (x, t), src, ...} => def (x, t, useOperand (src, a))
              | Move {dst, src} => useOperand (src, useOperand (dst, a))
-             | Object {dst = (dst, ty), ...} => def (dst, ty, a)
+             | Object {dst = (dst, ty), init, ...} =>
+                  Vector.fold (init, def (dst, ty, a), fn ({src, ...}, a) =>
+                               useOperand (src, a))
              | PrimApp {dst, args, ...} =>
                   Vector.fold (args,
                                Option.fold (dst, a, fn ((x, t), a) =>
@@ -231,7 +236,14 @@ structure Statement =
                         pinned = pinned,
                         src = oper src}
              | Move {dst, src} => Move {dst = oper dst, src = oper src}
-             | Object _ => s
+             | Object {dst, header, init, size} =>
+                  Object {dst = dst,
+                          header = header,
+                          init = Vector.map (init, fn {offset, src, ty} =>
+                                             {offset = offset,
+                                              src = oper src,
+                                              ty = ty}),
+                          size = size}
              | PrimApp {args, dst, prim} =>
                   PrimApp {args = Vector.map (args, oper),
                            dst = dst,
@@ -256,11 +268,18 @@ structure Statement =
                   mayAlign
                   [Operand.layout dst,
                    indent (seq [str ":= ", Operand.layout src], 2)]
-             | Object {dst = (dst, ty), header, size} =>
+             | Object {dst = (dst, ty), header, init, size} =>
                   mayAlign
                   [seq [Var.layout dst, constrain ty],
                    indent (seq [str "= Object ",
                                 record [("header", seq [str "0x", Word.layout header]),
+                                        ("init",
+                                         Vector.layout
+                                         (fn {offset, src, ty} =>
+                                          record [("offset", Bytes.layout offset),
+                                                  ("src", Operand.layout src),
+                                                  ("ty", Type.layout ty)])
+                                         init),
                                         ("size", Bytes.layout size)]],
                            2)]
              | PrimApp {dst, prim, args, ...} =>
