@@ -812,6 +812,12 @@ fun offsetIsOk {base, offset, tyconTy, result} =
                              ObjectType.Sequence _ => true
                            | _ => false)
                  andalso (equals (result, seqIndex ()))
+         else if Bytes.equals (offset, Runtime.sequenceCounterOffset ())
+            then (1 = Vector.length opts)
+                 andalso (case tyconTy (Vector.sub (opts, 0)) of
+                             ObjectType.Sequence _ => true
+                           | _ => false)
+                 andalso (equals (result, seqIndex ()))
          else (1 = Vector.length opts)
               andalso (case tyconTy (Vector.sub (opts, 0)) of
                           ObjectType.Normal {ty, ...} => 

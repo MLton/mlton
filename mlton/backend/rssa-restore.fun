@@ -522,6 +522,8 @@ fun restoreFunction {main: Function.t}
                    Statement.Object {dst=tupleDst, init=init, header=header, size=size}
               | Statement.PrimApp {args, prim, ...} =>
                    Statement.PrimApp {args=args, dst=SOME tupleDst, prim=prim}
+              | Statement.Sequence {header, init, size, ...} =>
+                   Statement.Sequence {dst=tupleDst, init=init, header=header, size=size}
               | _ => st
           end
         local

@@ -478,8 +478,7 @@ fun transform program =
                       (leaves, true, sourceSeq, []),
                       fn (s, (leaves, ncc, sourceSeq, ss)) =>
                       case s of
-                         Object _ => (leaves, true, sourceSeq, s :: ss)
-                       | Profile ps =>
+                         Profile ps =>
                             let
                                val (ncc, ss) =
                                   if needCodeCoverage
@@ -839,6 +838,14 @@ fun transform program =
                                       pushes = pushes,
                                       statements = statements}
                                   end
+                             | Sequence {size, ...} =>
+                                  {args = args,
+                                   bytesAllocated = Bytes.+ (bytesAllocated, size),
+                                   kind = kind,
+                                   label = label,
+                                   leaves = leaves,
+                                   pushes = pushes,
+                                   statements = s :: statements}
                              | _ =>
                                   {args = args,
                                    bytesAllocated = bytesAllocated,

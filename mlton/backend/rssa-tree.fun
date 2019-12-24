@@ -181,6 +181,12 @@ structure Statement =
                      prim: Type.t Prim.t}
        | Profile of ProfileExp.t
        | ProfileLabel of ProfileLabel.t
+       | Sequence of {dst: Var.t * Type.t,
+                      header: word,
+                      init: {offset: Bytes.t,
+                             src: Operand.t,
+                             ty: Type.t} vector vector,
+                      size: Bytes.t}
        | SetExnStackLocal
        | SetExnStackSlot
        | SetHandler of Label.t
@@ -190,13 +196,15 @@ structure Statement =
                                     use: Var.t * 'a -> 'a}): 'a =
          let
             fun useOperand (z: Operand.t, a) = Operand.foldVars (z, a, use)
+            fun useInit (init, a) =
+               Vector.fold (init, a, fn ({offset = _, src, ty = _}, a) =>
+                            useOperand (src, a))
          in
             case s of
                Bind {dst = (x, t), src, ...} => def (x, t, useOperand (src, a))
              | Move {dst, src} => useOperand (src, useOperand (dst, a))
              | Object {dst = (dst, ty), init, ...} =>
-                  Vector.fold (init, def (dst, ty, a), fn ({src, ...}, a) =>
-                               useOperand (src, a))
+                  useInit (init, def (dst, ty, a))
              | PrimApp {dst, args, ...} =>
                   Vector.fold (args,
                                Option.fold (dst, a, fn ((x, t), a) =>
@@ -204,6 +212,8 @@ structure Statement =
                                useOperand)
              | Profile _ => a
              | ProfileLabel _ => a
+             | Sequence {dst = (dst, ty), init, ...} =>
+                  Vector.fold (init, def (dst, ty, a), useInit)
              | SetExnStackLocal => a
              | SetExnStackSlot => a
              | SetHandler _ => a
@@ -229,6 +239,11 @@ structure Statement =
          let
             fun oper (z: Operand.t): Operand.t =
                Operand.replaceVar (z, f)
+            fun replaceInit init =
+               Vector.map (init, fn {offset, src, ty} =>
+                           {offset = offset,
+                            src = oper src,
+                            ty = ty})
          in
             case s of
                Bind {dst, pinned, src} =>
@@ -239,10 +254,7 @@ structure Statement =
              | Object {dst, header, init, size} =>
                   Object {dst = dst,
                           header = header,
-                          init = Vector.map (init, fn {offset, src, ty} =>
-                                             {offset = offset,
-                                              src = oper src,
-                                              ty = ty}),
+                          init = replaceInit init,
                           size = size}
              | PrimApp {args, dst, prim} =>
                   PrimApp {args = Vector.map (args, oper),
@@ -250,6 +262,11 @@ structure Statement =
                            prim = prim}
              | Profile _ => s
              | ProfileLabel _ => s
+             | Sequence {dst, header, init, size} =>
+                  Sequence {dst = dst,
+                            header = header,
+                            init = Vector.map (init, replaceInit),
+                            size = size}
              | SetExnStackLocal => s
              | SetExnStackSlot => s
              | SetHandler _ => s
@@ -259,6 +276,12 @@ structure Statement =
       val layout =
          let
             open Layout
+            val layoutInit =
+               Vector.layout
+               (fn {offset, src, ty} =>
+                record [("offset", Bytes.layout offset),
+                        ("src", Operand.layout src),
+                        ("ty", Type.layout ty)])
          in
             fn Bind {dst = (x, t), src, ...} =>
                   mayAlign
@@ -273,13 +296,7 @@ structure Statement =
                   [seq [Var.layout dst, constrain ty],
                    indent (seq [str "= Object ",
                                 record [("header", seq [str "0x", Word.layout header]),
-                                        ("init",
-                                         Vector.layout
-                                         (fn {offset, src, ty} =>
-                                          record [("offset", Bytes.layout offset),
-                                                  ("src", Operand.layout src),
-                                                  ("ty", Type.layout ty)])
-                                         init),
+                                        ("init", layoutInit init),
                                         ("size", Bytes.layout size)]],
                            2)]
              | PrimApp {dst, prim, args, ...} =>
@@ -293,6 +310,14 @@ structure Statement =
              | Profile e => ProfileExp.layout e
              | ProfileLabel p =>
                   seq [str "ProfileLabel ", ProfileLabel.layout p]
+             | Sequence {dst = (dst, ty), header, init, size} =>
+                  mayAlign
+                  [seq [Var.layout dst, constrain ty],
+                   indent (seq [str "= Sequence ",
+                                record [("header", seq [str "0x", Word.layout header]),
+                                        ("init", Vector.layout layoutInit init),
+                                        ("size", Bytes.layout size)]],
+                           2)]
              | SetExnStackLocal => str "SetExnStackLocal"
              | SetExnStackSlot => str "SetExnStackSlot "
              | SetHandler l => seq [str "SetHandler ", Label.layout l]

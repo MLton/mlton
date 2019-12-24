@@ -70,6 +70,12 @@ signature RSSA_TREE =
                            prim: Type.t Prim.t}
              | Profile of ProfileExp.t
              | ProfileLabel of ProfileLabel.t
+             | Sequence of {dst: Var.t * Type.t,
+                            header: word,
+                            init: {offset: Bytes.t,
+                                   src: Operand.t,
+                                   ty: Type.t} vector vector,
+                            size: Bytes.t (* including metadata *)}
              | SetExnStackLocal
              | SetExnStackSlot
              | SetHandler of Label.t (* label must be of Handler kind. *)

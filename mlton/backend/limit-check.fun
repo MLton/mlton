@@ -101,6 +101,7 @@ structure Statement =
       fun bytesAllocated (s: t): Bytes.t =
          case s of
             Object {size, ...} => size
+          | Sequence {size, ...} => size
           | _ => Bytes.zero
    end
 

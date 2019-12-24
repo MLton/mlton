@@ -124,6 +124,7 @@ signature MACHINE =
             val layout: t -> Layout.t
             val move: {dst: Operand.t, src: Operand.t} -> t option
             val object: {dst: Operand.t, header: word, size: Bytes.t} -> t vector
+            val sequence: {dst: Operand.t, header: word, length: int, size: Bytes.t} -> t vector
          end
 
       structure Transfer:

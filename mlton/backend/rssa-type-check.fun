@@ -524,6 +524,69 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, ...}) 
                        result = Option.map (dst, #2)}))
              | Profile _ => true
              | ProfileLabel pl => checkProfileLabel pl
+             | Sequence {dst = (dst, ty), header, init, size} =>
+                  let
+                     val dst = Operand.Var {ty = ty, var = dst}
+                     val tycon =
+                        ObjptrTycon.fromIndex
+                        (Runtime.headerToTypeIndex header)
+                  in
+                     Type.isSubtype (Type.objptr tycon, ty)
+                     andalso
+                     Bytes.equals
+                     (size,
+                      Bytes.align
+                      (size,
+                       {alignment = (case !Control.align of
+                                         Control.Align4 => Bytes.inWord32
+                                       | Control.Align8 => Bytes.inWord64)}))
+                     andalso
+                     (case tyconTy tycon of
+                         ObjectType.Sequence {elt, ...} =>
+                            Bytes.equals
+                            (size,
+                             Bytes.align
+                             (Bytes.+ (Runtime.sequenceMetaDataSize (),
+                                       Bytes.* (Type.bytes elt,
+                                                IntInf.fromInt (Vector.length init))),
+                              {alignment = (case !Control.align of
+                                               Control.Align4 => Bytes.inWord32
+                                             | Control.Align8 => Bytes.inWord64)}))
+                            andalso
+                            let
+                               val size = Type.bytes elt
+                               val (scale, mkIndex) =
+                                  case Scale.fromBytes size of
+                                     NONE =>
+                                        (Scale.One, fn index =>
+                                         Operand.word
+                                         (WordX.mul
+                                          (WordX.fromIntInf (IntInf.fromInt index,
+                                                             WordSize.seqIndex ()),
+                                           WordX.fromBytes (size, WordSize.seqIndex ()),
+                                           {signed = false})))
+                                   | SOME s =>
+                                        (s, fn index =>
+                                         Operand.word
+                                         (WordX.fromIntInf (IntInf.fromInt index,
+                                                            WordSize.seqIndex ())))
+                            in
+                               Vector.foralli
+                               (init, fn (index, init) =>
+                                let
+                                   fun mkDst {offset, ty} =
+                                        Operand.SequenceOffset
+                                        {base = dst,
+                                         index = mkIndex index,
+                                         offset = offset,
+                                         scale = scale,
+                                         ty = ty}
+                                in
+                                   initOk (init, mkDst, size)
+                                end)
+                            end
+                       | _ => false)
+                  end
              | SetExnStackLocal => (handlersImplemented := true; true)
              | SetExnStackSlot => (handlersImplemented := true; true)
              | SetHandler l =>

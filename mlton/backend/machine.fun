@@ -185,6 +185,8 @@ structure Operand =
 
     val word = Const o Const.Word
 
+    val zero = word o WordX.zero
+
     val ty =
        fn Cast (_, ty) => ty
         | Const (Const.CSymbol _) => Type.cpointer ()
@@ -361,13 +363,60 @@ structure Statement =
             val temp = Temporary (Temporary.new (Type.cpointer (), NONE))
          in
             Vector.new4
-            ((* tmp = Frontier + NORMAL_METADATA_SIZE; *)
+            ((* tmp = Frontier + GC_NORMAL_METADATA_SIZE; *)
              PrimApp {args = Vector.new2 (Frontier, bytes metaDataSize),
                       dst = SOME temp,
                       prim = Prim.cpointerAdd},
              (* CHECK; if objptr <> cpointer, need non-trivial coercion here. *)
              (* dst = pointerToObjptr(tmp); *)
              Move {dst = dst, src = Cast (temp, Operand.ty dst)},
+             (* OW(dst, -GC_HEADER_SIZE) = header; *)
+             Move {dst = Offset {base = dst,
+                                 offset = headerOffset,
+                                 ty = Type.objptrHeader ()},
+                   src = header},
+             (* Frontier += size; *)
+             PrimApp {args = Vector.new2 (Frontier, bytes size),
+                      dst = SOME Frontier,
+                      prim = Prim.cpointerAdd})
+         end
+
+      fun sequence {dst, header, length, size} =
+         let
+            datatype z = datatype Operand.t
+            fun bytes (b: Bytes.t): Operand.t =
+               Operand.word (WordX.fromIntInf (Bytes.toIntInf b, WordSize.csize ()))
+            val metaDataSize = Runtime.sequenceMetaDataSize ()
+            val headerOffset = Runtime.headerOffset ()
+            val lengthOffset = Runtime.sequenceLengthOffset ()
+            val counterOffset = Runtime.sequenceCounterOffset ()
+            val header =
+               Operand.word (WordX.fromIntInf (Word.toIntInf header,
+                                               WordSize.objptrHeader ()))
+            val length =
+               Operand.word (WordX.fromIntInf (Int.toIntInf length,
+                                               WordSize.seqIndex ()))
+            val counter = Operand.zero (WordSize.seqIndex ())
+            val temp = Temporary (Temporary.new (Type.cpointer (), NONE))
+         in
+            Vector.new6
+            ((* tmp = Frontier + GC_SEQUENCE_METADATA_SIZE; *)
+             PrimApp {args = Vector.new2 (Frontier, bytes metaDataSize),
+                      dst = SOME temp,
+                      prim = Prim.cpointerAdd},
+             (* CHECK; if objptr <> cpointer, need non-trivial coercion here. *)
+             (* dst = pointerToObjptr(tmp); *)
+             Move {dst = dst, src = Cast (temp, Operand.ty dst)},
+             (* OW(dst, -(GC_HEADER_SIZE + GC_SEQUENCE_LENGTH_SIZE + GC_SEQUENCE_COUNTER_SIZE)) = 0x0; *)
+             Move {dst = Offset {base = dst,
+                                 offset = counterOffset,
+                                 ty = Type.seqIndex ()},
+                   src = counter},
+             (* OW(dst, -(GC_HEADER_SIZE + GC_SEQUENCE_LENGTH_SIZE)) = length; *)
+             Move {dst = Offset {base = dst,
+                                 offset = lengthOffset,
+                                 ty = Type.seqIndex ()},
+                   src = length},
              (* OW(dst, -GC_HEADER_SIZE) = header; *)
              Move {dst = Offset {base = dst,
                                  offset = headerOffset,

@@ -19,6 +19,7 @@ in
    structure CFunction = CFunction
    structure Label = Label
    structure Live = Live
+   structure ObjectType = ObjectType
    structure ObjptrTycon = ObjptrTycon
    structure RealX = RealX
    structure Runtime = Runtime
@@ -520,6 +521,12 @@ fun toMachine (rssa: Rssa.Program.t) =
                case M.Statement.move arg of
                   NONE => Vector.new0 ()
                 | SOME move => Vector.new1 move
+            fun mkInit (init, mkDst) =
+               Vector.toListMap
+               (init, fn {src, offset, ty} =>
+                move {dst = mkDst {offset = offset,
+                                   ty = ty},
+                      src = translateOperand src})
          in
             case s of
                Bind {dst = (var, _), src, ...} =>
@@ -535,22 +542,19 @@ fun toMachine (rssa: Rssa.Program.t) =
              | Move {dst, src} =>
                   move {dst = translateOperand dst,
                         src = translateOperand src}
-             | Object {dst, header, init, size} =>
+             | Object {dst = (dst, _), header, init, size} =>
                   let
-                     val dst = varOperand (#1 dst)
-                     val init =
-                        Vector.toListMap
-                        (init, fn {src, offset, ty} =>
-                         move {dst = M.Operand.Offset {base = dst,
-                                                       offset = offset,
-                                                       ty = ty},
-                               src = translateOperand src})
+                     val dst = varOperand dst
+                     fun mkDst {offset, ty} =
+                        M.Operand.Offset {base = dst,
+                                          offset = offset,
+                                          ty = ty}
                   in
                      Vector.concat
                      (M.Statement.object {dst = dst,
                                           header = header,
                                           size = size}
-                      :: init)
+                      :: mkInit (init, mkDst))
                   end
              | PrimApp {dst, prim, args} =>
                   let
@@ -566,6 +570,51 @@ fun toMachine (rssa: Rssa.Program.t) =
                              prim = prim})
                   end
              | ProfileLabel s => Vector.new1 (M.Statement.ProfileLabel s)
+             | Sequence {dst = (dst, ty), header, init, size} =>
+                  let
+                     val dst = varOperand dst
+                     val elt =
+                        case Type.deObjptr ty of
+                           NONE => Error.bug "Backend.getStatement: Sequence"
+                         | SOME opt =>
+                              (case Vector.sub (objectTypes, ObjptrTycon.index opt) of
+                                  ObjectType.Sequence {elt, ...} => elt
+                                | _ => Error.bug "Backend.getStatement: Sequence")
+                     val (scale, mkIndex) =
+                        case Scale.fromBytes (Type.bytes elt) of
+                           NONE =>
+                              (Scale.One, fn index =>
+                               M.Operand.word
+                               (WordX.mul
+                                (WordX.fromIntInf (IntInf.fromInt index,
+                                                   WordSize.seqIndex ()),
+                                 WordX.fromBytes (Type.bytes elt, WordSize.seqIndex ()),
+                                 {signed = false})))
+                         | SOME s =>
+                              (s, fn index =>
+                               M.Operand.word
+                               (WordX.fromIntInf (IntInf.fromInt index,
+                                                  WordSize.seqIndex ())))
+                  in
+                     Vector.concat
+                     (M.Statement.sequence {dst = dst,
+                                            header = header,
+                                            length = Vector.length init,
+                                            size = size}
+                      :: (List.concat o Vector.toListMapi)
+                         (init, fn (index, init) =>
+                          let
+                             fun mkDst {offset, ty} =
+                                M.Operand.SequenceOffset
+                                {base = dst,
+                                 index = mkIndex index,
+                                 offset = offset,
+                                 scale = scale,
+                                 ty = ty}
+                          in
+                             mkInit (init, mkDst)
+                          end))
+                  end
              | SetExnStackLocal =>
                   (* ExnStack = stackTop + (handlerOffset + LABEL_SIZE) - StackBottom; *)
                   let
