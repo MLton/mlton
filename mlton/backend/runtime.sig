@@ -79,6 +79,8 @@ signature RUNTIME =
       val maxFrameSize: Bytes.t
       val normalMetaDataSize: unit -> Bytes.t
       val objptrSize: unit -> Bytes.t
+      val sequenceCounterOffset: unit -> Bytes.t
+      val sequenceCounterSize: unit -> Bytes.t
       val sequenceLengthOffset: unit -> Bytes.t
       val sequenceLengthSize: unit -> Bytes.t
       val sequenceMetaDataSize: unit -> Bytes.t

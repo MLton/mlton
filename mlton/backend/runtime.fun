@@ -188,6 +188,14 @@ val sequenceLengthOffset : unit -> Bytes.t =
    Promise.lazy (fn () => Bytes.~ (Bytes.+ (headerSize (),
                                             sequenceLengthSize ())))
 
+(* see gc/sequence.h *)
+val sequenceCounterSize : unit -> Bytes.t =
+   Promise.lazy (Bits.toBytes o Control.Target.Size.seqIndex)
+val sequenceCounterOffset : unit -> Bytes.t =
+   Promise.lazy (fn () => Bytes.~ (Bytes.+ (Bytes.+ (headerSize (),
+                                                     sequenceLengthSize ()),
+                                            sequenceCounterSize ())))
+
 (* see gc/object.h and gc/sequence.h *)
 val sequenceMetaDataSize : unit -> Bytes.t =
    Promise.lazy (Bits.toBytes o Control.Target.Size.sequenceMetaData)
