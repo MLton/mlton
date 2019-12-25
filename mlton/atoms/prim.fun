@@ -700,6 +700,7 @@ val map: 'a t * ('a -> 'b) -> 'b t =
 val cast: 'a t -> 'b t = fn p => map (p, fn _ => Error.bug "Prim.cast")
 
 val arrayAlloc = fn {raw} => Array_alloc {raw = raw}
+val arrayArray = Array_array
 val arrayLength = Array_length
 val arrayToVector = Array_toVector
 val arrayUpdate = Array_update

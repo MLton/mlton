@@ -217,6 +217,7 @@ signature PRIM =
       val apply:
          'a t * 'b ApplyArg.t list * ('b * 'b -> bool) -> ('a, 'b) ApplyResult.t
       val arrayAlloc: {raw: bool} -> 'a t
+      val arrayArray: 'a t
       val arrayLength: 'a t
       val arrayToVector: 'a t
       val arrayUpdate: 'a t
