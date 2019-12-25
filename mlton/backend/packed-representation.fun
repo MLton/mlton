@@ -1038,6 +1038,57 @@ structure ObjptrRep =
           layout, Var.layout o #dst, List.layout Statement.layout)
          tuple
 
+      fun sequence (T {components, componentsTy, ty, tycon, ...},
+                    {dst = dst: Var.t,
+                     src: ({index: int} -> Operand.t) vector}) =
+         let
+            val (pre, init) =
+               Vector.fold
+               (src, ([], []), fn (src, (pre, init')) =>
+                let
+                   val (pre, init) =
+                      Vector.fold
+                      (components, (pre, []), fn ({component, offset}, (pre, init)) =>
+                       let
+                          val tmpVar = Var.newNoname ()
+                          val tmpTy = Component.ty component
+                          val statements =
+                             Component.tuple (component,
+                                              {dst = (tmpVar, tmpTy), src = src})
+                       in
+                          if List.isEmpty statements
+                             then (pre, init)
+                             else (statements :: pre,
+                                   {offset = offset,
+                                    src = Var {ty = tmpTy, var = tmpVar},
+                                    ty = tmpTy} :: init)
+                       end)
+                in
+                   (pre, Vector.fromListRev init :: init')
+                end)
+            val length = Vector.length src
+            val size =
+               Bytes.+ (Bytes.* (Type.bytes componentsTy, IntInf.fromInt length),
+                        Runtime.sequenceMetaDataSize ())
+            val size =
+               case !Control.align of
+                  Control.Align4 => Bytes.alignWord32 size
+                | Control.Align8 => Bytes.alignWord64 size
+         in
+            List.concatRev
+            ([Sequence {dst = (dst, ty),
+                        header = Runtime.typeIndexToHeader (ObjptrTycon.index tycon),
+                        init = Vector.fromListRev init,
+                        size = size}]
+             :: pre)
+         end
+
+      val sequence =
+         Trace.trace2
+         ("PackedRepresentation.ObjptrRep.sequence",
+          layout, Var.layout o #dst, List.layout Statement.layout)
+         sequence
+
       fun makeStatic {components, tycon, location, src} =
          let
             val (_, elems) =
@@ -2913,6 +2964,15 @@ fun compute (program as Ssa2.Program.T {datatypes, ...}) =
                NONE => TupleRep.tuple (tupleRep objectTy, {dst = dst, src = src})
              | SOME con => ConRep.conApp (conRep con, {dst = dst, src = src})
          end
+      fun sequence {args, dst = (dst, _), sequenceTy, oper} =
+         let
+            val src = Vector.map (args, fn args => makeSrc (args, oper))
+         in
+            case sequenceRep sequenceTy of
+               TupleRep.Indirect pr =>
+                  ObjptrRep.sequence (pr, {dst = dst, src = src})
+             | _ => Error.bug "PackedRepresentation.sequence: non-Indirect"
+         end
       fun getSelects (con, objectTy) =
          let
             datatype z = datatype ObjectCon.t
@@ -2976,6 +3036,7 @@ fun compute (program as Ssa2.Program.T {datatypes, ...}) =
        object = object,
        objectTypes = objectTypes,
        select = select,
+       sequence = sequence,
        static = static,
        toRtype = toRtype,
        update = update}

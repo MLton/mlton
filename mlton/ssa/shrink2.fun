@@ -1250,6 +1250,7 @@ fun shrinkFunction {globals: Statement.t vector} =
                                 | _ => dontChange ()
                             end
                        | Base.SequenceSub _ => simple {sideEffect = false})
+                | Sequence _ => simple {sideEffect = false}
                 | Var x => setVar (varInfo x)
             end
          and evalStatement arg : Statement.t list -> Statement.t list =

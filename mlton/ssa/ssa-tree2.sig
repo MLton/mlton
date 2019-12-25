@@ -119,6 +119,7 @@ signature SSA_TREE2 =
                            prim: Type.t Prim.t}
              | Select of {base: Var.t Base.t,
                           offset: int}
+             | Sequence of {args: Var.t vector vector}
              | Var of Var.t
 
             val equals: t * t -> bool

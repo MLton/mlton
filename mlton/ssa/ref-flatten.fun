@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2017 Matthew Fluet.
+(* Copyright (C) 2009,2017,2019 Matthew Fluet.
  * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -514,6 +514,20 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
            *)
           ; Value.dontFlatten value)
       fun const c = typeValue (Type.ofConst c)
+      fun sequence {args, resultType} =
+         let
+            val v = typeValue resultType
+            val _ =
+               Vector.foreach
+               (args, fn args =>
+                Vector.foreachi
+                (Prod.dest args, fn (offset, {elt, ...}) =>
+                 update {base = v,
+                         offset = offset,
+                         value = elt}))
+         in
+            v
+         end
       val {func, value = varValue, ...} =
          analyze {base = base,
                   coerce = coerce,
@@ -528,6 +542,7 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                   program = program,
                   select = fn {base, offset, ...} => select {base = base,
                                                              offset = offset},
+                  sequence = sequence,
                   update = update,
                   useFromTypeOnBinds = false}
       val varObject = Value.deObject o varValue

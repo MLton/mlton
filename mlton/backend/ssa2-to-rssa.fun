@@ -670,7 +670,7 @@ fun convertWordX (w: WordX.t): WordX.t =
 fun convert (program as S.Program.T {functions, globals, main, ...},
              {codegenImplementsPrim: Rssa.Type.t Rssa.Prim.t -> bool}): Rssa.Program.t =
    let
-      val {diagnostic, genCase, object, objectTypes, select, static, toRtype, update} =
+      val {diagnostic, genCase, object, objectTypes, select, sequence, static, toRtype, update} =
          PackedRepresentation.compute program
       val objectTypes = Vector.concat [ObjectType.basic (), objectTypes]
       val () =
@@ -1615,6 +1615,14 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                            baseTy = varType (Base.object base),
                                            dst = (var, ty),
                                            offset = offset})))
+                      | S.Exp.Sequence {args} =>
+                           (case toRtype ty of
+                               NONE => none ()
+                             | SOME dstTy =>
+                                  adds (sequence {args = args,
+                                                  dst = (valOf var, dstTy),
+                                                  sequenceTy = ty,
+                                                  oper = varOp}))
                       | S.Exp.Var y =>
                            (case toRtype ty of
                                NONE => none ()
@@ -1828,8 +1836,9 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                      NONE => word (Type.bogusWord ty)
                                                    | SOME s => real (RealX.zero s)))
                              | _ => keep ())
-                      | S.Exp.Var v => copy v
                       | S.Exp.Select _ => keep ()
+                      | S.Exp.Sequence _ => keep ()
+                      | S.Exp.Var v => copy v
                   end
 
             val translateStatement =

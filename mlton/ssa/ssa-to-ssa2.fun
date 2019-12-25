@@ -148,49 +148,7 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
                                                     prim = Prim.arrayLength})
                        | Vector_sub => sub ()
                        | Vector_vector =>
-                            let
-                               val siws = S2.WordSize.seqIndex ()
-                               fun mkIStmt (iVar, i) =
-                                  S2.Statement.Bind
-                                  {exp = (S2.Exp.Const o S2.Const.word o S2.WordX.fromIntInf)
-                                         (IntInf.fromInt i, siws),
-                                   ty = S2.Type.word siws,
-                                   var = SOME iVar}
-                               val nVar = Var.newString "n"
-                               val aVar = Var.newString "a"
-                               val vStmt =
-                                  S2.Statement.Bind
-                                  {exp = S2.Exp.PrimApp {args = Vector.new1 aVar,
-                                                         prim = Prim.arrayToVector},
-                                   ty = ty,
-                                   var = var}
-                               val stmts =
-                                  Vector.foldri
-                                  (args, [vStmt], fn (i, arg, stmts) =>
-                                   let
-                                      val iVar = Var.newString "i"
-                                      val iStmt = mkIStmt (iVar, i)
-                                      val uStmt =
-                                         S2.Statement.Update
-                                         {base = Base.SequenceSub {index = iVar,
-                                                                   sequence = aVar},
-                                          offset = 0,
-                                          value = arg}
-                                   in
-                                      iStmt::uStmt::stmts
-                                   end)
-                               val nStmt = mkIStmt (nVar, Vector.length args)
-                               val aStmt =
-                                  S2.Statement.Bind
-                                  {exp = S2.Exp.PrimApp {args = Vector.new1 nVar,
-                                                         prim = Prim.arrayAlloc
-                                                                {raw = false}},
-                                   ty = S2.Type.array1 (S2.Type.deSequence1 ty),
-                                   var = SOME aVar}
-                               val stmts = nStmt::aStmt::stmts
-                            in
-                               Vector.fromList stmts
-                            end
+                            simple (S2.Exp.Sequence {args = Vector.map (args, Vector.new1)})
                        | _ =>
                             simple (S2.Exp.PrimApp {args = args,
                                                     prim = convertPrim prim})

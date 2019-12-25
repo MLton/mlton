@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -42,6 +42,8 @@ signature ANALYZE2 =
           select: {base: 'a,
                    offset: int,
                    resultType: Type.t} -> 'a,
+          sequence: {args: 'a Prod.t vector,
+                     resultType: Type.t} -> 'a,
           update: {base: 'a,
                    offset: int,
                    value: 'a} -> unit,

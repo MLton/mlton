@@ -18,7 +18,7 @@ datatype z = datatype Transfer.t
 fun 'a analyze
    {base, coerce, const, filter, filterWord, fromType, inject, layout, object, primApp,
     program = Program.T {functions, globals, main, ...},
-    select, update, useFromTypeOnBinds} =
+    select, sequence, update, useFromTypeOnBinds} =
    let
       fun coerces (msg, from, to) =
          if Vector.length from = Vector.length to
@@ -231,6 +231,24 @@ fun 'a analyze
                select {base = baseValue base,
                        offset = offset,
                        resultType = ty}
+          | Sequence {args} =>
+               let
+                  val args =
+                     case Type.dest ty of
+                        Type.Object {args = ts, con = ObjectCon.Sequence} =>
+                           Vector.map
+                           (args, fn args =>
+                            Prod.make
+                            (Vector.map2
+                             (args, Prod.dest ts,
+                              fn (x, {isMutable, ...}) =>
+                              {elt = value x,
+                               isMutable = isMutable})))
+                      | _ => Error.bug "Analyze2.loopBind (strange sequence)"
+               in
+                  sequence {args = args,
+                            resultType = ty}
+               end
           | Var x => value x
       fun loopStatement (s: Statement.t): unit =
          (case s of
