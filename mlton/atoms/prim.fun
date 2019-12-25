@@ -35,6 +35,7 @@ structure Kind =
 
 datatype 'a t =
    Array_alloc of {raw: bool} (* to rssa (as runtime C fn) *)
+ | Array_array (* to ssa2 *)
  | Array_copyArray (* to rssa (as runtime C fn) *)
  | Array_copyVector (* to rssa (as runtime C fn) *)
  | Array_length (* to rssa *)
@@ -223,6 +224,7 @@ fun toString (n: 'a t): string =
    in
       case n of
          Array_alloc {raw} => if raw then "Array_allocRaw" else "Array_alloc"
+       | Array_array => "Array_array"
        | Array_copyArray => "Array_copyArray"
        | Array_copyVector => "Array_copyVector"
        | Array_length => "Array_length"
@@ -376,6 +378,7 @@ fun layoutFull (p, layoutX) =
 
 val equals: 'a t * 'a t -> bool =
    fn (Array_alloc {raw = r}, Array_alloc {raw = r'}) => Bool.equals (r, r')
+    | (Array_array, Array_array) => true
     | (Array_copyArray, Array_copyArray) => true
     | (Array_copyVector, Array_copyVector) => true
     | (Array_length, Array_length) => true
@@ -553,6 +556,7 @@ val map: 'a t * ('a -> 'b) -> 'b t =
    fn (p, f) =>
    case p of
       Array_alloc {raw} => Array_alloc {raw = raw}
+    | Array_array => Array_array
     | Array_copyArray => Array_copyArray
     | Array_copyVector => Array_copyVector
     | Array_length => Array_length
@@ -801,6 +805,7 @@ val kind: 'a t -> Kind.t =
    in
       case p of
          Array_alloc _ => Moveable
+       | Array_array => Moveable
        | Array_copyArray => SideEffect
        | Array_copyVector => SideEffect
        | Array_length => Functional
@@ -1011,6 +1016,7 @@ in
    val all: unit t list =
       [Array_alloc {raw = false},
        Array_alloc {raw = true},
+       Array_array,
        Array_copyArray,
        Array_copyVector,
        Array_length,
@@ -1295,6 +1301,7 @@ fun 'a checkApp (prim: 'a t,
   in
       case prim of
          Array_alloc _ => oneTarg (fn targ => (oneArg seqIndex, array targ))
+       | Array_array => oneTarg (fn targ => (nArgs (Vector.map (args, fn _ => targ)), array targ))
        | Array_copyArray => oneTarg (fn t => (fiveArgs (array t, seqIndex, array t, seqIndex, seqIndex), unit))
        | Array_copyVector => oneTarg (fn t => (fiveArgs (array t, seqIndex, vector t, seqIndex, seqIndex), unit))
        | Array_length => oneTarg (fn t => (oneArg (array t), seqIndex))
@@ -1490,6 +1497,7 @@ fun ('a, 'b) extractTargs (prim: 'b t,
    in
       case prim of
          Array_alloc _ => one (deArray result)
+       | Array_array => one (deArray result)
        | Array_copyArray => one (deArray (arg 0))
        | Array_copyVector => one (deArray (arg 0))
        | Array_length => one (deArray (arg 0))

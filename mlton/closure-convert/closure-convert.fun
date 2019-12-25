@@ -961,7 +961,17 @@ fun closureConvert
                       in
                          simple
                          (case Prim.name prim of
-                             Array_update =>
+                             Array_array =>
+                                let
+                                   val ys = Vector.map (args, varExpInfo)
+                                   val v = Value.deArray v
+                                in
+                                   primApp (v1 (valueType v),
+                                            Vector.map (ys, fn y =>
+                                                        coerce (convertVarInfo y,
+                                                                VarInfo.value y, v)))
+                                end
+                           | Array_update =>
                                 let
                                    val a = varExpInfo (arg 0)
                                    val y = varExpInfo (arg 2)

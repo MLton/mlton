@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2017,2018 Matthew Fluet.
+(* Copyright (C) 2009,2017-2019 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -627,6 +627,18 @@ fun transform (program: Program.t): Program.t =
                   case Prim.name prim of
                      Array_alloc _ =>
                         coerce {from = arg 0, to = arrayLength result}
+                   | Array_array =>
+                        let
+                           val l =
+                              (const o S.Const.word o WordX.fromIntInf)
+                              (IntInf.fromInt (Vector.length args),
+                               WordSize.seqIndex ())
+                        in
+                           (coerce {from = l, to = arrayLength result}
+                            ; Vector.foreach
+                              (args, fn arg =>
+                               coerce {from = arg, to = dearray result}))
+                        end
                    | Array_copyArray =>
                         let
                            val a = dearray (arg 0)

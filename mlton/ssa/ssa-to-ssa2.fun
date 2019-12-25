@@ -115,6 +115,8 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
              | S.Exp.PrimApp {args, prim, ...} =>
                   let
                      fun arg i = Vector.sub (args, i)
+                     fun sequence () =
+                        simple (S2.Exp.Sequence {args = Vector.map (args, Vector.new1)})
                      fun sub () =
                         simple
                         (S2.Exp.Select {base = Base.SequenceSub {index = arg 1,
@@ -123,7 +125,8 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
                      datatype z = datatype Prim.Name.t
                    in
                       case Prim.name prim of
-                         Array_sub => sub ()
+                         Array_array => sequence ()
+                       | Array_sub => sub ()
                        | Array_update =>
                             maybeBindUnit
                             (S2.Statement.Update
@@ -147,8 +150,7 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
                             simple (S2.Exp.PrimApp {args = args,
                                                     prim = Prim.arrayLength})
                        | Vector_sub => sub ()
-                       | Vector_vector =>
-                            simple (S2.Exp.Sequence {args = Vector.map (args, Vector.new1)})
+                       | Vector_vector => sequence ()
                        | _ =>
                             simple (S2.Exp.PrimApp {args = args,
                                                     prim = convertPrim prim})
