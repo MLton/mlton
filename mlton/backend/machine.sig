@@ -22,20 +22,6 @@ signature MACHINE =
 
       structure ChunkLabel: ID
 
-      structure Temporary:
-         sig
-            type t
-
-            val equals: t * t -> bool
-            val index: t -> int
-            val indexOpt: t -> int option
-            val layout: t -> Layout.t
-            val new: Type.t * int option -> t
-            val setIndex: t * int -> unit
-            val toString: t -> string
-            val ty: t -> Type.t
-         end
-
       structure Global:
          sig
             type t
@@ -53,6 +39,20 @@ signature MACHINE =
             datatype t = T of {offset: Bytes.t,
                                ty: Type.t}
 
+            val ty: t -> Type.t
+         end
+
+      structure Temporary:
+         sig
+            type t
+
+            val equals: t * t -> bool
+            val index: t -> int
+            val indexOpt: t -> int option
+            val layout: t -> Layout.t
+            val new: Type.t * int option -> t
+            val setIndex: t * int -> unit
+            val toString: t -> string
             val ty: t -> Type.t
          end
 

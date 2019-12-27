@@ -14,67 +14,6 @@ open S
 
 structure ChunkLabel = Id (val noname = "Chunk")
 
-structure Temporary =
-   struct
-      datatype t = T of {index: int option ref,
-                         ty: Type.t}
-
-      local
-         fun make f (T r) = f r
-      in
-         val indexOpt = ! o (make #index)
-         val ty = make #ty
-      end
-
-      fun layout (T {index, ty, ...}) =
-         let
-            open Layout
-         in
-            seq [str (concat ["T", Type.name ty]),
-                 paren (case !index of
-                           NONE => str "NONE"
-                         | SOME i => Int.layout i),
-                 str ": ",
-                 Type.layout ty]
-         end
-
-      val toString = Layout.toString o layout
-
-      fun index (r as T {index, ...}) =
-         case !index of
-            NONE =>
-               Error.bug (concat ["Machine.Temporary: temporary ",
-                                  toString r, " missing index"])
-          | SOME i => i
-
-      fun setIndex (r as T {index, ...}, i) =
-         case !index of
-            NONE => index := SOME i
-          | SOME _ =>
-               Error.bug (concat ["Machine.Temporary: temporary ",
-                                  toString r, " index already set"])
-
-      fun new (ty, i) = T {index = ref i,
-                           ty = ty}
-
-      fun equals (r, r') =
-         (case (indexOpt r, indexOpt r') of
-             (SOME i, SOME i') => i = i'
-           | _ => false)
-         andalso CType.equals (Type.toCType (ty r), Type.toCType (ty r'))
-
-      val equals =
-         Trace.trace2 ("Machine.Temporary.equals", layout, layout, Bool.layout) equals
-
-      val isSubtype: t * t -> bool =
-         fn (T {index = i, ty = t}, T {index = i', ty = t'}) =>
-         (case (!i, !i') of
-             (SOME i, SOME i') => i = i'
-           | _ => false)
-         andalso Type.isSubtype (t, t')
-         andalso CType.equals (Type.toCType t, Type.toCType t')
-   end
-
 structure Global =
    struct
       datatype t = T of {index: int,
@@ -147,7 +86,7 @@ structure StackOffset =
 
       val interfere: t * t -> bool =
          fn (T {offset = b, ty = ty}, T {offset = b', ty = ty'}) =>
-         let 
+         let
             val max = Bytes.+ (b, Type.bytes ty)
             val max' = Bytes.+ (b', Type.bytes ty')
          in
@@ -157,6 +96,67 @@ structure StackOffset =
       fun shift (T {offset, ty}, size): t =
          T {offset = Bytes.- (offset, size),
             ty = ty}
+   end
+
+structure Temporary =
+   struct
+      datatype t = T of {index: int option ref,
+                         ty: Type.t}
+
+      local
+         fun make f (T r) = f r
+      in
+         val indexOpt = ! o (make #index)
+         val ty = make #ty
+      end
+
+      fun layout (T {index, ty, ...}) =
+         let
+            open Layout
+         in
+            seq [str (concat ["T", Type.name ty]),
+                 paren (case !index of
+                           NONE => str "NONE"
+                         | SOME i => Int.layout i),
+                 str ": ",
+                 Type.layout ty]
+         end
+
+      val toString = Layout.toString o layout
+
+      fun index (r as T {index, ...}) =
+         case !index of
+            NONE =>
+               Error.bug (concat ["Machine.Temporary: temporary ",
+                                  toString r, " missing index"])
+          | SOME i => i
+
+      fun setIndex (r as T {index, ...}, i) =
+         case !index of
+            NONE => index := SOME i
+          | SOME _ =>
+               Error.bug (concat ["Machine.Temporary: temporary ",
+                                  toString r, " index already set"])
+
+      fun new (ty, i) = T {index = ref i,
+                           ty = ty}
+
+      fun equals (r, r') =
+         (case (indexOpt r, indexOpt r') of
+             (SOME i, SOME i') => i = i'
+           | _ => false)
+         andalso CType.equals (Type.toCType (ty r), Type.toCType (ty r'))
+
+      val equals =
+         Trace.trace2 ("Machine.Temporary.equals", layout, layout, Bool.layout) equals
+
+      val isSubtype: t * t -> bool =
+         fn (T {index = i, ty = t}, T {index = i', ty = t'}) =>
+         (case (!i, !i') of
+             (SOME i, SOME i') => i = i'
+           | _ => false)
+         andalso Type.isSubtype (t, t')
+         andalso CType.equals (Type.toCType t, Type.toCType t')
    end
 
 structure Operand =
