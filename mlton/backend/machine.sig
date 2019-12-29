@@ -42,6 +42,33 @@ signature MACHINE =
             val ty: t -> Type.t
          end
 
+      structure StaticHeap:
+         sig
+            structure Kind:
+               sig
+                  datatype t = Immutable | Mutable | Root
+
+                  val all: t list
+                  val label: t -> Label.t
+                  val layout: t -> Layout.t
+                  val name: t -> string
+               end
+
+            structure Ref:
+               sig
+                  datatype t = T of {index: int,
+                                     kind: Kind.t,
+                                     offset: Bytes.t,
+                                     ty: Type.t}
+
+                  val index: t -> int
+                  val kind: t -> Kind.t
+                  val layout: t -> Layout.t
+                  val offset: t -> Bytes.t
+                  val ty: t -> Type.t
+               end
+         end
+
       structure Temporary:
          sig
             type t
@@ -78,6 +105,7 @@ signature MACHINE =
              | Static of {index: int,
                           offset: Bytes.t,
                           ty: Type.t}
+             | StaticHeapRef of StaticHeap.Ref.t
              | Temporary of Temporary.t
 
             val equals: t * t -> bool

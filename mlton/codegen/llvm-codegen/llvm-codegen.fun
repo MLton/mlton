@@ -1043,6 +1043,17 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
          in
             LLVM.ModuleContext.addGlobDecl (mc, name, {const = const, ty = ty, vis = SOME "hidden"})
          end
+      fun staticHeapVal (kind, mc): LLVM.Value.t =
+         let
+            val name = concat ["@", Label.toString (StaticHeap.Kind.label kind)]
+            val ty = LLVM.Type.word8
+            val const =
+               case kind of
+                  StaticHeap.Kind.Immutable => true
+                | _ => false
+         in
+            LLVM.ModuleContext.addGlobDecl (mc, name, {const = const, ty = ty, vis = SOME "hidden"})
+         end
 
       val gcState = ("%gcState", LLVM.Type.cpointer)
       local
@@ -1226,6 +1237,18 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                            val tmp = newTemp LLVM.Type.cpointer
                            val res = newTemp (Type.toLLVMType ty)
                            val _ = $(gep {dst = tmp, src = staticVal (index, mc),
+                                          args = [LLVM.Value.word
+                                                  (WordX.fromBytes
+                                                   (offset, WordSize.word32))]})
+                           val _ = $(cast {dst = res, src = tmp})
+                        in
+                           res
+                        end
+                   | Operand.StaticHeapRef (StaticHeap.Ref.T {kind, offset, ty, ...}) =>
+                        let
+                           val tmp = newTemp LLVM.Type.cpointer
+                           val res = newTemp (Type.toLLVMType ty)
+                           val _ = $(gep {dst = tmp, src = staticHeapVal (kind, mc),
                                           args = [LLVM.Value.word
                                                   (WordX.fromBytes
                                                    (offset, WordSize.word32))]})

@@ -98,6 +98,82 @@ structure StackOffset =
             ty = ty}
    end
 
+structure StaticHeap =
+   struct
+      structure Kind =
+         struct
+            datatype t = Immutable | Mutable | Root
+
+            val all = [Immutable, Mutable, Root]
+
+            fun equals (k1, k2) =
+               case (k1, k2) of
+                  (Immutable, Immutable) => true
+                | (Mutable, Mutable) => true
+                | (Root, Root) => true
+                | _ => false
+
+            fun toString k =
+               case k of
+                  Immutable => "immutable"
+                | Mutable => "mutable"
+                | Root => "root"
+            val layout = Layout.str o toString
+
+            fun name k =
+               case k of
+                  Immutable => "I"
+                | Mutable => "M"
+                | Root => "R"
+
+            val label =
+               let
+                  val labels =
+                     List.map
+                     (all, fn k =>
+                      (k, Label.fromString (concat ["staticHeap", name k])))
+               in
+                  fn k =>
+                  case List.peek (labels, fn (k', _) => equals (k, k')) of
+                     SOME (_, l) => l
+                   | _ => Error.bug "Machine.StaticHeap.Kind.label"
+               end
+         end
+
+      structure Ref =
+         struct
+            datatype t = T of {index: int,
+                               kind: Kind.t,
+                               offset: Bytes.t,
+                               ty: Type.t}
+
+            local
+               fun mk sel (T r) = sel r
+            in
+               val index = mk #index
+               val kind = mk #kind
+               val offset = mk #offset
+               val ty = mk #ty
+            end
+
+            fun equals (T {index = index1, kind = kind1, offset = offset1, ...},
+                        T {index = index2, kind = kind2, offset = offset2, ...}) =
+               Int.equals (index1, index2)
+               andalso Kind.equals (kind1, kind2)
+               andalso Bytes.equals (offset1, offset2)
+
+            fun layout (T {index, kind, offset, ty}) =
+               let
+                  open Layout
+               in
+                  seq [str (concat ["H", Kind.name kind]),
+                       tuple [Int.layout index, Bytes.layout offset],
+                       str ": ",
+                       Type.layout ty]
+               end
+         end
+   end
+
 structure Temporary =
    struct
       datatype t = T of {index: int option ref,
@@ -181,6 +257,7 @@ structure Operand =
        | Static of {index: int,
                     offset: Bytes.t,
                     ty: Type.t}
+       | StaticHeapRef of StaticHeap.Ref.t
        | Temporary of Temporary.t
 
     val word = Const o Const.Word
@@ -203,6 +280,7 @@ structure Operand =
         | StackOffset s => StackOffset.ty s
         | StackTop => Type.cpointer ()
         | Static {ty, ...} => ty
+        | StaticHeapRef h => StaticHeap.Ref.ty h
         | Temporary t => Temporary.ty t
 
     fun layout (z: t): Layout.t =
@@ -236,6 +314,7 @@ structure Operand =
                   seq [str "M",
                        tuple [Int.layout index, Type.layout ty,
                               Bytes.layout offset]]
+             | StaticHeapRef h => StaticHeap.Ref.layout h
              | Temporary t => Temporary.layout t
          end
 
@@ -260,6 +339,8 @@ structure Operand =
               i = i'
               andalso Bytes.equals (j, j')
               andalso Type.equals (t, t')
+           | (StaticHeapRef h1, StaticHeapRef h2) =>
+              StaticHeap.Ref.equals (h1, h2)
            | (Temporary t, Temporary t') => Temporary.equals (t, t')
            | _ => false
 
@@ -285,6 +366,8 @@ structure Operand =
                   StackOffset.interfere (so, so')
              | (Static {index, ...}, Static {index=index', ...}) => index = index'
              | (Temporary t, Temporary t') => Temporary.equals (t, t')
+             | (StaticHeapRef h1, StaticHeapRef h2) =>
+                  StaticHeap.Ref.equals (h1, h2)
              | _ => false
          end
 
@@ -1182,6 +1265,7 @@ structure Program =
                            0 <= index andalso index < Vector.length statics
                            andalso
                            (Type.isCPointer ty orelse Type.isObjptr ty)
+                      | StaticHeapRef _ => true
                       | StackTop => true
                       | Temporary t => Alloc.doesDefine (alloc, Live.Temporary t)
                in

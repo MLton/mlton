@@ -356,6 +356,15 @@ struct
                in
                   Vector.new1 (x86.Operand.immediate base, x86MLton.pointerSize)
                end
+           | StaticHeapRef (Machine.StaticHeap.Ref.T {kind, offset, ...}) =>
+               let
+                  val offset = Bytes.toInt offset
+                  val base =
+                     x86.Immediate.labelPlusInt
+                     (Machine.StaticHeap.Kind.label kind, offset)
+               in
+                  Vector.new1 (x86.Operand.immediate base, x86MLton.pointerSize)
+               end
           | StackTop => 
                let 
                   val stackTop = x86MLton.gcState_stackTopContentsOperand ()

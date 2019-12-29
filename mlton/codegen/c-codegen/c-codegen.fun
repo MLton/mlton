@@ -956,6 +956,11 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
              | StackTop => "StackTop"
              | Static {index, offset, ty} =>
                   concat ["M", C.args [Type.toC ty, C.int index, C.bytes offset]]
+             | StaticHeapRef h =>
+                  concat ["H",
+                          C.args [Type.toC (StaticHeap.Ref.ty h),
+                                  StaticHeap.Kind.name (StaticHeap.Ref.kind h),
+                                  C.bytes (StaticHeap.Ref.offset h)]]
              | Temporary t =>
                   temporaryName (Type.toCType (Temporary.ty t), Temporary.index t)
       in
