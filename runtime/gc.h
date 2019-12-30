@@ -42,6 +42,7 @@ typedef GC_state GCState_t;
 #include "gc/object-size.h"
 #include "gc/generational.h"
 #include "gc/heap.h"
+#include "gc/static-heaps.h"
 #include "gc/current.h"
 #include "gc/foreach.h"
 #include "gc/translate.h"

@@ -22,6 +22,9 @@ void foreachGlobalObjptr (GC_state s, GC_foreachObjptrClosure f) {
       fprintf (stderr, "foreachGlobal %u\n", i);
     callIfIsObjptr (s, f, &s->globals [i]);
   }
+  pointer rootStart = alignFrontier (s, s->staticHeaps.root.start);
+  pointer rootBack = s->staticHeaps.root.start + s->staticHeaps.root.size;
+  foreachObjptrInRange (s, rootStart, &rootBack, f, TRUE);
   if (DEBUG_DETAILED)
     fprintf (stderr, "foreachGlobal threads\n");
   callIfIsObjptr (s, f, &s->callFromCHandlerThread);

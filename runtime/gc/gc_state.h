@@ -62,6 +62,7 @@ struct GC_state {
   struct GC_signalsInfo signalsInfo;
   struct GC_sourceMaps sourceMaps;
   pointer stackBottom; /* Bottom of stack in current thread. */
+  struct GC_staticHeaps staticHeaps;
   struct GC_sysvals sysvals;
   GC_weak weaks; /* Linked list of (live) weak pointers */
 };

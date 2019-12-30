@@ -516,6 +516,42 @@ fun outputDeclarations
               end))
           ; print "};\n")
 
+      fun declareStaticHeaps () =
+         let
+            fun sym k = Label.toString (Machine.StaticHeap.Kind.label k)
+            fun ty k = concat [sym k, "Ty"]
+            val _ =
+               List.foreach
+               (Machine.StaticHeap.Kind.all, fn k =>
+                (print "typedef "
+                 ; (case k of
+                       Machine.StaticHeap.Kind.Immutable => print "const "
+                     | _ => ())
+                 ; print "struct __attribute__ ((aligned(16), packed)) {\n"
+                 ; print "} "
+                 ; print (ty k)
+                 ; print ";\n"))
+            val _ =
+               List.foreach
+               (Machine.StaticHeap.Kind.all, fn k =>
+                (print "PRIVATE "
+                 ; print (ty k)
+                 ; print " "
+                 ; print (sym k)
+                 ; print ";\n"))
+            val _ =
+               List.foreach
+               (Machine.StaticHeap.Kind.all, fn k =>
+                (print "PRIVATE "
+                 ; print (ty k)
+                 ; print " "
+                 ; print (sym k)
+                 ; print " = {\n"
+                 ; print "};\n"))
+         in
+            ()
+         end
+
       fun declareArray (ty: string,
                         name: string,
                         {firstElemLen: bool, oneline: bool},
@@ -705,6 +741,7 @@ fun outputDeclarations
       ; declareStatics (); print "\n"
       ; declareHeapStatics (); print "\n"
       ; declareStaticInits (); print "\n"
+      ; declareStaticHeaps (); print "\n"
       ; declareFrameInfos (); print "\n"
       ; declareObjectTypes (); print "\n"
       ; declareSourceMaps (); print "\n"
@@ -1642,6 +1679,13 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
              Static.Location.Heap => ()
            | _ => print (concat [prefix, "PointerAux static_", C.int i, ";\n"]))
 
+      fun declareStaticHeaps (prefix: string, print) =
+         List.foreach
+         (Machine.StaticHeap.Kind.all, fn k =>
+          print (concat [prefix, "PointerAux ",
+                         Label.toString (Machine.StaticHeap.Kind.label k),
+                         ";\n"]))
+
       fun outputChunks chunks =
          let
             val {done, print, ...} = outputC ()
@@ -1649,6 +1693,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
             outputIncludes (["c-chunk.h"], print); print "\n"
             ; declareGlobals ("PRIVATE extern ", print); print "\n"
             ; declareStatics ("PRIVATE extern ", print); print "\n"
+            ; declareStaticHeaps ("PRIVATE extern ", print); print "\n"
             ; declareNextChunks (chunks, print); print "\n"
             ; declareFFI (chunks, print)
             ; List.foreach (chunks, fn chunk => outputChunkFn (chunk, print))
