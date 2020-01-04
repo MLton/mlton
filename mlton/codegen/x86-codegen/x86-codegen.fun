@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2010,2014,2019 Matthew Fluet.
+(* Copyright (C) 2009-2010,2014,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -112,7 +112,8 @@ struct
                      maxFrameSize, 
                      objectTypes, 
                      reals, 
-                     statics, ...} =
+                     statics,
+                     staticHeaps, ...} =
                   program
               in
                 val program =
@@ -126,7 +127,8 @@ struct
                    objectTypes = objectTypes, 
                    reals = reals, 
                    sourceMaps = getSourceMaps (),
-                   statics = statics}
+                   statics = statics,
+                   staticHeaps = staticHeaps}
               end
               val {print, done, ...} = makeC ()
               val additionalMainArgs =

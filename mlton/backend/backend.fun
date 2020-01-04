@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2013-2014,2017,2019 Matthew Fluet.
+(* Copyright (C) 2009,2013-2014,2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1240,7 +1240,8 @@ fun toMachine (rssa: Rssa.Program.t) =
           objectTypes = objectTypes,
           reals = allReals (),
           sourceMaps = sourceMaps,
-          statics = allStatics ()}
+          statics = allStatics (),
+          staticHeaps = fn _ => Vector.new0 ()}
    in
       machine
    end

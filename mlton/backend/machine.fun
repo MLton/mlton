@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014,2016-2017,2019 Matthew Fluet.
+(* Copyright (C) 2009,2014,2016-2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -170,6 +170,59 @@ structure StaticHeap =
                        tuple [Int.layout index, Bytes.layout offset],
                        str ": ",
                        Type.layout ty]
+               end
+         end
+
+      structure Object =
+         struct
+            structure Elem =
+               struct
+                  datatype t =
+                     Const of Const.t
+                   | Ref of Ref.t
+
+                  fun layout e =
+                     case e of
+                        Const c => Const.layout c
+                      | Ref r => Ref.layout r
+               end
+
+            datatype t =
+               Normal of {header: word,
+                          init: {offset: Bytes.t,
+                                 src: Elem.t} vector,
+                          size: Bytes.t,
+                          ty: Type.t}
+             | Sequence of {header: word,
+                            init: {offset: Bytes.t,
+                                   src: Elem.t} vector vector,
+                            size: Bytes.t,
+                            ty: Type.t}
+
+            fun layout d =
+               let
+                  open Layout
+                  fun headerLayout header =
+                     seq [str "0x", Word.layout header]
+                  val initLayout =
+                     Vector.layout
+                     (fn {offset, src} =>
+                      record [("offset", Bytes.layout offset),
+                              ("src", Elem.layout src)])
+               in
+                  case d of
+                     Normal {header, init, size, ty} =>
+                        seq [str "Normal ",
+                             record [("header", headerLayout header),
+                                     ("init", initLayout init),
+                                     ("size", Bytes.layout size),
+                                     ("ty", Type.layout ty)]]
+                   | Sequence {header, init, size, ty} =>
+                        seq [str "Sequence ",
+                             record [("header", headerLayout header),
+                                     ("init", Vector.layout initLayout init),
+                                     ("size", Bytes.layout size),
+                                     ("ty", Type.layout ty)]]
                end
          end
    end
@@ -899,7 +952,8 @@ structure Program =
                          objectTypes: ObjectType.t vector,
                          reals: (RealX.t * Global.t) list,
                          sourceMaps: SourceMaps.t option,
-                         statics: (int Static.t * Global.t option) vector}
+                         statics: (int Static.t * Global.t option) vector,
+                         staticHeaps: StaticHeap.Kind.t -> StaticHeap.Object.t vector}
 
       fun clear (T {chunks, sourceMaps, ...}) =
          (List.foreach (chunks, Chunk.clear)
@@ -907,7 +961,7 @@ structure Program =
 
       fun layouts (T {chunks, frameInfos, frameOffsets, handlesSignals,
                       main = {label, ...},
-                      maxFrameSize, objectTypes, sourceMaps, statics, ...},
+                      maxFrameSize, objectTypes, sourceMaps, statics, staticHeaps, ...},
                    output': Layout.t -> unit) =
          let
             open Layout
@@ -935,6 +989,10 @@ structure Program =
                       case g of
                          SOME g' => seq [str " -> ", Global.layout g']
                        | NONE => empty])
+            ; output (str "\n")
+            ; List.foreach (StaticHeap.Kind.all, fn k =>
+                            (output (StaticHeap.Kind.layout k)
+                             ; output (Vector.layout StaticHeap.Object.layout (staticHeaps k))))
             ; output (str "\n")
             ; List.foreach (chunks, fn chunk => Chunk.layouts (chunk, output))
          end
@@ -967,7 +1025,7 @@ structure Program =
 
       fun shuffle (T {chunks, frameInfos, frameOffsets,
                       handlesSignals, main, maxFrameSize,
-                      objectTypes, reals, sourceMaps, statics}) =
+                      objectTypes, reals, sourceMaps, statics, staticHeaps}) =
          let
             fun shuffle v =
                let
@@ -996,7 +1054,8 @@ structure Program =
                objectTypes = objectTypes,
                reals = reals,
                sourceMaps = sourceMaps,
-               statics = statics}
+               statics = statics,
+               staticHeaps = staticHeaps}
          end
 
       structure Alloc =

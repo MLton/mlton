@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014-2017,2019 Matthew Fluet.
+(* Copyright (C) 2009,2014-2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -183,6 +183,36 @@ structure Static =
          end
    end
 
+structure StaticHeap =
+   struct
+      open StaticHeap
+      structure Ref =
+         struct
+            open Ref
+            fun toC (T {kind, index, ...}) =
+               concat ["(Objptr)(&",
+                       Label.toString (Kind.label kind),
+                       ".obj", C.int index,
+                       ".data)"]
+         end
+      structure Object =
+         struct
+            open Object
+            structure Elem =
+               struct
+                  open Elem
+                  fun toCType e =
+                     case e of
+                        Const c => Const.toCType c
+                      | Ref _ => CType.objptr
+                  fun toC e =
+                     case e of
+                        Const c => Const.toC c
+                      | Ref r => Ref.toC r
+               end
+         end
+   end
+
 structure Operand =
    struct
       open Operand
@@ -299,7 +329,7 @@ fun outputDeclarations
     print: string -> unit,
     program = (Program.T
                {frameInfos, frameOffsets, maxFrameSize,
-                objectTypes, reals, sourceMaps, statics, ...}),
+                objectTypes, reals, sourceMaps, statics, staticHeaps, ...}),
     rest: unit -> unit
     }: unit =
    let
@@ -520,6 +550,56 @@ fun outputDeclarations
          let
             fun sym k = Label.toString (Machine.StaticHeap.Kind.label k)
             fun ty k = concat [sym k, "Ty"]
+
+            fun mkPad (next, offset) =
+               if Bytes.equals (next, offset)
+                  then NONE
+                  else let
+                          val pad =
+                             concat [CType.toString CType.Word8,
+                                     " pad", Bytes.toString next,
+                                     "[", Bytes.toString (Bytes.- (offset, next)), "]"]
+                       in
+                          SOME pad
+                       end
+
+            fun mkFieldTys (init, ty) =
+               let
+                  fun maybePad (next, offset, fieldTys) =
+                     Option.fold (mkPad (next, offset), fieldTys, op ::)
+                  val (fieldTys, next) =
+                     Vector.fold
+                     (init, ([], Bytes.zero), fn ({offset, src}, (fieldTys, next)) =>
+                      let
+                         val fieldTys = maybePad (next, offset, fieldTys)
+                         val fldCType = StaticHeap.Object.Elem.toCType src
+                         val fld = concat [CType.toString fldCType,
+                                           " fld", Bytes.toString offset]
+                      in
+                         (fld::fieldTys, Bytes.+ (offset, CType.size fldCType))
+                      end)
+                  val fieldTys = maybePad (next, Type.bytes ty, fieldTys)
+               in
+                  List.rev fieldTys
+               end
+
+            val headerTy = CType.objptrHeader ()
+            val counterTy = CType.seqIndex ()
+            val lengthTy = CType.seqIndex ()
+
+            fun mkFields init =
+               Vector.map
+               (init, fn {offset, src} =>
+                concat [".fld", Bytes.toString offset,
+                        " = ", StaticHeap.Object.Elem.toC src])
+
+            fun mkHeader header =
+               WordX.toC (WordX.fromIntInf (Word.toIntInf header, WordSize.objptrHeader()))
+            val counter =
+               WordX.toC (WordX.zero (WordSize.seqIndex ()))
+            fun mkLength length =
+               WordX.toC (WordX.fromIntInf (Int.toIntInf length, WordSize.seqIndex ()))
+
             val _ =
                List.foreach
                (Machine.StaticHeap.Kind.all, fn k =>
@@ -528,6 +608,91 @@ fun outputDeclarations
                        Machine.StaticHeap.Kind.Immutable => print "const "
                      | _ => ())
                  ; print "struct __attribute__ ((aligned(16), packed)) {\n"
+                 ; (Vector.foreachi
+                    (staticHeaps k, fn (i, obj) =>
+                     (print "struct __attribute__ ((packed)) {"
+                      ; (case obj of
+                            StaticHeap.Object.Normal {init, size, ty, ...} =>
+                               let
+                                  val ty =
+                                     case Type.deObjptr ty of
+                                        NONE => Error.bug "CCodegen.declareStaticHeaps: Normal"
+                                      | SOME opt =>
+                                           (case Vector.sub (objectTypes, ObjptrTycon.index opt) of
+                                               ObjectType.Normal {ty, ...} => ty
+                                             | _ => Error.bug "CCodegen.declareStaticHeaps: Normal")
+                               in
+                                  print "struct __attribute__ ((packed)) {"
+                                  ; print (CType.toString headerTy)
+                                  ; print " header;"
+                                  ; print "} metadata;"
+                                  ; print " "
+                                  ; print "struct __attribute__ ((packed)) {"
+                                  ; List.foreachi (mkFieldTys (init, ty), fn (i, fldTy) =>
+                                                   (if i > 0 then print " " else ()
+                                                    ; print fldTy
+                                                    ; print ";"))
+                                  ; print "} data;"
+                                  ; let
+                                       val next = Bytes.+ (Runtime.normalMetaDataSize (),
+                                                           Type.bytes ty)
+                                    in
+                                       Option.app (mkPad (next, size), fn pad =>
+                                                   (print " "
+                                                    ; print pad
+                                                    ; print ";"))
+                                    end
+                               end
+                          | StaticHeap.Object.Sequence {ty, init, size, ...} =>
+                               let
+                                  val ty =
+                                     case Type.deObjptr ty of
+                                        NONE => Error.bug "CCodegen.declareStaticHeaps: Sequence"
+                                      | SOME opt =>
+                                           (case Vector.sub (objectTypes, ObjptrTycon.index opt) of
+                                               ObjectType.Sequence {elt, ...} => elt
+                                             | _ => Error.bug "CCodegen.declareStaticHeaps: Sequence")
+                                  val length = Vector.length init
+                               in
+                                  print "struct __attribute__ ((packed)) {"
+                                  ; print (CType.toString counterTy)
+                                  ; print " counter;"
+                                  ; print " "
+                                  ; print (CType.toString lengthTy)
+                                  ; print " length;"
+                                  ; print " "
+                                  ; print (CType.toString headerTy)
+                                  ; print " header;"
+                                  ; print "} metadata;"
+                                  ; print " "
+                                  ; if Type.equals (ty, Type.word WordSize.word8)
+                                       then print (CType.toString CType.Word8)
+                                       else (print "struct __attribute__ ((packed)) {"
+                                             ; if length > 0
+                                                  then List.foreachi (mkFieldTys (Vector.first init, ty),
+                                                                      fn (i, fldTy) =>
+                                                                      (if i > 0 then print " " else ()
+                                                                          ; print fldTy
+                                                                          ; print ";"))
+                                                  else ()
+                                             ; print "}")
+                                  ; print " data["
+                                  ; print (C.int length)
+                                  ; print "];"
+                                  ; let
+                                       val next = Bytes.+ (Runtime.sequenceMetaDataSize (),
+                                                           Bytes.* (Type.bytes ty,
+                                                                    IntInf.fromInt length))
+                                    in
+                                       Option.app (mkPad (next, size), fn pad =>
+                                                   (print " "
+                                                    ; print pad
+                                                    ; print ";"))
+                                    end
+                               end)
+                      ; print "} obj"
+                      ; print (C.int i)
+                      ; print ";\n")))
                  ; print "} "
                  ; print (ty k)
                  ; print ";\n"))
@@ -547,6 +712,56 @@ fun outputDeclarations
                  ; print " "
                  ; print (sym k)
                  ; print " = {\n"
+                 ; (Vector.foreach
+                    (staticHeaps k, fn obj =>
+                     (print "{"
+                      ; (case obj of
+                            StaticHeap.Object.Normal {header, init, ...} =>
+                               (print "{"
+                                ; print (mkHeader header)
+                                ; print ","
+                                ; print "},"
+                                ; print "{"
+                                ; Vector.foreach (mkFields init, fn fld =>
+                                                  (print fld; print ","))
+                                ; print "},")
+                          | StaticHeap.Object.Sequence {header, init, ty, ...} =>
+                               let
+                                  val ty =
+                                     case Type.deObjptr ty of
+                                        NONE => Error.bug "CCodegen.declareStaticHeaps: Sequence"
+                                      | SOME opt =>
+                                           (case Vector.sub (objectTypes, ObjptrTycon.index opt) of
+                                               ObjectType.Sequence {elt, ...} => elt
+                                             | _ => Error.bug "CCodegen.declareStaticHeaps: Sequence")
+                                  fun toString (): string =
+                                     String.implode
+                                     (Vector.toListMap
+                                      (init, fn init =>
+                                       case Vector.first init of
+                                          {src = StaticHeap.Object.Elem.Const (Const.Word w), ...} => WordX.toChar w
+                                        | _ => Error.bug "CCodegen.declareStaticHeaps: toString"))
+                               in
+                                  print "{"
+                                  ; print counter
+                                  ; print ","
+                                  ; print (mkLength (Vector.length init))
+                                  ; print ","
+                                  ; print (mkHeader header)
+                                  ; print ","
+                                  ; print "},"
+                                  ; if Type.equals (ty, Type.word WordSize.word8)
+                                       then print (C.string (toString ()))
+                                       else (print "{"
+                                             ; Vector.foreach (init, fn init =>
+                                                               (print "{"
+                                                                ; Vector.foreach (mkFields init, fn fld =>
+                                                                                  (print fld; print ","))
+                                                                ; print "},"))
+                                             ; print "}")
+                                  ; print ","
+                               end)
+                      ; print "},\n")))
                  ; print "};\n"))
          in
             ()

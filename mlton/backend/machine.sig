@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014,2019 Matthew Fluet.
+(* Copyright (C) 2009,2014,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -66,6 +66,27 @@ signature MACHINE =
                   val layout: t -> Layout.t
                   val offset: t -> Bytes.t
                   val ty: t -> Type.t
+               end
+
+            structure Object:
+               sig
+                  structure Elem:
+                     sig
+                        datatype t =
+                           Const of Const.t
+                         | Ref of Ref.t
+                     end
+                  datatype t =
+                     Normal of {header: word,
+                                init: {offset: Bytes.t,
+                                       src: Elem.t} vector,
+                                size: Bytes.t,
+                                ty: Type.t}
+                   | Sequence of {header: word,
+                                  init: {offset: Bytes.t,
+                                         src: Elem.t} vector vector,
+                                  size: Bytes.t,
+                                  ty: Type.t}
                end
          end
 
@@ -277,7 +298,8 @@ signature MACHINE =
                      objectTypes: Type.ObjectType.t vector,
                      reals: (RealX.t * Global.t) list,
                      sourceMaps: SourceMaps.t option,
-                     statics: (int Static.t * Global.t option) vector}
+                     statics: (int Static.t * Global.t option) vector,
+                     staticHeaps: StaticHeap.Kind.t -> StaticHeap.Object.t vector}
 
             val clearLabelNames: t -> unit
             val layouts: t * (Layout.t -> unit) -> unit
