@@ -1,4 +1,4 @@
-(* Copyright (C) 2019 Matthew Fluet.
+(* Copyright (C) 2019-2020 Matthew Fluet.
  * Copyright (C) 2002-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -749,9 +749,10 @@ fun transform program =
                                 end
                              ;
                             case s of
-                               Object {size, ...} =>
+                               Object obj =>
                                   {args = args,
-                                   bytesAllocated = Bytes.+ (bytesAllocated, size),
+                                   bytesAllocated = Bytes.+ (bytesAllocated,
+                                                             Object.size obj),
                                    kind = kind,
                                    label = label,
                                    leaves = leaves,
@@ -838,14 +839,6 @@ fun transform program =
                                       pushes = pushes,
                                       statements = statements}
                                   end
-                             | Sequence {size, ...} =>
-                                  {args = args,
-                                   bytesAllocated = Bytes.+ (bytesAllocated, size),
-                                   kind = kind,
-                                   label = label,
-                                   leaves = leaves,
-                                   pushes = pushes,
-                                   statements = s :: statements}
                              | _ =>
                                   {args = args,
                                    bytesAllocated = bytesAllocated,

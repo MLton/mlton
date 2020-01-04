@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2017,2019 Matthew Fluet.
+(* Copyright (C) 2009,2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -51,6 +51,38 @@ signature RSSA_TREE =
          end
       sharing Operand = Switch.Use
 
+      structure Object:
+         sig
+            datatype t =
+               Normal of {dst: Var.t * Type.t,
+                          header: word,
+                          init: {offset: Bytes.t,
+                                 src: Operand.t,
+                                 ty: Type.t} vector,
+                          size: Bytes.t (* including metadata *)}
+             | Sequence of {dst: Var.t * Type.t,
+                            header: word,
+                            init: {offset: Bytes.t,
+                                   src: Operand.t,
+                                   ty: Type.t} vector vector,
+                            size: Bytes.t (* including metadata *)}
+
+            (* foldDef (s, a, f)
+             * If s defines a variable x, then return f (x, a), else return a.
+             *)
+            val foldDef: t * 'a * (Var.t * Type.t * 'a -> 'a) -> 'a
+            (* foreachDef (s, f) = foldDef (s, (), fn (x, ()) => f x) *)
+            val foreachDef: t * (Var.t * Type.t -> unit) -> unit
+            val foreachDefUse: t * {def: (Var.t * Type.t) -> unit,
+                                    use: Var.t -> unit} -> unit
+            val foldUse: t * 'a * (Var.t * 'a -> 'a) -> 'a
+            val foreachUse: t * (Var.t -> unit) -> unit
+            val layout: t -> Layout.t
+            val replaceUses: t * (Var.t -> Operand.t) -> t
+            val size: t -> Bytes.t
+            val toString: t -> string
+         end
+
       structure Statement:
          sig
             datatype t =
@@ -59,23 +91,12 @@ signature RSSA_TREE =
                         src: Operand.t}
              | Move of {dst: Operand.t,
                         src: Operand.t}
-             | Object of {dst: Var.t * Type.t,
-                          header: word,
-                          init: {offset: Bytes.t,
-                                 src: Operand.t,
-                                 ty: Type.t} vector,
-                          size: Bytes.t (* including metadata *)}
+             | Object of Object.t
              | PrimApp of {args: Operand.t vector,
                            dst: (Var.t * Type.t) option,
                            prim: Type.t Prim.t}
              | Profile of ProfileExp.t
              | ProfileLabel of ProfileLabel.t
-             | Sequence of {dst: Var.t * Type.t,
-                            header: word,
-                            init: {offset: Bytes.t,
-                                   src: Operand.t,
-                                   ty: Type.t} vector vector,
-                            size: Bytes.t (* including metadata *)}
              | SetExnStackLocal
              | SetExnStackSlot
              | SetHandler of Label.t (* label must be of Handler kind. *)

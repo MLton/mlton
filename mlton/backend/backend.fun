@@ -43,6 +43,7 @@ in
    structure Const = Const
    structure Func = Func
    structure Function = Function
+   structure Object = Object
    structure Prim = Prim
    structure Type = Type
    structure Var = Var
@@ -542,7 +543,7 @@ fun toMachine (rssa: Rssa.Program.t) =
              | Move {dst, src} =>
                   move {dst = translateOperand dst,
                         src = translateOperand src}
-             | Object {dst = (dst, _), header, init, size} =>
+             | Object (Object.Normal {dst = (dst, _), header, init, size}) =>
                   let
                      val dst = varOperand dst
                      fun mkDst {offset, ty} =
@@ -556,21 +557,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                                           size = size}
                       :: mkInit (init, mkDst))
                   end
-             | PrimApp {dst, prim, args} =>
-                  let
-                     datatype z = datatype Prim.Name.t
-                  in
-                     case Prim.name prim of
-                        MLton_touch => Vector.new0 ()
-                      | _ => 
-                           Vector.new1
-                           (M.Statement.PrimApp
-                            {args = translateOperands args,
-                             dst = Option.map (dst, varOperand o #1),
-                             prim = prim})
-                  end
-             | ProfileLabel s => Vector.new1 (M.Statement.ProfileLabel s)
-             | Sequence {dst = (dst, ty), header, init, size} =>
+             | Object (Object.Sequence {dst = (dst, ty), header, init, size}) =>
                   let
                      val dst = varOperand dst
                      val elt =
@@ -615,6 +602,20 @@ fun toMachine (rssa: Rssa.Program.t) =
                              mkInit (init, mkDst)
                           end))
                   end
+             | PrimApp {dst, prim, args} =>
+                  let
+                     datatype z = datatype Prim.Name.t
+                  in
+                     case Prim.name prim of
+                        MLton_touch => Vector.new0 ()
+                      | _ =>
+                           Vector.new1
+                           (M.Statement.PrimApp
+                            {args = translateOperands args,
+                             dst = Option.map (dst, varOperand o #1),
+                             prim = prim})
+                  end
+             | ProfileLabel s => Vector.new1 (M.Statement.ProfileLabel s)
              | SetExnStackLocal =>
                   (* ExnStack = stackTop + (handlerOffset + LABEL_SIZE) - StackBottom; *)
                   let

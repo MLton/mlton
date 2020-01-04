@@ -1,4 +1,4 @@
-(* Copyright (C) 2019 Jason Carr, Matthew Fluet.
+(* Copyright (C) 2019-2020 Jason Carr, Matthew Fluet.
  * Copyright (C) 2009,2017 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
@@ -518,12 +518,12 @@ fun restoreFunction {main: Function.t}
                    Statement.Bind {dst=tupleDst, pinned=pinned, src=src}
               | Statement.Move {src, ...} =>
                    Statement.Move {dst=Operand.Var dst, src=src}
-              | Statement.Object {header, init, size, ...} =>
-                   Statement.Object {dst=tupleDst, init=init, header=header, size=size}
+              | Statement.Object (Object.Normal {header, init, size, ...}) =>
+                   Statement.Object (Object.Normal {dst=tupleDst, init=init, header=header, size=size})
+              | Statement.Object (Object.Sequence {header, init, size, ...}) =>
+                   Statement.Object (Object.Sequence {dst=tupleDst, init=init, header=header, size=size})
               | Statement.PrimApp {args, prim, ...} =>
                    Statement.PrimApp {args=args, dst=SOME tupleDst, prim=prim}
-              | Statement.Sequence {header, init, size, ...} =>
-                   Statement.Sequence {dst=tupleDst, init=init, header=header, size=size}
               | _ => st
           end
         local

@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2016-2017,2019 Matthew Fluet.
+(* Copyright (C) 2009,2016-2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -448,9 +448,9 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, ...}) 
          Err.check (name, fn () => isOk x, fn () => layout x)
       val handlersImplemented = ref false
       val labelKind = Block.kind o labelBlock
-      fun statementOk (s: Statement.t): bool =
+      fun objectOk (obj: Object.t): bool =
          let
-            datatype z = datatype Statement.t
+            datatype z = datatype Object.t
             fun initOk (init, mkDst, size) =
                Exn.withEscape
                (fn esc =>
@@ -460,7 +460,7 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, ...}) 
                       (init, Bytes.zero, fn ({offset, src, ty}, next) =>
                        let
                           val dst = mkDst {offset = offset, ty = ty}
-                          val move = Move {dst = dst, src = src}
+                          val move = Statement.Move {dst = dst, src = src}
                        in
                           if Bytes.>= (offset, next)
                              andalso
@@ -472,16 +472,8 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, ...}) 
                    Bytes.<= (next, size)
                 end)
          in
-            case s of
-               Bind {src, dst = (_, dstTy), ...} =>
-                  (checkOperand src
-                   ; Type.isSubtype (Operand.ty src, dstTy))
-             | Move {dst, src} =>
-                  (checkOperand dst
-                   ; checkOperand src
-                   ; (Type.isSubtype (Operand.ty src, Operand.ty dst)
-                      andalso Operand.isLocation dst))
-             | Object {dst = (dst, ty), header, init, size} =>
+            case obj of
+               Normal {dst = (dst, ty), header, init, size} =>
                   let
                      val dst = Operand.Var {ty = ty, var = dst}
                      val tycon =
@@ -516,14 +508,6 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, ...}) 
                             end
                        | _ => false)
                   end
-             | PrimApp {args, dst, prim} =>
-                  (Vector.foreach (args, checkOperand)
-                   ; (Type.checkPrimApp
-                      {args = Vector.map (args, Operand.ty),
-                       prim = prim,
-                       result = Option.map (dst, #2)}))
-             | Profile _ => true
-             | ProfileLabel pl => checkProfileLabel pl
              | Sequence {dst = (dst, ty), header, init, size} =>
                   let
                      val dst = Operand.Var {ty = ty, var = dst}
@@ -587,6 +571,29 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, ...}) 
                             end
                        | _ => false)
                   end
+         end
+      and statementOk (s: Statement.t): bool =
+         let
+            datatype z = datatype Statement.t
+         in
+            case s of
+               Bind {src, dst = (_, dstTy), ...} =>
+                  (checkOperand src
+                   ; Type.isSubtype (Operand.ty src, dstTy))
+             | Move {dst, src} =>
+                  (checkOperand dst
+                   ; checkOperand src
+                   ; (Type.isSubtype (Operand.ty src, Operand.ty dst)
+                      andalso Operand.isLocation dst))
+             | Object obj => objectOk obj
+             | PrimApp {args, dst, prim} =>
+                  (Vector.foreach (args, checkOperand)
+                   ; (Type.checkPrimApp
+                      {args = Vector.map (args, Operand.ty),
+                       prim = prim,
+                       result = Option.map (dst, #2)}))
+             | Profile _ => true
+             | ProfileLabel pl => checkProfileLabel pl
              | SetExnStackLocal => (handlersImplemented := true; true)
              | SetExnStackSlot => (handlersImplemented := true; true)
              | SetHandler l =>

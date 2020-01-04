@@ -1,4 +1,4 @@
-(* Copyright (C) 2016-2017,2019 Matthew Fluet.
+(* Copyright (C) 2016-2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -23,6 +23,7 @@ in
    structure Block = Block
    structure Kind = Kind
    structure Label = Label
+   structure Object = Object
    structure ObjectType = ObjectType
    structure Operand = Operand
    structure ObjptrTycon = ObjptrTycon
@@ -1025,10 +1026,11 @@ structure ObjptrRep =
                 end)
          in
             List.concatRev
-            ([Object {dst = (dst, ty),
-                      header = Runtime.typeIndexToHeader (ObjptrTycon.index tycon),
-                      init = Vector.fromListRev init,
-                      size = Bytes.+ (Type.bytes componentsTy, Runtime.normalMetaDataSize ())}]
+            ([Object (Object.Normal
+                      {dst = (dst, ty),
+                       header = Runtime.typeIndexToHeader (ObjptrTycon.index tycon),
+                       init = Vector.fromListRev init,
+                       size = Bytes.+ (Type.bytes componentsTy, Runtime.normalMetaDataSize ())})]
              :: pre)
          end
 
@@ -1076,10 +1078,11 @@ structure ObjptrRep =
                 | Control.Align8 => Bytes.alignWord64 size
          in
             List.concatRev
-            ([Sequence {dst = (dst, ty),
-                        header = Runtime.typeIndexToHeader (ObjptrTycon.index tycon),
-                        init = Vector.fromListRev init,
-                        size = size}]
+            ([Object (Object.Sequence
+                      {dst = (dst, ty),
+                       header = Runtime.typeIndexToHeader (ObjptrTycon.index tycon),
+                       init = Vector.fromListRev init,
+                       size = size})]
              :: pre)
          end
 

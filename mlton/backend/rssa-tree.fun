@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2016-2017,2019 Matthew Fluet.
+(* Copyright (C) 2009,2016-2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -162,35 +162,26 @@ structure Switch =
             test = Operand.replaceVar (test, f)}
    end
 
-structure Statement =
+structure Object =
    struct
       datatype t =
-         Bind of {dst: Var.t * Type.t,
-                  pinned: bool,
-                  src: Operand.t}
-       | Move of {dst: Operand.t,
-                  src: Operand.t}
-       | Object of {dst: Var.t * Type.t,
+         Normal of {dst: Var.t * Type.t,
                     header: word,
                     init: {offset: Bytes.t,
                            src: Operand.t,
                            ty: Type.t} vector,
                     size: Bytes.t}
-       | PrimApp of {args: Operand.t vector,
-                     dst: (Var.t * Type.t) option,
-                     prim: Type.t Prim.t}
-       | Profile of ProfileExp.t
-       | ProfileLabel of ProfileLabel.t
        | Sequence of {dst: Var.t * Type.t,
                       header: word,
                       init: {offset: Bytes.t,
                              src: Operand.t,
                              ty: Type.t} vector vector,
                       size: Bytes.t}
-       | SetExnStackLocal
-       | SetExnStackSlot
-       | SetHandler of Label.t
-       | SetSlotExnStack
+
+      fun size obj =
+         case obj of
+            Normal {size, ...} => size
+          | Sequence {size, ...} => size
 
       fun 'a foldDefUse (s, a: 'a, {def: Var.t * Type.t * 'a -> 'a,
                                     use: Var.t * 'a -> 'a}): 'a =
@@ -201,23 +192,10 @@ structure Statement =
                             useOperand (src, a))
          in
             case s of
-               Bind {dst = (x, t), src, ...} => def (x, t, useOperand (src, a))
-             | Move {dst, src} => useOperand (src, useOperand (dst, a))
-             | Object {dst = (dst, ty), init, ...} =>
+               Normal {dst = (dst, ty), init, ...} =>
                   useInit (init, def (dst, ty, a))
-             | PrimApp {dst, args, ...} =>
-                  Vector.fold (args,
-                               Option.fold (dst, a, fn ((x, t), a) =>
-                                            def (x, t, a)),
-                               useOperand)
-             | Profile _ => a
-             | ProfileLabel _ => a
              | Sequence {dst = (dst, ty), init, ...} =>
                   Vector.fold (init, def (dst, ty, a), useInit)
-             | SetExnStackLocal => a
-             | SetExnStackSlot => a
-             | SetHandler _ => a
-             | SetSlotExnStack => a
          end
 
       fun foreachDefUse (s: t, {def, use}) =
@@ -246,31 +224,16 @@ structure Statement =
                             ty = ty})
          in
             case s of
-               Bind {dst, pinned, src} =>
-                  Bind {dst = dst,
-                        pinned = pinned,
-                        src = oper src}
-             | Move {dst, src} => Move {dst = oper dst, src = oper src}
-             | Object {dst, header, init, size} =>
-                  Object {dst = dst,
+               Normal {dst, header, init, size} =>
+                  Normal {dst = dst,
                           header = header,
                           init = replaceInit init,
                           size = size}
-             | PrimApp {args, dst, prim} =>
-                  PrimApp {args = Vector.map (args, oper),
-                           dst = dst,
-                           prim = prim}
-             | Profile _ => s
-             | ProfileLabel _ => s
              | Sequence {dst, header, init, size} =>
                   Sequence {dst = dst,
                             header = header,
                             init = Vector.map (init, replaceInit),
                             size = size}
-             | SetExnStackLocal => s
-             | SetExnStackSlot => s
-             | SetHandler _ => s
-             | SetSlotExnStack => s
          end
 
       val layout =
@@ -283,6 +246,111 @@ structure Statement =
                         ("src", Operand.layout src),
                         ("ty", Type.layout ty)])
          in
+            fn Normal {dst = (dst, ty), header, init, size} =>
+                  mayAlign
+                  [seq [Var.layout dst, constrain ty],
+                   indent (seq [str "= NormalObject ",
+                                record [("header", seq [str "0x", Word.layout header]),
+                                        ("init", layoutInit init),
+                                        ("size", Bytes.layout size)]],
+                           2)]
+             | Sequence {dst = (dst, ty), header, init, size} =>
+                  mayAlign
+                  [seq [Var.layout dst, constrain ty],
+                   indent (seq [str "= SequenceObject ",
+                                record [("header", seq [str "0x", Word.layout header]),
+                                        ("init", Vector.layout layoutInit init),
+                                        ("size", Bytes.layout size)]],
+                           2)]
+         end
+
+      val toString = Layout.toString o layout
+   end
+
+structure Statement =
+   struct
+      datatype t =
+         Bind of {dst: Var.t * Type.t,
+                  pinned: bool,
+                  src: Operand.t}
+       | Move of {dst: Operand.t,
+                  src: Operand.t}
+       | Object of Object.t
+       | PrimApp of {args: Operand.t vector,
+                     dst: (Var.t * Type.t) option,
+                     prim: Type.t Prim.t}
+       | Profile of ProfileExp.t
+       | ProfileLabel of ProfileLabel.t
+       | SetExnStackLocal
+       | SetExnStackSlot
+       | SetHandler of Label.t
+       | SetSlotExnStack
+
+      fun 'a foldDefUse (s, a: 'a, {def: Var.t * Type.t * 'a -> 'a,
+                                    use: Var.t * 'a -> 'a}): 'a =
+         let
+            fun useOperand (z: Operand.t, a) = Operand.foldVars (z, a, use)
+         in
+            case s of
+               Bind {dst = (x, t), src, ...} => def (x, t, useOperand (src, a))
+             | Move {dst, src} => useOperand (src, useOperand (dst, a))
+             | Object obj => Object.foldDefUse (obj, a, {def = def, use = use})
+             | PrimApp {dst, args, ...} =>
+                  Vector.fold (args,
+                               Option.fold (dst, a, fn ((x, t), a) =>
+                                            def (x, t, a)),
+                               useOperand)
+             | Profile _ => a
+             | ProfileLabel _ => a
+             | SetExnStackLocal => a
+             | SetExnStackSlot => a
+             | SetHandler _ => a
+             | SetSlotExnStack => a
+         end
+
+      fun foreachDefUse (s: t, {def, use}) =
+         foldDefUse (s, (), {def = fn (x, t, ()) => def (x, t),
+                             use = use o #1})
+
+      fun 'a foldDef (s: t, a: 'a, f: Var.t * Type.t * 'a -> 'a): 'a =
+         foldDefUse (s, a, {def = f, use = #2})
+
+      fun foreachDef (s:t , f: Var.t * Type.t -> unit) =
+         foldDef (s, (), fn (x, t, ()) => f (x, t))
+
+      fun 'a foldUse (s: t, a: 'a, f: Var.t * 'a -> 'a) =
+         foldDefUse (s, a, {def = #3, use = f})
+
+      fun foreachUse (s, f) = foldUse (s, (), f o #1)
+
+      fun replaceUses (s: t, f: Var.t -> Operand.t): t =
+         let
+            fun oper (z: Operand.t): Operand.t =
+               Operand.replaceVar (z, f)
+         in
+            case s of
+               Bind {dst, pinned, src} =>
+                  Bind {dst = dst,
+                        pinned = pinned,
+                        src = oper src}
+             | Move {dst, src} => Move {dst = oper dst, src = oper src}
+             | Object obj => Object (Object.replaceUses (obj, f))
+             | PrimApp {args, dst, prim} =>
+                  PrimApp {args = Vector.map (args, oper),
+                           dst = dst,
+                           prim = prim}
+             | Profile _ => s
+             | ProfileLabel _ => s
+             | SetExnStackLocal => s
+             | SetExnStackSlot => s
+             | SetHandler _ => s
+             | SetSlotExnStack => s
+         end
+
+      val layout =
+         let
+            open Layout
+         in
             fn Bind {dst = (x, t), src, ...} =>
                   mayAlign
                   [seq [Var.layout x, constrain t],
@@ -291,14 +359,7 @@ structure Statement =
                   mayAlign
                   [Operand.layout dst,
                    indent (seq [str ":= ", Operand.layout src], 2)]
-             | Object {dst = (dst, ty), header, init, size} =>
-                  mayAlign
-                  [seq [Var.layout dst, constrain ty],
-                   indent (seq [str "= Object ",
-                                record [("header", seq [str "0x", Word.layout header]),
-                                        ("init", layoutInit init),
-                                        ("size", Bytes.layout size)]],
-                           2)]
+             | Object obj => Object.layout obj
              | PrimApp {dst, prim, args, ...} =>
                   mayAlign
                   [case dst of
@@ -310,14 +371,6 @@ structure Statement =
              | Profile e => ProfileExp.layout e
              | ProfileLabel p =>
                   seq [str "ProfileLabel ", ProfileLabel.layout p]
-             | Sequence {dst = (dst, ty), header, init, size} =>
-                  mayAlign
-                  [seq [Var.layout dst, constrain ty],
-                   indent (seq [str "= Sequence ",
-                                record [("header", seq [str "0x", Word.layout header]),
-                                        ("init", Vector.layout layoutInit init),
-                                        ("size", Bytes.layout size)]],
-                           2)]
              | SetExnStackLocal => str "SetExnStackLocal"
              | SetExnStackSlot => str "SetExnStackSlot "
              | SetHandler l => seq [str "SetHandler ", Label.layout l]
