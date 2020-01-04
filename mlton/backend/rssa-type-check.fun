@@ -245,7 +245,7 @@ fun checkHandlers (Program.T {functions, ...}) =
       ()
    end
 
-fun checkScopes (program as Program.T {functions, main, ...}): unit =
+fun checkScopes (program as Program.T {functions, main, statics, ...}): unit =
    let
       datatype status =
          Defined
@@ -336,6 +336,10 @@ fun checkScopes (program as Program.T {functions, main, ...}): unit =
          in
             ()
          end
+      val _ = Vector.foreach (statics, fn obj =>
+                              (Object.foreachUse (obj, getVar)
+                               ; Object.foreachDef (obj, fn (x, _) =>
+                                                    bindVar (x, true))))
       val _ = List.foreach (functions, bindFunc o Function.name)
       val _ = loopFunc (main, true)
       val _ = List.foreach (functions, fn f => loopFunc (f, false))
@@ -345,7 +349,7 @@ fun checkScopes (program as Program.T {functions, main, ...}): unit =
 
 val checkScopes = Control.trace (Control.Detail, "checkScopes") checkScopes
 
-fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, ...}) =
+fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, statics, ...}) =
    let
       val _ =
          Vector.foreach
@@ -603,6 +607,11 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, ...}) 
                     | _ => false)
              | SetSlotExnStack => (handlersImplemented := true; true)
          end
+      val objectOk =
+         Trace.trace ("Rssa.objectOk",
+                      Object.layout,
+                      Bool.layout)
+                     objectOk
       val statementOk =
          Trace.trace ("Rssa.statementOk",
                       Statement.layout,
@@ -814,6 +823,11 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, ...}) 
          in
             ()
          end
+      val _ =
+         Vector.foreach
+         (statics, fn obj =>
+          (setVarType (Object.dst obj)
+           ; check' (obj, "static", objectOk, Object.layout)))
       val _ =
          List.foreach
          (functions, fn f => setFuncInfo (Function.name f, f))

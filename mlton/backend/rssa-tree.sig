@@ -67,6 +67,7 @@ signature RSSA_TREE =
                                    ty: Type.t} vector vector,
                             size: Bytes.t (* including metadata *)}
 
+            val dst: t -> Var.t * Type.t
             (* foldDef (s, a, f)
              * If s defines a variable x, then return f (x, a), else return a.
              *)
@@ -230,7 +231,8 @@ signature RSSA_TREE =
                      main: Function.t,
                      objectTypes: ObjectType.t vector,
                      profileInfo: {sourceMaps: SourceMaps.t,
-                                   getFrameSourceSeqIndex: Label.t -> int option} option}
+                                   getFrameSourceSeqIndex: Label.t -> int option} option,
+                     statics: Object.t vector}
 
             val clear: t -> unit
             (* dfs (p, v) visits the functions in depth-first order, applying v f

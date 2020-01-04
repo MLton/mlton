@@ -135,7 +135,7 @@ fun eliminateDeadCode (f: R.Function.t): R.Function.t =
 
 fun toMachine (rssa: Rssa.Program.t) =
    let
-      val R.Program.T {functions, handlesSignals, main, objectTypes, profileInfo} = rssa
+      val R.Program.T {functions, handlesSignals, main, objectTypes, profileInfo, statics} = rssa
       (* returnsTo and raisesTo info *)
       val rflow = R.Program.rflow rssa
       (* Chunk info *)

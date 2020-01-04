@@ -178,6 +178,11 @@ structure Object =
                              ty: Type.t} vector vector,
                       size: Bytes.t}
 
+      fun dst obj =
+         case obj of
+            Normal {dst, ...} => dst
+          | Sequence {dst, ...} => dst
+
       fun size obj =
          case obj of
             Normal {size, ...} => size
@@ -265,6 +270,9 @@ structure Object =
          end
 
       val toString = Layout.toString o layout
+
+      fun clear (s: t) =
+         foreachDef (s, Var.clear o #1)
    end
 
 structure Statement =
@@ -887,13 +895,15 @@ structure Program =
                main: Function.t,
                objectTypes: ObjectType.t vector,
                profileInfo: {sourceMaps: SourceMaps.t,
-                             getFrameSourceSeqIndex: Label.t -> int option} option}
+                             getFrameSourceSeqIndex: Label.t -> int option} option,
+               statics: Object.t vector}
 
-      fun clear (T {functions, main, ...}) =
+      fun clear (T {functions, main, statics, ...}) =
          (List.foreach (functions, Function.clear)
-          ; Function.clear main)
+          ; Function.clear main
+          ; Vector.foreach (statics, Object.clear))
 
-      fun layouts (T {functions, main, objectTypes, ...},
+      fun layouts (T {functions, main, objectTypes, statics, ...},
                    output': Layout.t -> unit): unit =
          let
             open Layout
@@ -903,6 +913,8 @@ structure Program =
             ; Vector.foreachi (objectTypes, fn (i, ty) =>
                                output (seq [str "opt_", Int.layout i,
                                             str " = ", ObjectType.layout ty]))
+            ; output (str "\nStatics:")
+            ; Vector.foreach (statics, output o Object.layout)
             ; output (str "\nMain:")
             ; Function.layouts (main, output)
             ; output (str "\nFunctions:")
@@ -911,7 +923,7 @@ structure Program =
 
       val toFile = {display = Control.Layouts layouts, style = Control.ML, suffix = "rssa"}
 
-      fun layoutStats (program as T {functions, main, objectTypes, ...}) =
+      fun layoutStats (program as T {functions, main, objectTypes, statics, ...}) =
          let
             val numStatements = ref 0
             val numBlocks = ref 0
@@ -928,6 +940,7 @@ structure Program =
                 end)
             val numFunctions = 1 + List.length functions
             val numObjectTypes = Vector.length objectTypes
+            val numStatics = Vector.length statics
             open Layout
          in
             align
@@ -935,16 +948,18 @@ structure Program =
              seq [str "num functions in program = ", Int.layout numFunctions],
              seq [str "num blocks in program = ", Int.layout (!numBlocks)],
              seq [str "num statements in program = ", Int.layout (!numStatements)],
-             seq [str "num object types in program = ", Int.layout (numObjectTypes)]]
+             seq [str "num object types in program = ", Int.layout (numObjectTypes)],
+             seq [str "num statics in program = ", Int.layout numStatics]]
          end
 
-      fun dropProfile (T {functions, handlesSignals, main, objectTypes, ...}) =
+      fun dropProfile (T {functions, handlesSignals, main, objectTypes, statics, ...}) =
          (Control.profile := Control.ProfileNone
           ; T {functions = List.map (functions, Function.dropProfile),
                handlesSignals = handlesSignals,
                main = Function.dropProfile main,
                objectTypes = objectTypes,
-               profileInfo = NONE})
+               profileInfo = NONE,
+               statics = statics})
       (* quell unused warning *)
       val _ = dropProfile
 
@@ -1034,7 +1049,7 @@ structure Program =
             end
          end
 
-      fun orderFunctions (p as T {handlesSignals, objectTypes, profileInfo, ...}) =
+      fun orderFunctions (p as T {handlesSignals, objectTypes, profileInfo, statics, ...}) =
          let
             val functions = ref []
             val () =
@@ -1068,10 +1083,11 @@ structure Program =
                handlesSignals = handlesSignals,
                main = main,
                objectTypes = objectTypes,
-               profileInfo = profileInfo}
+               profileInfo = profileInfo,
+               statics = statics}
          end
 
-      fun shuffle (T {functions, handlesSignals, main, objectTypes, profileInfo}) =
+      fun shuffle (T {functions, handlesSignals, main, objectTypes, profileInfo, statics}) =
          let
             val functions = Array.fromListMap (functions, Function.shuffle)
             val () = Array.shuffle functions
@@ -1079,7 +1095,8 @@ structure Program =
                        handlesSignals = handlesSignals,
                        main = Function.shuffle main,
                        objectTypes = objectTypes,
-                       profileInfo = profileInfo}
+                       profileInfo = profileInfo,
+                       statics = statics}
          in
             p
          end

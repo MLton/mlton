@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2016-2017,2019 Matthew Fluet.
+(* Copyright (C) 2009,2016-2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -19,7 +19,7 @@ in
    structure ApplyResult = ApplyResult
 end
 
-fun shrinkFunction {main: Function.t} : {main: unit -> Function.t, shrink: Function.t -> Function.t} =
+fun shrinkFunction {main: Function.t, statics: Object.t vector} : {main: unit -> Function.t, shrink: Function.t -> Function.t} =
    let
       val {get = replaceVar: Var.t -> Operand.t,
            set = setReplaceVar, ...} =
@@ -236,15 +236,17 @@ fun shrinkFunction {main: Function.t} : {main: unit -> Function.t, shrink: Funct
          in
             f
          end
+      val () = Vector.foreach (statics, fn obj =>
+                               Object.foreachDef (obj, dontReplaceVar))
       val main = shrink (main, false)
    in
       {main = fn () => (Function.clear main; main),
        shrink = fn f => shrink (f, true)}
    end
 
-fun shrink (Program.T {functions, handlesSignals, main, objectTypes, profileInfo}): Program.t =
+fun shrink (Program.T {functions, handlesSignals, main, objectTypes, profileInfo, statics}): Program.t =
    let
-      val {main, shrink} = shrinkFunction {main = main}
+      val {main, shrink} = shrinkFunction {main = main, statics = statics}
       val functions = List.revMap (functions, shrink)
       val main = main ()
    in
@@ -252,7 +254,8 @@ fun shrink (Program.T {functions, handlesSignals, main, objectTypes, profileInfo
                  handlesSignals = handlesSignals,
                  main = main,
                  objectTypes = objectTypes,
-                 profileInfo = profileInfo}
+                 profileInfo = profileInfo,
+                 statics = statics}
    end
 
 end

@@ -158,7 +158,7 @@ structure VarInfo =
                                      | h::_ => SOME h
   end
 
-fun restoreFunction {main: Function.t}
+fun restoreFunction {main: Function.t, statics: Object.t vector}
   = let
       exception NoViolations
 
@@ -693,18 +693,20 @@ fun restoreFunction {main: Function.t}
 
       val main = restore main
 
-      (* check for violations in main/globals *)
-      fun addDef (x, ty)
+      (* check for violations in statics/main *)
+      fun addDef msg (x, ty)
         = let
              val () = remVarInfo x
-            val vi = varInfo x
+             val vi = varInfo x
           in
-            VarInfo.ty vi := ty ;
-            VarInfo.addDef vi ;
-            VarInfo.whenViolates
-            (vi, fn () => Error.bug "RssaRestore.restore: violation in main/globals")
+             VarInfo.ty vi := ty ;
+             VarInfo.addDef vi ;
+             VarInfo.whenViolates
+             (vi, fn () => Error.bug ("RssaRestore.restore: violation in " ^ msg))
           end
-      val _ = Function.foreachDef (main, addDef)
+      val _ = Vector.foreach (statics, fn obj =>
+                              Object.foreachDef (obj, addDef "statics"))
+      val _ = Function.foreachDef (main, addDef "main")
     in
        {main = main,
         restore = restore}
@@ -716,21 +718,22 @@ val traceRestoreFunction
                  Func.layout o Function.name)
 
 val restoreFunction
-  = fn main =>
+  = fn {main, statics} =>
     let
-      val {main, restore} = restoreFunction main
+      val {main, restore} = restoreFunction {main = main, statics = statics}
     in
       {main = main, restore = fn f => traceRestoreFunction restore f}
    end
 
-fun restore (Program.T {functions, handlesSignals, main, objectTypes, profileInfo})
+fun restore (Program.T {functions, handlesSignals, main, objectTypes, profileInfo, statics})
   = let
-      val {main, restore} = restoreFunction {main = main}
+      val {main, restore} = restoreFunction {main = main, statics = statics}
     in
       Program.T {handlesSignals = handlesSignals,
                  functions = List.revMap (functions, restore),
                  main = main,
                  objectTypes = objectTypes,
-                 profileInfo = profileInfo}
+                 profileInfo = profileInfo,
+                 statics = statics}
     end
 end

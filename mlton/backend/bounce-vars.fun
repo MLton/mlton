@@ -409,11 +409,11 @@ fun transform p =
                 returns=returns, start=start}
          end
 
-      val Program.T {functions, handlesSignals, main, objectTypes, profileInfo} = p
+      val Program.T {functions, handlesSignals, main, objectTypes, profileInfo, statics} = p
       val main = transformFunc main
-      val {main, restore} = restoreFunction {main = main}
+      val {main, restore} = restoreFunction {main = main, statics = statics}
       val () = Function.foreachDef (main, remVarInfo o #1)
-      val {main, shrink} = shrinkFunction {main = main}
+      val {main, shrink} = shrinkFunction {main = main, statics = statics}
       val functions = List.revMap (functions, shrink o restore o transformFunc)
       val main = main ()
    in
@@ -421,6 +421,7 @@ fun transform p =
                  handlesSignals = handlesSignals,
                  main = main,
                  objectTypes = objectTypes,
-                 profileInfo = profileInfo}
+                 profileInfo = profileInfo,
+                 statics = statics}
    end
 end

@@ -143,7 +143,7 @@ fun transform program =
       then program
    else
    let
-      val Program.T {functions, handlesSignals, main, objectTypes, ...} = program
+      val Program.T {functions, handlesSignals, main, objectTypes, statics, ...} = program
       val debug = false
       datatype z = datatype Control.profile
       val profile = !Control.profile
@@ -937,7 +937,8 @@ fun transform program =
                  main = main,
                  objectTypes = objectTypes,
                  profileInfo = SOME {sourceMaps = sourceMaps,
-                                     getFrameSourceSeqIndex = getFrameSourceSeqIndex}}
+                                     getFrameSourceSeqIndex = getFrameSourceSeqIndex},
+                 statics = statics}
    end
 
 end
