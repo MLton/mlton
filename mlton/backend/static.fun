@@ -89,28 +89,19 @@ functor Static (S: STATIC_STRUCTS): STATIC =
          List.fold (metadata, Bytes.zero, fn (w, b) =>
                     Bytes.+ (WordSize.bytes (WordX.size w), b))
 
-      fun getTyconHeader tycon =
-         let
-            val header = Runtime.typeIndexToHeader (ObjptrTycon.index tycon)
-            val header = WordX.fromIntInf (Word.toIntInf header, WordSize.objptrHeader ())
-         in
-            header
-         end
-
       fun object {elems, location, tycon} =
          T {data = Data.Object elems,
             location = location,
-            metadata = [getTyconHeader tycon]}
+            metadata = [ObjptrTycon.toHeader tycon]}
 
       fun sequenceMetadata (tycon, length: int) =
          let
             val counter = WordX.zero (WordSize.seqIndex ())
             val length = WordX.fromIntInf (Int.toIntInf length, WordSize.seqIndex ())
-            val header = getTyconHeader tycon
+            val header = ObjptrTycon.toHeader tycon
          in
             [counter, length, header]
          end
-
 
       fun vector {data, location, tycon} =
          T {data = Data.Vector data,

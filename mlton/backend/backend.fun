@@ -486,11 +486,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                                             ty = ty}
                   end
              | ObjptrTycon opt =>
-                  M.Operand.word
-                  (WordX.fromIntInf
-                   (Word.toIntInf (Runtime.typeIndexToHeader
-                                   (ObjptrTycon.index opt)),
-                    WordSize.objptrHeader ()))
+                  M.Operand.word (ObjptrTycon.toHeader opt)
              | Runtime f => runtimeOp f
              | SequenceOffset {base, index, offset, scale, ty} =>
                   let
@@ -545,7 +541,7 @@ fun toMachine (rssa: Rssa.Program.t) =
              | Object (obj as Object.Normal {dst = (dst, _), init, tycon, ...}) =>
                   let
                      val dst = varOperand dst
-                     val header = Runtime.typeIndexToHeader (ObjptrTycon.index tycon)
+                     val header = ObjptrTycon.toHeader tycon
                      fun mkDst {offset, ty} =
                         M.Operand.Offset {base = dst,
                                           offset = offset,
@@ -560,7 +556,7 @@ fun toMachine (rssa: Rssa.Program.t) =
              | Object (obj as Object.Sequence {dst = (dst, _), elt, init, tycon, ...}) =>
                   let
                      val dst = varOperand dst
-                     val header = Runtime.typeIndexToHeader (ObjptrTycon.index tycon)
+                     val header = ObjptrTycon.toHeader tycon
                      val (scale, mkIndex) =
                         case Scale.fromBytes (Type.bytes elt) of
                            NONE =>

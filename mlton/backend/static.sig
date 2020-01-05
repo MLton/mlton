@@ -14,7 +14,7 @@ signature STATIC_STRUCTS = sig
    structure WordXVector: WORD_X_VECTOR
    sharing RealX = Const.RealX
    sharing WordSize = WordX.WordSize = WordXVector.WordSize
-   sharing WordX = Const.WordX = WordXVector.WordX
+   sharing WordX = Const.WordX = ObjptrTycon.WordX = WordXVector.WordX
    sharing WordXVector = Const.WordXVector
 end
 

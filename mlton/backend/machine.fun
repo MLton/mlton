@@ -493,9 +493,7 @@ structure Statement =
                Operand.word (WordX.fromIntInf (Bytes.toIntInf b, WordSize.csize ()))
             val metaDataSize = Runtime.normalMetaDataSize ()
             val headerOffset = Runtime.headerOffset ()
-            val header =
-               Operand.word (WordX.fromIntInf (Word.toIntInf header,
-                                               WordSize.objptrHeader ()))
+            val header = Operand.word header
             val temp = Temporary (Temporary.new (Type.cpointer (), NONE))
          in
             Vector.new4
@@ -526,9 +524,7 @@ structure Statement =
             val headerOffset = Runtime.headerOffset ()
             val lengthOffset = Runtime.sequenceLengthOffset ()
             val counterOffset = Runtime.sequenceCounterOffset ()
-            val header =
-               Operand.word (WordX.fromIntInf (Word.toIntInf header,
-                                               WordSize.objptrHeader ()))
+            val header = Operand.word header
             val length =
                Operand.word (WordX.fromIntInf (Int.toIntInf length,
                                                WordSize.seqIndex ()))

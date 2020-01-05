@@ -1,4 +1,4 @@
-(* Copyright (C) 2019 Matthew Fluet.
+(* Copyright (C) 2019-2020 Matthew Fluet.
  *
  * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
@@ -38,10 +38,10 @@ signature BACKEND_ATOMS' =
       sharing Const = Static.Const
       sharing Label = Type.Label
       sharing Prim = Type.Prim
-      sharing RealSize = ObjptrTycon.RealSize = Type.RealSize
+      sharing RealSize = ObjptrTycon.RealSize = RealX.RealSize = Type.RealSize
       sharing RealX = Static.RealX = Type.RealX
-      sharing WordSize = ObjptrTycon.WordSize = Static.WordSize = Type.WordSize
-      sharing WordX = Static.WordX = Type.WordX
+      sharing WordSize = ObjptrTycon.WordSize = Static.WordSize = Type.WordSize = WordX.WordSize
+      sharing WordX = ObjptrTycon.WordX = Static.WordX = Type.WordX
       sharing WordXVector = Static.WordXVector = Type.WordXVector
    end
 
