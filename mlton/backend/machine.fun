@@ -188,22 +188,18 @@ structure StaticHeap =
                end
 
             datatype t =
-               Normal of {header: word,
-                          init: {offset: Bytes.t,
+               Normal of {init: {offset: Bytes.t,
                                  src: Elem.t} vector,
-                          size: Bytes.t,
-                          ty: Type.t}
-             | Sequence of {header: word,
+                          ty: Type.t,
+                          tycon: ObjptrTycon.t}
+             | Sequence of {elt: Type.t,
                             init: {offset: Bytes.t,
                                    src: Elem.t} vector vector,
-                            size: Bytes.t,
-                            ty: Type.t}
+                            tycon: ObjptrTycon.t}
 
             fun layout d =
                let
                   open Layout
-                  fun headerLayout header =
-                     seq [str "0x", Word.layout header]
                   val initLayout =
                      Vector.layout
                      (fn {offset, src} =>
@@ -211,18 +207,16 @@ structure StaticHeap =
                               ("src", Elem.layout src)])
                in
                   case d of
-                     Normal {header, init, size, ty} =>
+                     Normal {init, ty, tycon} =>
                         seq [str "Normal ",
-                             record [("header", headerLayout header),
-                                     ("init", initLayout init),
-                                     ("size", Bytes.layout size),
-                                     ("ty", Type.layout ty)]]
-                   | Sequence {header, init, size, ty} =>
+                             record [("init", initLayout init),
+                                     ("ty", Type.layout ty),
+                                     ("tycon", ObjptrTycon.layout tycon)]]
+                   | Sequence {elt, init, tycon} =>
                         seq [str "Sequence ",
-                             record [("header", headerLayout header),
+                             record [("elt", Type.layout elt),
                                      ("init", Vector.layout initLayout init),
-                                     ("size", Bytes.layout size),
-                                     ("ty", Type.layout ty)]]
+                                     ("tycon", ObjptrTycon.layout tycon)]]
                end
          end
    end

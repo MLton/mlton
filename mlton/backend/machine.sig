@@ -77,16 +77,14 @@ signature MACHINE =
                          | Ref of Ref.t
                      end
                   datatype t =
-                     Normal of {header: word,
-                                init: {offset: Bytes.t,
+                     Normal of {init: {offset: Bytes.t,
                                        src: Elem.t} vector,
-                                size: Bytes.t,
-                                ty: Type.t}
-                   | Sequence of {header: word,
+                                ty: Type.t,
+                                tycon: ObjptrTycon.t}
+                   | Sequence of {elt: Type.t,
                                   init: {offset: Bytes.t,
                                          src: Elem.t} vector vector,
-                                  size: Bytes.t,
-                                  ty: Type.t}
+                                  tycon: ObjptrTycon.t}
                end
          end
 

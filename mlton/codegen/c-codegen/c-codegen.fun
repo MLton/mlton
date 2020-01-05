@@ -593,8 +593,8 @@ fun outputDeclarations
                 concat [".fld", Bytes.toString offset,
                         " = ", StaticHeap.Object.Elem.toC src])
 
-            fun mkHeader header =
-               WordX.toC (WordX.fromIntInf (Word.toIntInf header, WordSize.objptrHeader()))
+            fun mkHeader tycon =
+               WordX.toC (ObjptrTycon.toHeader tycon)
             val counter =
                WordX.toC (WordX.zero (WordSize.seqIndex ()))
             fun mkLength length =
@@ -612,46 +612,20 @@ fun outputDeclarations
                     (staticHeaps k, fn (i, obj) =>
                      (print "struct __attribute__ ((packed)) {"
                       ; (case obj of
-                            StaticHeap.Object.Normal {init, size, ty, ...} =>
+                            StaticHeap.Object.Normal {init, ty, ...} =>
+                               (print "struct __attribute__ ((packed)) {"
+                                ; print (CType.toString headerTy)
+                                ; print " header;"
+                                ; print "} metadata;"
+                                ; print " "
+                                ; print "struct __attribute__ ((packed)) {"
+                                ; List.foreachi (mkFieldTys (init, ty), fn (i, fldTy) =>
+                                                 (if i > 0 then print " " else ()
+                                                     ; print fldTy
+                                                     ; print ";"))
+                                ; print "} data;")
+                          | StaticHeap.Object.Sequence {elt, init, ...} =>
                                let
-                                  val ty =
-                                     case Type.deObjptr ty of
-                                        NONE => Error.bug "CCodegen.declareStaticHeaps: Normal"
-                                      | SOME opt =>
-                                           (case Vector.sub (objectTypes, ObjptrTycon.index opt) of
-                                               ObjectType.Normal {ty, ...} => ty
-                                             | _ => Error.bug "CCodegen.declareStaticHeaps: Normal")
-                               in
-                                  print "struct __attribute__ ((packed)) {"
-                                  ; print (CType.toString headerTy)
-                                  ; print " header;"
-                                  ; print "} metadata;"
-                                  ; print " "
-                                  ; print "struct __attribute__ ((packed)) {"
-                                  ; List.foreachi (mkFieldTys (init, ty), fn (i, fldTy) =>
-                                                   (if i > 0 then print " " else ()
-                                                    ; print fldTy
-                                                    ; print ";"))
-                                  ; print "} data;"
-                                  ; let
-                                       val next = Bytes.+ (Runtime.normalMetaDataSize (),
-                                                           Type.bytes ty)
-                                    in
-                                       Option.app (mkPad (next, size), fn pad =>
-                                                   (print " "
-                                                    ; print pad
-                                                    ; print ";"))
-                                    end
-                               end
-                          | StaticHeap.Object.Sequence {ty, init, size, ...} =>
-                               let
-                                  val ty =
-                                     case Type.deObjptr ty of
-                                        NONE => Error.bug "CCodegen.declareStaticHeaps: Sequence"
-                                      | SOME opt =>
-                                           (case Vector.sub (objectTypes, ObjptrTycon.index opt) of
-                                               ObjectType.Sequence {elt, ...} => elt
-                                             | _ => Error.bug "CCodegen.declareStaticHeaps: Sequence")
                                   val length = Vector.length init
                                in
                                   print "struct __attribute__ ((packed)) {"
@@ -665,11 +639,11 @@ fun outputDeclarations
                                   ; print " header;"
                                   ; print "} metadata;"
                                   ; print " "
-                                  ; if Type.equals (ty, Type.word WordSize.word8)
+                                  ; if Type.equals (elt, Type.word WordSize.word8)
                                        then print (CType.toString CType.Word8)
                                        else (print "struct __attribute__ ((packed)) {"
                                              ; if length > 0
-                                                  then List.foreachi (mkFieldTys (Vector.first init, ty),
+                                                  then List.foreachi (mkFieldTys (Vector.first init, elt),
                                                                       fn (i, fldTy) =>
                                                                       (if i > 0 then print " " else ()
                                                                           ; print fldTy
@@ -681,8 +655,12 @@ fun outputDeclarations
                                   ; print "];"
                                   ; let
                                        val next = Bytes.+ (Runtime.sequenceMetaDataSize (),
-                                                           Bytes.* (Type.bytes ty,
+                                                           Bytes.* (Type.bytes elt,
                                                                     IntInf.fromInt length))
+                                       val size =
+                                          case !Control.align of
+                                             Control.Align4 => Bytes.alignWord32 next
+                                           | Control.Align8 => Bytes.alignWord64 next
                                     in
                                        Option.app (mkPad (next, size), fn pad =>
                                                    (print " "
@@ -716,24 +694,17 @@ fun outputDeclarations
                     (staticHeaps k, fn obj =>
                      (print "{"
                       ; (case obj of
-                            StaticHeap.Object.Normal {header, init, ...} =>
+                            StaticHeap.Object.Normal {init, tycon, ...} =>
                                (print "{"
-                                ; print (mkHeader header)
+                                ; print (mkHeader tycon)
                                 ; print ","
                                 ; print "},"
                                 ; print "{"
                                 ; Vector.foreach (mkFields init, fn fld =>
                                                   (print fld; print ","))
                                 ; print "},")
-                          | StaticHeap.Object.Sequence {header, init, ty, ...} =>
+                          | StaticHeap.Object.Sequence {elt, init, tycon, ...} =>
                                let
-                                  val ty =
-                                     case Type.deObjptr ty of
-                                        NONE => Error.bug "CCodegen.declareStaticHeaps: Sequence"
-                                      | SOME opt =>
-                                           (case Vector.sub (objectTypes, ObjptrTycon.index opt) of
-                                               ObjectType.Sequence {elt, ...} => elt
-                                             | _ => Error.bug "CCodegen.declareStaticHeaps: Sequence")
                                   fun toString (): string =
                                      String.implode
                                      (Vector.toListMap
@@ -747,10 +718,10 @@ fun outputDeclarations
                                   ; print ","
                                   ; print (mkLength (Vector.length init))
                                   ; print ","
-                                  ; print (mkHeader header)
+                                  ; print (mkHeader tycon)
                                   ; print ","
                                   ; print "},"
-                                  ; if Type.equals (ty, Type.word WordSize.word8)
+                                  ; if Type.equals (elt, Type.word WordSize.word8)
                                        then print (C.string (toString ()))
                                        else (print "{"
                                              ; Vector.foreach (init, fn init =>
