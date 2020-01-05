@@ -189,8 +189,8 @@ structure StaticHeap =
       structure Ref =
          struct
             open Ref
-            fun toC (T {kind, index, ...}) =
-               concat ["(Objptr)(&",
+            fun toC (T {kind, index, ty, ...}) =
+               concat ["(", CType.toString (Type.toCType ty), ")(&",
                        Label.toString (Kind.label kind),
                        ".obj", C.int index,
                        ".data)"]
