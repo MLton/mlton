@@ -346,8 +346,8 @@ fun toMachine (rssa: Rssa.Program.t) =
                 | R.Operand.Var {var, ...} => varElem var
                 | _ => Error.bug "Backend.staticHeaps.translateOperand: invalid operand"
             fun translateInit init =
-               Vector.map (init, fn {offset, src, ty = _} =>
-                           {offset = offset, src = translateOperand src})
+               Vector.map (init, fn {offset, src, ty} =>
+                           {offset = offset, src = translateOperand src, ty = ty})
             fun translateObject obj =
                case obj of
                   R.Object.Normal {dst = (dst, _), init, ty, tycon, ...} =>

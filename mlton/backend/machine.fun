@@ -189,12 +189,14 @@ structure StaticHeap =
 
             datatype t =
                Normal of {init: {offset: Bytes.t,
-                                 src: Elem.t} vector,
+                                 src: Elem.t,
+                                 ty: Type.t} vector,
                           ty: Type.t,
                           tycon: ObjptrTycon.t}
              | Sequence of {elt: Type.t,
                             init: {offset: Bytes.t,
-                                   src: Elem.t} vector vector,
+                                   src: Elem.t,
+                                   ty: Type.t} vector vector,
                             tycon: ObjptrTycon.t}
 
             fun layout d =
@@ -202,9 +204,10 @@ structure StaticHeap =
                   open Layout
                   val initLayout =
                      Vector.layout
-                     (fn {offset, src} =>
+                     (fn {offset, src, ty} =>
                       record [("offset", Bytes.layout offset),
-                              ("src", Elem.layout src)])
+                              ("src", Elem.layout src),
+                              ("ty", Type.layout ty)])
                in
                   case d of
                      Normal {init, ty, tycon} =>

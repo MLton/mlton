@@ -201,10 +201,6 @@ structure StaticHeap =
             structure Elem =
                struct
                   open Elem
-                  fun toCType e =
-                     case e of
-                        Const c => Const.toCType c
-                      | Ref _ => CType.objptr
                   fun toC e =
                      case e of
                         Const c => Const.toC c
@@ -569,10 +565,10 @@ fun outputDeclarations
                      Option.fold (mkPad (next, offset), fieldTys, op ::)
                   val (fieldTys, next) =
                      Vector.fold
-                     (init, ([], Bytes.zero), fn ({offset, src}, (fieldTys, next)) =>
+                     (init, ([], Bytes.zero), fn ({offset, src = _, ty}, (fieldTys, next)) =>
                       let
                          val fieldTys = maybePad (next, offset, fieldTys)
-                         val fldCType = StaticHeap.Object.Elem.toCType src
+                         val fldCType = Type.toCType ty
                          val fld = concat [CType.toString fldCType,
                                            " fld", Bytes.toString offset]
                       in
@@ -589,7 +585,7 @@ fun outputDeclarations
 
             fun mkFields init =
                Vector.map
-               (init, fn {offset, src} =>
+               (init, fn {offset, src, ty = _} =>
                 concat [".fld", Bytes.toString offset,
                         " = ", StaticHeap.Object.Elem.toC src])
 

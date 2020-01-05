@@ -78,12 +78,14 @@ signature MACHINE =
                      end
                   datatype t =
                      Normal of {init: {offset: Bytes.t,
-                                       src: Elem.t} vector,
+                                       src: Elem.t,
+                                       ty: Type.t} vector,
                                 ty: Type.t,
                                 tycon: ObjptrTycon.t}
                    | Sequence of {elt: Type.t,
                                   init: {offset: Bytes.t,
-                                         src: Elem.t} vector vector,
+                                         src: Elem.t,
+                                         ty: Type.t} vector vector,
                                   tycon: ObjptrTycon.t}
                end
          end
