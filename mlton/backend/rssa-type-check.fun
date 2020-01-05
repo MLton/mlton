@@ -477,28 +477,15 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, static
                 end)
          in
             case obj of
-               Normal {dst = (dst, ty), header, init, size} =>
+               Normal {dst = (dst, dstTy), init, ty, tycon} =>
                   let
-                     val dst = Operand.Var {ty = ty, var = dst}
-                     val tycon =
-                        ObjptrTycon.fromIndex
-                        (Runtime.headerToTypeIndex header)
+                     val dst = Operand.Var {ty = dstTy, var = dst}
                   in
-                     Type.isSubtype (Type.objptr tycon, ty)
-                     andalso
-                     Bytes.equals
-                     (size,
-                      Bytes.align
-                      (size,
-                       {alignment = (case !Control.align of
-                                         Control.Align4 => Bytes.inWord32
-                                       | Control.Align8 => Bytes.inWord64)}))
+                     Type.isSubtype (Type.objptr tycon, dstTy)
                      andalso
                      (case tyconTy tycon of
-                         ObjectType.Normal {ty, ...} =>
-                            Bytes.equals
-                            (size, Bytes.+ (Runtime.normalMetaDataSize (),
-                                            Type.bytes ty))
+                         ObjectType.Normal {ty = ty', ...} =>
+                            Type.equals (ty, ty')
                             andalso
                             let
                                val size = Type.bytes ty
@@ -512,34 +499,15 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, static
                             end
                        | _ => false)
                   end
-             | Sequence {dst = (dst, ty), header, init, size} =>
+             | Sequence {dst = (dst, dstTy), elt, init, tycon} =>
                   let
-                     val dst = Operand.Var {ty = ty, var = dst}
-                     val tycon =
-                        ObjptrTycon.fromIndex
-                        (Runtime.headerToTypeIndex header)
+                     val dst = Operand.Var {ty = dstTy, var = dst}
                   in
-                     Type.isSubtype (Type.objptr tycon, ty)
-                     andalso
-                     Bytes.equals
-                     (size,
-                      Bytes.align
-                      (size,
-                       {alignment = (case !Control.align of
-                                         Control.Align4 => Bytes.inWord32
-                                       | Control.Align8 => Bytes.inWord64)}))
+                     Type.isSubtype (Type.objptr tycon, dstTy)
                      andalso
                      (case tyconTy tycon of
-                         ObjectType.Sequence {elt, ...} =>
-                            Bytes.equals
-                            (size,
-                             Bytes.align
-                             (Bytes.+ (Runtime.sequenceMetaDataSize (),
-                                       Bytes.* (Type.bytes elt,
-                                                IntInf.fromInt (Vector.length init))),
-                              {alignment = (case !Control.align of
-                                               Control.Align4 => Bytes.inWord32
-                                             | Control.Align8 => Bytes.inWord64)}))
+                         ObjectType.Sequence {elt = elt', ...} =>
+                            Type.equals (elt, elt')
                             andalso
                             let
                                val size = Type.bytes elt

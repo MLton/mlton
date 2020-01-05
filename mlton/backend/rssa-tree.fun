@@ -166,17 +166,17 @@ structure Object =
    struct
       datatype t =
          Normal of {dst: Var.t * Type.t,
-                    header: word,
                     init: {offset: Bytes.t,
                            src: Operand.t,
                            ty: Type.t} vector,
-                    size: Bytes.t}
+                    ty: Type.t,
+                    tycon: ObjptrTycon.t}
        | Sequence of {dst: Var.t * Type.t,
-                      header: word,
+                      elt: Type.t,
                       init: {offset: Bytes.t,
                              src: Operand.t,
                              ty: Type.t} vector vector,
-                      size: Bytes.t}
+                      tycon: ObjptrTycon.t}
 
       fun dst obj =
          case obj of
@@ -185,8 +185,18 @@ structure Object =
 
       fun size obj =
          case obj of
-            Normal {size, ...} => size
-          | Sequence {size, ...} => size
+            Normal {ty, ...} => Bytes.+ (Runtime.normalMetaDataSize (), Type.bytes ty)
+          | Sequence {elt, init, ...} =>
+               let
+                  val length = Vector.length init
+                  val size =
+                     Bytes.+ (Runtime.sequenceMetaDataSize (),
+                              Bytes.* (Type.bytes elt, IntInf.fromInt length))
+               in
+                  case !Control.align of
+                     Control.Align4 => Bytes.alignWord32 size
+                   | Control.Align8 => Bytes.alignWord64 size
+               end
 
       fun 'a foldDefUse (s, a: 'a, {def: Var.t * Type.t * 'a -> 'a,
                                     use: Var.t * 'a -> 'a}): 'a =
@@ -229,16 +239,16 @@ structure Object =
                             ty = ty})
          in
             case s of
-               Normal {dst, header, init, size} =>
+               Normal {dst, init, ty, tycon} =>
                   Normal {dst = dst,
-                          header = header,
                           init = replaceInit init,
-                          size = size}
-             | Sequence {dst, header, init, size} =>
+                          ty = ty,
+                          tycon = tycon}
+             | Sequence {dst, elt, init, tycon} =>
                   Sequence {dst = dst,
-                            header = header,
+                            elt = elt,
                             init = Vector.map (init, replaceInit),
-                            size = size}
+                            tycon = tycon}
          end
 
       val layout =
@@ -251,21 +261,21 @@ structure Object =
                         ("src", Operand.layout src),
                         ("ty", Type.layout ty)])
          in
-            fn Normal {dst = (dst, ty), header, init, size} =>
+            fn Normal {dst = (dst, dstTy), init, ty, tycon} =>
                   mayAlign
-                  [seq [Var.layout dst, constrain ty],
+                  [seq [Var.layout dst, constrain dstTy],
                    indent (seq [str "= NormalObject ",
-                                record [("header", seq [str "0x", Word.layout header]),
-                                        ("init", layoutInit init),
-                                        ("size", Bytes.layout size)]],
+                                record [("init", layoutInit init),
+                                        ("ty", Type.layout ty),
+                                        ("tycon", ObjptrTycon.layout tycon)]],
                            2)]
-             | Sequence {dst = (dst, ty), header, init, size} =>
+             | Sequence {dst = (dst, dstTy), elt, init, tycon} =>
                   mayAlign
-                  [seq [Var.layout dst, constrain ty],
+                  [seq [Var.layout dst, constrain dstTy],
                    indent (seq [str "= SequenceObject ",
-                                record [("header", seq [str "0x", Word.layout header]),
+                                record [("elt", Type.layout elt),
                                         ("init", Vector.layout layoutInit init),
-                                        ("size", Bytes.layout size)]],
+                                        ("tycon", ObjptrTycon.layout tycon)]],
                            2)]
          end
 

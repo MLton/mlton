@@ -19,7 +19,6 @@ in
    structure CFunction = CFunction
    structure Label = Label
    structure Live = Live
-   structure ObjectType = ObjectType
    structure ObjptrTycon = ObjptrTycon
    structure RealX = RealX
    structure Runtime = Runtime
@@ -543,9 +542,10 @@ fun toMachine (rssa: Rssa.Program.t) =
              | Move {dst, src} =>
                   move {dst = translateOperand dst,
                         src = translateOperand src}
-             | Object (Object.Normal {dst = (dst, _), header, init, size}) =>
+             | Object (obj as Object.Normal {dst = (dst, _), init, tycon, ...}) =>
                   let
                      val dst = varOperand dst
+                     val header = Runtime.typeIndexToHeader (ObjptrTycon.index tycon)
                      fun mkDst {offset, ty} =
                         M.Operand.Offset {base = dst,
                                           offset = offset,
@@ -554,19 +554,13 @@ fun toMachine (rssa: Rssa.Program.t) =
                      Vector.concat
                      (M.Statement.object {dst = dst,
                                           header = header,
-                                          size = size}
+                                          size = Object.size obj}
                       :: mkInit (init, mkDst))
                   end
-             | Object (Object.Sequence {dst = (dst, ty), header, init, size}) =>
+             | Object (obj as Object.Sequence {dst = (dst, _), elt, init, tycon, ...}) =>
                   let
                      val dst = varOperand dst
-                     val elt =
-                        case Type.deObjptr ty of
-                           NONE => Error.bug "Backend.getStatement: Sequence"
-                         | SOME opt =>
-                              (case Vector.sub (objectTypes, ObjptrTycon.index opt) of
-                                  ObjectType.Sequence {elt, ...} => elt
-                                | _ => Error.bug "Backend.getStatement: Sequence")
+                     val header = Runtime.typeIndexToHeader (ObjptrTycon.index tycon)
                      val (scale, mkIndex) =
                         case Scale.fromBytes (Type.bytes elt) of
                            NONE =>
@@ -587,7 +581,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                      (M.Statement.sequence {dst = dst,
                                             header = header,
                                             length = Vector.length init,
-                                            size = size}
+                                            size = Object.size obj}
                       :: (List.concat o Vector.toListMapi)
                          (init, fn (index, init) =>
                           let

@@ -518,10 +518,10 @@ fun restoreFunction {main: Function.t, statics: Object.t vector}
                    Statement.Bind {dst=tupleDst, pinned=pinned, src=src}
               | Statement.Move {src, ...} =>
                    Statement.Move {dst=Operand.Var dst, src=src}
-              | Statement.Object (Object.Normal {header, init, size, ...}) =>
-                   Statement.Object (Object.Normal {dst=tupleDst, init=init, header=header, size=size})
-              | Statement.Object (Object.Sequence {header, init, size, ...}) =>
-                   Statement.Object (Object.Sequence {dst=tupleDst, init=init, header=header, size=size})
+              | Statement.Object (Object.Normal {init, ty, tycon, ...}) =>
+                   Statement.Object (Object.Normal {dst=tupleDst, init=init, ty=ty, tycon=tycon})
+              | Statement.Object (Object.Sequence {elt, init, tycon, ...}) =>
+                   Statement.Object (Object.Sequence {dst=tupleDst, elt=elt, init=init, tycon=tycon})
               | Statement.PrimApp {args, prim, ...} =>
                    Statement.PrimApp {args=args, dst=SOME tupleDst, prim=prim}
               | _ => st

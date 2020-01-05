@@ -55,17 +55,17 @@ signature RSSA_TREE =
          sig
             datatype t =
                Normal of {dst: Var.t * Type.t,
-                          header: word,
                           init: {offset: Bytes.t,
                                  src: Operand.t,
                                  ty: Type.t} vector,
-                          size: Bytes.t (* including metadata *)}
+                          ty: Type.t,
+                          tycon: ObjptrTycon.t}
              | Sequence of {dst: Var.t * Type.t,
-                            header: word,
+                            elt: Type.t,
                             init: {offset: Bytes.t,
                                    src: Operand.t,
                                    ty: Type.t} vector vector,
-                            size: Bytes.t (* including metadata *)}
+                            tycon: ObjptrTycon.t}
 
             val dst: t -> Var.t * Type.t
             (* foldDef (s, a, f)

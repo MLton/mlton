@@ -1028,9 +1028,9 @@ structure ObjptrRep =
             List.concatRev
             ([Object (Object.Normal
                       {dst = (dst, ty),
-                       header = Runtime.typeIndexToHeader (ObjptrTycon.index tycon),
                        init = Vector.fromListRev init,
-                       size = Bytes.+ (Type.bytes componentsTy, Runtime.normalMetaDataSize ())})]
+                       ty = componentsTy,
+                       tycon = tycon})]
              :: pre)
          end
 
@@ -1068,21 +1068,13 @@ structure ObjptrRep =
                 in
                    (pre, Vector.fromListRev init :: init')
                 end)
-            val length = Vector.length src
-            val size =
-               Bytes.+ (Bytes.* (Type.bytes componentsTy, IntInf.fromInt length),
-                        Runtime.sequenceMetaDataSize ())
-            val size =
-               case !Control.align of
-                  Control.Align4 => Bytes.alignWord32 size
-                | Control.Align8 => Bytes.alignWord64 size
          in
             List.concatRev
             ([Object (Object.Sequence
                       {dst = (dst, ty),
-                       header = Runtime.typeIndexToHeader (ObjptrTycon.index tycon),
+                       elt = componentsTy,
                        init = Vector.fromListRev init,
-                       size = size})]
+                       tycon = tycon})]
              :: pre)
          end
 
