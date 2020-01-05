@@ -23,6 +23,7 @@ in
    structure RealX = RealX
    structure Runtime = Runtime
    structure StackOffset = StackOffset
+   structure StaticHeap = StaticHeap
    structure Temporary = Temporary
    structure WordSize = WordSize
    structure WordX = WordX
@@ -43,6 +44,7 @@ in
    structure Func = Func
    structure Function = Function
    structure Object = Object
+   structure ObjectType = ObjectType
    structure Prim = Prim
    structure Type = Type
    structure Var = Var
@@ -329,6 +331,113 @@ fun toMachine (rssa: Rssa.Program.t) =
                       Var.layout,
                       M.Operand.layout)
          varOperand
+
+      val staticHeaps =
+         let
+            open StaticHeap
+            fun varElem (x: Var.t): Object.Elem.t =
+               case varOperand x of
+                  M.Operand.Const c => Object.Elem.Const c
+                | M.Operand.StaticHeapRef r => Object.Elem.Ref r
+                | _ => Error.bug "Backend.staticHeaps.varElem: invalid operand"
+            fun translateOperand (oper: R.Operand.t): Object.Elem.t =
+               case oper of
+                  R.Operand.Const c => Object.Elem.Const c
+                | R.Operand.Var {var, ...} => varElem var
+                | _ => Error.bug "Backend.staticHeaps.translateOperand: invalid operand"
+            fun translateInit init =
+               Vector.map (init, fn {offset, src, ty = _} =>
+                           {offset = offset, src = translateOperand src})
+            fun translateObject obj =
+               case obj of
+                  R.Object.Normal {dst = (dst, _), init, ty, tycon, ...} =>
+                     let
+                        val hasIdentity =
+                           case Vector.sub (objectTypes, ObjptrTycon.index tycon) of
+                              ObjectType.Normal {hasIdentity, ...} => hasIdentity
+                            | _ => Error.bug "Backend.staticHeaps.translateObject: Normal,hasIdentity"
+                        val kind =
+                           if hasIdentity
+                              then if Type.isUnit ty
+                                      then Kind.Immutable
+                                      else (* Conservative, b/c the objptr field
+                                            * might not be mutable.
+                                            *)
+                                           if Type.exists (ty, Type.isObjptr)
+                                              then Kind.Root
+                                              else Kind.Mutable
+                              else Kind.Immutable
+                     in
+                        {dst = dst,
+                         kind = kind,
+                         obj = Object.Normal {init = translateInit init,
+                                              ty = ty,
+                                              tycon = tycon},
+                         offset = Runtime.normalMetaDataSize (),
+                         size = R.Object.size obj,
+                         tycon = tycon}
+                     end
+                | R.Object.Sequence {dst = (dst, _), elt, init, tycon, ...} =>
+                     let
+                        val hasIdentity =
+                           case Vector.sub (objectTypes, ObjptrTycon.index tycon) of
+                              ObjectType.Sequence {hasIdentity, ...} => hasIdentity
+                            | _ => Error.bug "Backend.staticHeaps.translateObject: Sequence,hasIdentity"
+                        val kind =
+                           if hasIdentity
+                              then if Type.exists (elt, Type.isObjptr)
+                                      then Kind.Root
+                                      else Kind.Mutable
+                              else Kind.Immutable
+                     in
+                        {dst = dst,
+                         kind = kind,
+                         obj = Object.Sequence {elt = elt,
+                                                init = Vector.map (init, translateInit),
+                                                tycon = tycon},
+                         offset = Runtime.sequenceMetaDataSize (),
+                         size = R.Object.size obj,
+                         tycon = tycon}
+                     end
+            val ({objs = immObjs, ...}, {objs = mutObjs, ...}, {objs = rootObjs, ...}) =
+               Vector.fold
+               (statics,
+                let val init = {nextIndex = 0, nextOffset = Bytes.zero, objs = []}
+                in (init, init, init) end,
+                fn (obj, (imm, mut, root)) =>
+                let
+                   val {dst, kind, obj, offset, size, tycon} =
+                      translateObject obj
+                   fun addObj {nextIndex, nextOffset, objs} =
+                      let
+                         val ty = Type.objptr tycon
+                         val r = Ref.T {index = nextIndex,
+                                        kind = kind,
+                                        offset = Bytes.+ (nextOffset, offset),
+                                        ty = ty}
+                         val _ =
+                            setVarInfo (dst, {operand = VarOperand.Const (M.Operand.StaticHeapRef r),
+                                              ty = ty})
+                      in
+                         {nextIndex = nextIndex + 1,
+                          nextOffset = Bytes.+ (nextOffset, size),
+                          objs = obj::objs}
+                      end
+                in
+                   case kind of
+                      Kind.Immutable => (addObj imm, mut, root)
+                    | Kind.Mutable => (imm, addObj mut, root)
+                    | Kind.Root => (imm, mut, addObj root)
+                end)
+            val immObjs = Vector.fromListRev immObjs
+            val mutObjs = Vector.fromListRev mutObjs
+            val rootObjs = Vector.fromListRev rootObjs
+         in
+            fn Kind.Immutable => immObjs
+             | Kind.Mutable => mutObjs
+             | Kind.Root => rootObjs
+         end
+
       (* Hash tables for uniquifying globals. *)
       local
          val allStatics = ref []
@@ -1232,7 +1341,7 @@ fun toMachine (rssa: Rssa.Program.t) =
           reals = allReals (),
           sourceMaps = sourceMaps,
           statics = allStatics (),
-          staticHeaps = fn _ => Vector.new0 ()}
+          staticHeaps = staticHeaps}
    in
       machine
    end
