@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019 Matthew Fluet.
+(* Copyright (C) 2009,2019-2020 Matthew Fluet.
  * Copyright (C) 2002-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -40,5 +40,5 @@ signature SWITCH =
       val isOk: t * {checkUse: Use.t -> unit,
                      labelIsOk: Label.t -> bool} -> bool
       val layout: t -> Layout.t
-      val replaceLabels: t * (Label.t -> Label.t) -> t
+      val replace: t * {label: Label.t -> Label.t, use: Use.t -> Use.t} -> t
    end

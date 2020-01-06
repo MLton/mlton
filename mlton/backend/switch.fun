@@ -1,4 +1,4 @@
-(* Copyright (C) 2019 Matthew Fluet.
+(* Copyright (C) 2019-2020 Matthew Fluet.
  * Copyright (C) 2002-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -93,9 +93,10 @@ fun foreachLabel (s, f) =
    foldLabelUse (s, (), {label = f o #1,
                          use = fn _ => ()})
 
-fun replaceLabels (T {cases, default, expect, size, test}, f) =
-   T {cases = Vector.map (cases, (fn (w, l) => (w, f l))),
-      default = Option.map (default, f),
+fun replace (T {cases, default, expect, size, test}, {label, use}): t =
+   T {cases = Vector.map (cases, (fn (w, l) => (w, label l))),
+      default = Option.map (default, label),
       expect = expect,
-      size = size, test = test}
+      size = size,
+      test = use test}
 end

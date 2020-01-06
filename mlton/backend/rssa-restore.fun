@@ -594,7 +594,8 @@ fun restoreFunction {main: Function.t, statics: Object.t vector}
         end
         fun rewriteStatement addPost st
           = let
-               val st = Statement.replaceUses (st, rewriteVar)
+               val st = Statement.replace (st, {const = Operand.Const,
+                                                var = rewriteVar o #var})
                val st =
                  case st of
                       Statement.SetHandler l => Statement.SetHandler (route false l)
@@ -617,6 +618,11 @@ fun restoreFunction {main: Function.t, statics: Object.t vector}
                         return=Return.NonTail
                         {cont, handler=Handler.Handle h}} =>
                      let
+                       val args =
+                          Vector.map
+                          (args, fn arg =>
+                           Operand.replace (arg, {const = Operand.Const,
+                                                  var = rewriteVar o #var}))
                        val h' = route false h
                        val cont = route true cont
                      in
@@ -625,8 +631,9 @@ fun restoreFunction {main: Function.t, statics: Object.t vector}
                              return=Return.NonTail
                               {cont=cont, handler=Handler.Handle h'}}
                      end
-                 | _ => Transfer.replaceLabels (t, route false)
-              val t = Transfer.replaceUses (t, rewriteVar)
+                 | _ => Transfer.replace (t, {const = Operand.Const,
+                                              label = route false,
+                                              var = rewriteVar o #var})
            in
               t
            end

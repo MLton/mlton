@@ -98,7 +98,8 @@ fun shrinkFunction {main: Function.t, statics: Object.t vector} : {main: unit ->
             fun loopStatement (s: Statement.t): Statement.t option =
                let
                   datatype z = datatype Statement.t
-                  val s = Statement.replaceUses (s, replaceVar)
+                  val s = Statement.replace (s, {const = Operand.Const,
+                                                 var = replaceVar o #var})
                   fun keep () =
                      (Statement.foreachDef (s, dontReplaceVar)
                       ; SOME s)
@@ -169,8 +170,9 @@ fun shrinkFunction {main: Function.t, statics: Object.t vector} : {main: unit ->
                   fun loop (ss, t) =
                      let
                         val () = List.push (stmts, Vector.keepAllMap (ss, loopStatement))
-                        val t = Transfer.replaceLabels (t, replaceLabel)
-                        val t = Transfer.replaceUses (t, replaceVar)
+                        val t = Transfer.replace (t, {const = Operand.Const,
+                                                      label = replaceLabel,
+                                                      var = replaceVar o #var})
                         fun done () = (Vector.concat (List.rev (!stmts)), t)
                      in
                         case t of

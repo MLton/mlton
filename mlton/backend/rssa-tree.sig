@@ -44,7 +44,8 @@ signature RSSA_TREE =
             val cast: t * Type.t -> t
             val layout: t -> Layout.t
             val null: t
-            val replaceVar: t * (Var.t -> t) -> t
+            val replace: t * {const: Const.t -> t,
+                              var: {ty: Type.t, var: Var.t} -> t} -> t
             val ty: t -> Type.t
             val word: WordX.t -> t
             val zero: WordSize.t -> t
@@ -79,7 +80,6 @@ signature RSSA_TREE =
             val foldUse: t * 'a * (Var.t * 'a -> 'a) -> 'a
             val foreachUse: t * (Var.t -> unit) -> unit
             val layout: t -> Layout.t
-            val replaceUses: t * (Var.t -> Operand.t) -> t
             val size: t -> Bytes.t
             val toString: t -> string
          end
@@ -114,7 +114,8 @@ signature RSSA_TREE =
             val foldUse: t * 'a * (Var.t * 'a -> 'a) -> 'a
             val foreachUse: t * (Var.t -> unit) -> unit
             val layout: t -> Layout.t
-            val replaceUses: t * (Var.t -> Operand.t) -> t
+            val replace: t * {const: Const.t -> Operand.t,
+                              var: {var: Var.t, ty: Type.t} -> Operand.t} -> t
             val resize: Operand.t * Type.t -> Operand.t * t list
             val toString: t -> string
          end
@@ -154,8 +155,10 @@ signature RSSA_TREE =
             (* in ifZero, the operand should be of type defaultWord *)
             val ifZero: Operand.t * {falsee: Label.t, truee: Label.t} -> t
             val layout: t -> Layout.t
+            val replace: t * {const: Const.t -> Operand.t,
+                              label: Label.t -> Label.t,
+                              var: {var: Var.t, ty: Type.t} -> Operand.t} -> t
             val replaceLabels: t * (Label.t -> Label.t) -> t
-            val replaceUses: t * (Var.t -> Operand.t) -> t
          end
 
       structure Kind:

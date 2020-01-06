@@ -121,11 +121,13 @@ structure Operand =
           | Var {var, ...} => f (var, a)
           | _ => a
 
-      fun replaceVar (z: t, f: Var.t -> t): t =
+      fun replace (z: t, {const: Const.t -> t,
+                          var: {ty: Type.t, var: Var.t} -> t}): t =
          let
             fun loop (z: t): t =
                case z of
                   Cast (t, ty) => Cast (loop t, ty)
+                | Const c => const c
                 | Offset {base, offset, ty} =>
                      Offset {base = loop base,
                              offset = offset,
@@ -136,12 +138,11 @@ structure Operand =
                                   offset = offset,
                                   scale = scale,
                                   ty = ty}
-                | Var {var, ...} => f var
+                | Var x_ty => var x_ty
                 | _ => z
          in
             loop z
          end
-
    end
 
 structure Switch =
@@ -154,12 +155,10 @@ structure Switch =
          open S
       end
 
-      fun replaceVar (T {cases, default, expect, size, test}, f) =
-         T {cases = cases,
-            default = default,
-            expect = expect,
-            size = size,
-            test = Operand.replaceVar (test, f)}
+      fun replace' (s, {const, label, var}) =
+         replace (s, {label = label,
+                      use = fn oper => Operand.replace (oper, {const = const,
+                                                               var = var})})
    end
 
 structure Object =
@@ -228,10 +227,11 @@ structure Object =
 
       fun foreachUse (s, f) = foldUse (s, (), f o #1)
 
-      fun replaceUses (s: t, f: Var.t -> Operand.t): t =
+      fun replace (s:t, {const: Const.t -> Operand.t,
+                         var: {ty: Type.t, var: Var.t} -> Operand.t}): t =
          let
             fun oper (z: Operand.t): Operand.t =
-               Operand.replaceVar (z, f)
+               Operand.replace (z, {const = const, var = var})
             fun replaceInit init =
                Vector.map (init, fn {offset, src, ty} =>
                            {offset = offset,
@@ -341,10 +341,11 @@ structure Statement =
 
       fun foreachUse (s, f) = foldUse (s, (), f o #1)
 
-      fun replaceUses (s: t, f: Var.t -> Operand.t): t =
+      fun replace (s: t, fs as {const: Const.t -> Operand.t,
+                                var: {ty: Type.t, var: Var.t} -> Operand.t}): t =
          let
             fun oper (z: Operand.t): Operand.t =
-               Operand.replaceVar (z, f)
+               Operand.replace (z, {const = const, var = var})
          in
             case s of
                Bind {dst, pinned, src} =>
@@ -352,7 +353,7 @@ structure Statement =
                         pinned = pinned,
                         src = oper src}
              | Move {dst, src} => Move {dst = oper dst, src = oper src}
-             | Object obj => Object (Object.replaceUses (obj, f))
+             | Object obj => Object (Object.replace (obj, fs))
              | PrimApp {args, dst, prim} =>
                   PrimApp {args = Vector.map (args, oper),
                            dst = dst,
@@ -569,44 +570,33 @@ structure Transfer =
                      test = test})
       end
 
-      fun replaceLabels (t: t, f: Label.t -> Label.t): t =
-         case t of
-               CCall {args, func, return} =>
-                  CCall {args = args,
-                         func = func,
-                         return = Option.map (return, f)}
-             | Call {args, func, return} =>
-                  Call {args = args,
-                        func = func,
-                        return = Return.map (return, f)}
-             | Goto {args, dst} =>
-                  Goto {args = args,
-                        dst = f dst}
-             | Raise zs => Raise zs
-             | Return zs => Return zs
-             | Switch s => Switch (Switch.replaceLabels (s, f))
-
-      fun replaceUses (t: t, f: Var.t -> Operand.t): t =
+      fun replace (t: t, fs as {const: Const.t -> Operand.t,
+                                label: Label.t -> Label.t,
+                                var: {ty: Type.t, var: Var.t} -> Operand.t}): t =
          let
-            fun oper z = Operand.replaceVar (z, f)
+            fun oper z = Operand.replace (z, {const = const, var = var})
             fun opers zs = Vector.map (zs, oper)
          in
             case t of
                CCall {args, func, return} =>
                   CCall {args = opers args,
                          func = func,
-                         return = return}
+                         return = Option.map (return, label)}
              | Call {args, func, return} =>
                   Call {args = opers args,
                         func = func,
-                        return = return}
+                        return = Return.map (return, label)}
              | Goto {args, dst} =>
                   Goto {args = opers args,
-                        dst = dst}
+                        dst = label dst}
              | Raise zs => Raise (opers zs)
              | Return zs => Return (opers zs)
-             | Switch s => Switch (Switch.replaceVar (s, f))
+             | Switch s => Switch (Switch.replace' (s, fs))
          end
+      fun replaceLabels (s, label) =
+         replace (s, {const = Operand.Const,
+                      label = label,
+                      var = Operand.Var})
    end
 
 structure Kind =
