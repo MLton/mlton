@@ -486,7 +486,7 @@ fun outputDeclarations
                                 (* Requires initialization, and is likely an array anyway *)
                                 Machine.Static.Data.Empty _ => ""
                               | _ => "const ")
-                      | Heap => "const static " (* Will just be handed to GC by address *)
+                      | Heap => "static const " (* Will just be handed to GC by address *)
                    end
 
                 val decl = concat
