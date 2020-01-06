@@ -178,13 +178,20 @@ structure StaticHeap =
             structure Elem =
                struct
                   datatype t =
-                     Const of Const.t
+                     Cast of t * Type.t
+                   | Const of Const.t
                    | Ref of Ref.t
 
                   fun layout e =
-                     case e of
-                        Const c => Const.layout c
-                      | Ref r => Ref.layout r
+                     let
+                        open Layout
+                     in
+                        case e of
+                           Cast (z, ty) =>
+                              seq [str "Cast ", tuple [layout z, Type.layout ty]]
+                         | Const c => Const.layout c
+                         | Ref r => Ref.layout r
+                     end
                end
 
             datatype t =

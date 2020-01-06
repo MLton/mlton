@@ -73,7 +73,8 @@ signature MACHINE =
                   structure Elem:
                      sig
                         datatype t =
-                           Const of Const.t
+                           Cast of t * Type.t
+                         | Const of Const.t
                          | Ref of Ref.t
                      end
                   datatype t =

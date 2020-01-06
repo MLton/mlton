@@ -342,7 +342,8 @@ fun toMachine (rssa: Rssa.Program.t) =
                 | _ => Error.bug "Backend.staticHeaps.varElem: invalid operand"
             fun translateOperand (oper: R.Operand.t): Object.Elem.t =
                case oper of
-                  R.Operand.Const c => Object.Elem.Const c
+                  R.Operand.Cast (z, ty) => Object.Elem.Cast (translateOperand z, ty)
+                | R.Operand.Const c => Object.Elem.Const c
                 | R.Operand.Var {var, ...} => varElem var
                 | _ => Error.bug "Backend.staticHeaps.translateOperand: invalid operand"
             fun translateInit init =

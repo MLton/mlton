@@ -131,6 +131,14 @@ structure Const =
           | _ => Error.bug "CCodegen.Const.toC"
    end
 
+structure Type =
+   struct
+      open Type
+
+      fun toC (t: t): string =
+         CType.toString (Type.toCType t)
+   end
+
 structure Static =
    struct
       local
@@ -203,7 +211,9 @@ structure StaticHeap =
                   open Elem
                   fun toC e =
                      case e of
-                        Const c => Const.toC c
+                        Cast (z, ty) =>
+                           concat ["(", Type.toC ty, ")", toC z]
+                      | Const c => Const.toC c
                       | Ref r => Ref.toC r
                end
          end
@@ -971,14 +981,6 @@ fun outputDeclarations
       ; rest (); print "\n"
       ; declareMLtonMain (); declareMain (); print "\n"
       ; declareExports ()
-   end
-
-structure Type =
-   struct
-      open Type
-
-      fun toC (t: t): string =
-         CType.toString (Type.toCType t)
    end
 
 structure StackOffset =
