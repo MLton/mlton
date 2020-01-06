@@ -1,4 +1,4 @@
-(* Copyright (C) 2014,2019 Matthew Fluet.
+(* Copyright (C) 2014,2019-2020 Matthew Fluet.
  * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -159,7 +159,7 @@ val csize =
 val seqIndex =
    Promise.lazy
    (fn () => word' (Control.Target.Size.seqIndex (),
-                    {signed = true}))
+                    {signed = false}))
 
 val objptrHeader =
    Promise.lazy
