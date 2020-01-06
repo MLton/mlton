@@ -554,7 +554,33 @@ fun outputDeclarations
 
       fun declareStaticHeaps () =
          let
-            fun sym k = Label.toString (Machine.StaticHeap.Kind.label k)
+            open StaticHeap
+            val declareCSymbol =
+               let
+                  val seen = String.memoize (fn _ => ref false)
+               in
+                  fn CSymbol.T {name, cty, symbolScope} =>
+                  let
+                     fun doit () =
+                        (print o concat)
+                        [case symbolScope of
+                            CSymbolScope.External => "EXTERNAL "
+                          | CSymbolScope.Private => "PRIVATE "
+                          | CSymbolScope.Public => "PUBLIC ",
+                         "extern ",
+                         CType.toString (Option.fold (cty, CType.Word8, #1)),
+                         " ",
+                         name,
+                         ";\n"]
+                     val seen = seen name
+                  in
+                     if !seen
+                        then ()
+                        else (seen := true; doit ())
+                  end
+               end
+
+            fun sym k = Label.toString (Kind.label k)
             fun ty k = concat [sym k, "Ty"]
 
             fun mkPadTy (next, offset) =
@@ -616,7 +642,7 @@ fun outputDeclarations
                       let
                          val fields = maybePad (next, offset, fields)
                          val fldCType = Type.toCType ty
-                         val fld = StaticHeap.Object.Elem.toC src
+                         val fld = Object.Elem.toC src
                       in
                          (fld::fields, Bytes.+ (offset, CType.size fldCType))
                       end)
@@ -634,17 +660,17 @@ fun outputDeclarations
 
             val _ =
                List.foreach
-               (Machine.StaticHeap.Kind.all, fn k =>
+               (Kind.all, fn k =>
                 (print "typedef "
                  ; (case k of
-                       Machine.StaticHeap.Kind.Immutable => print "const "
+                       Kind.Immutable => print "const "
                      | _ => ())
                  ; print "struct __attribute__ ((aligned(16), packed)) {\n"
                  ; (Vector.foreachi
                     (staticHeaps k, fn (i, obj) =>
                      (print "struct __attribute__ ((packed)) {"
                       ; (case obj of
-                            StaticHeap.Object.Normal {init, ty, ...} =>
+                            Object.Normal {init, ty, ...} =>
                                (print "struct __attribute__ ((packed)) {"
                                 ; print (CType.toString headerTy)
                                 ; print " header;"
@@ -656,7 +682,7 @@ fun outputDeclarations
                                                      ; print fldTy
                                                      ; print ";"))
                                 ; print "} data;")
-                          | StaticHeap.Object.Sequence {elt, init, ...} =>
+                          | Object.Sequence {elt, init, ...} =>
                                let
                                   val length = Vector.length init
                                in
@@ -708,7 +734,7 @@ fun outputDeclarations
                  ; print ";\n"))
             val _ =
                List.foreach
-               (Machine.StaticHeap.Kind.all, fn k =>
+               (Kind.all, fn k =>
                 (print "PRIVATE "
                  ; print (ty k)
                  ; print " "
@@ -716,7 +742,31 @@ fun outputDeclarations
                  ; print ";\n"))
             val _ =
                List.foreach
-               (Machine.StaticHeap.Kind.all, fn k =>
+               (Kind.all, fn k =>
+                Vector.foreach
+                (staticHeaps k, fn obj =>
+                 let
+                    datatype z = datatype Object.Elem.t
+                    fun loopElem e =
+                       case e of
+                          Cast (e, _) => loopElem e
+                        | Const (Const.CSymbol s) => declareCSymbol s
+                        | Const _ => ()
+                        | Ref _ => ()
+                    fun loopInit init =
+                       Vector.foreach
+                       (init, fn {offset = _, src, ty = _} =>
+                        loopElem src)
+                 in
+                    case obj of
+                       Object.Normal {init, ...} =>
+                          loopInit init
+                     | Object.Sequence {init, ...} =>
+                          Vector.foreach (init, loopInit)
+                 end))
+            val _ =
+               List.foreach
+               (Kind.all, fn k =>
                 (print "PRIVATE "
                  ; print (ty k)
                  ; print " "
@@ -726,7 +776,7 @@ fun outputDeclarations
                     (staticHeaps k, fn obj =>
                      (print "{"
                       ; (case obj of
-                            StaticHeap.Object.Normal {init, tycon, ty, ...} =>
+                            Object.Normal {init, tycon, ty, ...} =>
                                (print "{"
                                 ; print (mkHeader tycon)
                                 ; print ","
@@ -735,14 +785,14 @@ fun outputDeclarations
                                 ; List.foreach (mkFields (init, ty), fn fld =>
                                                 (print fld; print ","))
                                 ; print "},")
-                          | StaticHeap.Object.Sequence {elt, init, tycon, ...} =>
+                          | Object.Sequence {elt, init, tycon, ...} =>
                                let
                                   fun toString (): string =
                                      String.implode
                                      (Vector.toListMap
                                       (init, fn init =>
                                        case Vector.first init of
-                                          {src = StaticHeap.Object.Elem.Const (Const.Word w), ...} => WordX.toChar w
+                                          {src = Object.Elem.Const (Const.Word w), ...} => WordX.toChar w
                                         | _ => Error.bug "CCodegen.declareStaticHeaps: toString"))
                                   val length = Vector.length init
                                in
@@ -1905,9 +1955,9 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
 
       fun declareStaticHeaps (prefix: string, print) =
          List.foreach
-         (Machine.StaticHeap.Kind.all, fn k =>
+         (StaticHeap.Kind.all, fn k =>
           print (concat [prefix, "PointerAux ",
-                         Label.toString (Machine.StaticHeap.Kind.label k),
+                         Label.toString (StaticHeap.Kind.label k),
                          ";\n"]))
 
       fun outputChunks chunks =
