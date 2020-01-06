@@ -547,14 +547,15 @@ fun outputDeclarations
             fun sym k = Label.toString (Machine.StaticHeap.Kind.label k)
             fun ty k = concat [sym k, "Ty"]
 
-            fun mkPad (next, offset) =
+            fun mkPadTy (next, offset) =
                if Bytes.equals (next, offset)
                   then NONE
                   else let
+                          val psize = Bytes.- (offset, next)
                           val pad =
                              concat [CType.toString CType.Word8,
                                      " pad", Bytes.toString next,
-                                     "[", Bytes.toString (Bytes.- (offset, next)), "]"]
+                                     "[", Bytes.toString psize, "]"]
                        in
                           SOME pad
                        end
@@ -562,7 +563,7 @@ fun outputDeclarations
             fun mkFieldTys (init, ty) =
                let
                   fun maybePad (next, offset, fieldTys) =
-                     Option.fold (mkPad (next, offset), fieldTys, op ::)
+                     Option.fold (mkPadTy (next, offset), fieldTys, op ::)
                   val (fieldTys, next) =
                      Vector.fold
                      (init, ([], Bytes.zero), fn ({offset, src = _, ty}, (fieldTys, next)) =>
@@ -583,11 +584,36 @@ fun outputDeclarations
             val counterTy = CType.seqIndex ()
             val lengthTy = CType.seqIndex ()
 
-            fun mkFields init =
-               Vector.map
-               (init, fn {offset, src, ty = _} =>
-                concat [".fld", Bytes.toString offset,
-                        " = ", StaticHeap.Object.Elem.toC src])
+            fun mkPad (next, offset) =
+               if Bytes.equals (next, offset)
+                  then NONE
+                  else let
+                          val psize = Bytes.- (offset, next)
+                          val pad =
+                             (C.string o String.tabulate)
+                             (Bytes.toInt psize, fn _ => #"\000")
+                       in
+                          SOME pad
+                       end
+
+            fun mkFields (init, ty) =
+               let
+                  fun maybePad (next, offset, fields) =
+                     Option.fold (mkPad (next, offset), fields, op ::)
+                  val (fields, next) =
+                     Vector.fold
+                     (init, ([], Bytes.zero), fn ({offset, src, ty}, (fields, next)) =>
+                      let
+                         val fields = maybePad (next, offset, fields)
+                         val fldCType = Type.toCType ty
+                         val fld = StaticHeap.Object.Elem.toC src
+                      in
+                         (fld::fields, Bytes.+ (offset, CType.size fldCType))
+                      end)
+                  val fields = maybePad (next, Type.bytes ty, fields)
+               in
+                  List.rev fields
+               end
 
             fun mkHeader tycon =
                WordX.toC (ObjptrTycon.toHeader tycon)
@@ -658,7 +684,7 @@ fun outputDeclarations
                                              Control.Align4 => Bytes.alignWord32 next
                                            | Control.Align8 => Bytes.alignWord64 next
                                     in
-                                       Option.app (mkPad (next, size), fn pad =>
+                                       Option.app (mkPadTy (next, size), fn pad =>
                                                    (print " "
                                                     ; print pad
                                                     ; print ";"))
@@ -690,14 +716,14 @@ fun outputDeclarations
                     (staticHeaps k, fn obj =>
                      (print "{"
                       ; (case obj of
-                            StaticHeap.Object.Normal {init, tycon, ...} =>
+                            StaticHeap.Object.Normal {init, tycon, ty, ...} =>
                                (print "{"
                                 ; print (mkHeader tycon)
                                 ; print ","
                                 ; print "},"
                                 ; print "{"
-                                ; Vector.foreach (mkFields init, fn fld =>
-                                                  (print fld; print ","))
+                                ; List.foreach (mkFields (init, ty), fn fld =>
+                                                (print fld; print ","))
                                 ; print "},")
                           | StaticHeap.Object.Sequence {elt, init, tycon, ...} =>
                                let
@@ -708,11 +734,12 @@ fun outputDeclarations
                                        case Vector.first init of
                                           {src = StaticHeap.Object.Elem.Const (Const.Word w), ...} => WordX.toChar w
                                         | _ => Error.bug "CCodegen.declareStaticHeaps: toString"))
+                                  val length = Vector.length init
                                in
                                   print "{"
                                   ; print counter
                                   ; print ","
-                                  ; print (mkLength (Vector.length init))
+                                  ; print (mkLength length)
                                   ; print ","
                                   ; print (mkHeader tycon)
                                   ; print ","
@@ -722,11 +749,24 @@ fun outputDeclarations
                                        else (print "{"
                                              ; Vector.foreach (init, fn init =>
                                                                (print "{"
-                                                                ; Vector.foreach (mkFields init, fn fld =>
-                                                                                  (print fld; print ","))
+                                                                ; List.foreach (mkFields (init, elt), fn fld =>
+                                                                                (print fld; print ","))
                                                                 ; print "},"))
                                              ; print "}")
                                   ; print ","
+                                  ; let
+                                       val next = Bytes.+ (Runtime.sequenceMetaDataSize (),
+                                                           Bytes.* (Type.bytes elt,
+                                                                    IntInf.fromInt length))
+                                       val size =
+                                          case !Control.align of
+                                             Control.Align4 => Bytes.alignWord32 next
+                                           | Control.Align8 => Bytes.alignWord64 next
+                                    in
+                                       Option.app (mkPad (next, size), fn pad =>
+                                                   (print pad
+                                                    ; print ","))
+                                    end
                                end)
                       ; print "},\n")))
                  ; print "};\n"))
