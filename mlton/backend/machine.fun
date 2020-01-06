@@ -991,7 +991,7 @@ structure Program =
                        | NONE => empty])
             ; output (str "\n")
             ; List.foreach (StaticHeap.Kind.all, fn k =>
-                            (output (StaticHeap.Kind.layout k)
+                            (output (seq [Label.layout (StaticHeap.Kind.label k), str ":"])
                              ; output (Vector.layout StaticHeap.Object.layout (staticHeaps k))))
             ; output (str "\n")
             ; List.foreach (chunks, fn chunk => Chunk.layouts (chunk, output))
