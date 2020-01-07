@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2012,2014-2017,2019 Matthew Fluet.
+(* Copyright (C) 2009-2012,2014-2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1403,6 +1403,10 @@ val showDefUse = control {name = "show def-use",
 val showTypes = control {name = "show types",
                          default = true,
                          toString = Bool.toString}
+
+val staticAllocAndInit = control {name = "static alloc and init",
+                                  default = true,
+                                  toString = Bool.toString}
 
 structure StaticAlloc =
    struct

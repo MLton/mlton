@@ -1,4 +1,4 @@
-(* Copyright (C) 2010-2011,2013-2019 Matthew Fluet.
+(* Copyright (C) 2010-2011,2013-2020 Matthew Fluet.
  * Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -840,11 +840,14 @@ fun makeOptions {usage} =
          case Control.OptimizationPasses.set {il = "ssa2", passes = s} of
             Result.Yes () => ()
           | Result.No s => usage (concat ["invalid -ssa2-passes arg: ", s]))),
+       (Expert, "static-alloc-and-init", " {true|false}",
+        "Enable or disable static alloc/init of objects",
+        boolRef staticAllocAndInit),
        (Expert, "static-alloc-arrays", " {true|false}",
         "Allow arrays to be statically allocated",
         boolRef staticAllocArrays),
        (Expert, "static-alloc-internal-ptrs", " {all|static|none}",
-        "which pointers to allow in statically allocated values",
+        "Which pointers to allow in statically allocated values",
         SpaceString (fn s =>
                      staticAllocInternalPtrs :=
                      (case s of

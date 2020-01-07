@@ -1669,6 +1669,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                           returns = transTypes returns,
                           start = start}
          end
+
       fun translateGlobalStatics statements
          : (Var.t * Type.t * Var.t Static.t) vector * S.Statement.t vector
          =
@@ -1851,11 +1852,13 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
             (Vector.fromListRev (!statics), Vector.fromListRev (!keeps))
          end
 
-
       val main =
          let
             val start = Label.newNoname ()
-            val (statics, globalStatements) = translateGlobalStatics globals
+            val (statics, globals) =
+               if !Control.staticAllocAndInit
+                  then translateGlobalStatics globals
+                  else (Vector.new0 (), globals)
             val {args, blocks, name, raises, returns, start} =
                (Function.dest o translateFunction)
                (S.Function.profile
@@ -1865,7 +1868,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                             (S.Block.T
                              {label = start,
                               args = Vector.new0 (),
-                              statements = globalStatements,
+                              statements = globals,
                               transfer = (S.Transfer.Call
                                           {args = Vector.new0 (),
                                            func = main,
@@ -1876,27 +1879,34 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                   returns = NONE,
                   start = start},
                  S.SourceInfo.main))
-            val staticLabel = Label.newString "initStatics"
-            val staticBlock =
-               Block.T
-               {args = Vector.new0 (),
-                kind = Kind.Jump,
-                label = staticLabel,
-                statements = (Vector.map
-                              (statics, fn (v, rty, static) =>
-                               Statement.Bind
-                               {dst = (v, rty),
-                                pinned = false,
-                                src = Operand.Static {static = static, ty = rty}})),
-                transfer = Transfer.Goto {args = Vector.new0 (), dst = start}}
+            val blocks =
+               if Vector.isEmpty statics
+                  then blocks
+                  else Vector.map
+                       (blocks, fn b as Block.T {args, kind, label, statements, transfer} =>
+                        if Label.equals (label, start)
+                           then Block.T {args = args,
+                                         kind = kind,
+                                         label = label,
+                                         statements = Vector.concat
+                                                      [Vector.map
+                                                       (statics, fn (v, rty, static) =>
+                                                        Statement.Bind
+                                                        {dst = (v, rty),
+                                                         pinned = false,
+                                                         src = Operand.Static {static = static,
+                                                                               ty = rty}}),
+                                                       statements],
+                                         transfer = transfer}
+                           else b)
          in
             Function.new
             {args = args,
-             blocks = Vector.concat [Vector.new1 staticBlock, blocks],
+             blocks = blocks,
              name = name,
              raises = raises,
-             returns =returns,
-             start = staticLabel}
+             returns = returns,
+             start = start}
          end
       val functions = List.revMap (functions, translateFunction)
       val p = Program.T {functions = functions,
