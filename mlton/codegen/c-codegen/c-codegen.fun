@@ -788,8 +788,8 @@ fun outputDeclarations
                           | Object.Sequence {elt, init, tycon, ...} =>
                                let
                                   fun toString (): string =
-                                     String.implode
-                                     (Vector.toListMap
+                                     String.implodeV
+                                     (Vector.map
                                       (init, fn init =>
                                        case Vector.first init of
                                           {src = Object.Elem.Const (Const.Word w), ...} => WordX.toChar w
