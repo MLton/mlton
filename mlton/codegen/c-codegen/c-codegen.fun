@@ -805,6 +805,7 @@ fun outputDeclarations
                                   ; print ","
                                   ; print "},"
                                   ; if Type.equals (elt, Type.word WordSize.word8)
+                                       andalso length > 0
                                        then print (C.string (toString ()))
                                        else (print "{"
                                              ; Vector.foreach (init, fn init =>
