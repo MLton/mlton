@@ -254,7 +254,7 @@ structure Object =
       val layout =
          let
             open Layout
-            val layoutInit =
+            val initLayout =
                Vector.layout
                (fn {offset, src, ty} =>
                 record [("offset", Bytes.layout offset),
@@ -265,18 +265,42 @@ structure Object =
                   mayAlign
                   [seq [Var.layout dst, constrain dstTy],
                    indent (seq [str "= NormalObject ",
-                                record [("init", layoutInit init),
+                                record [("init", initLayout init),
                                         ("ty", Type.layout ty),
                                         ("tycon", ObjptrTycon.layout tycon)]],
                            2)]
              | Sequence {dst = (dst, dstTy), elt, init, tycon} =>
-                  mayAlign
-                  [seq [Var.layout dst, constrain dstTy],
-                   indent (seq [str "= SequenceObject ",
-                                record [("elt", Type.layout elt),
-                                        ("init", Vector.layout layoutInit init),
-                                        ("tycon", ObjptrTycon.layout tycon)]],
-                           2)]
+                  let
+                     val init =
+                        let
+                           fun default () = Vector.layout initLayout init
+                        in
+                           if Type.equals (elt, Type.word WordSize.word8)
+                              then Exn.withEscape
+                                   (fn escape =>
+                                    seq
+                                    [str "\"",
+                                     str
+                                     (String.escapeSML
+                                      (String.implodeV
+                                       (Vector.map
+                                        (init, fn init =>
+                                         case Vector.first init of
+                                            {src = Operand.Const (Const.Word w), ...} =>
+                                               WordX.toChar w
+                                          | _ => escape (default ()))))),
+                                     str "\""])
+                              else default ()
+                        end
+                  in
+                     mayAlign
+                     [seq [Var.layout dst, constrain dstTy],
+                      indent (seq [str "= SequenceObject ",
+                                   record [("elt", Type.layout elt),
+                                           ("init", init),
+                                           ("tycon", ObjptrTycon.layout tycon)]],
+                              2)]
+                  end
          end
 
       val toString = Layout.toString o layout

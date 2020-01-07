@@ -223,10 +223,34 @@ structure StaticHeap =
                                      ("ty", Type.layout ty),
                                      ("tycon", ObjptrTycon.layout tycon)]]
                    | Sequence {elt, init, tycon} =>
-                        seq [str "Sequence ",
-                             record [("elt", Type.layout elt),
-                                     ("init", Vector.layout initLayout init),
-                                     ("tycon", ObjptrTycon.layout tycon)]]
+                        let
+                           val init =
+                              let
+                                 fun default () = Vector.layout initLayout init
+                              in
+                                 if Type.equals (elt, Type.word WordSize.word8)
+                                    then Exn.withEscape
+                                         (fn escape =>
+                                          seq
+                                          [str "\"",
+                                           str
+                                           (String.escapeSML
+                                            (String.implodeV
+                                             (Vector.map
+                                              (init, fn init =>
+                                               case Vector.first init of
+                                                  {src = Elem.Const (Const.Word w), ...} =>
+                                                     WordX.toChar w
+                                                | _ => escape (default ()))))),
+                                           str "\""])
+                                    else default ()
+                              end
+                        in
+                           seq [str "Sequence ",
+                                record [("elt", Type.layout elt),
+                                        ("init", init),
+                                        ("tycon", ObjptrTycon.layout tycon)]]
+                        end
                end
          end
    end
