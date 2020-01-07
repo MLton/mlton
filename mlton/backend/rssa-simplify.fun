@@ -1,4 +1,4 @@
-(* Copyright (C) 2019 Matthew Fluet.
+(* Copyright (C) 2019-2020 Matthew Fluet.
  *
  * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
@@ -9,14 +9,24 @@ struct
 
 open S
 
+structure BounceVars = BounceVars (S)
+structure CollectStatics = CollectStatics (S)
 structure ImplementHandlers = ImplementHandlers (S)
 structure ImplementProfiling = ImplementProfiling (S)
 structure LimitCheck = LimitCheck (S)
-structure BounceVars = BounceVars (S)
 structure SignalCheck = SignalCheck(S)
 
 val rssaPasses =
    {name = "rssaShrink1", doit = S.shrink, execute = true} ::
+   {name = "collectStatics.WordXVectorConsts",
+    doit = CollectStatics.WordXVectorConsts.transform,
+    execute = false} ::
+   {name = "collectStatics.Globals",
+    doit = CollectStatics.Globals.transform,
+    execute = false} ::
+   {name = "collectStatics.RealConsts",
+    doit = CollectStatics.RealConsts.transform,
+    execute = false} ::
    {name = "insertLimitChecks", doit = LimitCheck.transform, execute = true} ::
    {name = "insertSignalChecks", doit = SignalCheck.transform, execute = true} ::
    (* must be before implementHandlers *)
