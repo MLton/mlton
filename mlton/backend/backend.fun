@@ -360,10 +360,9 @@ fun toMachine (rssa: Rssa.Program.t) =
                         val kind =
                            if hasIdentity
                               then if Type.isUnit ty
-                                      then Kind.Immutable
-                                      else (* Conservative, b/c the objptr field
-                                            * might not be mutable.
-                                            *)
+                                      then (* A `unit ref`; will never be updated. *)
+                                           Kind.Immutable
+                                      else (* Conservative; the objptr field might not be mutable. *)
                                            if Type.exists (ty, Type.isObjptr)
                                               then Kind.Root
                                               else Kind.Mutable
@@ -386,9 +385,16 @@ fun toMachine (rssa: Rssa.Program.t) =
                             | _ => Error.bug "Backend.staticHeaps.translateObject: Sequence,hasIdentity"
                         val kind =
                            if hasIdentity
-                              then if Type.exists (elt, Type.isObjptr)
-                                      then Kind.Root
-                                      else Kind.Mutable
+                              then if Vector.isEmpty init
+                                      then (* An empty sequence;
+                                            * elements will never be updated,
+                                            * but header may be updated.
+                                            *)
+                                           Kind.Mutable
+                                      else (* Conservative; the objptr field might not be mutable. *)
+                                           if Type.exists (elt, Type.isObjptr)
+                                              then Kind.Root
+                                              else Kind.Mutable
                               else Kind.Immutable
                      in
                         {dst = dst,
