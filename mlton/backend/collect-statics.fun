@@ -226,19 +226,40 @@ structure Globals =
 
             fun objectIsStatic obj =
                let
+                  fun hasIdentity tycon =
+                     case Vector.sub (objectTypes, ObjptrTycon.index tycon) of
+                        ObjectType.Normal {hasIdentity, ...} => hasIdentity
+                      | ObjectType.Sequence {hasIdentity, ...} => hasIdentity
+                      | _ => Error.bug "CollectStatics.Globals.transform.objectIsStatic.hasIdentity"
                   fun initIsStatic init =
                      Vector.forall (init, fn {offset = _, src, ty = _} =>
                                     operandIsStatic src)
                in
                   case obj of
-                     Object.Normal {dst = (dst, _), init, ...} =>
+                     Object.Normal {dst = (dst, _), init, tycon, ty, ...} =>
                         if initIsStatic init
+                           andalso (not (hasIdentity tycon)
+                                    orelse (* Address of a static object
+                                            * won't map to a valid card slot.
+                                            *)
+                                           not (Type.exists (ty, Type.isObjptr)
+                                                andalso !Control.markCards))
                            then (List.push (newStatics, obj)
                                  ; setVarIsStatic (dst, true)
                                  ; true)
                            else false
-                   | Object.Sequence {dst = (dst, _), init, ...} =>
+                   | Object.Sequence {dst = (dst, _), elt, init, tycon, ...} =>
                         if Vector.forall (init, initIsStatic)
+                           andalso (not (hasIdentity tycon)
+                                    orelse (* Address of a static object
+                                            * won't map to a valid card slot.
+                                            *)
+                                           not (Type.exists (elt, Type.isObjptr)
+                                                andalso !Control.markCards)
+                                    orelse (* But an empty sequence will never be updated
+                                            * and trigger a card marking.
+                                            *)
+                                           Vector.isEmpty init)
                            then (List.push (newStatics, obj)
                                  ; setVarIsStatic (dst, true)
                                  ; true)
