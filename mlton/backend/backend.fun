@@ -332,7 +332,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                       M.Operand.layout)
          varOperand
 
-      val staticHeaps =
+      val (addToStaticHeaps, finishStaticHeaps) =
          let
             open StaticHeap
             fun varElem (x: Var.t): Object.Elem.t =
@@ -351,7 +351,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                            {offset = offset, src = translateOperand src, ty = ty})
             fun translateObject obj =
                case obj of
-                  R.Object.Normal {dst = (dst, _), init, ty, tycon, ...} =>
+                  R.Object.Normal {dst, init, ty, tycon, ...} =>
                      let
                         val hasIdentity =
                            case Vector.sub (objectTypes, ObjptrTycon.index tycon) of
@@ -377,7 +377,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                          size = R.Object.size obj,
                          tycon = tycon}
                      end
-                | R.Object.Sequence {dst = (dst, _), elt, init, tycon, ...} =>
+                | R.Object.Sequence {dst, elt, init, tycon, ...} =>
                      let
                         val hasIdentity =
                            case Vector.sub (objectTypes, ObjptrTycon.index tycon) of
@@ -406,44 +406,61 @@ fun toMachine (rssa: Rssa.Program.t) =
                          size = R.Object.size obj,
                          tycon = tycon}
                      end
-            val ({objs = immObjs, ...}, {objs = mutObjs, ...}, {objs = rootObjs, ...}) =
-               Vector.fold
-               (statics,
-                let val init = {nextIndex = 0, nextOffset = Bytes.zero, objs = []}
-                in (init, init, init) end,
-                fn (obj, (imm, mut, root)) =>
-                let
-                   val {dst, kind, obj, offset, size, tycon} =
-                      translateObject obj
-                   fun addObj {nextIndex, nextOffset, objs} =
-                      let
-                         val ty = Type.objptr tycon
-                         val r = Ref.T {index = nextIndex,
-                                        kind = kind,
-                                        offset = Bytes.+ (nextOffset, offset),
-                                        ty = ty}
-                         val _ =
-                            setVarInfo (dst, {operand = VarOperand.Const (M.Operand.StaticHeapRef r),
-                                              ty = ty})
-                      in
-                         {nextIndex = nextIndex + 1,
-                          nextOffset = Bytes.+ (nextOffset, size),
-                          objs = obj::objs}
-                      end
-                in
-                   case kind of
-                      Kind.Immutable => (addObj imm, mut, root)
-                    | Kind.Mutable => (imm, addObj mut, root)
-                    | Kind.Root => (imm, mut, addObj root)
-                end)
-            val immObjs = Vector.fromListRev immObjs
-            val mutObjs = Vector.fromListRev mutObjs
-            val rootObjs = Vector.fromListRev rootObjs
+
+            val kindAcc =
+               let
+                  fun make () =
+                     {objs = ref [],
+                      nextIndex = Counter.generator 0,
+                      nextOffset = ref Bytes.zero}
+                  val immAcc = make ()
+                  val mutAcc = make ()
+                  val rootAcc = make ()
+               in
+                  fn Kind.Immutable => immAcc
+                   | Kind.Mutable => mutAcc
+                   | Kind.Root => rootAcc
+               end
+
+            fun add obj =
+               let
+                  val {dst = (dst, dstTy), kind, obj, offset, size, tycon} =
+                     translateObject obj
+                  val {objs, nextIndex, nextOffset} = kindAcc kind
+                  val r = Ref.T {index = nextIndex (),
+                                 kind = kind,
+                                 offset = Bytes.+ (!nextOffset, offset),
+                                 ty = Type.objptr tycon}
+               in
+                  List.push (objs, obj)
+                  ; nextOffset := Bytes.+ (!nextOffset, size)
+                  ; setVarInfo (dst,
+                                {operand = VarOperand.Const (M.Operand.StaticHeapRef r),
+                                 ty = dstTy})
+                  ; r
+               end
+
+            fun finish () =
+               let
+                  fun make kind =
+                     let
+                        val {objs, ...} = kindAcc kind
+                     in
+                        Vector.fromListRev (!objs)
+                     end
+                  val immObjs = make Kind.Immutable
+                  val mutObjs = make Kind.Mutable
+                  val rootObjs = make Kind.Root
+               in
+                  fn Kind.Immutable => immObjs
+                   | Kind.Mutable => mutObjs
+                   | Kind.Root => rootObjs
+               end
          in
-            fn Kind.Immutable => immObjs
-             | Kind.Mutable => mutObjs
-             | Kind.Root => rootObjs
+            (add, finish)
          end
+
+      val () = Vector.foreach (statics, ignore o addToStaticHeaps)
 
       (* Hash tables for uniquifying globals. *)
       local
@@ -509,21 +526,12 @@ fun toMachine (rssa: Rssa.Program.t) =
          val globalWordVector =
             make {equals = WordXVector.equals,
                   hash = WordXVector.hash,
-                  oper = fn wxv => let
-                                      val eltSize = WordXVector.elementSize wxv
-                                      val ty = Type.wordVector eltSize
-                                      val tycon = ObjptrTycon.wordVector eltSize
-                                      val location =
-                                         if !Control.staticAllocWordVectorConsts
-                                            then M.Static.Location.ImmStatic
-                                            else M.Static.Location.Heap
-                                   in
-                                      globalStatic
-                                      {static = M.Static.vector {data = wxv,
-                                                                 location = location,
-                                                                 tycon = tycon},
-                                       ty = ty}
-                                   end}
+                  oper = fn wv => let
+                                     val obj = R.Object.fromWordXVector (Var.newNoname (), wv)
+                                     val r = addToStaticHeaps obj
+                                  in
+                                     M.Operand.StaticHeapRef r
+                                  end}
       end
       fun constOperand (c: Const.t): M.Operand.t =
          let
@@ -1348,7 +1356,7 @@ fun toMachine (rssa: Rssa.Program.t) =
           reals = allReals (),
           sourceMaps = sourceMaps,
           statics = allStatics (),
-          staticHeaps = staticHeaps}
+          staticHeaps = finishStaticHeaps ()}
    in
       machine
    end
