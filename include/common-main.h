@@ -1,4 +1,4 @@
-/* Copyright (C) 2014,2019 Matthew Fluet.
+/* Copyright (C) 2014,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -37,8 +37,6 @@
         s->magic = mg;                                                  \
         s->maxFrameSize = mfs;                                          \
         s->mutatorMarksCards = mmc;                                     \
-        s->objectInits = objectInits;                                   \
-        s->objectInitsLength = cardof(objectInits);                     \
         s->objectTypes = objectTypes;                                   \
         s->objectTypesLength = cardof(objectTypes);                     \
         s->returnAddressToFrameIndex = returnAddressToFrameIndex;       \

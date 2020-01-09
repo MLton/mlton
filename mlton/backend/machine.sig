@@ -124,9 +124,6 @@ signature MACHINE =
                                   ty: Type.t}
              | StackOffset of StackOffset.t
              | StackTop
-             | Static of {index: int,
-                          offset: Bytes.t,
-                          ty: Type.t}
              | StaticHeapRef of StaticHeap.Ref.t
              | Temporary of Temporary.t
 
@@ -299,7 +296,6 @@ signature MACHINE =
                      objectTypes: Type.ObjectType.t vector,
                      reals: (RealX.t * Global.t) list,
                      sourceMaps: SourceMaps.t option,
-                     statics: (int Static.t * Global.t option) vector,
                      staticHeaps: StaticHeap.Kind.t -> StaticHeap.Object.t vector}
 
             val clearLabelNames: t -> unit

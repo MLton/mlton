@@ -33,8 +33,6 @@ objptr-tycon.fun
 object-type.sig
 rep-type.sig
 rep-type.fun
-static.sig
-static.fun
 
 backend-atoms.sig
 backend-atoms.fun

@@ -335,9 +335,6 @@ structure Operand =
                             ty: Type.t}
        | StackOffset of StackOffset.t
        | StackTop
-       | Static of {index: int,
-                    offset: Bytes.t,
-                    ty: Type.t}
        | StaticHeapRef of StaticHeap.Ref.t
        | Temporary of Temporary.t
 
@@ -360,7 +357,6 @@ structure Operand =
         | SequenceOffset {ty, ...} => ty
         | StackOffset s => StackOffset.ty s
         | StackTop => Type.cpointer ()
-        | Static {ty, ...} => ty
         | StaticHeapRef h => StaticHeap.Ref.ty h
         | Temporary t => Temporary.ty t
 
@@ -391,10 +387,6 @@ structure Operand =
                        constrain ty]
              | StackOffset so => StackOffset.layout so
              | StackTop => str "<StackTop>"
-             | Static {index, offset, ty} =>
-                  seq [str "M",
-                       tuple [Int.layout index, Type.layout ty,
-                              Bytes.layout offset]]
              | StaticHeapRef h => StaticHeap.Ref.layout h
              | Temporary t => Temporary.layout t
          end
@@ -415,11 +407,6 @@ structure Operand =
               SequenceOffset {base = b', index = i', ...}) =>
                 equals (b, b') andalso equals (i, i')
            | (StackOffset so, StackOffset so') => StackOffset.equals (so, so')
-           | (Static {index = i, offset = j, ty = t},
-              Static {index = i', offset = j', ty = t'}) =>
-              i = i'
-              andalso Bytes.equals (j, j')
-              andalso Type.equals (t, t')
            | (StaticHeapRef h1, StaticHeapRef h2) =>
               StaticHeap.Ref.equals (h1, h2)
            | (Temporary t, Temporary t') => Temporary.equals (t, t')
@@ -445,7 +432,6 @@ structure Operand =
                   inter base orelse inter index
              | (StackOffset so, StackOffset so') =>
                   StackOffset.interfere (so, so')
-             | (Static {index, ...}, Static {index=index', ...}) => index = index'
              | (Temporary t, Temporary t') => Temporary.equals (t, t')
              | (StaticHeapRef h1, StaticHeapRef h2) =>
                   StaticHeap.Ref.equals (h1, h2)
@@ -976,7 +962,6 @@ structure Program =
                          objectTypes: ObjectType.t vector,
                          reals: (RealX.t * Global.t) list,
                          sourceMaps: SourceMaps.t option,
-                         statics: (int Static.t * Global.t option) vector,
                          staticHeaps: StaticHeap.Kind.t -> StaticHeap.Object.t vector}
 
       fun clear (T {chunks, sourceMaps, ...}) =
@@ -985,7 +970,7 @@ structure Program =
 
       fun layouts (T {chunks, frameInfos, frameOffsets, handlesSignals,
                       main = {label, ...},
-                      maxFrameSize, objectTypes, sourceMaps, statics, staticHeaps, ...},
+                      maxFrameSize, objectTypes, sourceMaps, staticHeaps, ...},
                    output': Layout.t -> unit) =
          let
             open Layout
@@ -1004,15 +989,6 @@ structure Program =
             ; Vector.foreachi (objectTypes, fn (i, ty) =>
                                output (seq [str "opt_", Int.layout i,
                                             str " = ", ObjectType.layout ty]))
-            ; output (str "\n")
-            ; output (str "Statics:")
-            ; Vector.foreachi (statics, fn (i, (s, g)) => (output o seq)
-                     [str "static_", Int.layout i,
-                      str " = ",
-                      Static.layout (fn i => seq [str "&static_", Int.layout i]) s,
-                      case g of
-                         SOME g' => seq [str " -> ", Global.layout g']
-                       | NONE => empty])
             ; output (str "\n")
             ; List.foreach (StaticHeap.Kind.all, fn k =>
                             (output (seq [Label.layout (StaticHeap.Kind.label k), str ":"])
@@ -1049,7 +1025,7 @@ structure Program =
 
       fun shuffle (T {chunks, frameInfos, frameOffsets,
                       handlesSignals, main, maxFrameSize,
-                      objectTypes, reals, sourceMaps, statics, staticHeaps}) =
+                      objectTypes, reals, sourceMaps, staticHeaps}) =
          let
             fun shuffle v =
                let
@@ -1078,7 +1054,6 @@ structure Program =
                objectTypes = objectTypes,
                reals = reals,
                sourceMaps = sourceMaps,
-               statics = statics,
                staticHeaps = staticHeaps}
          end
 
@@ -1118,8 +1093,7 @@ structure Program =
 
       fun typeCheck (program as
                      T {chunks, frameInfos, frameOffsets,
-                        maxFrameSize, objectTypes, sourceMaps, reals,
-                        statics, ...}) =
+                        maxFrameSize, objectTypes, sourceMaps, reals, ...}) =
          let
             val (checkProfileLabel, finishCheckProfileLabel) =
                Err.check'
@@ -1236,14 +1210,6 @@ structure Program =
                   ("global real", g,
                    fn t => Type.equals (t, Type.real (RealX.size r)),
                    fn () => RealX.layout (r, {suffix=true})))
-            val _ =
-               Vector.foreach
-               (statics, fn (s, g) =>
-                  case g of
-                       NONE => ()
-                     | SOME g' =>
-                        checkGlobal ("static", g',
-                        Type.isObjptr, fn () => Static.layout Int.layout s))
             (* Check for no duplicate labels. *)
             local
                val {get, ...} =
@@ -1344,10 +1310,6 @@ structure Program =
                                                        tyconTy = tyconTy,
                                                        result = ty,
                                                        scale = scale})
-                      | Static {index, ty, ...} =>
-                           0 <= index andalso index < Vector.length statics
-                           andalso
-                           (Type.isCPointer ty orelse Type.isObjptr ty)
                       | StaticHeapRef _ => true
                       | StackTop => true
                       | Temporary t => Alloc.doesDefine (alloc, Live.Temporary t)

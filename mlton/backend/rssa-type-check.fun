@@ -439,7 +439,6 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, static
                                                   tyconTy = tyconTy,
                                                   result = ty,
                                                   scale = scale})
-                 | Static {ty, ...} => Type.isCPointer ty orelse Type.isObjptr ty
                  | Var {ty, var} => Type.isSubtype (varType var, ty)
           in
              Err.check ("operand", ok, fn () => Operand.layout x)

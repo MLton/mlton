@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019 Matthew Fluet.
+(* Copyright (C) 2009,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -18,13 +18,6 @@ signature REPRESENTATION_STRUCTS =
 signature REPRESENTATION = 
    sig
       include REPRESENTATION_STRUCTS
-
-      structure StaticOrElem:
-         sig
-            datatype t =
-               Static of Rssa.Var.t Rssa.Static.t
-             | Elem of Rssa.Var.t Rssa.Static.Data.Elem.t
-         end
 
       val compute:
          Ssa2.Program.t
@@ -51,12 +44,6 @@ signature REPRESENTATION =
                         dst: Rssa.Var.t * Rssa.Type.t,
                         sequenceTy: Ssa2.Type.t,
                         oper: Ssa2.Var.t -> Rssa.Operand.t} -> Rssa.Statement.t list,
-             static: {args: Ssa2.Var.t vector,
-                      con: Ssa2.Con.t option,
-                      elem: Ssa2.Var.t -> Rssa.Var.t Rssa.Static.Data.Elem.t,
-                      location: Rssa.Static.Location.t,
-                      objectTy: Ssa2.Type.t} ->
-                      StaticOrElem.t option,
              toRtype: Ssa2.Type.t -> Rssa.Type.t option,
              update: {base: Rssa.Operand.t Ssa2.Base.t,
                       baseTy: Ssa2.Type.t,

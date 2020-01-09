@@ -110,7 +110,6 @@ struct
                      maxFrameSize, 
                      objectTypes, 
                      reals, 
-                     statics,
                      staticHeaps, ...} =
                   program
               in
@@ -125,7 +124,6 @@ struct
                    objectTypes = objectTypes, 
                    reals = reals, 
                    sourceMaps = getSourceMaps (),
-                   statics = statics,
                    staticHeaps = staticHeaps}
               end
               val {print, done, ...} = makeC ()

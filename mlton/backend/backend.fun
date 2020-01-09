@@ -464,37 +464,6 @@ fun toMachine (rssa: Rssa.Program.t) =
 
       (* Hash tables for uniquifying globals. *)
       local
-         val allStatics = ref []
-         val staticsCounter = Counter.new 0
-      in
-         (* Doesn't likely need uniquifying, since they're introduced
-          * late and mutable statics can't be unique.
-          *)
-         val (allStatics, globalStatic) =
-            (fn () => Vector.fromListRev (!allStatics),
-             fn {static as M.Static.T {location, ...}, ty} =>
-             let
-                val static =
-                   M.Static.map
-                   (static, fn v =>
-                    case varOperandOpt v of
-                       SOME (M.Operand.Static {index, ...}) => index
-                     | _ => Error.bug "Backend.globalStatic: invalid referrent")
-                val i = Counter.next staticsCounter
-                val g =
-                   case location of
-                      M.Static.Location.Heap => SOME (M.Global.new ty)
-                    | _ => NONE
-                val _ = List.push (allStatics, (static, g))
-             in
-                case g of
-                   SOME g' => M.Operand.Global g'
-                 | NONE => M.Operand.Static {index = i,
-                                             offset = M.Static.metadataSize static,
-                                             ty = ty}
-             end)
-      end
-      local
          fun 'a make {equals: 'a * 'a -> bool,
                       hash: 'a -> word,
                       oper: 'a -> M.Operand.t} =
@@ -625,7 +594,6 @@ fun toMachine (rssa: Rssa.Program.t) =
                                scale = scale,
                                ty = ty}
                   end
-             | Static s => globalStatic s
              | Var {var, ...} => varOperand var
          end
       fun translateOperands ops = Vector.map (ops, translateOperand)
@@ -921,10 +889,6 @@ fun toMachine (rssa: Rssa.Program.t) =
                                                    set (z, casts)
                                               | VarOperand.Allocate _ =>
                                                    normal ())
-                                       | R.Operand.Static (s as {static, ...}) =>
-                                            if M.Static.location static <> M.Static.Location.Heap
-                                               then set (globalStatic s, casts)
-                                               else normal ()
                                        | _ => normal ()
                                 in
                                    loop (src, [])
@@ -1355,7 +1319,6 @@ fun toMachine (rssa: Rssa.Program.t) =
           objectTypes = objectTypes,
           reals = allReals (),
           sourceMaps = sourceMaps,
-          statics = allStatics (),
           staticHeaps = finishStaticHeaps ()}
    in
       machine

@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 Matthew Fluet.
+/* Copyright (C) 2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -68,7 +68,6 @@ PUBLIC int MLton_main (int argc, char* argv[]) {                        \
         GC_state s = MLton_gcState();                                   \
         Initialize (s, al, mg, mfs, mmc, pk, ps);                       \
         if (s->amOriginal) {                                            \
-                static_Init();                                          \
                 nextBlock = ml;                                         \
         } else {                                                        \
                 /* Return to the saved world */                         \
@@ -84,7 +83,6 @@ PUBLIC void LIB_OPEN(LIBNAME) (int argc, char* argv[]) {                \
         GC_state s = MLton_gcState();                                   \
         Initialize (s, al, mg, mfs, mmc, pk, ps);                       \
         if (s->amOriginal) {                                            \
-                static_Init();                                          \
                 nextBlock = ml;                                         \
         } else {                                                        \
                 /* Return to the saved world */                         \

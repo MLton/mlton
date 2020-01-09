@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019 Matthew Fluet.
+(* Copyright (C) 2009,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -307,14 +307,6 @@ struct
                   val sizes = amd64.Size.fromCType ty
                in
                   fromSizes (sizes, origin)
-               end
-          | Static {index, offset, ...} =>
-               let
-                  val offset = Bytes.toInt offset
-                  val base = amd64.Immediate.labelPlusInt
-                        (amd64MLton.static_label index, offset)
-               in
-                  Vector.new1 (amd64.Operand.immediate base, amd64MLton.pointerSize)
                end
            | StaticHeapRef (Machine.StaticHeap.Ref.T {kind, offset, ...}) =>
                let

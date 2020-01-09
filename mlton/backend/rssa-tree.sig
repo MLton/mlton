@@ -35,8 +35,6 @@ signature RSSA_TREE =
                                   offset: Bytes.t,
                                   scale: Scale.t,
                                   ty: Type.t}
-             | Static of {static: Var.t Static.t,
-                          ty: Type.t}
              | Var of {ty: Type.t,
                        var: Var.t}
 

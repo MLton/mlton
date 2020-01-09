@@ -44,8 +44,6 @@ structure Operand =
                             offset: Bytes.t,
                             scale: Scale.t,
                             ty: Type.t}
-       | Static of {static: Var.t Static.t,
-                    ty: Type.t}
        | Var of {var: Var.t,
                  ty: Type.t}
 
@@ -77,7 +75,6 @@ structure Operand =
           | ObjptrTycon _ => Type.objptrHeader ()
           | Runtime z => Type.ofGCField z
           | SequenceOffset {ty, ...} => ty
-          | Static {ty, ...} => ty
           | Var {ty, ...} => ty
 
       fun layout (z: t): Layout.t =
@@ -99,9 +96,6 @@ structure Operand =
                   seq [str (concat ["X", Type.name ty, " "]),
                        tuple [layout base, layout index, Scale.layout scale,
                               Bytes.layout offset]]
-             | Static {static, ...} =>
-                  Layout.seq [Layout.str "Static ",
-                  Static.layout (fn v => Layout.seq [Layout.str "&", Var.layout v]) static]
              | Var {var, ...} => Var.layout var
          end
 

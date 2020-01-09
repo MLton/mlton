@@ -937,7 +937,7 @@ fun aamd (oper, mc) =
              | _ => NONE (* not lvalue *)
          end
 
-fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...},
+fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
             outputC: unit -> {file: File.t,
                               print: string -> unit,
                               done: unit -> unit},
@@ -1006,21 +1006,6 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
       fun temporaryVarC (ct: CType.t, index: int): LLVM.Value.t =
          (temporaryName (ct, index), LLVM.Type.Pointer (LLVM.Type.fromCType ct))
       fun temporaryVar (t, index) = temporaryVarC (Type.toCType t, index)
-      fun staticName index: string =
-         concat ["@static_", Int.toString index]
-      fun staticVal (index, mc): LLVM.Value.t =
-         let
-            val name = staticName index
-            val (Static.T {location, ...}, _) = Vector.sub (statics, index)
-            val const =
-               case location of
-                  Static.Location.ImmStatic => true
-                | Static.Location.MutStatic => false
-                | Static.Location.Heap => Error.bug "LLVMCodegen.staticVal"
-            val ty = LLVM.Type.word8
-         in
-            LLVM.ModuleContext.addGlobDecl (mc, name, {const = const, ty = ty, vis = SOME "hidden"})
-         end
       fun staticHeapVal (kind, mc): LLVM.Value.t =
          let
             val name = concat ["@", Label.toString (StaticHeap.Kind.label kind)]
@@ -1210,18 +1195,6 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                    | Operand.SequenceOffset _ => load ()
                    | Operand.StackOffset _ => load ()
                    | Operand.StackTop => load ()
-                   | Operand.Static {index, ty, offset} =>
-                        let
-                           val tmp = newTemp LLVM.Type.cpointer
-                           val res = newTemp (Type.toLLVMType ty)
-                           val _ = $(gep {dst = tmp, src = staticVal (index, mc),
-                                          args = [LLVM.Value.word
-                                                  (WordX.fromBytes
-                                                   (offset, WordSize.word32))]})
-                           val _ = $(cast {dst = res, src = tmp})
-                        in
-                           res
-                        end
                    | Operand.StaticHeapRef (StaticHeap.Ref.T {kind, offset, ty, ...}) =>
                         let
                            val tmp = newTemp LLVM.Type.cpointer
