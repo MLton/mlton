@@ -53,10 +53,10 @@ structure Operand =
 
       val word = Const o Const.word
 
-      fun zero s = word (WordX.fromIntInf (0, s))
+      val one = word o WordX.one
+      val zero = word o WordX.zero
 
-      fun bool b =
-         word (WordX.fromIntInf (if b then 1 else 0, WordSize.bool))
+      fun bool b = (if b then one else zero) WordSize.bool
 
       val ty =
          fn Cast (_, ty) => ty

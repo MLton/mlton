@@ -43,6 +43,7 @@ signature RSSA_TREE =
             val bool: bool -> t
             val cast: t * Type.t -> t
             val layout: t -> Layout.t
+            val one: WordSize.t -> t
             val null: t
             val replace: t * {const: Const.t -> t,
                               var: {ty: Type.t, var: Var.t} -> t} -> t
