@@ -20,13 +20,13 @@ val rssaPasses =
    {name = "rssaShrink1", doit = S.shrink, execute = true} ::
    {name = "collectStatics.WordXVectorConsts",
     doit = CollectStatics.WordXVectorConsts.transform,
-    execute = false} ::
+    execute = true} ::
    {name = "collectStatics.Globals",
     doit = CollectStatics.Globals.transform,
-    execute = false} ::
+    execute = true} ::
    {name = "collectStatics.RealConsts",
     doit = CollectStatics.RealConsts.transform,
-    execute = false} ::
+    execute = true} ::
    {name = "insertLimitChecks", doit = LimitCheck.transform, execute = true} ::
    {name = "insertSignalChecks", doit = SignalCheck.transform, execute = true} ::
    (* must be before implementHandlers *)

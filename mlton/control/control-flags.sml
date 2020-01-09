@@ -1391,7 +1391,7 @@ val showTypes = control {name = "show types",
                          toString = Bool.toString}
 
 val staticAllocAndInit = control {name = "static alloc and init",
-                                  default = true,
+                                  default = false,
                                   toString = Bool.toString}
 
 structure StaticAlloc =
