@@ -86,23 +86,10 @@ structure WordXVectorConsts =
                      (table, wv, fn () =>
                       let
                          val var = Var.newNoname ()
-                         val ws = WordXVector.elementSize wv
-                         val ty = Type.wordVector ws
-                         val init =
-                            WordXVector.toVectorMap
-                            (wv, fn w =>
-                             Vector.new1 {offset = Bytes.zero,
-                                          src = Operand.word w,
-                                          ty = Type.word ws})
-                         val obj =
-                            Object.Sequence
-                            {dst = (var, ty),
-                             elt = Type.word ws,
-                             init = init,
-                             tycon = ObjptrTycon.wordVector ws}
+                         val obj = Object.fromWordXVector (var, wv)
                       in
                          List.push (newStatics, obj)
-                         ; Operand.Var {var = var, ty = ty}
+                         ; Operand.Var {var = var, ty = #2 (Object.dst obj)}
                       end)
                 | _ => Operand.Const c
          in

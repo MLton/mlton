@@ -80,6 +80,7 @@ signature RSSA_TREE =
                                     use: Var.t -> unit} -> unit
             val foldUse: t * 'a * (Var.t * 'a -> 'a) -> 'a
             val foreachUse: t * (Var.t -> unit) -> unit
+            val fromWordXVector: Var.t * WordXVector.t -> t
             val layout: t -> Layout.t
             val size: t -> Bytes.t
             val toString: t -> string

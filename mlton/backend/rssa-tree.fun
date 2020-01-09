@@ -197,6 +197,24 @@ structure Object =
                    | Control.Align8 => Bytes.alignWord64 size
                end
 
+      fun fromWordXVector (dst, wv) =
+         let
+            val ws = WordXVector.elementSize wv
+            val ty = Type.wordVector ws
+            val init =
+               WordXVector.toVectorMap
+               (wv, fn w =>
+                Vector.new1 {offset = Bytes.zero,
+                             src = Operand.word w,
+                             ty = Type.word ws})
+         in
+            Sequence
+            {dst = (dst, ty),
+             elt = Type.word ws,
+             init = init,
+             tycon = ObjptrTycon.wordVector ws}
+         end
+
       fun 'a foldDefUse (s, a: 'a, {def: Var.t * Type.t * 'a -> 'a,
                                     use: Var.t * 'a -> 'a}): 'a =
          let
