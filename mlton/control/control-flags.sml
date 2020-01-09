@@ -1045,22 +1045,20 @@ structure LLVMAliasAnalysisMetaData =
                   global: {cty: bool, index: bool} option,
                   heap: {cty: bool, kind: bool, offset: bool, tycon: bool} option,
                   other: bool,
-                  stack: {offset: bool} option,
-                  static: {cty: bool, index: bool, offset: bool} option}
+                  stack: {offset: bool} option}
 
       val tbaaDefault =
          TBAA {gcstate = SOME {offset = false},
                global = SOME {cty = false, index = false},
                heap = SOME {cty = false, kind = false, offset = false, tycon = false},
                other = true,
-               stack = SOME {offset = false},
-               static = SOME {cty = false, index = false, offset = false}}
+               stack = SOME {offset = false}}
 
       fun toString aamd =
          case aamd of
             None => "none"
           | Scope => "scope"
-          | TBAA {gcstate, global, heap, other, stack, static} =>
+          | TBAA {gcstate, global, heap, other, stack} =>
                let
                   open Layout
                in
@@ -1087,13 +1085,7 @@ structure LLVMAliasAnalysisMetaData =
                      ("stack",
                       Option.layout (fn {offset} =>
                                      record [("offset", Bool.layout offset)])
-                      stack),
-                     ("static",
-                      Option.layout (fn {cty, index, offset} =>
-                                     record [("cty", Bool.layout cty),
-                                             ("index", Bool.layout index),
-                                             ("offset", Bool.layout offset)])
-                      static)]))
+                      stack)]))
                end
       fun fromString s =
          let
@@ -1123,13 +1115,7 @@ structure LLVMAliasAnalysisMetaData =
                          nfield ("other", bool) >>= (fn other =>
                          nfield ("stack", option (cbrack (ffield ("offset", bool) >>= (fn offset =>
                                                           pure {offset = offset})))) >>= (fn stack =>
-                         nfield ("static", option (cbrack (ffield ("cty", bool) >>= (fn cty =>
-                                                           nfield ("index", bool) >>= (fn index =>
-                                                           nfield ("offset", bool) >>= (fn offset =>
-                                                           pure {cty = cty,
-                                                                 index = index,
-                                                                 offset = offset})))))) >>= (fn static =>
-                         pure (TBAA {gcstate = gcstate, global = global, heap = heap, other = other, stack = stack, static = static}))))))))
+                         pure (TBAA {gcstate = gcstate, global = global, heap = heap, other = other, stack = stack})))))))
                 <|>
                 pure tbaaDefault)]
                <* failing next

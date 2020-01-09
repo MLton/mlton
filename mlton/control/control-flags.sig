@@ -292,8 +292,7 @@ signature CONTROL_FLAGS =
                         global: {cty: bool, index: bool} option,
                         heap: {cty: bool, kind: bool, offset: bool, tycon: bool} option,
                         other: bool,
-                        stack: {offset: bool} option,
-                        static: {cty: bool, index: bool, offset: bool} option}
+                        stack: {offset: bool} option}
             val toString: t -> string
             val fromString: string -> t option
          end

@@ -1,4 +1,4 @@
-(* Copyright (C) 2019 Matthew Fluet.
+(* Copyright (C) 2019-2020 Matthew Fluet.
  * Copyright (C) 2013-2014 Matthew Fluet, Brian Leibig.
  *
  * MLton is released under a HPND-style license.
@@ -739,8 +739,8 @@ fun aamd (oper, mc) =
                LLVM.ModuleContext.addMetaData
                (mc, LLVM.MetaData.node [LLVM.MetaData.string s,
                                         LLVM.MetaData.id domain])
-            val (gcstate,global,heap,other,stack,static) =
-               (scope "GCState", scope "Global", scope "Heap", scope "Other", scope "Stack", scope "Static")
+            val (gcstate,global,heap,other,stack) =
+               (scope "GCState", scope "Global", scope "Heap", scope "Other", scope "Stack")
             val scopes = [global,gcstate,heap,other,stack]
             fun scope s =
                let
@@ -770,12 +770,11 @@ fun aamd (oper, mc) =
                    * then read from the stack via a `StackOffset` by the handler.
                    *)
                   scope stack
-             | Operand.Static _ => scope static
              | Operand.StackTop => NONE (* alloca *)
              | Operand.Temporary _ => NONE (* alloca *)
              | _ => NONE (* not lvalue *)
          end
-    | Control.LLVMAliasAnalysisMetaData.TBAA {gcstate, global, heap, other, stack, static} =>
+    | Control.LLVMAliasAnalysisMetaData.TBAA {gcstate, global, heap, other, stack} =>
          let
             fun tbaa path =
                let
@@ -934,27 +933,6 @@ fun aamd (oper, mc) =
                             tbaa path
                          end)
              | Operand.StackTop => NONE (* alloca *)
-             | Operand.Static {index, offset, ty} =>
-                  (case static of
-                      NONE => NONE
-                    | SOME {cty = doCTy, index = doIndex, offset = doOffset} =>
-                         let
-                            val path = ["Static"]
-                            val path =
-                               if doIndex
-                                  then (Int.toString index)::path
-                                  else path
-                            val path =
-                               if doCTy
-                                  then (CType.name (Type.toCType ty))::path
-                                  else path
-                            val path =
-                               if doOffset
-                                  then (Bytes.toString offset)::path
-                                  else path
-                         in
-                            tbaa path
-                         end)
              | Operand.Temporary _ => NONE (* alloca *)
              | _ => NONE (* not lvalue *)
          end
