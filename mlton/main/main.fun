@@ -470,7 +470,7 @@ fun makeOptions {usage} =
         boolRef globalizeArrays),
        (Expert, "globalize-refs", " {true|false}", "globalize refs",
         boolRef globalizeRefs),
-       (Expert, "globalize-small-int-inf", " {false|true}", "globalize int-inf as small type",
+       (Expert, "globalize-small-int-inf", " {true|false}", "globalize int-inf as small type",
         boolRef globalizeSmallIntInf),
        (Expert, "globalize-small-type", " {0|1|2|3|4|9}", "globalize small type",
         intRef globalizeSmallType),
