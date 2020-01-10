@@ -137,4 +137,75 @@ fun layout obj =
 
 val toString = Layout.toString o layout
 
+fun isOk (obj: t,
+          {checkUse: Use.t -> unit,
+           tyconTy: ObjptrTycon.t -> ObjectType.t}): bool =
+   let
+      fun initOk (init, offsetIsOk) =
+         Exn.withEscape
+         (fn esc =>
+          let
+             val _ =
+                Vector.fold
+                (init, Bytes.zero, fn ({offset, src, ty = _}, next) =>
+                 if Bytes.>= (offset, next)
+                    andalso
+                    (checkUse src
+                     ; offsetIsOk {offset = offset,
+                                   result = Use.ty src})
+                    then Bytes.+ (offset, Type.bytes (Use.ty src))
+                    else esc false)
+          in
+             true
+          end)
+   in
+      case obj of
+         Normal {init, ty, tycon} =>
+            (case tyconTy tycon of
+                ObjectType.Normal {ty = ty', ...} =>
+                   Type.equals (ty, ty')
+                   andalso
+                   let
+                      val base = Type.objptr tycon
+                      fun offsetIsOk {offset, result} =
+                         Type.offsetIsOk
+                         {base = base,
+                          offset = offset,
+                          tyconTy = tyconTy,
+                          result = result}
+                   in
+                      initOk (init, offsetIsOk)
+                   end
+              | _ => false)
+       | Sequence {elt, init, tycon} =>
+            (case tyconTy tycon of
+                ObjectType.Sequence {elt = elt', ...} =>
+                   Type.equals (elt, elt')
+                   andalso
+                   let
+                      val base = Type.objptr tycon
+                      val index = Type.seqIndex ()
+                      val scale =
+                         case Scale.fromBytes (Type.bytes elt) of
+                            NONE => Scale.One
+                          | SOME s => s
+                   in
+                      Vector.forall
+                      (init, fn init =>
+                       let
+                          fun offsetIsOk {offset, result} =
+                             Type.sequenceOffsetIsOk
+                             {base = base,
+                              index = index,
+                              offset = offset,
+                              result = result,
+                              scale = scale,
+                              tyconTy = tyconTy}
+                       in
+                          initOk (init, offsetIsOk)
+                       end)
+                   end
+              | _ => false)
+   end
+
 end

@@ -7,13 +7,15 @@
 signature OBJECT_STRUCTS =
    sig
       structure ObjptrTycon: OBJPTR_TYCON
+      structure ObjectType: OBJECT_TYPE
       structure Runtime: RUNTIME
       structure Type: REP_TYPE
       structure WordSize: WORD_SIZE
       structure WordX: WORD_X
       structure WordXVector: WORD_X_VECTOR
-      sharing ObjptrTycon = Type.ObjptrTycon
-      sharing Runtime = ObjptrTycon.Runtime = Type.Runtime
+      sharing ObjptrTycon = ObjectType.ObjptrTycon = Type.ObjptrTycon
+      sharing ObjectType = Type.ObjectType
+      sharing Runtime = ObjectType.Runtime = ObjptrTycon.Runtime = Type.Runtime
       sharing WordSize = ObjptrTycon.WordSize = Type.WordSize = WordX.WordSize = WordXVector.WordSize
       sharing WordX = ObjptrTycon.WordX = Type.WordX = WordXVector.WordX
       sharing WordXVector = Type.WordXVector
@@ -52,6 +54,8 @@ signature OBJECT =
       val foldUse: t * 'a * (Use.t * 'a -> 'a) -> 'a
       val foreachUse: t * (Use.t -> unit) -> unit
       val fromWordXVector: WordXVector.t -> t
+      val isOk: t * {checkUse: Use.t -> unit,
+                     tyconTy: ObjptrTycon.t -> ObjectType.t} -> bool
       val layout: t -> Layout.t
       val replace: t * {use: Use.t -> Use.t} -> t
       val size: t -> Bytes.t

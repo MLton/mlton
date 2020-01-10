@@ -451,95 +451,7 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, static
          Err.check (name, fn () => isOk x, fn () => layout x)
       val handlersImplemented = ref false
       val labelKind = Block.kind o labelBlock
-      fun objectOk (obj: Object.t): bool =
-         let
-            fun initOk (init, mkDst, size) =
-               Exn.withEscape
-               (fn esc =>
-                let
-                   val next =
-                      Vector.fold
-                      (init, Bytes.zero, fn ({offset, src, ty}, next) =>
-                       let
-                          val dst = mkDst {offset = offset, ty = ty}
-                          val move = Statement.Move {dst = dst, src = src}
-                       in
-                          if Bytes.>= (offset, next)
-                             andalso
-                             statementOk move
-                             then Bytes.+ (offset, Type.bytes ty)
-                             else esc false
-                       end)
-                in
-                   Bytes.<= (next, size)
-                end)
-            datatype z = datatype Object.t
-         in
-            case obj of
-               Normal {init, ty, tycon} =>
-                  (case tyconTy tycon of
-                      ObjectType.Normal {ty = ty', ...} =>
-                         Type.equals (ty, ty')
-                         andalso
-                         let
-                            val dst =
-                               Operand.Var
-                               {ty = Type.objptr tycon,
-                                var = Var.newString "objInit"}
-                            val size = Type.bytes ty
-                            fun mkDst {offset, ty} =
-                               Operand.Offset
-                               {base = dst,
-                                offset = offset,
-                                ty = ty}
-                         in
-                            initOk (init, mkDst, size)
-                         end
-                    | _ => false)
-             | Sequence {elt, init, tycon} =>
-                  (case tyconTy tycon of
-                      ObjectType.Sequence {elt = elt', ...} =>
-                         Type.equals (elt, elt')
-                         andalso
-                         let
-                            val size = Type.bytes elt
-                            val (scale, mkIndex) =
-                               case Scale.fromBytes size of
-                                  NONE =>
-                                     (Scale.One, fn index =>
-                                      Operand.word
-                                      (WordX.mul
-                                       (WordX.fromIntInf (IntInf.fromInt index,
-                                                          WordSize.seqIndex ()),
-                                        WordX.fromBytes (size, WordSize.seqIndex ()),
-                                        {signed = false})))
-                                | SOME s =>
-                                     (s, fn index =>
-                                      Operand.word
-                                      (WordX.fromIntInf (IntInf.fromInt index,
-                                                         WordSize.seqIndex ())))
-                            val dst =
-                               Operand.Var
-                               {ty = Type.objptr tycon,
-                                var = Var.newString "objInit"}
-                         in
-                            Vector.foralli
-                            (init, fn (index, init) =>
-                             let
-                                fun mkDst {offset, ty} =
-                                   Operand.SequenceOffset
-                                   {base = dst,
-                                    index = mkIndex index,
-                                    offset = offset,
-                                    scale = scale,
-                                    ty = ty}
-                             in
-                                initOk (init, mkDst, size)
-                             end)
-                         end
-                    | _ => false)
-         end
-      and statementOk (s: Statement.t): bool =
+      fun statementOk (s: Statement.t): bool =
          let
             datatype z = datatype Statement.t
          in
@@ -553,7 +465,8 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, static
                    ; (Type.isSubtype (Operand.ty src, Operand.ty dst)
                       andalso Operand.isLocation dst))
              | Object {dst = (_, dstTy), obj} =>
-                  (objectOk obj
+                  (Object.isOk (obj, {checkUse = checkOperand,
+                                      tyconTy = tyconTy})
                    andalso Type.isSubtype (Object.ty obj, dstTy))
              | PrimApp {args, dst, prim} =>
                   (Vector.foreach (args, checkOperand)
