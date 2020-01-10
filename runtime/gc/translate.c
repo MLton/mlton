@@ -1,4 +1,4 @@
-/* Copyright (C) 2010,2019 Matthew Fluet.
+/* Copyright (C) 2010,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -42,7 +42,7 @@ void translateHeap (GC_state s, pointer from, pointer to, size_t size) {
 
   if (DEBUG or s->controls.messages)
     fprintf (stderr, 
-             "[GC: Translating old-gen of size %s bytes of heap at "FMTPTR" from "FMTPTR".]\n",
+             "[GC: Translating %s bytes of heap at "FMTPTR" from "FMTPTR".]\n",
              uintmaxToCommaString(size),
              (uintptr_t)to,
              (uintptr_t)from);

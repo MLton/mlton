@@ -250,8 +250,8 @@ fun outputDeclarations
     includes: string list,
     print: string -> unit,
     program = (Program.T
-               {frameInfos, frameOffsets, maxFrameSize,
-                objectTypes, reals, sourceMaps, staticHeaps, ...}),
+               {frameInfos, frameOffsets, globals, maxFrameSize,
+                objectTypes, sourceMaps, staticHeaps, ...}),
     rest: unit -> unit
     }: unit =
    let
@@ -277,17 +277,25 @@ fun outputDeclarations
                                                  ; print "}"))
                    ; print ";\n"
                 end
-             fun doitReal rs =
+             fun doit' (sel, check, default, toC) =
                 (doit o SOME o List.tabulate)
                 (n, fn i =>
-                 case List.peek (reals, fn (r, g) =>
-                                 RealSize.equals (rs, RealX.size r)
-                                 andalso Int.equals (i, Global.index g)) of
-                    NONE => RealX.toC (RealX.zero rs)
-                  | SOME (r, _) => RealX.toC r)
+                 case List.peek (sel globals, fn (v, g) =>
+                                 Int.equals (i, Global.index g)
+                                 andalso check v) of
+                    NONE => default
+                  | SOME (v, _) => toC v)
+             fun doitReal rs =
+                doit' (#reals, fn r => RealSize.equals (rs, RealX.size r),
+                       RealX.toC (RealX.zero rs), RealX.toC)
+             fun doitObjptr () =
+                doit' (#objptrs, fn _ => true,
+                       concat ["(", CType.toString CType.Objptr, ")",
+                               WordX.toC (WordX.one (WordSize.objptr ()))],
+                       StaticHeap.Ref.toC)
           in
              case (n > 0, t) of
-                (_, CType.Objptr) => doit NONE
+                (_, CType.Objptr) => doitObjptr ()
               | (true, CType.Real32) => doitReal RealSize.R32
               | (true, CType.Real64) => doitReal RealSize.R64
               | (true, _) => doit NONE
@@ -435,7 +443,8 @@ fun outputDeclarations
                (Kind.all, fn k =>
                 (print "typedef "
                  ; (case k of
-                       Kind.Immutable => print "const "
+                       Kind.Dynamic => print "const "
+                     | Kind.Immutable => print "const "
                      | _ => ())
                  ; print "struct __attribute__ ((aligned(16), packed)) {\n"
                  ; (Vector.foreachi
@@ -791,9 +800,9 @@ fun outputDeclarations
          end
    in
       outputIncludes (includes, print); print "\n"
+      ; declareStaticHeaps (); print "\n"
       ; declareGlobals (); print "\n"
       ; declareLoadSaveGlobals (); print "\n"
-      ; declareStaticHeaps (); print "\n"
       ; declareFrameInfos (); print "\n"
       ; declareObjectTypes (); print "\n"
       ; declareSourceMaps (); print "\n"

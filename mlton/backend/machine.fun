@@ -102,37 +102,44 @@ structure StaticHeap =
    struct
       structure Kind =
          struct
-            datatype t = Immutable | Mutable | Root
+            datatype t = Dynamic | Immutable | Mutable | Root
 
-            val all = [Immutable, Mutable, Root]
+            val all = [Immutable, Mutable, Root, Dynamic]
+
+            val isDynamic = fn Dynamic => true | _ => false
 
             fun equals (k1, k2) =
                case (k1, k2) of
-                  (Immutable, Immutable) => true
+                  (Dynamic, Dynamic) => true
+                | (Immutable, Immutable) => true
                 | (Mutable, Mutable) => true
                 | (Root, Root) => true
                 | _ => false
 
             fun toString k =
                case k of
-                  Immutable => "immutable"
+                  Dynamic => "dynamic"
+                | Immutable => "immutable"
                 | Mutable => "mutable"
                 | Root => "root"
             val layout = Layout.str o toString
 
             fun name k =
                case k of
-                  Immutable => "I"
+                  Dynamic => "D"
+                | Immutable => "I"
                 | Mutable => "M"
                 | Root => "R"
 
             fun memoize f =
                let
+                  val dyn = f Dynamic
                   val imm = f Immutable
                   val mut = f Mutable
                   val root = f Root
                in
-                  fn Immutable => imm
+                  fn Dynamic => dyn
+                   | Immutable => imm
                    | Mutable => mut
                    | Root => root
                end
@@ -955,12 +962,13 @@ structure Program =
       datatype t = T of {chunks: Chunk.t list,
                          frameInfos: FrameInfo.t vector,
                          frameOffsets: FrameOffsets.t vector,
+                         globals: {objptrs: (StaticHeap.Ref.t * Global.t) list,
+                                   reals: (RealX.t * Global.t) list},
                          handlesSignals: bool,
                          main: {chunkLabel: ChunkLabel.t,
                                 label: Label.t},
                          maxFrameSize: Bytes.t,
                          objectTypes: ObjectType.t vector,
-                         reals: (RealX.t * Global.t) list,
                          sourceMaps: SourceMaps.t option,
                          staticHeaps: StaticHeap.Kind.t -> StaticHeap.Object.t vector}
 
@@ -1023,9 +1031,9 @@ structure Program =
              seq [str "num object types in program = ", Int.layout (numObjectTypes)]]
          end
 
-      fun shuffle (T {chunks, frameInfos, frameOffsets,
+      fun shuffle (T {chunks, frameInfos, frameOffsets, globals,
                       handlesSignals, main, maxFrameSize,
-                      objectTypes, reals, sourceMaps, staticHeaps}) =
+                      objectTypes, sourceMaps, staticHeaps}) =
          let
             fun shuffle v =
                let
@@ -1048,11 +1056,11 @@ structure Program =
             T {chunks = chunks,
                frameInfos = frameInfos,
                frameOffsets = frameOffsets,
+               globals = globals,
                handlesSignals = handlesSignals,
                main = main,
                maxFrameSize = maxFrameSize,
                objectTypes = objectTypes,
-               reals = reals,
                sourceMaps = sourceMaps,
                staticHeaps = staticHeaps}
          end
@@ -1092,8 +1100,8 @@ structure Program =
          end
 
       fun typeCheck (program as
-                     T {chunks, frameInfos, frameOffsets,
-                        maxFrameSize, objectTypes, sourceMaps, reals, ...}) =
+                     T {chunks, frameInfos, frameOffsets, globals = {objptrs, reals, ...},
+                        maxFrameSize, objectTypes, sourceMaps, ...}) =
          let
             val (checkProfileLabel, finishCheckProfileLabel) =
                Err.check'
@@ -1206,10 +1214,18 @@ structure Program =
                end
             val _ =
                List.foreach
-               (reals, fn (r, g) => checkGlobal
-                  ("global real", g,
-                   fn t => Type.equals (t, Type.real (RealX.size r)),
-                   fn () => RealX.layout (r, {suffix=true})))
+               (objptrs, fn (r, g) =>
+                checkGlobal
+                ("global objptr", g,
+                 fn t => Type.equals (t, StaticHeap.Ref.ty r),
+                 fn () => StaticHeap.Ref.layout r))
+            val _ =
+               List.foreach
+               (reals, fn (r, g) =>
+                checkGlobal
+                ("global real", g,
+                 fn t => Type.equals (t, Type.real (RealX.size r)),
+                 fn () => RealX.layout (r, {suffix=true})))
             (* Check for no duplicate labels. *)
             local
                val {get, ...} =

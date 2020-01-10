@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 Matthew Fluet.
+/* Copyright (C) 2019-2020 Matthew Fluet.
  *
  * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
@@ -16,11 +16,13 @@ struct GC_staticHeap {
  *
  * I -> {I,M,R}
  * M -> {I,M,R}
- * R -> {I,M,R,D}
+ * R -> {I,M,R,D[*],H}  [*] only during initialization
  * D -> {I,M,R,D}
+ * H -> {I,M,R,H}
  */
 
 struct GC_staticHeaps {
+  struct GC_staticHeap dynamic;
   struct GC_staticHeap immutable;
   struct GC_staticHeap mutable;
   struct GC_staticHeap root;

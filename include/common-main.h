@@ -49,6 +49,8 @@
         s->sourceMaps.sourceSeqsLength = cardof(sourceSeqs);            \
         s->sourceMaps.sources = sources;                                \
         s->sourceMaps.sourcesLength = cardof(sources);                  \
+        s->staticHeaps.dynamic.start = (pointer)&staticHeapD;           \
+        s->staticHeaps.dynamic.size = sizeof(staticHeapD);              \
         s->staticHeaps.immutable.start = (pointer)&staticHeapI;         \
         s->staticHeaps.immutable.size = sizeof(staticHeapI);            \
         s->staticHeaps.mutable.start = (pointer)&staticHeapM;           \

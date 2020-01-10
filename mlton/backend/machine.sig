@@ -46,9 +46,10 @@ signature MACHINE =
          sig
             structure Kind:
                sig
-                  datatype t = Immutable | Mutable | Root
+                  datatype t = Dynamic | Immutable | Mutable | Root
 
                   val all: t list
+                  val isDynamic: t -> bool
                   val label: t -> Label.t
                   val layout: t -> Layout.t
                   val memoize: (t -> 'a) -> t -> 'a
@@ -290,12 +291,13 @@ signature MACHINE =
                T of {chunks: Chunk.t list,
                      frameInfos: FrameInfo.t vector,
                      frameOffsets: FrameOffsets.t vector,
+                     globals: {objptrs: (StaticHeap.Ref.t * Global.t) list,
+                               reals: (RealX.t * Global.t) list},
                      handlesSignals: bool,
                      main: {chunkLabel: ChunkLabel.t,
                             label: Label.t},
                      maxFrameSize: Bytes.t,
                      objectTypes: Type.ObjectType.t vector,
-                     reals: (RealX.t * Global.t) list,
                      sourceMaps: SourceMaps.t option,
                      staticHeaps: StaticHeap.Kind.t -> StaticHeap.Object.t vector}
 

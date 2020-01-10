@@ -332,45 +332,71 @@ fun toMachine (rssa: Rssa.Program.t) =
                       M.Operand.layout)
          varOperand
 
-      val (addToStaticHeaps, finishStaticHeaps) =
+      val (addToStaticHeaps, finishStaticHeaps, allGlobalObjptrs) =
          let
             open StaticHeap
-            fun varElem (x: Var.t): Object.Elem.t =
+            val allGlobalObjptrs = ref []
+            fun varElem (x: Var.t): Object.Elem.t * bool =
                case varOperand x of
-                  M.Operand.Const c => Object.Elem.Const c
-                | M.Operand.StaticHeapRef r => Object.Elem.Ref r
+                  M.Operand.Const c => (Object.Elem.Const c, false)
+                | M.Operand.Global g =>
+                     (case List.peek (!allGlobalObjptrs, fn (_, g') =>
+                                      M.Global.equals (g, g')) of
+                         SOME (r, _) => (Object.Elem.Ref r, true)
+                       | NONE => Error.bug "Backend.staticHeaps.varElem: invalid operand,Global")
+                | M.Operand.StaticHeapRef r => (Object.Elem.Ref r,
+                                                Kind.isDynamic (Ref.kind r))
                 | _ => Error.bug "Backend.staticHeaps.varElem: invalid operand"
-            fun translateOperand (oper: R.Operand.t): Object.Elem.t =
+            fun translateOperand (oper: R.Operand.t): Object.Elem.t * bool =
                case oper of
-                  R.Operand.Cast (z, ty) => Object.Elem.Cast (translateOperand z, ty)
-                | R.Operand.Const c => Object.Elem.Const c
+                  R.Operand.Cast (z, ty) =>
+                     let
+                        val (z, hasDynamic) = translateOperand z
+                     in
+                        (Object.Elem.Cast (z, ty), hasDynamic)
+                     end
+                | R.Operand.Const c => (Object.Elem.Const c, false)
                 | R.Operand.Var {var, ...} => varElem var
                 | _ => Error.bug "Backend.staticHeaps.translateOperand: invalid operand"
             fun translateInit init =
-               Vector.map (init, fn {offset, src, ty} =>
-                           {offset = offset, src = translateOperand src, ty = ty})
+               Vector.mapAndFold
+               (init, false, fn ({offset, src, ty}, hasDynamic') =>
+                let
+                   val (src, hasDynamic) = translateOperand src
+                in
+                   ({offset = offset, src = src, ty = ty},
+                    hasDynamic' orelse hasDynamic)
+                end)
             fun translateObject obj =
                case obj of
                   R.Object.Normal {dst, init, ty, tycon, ...} =>
                      let
+                        val (init, hasDynamic) = translateInit init
                         val hasIdentity =
                            case Vector.sub (objectTypes, ObjptrTycon.index tycon) of
                               ObjectType.Normal {hasIdentity, ...} => hasIdentity
                             | _ => Error.bug "Backend.staticHeaps.translateObject: Normal,hasIdentity"
                         val kind =
-                           if hasIdentity
-                              then if Type.isUnit ty
-                                      then (* A `unit ref`; will never be updated. *)
-                                           Kind.Immutable
-                                      else (* Conservative; the objptr field might not be mutable. *)
-                                           if Type.exists (ty, Type.isObjptr)
-                                              then Kind.Root
-                                              else Kind.Mutable
+                           if hasDynamic
+                              then Kind.Dynamic
+                              else if hasIdentity
+                                      then if Type.isUnit ty
+                                              then (* A `unit ref`; will never be updated. *)
+                                                   Kind.Immutable
+                                              else (* Conservative; the objptr field might not be mutable. *)
+                                                   if Type.exists (ty, Type.isObjptr)
+                                                      then (* Reference to root static heap
+                                                            * won't map to valid card slot.
+                                                            *)
+                                                           if !Control.markCards
+                                                              then Kind.Dynamic
+                                                              else Kind.Root
+                                                      else Kind.Mutable
                               else Kind.Immutable
                      in
                         {dst = dst,
                          kind = kind,
-                         obj = Object.Normal {init = translateInit init,
+                         obj = Object.Normal {init = init,
                                               ty = ty,
                                               tycon = tycon},
                          offset = Runtime.normalMetaDataSize (),
@@ -379,28 +405,43 @@ fun toMachine (rssa: Rssa.Program.t) =
                      end
                 | R.Object.Sequence {dst, elt, init, tycon, ...} =>
                      let
+                        val (init, hasDynamic) =
+                           Vector.mapAndFold
+                           (init, false, fn (init, hasDynamic') =>
+                            let
+                               val (init, hasDynamic) = translateInit init
+                            in
+                               (init, hasDynamic' orelse hasDynamic)
+                            end)
                         val hasIdentity =
                            case Vector.sub (objectTypes, ObjptrTycon.index tycon) of
                               ObjectType.Sequence {hasIdentity, ...} => hasIdentity
                             | _ => Error.bug "Backend.staticHeaps.translateObject: Sequence,hasIdentity"
                         val kind =
-                           if hasIdentity
-                              then if Vector.isEmpty init
-                                      then (* An empty sequence;
-                                            * elements will never be updated,
-                                            * but header may be updated.
-                                            *)
-                                           Kind.Mutable
-                                      else (* Conservative; the objptr field might not be mutable. *)
-                                           if Type.exists (elt, Type.isObjptr)
-                                              then Kind.Root
-                                              else Kind.Mutable
+                           if hasDynamic
+                              then Kind.Dynamic
+                              else if hasIdentity
+                                      then if Vector.isEmpty init
+                                              then (* An empty sequence;
+                                                    * elements will never be updated,
+                                                    * but header may be updated.
+                                                    *)
+                                                   Kind.Mutable
+                                              else (* Conservative; the objptr field might not be mutable. *)
+                                                 if Type.exists (elt, Type.isObjptr)
+                                                    then (* Reference to root static heap
+                                                          * won't map to valid card slot.
+                                                          *)
+                                                         if !Control.markCards
+                                                            then Kind.Dynamic
+                                                            else Kind.Root
+                                                    else Kind.Mutable
                               else Kind.Immutable
                      in
                         {dst = dst,
                          kind = kind,
                          obj = Object.Sequence {elt = elt,
-                                                init = Vector.map (init, translateInit),
+                                                init = init,
                                                 tycon = tycon},
                          offset = Runtime.sequenceMetaDataSize (),
                          size = R.Object.size obj,
@@ -421,19 +462,27 @@ fun toMachine (rssa: Rssa.Program.t) =
                                  kind = kind,
                                  offset = Bytes.+ (!nextOffset, offset),
                                  ty = Type.objptr tycon}
+                  val oper =
+                     case kind of
+                        Kind.Dynamic =>
+                           let
+                              val g = M.Global.new (Type.objptr tycon)
+                           in
+                              List.push (allGlobalObjptrs, (r, g))
+                              ; M.Operand.Global g
+                           end
+                      | _ => M.Operand.StaticHeapRef r
                in
                   List.push (objs, obj)
                   ; nextOffset := Bytes.+ (!nextOffset, size)
-                  ; setVarInfo (dst,
-                                {operand = VarOperand.Const (M.Operand.StaticHeapRef r),
-                                 ty = dstTy})
-                  ; r
+                  ; setVarInfo (dst, {operand = VarOperand.Const oper, ty = dstTy})
+                  ; oper
                end
 
             fun finish () =
                Kind.memoize (Vector.fromListRev o ! o #objs o kindAcc)
          in
-            (add, finish)
+            (add, finish, fn () => !allGlobalObjptrs)
          end
 
       val () = Vector.foreach (statics, ignore o addToStaticHeaps)
@@ -454,7 +503,7 @@ fun toMachine (rssa: Rssa.Program.t) =
             end
       in
          local
-            val allReals = ref []
+            val allGlobalReals = ref []
          in
             val globalReal =
                make {equals = RealX.equals,
@@ -462,10 +511,10 @@ fun toMachine (rssa: Rssa.Program.t) =
                      oper = fn r => let
                                        val g = M.Global.new (Type.real (RealX.size r))
                                     in
-                                       List.push (allReals, (r, g))
+                                       List.push (allGlobalReals, (r, g))
                                        ; M.Operand.Global g
                                     end}
-            val allReals = fn () => !allReals
+            val allGlobalReals = fn () => !allGlobalReals
          end
 
          val globalWordVector =
@@ -473,9 +522,8 @@ fun toMachine (rssa: Rssa.Program.t) =
                   hash = WordXVector.hash,
                   oper = fn wv => let
                                      val obj = R.Object.fromWordXVector (Var.newNoname (), wv)
-                                     val r = addToStaticHeaps obj
                                   in
-                                     M.Operand.StaticHeapRef r
+                                     addToStaticHeaps obj
                                   end}
       end
       fun constOperand (c: Const.t): M.Operand.t =
@@ -1289,11 +1337,12 @@ fun toMachine (rssa: Rssa.Program.t) =
          {chunks = chunks,
           frameInfos = frameInfos,
           frameOffsets = frameOffsets,
+          globals = {objptrs = allGlobalObjptrs (),
+                     reals = allGlobalReals ()},
           handlesSignals = handlesSignals,
           main = main,
           maxFrameSize = maxFrameSize,
           objectTypes = objectTypes,
-          reals = allReals (),
           sourceMaps = sourceMaps,
           staticHeaps = finishStaticHeaps ()}
    in

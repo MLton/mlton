@@ -105,11 +105,11 @@ struct
                     {chunks, 
                      frameInfos,
                      frameOffsets, 
+                     globals,
                      handlesSignals, 
                      main, 
                      maxFrameSize, 
                      objectTypes, 
-                     reals, 
                      staticHeaps, ...} =
                   program
               in
@@ -118,11 +118,11 @@ struct
                   {chunks = chunks, 
                    frameInfos = frameInfos,
                    frameOffsets = frameOffsets, 
+                   globals = globals,
                    handlesSignals = handlesSignals, 
                    main = main, 
                    maxFrameSize = maxFrameSize, 
                    objectTypes = objectTypes, 
-                   reals = reals, 
                    sourceMaps = getSourceMaps (),
                    staticHeaps = staticHeaps}
               end

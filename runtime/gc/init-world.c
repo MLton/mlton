@@ -15,17 +15,15 @@ size_t sizeofInitialBytesLive (GC_state s) {
   size_t total;
 
   total = 0;
+  total += s->staticHeaps.dynamic.size;
   total += sizeofStackWithMetaData (s, sizeofStackInitialReserved (s)) + sizeofThread (s);
   return total;
 }
 
 void initWorld (GC_state s) {
-  uint32_t i;
   pointer start;
   GC_thread thread;
 
-  for (i = 0; i < s->globalsLength; ++i)
-    s->globals[i] = BOGUS_OBJPTR;
   s->lastMajorStatistics.bytesLive = sizeofInitialBytesLive (s);
   createHeap (s, &s->heap,
               sizeofHeapDesired (s, s->lastMajorStatistics.bytesLive, 0),
@@ -35,6 +33,9 @@ void initWorld (GC_state s) {
   s->frontier = start;
   s->limitPlusSlop = s->heap.start + s->heap.size;
   s->limit = s->limitPlusSlop - GC_HEAP_LIMIT_SLOP;
+  GC_memcpy (s->staticHeaps.dynamic.start, start, s->staticHeaps.dynamic.size);
+  s->frontier = start + s->staticHeaps.dynamic.size;
+  translateHeap (s, s->staticHeaps.dynamic.start, start, s->staticHeaps.dynamic.size);
   assert ((size_t)(s->frontier - start) <= s->lastMajorStatistics.bytesLive);
   s->heap.oldGenSize = (size_t)(s->frontier - s->heap.start);
   setGCStateCurrentHeap (s, 0, 0);
