@@ -86,10 +86,11 @@ structure WordXVectorConsts =
                      (table, wv, fn () =>
                       let
                          val var = Var.newNoname ()
-                         val obj = Object.fromWordXVector (var, wv)
+                         val ty = Type.wordVector (WordXVector.elementSize wv)
+                         val obj = Object.fromWordXVector wv
                       in
-                         List.push (newStatics, obj)
-                         ; Operand.Var {var = var, ty = #2 (Object.dst obj)}
+                         List.push (newStatics, {dst = (var, ty), obj = obj})
+                         ; Operand.Var {var = var, ty = ty}
                       end)
                 | _ => Operand.Const c
          in
@@ -143,12 +144,11 @@ structure RealConsts =
                                         ty = elt})
                                    val obj =
                                       Object.Sequence
-                                      {dst = (vecVar, vecTy),
-                                       elt = elt,
+                                      {elt = elt,
                                        init = init,
                                        tycon = vecTycon}
                                 in
-                                   SOME obj
+                                   SOME {dst = (vecVar, vecTy), obj = obj}
                                 end
                   in
                      (add, newStatic)
@@ -218,27 +218,22 @@ structure Globals =
                                     operandIsStatic src)
                in
                   case obj of
-                     Object.Normal {dst = (dst, _), init, ...} =>
-                        if initIsStatic init
-                           then (List.push (newStatics, obj)
-                                 ; setVarIsStatic (dst, true)
-                                 ; true)
-                           else false
-                   | Object.Sequence {dst = (dst, _), init, ...} =>
-                        if Vector.forall (init, initIsStatic)
-                           then (List.push (newStatics, obj)
-                                 ; setVarIsStatic (dst, true)
-                                 ; true)
-                           else false
+                     Object.Normal {init, ...} => initIsStatic init
+                   | Object.Sequence {init, ...} => Vector.forall (init, initIsStatic)
                end
             fun statementIsStatic stmt =
                case stmt of
-                  Statement.Object obj => objectIsStatic obj
+                  Statement.Object {dst as (dstVar, _), obj} =>
+                     if objectIsStatic obj
+                        then (List.push (newStatics, {dst = dst, obj = obj})
+                              ; setVarIsStatic (dstVar, true)
+                              ; true)
+                        else false
                 | _ => false
 
             val () =
                Vector.foreach
-               (statics, fn obj => setVarIsStatic (#1 (Object.dst obj), true))
+               (statics, fn {dst = (dstVar, _), ...} => setVarIsStatic (dstVar, true))
 
             val main =
                let

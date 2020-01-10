@@ -369,7 +369,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                 end)
             fun translateObject obj =
                case obj of
-                  R.Object.Normal {dst, init, ty, tycon, ...} =>
+                  R.Object.Normal {init, ty, tycon, ...} =>
                      let
                         val (init, hasDynamic) = translateInit init
                         val hasIdentity =
@@ -394,8 +394,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                                                       else Kind.Mutable
                               else Kind.Immutable
                      in
-                        {dst = dst,
-                         kind = kind,
+                        {kind = kind,
                          obj = Object.Normal {init = init,
                                               ty = ty,
                                               tycon = tycon},
@@ -403,7 +402,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                          size = R.Object.size obj,
                          tycon = tycon}
                      end
-                | R.Object.Sequence {dst, elt, init, tycon, ...} =>
+                | R.Object.Sequence {elt, init, tycon, ...} =>
                      let
                         val (init, hasDynamic) =
                            Vector.mapAndFold
@@ -438,8 +437,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                                                     else Kind.Mutable
                               else Kind.Immutable
                      in
-                        {dst = dst,
-                         kind = kind,
+                        {kind = kind,
                          obj = Object.Sequence {elt = elt,
                                                 init = init,
                                                 tycon = tycon},
@@ -455,7 +453,7 @@ fun toMachine (rssa: Rssa.Program.t) =
 
             fun add obj =
                let
-                  val {dst = (dst, dstTy), kind, obj, offset, size, tycon} =
+                  val {kind, obj, offset, size, tycon} =
                      translateObject obj
                   val {objs, nextIndex, nextOffset} = kindAcc kind
                   val r = Ref.T {index = nextIndex (),
@@ -475,7 +473,6 @@ fun toMachine (rssa: Rssa.Program.t) =
                in
                   List.push (objs, obj)
                   ; nextOffset := Bytes.+ (!nextOffset, size)
-                  ; setVarInfo (dst, {operand = VarOperand.Const oper, ty = dstTy})
                   ; oper
                end
 
@@ -485,7 +482,12 @@ fun toMachine (rssa: Rssa.Program.t) =
             (add, finish, fn () => !allGlobalObjptrs)
          end
 
-      val () = Vector.foreach (statics, ignore o addToStaticHeaps)
+      val () = Vector.foreach (statics, fn {dst = (dstVar, dstTy), obj} =>
+                               let
+                                  val oper = addToStaticHeaps obj
+                               in
+                                  setVarInfo (dstVar, {operand = VarOperand.Const oper, ty = dstTy})
+                               end)
 
       (* Hash tables for uniquifying globals. *)
       local
@@ -520,11 +522,7 @@ fun toMachine (rssa: Rssa.Program.t) =
          val globalWordVector =
             make {equals = WordXVector.equals,
                   hash = WordXVector.hash,
-                  oper = fn wv => let
-                                     val obj = R.Object.fromWordXVector (Var.newNoname (), wv)
-                                  in
-                                     addToStaticHeaps obj
-                                  end}
+                  oper = addToStaticHeaps o R.Object.fromWordXVector}
       end
       fun constOperand (c: Const.t): M.Operand.t =
          let
@@ -654,7 +652,7 @@ fun toMachine (rssa: Rssa.Program.t) =
              | Move {dst, src} =>
                   move {dst = translateOperand dst,
                         src = translateOperand src}
-             | Object (obj as Object.Normal {dst = (dst, _), init, tycon, ...}) =>
+             | Object {dst = (dst, _), obj as Object.Normal {init, tycon, ...}} =>
                   let
                      val dst = varOperand dst
                      val header = ObjptrTycon.toHeader tycon
@@ -669,7 +667,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                                           size = Object.size obj}
                       :: mkInit (init, mkDst))
                   end
-             | Object (obj as Object.Sequence {dst = (dst, _), elt, init, tycon, ...}) =>
+             | Object {dst = (dst, _), obj as Object.Sequence {elt, init, tycon, ...}} =>
                   let
                      val dst = varOperand dst
                      val header = ObjptrTycon.toHeader tycon

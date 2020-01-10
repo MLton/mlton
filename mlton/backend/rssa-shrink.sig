@@ -17,7 +17,7 @@ signature RSSA_SHRINK =
       include RSSA_SHRINK_STRUCTS
 
       val shrinkFunction:
-         {main: Function.t, statics: Object.t vector}
+         {main: Function.t, statics: {dst: Var.t * Type.t, obj: Object.t} vector}
          -> {main: unit -> Function.t, shrink: Function.t -> Function.t}
       val shrink: Program.t -> Program.t
    end

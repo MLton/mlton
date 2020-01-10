@@ -749,7 +749,7 @@ fun transform program =
                                 end
                              ;
                             case s of
-                               Object obj =>
+                               Object {obj, ...} =>
                                   {args = args,
                                    bytesAllocated = Bytes.+ (bytesAllocated,
                                                              Object.size obj),

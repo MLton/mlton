@@ -100,7 +100,7 @@ structure Statement =
 
       fun bytesAllocated (s: t): Bytes.t =
          case s of
-            Object obj => Object.size obj
+            Object {obj, ...} => Object.size obj
           | _ => Bytes.zero
    end
 
@@ -855,15 +855,16 @@ fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileI
                           Vector.new1 (ObjectType.Sequence {elt = flagTy, hasIdentity = true})],
                          Vector.concat
                          [statics,
-                          Vector.new1 (Object.Sequence {dst = (flagsVar, flagsTy),
-                                                        elt = flagTy,
-                                                        init = Vector.tabulate
-                                                               (Counter.value c, fn _ =>
-                                                                Vector.new1
-                                                                {offset = Bytes.zero,
-                                                                 src = Operand.one flagWS,
-                                                                 ty = flagTy}),
-                                                               tycon = flagsTycon})]))
+                          Vector.new1 {dst = (flagsVar, flagsTy),
+                                       obj = Object.Sequence
+                                             {elt = flagTy,
+                                              init = Vector.tabulate
+                                                     (Counter.value c, fn _ =>
+                                                      Vector.new1
+                                                      {offset = Bytes.zero,
+                                                       src = Operand.one flagWS,
+                                                       ty = flagTy}),
+                                              tycon = flagsTycon}}]))
                 else (objectTypes, statics))
          end
 

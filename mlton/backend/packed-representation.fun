@@ -970,11 +970,11 @@ structure ObjptrRep =
                 end)
          in
             List.concatRev
-            ([Object (Object.Normal
-                      {dst = (dst, ty),
-                       init = Vector.fromListRev init,
-                       ty = componentsTy,
-                       tycon = tycon})]
+            ([Object {dst = (dst, ty),
+                      obj = Object.Normal
+                            {init = Vector.fromListRev init,
+                             ty = componentsTy,
+                             tycon = tycon}}]
              :: pre)
          end
 
@@ -1014,11 +1014,11 @@ structure ObjptrRep =
                 end)
          in
             List.concatRev
-            ([Object (Object.Sequence
-                      {dst = (dst, ty),
-                       elt = componentsTy,
-                       init = Vector.fromListRev init,
-                       tycon = tycon})]
+            ([Object {dst = (dst, ty),
+                      obj = Object.Sequence
+                            {elt = componentsTy,
+                             init = Vector.fromListRev init,
+                             tycon = tycon}}]
              :: pre)
          end
 

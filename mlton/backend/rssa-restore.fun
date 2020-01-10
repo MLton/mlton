@@ -158,7 +158,7 @@ structure VarInfo =
                                      | h::_ => SOME h
   end
 
-fun restoreFunction {main: Function.t, statics: Object.t vector}
+fun restoreFunction {main: Function.t, statics: {dst: Var.t * Type.t, obj: Object.t} vector}
   = let
       exception NoViolations
 
@@ -518,10 +518,8 @@ fun restoreFunction {main: Function.t, statics: Object.t vector}
                    Statement.Bind {dst=tupleDst, pinned=pinned, src=src}
               | Statement.Move {src, ...} =>
                    Statement.Move {dst=Operand.Var dst, src=src}
-              | Statement.Object (Object.Normal {init, ty, tycon, ...}) =>
-                   Statement.Object (Object.Normal {dst=tupleDst, init=init, ty=ty, tycon=tycon})
-              | Statement.Object (Object.Sequence {elt, init, tycon, ...}) =>
-                   Statement.Object (Object.Sequence {dst=tupleDst, elt=elt, init=init, tycon=tycon})
+              | Statement.Object {obj, ...} =>
+                   Statement.Object {dst=tupleDst, obj = obj}
               | Statement.PrimApp {args, prim, ...} =>
                    Statement.PrimApp {args=args, dst=SOME tupleDst, prim=prim}
               | _ => st
@@ -711,8 +709,7 @@ fun restoreFunction {main: Function.t, statics: Object.t vector}
              VarInfo.whenViolates
              (vi, fn () => Error.bug ("RssaRestore.restore: violation in " ^ msg))
           end
-      val _ = Vector.foreach (statics, fn obj =>
-                              Object.foreachDef (obj, addDef "statics"))
+      val _ = Vector.foreach (statics, addDef "statics" o #dst)
       val _ = Function.foreachDef (main, addDef "main")
     in
        {main = main,

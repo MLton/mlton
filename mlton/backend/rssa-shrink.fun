@@ -19,7 +19,8 @@ in
    structure ApplyResult = ApplyResult
 end
 
-fun shrinkFunction {main: Function.t, statics: Object.t vector} : {main: unit -> Function.t, shrink: Function.t -> Function.t} =
+fun shrinkFunction {main: Function.t, statics: {dst: Var.t * Type.t, obj: Object.t} vector}:
+   {main: unit -> Function.t, shrink: Function.t -> Function.t} =
    let
       val {get = replaceVar: Var.t -> Operand.t,
            set = setReplaceVar, ...} =
@@ -238,8 +239,7 @@ fun shrinkFunction {main: Function.t, statics: Object.t vector} : {main: unit ->
          in
             f
          end
-      val () = Vector.foreach (statics, fn obj =>
-                               Object.foreachDef (obj, dontReplaceVar))
+      val () = Vector.foreach (statics, dontReplaceVar o #dst)
       val main = shrink (main, false)
    in
       {main = fn () => (Function.clear main; main),

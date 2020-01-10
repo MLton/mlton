@@ -54,31 +54,20 @@ signature RSSA_TREE =
       structure Object:
          sig
             datatype t =
-               Normal of {dst: Var.t * Type.t,
-                          init: {offset: Bytes.t,
+               Normal of {init: {offset: Bytes.t,
                                  src: Operand.t,
                                  ty: Type.t} vector,
                           ty: Type.t,
                           tycon: ObjptrTycon.t}
-             | Sequence of {dst: Var.t * Type.t,
-                            elt: Type.t,
+             | Sequence of {elt: Type.t,
                             init: {offset: Bytes.t,
                                    src: Operand.t,
                                    ty: Type.t} vector vector,
                             tycon: ObjptrTycon.t}
 
-            val dst: t -> Var.t * Type.t
-            (* foldDef (s, a, f)
-             * If s defines a variable x, then return f (x, a), else return a.
-             *)
-            val foldDef: t * 'a * (Var.t * Type.t * 'a -> 'a) -> 'a
-            (* foreachDef (s, f) = foldDef (s, (), fn (x, ()) => f x) *)
-            val foreachDef: t * (Var.t * Type.t -> unit) -> unit
-            val foreachDefUse: t * {def: (Var.t * Type.t) -> unit,
-                                    use: Var.t -> unit} -> unit
             val foldUse: t * 'a * (Var.t * 'a -> 'a) -> 'a
             val foreachUse: t * (Var.t -> unit) -> unit
-            val fromWordXVector: Var.t * WordXVector.t -> t
+            val fromWordXVector: WordXVector.t -> t
             val layout: t -> Layout.t
             val size: t -> Bytes.t
             val toString: t -> string
@@ -92,7 +81,8 @@ signature RSSA_TREE =
                         src: Operand.t}
              | Move of {dst: Operand.t,
                         src: Operand.t}
-             | Object of Object.t
+             | Object of {dst: Var.t * Type.t,
+                          obj: Object.t}
              | PrimApp of {args: Operand.t vector,
                            dst: (Var.t * Type.t) option,
                            prim: Type.t Prim.t}
@@ -235,7 +225,7 @@ signature RSSA_TREE =
                      objectTypes: ObjectType.t vector,
                      profileInfo: {sourceMaps: SourceMaps.t,
                                    getFrameSourceSeqIndex: Label.t -> int option} option,
-                     statics: Object.t vector}
+                     statics: {dst: Var.t * Type.t, obj: Object.t} vector}
 
             val clear: t -> unit
             (* dfs (p, v) visits the functions in depth-first order, applying v f
