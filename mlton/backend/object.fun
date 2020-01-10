@@ -28,6 +28,11 @@ fun tycon obj =
 
 val ty = Type.objptr o tycon
 
+fun metaDataSize obj =
+   case obj of
+      Normal _ => Runtime.normalMetaDataSize ()
+    | Sequence _ => Runtime.sequenceMetaDataSize ()
+
 fun size obj =
    case obj of
       Normal {ty, ...} => Bytes.+ (Runtime.normalMetaDataSize (), Type.bytes ty)

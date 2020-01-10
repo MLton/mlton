@@ -57,6 +57,7 @@ signature OBJECT =
       val isOk: t * {checkUse: Use.t -> unit,
                      tyconTy: ObjptrTycon.t -> ObjectType.t} -> bool
       val layout: t -> Layout.t
+      val metaDataSize: t -> Bytes.t
       val replace: t * {use: Use.t -> Use.t} -> t
       val size: t -> Bytes.t
       val toString: t -> string

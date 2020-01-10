@@ -1048,7 +1048,7 @@ structure Program =
 
       fun typeCheck (program as
                      T {chunks, frameInfos, frameOffsets, globals = {objptrs, reals, ...},
-                        maxFrameSize, objectTypes, sourceMaps, ...}) =
+                        maxFrameSize, objectTypes, sourceMaps, staticHeaps, ...}) =
          let
             val (checkProfileLabel, finishCheckProfileLabel) =
                Err.check'
@@ -1149,6 +1149,18 @@ structure Program =
                Vector.sub (objectTypes, ObjptrTycon.index opt)
             open Layout
 
+            val staticHeaps =
+               let
+                  open StaticHeap
+               in
+                  Kind.memoize
+                  (fn k =>
+                   (#1 o Vector.mapAndFold)
+                   (staticHeaps k, Bytes.zero, fn (obj, next) =>
+                    ((Bytes.+ (next, Object.metaDataSize obj), obj),
+                     Bytes.+ (next, Object.size obj))))
+               end
+
             fun checkGlobal (name, global, isOk, layoutVal) =
                let
                   val ty = Global.ty global
@@ -1202,6 +1214,13 @@ structure Program =
                 Vector.foreach
                 (blocks, fn b as Block.T {label, ...} =>
                  setLabelBlock (label, b)))
+            fun checkStaticHeapRef (StaticHeap.Ref.T {index, kind, offset, ty}) =
+               let
+                  val (dataOffset, obj) = Vector.sub (staticHeaps kind, index)
+               in
+                  Bytes.equals (dataOffset, offset)
+                  andalso Type.equals (StaticHeap.Object.ty obj, ty)
+               end
             fun checkOperand (x: Operand.t, alloc: Alloc.t): unit =
                let
                   datatype z = datatype Operand.t
@@ -1273,7 +1292,7 @@ structure Program =
                                                        tyconTy = tyconTy,
                                                        result = ty,
                                                        scale = scale})
-                      | StaticHeapRef _ => true
+                      | StaticHeapRef r => checkStaticHeapRef r
                       | StackTop => true
                       | Temporary t => Alloc.doesDefine (alloc, Live.Temporary t)
                in
@@ -1673,6 +1692,37 @@ structure Program =
                in
                   true
                end
+            fun checkStaticHeapElem (e: StaticHeap.Elem.t): unit =
+               let
+                  datatype z = datatype StaticHeap.Elem.t
+                  fun ok () =
+                     case e of
+                        Cast (z, t) =>
+                           (checkStaticHeapElem z
+                            ; Type.castIsOk
+                              {from = StaticHeap.Elem.ty e,
+                               to = t,
+                               tyconTy = tyconTy})
+                      | Const _ => true
+                      | Ref r => checkStaticHeapRef r
+               in
+                  Err.check ("elem", ok, fn () => StaticHeap.Elem.layout e)
+               end
+            val _ =
+               List.foreach
+               (StaticHeap.Kind.all, fn kind =>
+                Err.check
+                ("staticHeap",
+                 fn () =>
+                 (Vector.foreach
+                  (staticHeaps kind, fn (_, obj) =>
+                   Err.check
+                   ("object",
+                    fn () => StaticHeap.Object.isOk (obj, {checkUse = checkStaticHeapElem,
+                                                           tyconTy = tyconTy}),
+                    fn () => StaticHeap.Object.layout obj))
+                  ; true),
+                 fn () => Label.layout (StaticHeap.Kind.label kind)))
             val _ =
                List.foreach
                (chunks,
