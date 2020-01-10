@@ -18,6 +18,7 @@ structure BackendAtoms =
                                            structure WordX = WordX)
       structure RepType = RepType (structure CFunction = CFunction
                                    structure CType = CType
+                                   structure Const = Const
                                    structure Label = Label
                                    structure ObjptrTycon = ObjptrTycon
                                    structure Prim = Prim

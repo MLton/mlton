@@ -1,4 +1,4 @@
-(* Copyright (C) 2014,2017,2019 Matthew Fluet.
+(* Copyright (C) 2014,2017,2019-2020 Matthew Fluet.
  * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -10,6 +10,7 @@ signature REP_TYPE_STRUCTS =
    sig
       structure CFunction: C_FUNCTION
       structure CType: C_TYPE
+      structure Const: CONST
       structure Label: LABEL
       structure ObjptrTycon: OBJPTR_TYCON
       structure Prim: PRIM
@@ -21,17 +22,23 @@ signature REP_TYPE_STRUCTS =
       structure WordXVector: WORD_X_VECTOR
       sharing CFunction = Prim.CFunction
       sharing RealSize = ObjptrTycon.RealSize = Prim.RealSize = RealX.RealSize
+      sharing RealX = Const.RealX
+      sharing Runtime = ObjptrTycon.Runtime
       sharing WordSize = ObjptrTycon.WordSize = Prim.WordSize = WordX.WordSize
-      sharing WordX = RealX.WordX = WordXVector.WordX
+      sharing WordX = Const.WordX = RealX.WordX = WordXVector.WordX
+      sharing WordXVector = Const.WordXVector
    end
 
 signature REP_TYPE =
    sig
       include REP_TYPE_STRUCTS
 
-      structure ObjectType: OBJECT_TYPE
       type t
-      sharing type t = ObjectType.ty
+
+      structure ObjectType: OBJECT_TYPE
+      sharing type ObjectType.ty = t
+      (* sharing ObjectType.ObjptrTycon = ObjptrTycon *)
+      (* sharing ObjectType.Runtime = Runtime *)
 
       val bogusWord: t -> WordX.t
       val align: t * Bytes.t -> Bytes.t
@@ -67,6 +74,7 @@ signature REP_TYPE =
       val label: Label.t -> t
       val layout: t -> Layout.t
       val name: t -> string (* simple one letter abbreviation *)
+      val ofConst: Const.t -> t
       val ofGCField: Runtime.GCField.t -> t
       val ofRealX: RealX.t -> t
       val ofWordXVector: WordXVector.t -> t

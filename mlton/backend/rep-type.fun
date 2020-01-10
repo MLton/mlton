@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2010,2014,2016-2017,2019 Matthew Fluet.
+(* Copyright (C) 2009-2010,2014,2016-2017,2019-2020 Matthew Fluet.
  * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -150,7 +150,6 @@ structure Type =
 
       val zero: Bits.t -> t = bits
 
-
       val ofRealX: RealX.t -> t =
          fn r => real (RealX.size r)
 
@@ -228,6 +227,21 @@ structure Type =
                      word (WordSize.fromBits 
                            (Bits.- (WordSize.bits (WordSize.smallIntInfWord ()),
                                     Bits.one)))))))
+
+
+      fun ofConst (c: Const.t): t =
+         let
+            datatype z = datatype Const.t
+         in
+            case c of
+               CSymbol _ => cpointer ()
+             | IntInf _ => intInf ()
+             | Null => cpointer ()
+             | Real r => ofRealX r
+             | Word w => ofWordX w
+             | WordVector v => ofWordXVector v
+         end
+
 
       val deLabel: t -> Label.t option =
          fn t =>

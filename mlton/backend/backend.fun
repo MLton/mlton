@@ -336,26 +336,26 @@ fun toMachine (rssa: Rssa.Program.t) =
          let
             open StaticHeap
             val allGlobalObjptrs = ref []
-            fun varElem (x: Var.t): Object.Elem.t * bool =
+            fun varElem (x: Var.t): Elem.t * bool =
                case varOperand x of
-                  M.Operand.Const c => (Object.Elem.Const c, false)
+                  M.Operand.Const c => (Elem.Const c, false)
                 | M.Operand.Global g =>
                      (case List.peek (!allGlobalObjptrs, fn (_, g') =>
                                       M.Global.equals (g, g')) of
-                         SOME (r, _) => (Object.Elem.Ref r, true)
+                         SOME (r, _) => (Elem.Ref r, true)
                        | NONE => Error.bug "Backend.staticHeaps.varElem: invalid operand,Global")
-                | M.Operand.StaticHeapRef r => (Object.Elem.Ref r,
+                | M.Operand.StaticHeapRef r => (Elem.Ref r,
                                                 Kind.isDynamic (Ref.kind r))
                 | _ => Error.bug "Backend.staticHeaps.varElem: invalid operand"
-            fun translateOperand (oper: R.Operand.t): Object.Elem.t * bool =
+            fun translateOperand (oper: R.Operand.t): Elem.t * bool =
                case oper of
                   R.Operand.Cast (z, ty) =>
                      let
                         val (z, hasDynamic) = translateOperand z
                      in
-                        (Object.Elem.Cast (z, ty), hasDynamic)
+                        (Elem.Cast (z, ty), hasDynamic)
                      end
-                | R.Operand.Const c => (Object.Elem.Const c, false)
+                | R.Operand.Const c => (Elem.Const c, false)
                 | R.Operand.Var {var, ...} => varElem var
                 | _ => Error.bug "Backend.staticHeaps.translateOperand: invalid operand"
             fun translateInit init =

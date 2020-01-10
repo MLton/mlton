@@ -24,9 +24,12 @@ local
    backend-atoms.sig
    backend-atoms.fun
 
+   err.sml
+
+   object.sig
+   object.fun
    switch.sig
    switch.fun
-   err.sml
 
    rssa-tree.sig
    rssa-tree.fun

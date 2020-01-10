@@ -180,86 +180,38 @@ structure StaticHeap =
                end
          end
 
-      structure Object =
+      structure Elem =
          struct
-            structure Elem =
-               struct
-                  datatype t =
-                     Cast of t * Type.t
-                   | Const of Const.t
-                   | Ref of Ref.t
-
-                  fun layout e =
-                     let
-                        open Layout
-                     in
-                        case e of
-                           Cast (z, ty) =>
-                              seq [str "Cast ", tuple [layout z, Type.layout ty]]
-                         | Const c => Const.layout c
-                         | Ref r => Ref.layout r
-                     end
-               end
-
             datatype t =
-               Normal of {init: {offset: Bytes.t,
-                                 src: Elem.t,
-                                 ty: Type.t} vector,
-                          ty: Type.t,
-                          tycon: ObjptrTycon.t}
-             | Sequence of {elt: Type.t,
-                            init: {offset: Bytes.t,
-                                   src: Elem.t,
-                                   ty: Type.t} vector vector,
-                            tycon: ObjptrTycon.t}
+               Cast of t * Type.t
+             | Const of Const.t
+             | Ref of Ref.t
 
-            fun layout d =
+            fun ty e =
+               case e of
+                  Cast (_, ty) => ty
+                | Const c => Type.ofConst c
+                | Ref r => Ref.ty r
+
+            fun layout e =
                let
                   open Layout
-                  val initLayout =
-                     Vector.layout
-                     (fn {offset, src, ty} =>
-                      record [("offset", Bytes.layout offset),
-                              ("src", Elem.layout src),
-                              ("ty", Type.layout ty)])
                in
-                  case d of
-                     Normal {init, ty, tycon} =>
-                        seq [str "Normal ",
-                             record [("init", initLayout init),
-                                     ("ty", Type.layout ty),
-                                     ("tycon", ObjptrTycon.layout tycon)]]
-                   | Sequence {elt, init, tycon} =>
-                        let
-                           val init =
-                              let
-                                 fun default () = Vector.layout initLayout init
-                              in
-                                 if Type.equals (elt, Type.word WordSize.word8)
-                                    then Exn.withEscape
-                                         (fn escape =>
-                                          seq
-                                          [str "\"",
-                                           str
-                                           (String.escapeSML
-                                            (String.implodeV
-                                             (Vector.map
-                                              (init, fn init =>
-                                               case Vector.first init of
-                                                  {src = Elem.Const (Const.Word w), ...} =>
-                                                     WordX.toChar w
-                                                | _ => escape (default ()))))),
-                                           str "\""])
-                                    else default ()
-                              end
-                        in
-                           seq [str "Sequence ",
-                                record [("elt", Type.layout elt),
-                                        ("init", init),
-                                        ("tycon", ObjptrTycon.layout tycon)]]
-                        end
+                  case e of
+                     Cast (z, ty) =>
+                        seq [str "Cast ", tuple [layout z, Type.layout ty]]
+                   | Const c => Const.layout c
+                   | Ref r => Ref.layout r
                end
+
+            val word = Const o Const.word
+            val deWord =
+               fn Const (Const.Word w) => SOME w
+                | _ => NONE
          end
+
+      structure Object = Object (open S
+                                 structure Use = Elem)
    end
 
 structure Temporary =
@@ -351,11 +303,7 @@ structure Operand =
 
     val ty =
        fn Cast (_, ty) => ty
-        | Const (Const.CSymbol _) => Type.cpointer ()
-        | Const Const.Null => Type.cpointer ()
-        | Const (Const.Real r) => Type.ofRealX r
-        | Const (Const.Word w) => Type.ofWordX w
-        | Const _ => Error.bug "Machine.Operand.ty: Const"
+        | Const c => Type.ofConst c
         | Frontier => Type.cpointer ()
         | GCState => Type.gcState ()
         | Global g => Global.ty g
@@ -455,8 +403,7 @@ structure Operand =
           | _ => false
    end
 
-structure Switch = Switch (open Atoms
-                           structure Type = Type
+structure Switch = Switch (open S
                            structure Use = Operand)
 
 structure Statement =

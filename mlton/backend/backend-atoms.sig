@@ -34,6 +34,7 @@ signature BACKEND_ATOMS' =
       (* sharing Atoms = Type *)
       sharing CFunction = Type.CFunction
       sharing CType = Type.CType
+      sharing Const = Type.Const
       sharing Label = Type.Label
       sharing Prim = Type.Prim
       sharing RealSize = ObjptrTycon.RealSize = RealX.RealSize = Type.RealSize

@@ -291,6 +291,10 @@ fun checkScopes (program as Program.T {functions, main, statics, ...}): unit =
       val (bindLabel, getLabel, unbindLabel) =
          make (Label.layout, Label.plist)
       val bindLabel = fn l => bindLabel (l, false)
+      fun loopStmt (s: Statement.t, isMain: bool): unit =
+         (Statement.foreachUse (s, getVar)
+          ; Statement.foreachDef (s, fn (x, _) =>
+                                  bindVar (x, isMain)))
       fun loopFunc (f: Function.t, isMain: bool): unit =
          let
             val bindVar = fn x => bindVar (x, isMain)
@@ -312,9 +316,7 @@ fun checkScopes (program as Program.T {functions, main, statics, ...}): unit =
                    val _ = Vector.foreach (args, bindVar o #1)
                    val _ =
                       Vector.foreach
-                      (statements, fn s =>
-                       (Statement.foreachUse (s, getVar)
-                        ; Statement.foreachDef (s, bindVar o #1)))
+                      (statements, fn s => loopStmt (s, isMain))
                    val _ = Transfer.foreachUse (transfer, getVar)
                 in
                    fn () =>
@@ -336,9 +338,8 @@ fun checkScopes (program as Program.T {functions, main, statics, ...}): unit =
          in
             ()
          end
-      val _ = Vector.foreach (statics, fn {dst = (x, _), obj} =>
-                              (Object.foreachUse (obj, getVar)
-                               ; bindVar (x, true)))
+      val _ = Vector.foreach (statics, fn {dst, obj} =>
+                              loopStmt (Statement.Object {dst = dst, obj = obj}, true))
       val _ = List.foreach (functions, bindFunc o Function.name)
       val _ = loopFunc (main, true)
       val _ = List.foreach (functions, fn f => loopFunc (f, false))
@@ -450,9 +451,8 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, static
          Err.check (name, fn () => isOk x, fn () => layout x)
       val handlersImplemented = ref false
       val labelKind = Block.kind o labelBlock
-      fun objectOk {dst = (dst, dstTy), obj: Object.t}: bool =
+      fun objectOk (obj: Object.t): bool =
          let
-            val dst = Operand.Var {ty = dstTy, var = dst}
             fun initOk (init, mkDst, size) =
                Exn.withEscape
                (fn esc =>
@@ -477,13 +477,15 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, static
          in
             case obj of
                Normal {init, ty, tycon} =>
-                  Type.isSubtype (Type.objptr tycon, dstTy)
-                  andalso
                   (case tyconTy tycon of
                       ObjectType.Normal {ty = ty', ...} =>
                          Type.equals (ty, ty')
                          andalso
                          let
+                            val dst =
+                               Operand.Var
+                               {ty = Type.objptr tycon,
+                                var = Var.newString "objInit"}
                             val size = Type.bytes ty
                             fun mkDst {offset, ty} =
                                Operand.Offset
@@ -495,8 +497,6 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, static
                          end
                     | _ => false)
              | Sequence {elt, init, tycon} =>
-                  Type.isSubtype (Type.objptr tycon, dstTy)
-                  andalso
                   (case tyconTy tycon of
                       ObjectType.Sequence {elt = elt', ...} =>
                          Type.equals (elt, elt')
@@ -518,6 +518,10 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, static
                                       Operand.word
                                       (WordX.fromIntInf (IntInf.fromInt index,
                                                          WordSize.seqIndex ())))
+                            val dst =
+                               Operand.Var
+                               {ty = Type.objptr tycon,
+                                var = Var.newString "objInit"}
                          in
                             Vector.foralli
                             (init, fn (index, init) =>
@@ -548,7 +552,9 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, static
                    ; checkOperand src
                    ; (Type.isSubtype (Operand.ty src, Operand.ty dst)
                       andalso Operand.isLocation dst))
-             | Object {dst, obj} => objectOk {dst = dst, obj = obj}
+             | Object {dst = (_, dstTy), obj} =>
+                  (objectOk obj
+                   andalso Type.isSubtype (Object.ty obj, dstTy))
              | PrimApp {args, dst, prim} =>
                   (Vector.foreach (args, checkOperand)
                    ; (Type.checkPrimApp

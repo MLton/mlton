@@ -50,6 +50,9 @@ structure Operand =
       val null = Const Const.null
 
       val word = Const o Const.word
+      val deWord =
+         fn Const (Const.Word w) => SOME w
+          | _ => NONE
 
       val one = word o WordX.one
       val zero = word o WordX.zero
@@ -58,18 +61,7 @@ structure Operand =
 
       val ty =
          fn Cast (_, ty) => ty
-          | Const c =>
-               let
-                  datatype z = datatype Const.t
-               in
-                  case c of
-                     CSymbol _ => Type.cpointer ()
-                   | IntInf _ => Type.intInf ()
-                   | Null => Type.cpointer ()
-                   | Real r => Type.ofRealX r
-                   | Word w => Type.ofWordX w
-                   | WordVector v => Type.ofWordXVector v
-               end
+          | Const c => Type.ofConst c
           | GCState => Type.gcState ()
           | Offset {ty, ...} => ty
           | ObjptrTycon _ => Type.objptrHeader ()
@@ -139,151 +131,18 @@ structure Operand =
          end
    end
 
-structure Switch =
+structure Object =
    struct
       local
-         structure S = Switch (open S
-                               structure Type = Type
+         structure S = Object (open S
                                structure Use = Operand)
       in
          open S
       end
 
-      fun replace' (s, {const, label, var}) =
-         replace (s, {label = label,
-                      use = fn oper => Operand.replace (oper, {const = const,
+      fun replace' (s, {const, var}) =
+         replace (s, {use = fn oper => Operand.replace (oper, {const = const,
                                                                var = var})})
-   end
-
-structure Object =
-   struct
-      datatype t =
-         Normal of {init: {offset: Bytes.t,
-                           src: Operand.t,
-                           ty: Type.t} vector,
-                    ty: Type.t,
-                    tycon: ObjptrTycon.t}
-       | Sequence of {elt: Type.t,
-                      init: {offset: Bytes.t,
-                             src: Operand.t,
-                             ty: Type.t} vector vector,
-                      tycon: ObjptrTycon.t}
-
-      fun size obj =
-         case obj of
-            Normal {ty, ...} => Bytes.+ (Runtime.normalMetaDataSize (), Type.bytes ty)
-          | Sequence {elt, init, ...} =>
-               let
-                  val length = Vector.length init
-                  val size =
-                     Bytes.+ (Runtime.sequenceMetaDataSize (),
-                              Bytes.* (Type.bytes elt, IntInf.fromInt length))
-               in
-                  case !Control.align of
-                     Control.Align4 => Bytes.alignWord32 size
-                   | Control.Align8 => Bytes.alignWord64 size
-               end
-
-      fun fromWordXVector wv =
-         let
-            val ws = WordXVector.elementSize wv
-            val init =
-               WordXVector.toVectorMap
-               (wv, fn w =>
-                Vector.new1 {offset = Bytes.zero,
-                             src = Operand.word w,
-                             ty = Type.word ws})
-         in
-            Sequence
-            {elt = Type.word ws,
-             init = init,
-             tycon = ObjptrTycon.wordVector ws}
-         end
-
-      fun 'a foldUse (s, a: 'a, use: Var.t * 'a -> 'a): 'a =
-         let
-            fun useOperand (z: Operand.t, a) = Operand.foldVars (z, a, use)
-            fun useInit (init, a) =
-               Vector.fold (init, a, fn ({offset = _, src, ty = _}, a) =>
-                            useOperand (src, a))
-         in
-            case s of
-               Normal {init, ...} => useInit (init, a)
-             | Sequence {init, ...} => Vector.fold (init, a, useInit)
-         end
-
-      fun foreachUse (s, f) = foldUse (s, (), f o #1)
-
-      fun replace (s:t, {const: Const.t -> Operand.t,
-                         var: {ty: Type.t, var: Var.t} -> Operand.t}): t =
-         let
-            fun oper (z: Operand.t): Operand.t =
-               Operand.replace (z, {const = const, var = var})
-            fun replaceInit init =
-               Vector.map (init, fn {offset, src, ty} =>
-                           {offset = offset,
-                            src = oper src,
-                            ty = ty})
-         in
-            case s of
-               Normal {init, ty, tycon} =>
-                  Normal {init = replaceInit init,
-                          ty = ty,
-                          tycon = tycon}
-             | Sequence {elt, init, tycon} =>
-                  Sequence {elt = elt,
-                            init = Vector.map (init, replaceInit),
-                            tycon = tycon}
-         end
-
-      fun layout obj =
-         let
-            open Layout
-            val initLayout =
-               Vector.layout
-               (fn {offset, src, ty} =>
-                record [("offset", Bytes.layout offset),
-                        ("src", Operand.layout src),
-                        ("ty", Type.layout ty)])
-         in
-            case obj of
-               Normal {init, ty, tycon} =>
-                  seq [str "NormalObject ",
-                       record [("init", initLayout init),
-                               ("ty", Type.layout ty),
-                               ("tycon", ObjptrTycon.layout tycon)]]
-             | Sequence {elt, init, tycon} =>
-                  let
-                     val init =
-                        let
-                           fun default () = Vector.layout initLayout init
-                        in
-                           if Type.equals (elt, Type.word WordSize.word8)
-                              then Exn.withEscape
-                                   (fn escape =>
-                                    seq
-                                    [str "\"",
-                                     str
-                                     (String.escapeSML
-                                      (String.implodeV
-                                       (Vector.map
-                                        (init, fn init =>
-                                         case Vector.first init of
-                                            {src = Operand.Const (Const.Word w), ...} =>
-                                               WordX.toChar w
-                                          | _ => escape (default ()))))),
-                                     str "\""])
-                              else default ()
-                        end
-                  in
-                     seq [str "SequenceObject ",
-                          record [("elt", Type.layout elt),
-                                  ("init", init),
-                                  ("tycon", ObjptrTycon.layout tycon)]]
-                  end
-         end
-
-      val toString = Layout.toString o layout
    end
 
 structure Statement =
@@ -314,7 +173,7 @@ structure Statement =
             case s of
                Bind {dst = (x, t), src, ...} => def (x, t, useOperand (src, a))
              | Move {dst, src} => useOperand (src, useOperand (dst, a))
-             | Object {dst = (x, t), obj} => def (x, t, Object.foldUse (obj, a, use))
+             | Object {dst = (x, t), obj} => def (x, t, Object.foldUse (obj, a, useOperand))
              | PrimApp {dst, args, ...} =>
                   Vector.fold (args,
                                Option.fold (dst, a, fn ((x, t), a) =>
@@ -355,7 +214,7 @@ structure Statement =
                         pinned = pinned,
                         src = oper src}
              | Move {dst, src} => Move {dst = oper dst, src = oper src}
-             | Object {dst, obj} => Object {dst = dst, obj = Object.replace (obj, fs)}
+             | Object {dst, obj} => Object {dst = dst, obj = Object.replace' (obj, fs)}
              | PrimApp {args, dst, prim} =>
                   PrimApp {args = Vector.map (args, oper),
                            dst = dst,
@@ -467,6 +326,21 @@ structure Statement =
          in
             (dst, ssSrc @ ssConv @ ssDst)
          end
+   end
+
+structure Switch =
+   struct
+      local
+         structure S = Switch (open S
+                               structure Use = Operand)
+      in
+         open S
+      end
+
+      fun replace' (s, {const, label, var}) =
+         replace (s, {label = label,
+                      use = fn oper => Operand.replace (oper, {const = const,
+                                                               var = var})})
    end
 
 structure Transfer =

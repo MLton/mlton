@@ -16,9 +16,6 @@ signature RSSA_TREE =
    sig
       include RSSA_TREE_STRUCTS
 
-      structure Switch: SWITCH
-      sharing Atoms = Switch
-
       structure Operand:
          sig
             datatype t =
@@ -49,29 +46,10 @@ signature RSSA_TREE =
             val word: WordX.t -> t
             val zero: WordSize.t -> t
          end
-      sharing Operand = Switch.Use
 
-      structure Object:
-         sig
-            datatype t =
-               Normal of {init: {offset: Bytes.t,
-                                 src: Operand.t,
-                                 ty: Type.t} vector,
-                          ty: Type.t,
-                          tycon: ObjptrTycon.t}
-             | Sequence of {elt: Type.t,
-                            init: {offset: Bytes.t,
-                                   src: Operand.t,
-                                   ty: Type.t} vector vector,
-                            tycon: ObjptrTycon.t}
-
-            val foldUse: t * 'a * (Var.t * 'a -> 'a) -> 'a
-            val foreachUse: t * (Var.t -> unit) -> unit
-            val fromWordXVector: WordXVector.t -> t
-            val layout: t -> Layout.t
-            val size: t -> Bytes.t
-            val toString: t -> string
-         end
+      structure Object: OBJECT
+      sharing Object = BackendAtoms
+      sharing Object.Use = Operand
 
       structure Statement:
          sig
@@ -109,6 +87,10 @@ signature RSSA_TREE =
             val resize: Operand.t * Type.t -> Operand.t * t list
             val toString: t -> string
          end
+
+      structure Switch: SWITCH
+      sharing Switch = Atoms
+      sharing Switch.Use = Operand
 
       structure Transfer:
          sig

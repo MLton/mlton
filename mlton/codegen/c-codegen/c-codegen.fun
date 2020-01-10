@@ -119,19 +119,15 @@ structure StaticHeap =
                        ".obj", C.int index,
                        ".data)"]
          end
-      structure Object =
+      structure Elem =
          struct
-            open Object
-            structure Elem =
-               struct
-                  open Elem
-                  fun toC e =
-                     case e of
-                        Cast (z, ty) =>
-                           concat ["(", Type.toC ty, ")", toC z]
-                      | Const c => Const.toC c
-                      | Ref r => Ref.toC r
-               end
+            open Elem
+            fun toC e =
+               case e of
+                  Cast (z, ty) =>
+                     concat ["(", Type.toC ty, ")", toC z]
+                | Const c => Const.toC c
+                | Ref r => Ref.toC r
          end
    end
 
@@ -422,7 +418,7 @@ fun outputDeclarations
                       let
                          val fields = maybePad (next, offset, fields)
                          val fldCType = Type.toCType ty
-                         val fld = Object.Elem.toC src
+                         val fld = Elem.toC src
                       in
                          (fld::fields, Bytes.+ (offset, CType.size fldCType))
                       end)
@@ -527,7 +523,7 @@ fun outputDeclarations
                 Vector.foreach
                 (staticHeaps k, fn obj =>
                  let
-                    datatype z = datatype Object.Elem.t
+                    datatype z = datatype Elem.t
                     fun loopElem e =
                        case e of
                           Cast (e, _) => loopElem e
@@ -566,15 +562,8 @@ fun outputDeclarations
                                 ; List.foreach (mkFields (init, ty), fn fld =>
                                                 (print fld; print ","))
                                 ; print "},")
-                          | Object.Sequence {elt, init, tycon, ...} =>
+                          | Object.Sequence (arg as {elt, init, tycon, ...}) =>
                                let
-                                  fun toString (): string =
-                                     String.implodeV
-                                     (Vector.map
-                                      (init, fn init =>
-                                       case Vector.first init of
-                                          {src = Object.Elem.Const (Const.Word w), ...} => WordX.toChar w
-                                        | _ => Error.bug "CCodegen.declareStaticHeaps: toString"))
                                   val length = Vector.length init
                                in
                                   print "{"
@@ -585,16 +574,15 @@ fun outputDeclarations
                                   ; print (mkHeader tycon)
                                   ; print ","
                                   ; print "},"
-                                  ; if Type.equals (elt, Type.word WordSize.word8)
-                                       andalso length > 0
-                                       then print (C.string (toString ()))
-                                       else (print "{"
-                                             ; Vector.foreach (init, fn init =>
-                                                               (print "{"
-                                                                ; List.foreach (mkFields (init, elt), fn fld =>
-                                                                                (print fld; print ","))
-                                                                ; print "},"))
-                                             ; print "}")
+                                  ; (case (Object.deString arg, length > 0) of
+                                        (SOME s, true) => print (C.string s)
+                                      | _ => (print "{"
+                                              ; Vector.foreach (init, fn init =>
+                                                                (print "{"
+                                                                 ; List.foreach (mkFields (init, elt), fn fld =>
+                                                                                 (print fld; print ","))
+                                                                 ; print "},"))
+                                              ; print "}"))
                                   ; print ","
                                   ; let
                                        val next = Bytes.+ (Runtime.sequenceMetaDataSize (),

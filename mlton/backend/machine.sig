@@ -16,10 +16,6 @@ signature MACHINE =
    sig
       include MACHINE_STRUCTS
 
-      structure Switch: SWITCH
-
-      sharing Atoms = Switch
-
       structure ChunkLabel: ID
 
       structure Global:
@@ -70,28 +66,19 @@ signature MACHINE =
                   val ty: t -> Type.t
                end
 
-            structure Object:
+            structure Elem:
                sig
-                  structure Elem:
-                     sig
-                        datatype t =
-                           Cast of t * Type.t
-                         | Const of Const.t
-                         | Ref of Ref.t
-                     end
                   datatype t =
-                     Normal of {init: {offset: Bytes.t,
-                                       src: Elem.t,
-                                       ty: Type.t} vector,
-                                ty: Type.t,
-                                tycon: ObjptrTycon.t}
-                   | Sequence of {elt: Type.t,
-                                  init: {offset: Bytes.t,
-                                         src: Elem.t,
-                                         ty: Type.t} vector vector,
-                                  tycon: ObjptrTycon.t}
+                     Cast of t * Type.t
+                   | Const of Const.t
+                   | Ref of Ref.t
                end
+
+            structure Object: OBJECT
+            (* sharing Object = BackendAtoms *)
+            sharing Object.Use = Elem
          end
+      sharing StaticHeap.Object = BackendAtoms
 
       structure Temporary:
          sig
@@ -139,7 +126,6 @@ signature MACHINE =
             val ty: t -> Type.t
             val word: WordX.t -> t
          end
-      sharing Operand = Switch.Use
 
       structure Live:
          sig
@@ -175,6 +161,10 @@ signature MACHINE =
             val object: {dst: Operand.t, header: WordX.t, size: Bytes.t} -> t vector
             val sequence: {dst: Operand.t, header: WordX.t, length: int, size: Bytes.t} -> t vector
          end
+
+      structure Switch: SWITCH
+      sharing Switch = Atoms
+      sharing Switch.Use = Operand
 
       structure Transfer:
          sig
