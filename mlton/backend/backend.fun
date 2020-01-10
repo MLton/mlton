@@ -407,20 +407,10 @@ fun toMachine (rssa: Rssa.Program.t) =
                          tycon = tycon}
                      end
 
-            val kindAcc =
-               let
-                  fun make () =
-                     {objs = ref [],
-                      nextIndex = Counter.generator 0,
-                      nextOffset = ref Bytes.zero}
-                  val immAcc = make ()
-                  val mutAcc = make ()
-                  val rootAcc = make ()
-               in
-                  fn Kind.Immutable => immAcc
-                   | Kind.Mutable => mutAcc
-                   | Kind.Root => rootAcc
-               end
+            val kindAcc = Kind.memoize (fn _ =>
+                                        {objs = ref [],
+                                         nextIndex = Counter.generator 0,
+                                         nextOffset = ref Bytes.zero})
 
             fun add obj =
                let
@@ -441,21 +431,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                end
 
             fun finish () =
-               let
-                  fun make kind =
-                     let
-                        val {objs, ...} = kindAcc kind
-                     in
-                        Vector.fromListRev (!objs)
-                     end
-                  val immObjs = make Kind.Immutable
-                  val mutObjs = make Kind.Mutable
-                  val rootObjs = make Kind.Root
-               in
-                  fn Kind.Immutable => immObjs
-                   | Kind.Mutable => mutObjs
-                   | Kind.Root => rootObjs
-               end
+               Kind.memoize (Vector.fromListRev o ! o #objs o kindAcc)
          in
             (add, finish)
          end

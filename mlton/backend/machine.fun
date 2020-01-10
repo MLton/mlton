@@ -126,18 +126,18 @@ structure StaticHeap =
                 | Mutable => "M"
                 | Root => "R"
 
-            val label =
+            fun memoize f =
                let
-                  val labels =
-                     List.map
-                     (all, fn k =>
-                      (k, Label.fromString (concat ["staticHeap", name k])))
+                  val imm = f Immutable
+                  val mut = f Mutable
+                  val root = f Root
                in
-                  fn k =>
-                  case List.peek (labels, fn (k', _) => equals (k, k')) of
-                     SOME (_, l) => l
-                   | _ => Error.bug "Machine.StaticHeap.Kind.label"
+                  fn Immutable => imm
+                   | Mutable => mut
+                   | Root => root
                end
+
+            val label = memoize (fn k => Label.fromString (concat ["staticHeap", name k]))
          end
 
       structure Ref =

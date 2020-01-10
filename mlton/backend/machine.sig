@@ -51,6 +51,7 @@ signature MACHINE =
                   val all: t list
                   val label: t -> Label.t
                   val layout: t -> Layout.t
+                  val memoize: (t -> 'a) -> t -> 'a
                   val name: t -> string
                end
 
