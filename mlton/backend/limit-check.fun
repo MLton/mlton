@@ -862,8 +862,7 @@ fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileI
                                                      (Counter.value c, fn _ =>
                                                       Vector.new1
                                                       {offset = Bytes.zero,
-                                                       src = Operand.one flagWS,
-                                                       ty = flagTy}),
+                                                       src = Operand.one flagWS}),
                                               tycon = flagsTycon}}]))
                 else (objectTypes, statics))
          end

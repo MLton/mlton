@@ -360,11 +360,11 @@ fun toMachine (rssa: Rssa.Program.t) =
                 | _ => Error.bug "Backend.staticHeaps.translateOperand: invalid operand"
             fun translateInit init =
                Vector.mapAndFold
-               (init, false, fn ({offset, src, ty}, hasDynamic') =>
+               (init, false, fn ({offset, src}, hasDynamic') =>
                 let
                    val (src, hasDynamic) = translateOperand src
                 in
-                   ({offset = offset, src = src, ty = ty},
+                   ({offset = offset, src = src},
                     hasDynamic' orelse hasDynamic)
                 end)
             fun translateObject obj =
@@ -633,9 +633,9 @@ fun toMachine (rssa: Rssa.Program.t) =
                 | SOME move => Vector.new1 move
             fun mkInit (init, mkDst) =
                Vector.toListMap
-               (init, fn {src, offset, ty} =>
+               (init, fn {src, offset} =>
                 move {dst = mkDst {offset = offset,
-                                   ty = ty},
+                                   ty = R.Operand.ty src},
                       src = translateOperand src})
          in
             case s of

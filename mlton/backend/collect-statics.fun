@@ -140,8 +140,7 @@ structure RealConsts =
                                       (List.rev (!rs), fn r =>
                                        Vector.new1
                                        {offset = Bytes.zero,
-                                        src = Operand.Const (Const.Real r),
-                                        ty = elt})
+                                        src = Operand.Const (Const.Real r)})
                                    val obj =
                                       Object.Sequence
                                       {elt = elt,
@@ -214,7 +213,7 @@ structure Globals =
             fun objectIsStatic obj =
                let
                   fun initIsStatic init =
-                     Vector.forall (init, fn {offset = _, src, ty = _} =>
+                     Vector.forall (init, fn {offset = _, src} =>
                                     operandIsStatic src)
                in
                   case obj of

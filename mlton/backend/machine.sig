@@ -72,6 +72,9 @@ signature MACHINE =
                      Cast of t * Type.t
                    | Const of Const.t
                    | Ref of Ref.t
+
+                  val layout: t -> Layout.t
+                  val ty: t -> Type.t
                end
 
             structure Object: OBJECT

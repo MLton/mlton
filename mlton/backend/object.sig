@@ -36,20 +36,17 @@ signature OBJECT =
 
       datatype t =
          Normal of {init: {offset: Bytes.t,
-                           src: Use.t,
-                           ty: Type.t} vector,
+                           src: Use.t} vector,
                     ty: Type.t,
                     tycon: ObjptrTycon.t}
        | Sequence of {elt: Type.t,
                       init: {offset: Bytes.t,
-                             src: Use.t,
-                             ty: Type.t} vector vector,
+                             src: Use.t} vector vector,
                       tycon: ObjptrTycon.t}
 
       val deString: {elt: Type.t,
                      init: {offset: Bytes.t,
-                            src: Use.t,
-                            ty: Type.t} vector vector,
+                            src: Use.t} vector vector,
                      tycon: ObjptrTycon.t} -> string option
       val foldUse: t * 'a * (Use.t * 'a -> 'a) -> 'a
       val foreachUse: t * (Use.t -> unit) -> unit

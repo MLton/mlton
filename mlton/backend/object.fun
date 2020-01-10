@@ -11,14 +11,12 @@ open S
 
 datatype t =
    Normal of {init: {offset: Bytes.t,
-                     src: Use.t,
-                     ty: Type.t} vector,
+                     src: Use.t} vector,
               ty: Type.t,
               tycon: ObjptrTycon.t}
  | Sequence of {elt: Type.t,
                 init: {offset: Bytes.t,
-                       src: Use.t,
-                       ty: Type.t} vector vector,
+                       src: Use.t} vector vector,
                 tycon: ObjptrTycon.t}
 
 fun tycon obj =
@@ -55,8 +53,7 @@ fun fromWordXVector wv =
          WordXVector.toVectorMap
          (wv, fn w =>
           Vector.new1 {offset = Bytes.zero,
-                       src = Use.word w,
-                       ty = Type.word ws})
+                       src = Use.word w})
    in
       Sequence
       {elt = Type.word ws,
@@ -67,7 +64,7 @@ fun fromWordXVector wv =
 fun 'a foldUse (s, a: 'a, use: Use.t * 'a -> 'a): 'a =
    let
       fun useInit (init, a) =
-         Vector.fold (init, a, fn ({offset = _, src, ty = _}, a) =>
+         Vector.fold (init, a, fn ({offset = _, src}, a) =>
                       use (src, a))
    in
       case s of
@@ -80,10 +77,9 @@ fun foreachUse (s, f) = foldUse (s, (), f o #1)
 fun replace (s:t, {use: Use.t -> Use.t}): t =
    let
       fun replaceInit init =
-         Vector.map (init, fn {offset, src, ty} =>
+         Vector.map (init, fn {offset, src} =>
                      {offset = offset,
-                      src = use src,
-                      ty = ty})
+                      src = use src})
    in
       case s of
          Normal {init, ty, tycon} =>
@@ -98,8 +94,7 @@ fun replace (s:t, {use: Use.t -> Use.t}): t =
 
 fun deString {elt: Type.t,
               init: {offset: Bytes.t,
-                     src: Use.t,
-                     ty: Type.t} vector vector,
+                     src: Use.t} vector vector,
               tycon = _ : ObjptrTycon.t} =
    if Type.equals (elt, Type.word WordSize.word8)
       then Exn.withEscape
@@ -118,10 +113,9 @@ fun layout obj =
       open Layout
       val initLayout =
          Vector.layout
-         (fn {offset, src, ty} =>
+         (fn {offset, src} =>
           record [("offset", Bytes.layout offset),
-                  ("src", Use.layout src),
-                  ("ty", Type.layout ty)])
+                  ("src", Use.layout src)])
    in
       case obj of
          Normal {init, ty, tycon} =>
@@ -152,7 +146,7 @@ fun isOk (obj: t,
           let
              val _ =
                 Vector.fold
-                (init, Bytes.zero, fn ({offset, src, ty = _}, next) =>
+                (init, Bytes.zero, fn ({offset, src}, next) =>
                  if Bytes.>= (offset, next)
                     andalso
                     (checkUse src

@@ -378,10 +378,10 @@ fun outputDeclarations
                      Option.fold (mkPadTy (next, offset), fieldTys, op ::)
                   val (fieldTys, next) =
                      Vector.fold
-                     (init, ([], Bytes.zero), fn ({offset, src = _, ty}, (fieldTys, next)) =>
+                     (init, ([], Bytes.zero), fn ({offset, src}, (fieldTys, next)) =>
                       let
                          val fieldTys = maybePad (next, offset, fieldTys)
-                         val fldCType = Type.toCType ty
+                         val fldCType = Type.toCType (Elem.ty src)
                          val fld = concat [CType.toString fldCType,
                                            " fld", Bytes.toString offset]
                       in
@@ -414,10 +414,10 @@ fun outputDeclarations
                      Option.fold (mkPad (next, offset), fields, op ::)
                   val (fields, next) =
                      Vector.fold
-                     (init, ([], Bytes.zero), fn ({offset, src, ty}, (fields, next)) =>
+                     (init, ([], Bytes.zero), fn ({offset, src}, (fields, next)) =>
                       let
                          val fields = maybePad (next, offset, fields)
-                         val fldCType = Type.toCType ty
+                         val fldCType = Type.toCType (Elem.ty src)
                          val fld = Elem.toC src
                       in
                          (fld::fields, Bytes.+ (offset, CType.size fldCType))
@@ -532,7 +532,7 @@ fun outputDeclarations
                         | Ref _ => ()
                     fun loopInit init =
                        Vector.foreach
-                       (init, fn {offset = _, src, ty = _} =>
+                       (init, fn {offset = _, src} =>
                         loopElem src)
                  in
                     case obj of

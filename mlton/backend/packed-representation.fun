@@ -965,8 +965,7 @@ structure ObjptrRep =
                       then (pre, init)
                       else (statements :: pre,
                             {offset = offset,
-                             src = Var {ty = tmpTy, var = tmpVar},
-                             ty = tmpTy} :: init)
+                             src = Var {ty = tmpTy, var = tmpVar}} :: init)
                 end)
          in
             List.concatRev
@@ -1006,8 +1005,7 @@ structure ObjptrRep =
                              then (pre, init)
                              else (statements :: pre,
                                    {offset = offset,
-                                    src = Var {ty = tmpTy, var = tmpVar},
-                                    ty = tmpTy} :: init)
+                                    src = Var {ty = tmpTy, var = tmpVar}} :: init)
                        end)
                 in
                    (pre, Vector.fromListRev init :: init')
