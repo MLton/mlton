@@ -1472,10 +1472,9 @@ structure Target =
             val (objptr: unit -> Bits.t, set_objptr) = make "Size.objptr"
             val (seqIndex: unit -> Bits.t, set_seqIndex) = make "Size.seqIndex"
          end
-      fun setSizes {sequenceMetaData, cint, cpointer, cptrdiff, csize,
-                    header, mplimb, normalMetaData, objptr, seqIndex} =
-         (Size.set_sequenceMetaData sequenceMetaData
-          ; Size.set_cint cint
+      fun setSizes {cint, cpointer, cptrdiff, csize, header, mplimb,
+                    normalMetaData, objptr, seqIndex, sequenceMetaData} =
+         (Size.set_cint cint
           ; Size.set_cpointer cpointer
           ; Size.set_cptrdiff cptrdiff
           ; Size.set_csize csize
@@ -1483,7 +1482,8 @@ structure Target =
           ; Size.set_mplimb mplimb
           ; Size.set_normalMetaData normalMetaData
           ; Size.set_objptr objptr
-          ; Size.set_seqIndex seqIndex)
+          ; Size.set_seqIndex seqIndex
+          ; Size.set_sequenceMetaData sequenceMetaData)
    end
 
 fun mlbPathMap () =
