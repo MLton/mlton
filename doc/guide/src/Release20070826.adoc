@@ -45,24 +45,24 @@ For a complete list of changes and bug fixes since
 * AMD64
 ** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.amd64-linux.tgz[Linux], glibc 2.3
 * HPPA
-** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.hppa-hpux1100.tgz[HPUX] 11.00 and above, statically linked against <:GnuMP:>
+** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.hppa-hpux1100.tgz[HPUX] 11.00 and above, statically linked against <:GMP:>
 * PowerPC
-** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.powerpc-aix51.tgz[AIX] 5.1 and above, statically linked against <:GnuMP:>
-** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.powerpc-darwin.gmp-static.tgz[Darwin] 8.10 (Mac OS X), statically linked against <:GnuMP:>
-** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.powerpc-darwin.gmp-macports.tgz[Darwin] 8.10 (Mac OS X), dynamically linked against <:GnuMP:> in `/opt/local/lib` (suitable for http://macports.org[MacPorts] install of <:GnuMP:>)
+** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.powerpc-aix51.tgz[AIX] 5.1 and above, statically linked against <:GMP:>
+** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.powerpc-darwin.gmp-static.tgz[Darwin] 8.10 (Mac OS X), statically linked against <:GMP:>
+** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.powerpc-darwin.gmp-macports.tgz[Darwin] 8.10 (Mac OS X), dynamically linked against <:GMP:> in `/opt/local/lib` (suitable for http://macports.org[MacPorts] install of <:GMP:>)
 * Sparc
-** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.sparc-solaris8.tgz[Solaris] 8 and above, statically linked against <:GnuMP:>
+** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.sparc-solaris8.tgz[Solaris] 8 and above, statically linked against <:GMP:>
 * X86
 ** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-cygwin.tgz[Cygwin] 1.5.24-2
-** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-darwin.gmp-macports.tgz[Darwin (.tgz)] 8.10 (Mac OS X), dynamically linked against <:GnuMP:> in `/opt/local/lib` (suitable for http://macports.org[MacPorts] install of <:GnuMP:>)
-** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-darwin.gmp-macports.dmg[Darwin (.dmg)] 8.10 (Mac OS X), dynamically linked against <:GnuMP:> in `/opt/local/lib` (suitable for http://macports.org[MacPorts] install of <:GnuMP:>)
-** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-darwin.gmp-static.tgz[Darwin (.tgz)] 8.10 (Mac OS X), statically linked against <:GnuMP:>
-** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-darwin.gmp-static.dmg[Darwin (.dmg)] 8.10 (Mac OS X), statically linked against <:GnuMP:>
+** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-darwin.gmp-macports.tgz[Darwin (.tgz)] 8.10 (Mac OS X), dynamically linked against <:GMP:> in `/opt/local/lib` (suitable for http://macports.org[MacPorts] install of <:GMP:>)
+** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-darwin.gmp-macports.dmg[Darwin (.dmg)] 8.10 (Mac OS X), dynamically linked against <:GMP:> in `/opt/local/lib` (suitable for http://macports.org[MacPorts] install of <:GMP:>)
+** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-darwin.gmp-static.tgz[Darwin (.tgz)] 8.10 (Mac OS X), statically linked against <:GMP:>
+** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-darwin.gmp-static.dmg[Darwin (.dmg)] 8.10 (Mac OS X), statically linked against <:GMP:>
 ** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-freebsd.tgz[FreeBSD]
 ** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-linux.tgz[Linux], glibc 2.3
-** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-linux.glibc213.gmp-static.tgz[Linux], glibc 2.1, statically linked against <:GnuMP:>
-** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-mingw.gmp-dll.tgz[MinGW], dynamically linked against <:GnuMP:> (requires `libgmp-3.dll`)
-** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-mingw.gmp-static.tgz[MinGW], statically linked against <:GnuMP:>
+** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-linux.glibc213.gmp-static.tgz[Linux], glibc 2.1, statically linked against <:GMP:>
+** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-mingw.gmp-dll.tgz[MinGW], dynamically linked against <:GMP:> (requires `libgmp-3.dll`)
+** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-mingw.gmp-static.tgz[MinGW], statically linked against <:GMP:>
 
 == 20070826 source packages ==
 

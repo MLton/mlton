@@ -48,7 +48,7 @@ The goal of this step is to be able to successfully run `make` in the
 
 * Add rounding mode control to `basis/Real/IEEEReal.c` for the new arch (if not `HAS_FEROUND`)
 
-* Compile and install the <:GnuMP:>.  This varies from platform to platform.  In `platform/<os>.h`, you need to include the appropriate `gmp.h`.
+* Compile and install the <:GMP:> development library.  This varies from platform to platform.  In `platform/<os>.h`, you need to include the appropriate `gmp.h`.
 --
 
 * Basis Library implementation (`basis-library/*`)

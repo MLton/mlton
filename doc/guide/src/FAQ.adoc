@@ -34,7 +34,7 @@ with other SML implementations.
 
 == Why do I get a Segfault/Bus error in a program that uses `IntInf`/`LargeInt` to calculate numbers with several hundred thousand digits? ==
 
-<:GnuMP:>
+<:GMP:>
 
 == How can I decrease compile-time memory usage? ==
 

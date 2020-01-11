@@ -64,7 +64,7 @@ same C-like representations as their polymorphic counterparts.
 
 * Multiple <:GarbageCollection:garbage collection> strategies.
 
-* Fast arbitrary precision arithmetic (`IntInf`) based on <:GnuMP:>.
+* Fast arbitrary precision arithmetic (`IntInf`) based on <:GMP:>.
 +
 For `IntInf` intensive programs, MLton can be an order of magnitude or
 more faster than Poly/ML or SML/NJ.

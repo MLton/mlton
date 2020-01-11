@@ -5,10 +5,10 @@ MLton runs fine on Darwin (and on Mac OS X).
 
 == Notes ==
 
-* MLton requires the <:GnuMP:> library, which is available via
-http://www.finkproject.org[Fink], http://www.macports.com[MacPorts],
-http://mxcl.github.io/homebrew/[Homebrew].
-
+* MLton requires the <:GMP:> library, which is available via
+https://brew.sh/[Homebrew], http://www.macports.com[MacPorts],
+and http://www.finkproject.org[Fink].
+n
 * For Intel-based Macs, MLton targets the <:RunningOnAMD64:AMD64
 architecture> on Darwin 10 (Mac OS X Snow Leopard) and higher and
 targets the <:RunningOnX86:x86 architecture> on Darwin 8 (Mac OS X

@@ -8,7 +8,7 @@ changed.
 == Notes ==
 
 * To compile MLton on MinGW:
-** The <:GnuMP:> library is required.
+** The <:GMP:> library is required.
 ** The Bash shell is required.  If you are using a prebuilt MSYS, you
 probably want to symlink `bash` to `sh`.
 
