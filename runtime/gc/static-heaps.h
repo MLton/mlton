@@ -35,10 +35,10 @@ struct GC_staticHeaps {
 static inline bool isObjptrInImmutableStaticHeap (GC_state s, objptr op);
 static inline bool isObjptrInMutableStaticHeap (GC_state s, objptr op);
 static inline bool isObjptrInRootStaticHeap (GC_state s, objptr op);
-static inline bool isObjptrInStaticHeap (GC_state s, objptr op);
+static inline bool isObjptrInImmutableMutableOrRootStaticHeap (GC_state s, objptr op);
 static inline bool isPointerInImmutableStaticHeap (GC_state s, pointer p);
 static inline bool isPointerInMutableStaticHeap (GC_state s, pointer p);
 static inline bool isPointerInRootStaticHeap (GC_state s, pointer p);
-static inline bool isPointerInStaticHeap (GC_state s, pointer p);
+static inline bool isPointerInImmutableMutableOrRootStaticHeap (GC_state s, pointer p);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */

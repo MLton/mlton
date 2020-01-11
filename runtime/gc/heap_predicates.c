@@ -1,4 +1,4 @@
-/* Copyright (C) 2012,2017,2019 Matthew Fluet.
+/* Copyright (C) 2012,2017,2019-2020 Matthew Fluet.
  * Copyright (C) 2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -116,13 +116,13 @@ bool isObjptrInRootStaticHeap (GC_state s, objptr op) {
   return isPointerInRootStaticHeap (s, p);
 }
 
-bool isPointerInStaticHeap (GC_state s, pointer p) {
+bool isPointerInImmutableMutableOrRootStaticHeap (GC_state s, pointer p) {
   return (isPointerInImmutableStaticHeap (s, p)
           or isPointerInMutableStaticHeap (s, p)
           or isPointerInRootStaticHeap (s, p));
 }
 
-bool isObjptrInStaticHeap (GC_state s, objptr op) {
+bool isObjptrInImmutableMutableOrRootStaticHeap (GC_state s, objptr op) {
   return (isObjptrInImmutableStaticHeap (s, op)
           or isObjptrInMutableStaticHeap (s, op)
           or isObjptrInRootStaticHeap (s, op));

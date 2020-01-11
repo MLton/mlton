@@ -1,4 +1,4 @@
-/* Copyright (C) 2011-2012,2017,2019 Matthew Fluet.
+/* Copyright (C) 2011-2012,2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -8,10 +8,12 @@
  */
 
 #if ASSERT
-void assertIsObjptrInFromSpace (GC_state s, objptr *opp,
-                                __attribute__((unused)) void *env) {
-  assert (isObjptrInFromSpace (s, *opp));
-  unless (isObjptrInFromSpace (s, *opp)) {
+void assertIsObjptrInFromSpaceOrImmutableMutableOrRootStaticHeap (GC_state s, objptr *opp,
+                                                                  __attribute__((unused)) void *env) {
+  assert (isObjptrInFromSpace (s, *opp)
+          || isObjptrInImmutableMutableOrRootStaticHeap (s, *opp));
+  unless (isObjptrInFromSpace (s, *opp)
+          || isObjptrInImmutableMutableOrRootStaticHeap (s, *opp)) {
     displayGCState (s, stderr);
     die ("gc.c: assertIsObjptrInFromSpace "
          "opp = "FMTPTR"  "
@@ -31,6 +33,11 @@ void assertIsObjptrInFromSpace (GC_state s, objptr *opp,
     die ("gc.c: intergenerational pointer from "FMTPTR" to "FMTOBJPTR" with unmarked card.\n",
          (uintptr_t)opp, *opp);
   }
+}
+
+void assertIsObjptrInImmutableMutableOrRootStaticHeap (GC_state s, objptr *opp,
+                                                       __attribute__((unused)) void *env) {
+  assert (isObjptrInImmutableMutableOrRootStaticHeap (s, *opp));
 }
 
 bool invariantForGC (GC_state s) {
@@ -75,27 +82,47 @@ bool invariantForGC (GC_state s) {
   }
   assert (s->secondaryHeap.start == NULL 
           or s->heap.size == s->secondaryHeap.size);
-  /* The following checks are disabled,
-   * because objptrs to static objects * fail `isObjptrInFromSpace`.
-   * if an efficient `isObjptrStatic` predicate were available,
-   * then these checks could be re-enabled.
-   */
-  if (FALSE) {
-  /* Check that all pointers are into from space. */
-  struct GC_foreachObjptrClosure assertIsObjptrInFromSpaceClosure =
-    {.fun = assertIsObjptrInFromSpace, .env = NULL};
-  foreachGlobalObjptr (s, &assertIsObjptrInFromSpaceClosure);
+
+  struct GC_foreachObjptrClosure assertIsObjptrInImmutableMutableOrRootStaticHeapClosure =
+    {.fun = assertIsObjptrInImmutableMutableOrRootStaticHeap, .env = NULL};
+  struct GC_foreachObjptrClosure assertIsObjptrInFromSpaceOrImmutableMutableOrRootStaticHeapClosure =
+    {.fun = assertIsObjptrInFromSpaceOrImmutableMutableOrRootStaticHeap, .env = NULL};
+
+  /* The immutable and mutable static heaps may only have pointers into static heaps. */
+  if (DEBUG_DETAILED)
+    fprintf (stderr, "Checking immutable static heap.\n");
+  foreachObjptrInStaticHeap (s, &s->staticHeaps.immutable,
+                             &assertIsObjptrInImmutableMutableOrRootStaticHeapClosure,
+                             FALSE);
+  if (DEBUG_DETAILED)
+    fprintf (stderr, "Checking mutable static heap.\n");
+  foreachObjptrInStaticHeap (s, &s->staticHeaps.mutable,
+                             &assertIsObjptrInImmutableMutableOrRootStaticHeapClosure,
+                             FALSE);
+  /* The root static heap may have pointers into the runtime heap and static heaps. */
+  if (DEBUG_DETAILED)
+    fprintf (stderr, "Checking root static heap.\n");
+  foreachObjptrInStaticHeap (s, &s->staticHeaps.root,
+                             &assertIsObjptrInFromSpaceOrImmutableMutableOrRootStaticHeapClosure,
+                             FALSE);
+  /* Global objptrs may be into runtime heap. */
+  if (DEBUG_DETAILED)
+    fprintf (stderr, "Checking global objptrs.\n");
+  foreachGlobalObjptr (s, &assertIsObjptrInFromSpaceOrImmutableMutableOrRootStaticHeapClosure);
+  /* The runtime heap may have pointers into the runtime heap and static heaps. */
   pointer back = s->heap.start + s->heap.oldGenSize;
   if (DEBUG_DETAILED)
     fprintf (stderr, "Checking old generation.\n");
   foreachObjptrInRange (s, alignFrontier (s, s->heap.start), &back, 
-                        &assertIsObjptrInFromSpaceClosure, FALSE);
+                        &assertIsObjptrInFromSpaceOrImmutableMutableOrRootStaticHeapClosure, FALSE);
   if (DEBUG_DETAILED)
     fprintf (stderr, "Checking nursery.\n");
   foreachObjptrInRange (s, s->heap.nursery, &s->frontier, 
-                        &assertIsObjptrInFromSpaceClosure, FALSE);
-  }
+                        &assertIsObjptrInFromSpaceOrImmutableMutableOrRootStaticHeapClosure, FALSE);
+
   /* Current thread. */
+  if (DEBUG_DETAILED)
+    fprintf (stderr, "Checking current thread/stack.\n");
   GC_stack stack = getStackCurrent(s);
   assert (isStackReservedAligned (s, stack->reserved));
   assert (s->stackBottom == getStackBottom (s, stack));
