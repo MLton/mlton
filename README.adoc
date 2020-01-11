@@ -140,6 +140,7 @@ For example:
 $ make PREFIX=/opt/mlton install
 ----
 
+
 == Install (from binary package)
 
 === Requirements
@@ -197,18 +198,28 @@ For example:
 $ make PREFIX=/opt/mlton install
 ----
 
+
 == Resources
 
  * `http://mlton.org`
- * mailing lists
+ * Mailing lists
    - `MLton-devel@mlton.org` -- MLton developers
      (https://sourceforge.net/mailarchive/forum.php?forum_name=mlton-devel[archive],
      https://lists.sourceforge.net/lists/listinfo/mlton-devel[subscribe])
    - `MLton-user@mlton.org` -- MLton user community
      (https://sourceforge.net/mailarchive/forum.php?forum_name=mlton-user[archive],
      https://lists.sourceforge.net/lists/listinfo/mlton-user[subscribe])
+ * Development
+   - `https://github.com/MLton/mlton`
+   - https://github.com/MLton/mlton/pulls[pull requests]
+   - https://github.com/MLton/mlton/issues[issue tracker]
 
-== Need help? Found a bug?
 
-https://github.com/MLton/mlton/issues[Submit an issue] if you need any help.
-We welcome pull requests with bug fixes or changes.
+== Support and Contributing
+
+To report bugs or suggest new features, use the
+https://github.com/MLton/mlton/issues[issue tracker] or ask on the
+mailto:mlton-user@mlton.org[mailing list].
+
+https://github.com/MLton/mlton/pulls[Pull requests] with bug fixes or
+changes are welcome.
