@@ -1461,7 +1461,6 @@ structure Target =
 
       structure Size =
          struct
-            val (sequenceMetaData: unit -> Bits.t, set_sequenceMetaData) = make "Size.sequenceMetaData"
             val (cint: unit -> Bits.t, set_cint) = make "Size.cint"
             val (cpointer: unit -> Bits.t, set_cpointer) = make "Size.cpointer"
             val (cptrdiff: unit -> Bits.t, set_cptrdiff) = make "Size.cptrdiff"
@@ -1471,6 +1470,7 @@ structure Target =
             val (normalMetaData: unit -> Bits.t, set_normalMetaData) = make "Size.normalMetaData"
             val (objptr: unit -> Bits.t, set_objptr) = make "Size.objptr"
             val (seqIndex: unit -> Bits.t, set_seqIndex) = make "Size.seqIndex"
+            val (sequenceMetaData: unit -> Bits.t, set_sequenceMetaData) = make "Size.sequenceMetaData"
          end
       fun setSizes {cint, cpointer, cptrdiff, csize, header, mplimb,
                     normalMetaData, objptr, seqIndex, sequenceMetaData} =
