@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014,2019 Matthew Fluet.
+(* Copyright (C) 2009,2014,2019-2020 Matthew Fluet.
  * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -100,11 +100,17 @@ end
 
 fun equals (w, w') = WordSize.equals (size w, size w') andalso value w = value w'
 
+val fromIntInf = make
+
+fun fromBits (b, ws) = make (Bits.toIntInf b, ws)
+
 fun fromBytes (b, ws) = make (Bytes.toIntInf b, ws)
 
-fun fromChar (c: Char.t) = make (Int.toIntInf (Char.toInt c), WordSize.byte)
+fun fromInt (i, ws) = make (Int.toIntInf i, ws)
 
-val fromIntInf = make
+fun fromChar (c: Char.t) = fromInt (Char.toInt c, WordSize.byte)
+
+fun fromWord (w, ws) = make (Word.toIntInf w, ws)
 
 fun isAllOnes w = value w = modulus (size w) - 1
 

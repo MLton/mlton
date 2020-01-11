@@ -677,15 +677,13 @@ fun toMachine (rssa: Rssa.Program.t) =
                               (Scale.One, fn index =>
                                M.Operand.word
                                (WordX.mul
-                                (WordX.fromIntInf (IntInf.fromInt index,
-                                                   WordSize.seqIndex ()),
+                                (WordX.fromInt (index, WordSize.seqIndex ()),
                                  WordX.fromBytes (Type.bytes elt, WordSize.seqIndex ()),
                                  {signed = false})))
                          | SOME s =>
                               (s, fn index =>
                                M.Operand.word
-                               (WordX.fromIntInf (IntInf.fromInt index,
-                                                  WordSize.seqIndex ())))
+                               (WordX.fromInt (index, WordSize.seqIndex ())))
                   in
                      Vector.concat
                      (M.Statement.sequence {dst = dst,
@@ -732,10 +730,8 @@ fun toMachine (rssa: Rssa.Program.t) =
                       {args = (Vector.new2
                                (stackTopOp,
                                 M.Operand.word
-                                (WordX.fromIntInf
-                                 (Int.toIntInf
-                                  (Bytes.toInt
-                                   (Bytes.+ (handlerOffset (), Runtime.labelSize ()))),
+                                (WordX.fromBytes
+                                 (Bytes.+ (handlerOffset (), Runtime.labelSize ()),
                                   WordSize.cptrdiff ())))),
                        dst = SOME tmp,
                        prim = Prim.cpointerAdd},

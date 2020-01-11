@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019 Matthew Fluet.
+(* Copyright (C) 2009,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -27,7 +27,7 @@ struct
   val ones : int * WordSize.t -> WordX.t
     = fn (i, ws) => (WordX.notb o WordX.lshift) 
                     (WordX.allOnes ws,
-                     WordX.fromIntInf (IntInf.fromInt i, ws))
+                     WordX.fromInt (i, ws))
 
   val tracerTop = x86.tracerTop
 
@@ -1843,7 +1843,7 @@ struct
                           if length >= 8 
                              andalso
                              WordX.lt (WordX.div(rangeK,two,{signed=false}),
-                                       WordX.fromIntInf (IntInf.fromInt length, ws),
+                                       WordX.fromInt (length, ws),
                                        {signed = false})
                             then let
                                    val cases 

@@ -1,4 +1,4 @@
-(* Copyright (C) 2017,2019 Matthew Fluet.
+(* Copyright (C) 2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -630,8 +630,7 @@ structure Value =
                        else const' (Const.unknown (), eltTy)
                     end
             val length =
-               const (Sconst.Word (WordX.fromIntInf (IntInf.fromInt length,
-                                                     WordSize.seqIndex ())))
+               const (Sconst.Word (WordX.fromInt (length, WordSize.seqIndex ())))
          in
             {elt = elt, length = length}
          end
@@ -1009,9 +1008,8 @@ fun transform (program: Program.t): Program.t =
                   let
                      val v = fromType resultType
                      val l =
-                        (const o S.Const.word o WordX.fromIntInf)
-                        (IntInf.fromInt (Vector.length args),
-                         WordSize.seqIndex ())
+                        (const o S.Const.word o WordX.fromInt)
+                        (Vector.length args, WordSize.seqIndex ())
                      val _ = coerce {from = l, to = vectorLength v}
                      val _ =
                         Vector.foreach
@@ -1026,9 +1024,8 @@ fun transform (program: Program.t): Program.t =
                 | Array_array =>
                      let
                         val l =
-                           (const o S.Const.word o WordX.fromIntInf)
-                           (IntInf.fromInt (Vector.length args),
-                            WordSize.seqIndex ())
+                           (const o S.Const.word o WordX.fromInt)
+                           (Vector.length args, WordSize.seqIndex ())
                         val a = array (false, l, bear ())
                         val _ =
                            Vector.foreach

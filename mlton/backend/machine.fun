@@ -458,7 +458,7 @@ structure Statement =
          let
             datatype z = datatype Operand.t
             fun bytes (b: Bytes.t): Operand.t =
-               Operand.word (WordX.fromIntInf (Bytes.toIntInf b, WordSize.csize ()))
+               Operand.word (WordX.fromBytes (b, WordSize.csize ()))
             val metaDataSize = Runtime.normalMetaDataSize ()
             val headerOffset = Runtime.headerOffset ()
             val header = Operand.word header
@@ -487,15 +487,14 @@ structure Statement =
          let
             datatype z = datatype Operand.t
             fun bytes (b: Bytes.t): Operand.t =
-               Operand.word (WordX.fromIntInf (Bytes.toIntInf b, WordSize.csize ()))
+               Operand.word (WordX.fromBytes (b, WordSize.csize ()))
             val metaDataSize = Runtime.sequenceMetaDataSize ()
             val headerOffset = Runtime.headerOffset ()
             val lengthOffset = Runtime.sequenceLengthOffset ()
             val counterOffset = Runtime.sequenceCounterOffset ()
             val header = Operand.word header
             val length =
-               Operand.word (WordX.fromIntInf (Int.toIntInf length,
-                                               WordSize.seqIndex ()))
+               Operand.word (WordX.fromInt (length, WordSize.seqIndex ()))
             val counter = Operand.zero (WordSize.seqIndex ())
             val temp = Temporary (Temporary.new (Type.cpointer (), NONE))
          in

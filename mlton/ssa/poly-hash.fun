@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2010 Matthew Fluet.
+(* Copyright (C) 2009-2010,2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -34,7 +34,7 @@ structure Dexp =
       open DirectExp
 
       fun wordFromWord (w: word, ws: WordSize.t): t =
-         word (WordX.fromIntInf (Word.toIntInf w, ws))
+         word (WordX.fromWord (w, ws))
 
       fun shiftInt i =
          word (WordX.fromIntInf (i, WordSize.shiftArg))

@@ -325,9 +325,7 @@ structure WordRep =
                               val (s, src) =
                                  Statement.lshift
                                  (src,
-                                  Operand.word
-                                  (WordX.fromIntInf (Bits.toIntInf shift,
-                                                     WordSize.shiftArg)))
+                                  Operand.word (WordX.fromBits (shift, WordSize.shiftArg)))
                            in
                               (src, s :: ss)
                            end
@@ -478,8 +476,7 @@ structure Unpack =
                   then (src, [])
                else
                   let
-                     val shift =
-                        WordX.fromIntInf (Bits.toIntInf shift, WordSize.shiftArg)
+                     val shift = WordX.fromBits (shift, WordSize.shiftArg)
                      val (s, tmp) = Statement.rshift (src, Operand.word shift)
                   in
                      (tmp, [s])
@@ -522,8 +519,7 @@ structure Unpack =
                   {chunk: Operand.t,
                    component: Operand.t}): Operand.t * Statement.t list =
          let
-            val shift =
-               WordX.fromIntInf (Bits.toIntInf shift, WordSize.shiftArg)
+            val shift = WordX.fromBits (shift, WordSize.shiftArg)
             val chunkTy = Operand.ty chunk
             val chunkWidth = Type.width chunkTy
             val mask =
@@ -1463,10 +1459,8 @@ structure ConRep =
             ShiftAndTag {component, tag, ...} =>
                let
                   val (dstVar, dstTy) = dst
-                  val shift = Operand.word (WordX.fromIntInf
-                                            (Bits.toIntInf
-                                             (WordSize.bits
-                                              (WordX.size tag)),
+                  val shift = Operand.word (WordX.fromBits
+                                            (WordSize.bits (WordX.size tag),
                                              WordSize.shiftArg))
                   val tmpVar = Var.newNoname ()
                   val tmpTy =
@@ -1589,8 +1583,8 @@ structure Objptrs =
                (cases, fn {con, dst, dstHasArg} =>
                 case conRep con of
                    ConRep.Tuple (TupleRep.Indirect (ObjptrRep.T {ty, tycon, ...})) =>
-                      SOME (WordX.fromIntInf (Int.toIntInf (ObjptrTycon.index tycon),
-                                              WordSize.objptrHeader ()),
+                      SOME (WordX.fromInt (ObjptrTycon.index tycon,
+                                           WordSize.objptrHeader ()),
                             Block.new
                             {statements = Vector.new0 (),
                              transfer = Goto {args = if dstHasArg

@@ -842,8 +842,8 @@ fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileI
          in
             (fn () => Operand.SequenceOffset
                       {base = flags,
-                       index = Operand.word (WordX.fromIntInf (IntInf.fromInt (Counter.next c),
-                                                               WordSize.seqIndex ())),
+                       index = Operand.word (WordX.fromInt (Counter.next c,
+                                                            WordSize.seqIndex ())),
                        offset = Bytes.zero,
                        scale = flagScale,
                        ty = flagTy},

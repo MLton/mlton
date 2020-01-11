@@ -1,4 +1,4 @@
-(* Copyright (C) 2017,2019 Matthew Fluet.
+(* Copyright (C) 2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1086,7 +1086,7 @@ structure DirectExp =
             val es =
                Vector.tabulate
                (length, fn i =>
-                vectorSub (vector, const (Const.word (WordX.fromIntInf (IntInf.fromInt i, WordSize.seqIndex ())))))
+                vectorSub (vector, const (Const.word (WordX.fromInt (i, WordSize.seqIndex ())))))
          in
             convertsGen (es, fn args => (body args) k)
          end

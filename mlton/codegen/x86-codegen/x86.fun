@@ -1,4 +1,4 @@
-(* Copyright (C) 2019 Matthew Fluet.
+(* Copyright (C) 2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -441,12 +441,12 @@ struct
             then construct (LabelPlusWord (l, w))
          else Error.bug "x86.Immediate.labelPlusWord"
 
-      val int' = fn (i, ws) => word (WordX.fromIntInf (IntInf.fromInt i, ws))
+      val int' = fn (i, ws) => word (WordX.fromInt (i, ws))
       val int = fn i => int' (i, WordSize.word32)
       val zero = int 0
 
       val labelPlusInt = fn (l, i) => 
-         labelPlusWord (l, WordX.fromIntInf (IntInf.fromInt i, WordSize.word32))
+         labelPlusWord (l, WordX.fromInt (i, WordSize.word32))
 
       val deLabel
         = fn T {immediate = Label l, ...} => SOME l

@@ -326,9 +326,7 @@ fun transform program =
          in
             Statement.Move
             {dst = curSourceSeqIndex,
-             src = Operand.word (WordX.fromIntInf 
-                                 (IntInf.fromInt sourceSeqIndex,
-                                  WordSize.word32))}
+             src = Operand.word (WordX.fromInt (sourceSeqIndex, WordSize.word32))}
          end
       fun codeCoverageStatementFromSourceSeqIndex (sourceSeqIndex: int): Statement.t =
          if needProfileLabels
@@ -698,9 +696,7 @@ fun transform program =
                                     {args = (Vector.new2
                                              (Operand.GCState,
                                               Operand.word
-                                              (WordX.fromIntInf
-                                               (IntInf.fromInt amount,
-                                                WordSize.csize ())))),
+                                              (WordX.fromInt (amount, WordSize.csize ())))),
                                      func = func,
                                      return = SOME newLabel}
                                  val sourceSeq = Push.toSourceSeq pushes

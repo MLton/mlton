@@ -41,8 +41,7 @@ fun toString (opt: t): string =
 val layout = Layout.str o toString
 
 fun toHeader (opt: t): WordX.t =
-   WordX.fromIntInf (Word.toIntInf (Runtime.typeIndexToHeader (index opt)),
-                     WordSize.objptrHeader ())
+   WordX.fromWord (Runtime.typeIndexToHeader (index opt), WordSize.objptrHeader ())
 
 val stack = new ()
 val thread = new ()

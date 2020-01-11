@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2017-2019 Matthew Fluet.
+(* Copyright (C) 2009,2017-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -630,8 +630,8 @@ fun transform (program: Program.t): Program.t =
                    | Array_array =>
                         let
                            val l =
-                              (const o S.Const.word o WordX.fromIntInf)
-                              (IntInf.fromInt (Vector.length args),
+                              (const o S.Const.word o WordX.fromInt)
+                              (Vector.length args,
                                WordSize.seqIndex ())
                         in
                            (coerce {from = l, to = arrayLength result}
@@ -720,9 +720,8 @@ fun transform (program: Program.t): Program.t =
                    | Vector_vector =>
                         let
                            val l =
-                              (const o S.Const.word o WordX.fromIntInf)
-                              (IntInf.fromInt (Vector.length args),
-                               WordSize.seqIndex ())
+                              (const o S.Const.word o WordX.fromInt)
+                              (Vector.length args, WordSize.seqIndex ())
                         in
                            (coerce {from = l, to = vectorLength result}
                             ; Vector.foreach
