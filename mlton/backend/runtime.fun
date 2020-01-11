@@ -66,46 +66,6 @@ structure GCField =
           | StackLimit => !stackLimitOffset
           | StackTop => !stackTopOffset
 
-      val atomicStateSize: Bytes.t ref = ref Bytes.zero
-      val cardMapAbsoluteSize: Bytes.t ref = ref Bytes.zero
-      val curSourceSeqIndexSize: Bytes.t ref = ref Bytes.zero
-      val exnStackSize: Bytes.t ref = ref Bytes.zero
-      val frontierSize: Bytes.t ref = ref Bytes.zero
-      val limitSize: Bytes.t ref = ref Bytes.zero
-      val limitPlusSlopSize: Bytes.t ref = ref Bytes.zero
-      val signalIsPendingSize: Bytes.t ref = ref Bytes.zero
-      val stackBottomSize: Bytes.t ref = ref Bytes.zero
-      val stackLimitSize: Bytes.t ref = ref Bytes.zero
-      val stackTopSize: Bytes.t ref = ref Bytes.zero
-
-      fun setSizes {atomicState, cardMapAbsolute, curSourceSeqIndex,
-                    exnStack, frontier, limit, limitPlusSlop,
-                    signalIsPending, stackBottom, stackLimit, stackTop} =
-         (atomicStateSize := atomicState
-          ; cardMapAbsoluteSize := cardMapAbsolute
-          ; curSourceSeqIndexSize := curSourceSeqIndex
-          ; exnStackSize := exnStack
-          ; frontierSize := frontier
-          ; limitSize := limit
-          ; limitPlusSlopSize := limitPlusSlop
-          ; signalIsPendingSize := signalIsPending
-          ; stackBottomSize := stackBottom
-          ; stackLimitSize := stackLimit
-          ; stackTopSize := stackTop)
-
-      val size =
-         fn AtomicState => !atomicStateSize
-          | CardMapAbsolute => !cardMapAbsoluteSize
-          | CurSourceSeqIndex => !curSourceSeqIndexSize
-          | ExnStack => !exnStackSize
-          | Frontier => !frontierSize
-          | Limit => !limitSize
-          | LimitPlusSlop => !limitPlusSlopSize
-          | SignalIsPending => !signalIsPendingSize
-          | StackBottom => !stackBottomSize
-          | StackLimit => !stackLimitSize
-          | StackTop => !stackTopSize
-
       val toString =
          fn AtomicState => "AtomicState"
           | CardMapAbsolute => "CardMapAbsolute"

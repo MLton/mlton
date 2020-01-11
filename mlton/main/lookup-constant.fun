@@ -1,4 +1,4 @@
-(* Copyright (C) 2010-2011,2013-2014,2019 Matthew Fluet.
+(* Copyright (C) 2010-2011,2013-2014,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -70,18 +70,12 @@ val gcFieldsOffsets =
               value = concat ["(", Ffi.CType.toString Ffi.CType.Word32 ,")",
                               "(offsetof (struct GC_state, ", s, "))"],
               ty = ConstType.Word WordSize.word32})
-val gcFieldsSizes =
-   List.map (gcFields, fn s =>
-             {name = s ^ "_Size",
-              value = concat ["(", Ffi.CType.toString Ffi.CType.Word32 ,")",
-                              "(sizeof (gcState.", s, "))"],
-              ty = ConstType.Word WordSize.word32})
 
 fun build (constants, out) =
    let
       val constants =
          List.fold
-         (constants, gcFieldsSizes @ gcFieldsOffsets, fn ((name, ty), ac) =>
+         (constants, gcFieldsOffsets, fn ((name, ty), ac) =>
           if List.exists (buildConstants, fn (name', _) => name = name')
              then ac
           else {name = name, value = name, ty = ty} :: ac)

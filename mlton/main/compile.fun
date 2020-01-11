@@ -1,4 +1,4 @@
-(* Copyright (C) 2011,2014-2015,2017,2019 Matthew Fluet.
+(* Copyright (C) 2011,2014-2015,2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -182,20 +182,6 @@ fun setupRuntimeConstants() : unit =
              stackBottom = get "stackBottom_Offset",
              stackLimit = get "stackLimit_Offset",
              stackTop = get "stackTop_Offset"
-             };
-            Runtime.GCField.setSizes
-            {
-             atomicState = get "atomicState_Size",
-             cardMapAbsolute = get "generationalMaps.cardMapAbsolute_Size",
-             curSourceSeqIndex = get "sourceMaps.curSourceSeqIndex_Size",
-             exnStack = get "exnStack_Size",
-             frontier = get "frontier_Size",
-             limit = get "limit_Size",
-             limitPlusSlop = get "limitPlusSlop_Size",
-             signalIsPending = get "signalsInfo.signalIsPending_Size",
-             stackBottom = get "stackBottom_Size",
-             stackLimit = get "stackLimit_Size",
-             stackTop = get "stackTop_Size"
              }
          end
       (* Setup endianness *)
