@@ -50,13 +50,13 @@
         s->sourceMaps.sources = sources;                                \
         s->sourceMaps.sourcesLength = cardof(sources);                  \
         s->staticHeaps.dynamic.start = (pointer)&staticHeapD;           \
-        s->staticHeaps.dynamic.size = sizeof(staticHeapD);              \
+        s->staticHeaps.dynamic.size = (pointer)&staticHeapD.end - (pointer)&staticHeapD; \
         s->staticHeaps.immutable.start = (pointer)&staticHeapI;         \
-        s->staticHeaps.immutable.size = sizeof(staticHeapI);            \
+        s->staticHeaps.immutable.size = (pointer)&staticHeapI.end - (pointer)&staticHeapI; \
         s->staticHeaps.mutable.start = (pointer)&staticHeapM;           \
-        s->staticHeaps.mutable.size = sizeof(staticHeapM);              \
+        s->staticHeaps.mutable.size = (pointer)&staticHeapM.end - (pointer)&staticHeapM; \
         s->staticHeaps.root.start = (pointer)&staticHeapR;              \
-        s->staticHeaps.root.size = sizeof(staticHeapR);                 \
+        s->staticHeaps.root.size = (pointer)&staticHeapR.end - (pointer)&staticHeapR; \
         s->profiling.kind = pk;                                         \
         s->profiling.stack = ps;                                        \
         MLton_init (argc, argv, s);

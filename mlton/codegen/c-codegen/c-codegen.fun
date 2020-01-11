@@ -506,6 +506,7 @@ fun outputDeclarations
                       ; print "} obj"
                       ; print (C.int i)
                       ; print ";\n")))
+                 ; print "struct __attribute__ ((packed)) {} end;\n"
                  ; print "} "
                  ; print (ty k)
                  ; print ";\n"))
@@ -599,6 +600,7 @@ fun outputDeclarations
                                     end
                                end)
                       ; print "},\n")))
+                 ; print "{},\n"
                  ; print "};\n"))
          in
             ()
