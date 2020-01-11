@@ -211,6 +211,10 @@ $ make PREFIX=/opt/mlton install
 == Resources
 
  * `http://mlton.org`
+ * Development
+   - `https://github.com/MLton/mlton`
+   - https://github.com/MLton/mlton/pulls[pull requests]
+   - https://github.com/MLton/mlton/issues[issue tracker]
  * Mailing lists
    - `MLton-devel@mlton.org` -- MLton developers
      (https://sourceforge.net/mailarchive/forum.php?forum_name=mlton-devel[archive],
@@ -218,10 +222,6 @@ $ make PREFIX=/opt/mlton install
    - `MLton-user@mlton.org` -- MLton user community
      (https://sourceforge.net/mailarchive/forum.php?forum_name=mlton-user[archive],
      https://lists.sourceforge.net/lists/listinfo/mlton-user[subscribe])
- * Development
-   - `https://github.com/MLton/mlton`
-   - https://github.com/MLton/mlton/pulls[pull requests]
-   - https://github.com/MLton/mlton/issues[issue tracker]
 
 
 == Support and Contributing
