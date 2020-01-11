@@ -6,7 +6,18 @@ endif::[]
 
 ****
 MLton is a whole-program optimizing compiler for the Standard{nbsp}ML
-programming language.
+programming language.  MLton generates small executables with
+excellent runtime performance, utilizing untagged and unboxed native
+integers, reals, and words, unboxed native arrays, fast
+arbitrary-precision arithmetic based on GMP, and multiple code
+generation and garbage collection strategies.  In addition, MLton
+provides a feature rich Standard{nbsp}ML programming environment, with
+full support for SML97 as given in The Definition of Standard{nbsp}ML
+(Revised), a number of useful language extensions, a complete
+implementation of the Standard ML Basis Library, various useful
+libraries, a simple and fast C foreign function interface, the ML
+Basis system for programming with source libraries, and tools such as
+a lexer generator, a parser generator, and a profiler.
 ****
 
 == Features
