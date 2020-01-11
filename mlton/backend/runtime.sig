@@ -43,18 +43,6 @@ signature RUNTIME =
                              stackBottom: Bytes.t,
                              stackLimit: Bytes.t,
                              stackTop: Bytes.t} -> unit
-            val setSizes: {atomicState: Bytes.t,
-                           cardMapAbsolute: Bytes.t,
-                           curSourceSeqIndex: Bytes.t,
-                           exnStack: Bytes.t,
-                           frontier: Bytes.t,
-                           limit: Bytes.t,
-                           limitPlusSlop: Bytes.t,
-                           signalIsPending: Bytes.t,
-                           stackBottom: Bytes.t,
-                           stackLimit: Bytes.t,
-                           stackTop: Bytes.t} -> unit
-            val size: t -> Bytes.t (* Field size in struct GC_state. *)
             val toString: t -> string
          end
       structure RObjectType:
