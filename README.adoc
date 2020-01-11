@@ -20,17 +20,13 @@ Basis system for programming with source libraries, and tools such as
 a lexer generator, a parser generator, and a profiler.
 ****
 
+
 == Features
-
- * Portability.
-
-   - Runs on a wide variety of platforms.
 
  * Robustness.
 
-   - Supports the full SML 97 language as given in The Definition of
-     Standard{nbsp}ML (Revised).
-   - A complete implementation of the Basis Library.
+   - Supports the full SML{nbsp}97 language as given in The Definition of Standard{nbsp}ML (Revised).
+   - A complete implementation of the http://sml-family.org/Basis/[Basis Library].
    - Generates standalone executables.
    - Compiles large programs.
    - Support for large amounts of memory (up to 4G on 32-bit systems;
@@ -41,28 +37,30 @@ a lexer generator, a parser generator, and a profiler.
 
  * Performance.
 
-   - Executables have excellent running times.
+   - Executables have excellent runtime performance.
    - Generates small executables.
    - Untagged and unboxed native integers, reals, and words.
    - Unboxed native arrays.
    - Multiple garbage collection strategies.
-   - Fast arbitrary-precision arithmetic based on GMP.
+   - Fast arbitrary-precision arithmetic based on https://gmplib.org[GMP].
 
  * Tools.
 
-   - Source-level profiling for both time and allocation.
+   - Source-level http://mlton.org/Profiling[profiling] for both time and allocation.
    - MLLex lexer generator.
    - MLYacc parser generator.
    - MLNLFFIGEN foreign-function-interface generator.
 
  * Extensions.
 
-   - A simple and fast C FFI that supports calling from SML to C and from C
-     to SML.
-   - The ML Basis system for programming in the very large.
-   - Libraries for continuations, finalization, interval timers, random numbers,
-     resource limits, resource usage, signal handlers, object size, system
-     logging, threads, weak pointers, and world save and restore.
+   - The http://mlton.org/MLBasis[ML Basis system] for programming with source libraries.
+   - A number of useful http://mlton.org/SuccessorML[language extensions].
+   - A simple and fast http://mlton.org/ForeignFunctionInterface[C FFI] that supports calling from SML to C and from C to SML.
+   - Libraries for http://mlton.org/MLtonWeak[weak pointers] and http://mlton.org/MLtonFinalizable[finalization], http://mlton.org/MLtonThread[threads], http://mlton.org/MLtonCont[continuations], http://mlton.org/MLtonItimer[interval timers] and http://mlton.org/MLtonSignal[signal handlers], http://mlton.org/MLtonWorld[world save and restore], and http://mlton.org/MLtonStructure[more].
+
+ * Portability.
+
+   - Runs on a wide variety of platforms.
 
 
 == Build and Install (from source)
