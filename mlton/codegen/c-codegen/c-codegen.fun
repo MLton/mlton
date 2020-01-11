@@ -432,7 +432,7 @@ fun outputDeclarations
             val counter =
                WordX.toC (WordX.zero (WordSize.seqIndex ()))
             fun mkLength length =
-               WordX.toC (WordX.fromIntInf (Int.toIntInf length, WordSize.seqIndex ()))
+               WordX.toC (WordX.fromInt (length, WordSize.seqIndex ()))
 
             val _ =
                List.foreach
@@ -724,8 +724,7 @@ fun outputDeclarations
                      (Word.<< (version, Word.fromInt (Word.wordSize - 8)),
                       Word.>> (random, Word.fromInt 8))
                in
-                  WordX.fromIntInf
-                  (Word.toIntInf magic, WordSize.word32)
+                  WordX.fromWord (magic, WordSize.word32)
                end
             val profile =
                case !Control.profile of

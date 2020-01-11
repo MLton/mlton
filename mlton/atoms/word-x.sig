@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019 Matthew Fluet.
+(* Copyright (C) 2009,2019-2020 Matthew Fluet.
  * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -24,9 +24,12 @@ signature WORD_X =
       val compare: t * t * {signed: bool} -> order
       val div: t * t * {signed: bool} -> t
       val equals: t * t -> bool
+      val fromBits: Bits.t * WordSize.t -> t
       val fromBytes: Bytes.t * WordSize.t -> t
       val fromChar: char -> t (* returns a word of size 8 *)
+      val fromInt: int * WordSize.t -> t
       val fromIntInf: IntInf.t * WordSize.t -> t
+      val fromWord: word * WordSize.t -> t
       val ge: t * t * {signed: bool} -> bool
       val gt: t * t * {signed: bool} -> bool
       val hash: t -> word

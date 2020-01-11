@@ -125,9 +125,7 @@ structure RealConsts =
                          ; Operand.SequenceOffset
                            {base = vecBase,
                             index = Operand.word
-                                    (WordX.fromIntInf
-                                     (IntInf.fromInt (next ()),
-                                      WordSize.seqIndex ())),
+                                    (WordX.fromInt (next (), WordSize.seqIndex ())),
                             offset = Bytes.zero,
                             scale = scale,
                             ty = elt})

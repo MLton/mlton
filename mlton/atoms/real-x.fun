@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2011-2012,2018-2019 Matthew Fluet.
+(* Copyright (C) 2009,2011-2012,2018-2020 Matthew Fluet.
  * Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -291,12 +291,11 @@ in
 end
 
 local
-   fun doit (R {bits, toBytes, subVec, ...}) x = let
-   in
-       (SOME o WordX.fromIntInf)
-          (P.LargeWord.toLargeInt (subVec (toBytes x, 0)),
-           WordX.WordSize.fromBits bits)
-   end handle _ => NONE
+   fun doit (R {bits, toBytes, subVec, ...}) x =
+      ((SOME o WordX.fromIntInf)
+       (P.LargeWord.toLargeInt (subVec (toBytes x, 0)),
+        WordX.WordSize.fromBits bits))
+      handle _ => NONE
 in
    fun castToWord x =
        if disableCF ()

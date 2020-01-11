@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2010,2014,2016-2017,2019 Matthew Fluet.
+(* Copyright (C) 2009-2010,2014,2016-2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1956,10 +1956,7 @@ fun ('a, 'b) apply (p: 'a t,
                            if WordX.isZero
                               (WordX.rem
                                (w,
-                                WordX.fromIntInf
-                                (IntInf.fromInt
-                                 (Bits.toInt (WordSize.bits s)),
-                                 WordX.size w),
+                                WordX.fromBits (WordSize.bits s, WordX.size w),
                                 {signed = false}))
                               then Var x
                            else Unknown
@@ -1973,9 +1970,7 @@ fun ('a, 'b) apply (p: 'a t,
                                 then Var x
                              else if (WordX.ge
                                       (w,
-                                       WordX.fromIntInf (Bits.toIntInf
-                                                         (WordSize.bits s),
-                                                         WordSize.shiftArg),
+                                       WordX.fromBits (WordSize.bits s, WordSize.shiftArg),
                                        {signed = false}))
                                      then zero s
                                   else Unknown

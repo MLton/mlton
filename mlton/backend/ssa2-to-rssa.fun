@@ -1065,9 +1065,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                      {args = (Vector.new2
                                               (atomicState,
                                                (Operand.word
-                                                (WordX.fromIntInf
-                                                 (IntInf.fromInt n,
-                                                  WordSize.word32))))),
+                                                (WordX.fromInt (n, WordSize.word32))))),
                                       dst = SOME (res, resTy),
                                       prim = Prim.wordAdd WordSize.word32},
                                      Statement.Move
@@ -1416,9 +1414,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                             {args = (Vector.new2
                                                      (Runtime LimitPlusSlop,
                                                       Operand.word
-                                                      (WordX.fromIntInf
-                                                       (IntInf.fromInt
-                                                        (Bytes.toInt Runtime.limitSlop),
+                                                      (WordX.fromBytes
+                                                       (Runtime.limitSlop,
                                                         size)))),
                                              dst = SOME (tmp, ty),
                                              prim = Prim.cpointerSub},

@@ -979,8 +979,8 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
       val labelChunk = #chunkLabel o labelInfo
       val labelIndex = valOf o #index o labelInfo
       fun labelIndexValue l =
-         (LLVM.Value.word o WordX.fromIntInf)
-         (IntInf.fromInt (labelIndex l), WordSize.cpointer ())
+         (LLVM.Value.word o WordX.fromInt)
+         (labelIndex l, WordSize.cpointer ())
 
       val amTimeProfiling =
          !Control.profile = Control.ProfileTimeField
@@ -1083,9 +1083,8 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                            let
                               val ty = Global.ty g
                               val index =
-                                 LLVM.Value.word (WordX.fromIntInf
-                                                  (IntInf.fromInt (Global.index g),
-                                                   WordSize.word32))
+                                 LLVM.Value.word
+                                 (WordX.fromInt (Global.index g, WordSize.word32))
                               val res = newTemp (LLVM.Type.Pointer (Type.toLLVMType ty))
                               val _ = $(gep {dst = res, src = globalVal (ty, mc),
                                              args = [LLVM.Value.zero WordSize.word32, index]})
@@ -1833,8 +1832,8 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                           val index = newTemp (LLVM.Type.uintptr ())
                           val nextLabelAddr = newTemp (LLVM.Type.Pointer LLVM.Type.blockaddress)
                           val nextLabel = newTemp LLVM.Type.blockaddress
-                          val bias = LLVM.Value.word (WordX.fromIntInf (Int.toIntInf (#2 (List.first entries)),
-                                                                        WordSize.cpointer ()))
+                          val bias = LLVM.Value.word (WordX.fromInt (#2 (List.first entries),
+                                                                     WordSize.cpointer ()))
 
                           val _ = $(naryop {dst = index, oper = ("sub nuw nsw", LLVM.Type.uintptr ()),
                                             args = [nextBlock, bias]})
@@ -1850,8 +1849,8 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                             default = LLVM.Value.label' "switchNextBlockDefault",
                                             table = List.map (entries, fn (label, index) =>
                                                               (LLVM.Value.word
-                                                               (WordX.fromIntInf
-                                                                (IntInf.fromInt index,
+                                                               (WordX.fromInt
+                                                                (index,
                                                                  WordSize.cpointer ())),
                                                                LLVM.Value.label label))})
                           val _ = print "switchNextBlockDefault:\n"
