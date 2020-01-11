@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019 Matthew Fluet.
+(* Copyright (C) 2009,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -100,7 +100,7 @@ structure Statement =
 
       fun bytesAllocated (s: t): Bytes.t =
          case s of
-            Object {size, ...} => size
+            Object {obj, ...} => Object.size obj
           | _ => Bytes.zero
    end
 
@@ -152,10 +152,9 @@ structure Block =
            | Transfer.Small b => b)
    end
 
-val extraGlobals: Var.t list ref = ref []
-
 fun insertFunction (f: Function.t,
                     handlesSignals: bool,
+                    newFlag: unit -> Operand.t,
                     blockCheckAmount: {blockIndex: int} -> Bytes.t,
                     ensureFree: Label.t -> Bytes.t) =
    let
@@ -235,15 +234,7 @@ fun insertFunction (f: Function.t,
                       case !Control.gcCheck of
                          Control.First =>
                             let
-                               val global = Var.newNoname ()
-                               val _ = List.push (extraGlobals, global)
-                               val global =
-                                  Operand.Offset
-                                  {base=Operand.Var
-                                     {var = global,
-                                      ty = Type.cpointer ()},
-                                   offset=Bytes.zero,
-                                   ty=Type.bool}
+                               val flag = newFlag ()
                                val dontCollect' = Label.newNoname ()
                                val _ =
                                   List.push
@@ -255,16 +246,16 @@ fun insertFunction (f: Function.t,
                                     statements = Vector.new0 (),
                                     transfer =
                                     Transfer.ifBoolE
-                                    (global,
+                                    (flag,
                                      !Control.gcExpect,
                                      {falsee = dontCollect,
                                       truee = collect})})
                             in
                                (dontCollect',
                                 Vector.new1
-                                (Statement.Move {dst = global,
+                                (Statement.Move {dst = flag,
                                                  src = Operand.bool false}),
-                                global)
+                                flag)
                             end
                        | Control.Limit =>
                             (dontCollect, Vector.new0 (), Operand.bool false)
@@ -511,13 +502,13 @@ fun insertFunction (f: Function.t,
                     start = start}
    end
 
-fun insertPerBlock (f: Function.t, handlesSignals) =
+fun insertPerBlock (f: Function.t, handlesSignals, newFlag) =
    let
       val {blocks, ...} = Function.dest f
       fun blockCheckAmount {blockIndex} =
          Block.objectBytesAllocated (Vector.sub (blocks, blockIndex))
    in
-      insertFunction (f, handlesSignals, blockCheckAmount, fn _ => Bytes.zero)
+      insertFunction (f, handlesSignals, newFlag, blockCheckAmount, fn _ => Bytes.zero)
    end
 
 structure Graph = DirectedGraph
@@ -565,7 +556,7 @@ fun isolateBigTransfers (f: Function.t): Function.t =
                     start = start}
    end
 
-fun insertCoalesce (f: Function.t, handlesSignals) =
+fun insertCoalesce (f: Function.t, handlesSignals, newFlag) =
    let
       val f = isolateBigTransfers f
       val {blocks, start, ...} = Function.dest f
@@ -816,7 +807,7 @@ fun insertCoalesce (f: Function.t, handlesSignals) =
          if Array.sub (mayHaveCheck, blockIndex)
             then maxPath blockIndex
          else Bytes.zero
-      val f = insertFunction (f, handlesSignals, blockCheckAmount,
+      val f = insertFunction (f, handlesSignals, newFlag, blockCheckAmount,
                               maxPath o labelIndex)
       val _ =
          Control.diagnostics
@@ -832,67 +823,67 @@ fun insertCoalesce (f: Function.t, handlesSignals) =
       f
    end
 
-fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileInfo}) =
+fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileInfo, statics}) =
    let
       val _ = Control.diagnostic (fn () => Layout.str "Limit Check maxPaths")
+
+      val (newFlag, finishFlags) =
+         let
+            val flagsTycon = ObjptrTycon.new ()
+            val flagsVar = Var.newString "flags"
+            val flagsTy = Type.objptr flagsTycon
+            val flags = Operand.Var {ty = flagsTy, var = flagsVar}
+
+            val flagWS = WordSize.bool
+            val flagScale = valOf (Scale.fromBytes (WordSize.bytes flagWS))
+            val flagTy = Type.word flagWS
+
+            val c = Counter.new 0
+         in
+            (fn () => Operand.SequenceOffset
+                      {base = flags,
+                       index = Operand.word (WordX.fromIntInf (IntInf.fromInt (Counter.next c),
+                                                               WordSize.seqIndex ())),
+                       offset = Bytes.zero,
+                       scale = flagScale,
+                       ty = flagTy},
+             fn () =>
+             if Counter.value c > 0
+                then (ObjptrTycon.setIndex (flagsTycon, Vector.length objectTypes)
+                      ; (Vector.concat
+                         [objectTypes,
+                          Vector.new1 (ObjectType.Sequence {elt = flagTy, hasIdentity = true})],
+                         Vector.concat
+                         [statics,
+                          Vector.new1 {dst = (flagsVar, flagsTy),
+                                       obj = Object.Sequence
+                                             {elt = flagTy,
+                                              init = Vector.tabulate
+                                                     (Counter.value c, fn _ =>
+                                                      Vector.new1
+                                                      {offset = Bytes.zero,
+                                                       src = Operand.one flagWS}),
+                                              tycon = flagsTycon}}]))
+                else (objectTypes, statics))
+         end
+
       datatype z = datatype Control.limitCheck
       fun insert f =
          case !Control.limitCheck of
-            PerBlock => insertPerBlock (f, handlesSignals)
-          | _ => insertCoalesce (f, handlesSignals)
-      val functions = List.revMap (functions, insert)
-      val {args, blocks, name, raises, returns, start} =
-         Function.dest (insert main)
-      val newStart = Label.newNoname ()
+            PerBlock => insertPerBlock (f, handlesSignals, newFlag)
+          | _ => insertCoalesce (f, handlesSignals, newFlag)
 
-      val newTycon = ref NONE
-      fun define x =
-         let
-            val refTycon =
-               Ref.memoize (newTycon,
-                  fn () => ObjptrTycon.new ())
-         in
-            Statement.Bind
-               {dst = (x, Type.cpointer ()),
-                pinned = false,
-                src = Operand.Static
-                  {static=Static.object
-                     {elems=[Static.Data.Elem.word (WordX.one WordSize.bool)],
-                      location=Static.Location.MutStatic,
-                      tycon=refTycon},
-                   ty=Type.cpointer ()}}
-         end
-      val block =
-         Block.T {args = Vector.new0 (),
-                  kind = Kind.Jump,
-                  label = newStart,
-                  statements = (Vector.fromListMap
-                                (!extraGlobals, define)),
-                  transfer = Transfer.Goto {args = Vector.new0 (),
-                                            dst = start}}
-      val blocks = Vector.concat [Vector.new1 block, blocks]
-      val main = Function.new {args = args,
-                               blocks = blocks,
-                               name = name,
-                               raises = raises,
-                               returns = returns,
-                               start = newStart}
-      val objectTypes =
-         case !newTycon of
-              NONE => objectTypes
-            | SOME _ => Vector.concat [objectTypes,
-               (Vector.new1 o ObjectType.Normal)
-                  {ty=case !Control.align of
-                           Control.Align4 => Type.bool
-                         | Control.Align8 => (Type.seq o Vector.fromList)
-                            [Type.bool, Type.word WordSize.word32],
-                   hasIdentity=true}]
+      val main = insert main
+      val functions = List.revMap (functions, insert)
+
+      val (objectTypes, statics) = finishFlags ()
    in
       Program.T {functions = functions,
                  handlesSignals = handlesSignals,
                  main = main,
                  objectTypes = objectTypes,
-                 profileInfo = profileInfo}
+                 profileInfo = profileInfo,
+                 statics = statics}
    end
 
 end

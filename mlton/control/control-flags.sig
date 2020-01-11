@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2012,2014-2017,2019 Matthew Fluet.
+(* Copyright (C) 2009-2012,2014-2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -292,8 +292,7 @@ signature CONTROL_FLAGS =
                         global: {cty: bool, index: bool} option,
                         heap: {cty: bool, kind: bool, offset: bool, tycon: bool} option,
                         other: bool,
-                        stack: {offset: bool} option,
-                        static: {cty: bool, index: bool, offset: bool} option}
+                        stack: {offset: bool} option}
             val toString: t -> string
             val fromString: string -> t option
          end
@@ -429,20 +428,6 @@ signature CONTROL_FLAGS =
        | Smart (* split only when smaller than two, default *)
        | Always
       val splitTypesBool: splitTypesBool ref
-
-      datatype staticAllocInternalPtrs =
-         All
-       | Static
-       | None
-      val staticAllocInternalPtrs: staticAllocInternalPtrs ref
-
-      val staticInitArrays: bool ref
-      val staticAllocArrays: bool ref
-
-      val staticInitObjects: bool option ref
-      val staticAllocObjects: bool ref
-
-      val staticAllocWordVectorConsts: bool ref
 
       (* List of pass names to stop at. *)
       val stopPasses: Regexp.Compiled.t list ref

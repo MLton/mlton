@@ -27,6 +27,7 @@ signature PRIM =
          sig
             datatype 'a t =
                Array_alloc of {raw: bool} (* to rssa (as runtime C fn) *)
+             | Array_array (* to ssa2 *)
              | Array_copyArray (* to rssa (as runtime C fn) *)
              | Array_copyVector (* to rssa (as runtime C fn) *)
              | Array_length (* to rssa *)
@@ -216,6 +217,7 @@ signature PRIM =
       val apply:
          'a t * 'b ApplyArg.t list * ('b * 'b -> bool) -> ('a, 'b) ApplyResult.t
       val arrayAlloc: {raw: bool} -> 'a t
+      val arrayArray: 'a t
       val arrayLength: 'a t
       val arrayToVector: 'a t
       val arrayUpdate: 'a t

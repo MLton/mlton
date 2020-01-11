@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2016-2017,2019 Matthew Fluet.
+(* Copyright (C) 2009,2016-2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -245,7 +245,7 @@ fun checkHandlers (Program.T {functions, ...}) =
       ()
    end
 
-fun checkScopes (program as Program.T {functions, main, ...}): unit =
+fun checkScopes (program as Program.T {functions, main, statics, ...}): unit =
    let
       datatype status =
          Defined
@@ -291,6 +291,10 @@ fun checkScopes (program as Program.T {functions, main, ...}): unit =
       val (bindLabel, getLabel, unbindLabel) =
          make (Label.layout, Label.plist)
       val bindLabel = fn l => bindLabel (l, false)
+      fun loopStmt (s: Statement.t, isMain: bool): unit =
+         (Statement.foreachUse (s, getVar)
+          ; Statement.foreachDef (s, fn (x, _) =>
+                                  bindVar (x, isMain)))
       fun loopFunc (f: Function.t, isMain: bool): unit =
          let
             val bindVar = fn x => bindVar (x, isMain)
@@ -312,9 +316,7 @@ fun checkScopes (program as Program.T {functions, main, ...}): unit =
                    val _ = Vector.foreach (args, bindVar o #1)
                    val _ =
                       Vector.foreach
-                      (statements, fn s =>
-                       (Statement.foreachUse (s, getVar)
-                        ; Statement.foreachDef (s, bindVar o #1)))
+                      (statements, fn s => loopStmt (s, isMain))
                    val _ = Transfer.foreachUse (transfer, getVar)
                 in
                    fn () =>
@@ -336,6 +338,8 @@ fun checkScopes (program as Program.T {functions, main, ...}): unit =
          in
             ()
          end
+      val _ = Vector.foreach (statics, fn {dst, obj} =>
+                              loopStmt (Statement.Object {dst = dst, obj = obj}, true))
       val _ = List.foreach (functions, bindFunc o Function.name)
       val _ = loopFunc (main, true)
       val _ = List.foreach (functions, fn f => loopFunc (f, false))
@@ -345,7 +349,7 @@ fun checkScopes (program as Program.T {functions, main, ...}): unit =
 
 val checkScopes = Control.trace (Control.Detail, "checkScopes") checkScopes
 
-fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, ...}) =
+fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, statics, ...}) =
    let
       val _ =
          Vector.foreach
@@ -435,7 +439,6 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, ...}) 
                                                   tyconTy = tyconTy,
                                                   result = ty,
                                                   scale = scale})
-                 | Static {ty, ...} => Type.isCPointer ty orelse Type.isObjptr ty
                  | Var {ty, var} => Type.isSubtype (varType var, ty)
           in
              Err.check ("operand", ok, fn () => Operand.layout x)
@@ -461,29 +464,10 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, ...}) 
                    ; checkOperand src
                    ; (Type.isSubtype (Operand.ty src, Operand.ty dst)
                       andalso Operand.isLocation dst))
-             | Object {dst = (_, ty), header, size} =>
-                  let
-                     val tycon =
-                        ObjptrTycon.fromIndex
-                        (Runtime.headerToTypeIndex header)
-                  in
-                     Type.isSubtype (Type.objptr tycon, ty)
-                     andalso
-                     Bytes.equals
-                     (size,
-                      Bytes.align
-                      (size,
-                       {alignment = (case !Control.align of
-                                         Control.Align4 => Bytes.inWord32
-                                       | Control.Align8 => Bytes.inWord64)}))
-                     andalso
-                     (case tyconTy tycon of
-                         ObjectType.Normal {ty, ...} =>
-                            Bytes.equals
-                            (size, Bytes.+ (Runtime.normalMetaDataSize (),
-                                            Type.bytes ty))
-                        | _ => false)
-                  end
+             | Object {dst = (_, dstTy), obj} =>
+                  (Object.isOk (obj, {checkUse = checkOperand,
+                                      tyconTy = tyconTy})
+                   andalso Type.isSubtype (Object.ty obj, dstTy))
              | PrimApp {args, dst, prim} =>
                   (Vector.foreach (args, checkOperand)
                    ; (Type.checkPrimApp
@@ -712,6 +696,11 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, ...}) 
          in
             ()
          end
+      val _ =
+         Vector.foreach
+         (statics, fn stmt as {dst, ...} =>
+          (setVarType dst
+           ; check' (Statement.Object stmt, "static", statementOk, Statement.layout)))
       val _ =
          List.foreach
          (functions, fn f => setFuncInfo (Function.name f, f))

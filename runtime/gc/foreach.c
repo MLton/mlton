@@ -1,4 +1,4 @@
-/* Copyright (C) 2016,2019 Matthew Fluet.
+/* Copyright (C) 2016,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -22,6 +22,7 @@ void foreachGlobalObjptr (GC_state s, GC_foreachObjptrClosure f) {
       fprintf (stderr, "foreachGlobal %u\n", i);
     callIfIsObjptr (s, f, &s->globals [i]);
   }
+  foreachObjptrInStaticHeap (s, &s->staticHeaps.root, f, TRUE);
   if (DEBUG_DETAILED)
     fprintf (stderr, "foreachGlobal threads\n");
   callIfIsObjptr (s, f, &s->callFromCHandlerThread);
@@ -193,6 +194,14 @@ pointer foreachObjptrInRange (GC_state s, pointer front, pointer *back,
   return front;
 }
 
+void foreachObjptrInStaticHeap (GC_state s,
+                                struct GC_staticHeap *staticHeap,
+                                GC_foreachObjptrClosure f,
+                                bool skipWeaks) {
+  pointer front = alignFrontier (s, staticHeap->start);
+  pointer back = staticHeap->start + staticHeap->size;
+  foreachObjptrInRange (s, front, &back, f, skipWeaks);
+}
 
 /* Apply f to the frame index of each frame in the current thread's stack. */
 void foreachStackFrame (GC_state s, GC_foreachStackFrameClosure f) {

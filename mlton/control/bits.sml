@@ -60,6 +60,7 @@ local
             sig
                type t
 
+               val * : t * IntInf.int -> t
                val + : t * t -> t
                val - : t * t -> t
                val ~ : t -> t

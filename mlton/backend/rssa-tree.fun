@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2016-2017,2019 Matthew Fluet.
+(* Copyright (C) 2009,2016-2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -44,40 +44,29 @@ structure Operand =
                             offset: Bytes.t,
                             scale: Scale.t,
                             ty: Type.t}
-       | Static of {static: Var.t Static.t,
-                    ty: Type.t}
        | Var of {var: Var.t,
                  ty: Type.t}
 
       val null = Const Const.null
 
       val word = Const o Const.word
+      val deWord =
+         fn Const (Const.Word w) => SOME w
+          | _ => NONE
 
-      fun zero s = word (WordX.fromIntInf (0, s))
+      val one = word o WordX.one
+      val zero = word o WordX.zero
 
-      fun bool b =
-         word (WordX.fromIntInf (if b then 1 else 0, WordSize.bool))
+      fun bool b = (if b then one else zero) WordSize.bool
 
       val ty =
          fn Cast (_, ty) => ty
-          | Const c =>
-               let
-                  datatype z = datatype Const.t
-               in
-                  case c of
-                     CSymbol _ => Type.cpointer ()
-                   | IntInf _ => Type.intInf ()
-                   | Null => Type.cpointer ()
-                   | Real r => Type.ofRealX r
-                   | Word w => Type.ofWordX w
-                   | WordVector v => Type.ofWordXVector v
-               end
+          | Const c => Type.ofConst c
           | GCState => Type.gcState ()
           | Offset {ty, ...} => ty
           | ObjptrTycon _ => Type.objptrHeader ()
           | Runtime z => Type.ofGCField z
           | SequenceOffset {ty, ...} => ty
-          | Static {ty, ...} => ty
           | Var {ty, ...} => ty
 
       fun layout (z: t): Layout.t =
@@ -99,9 +88,6 @@ structure Operand =
                   seq [str (concat ["X", Type.name ty, " "]),
                        tuple [layout base, layout index, Scale.layout scale,
                               Bytes.layout offset]]
-             | Static {static, ...} =>
-                  Layout.seq [Layout.str "Static ",
-                  Static.layout (fn v => Layout.seq [Layout.str "&", Var.layout v]) static]
              | Var {var, ...} => Var.layout var
          end
 
@@ -121,11 +107,13 @@ structure Operand =
           | Var {var, ...} => f (var, a)
           | _ => a
 
-      fun replaceVar (z: t, f: Var.t -> t): t =
+      fun replace (z: t, {const: Const.t -> t,
+                          var: {ty: Type.t, var: Var.t} -> t}): t =
          let
             fun loop (z: t): t =
                case z of
                   Cast (t, ty) => Cast (loop t, ty)
+                | Const c => const c
                 | Offset {base, offset, ty} =>
                      Offset {base = loop base,
                              offset = offset,
@@ -136,30 +124,25 @@ structure Operand =
                                   offset = offset,
                                   scale = scale,
                                   ty = ty}
-                | Var {var, ...} => f var
+                | Var x_ty => var x_ty
                 | _ => z
          in
             loop z
          end
-
    end
 
-structure Switch =
+structure Object =
    struct
       local
-         structure S = Switch (open S
-                               structure Type = Type
+         structure S = Object (open S
                                structure Use = Operand)
       in
          open S
       end
 
-      fun replaceVar (T {cases, default, expect, size, test}, f) =
-         T {cases = cases,
-            default = default,
-            expect = expect,
-            size = size,
-            test = Operand.replaceVar (test, f)}
+      fun replace' (s, {const, var}) =
+         replace (s, {use = fn oper => Operand.replace (oper, {const = const,
+                                                               var = var})})
    end
 
 structure Statement =
@@ -171,8 +154,7 @@ structure Statement =
        | Move of {dst: Operand.t,
                   src: Operand.t}
        | Object of {dst: Var.t * Type.t,
-                    header: word,
-                    size: Bytes.t}
+                    obj: Object.t}
        | PrimApp of {args: Operand.t vector,
                      dst: (Var.t * Type.t) option,
                      prim: Type.t Prim.t}
@@ -191,7 +173,7 @@ structure Statement =
             case s of
                Bind {dst = (x, t), src, ...} => def (x, t, useOperand (src, a))
              | Move {dst, src} => useOperand (src, useOperand (dst, a))
-             | Object {dst = (dst, ty), ...} => def (dst, ty, a)
+             | Object {dst = (x, t), obj} => def (x, t, Object.foldUse (obj, a, useOperand))
              | PrimApp {dst, args, ...} =>
                   Vector.fold (args,
                                Option.fold (dst, a, fn ((x, t), a) =>
@@ -220,10 +202,11 @@ structure Statement =
 
       fun foreachUse (s, f) = foldUse (s, (), f o #1)
 
-      fun replaceUses (s: t, f: Var.t -> Operand.t): t =
+      fun replace (s: t, fs as {const: Const.t -> Operand.t,
+                                var: {ty: Type.t, var: Var.t} -> Operand.t}): t =
          let
             fun oper (z: Operand.t): Operand.t =
-               Operand.replaceVar (z, f)
+               Operand.replace (z, {const = const, var = var})
          in
             case s of
                Bind {dst, pinned, src} =>
@@ -231,7 +214,7 @@ structure Statement =
                         pinned = pinned,
                         src = oper src}
              | Move {dst, src} => Move {dst = oper dst, src = oper src}
-             | Object _ => s
+             | Object {dst, obj} => Object {dst = dst, obj = Object.replace' (obj, fs)}
              | PrimApp {args, dst, prim} =>
                   PrimApp {args = Vector.map (args, oper),
                            dst = dst,
@@ -256,13 +239,10 @@ structure Statement =
                   mayAlign
                   [Operand.layout dst,
                    indent (seq [str ":= ", Operand.layout src], 2)]
-             | Object {dst = (dst, ty), header, size} =>
+             | Object {dst = (x, t), obj} =>
                   mayAlign
-                  [seq [Var.layout dst, constrain ty],
-                   indent (seq [str "= Object ",
-                                record [("header", seq [str "0x", Word.layout header]),
-                                        ("size", Bytes.layout size)]],
-                           2)]
+                  [seq [Var.layout x, constrain t],
+                   indent (seq [str "= ", Object.layout obj], 2)]
              | PrimApp {dst, prim, args, ...} =>
                   mayAlign
                   [case dst of
@@ -346,6 +326,21 @@ structure Statement =
          in
             (dst, ssSrc @ ssConv @ ssDst)
          end
+   end
+
+structure Switch =
+   struct
+      local
+         structure S = Switch (open S
+                               structure Use = Operand)
+      in
+         open S
+      end
+
+      fun replace' (s, {const, label, var}) =
+         replace (s, {label = label,
+                      use = fn oper => Operand.replace (oper, {const = const,
+                                                               var = var})})
    end
 
 structure Transfer =
@@ -454,44 +449,33 @@ structure Transfer =
                      test = test})
       end
 
-      fun replaceLabels (t: t, f: Label.t -> Label.t): t =
-         case t of
-               CCall {args, func, return} =>
-                  CCall {args = args,
-                         func = func,
-                         return = Option.map (return, f)}
-             | Call {args, func, return} =>
-                  Call {args = args,
-                        func = func,
-                        return = Return.map (return, f)}
-             | Goto {args, dst} =>
-                  Goto {args = args,
-                        dst = f dst}
-             | Raise zs => Raise zs
-             | Return zs => Return zs
-             | Switch s => Switch (Switch.replaceLabels (s, f))
-
-      fun replaceUses (t: t, f: Var.t -> Operand.t): t =
+      fun replace (t: t, fs as {const: Const.t -> Operand.t,
+                                label: Label.t -> Label.t,
+                                var: {ty: Type.t, var: Var.t} -> Operand.t}): t =
          let
-            fun oper z = Operand.replaceVar (z, f)
+            fun oper z = Operand.replace (z, {const = const, var = var})
             fun opers zs = Vector.map (zs, oper)
          in
             case t of
                CCall {args, func, return} =>
                   CCall {args = opers args,
                          func = func,
-                         return = return}
+                         return = Option.map (return, label)}
              | Call {args, func, return} =>
                   Call {args = opers args,
                         func = func,
-                        return = return}
+                        return = Return.map (return, label)}
              | Goto {args, dst} =>
                   Goto {args = opers args,
-                        dst = dst}
+                        dst = label dst}
              | Raise zs => Raise (opers zs)
              | Return zs => Return (opers zs)
-             | Switch s => Switch (Switch.replaceVar (s, f))
+             | Switch s => Switch (Switch.replace' (s, fs))
          end
+      fun replaceLabels (s, label) =
+         replace (s, {const = Operand.Const,
+                      label = label,
+                      var = Operand.Var})
    end
 
 structure Kind =
@@ -790,13 +774,15 @@ structure Program =
                main: Function.t,
                objectTypes: ObjectType.t vector,
                profileInfo: {sourceMaps: SourceMaps.t,
-                             getFrameSourceSeqIndex: Label.t -> int option} option}
+                             getFrameSourceSeqIndex: Label.t -> int option} option,
+               statics: {dst: Var.t * Type.t, obj: Object.t} vector}
 
-      fun clear (T {functions, main, ...}) =
+      fun clear (T {functions, main, statics, ...}) =
          (List.foreach (functions, Function.clear)
-          ; Function.clear main)
+          ; Function.clear main
+          ; Vector.foreach (statics, Statement.clear o Statement.Object))
 
-      fun layouts (T {functions, main, objectTypes, ...},
+      fun layouts (T {functions, main, objectTypes, statics, ...},
                    output': Layout.t -> unit): unit =
          let
             open Layout
@@ -806,6 +792,8 @@ structure Program =
             ; Vector.foreachi (objectTypes, fn (i, ty) =>
                                output (seq [str "opt_", Int.layout i,
                                             str " = ", ObjectType.layout ty]))
+            ; output (str "\nStatics:")
+            ; Vector.foreach (statics, output o Statement.layout o Statement.Object)
             ; output (str "\nMain:")
             ; Function.layouts (main, output)
             ; output (str "\nFunctions:")
@@ -814,7 +802,7 @@ structure Program =
 
       val toFile = {display = Control.Layouts layouts, style = Control.ML, suffix = "rssa"}
 
-      fun layoutStats (program as T {functions, main, objectTypes, ...}) =
+      fun layoutStats (program as T {functions, main, objectTypes, statics, ...}) =
          let
             val numStatements = ref 0
             val numBlocks = ref 0
@@ -831,6 +819,7 @@ structure Program =
                 end)
             val numFunctions = 1 + List.length functions
             val numObjectTypes = Vector.length objectTypes
+            val numStatics = Vector.length statics
             open Layout
          in
             align
@@ -838,16 +827,18 @@ structure Program =
              seq [str "num functions in program = ", Int.layout numFunctions],
              seq [str "num blocks in program = ", Int.layout (!numBlocks)],
              seq [str "num statements in program = ", Int.layout (!numStatements)],
-             seq [str "num object types in program = ", Int.layout (numObjectTypes)]]
+             seq [str "num object types in program = ", Int.layout (numObjectTypes)],
+             seq [str "num statics in program = ", Int.layout numStatics]]
          end
 
-      fun dropProfile (T {functions, handlesSignals, main, objectTypes, ...}) =
+      fun dropProfile (T {functions, handlesSignals, main, objectTypes, statics, ...}) =
          (Control.profile := Control.ProfileNone
           ; T {functions = List.map (functions, Function.dropProfile),
                handlesSignals = handlesSignals,
                main = Function.dropProfile main,
                objectTypes = objectTypes,
-               profileInfo = NONE})
+               profileInfo = NONE,
+               statics = statics})
       (* quell unused warning *)
       val _ = dropProfile
 
@@ -937,7 +928,7 @@ structure Program =
             end
          end
 
-      fun orderFunctions (p as T {handlesSignals, objectTypes, profileInfo, ...}) =
+      fun orderFunctions (p as T {handlesSignals, objectTypes, profileInfo, statics, ...}) =
          let
             val functions = ref []
             val () =
@@ -971,10 +962,11 @@ structure Program =
                handlesSignals = handlesSignals,
                main = main,
                objectTypes = objectTypes,
-               profileInfo = profileInfo}
+               profileInfo = profileInfo,
+               statics = statics}
          end
 
-      fun shuffle (T {functions, handlesSignals, main, objectTypes, profileInfo}) =
+      fun shuffle (T {functions, handlesSignals, main, objectTypes, profileInfo, statics}) =
          let
             val functions = Array.fromListMap (functions, Function.shuffle)
             val () = Array.shuffle functions
@@ -982,7 +974,8 @@ structure Program =
                        handlesSignals = handlesSignals,
                        main = Function.shuffle main,
                        objectTypes = objectTypes,
-                       profileInfo = profileInfo}
+                       profileInfo = profileInfo,
+                       statics = statics}
          in
             p
          end

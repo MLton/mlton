@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019 Matthew Fluet.
+(* Copyright (C) 2009,2019-2020 Matthew Fluet.
  * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -9,7 +9,11 @@
 signature OBJPTR_TYCON_STRUCTS =
    sig
       structure RealSize: REAL_SIZE
+      structure Runtime: RUNTIME
       structure WordSize: WORD_SIZE
+      structure WordX: WORD_X
+
+      sharing WordSize = WordX.WordSize
    end
 
 signature OBJPTR_TYCON =
@@ -28,6 +32,7 @@ signature OBJPTR_TYCON =
       val layout: t -> Layout.t
       val new: unit -> t
       val setIndex: t * int -> unit
+      val toHeader: t -> WordX.t
       val toString: t -> string
 
       (* See gc/object.h. *) 

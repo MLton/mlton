@@ -1,4 +1,4 @@
-/* Copyright (C) 2011-2012,2014,2016 Matthew Fluet.
+/* Copyright (C) 2011-2012,2014,2016,2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -12,53 +12,18 @@
 /* ---------------------------------------------------------------- */
 
 size_t sizeofInitialBytesLive (GC_state s) {
-  uint32_t i;
   size_t total;
 
   total = 0;
-  for (i = 0; i < s->objectInitsLength; ++i) {
-    total += align (s->objectInits[i].size, s->alignment);
-  }
+  total += s->staticHeaps.dynamic.size;
   total += sizeofStackWithMetaData (s, sizeofStackInitialReserved (s)) + sizeofThread (s);
   return total;
 }
 
-void initObjects (GC_state s) {
-  struct GC_objectInit *inits;
-  pointer frontier;
-  uint32_t i;
-  size_t objectSize;
-
-  assert (isFrontierAligned (s, s->frontier));
-  inits = s->objectInits;
-  frontier = s->frontier;
-  for (i = 0; i < s->objectInitsLength; i++) {
-    objectSize = align (inits[i].size, s->alignment);
-    assert (objectSize <= (size_t)(s->heap.start + s->heap.size - frontier));
-    memcpy (frontier, inits[i].words, inits[i].size);
-    s->globals[inits[i].globalIndex] =
-      pointerToObjptr(frontier + inits[i].headerOffset, s->heap.start);
-    frontier = frontier + objectSize;
-    if (DEBUG_DETAILED)
-      fprintf (stderr, "allocated object at "FMTPTR"\n",
-               (uintptr_t)(s->globals[inits[i].globalIndex]));
-  }
-  if (DEBUG_DETAILED)
-    fprintf (stderr, "frontier after global object allocations is "FMTPTR"\n",
-             (uintptr_t)frontier);
-  GC_profileAllocInc (s, (size_t)(frontier - s->frontier));
-  s->cumulativeStatistics.bytesAllocated += (size_t)(frontier - s->frontier);
-  assert (isFrontierAligned (s, frontier));
-  s->frontier = frontier;
-}
-
 void initWorld (GC_state s) {
-  uint32_t i;
   pointer start;
   GC_thread thread;
 
-  for (i = 0; i < s->globalsLength; ++i)
-    s->globals[i] = BOGUS_OBJPTR;
   s->lastMajorStatistics.bytesLive = sizeofInitialBytesLive (s);
   createHeap (s, &s->heap,
               sizeofHeapDesired (s, s->lastMajorStatistics.bytesLive, 0),
@@ -68,7 +33,9 @@ void initWorld (GC_state s) {
   s->frontier = start;
   s->limitPlusSlop = s->heap.start + s->heap.size;
   s->limit = s->limitPlusSlop - GC_HEAP_LIMIT_SLOP;
-  initObjects (s);
+  GC_memcpy (s->staticHeaps.dynamic.start, start, s->staticHeaps.dynamic.size);
+  s->frontier = start + s->staticHeaps.dynamic.size;
+  translateHeap (s, s->staticHeaps.dynamic.start, start, s->staticHeaps.dynamic.size);
   assert ((size_t)(s->frontier - start) <= s->lastMajorStatistics.bytesLive);
   s->heap.oldGenSize = (size_t)(s->frontier - s->heap.start);
   setGCStateCurrentHeap (s, 0, 0);

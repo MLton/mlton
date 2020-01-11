@@ -1,4 +1,4 @@
-(* Copyright (C) 2017 Matthew Fluet.
+(* Copyright (C) 2017,2019 Matthew Fluet.
  *
  * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
@@ -54,8 +54,8 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                    {var = SOME zeroArrVar,
                     ty = Type.array ty,
                     exp = PrimApp
-                    {args = Vector.new1 zeroVar,
-                     prim = Prim.arrayAlloc {raw = false},
+                    {args = Vector.new0 (),
+                     prim = Prim.arrayArray,
                      targs = Vector.new1 ty}}
                 val () = List.push (newGlobals, statement)
              in

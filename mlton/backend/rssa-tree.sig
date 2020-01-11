@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2017,2019 Matthew Fluet.
+(* Copyright (C) 2009,2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -16,9 +16,6 @@ signature RSSA_TREE =
    sig
       include RSSA_TREE_STRUCTS
 
-      structure Switch: SWITCH
-      sharing Atoms = Switch
-
       structure Operand:
          sig
             datatype t =
@@ -35,21 +32,24 @@ signature RSSA_TREE =
                                   offset: Bytes.t,
                                   scale: Scale.t,
                                   ty: Type.t}
-             | Static of {static: Var.t Static.t,
-                          ty: Type.t}
              | Var of {ty: Type.t,
                        var: Var.t}
 
             val bool: bool -> t
             val cast: t * Type.t -> t
             val layout: t -> Layout.t
+            val one: WordSize.t -> t
             val null: t
-            val replaceVar: t * (Var.t -> t) -> t
+            val replace: t * {const: Const.t -> t,
+                              var: {ty: Type.t, var: Var.t} -> t} -> t
             val ty: t -> Type.t
             val word: WordX.t -> t
             val zero: WordSize.t -> t
          end
-      sharing Operand = Switch.Use
+
+      structure Object: OBJECT
+      sharing Object = BackendAtoms
+      sharing Object.Use = Operand
 
       structure Statement:
          sig
@@ -60,8 +60,7 @@ signature RSSA_TREE =
              | Move of {dst: Operand.t,
                         src: Operand.t}
              | Object of {dst: Var.t * Type.t,
-                          header: word,
-                          size: Bytes.t (* including header *)}
+                          obj: Object.t}
              | PrimApp of {args: Operand.t vector,
                            dst: (Var.t * Type.t) option,
                            prim: Type.t Prim.t}
@@ -83,10 +82,15 @@ signature RSSA_TREE =
             val foldUse: t * 'a * (Var.t * 'a -> 'a) -> 'a
             val foreachUse: t * (Var.t -> unit) -> unit
             val layout: t -> Layout.t
-            val replaceUses: t * (Var.t -> Operand.t) -> t
+            val replace: t * {const: Const.t -> Operand.t,
+                              var: {var: Var.t, ty: Type.t} -> Operand.t} -> t
             val resize: Operand.t * Type.t -> Operand.t * t list
             val toString: t -> string
          end
+
+      structure Switch: SWITCH
+      sharing Switch = Atoms
+      sharing Switch.Use = Operand
 
       structure Transfer:
          sig
@@ -123,8 +127,10 @@ signature RSSA_TREE =
             (* in ifZero, the operand should be of type defaultWord *)
             val ifZero: Operand.t * {falsee: Label.t, truee: Label.t} -> t
             val layout: t -> Layout.t
+            val replace: t * {const: Const.t -> Operand.t,
+                              label: Label.t -> Label.t,
+                              var: {var: Var.t, ty: Type.t} -> Operand.t} -> t
             val replaceLabels: t * (Label.t -> Label.t) -> t
-            val replaceUses: t * (Var.t -> Operand.t) -> t
          end
 
       structure Kind:
@@ -200,7 +206,8 @@ signature RSSA_TREE =
                      main: Function.t,
                      objectTypes: ObjectType.t vector,
                      profileInfo: {sourceMaps: SourceMaps.t,
-                                   getFrameSourceSeqIndex: Label.t -> int option} option}
+                                   getFrameSourceSeqIndex: Label.t -> int option} option,
+                     statics: {dst: Var.t * Type.t, obj: Object.t} vector}
 
             val clear: t -> unit
             (* dfs (p, v) visits the functions in depth-first order, applying v f

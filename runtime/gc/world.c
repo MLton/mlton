@@ -31,6 +31,8 @@ void loadWorldFromFILE (GC_state s, FILE *f) {
               sizeofHeapDesired (s, s->heap.oldGenSize, 0),
               s->heap.oldGenSize);
   setCardMapAndCrossMap (s);
+  fread_safe (s->staticHeaps.mutable.start, 1, s->staticHeaps.mutable.size, f);
+  fread_safe (s->staticHeaps.root.start, 1, s->staticHeaps.root.size, f);
   fread_safe (s->heap.start, 1, s->heap.oldGenSize, f);
   if ((*(s->loadGlobals)) (f) != 0)
     diee ("Invalid world: failed to load globals.");
@@ -89,6 +91,10 @@ int saveWorldToFILE (GC_state s, FILE *f) {
   if (fwrite (&s->currentThread, sizeof(objptr), 1, f) != 1) return -1;
   if (fwrite (&s->signalHandlerThread, sizeof(objptr), 1, f) != 1) return -1;
 
+  if (fwrite (s->staticHeaps.mutable.start, 1, s->staticHeaps.mutable.size, f) != s->staticHeaps.mutable.size)
+    return -1;
+  if (fwrite (s->staticHeaps.root.start, 1, s->staticHeaps.root.size, f) != s->staticHeaps.root.size)
+    return -1;
   if (fwrite (s->heap.start, 1, s->heap.oldGenSize, f) != s->heap.oldGenSize)
     return -1;
   if ((*(s->saveGlobals)) (f) != 0)

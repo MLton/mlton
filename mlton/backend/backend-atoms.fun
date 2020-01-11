@@ -1,4 +1,4 @@
-(* Copyright (C) 2019 Matthew Fluet.
+(* Copyright (C) 2019-2020 Matthew Fluet.
  *
  * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
@@ -11,11 +11,14 @@ structure BackendAtoms =
    struct
       open S
 
-      structure ObjptrTycon = ObjptrTycon (structure RealSize = RealSize
-                                           structure WordSize = WordSize)
       structure Runtime = Runtime ()
+      structure ObjptrTycon = ObjptrTycon (structure RealSize = RealSize
+                                           structure Runtime = Runtime
+                                           structure WordSize = WordSize
+                                           structure WordX = WordX)
       structure RepType = RepType (structure CFunction = CFunction
                                    structure CType = CType
+                                   structure Const = Const
                                    structure Label = Label
                                    structure ObjptrTycon = ObjptrTycon
                                    structure Prim = Prim
@@ -27,13 +30,6 @@ structure BackendAtoms =
                                    structure WordXVector = WordXVector)
       structure ObjectType = RepType.ObjectType
 
-      structure Static = Static (structure Const = Const
-                                 structure ObjptrTycon = ObjptrTycon
-                                 structure Runtime = Runtime
-                                 structure RealX = RealX
-                                 structure WordSize = WordSize
-                                 structure WordX = WordX
-                                 structure WordXVector = WordXVector)
       structure Type = RepType
    end
 

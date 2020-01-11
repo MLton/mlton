@@ -1,4 +1,4 @@
-(* Copyright (C) 2019 Matthew Fluet.
+(* Copyright (C) 2019-2020 Matthew Fluet.
  * Copyright (C) 2002-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -143,7 +143,7 @@ fun transform program =
       then program
    else
    let
-      val Program.T {functions, handlesSignals, main, objectTypes, ...} = program
+      val Program.T {functions, handlesSignals, main, objectTypes, statics, ...} = program
       val debug = false
       datatype z = datatype Control.profile
       val profile = !Control.profile
@@ -478,8 +478,7 @@ fun transform program =
                       (leaves, true, sourceSeq, []),
                       fn (s, (leaves, ncc, sourceSeq, ss)) =>
                       case s of
-                         Object _ => (leaves, true, sourceSeq, s :: ss)
-                       | Profile ps =>
+                         Profile ps =>
                             let
                                val (ncc, ss) =
                                   if needCodeCoverage
@@ -750,9 +749,10 @@ fun transform program =
                                 end
                              ;
                             case s of
-                               Object {size, ...} =>
+                               Object {obj, ...} =>
                                   {args = args,
-                                   bytesAllocated = Bytes.+ (bytesAllocated, size),
+                                   bytesAllocated = Bytes.+ (bytesAllocated,
+                                                             Object.size obj),
                                    kind = kind,
                                    label = label,
                                    leaves = leaves,
@@ -937,7 +937,8 @@ fun transform program =
                  main = main,
                  objectTypes = objectTypes,
                  profileInfo = SOME {sourceMaps = sourceMaps,
-                                     getFrameSourceSeqIndex = getFrameSourceSeqIndex}}
+                                     getFrameSourceSeqIndex = getFrameSourceSeqIndex},
+                 statics = statics}
    end
 
 end

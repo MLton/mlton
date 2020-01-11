@@ -1,4 +1,4 @@
-(* Copyright (C) 2019 Matthew Fluet.
+(* Copyright (C) 2019-2020 Matthew Fluet.
  * Copyright (C) 2013-2014 Matthew Fluet, Brian Leibig.
  *
  * MLton is released under a HPND-style license.
@@ -739,8 +739,8 @@ fun aamd (oper, mc) =
                LLVM.ModuleContext.addMetaData
                (mc, LLVM.MetaData.node [LLVM.MetaData.string s,
                                         LLVM.MetaData.id domain])
-            val (gcstate,global,heap,other,stack,static) =
-               (scope "GCState", scope "Global", scope "Heap", scope "Other", scope "Stack", scope "Static")
+            val (gcstate,global,heap,other,stack) =
+               (scope "GCState", scope "Global", scope "Heap", scope "Other", scope "Stack")
             val scopes = [global,gcstate,heap,other,stack]
             fun scope s =
                let
@@ -770,12 +770,11 @@ fun aamd (oper, mc) =
                    * then read from the stack via a `StackOffset` by the handler.
                    *)
                   scope stack
-             | Operand.Static _ => scope static
              | Operand.StackTop => NONE (* alloca *)
              | Operand.Temporary _ => NONE (* alloca *)
              | _ => NONE (* not lvalue *)
          end
-    | Control.LLVMAliasAnalysisMetaData.TBAA {gcstate, global, heap, other, stack, static} =>
+    | Control.LLVMAliasAnalysisMetaData.TBAA {gcstate, global, heap, other, stack} =>
          let
             fun tbaa path =
                let
@@ -934,32 +933,11 @@ fun aamd (oper, mc) =
                             tbaa path
                          end)
              | Operand.StackTop => NONE (* alloca *)
-             | Operand.Static {index, offset, ty} =>
-                  (case static of
-                      NONE => NONE
-                    | SOME {cty = doCTy, index = doIndex, offset = doOffset} =>
-                         let
-                            val path = ["Static"]
-                            val path =
-                               if doIndex
-                                  then (Int.toString index)::path
-                                  else path
-                            val path =
-                               if doCTy
-                                  then (CType.name (Type.toCType ty))::path
-                                  else path
-                            val path =
-                               if doOffset
-                                  then (Bytes.toString offset)::path
-                                  else path
-                         in
-                            tbaa path
-                         end)
              | Operand.Temporary _ => NONE (* alloca *)
              | _ => NONE (* not lvalue *)
          end
 
-fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...},
+fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
             outputC: unit -> {file: File.t,
                               print: string -> unit,
                               done: unit -> unit},
@@ -1028,18 +1006,14 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
       fun temporaryVarC (ct: CType.t, index: int): LLVM.Value.t =
          (temporaryName (ct, index), LLVM.Type.Pointer (LLVM.Type.fromCType ct))
       fun temporaryVar (t, index) = temporaryVarC (Type.toCType t, index)
-      fun staticName index: string =
-         concat ["@static_", Int.toString index]
-      fun staticVal (index, mc): LLVM.Value.t =
+      fun staticHeapVal (kind, mc): LLVM.Value.t =
          let
-            val name = staticName index
-            val (Static.T {location, ...}, _) = Vector.sub (statics, index)
-            val const =
-               case location of
-                  Static.Location.ImmStatic => true
-                | Static.Location.MutStatic => false
-                | Static.Location.Heap => Error.bug "LLVMCodegen.staticVal"
+            val name = concat ["@", Label.toString (StaticHeap.Kind.label kind)]
             val ty = LLVM.Type.word8
+            val const =
+               case kind of
+                  StaticHeap.Kind.Immutable => true
+                | _ => false
          in
             LLVM.ModuleContext.addGlobDecl (mc, name, {const = const, ty = ty, vis = SOME "hidden"})
          end
@@ -1221,11 +1195,11 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                    | Operand.SequenceOffset _ => load ()
                    | Operand.StackOffset _ => load ()
                    | Operand.StackTop => load ()
-                   | Operand.Static {index, ty, offset} =>
+                   | Operand.StaticHeapRef (StaticHeap.Ref.T {kind, offset, ty, ...}) =>
                         let
                            val tmp = newTemp LLVM.Type.cpointer
                            val res = newTemp (Type.toLLVMType ty)
-                           val _ = $(gep {dst = tmp, src = staticVal (index, mc),
+                           val _ = $(gep {dst = tmp, src = staticHeapVal (kind, mc),
                                           args = [LLVM.Value.word
                                                   (WordX.fromBytes
                                                    (offset, WordSize.word32))]})

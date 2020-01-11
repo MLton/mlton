@@ -606,6 +606,7 @@ structure Exp =
                      args: Var.t vector}
        | Select of {base: Var.t Base.t,
                     offset: int}
+       | Sequence of {args: Var.t vector vector}
        | Var of Var.t
 
       val unit = Object {con = NONE, args = Vector.new0 ()}
@@ -620,6 +621,7 @@ structure Exp =
              | Object {args, ...} => vs args
              | PrimApp {args, ...} => vs args
              | Select {base, ...} => Base.foreach (base, v)
+             | Sequence {args, ...} => Vector.foreach (args, vs)
              | Var x => v x
          end
 
@@ -634,6 +636,8 @@ structure Exp =
              | PrimApp {prim, args} => PrimApp {args = fxs args, prim = prim}
              | Select {base, offset} =>
                   Select {base = Base.map (base, fx), offset = offset}
+             | Sequence {args} =>
+                  Sequence {args = Vector.map (args, fxs)}
              | Var x => Var (fx x)
          end
 
@@ -656,6 +660,9 @@ structure Exp =
                   seq [str "prim ", Prim.layoutFull (prim, Type.layout), str " ", layoutArgs args]
              | Select {base, offset} =>
                   Base.layoutWithOffset (base, offset, layoutVar)
+             | Sequence {args} =>
+                  seq [str "seq ",
+                       Vector.layout layoutArgs args]
              | Var x => layoutVar x
          end
 
@@ -687,6 +694,10 @@ structure Exp =
              Select <$>
              (Base.parseWithOffset Var.parse >>= (fn (base, offset) =>
               pure {base = base, offset = offset})),
+             Sequence <$>
+             (kw "seq" *>
+              vector parseArgs >>= (fn args =>
+              pure {args = args})),
              Var <$> Var.parse]
          end
 
@@ -697,6 +708,7 @@ structure Exp =
           | Object _ => false
           | PrimApp {prim,...} => Prim.maySideEffect prim
           | Select _ => false
+          | Sequence _ => false
           | Var _ => false
 
       fun varsEquals (xs, xs') = Vector.equals (xs, xs', Var.equals)
@@ -712,6 +724,8 @@ structure Exp =
                Prim.equals (prim, prim') andalso varsEquals (args, args')
           | (Select {base = b1, offset = i1}, Select {base = b2, offset = i2}) =>
                Base.equals (b1, b2, Var.equals) andalso i1 = i2
+          | (Sequence {args}, Sequence {args = args'}) =>
+               Vector.equals (args, args', varsEquals)
           | (Var x, Var x') => Var.equals (x, x')
           | _ => false
       (* quell unused warning *)
@@ -722,6 +736,7 @@ structure Exp =
          val inject = newHash ()
          val primApp = newHash ()
          val select = newHash ()
+         val sequence = newHash ()
          val tuple = newHash ()
          fun hashVars (xs: Var.t vector, w: Word.t): Word.t =
             Hash.combine (w, Hash.vectorMap (xs, Var.hash))
@@ -738,6 +753,10 @@ structure Exp =
              | PrimApp {args, ...} => hashVars (args, primApp)
              | Select {base, offset} =>
                   Hash.combine3 (select, Base.hash (base, Var.hash), Word.fromInt offset)
+             | Sequence {args} =>
+                  Hash.combine (sequence,
+                                Hash.vectorMap (args, fn args =>
+                                                Hash.vectorMap (args, Var.hash)))
              | Var x => Var.hash x
       end
       (* quell unused warning *)

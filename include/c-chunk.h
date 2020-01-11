@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 Matthew Fluet.
+/* Copyright (C) 2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -32,7 +32,7 @@
 /* ------------------------------------------------- */
 
 #define G(ty, i) (global##ty [i])
-#define M(ty, i, o) ((ty)(&static_##i + (o)))
+#define H(ty, k, o) ((ty)(&staticHeap##k + (o)))
 #define O(ty, b, o) (*(ty*)((b) + (o)))
 #define S(ty, i) (*(ty*)(StackTop + (i)))
 #define T(ty, i) T ## ty ## _ ## i

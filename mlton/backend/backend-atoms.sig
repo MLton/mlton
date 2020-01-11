@@ -1,4 +1,4 @@
-(* Copyright (C) 2019 Matthew Fluet.
+(* Copyright (C) 2019-2020 Matthew Fluet.
  *
  * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
@@ -16,12 +16,11 @@ signature BACKEND_ATOMS' =
       structure ObjectType: OBJECT_TYPE
       structure ObjptrTycon: OBJPTR_TYCON
       structure Runtime: RUNTIME
-      structure Static: STATIC
       structure Type: REP_TYPE
 
       sharing ObjectType = Type.ObjectType
-      sharing ObjptrTycon = ObjectType.ObjptrTycon = Static.ObjptrTycon = Type.ObjptrTycon
-      sharing Runtime = ObjectType.Runtime = Static.Runtime = Type.Runtime
+      sharing ObjptrTycon = ObjectType.ObjptrTycon = Type.ObjptrTycon
+      sharing Runtime = ObjectType.Runtime = Type.Runtime
 
       (* SML/NJ bug:
        *
@@ -35,14 +34,14 @@ signature BACKEND_ATOMS' =
       (* sharing Atoms = Type *)
       sharing CFunction = Type.CFunction
       sharing CType = Type.CType
-      sharing Const = Static.Const
+      sharing Const = Type.Const
       sharing Label = Type.Label
       sharing Prim = Type.Prim
-      sharing RealSize = ObjptrTycon.RealSize = Type.RealSize
-      sharing RealX = Static.RealX = Type.RealX
-      sharing WordSize = ObjptrTycon.WordSize = Static.WordSize = Type.WordSize
-      sharing WordX = Static.WordX = Type.WordX
-      sharing WordXVector = Static.WordXVector = Type.WordXVector
+      sharing RealSize = ObjptrTycon.RealSize = RealX.RealSize = Type.RealSize
+      sharing RealX = Type.RealX
+      sharing WordSize = ObjptrTycon.WordSize = Type.WordSize = WordX.WordSize
+      sharing WordX = ObjptrTycon.WordX = Type.WordX
+      sharing WordXVector = Type.WordXVector
    end
 
 signature BACKEND_ATOMS =
@@ -55,6 +54,5 @@ signature BACKEND_ATOMS =
       sharing ObjectType = BackendAtoms.ObjectType
       sharing ObjptrTycon = BackendAtoms.ObjptrTycon
       sharing Runtime = BackendAtoms.Runtime
-      sharing Static = BackendAtoms.Static
       sharing Type = BackendAtoms.Type
    end

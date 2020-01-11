@@ -1,4 +1,4 @@
-(* Copyright (C) 2010-2011,2013-2019 Matthew Fluet.
+(* Copyright (C) 2010-2011,2013-2020 Matthew Fluet.
  * Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -470,7 +470,7 @@ fun makeOptions {usage} =
         boolRef globalizeArrays),
        (Expert, "globalize-refs", " {true|false}", "globalize refs",
         boolRef globalizeRefs),
-       (Expert, "globalize-small-int-inf", " {false|true}", "globalize int-inf as small type",
+       (Expert, "globalize-small-int-inf", " {true|false}", "globalize int-inf as small type",
         boolRef globalizeSmallIntInf),
        (Expert, "globalize-small-type", " {0|1|2|3|4|9}", "globalize small type",
         intRef globalizeSmallType),
@@ -840,37 +840,6 @@ fun makeOptions {usage} =
          case Control.OptimizationPasses.set {il = "ssa2", passes = s} of
             Result.Yes () => ()
           | Result.No s => usage (concat ["invalid -ssa2-passes arg: ", s]))),
-       (Expert, "static-alloc-arrays", " {true|false}",
-        "Allow arrays to be statically allocated",
-        boolRef staticAllocArrays),
-       (Expert, "static-alloc-internal-ptrs", " {all|static|none}",
-        "which pointers to allow in statically allocated values",
-        SpaceString (fn s =>
-                     staticAllocInternalPtrs :=
-                     (case s of
-                         "all" => Control.All
-                       | "none" => Control.None
-                       | "static" => Control.Static
-                       | _ => usage (concat ["invalid ",
-                       "-static-alloc-internal-ptrs flag: ", s])))),
-       (Expert, "static-alloc-objects", " {true|false}",
-        "Allow objects to be statically allocated",
-        boolRef staticAllocObjects),
-       (Expert, "static-alloc-wordvector-consts", " {true|false}",
-        "Allow word-vector constants (strings) to be statically allocated",
-        boolRef staticAllocWordVectorConsts),
-       (Expert, "static-init-arrays", " {true|false}",
-        "Allow arrays to be statically initialized",
-        boolRef staticInitArrays),
-       (Expert, "static-init-objects", " {none|staticAllocOnly|all}",
-        "Allow objects to be statically initialized",
-        SpaceString
-        (fn s =>
-         staticInitObjects := (case s of
-                                  "none" => NONE
-                                | "staticAllocOnly" => SOME false
-                                | "all" => SOME true
-                                | _ => usage (concat ["invalid -static-init-objects arg: ", s])))),
        (Normal, "stop", " {f|g|o|tc}", "when to stop",
         SpaceString
         (fn s =>

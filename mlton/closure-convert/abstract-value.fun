@@ -1,4 +1,4 @@
-(* Copyright (C) 2017 Matthew Fluet.
+(* Copyright (C) 2017,2019 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -420,7 +420,18 @@ fun primApply {prim: Type.t Prim.t, args: t vector, resultTy: Type.t}: t =
       datatype z = datatype Prim.Name.t
    in
       case Prim.name prim of
-         Array_copyArray =>
+         Array_array =>
+            let
+                val r = result ()
+                val _ =
+                   case dest r of
+                      Array x => Vector.foreach (args, fn arg => coerce {from = arg, to = x})
+                    | Type _ => ()
+                    | _ => typeError ()
+            in
+               r
+            end
+       | Array_copyArray =>
             let val (da, _, sa, _, _) = fiveArgs ()
             in (case (dest da, dest sa) of
                    (Array dx, Array sx) => unify (dx, sx)

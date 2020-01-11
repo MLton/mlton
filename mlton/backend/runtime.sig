@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2016-2017,2019 Matthew Fluet.
+(* Copyright (C) 2009,2016-2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -73,12 +73,13 @@ signature RUNTIME =
       val cpointerSize: unit -> Bytes.t
       val headerOffset: unit -> Bytes.t
       val headerSize: unit -> Bytes.t
-      val headerToTypeIndex: word -> int
       val labelSize: unit -> Bytes.t
       val limitSlop: Bytes.t
       val maxFrameSize: Bytes.t
       val normalMetaDataSize: unit -> Bytes.t
       val objptrSize: unit -> Bytes.t
+      val sequenceCounterOffset: unit -> Bytes.t
+      val sequenceCounterSize: unit -> Bytes.t
       val sequenceLengthOffset: unit -> Bytes.t
       val sequenceLengthSize: unit -> Bytes.t
       val sequenceMetaDataSize: unit -> Bytes.t

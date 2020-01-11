@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2013-2014,2017,2019 Matthew Fluet.
+(* Copyright (C) 2009,2013-2014,2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -23,6 +23,7 @@ in
    structure RealX = RealX
    structure Runtime = Runtime
    structure StackOffset = StackOffset
+   structure StaticHeap = StaticHeap
    structure Temporary = Temporary
    structure WordSize = WordSize
    structure WordX = WordX
@@ -42,6 +43,8 @@ in
    structure Const = Const
    structure Func = Func
    structure Function = Function
+   structure Object = Object
+   structure ObjectType = ObjectType
    structure Prim = Prim
    structure Type = Type
    structure Var = Var
@@ -133,7 +136,7 @@ fun eliminateDeadCode (f: R.Function.t): R.Function.t =
 
 fun toMachine (rssa: Rssa.Program.t) =
    let
-      val R.Program.T {functions, handlesSignals, main, objectTypes, profileInfo} = rssa
+      val R.Program.T {functions, handlesSignals, main, objectTypes, profileInfo, statics} = rssa
       (* returnsTo and raisesTo info *)
       val rflow = R.Program.rflow rssa
       (* Chunk info *)
@@ -328,38 +331,165 @@ fun toMachine (rssa: Rssa.Program.t) =
                       Var.layout,
                       M.Operand.layout)
          varOperand
+
+      val (addToStaticHeaps, finishStaticHeaps, allGlobalObjptrs) =
+         let
+            open StaticHeap
+            val allGlobalObjptrs = ref []
+            fun varElem (x: Var.t): Elem.t * bool =
+               case varOperand x of
+                  M.Operand.Const c => (Elem.Const c, false)
+                | M.Operand.Global g =>
+                     (case List.peek (!allGlobalObjptrs, fn (_, g') =>
+                                      M.Global.equals (g, g')) of
+                         SOME (r, _) => (Elem.Ref r, true)
+                       | NONE => Error.bug "Backend.staticHeaps.varElem: invalid operand,Global")
+                | M.Operand.StaticHeapRef r => (Elem.Ref r,
+                                                Kind.isDynamic (Ref.kind r))
+                | _ => Error.bug "Backend.staticHeaps.varElem: invalid operand"
+            fun translateOperand (oper: R.Operand.t): Elem.t * bool =
+               case oper of
+                  R.Operand.Cast (z, ty) =>
+                     let
+                        val (z, hasDynamic) = translateOperand z
+                     in
+                        (Elem.Cast (z, ty), hasDynamic)
+                     end
+                | R.Operand.Const c => (Elem.Const c, false)
+                | R.Operand.Var {var, ...} => varElem var
+                | _ => Error.bug "Backend.staticHeaps.translateOperand: invalid operand"
+            fun translateInit init =
+               Vector.mapAndFold
+               (init, false, fn ({offset, src}, hasDynamic') =>
+                let
+                   val (src, hasDynamic) = translateOperand src
+                in
+                   ({offset = offset, src = src},
+                    hasDynamic' orelse hasDynamic)
+                end)
+            fun translateObject obj =
+               case obj of
+                  R.Object.Normal {init, ty, tycon, ...} =>
+                     let
+                        val (init, hasDynamic) = translateInit init
+                        val hasIdentity =
+                           case Vector.sub (objectTypes, ObjptrTycon.index tycon) of
+                              ObjectType.Normal {hasIdentity, ...} => hasIdentity
+                            | _ => Error.bug "Backend.staticHeaps.translateObject: Normal,hasIdentity"
+                        val kind =
+                           if hasDynamic
+                              then Kind.Dynamic
+                              else if hasIdentity
+                                      then if Type.isUnit ty
+                                              then (* A `unit ref`; will never be updated. *)
+                                                   Kind.Immutable
+                                              else (* Conservative; the objptr field might not be mutable. *)
+                                                   if Type.exists (ty, Type.isObjptr)
+                                                      then (* Reference to root static heap
+                                                            * won't map to valid card slot.
+                                                            *)
+                                                           if !Control.markCards
+                                                              then Kind.Dynamic
+                                                              else Kind.Root
+                                                      else Kind.Mutable
+                              else Kind.Immutable
+                     in
+                        {kind = kind,
+                         obj = Object.Normal {init = init,
+                                              ty = ty,
+                                              tycon = tycon},
+                         offset = Runtime.normalMetaDataSize (),
+                         size = R.Object.size obj,
+                         tycon = tycon}
+                     end
+                | R.Object.Sequence {elt, init, tycon, ...} =>
+                     let
+                        val (init, hasDynamic) =
+                           Vector.mapAndFold
+                           (init, false, fn (init, hasDynamic') =>
+                            let
+                               val (init, hasDynamic) = translateInit init
+                            in
+                               (init, hasDynamic' orelse hasDynamic)
+                            end)
+                        val hasIdentity =
+                           case Vector.sub (objectTypes, ObjptrTycon.index tycon) of
+                              ObjectType.Sequence {hasIdentity, ...} => hasIdentity
+                            | _ => Error.bug "Backend.staticHeaps.translateObject: Sequence,hasIdentity"
+                        val kind =
+                           if hasDynamic
+                              then Kind.Dynamic
+                              else if hasIdentity
+                                      then if Vector.isEmpty init
+                                              then (* An empty sequence;
+                                                    * elements will never be updated,
+                                                    * but header may be updated.
+                                                    *)
+                                                   Kind.Mutable
+                                              else (* Conservative; the objptr field might not be mutable. *)
+                                                 if Type.exists (elt, Type.isObjptr)
+                                                    then (* Reference to root static heap
+                                                          * won't map to valid card slot.
+                                                          *)
+                                                         if !Control.markCards
+                                                            then Kind.Dynamic
+                                                            else Kind.Root
+                                                    else Kind.Mutable
+                              else Kind.Immutable
+                     in
+                        {kind = kind,
+                         obj = Object.Sequence {elt = elt,
+                                                init = init,
+                                                tycon = tycon},
+                         offset = Runtime.sequenceMetaDataSize (),
+                         size = R.Object.size obj,
+                         tycon = tycon}
+                     end
+
+            val kindAcc = Kind.memoize (fn _ =>
+                                        {objs = ref [],
+                                         nextIndex = Counter.generator 0,
+                                         nextOffset = ref Bytes.zero})
+
+            fun add obj =
+               let
+                  val {kind, obj, offset, size, tycon} =
+                     translateObject obj
+                  val {objs, nextIndex, nextOffset} = kindAcc kind
+                  val r = Ref.T {index = nextIndex (),
+                                 kind = kind,
+                                 offset = Bytes.+ (!nextOffset, offset),
+                                 ty = Type.objptr tycon}
+                  val oper =
+                     case kind of
+                        Kind.Dynamic =>
+                           let
+                              val g = M.Global.new (Type.objptr tycon)
+                           in
+                              List.push (allGlobalObjptrs, (r, g))
+                              ; M.Operand.Global g
+                           end
+                      | _ => M.Operand.StaticHeapRef r
+               in
+                  List.push (objs, obj)
+                  ; nextOffset := Bytes.+ (!nextOffset, size)
+                  ; oper
+               end
+
+            fun finish () =
+               Kind.memoize (Vector.fromListRev o ! o #objs o kindAcc)
+         in
+            (add, finish, fn () => !allGlobalObjptrs)
+         end
+
+      val () = Vector.foreach (statics, fn {dst = (dstVar, dstTy), obj} =>
+                               let
+                                  val oper = addToStaticHeaps obj
+                               in
+                                  setVarInfo (dstVar, {operand = VarOperand.Const oper, ty = dstTy})
+                               end)
+
       (* Hash tables for uniquifying globals. *)
-      local
-         val allStatics = ref []
-         val staticsCounter = Counter.new 0
-      in
-         (* Doesn't likely need uniquifying, since they're introduced
-          * late and mutable statics can't be unique.
-          *)
-         val (allStatics, globalStatic) =
-            (fn () => Vector.fromListRev (!allStatics),
-             fn {static as M.Static.T {location, ...}, ty} =>
-             let
-                val static =
-                   M.Static.map
-                   (static, fn v =>
-                    case varOperandOpt v of
-                       SOME (M.Operand.Static {index, ...}) => index
-                     | _ => Error.bug "Backend.globalStatic: invalid referrent")
-                val i = Counter.next staticsCounter
-                val g =
-                   case location of
-                      M.Static.Location.Heap => SOME (M.Global.new ty)
-                    | _ => NONE
-                val _ = List.push (allStatics, (static, g))
-             in
-                case g of
-                   SOME g' => M.Operand.Global g'
-                 | NONE => M.Operand.Static {index = i,
-                                             offset = M.Static.metadataSize static,
-                                             ty = ty}
-             end)
-      end
       local
          fun 'a make {equals: 'a * 'a -> bool,
                       hash: 'a -> word,
@@ -375,7 +505,7 @@ fun toMachine (rssa: Rssa.Program.t) =
             end
       in
          local
-            val allReals = ref []
+            val allGlobalReals = ref []
          in
             val globalReal =
                make {equals = RealX.equals,
@@ -383,30 +513,16 @@ fun toMachine (rssa: Rssa.Program.t) =
                      oper = fn r => let
                                        val g = M.Global.new (Type.real (RealX.size r))
                                     in
-                                       List.push (allReals, (r, g))
+                                       List.push (allGlobalReals, (r, g))
                                        ; M.Operand.Global g
                                     end}
-            val allReals = fn () => !allReals
+            val allGlobalReals = fn () => !allGlobalReals
          end
 
          val globalWordVector =
             make {equals = WordXVector.equals,
                   hash = WordXVector.hash,
-                  oper = fn wxv => let
-                                      val eltSize = WordXVector.elementSize wxv
-                                      val ty = Type.wordVector eltSize
-                                      val tycon = ObjptrTycon.wordVector eltSize
-                                      val location =
-                                         if !Control.staticAllocWordVectorConsts
-                                            then M.Static.Location.ImmStatic
-                                            else M.Static.Location.Heap
-                                   in
-                                      globalStatic
-                                      {static = M.Static.vector {data = wxv,
-                                                                 location = location,
-                                                                 tycon = tycon},
-                                       ty = ty}
-                                   end}
+                  oper = addToStaticHeaps o R.Object.fromWordXVector}
       end
       fun constOperand (c: Const.t): M.Operand.t =
          let
@@ -485,11 +601,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                                             ty = ty}
                   end
              | ObjptrTycon opt =>
-                  M.Operand.word
-                  (WordX.fromIntInf
-                   (Word.toIntInf (Runtime.typeIndexToHeader
-                                   (ObjptrTycon.index opt)),
-                    WordSize.objptrHeader ()))
+                  M.Operand.word (ObjptrTycon.toHeader opt)
              | Runtime f => runtimeOp f
              | SequenceOffset {base, index, offset, scale, ty} =>
                   let
@@ -504,7 +616,6 @@ fun toMachine (rssa: Rssa.Program.t) =
                                scale = scale,
                                ty = ty}
                   end
-             | Static s => globalStatic s
              | Var {var, ...} => varOperand var
          end
       fun translateOperands ops = Vector.map (ops, translateOperand)
@@ -520,6 +631,12 @@ fun toMachine (rssa: Rssa.Program.t) =
                case M.Statement.move arg of
                   NONE => Vector.new0 ()
                 | SOME move => Vector.new1 move
+            fun mkInit (init, mkDst) =
+               Vector.toListMap
+               (init, fn {src, offset} =>
+                move {dst = mkDst {offset = offset,
+                                   ty = R.Operand.ty src},
+                      src = translateOperand src})
          in
             case s of
                Bind {dst = (var, _), src, ...} =>
@@ -535,17 +652,67 @@ fun toMachine (rssa: Rssa.Program.t) =
              | Move {dst, src} =>
                   move {dst = translateOperand dst,
                         src = translateOperand src}
-             | Object {dst, header, size} =>
-                  M.Statement.object {dst = varOperand (#1 dst),
-                                      header = header,
-                                      size = size}
+             | Object {dst = (dst, _), obj as Object.Normal {init, tycon, ...}} =>
+                  let
+                     val dst = varOperand dst
+                     val header = ObjptrTycon.toHeader tycon
+                     fun mkDst {offset, ty} =
+                        M.Operand.Offset {base = dst,
+                                          offset = offset,
+                                          ty = ty}
+                  in
+                     Vector.concat
+                     (M.Statement.object {dst = dst,
+                                          header = header,
+                                          size = Object.size obj}
+                      :: mkInit (init, mkDst))
+                  end
+             | Object {dst = (dst, _), obj as Object.Sequence {elt, init, tycon, ...}} =>
+                  let
+                     val dst = varOperand dst
+                     val header = ObjptrTycon.toHeader tycon
+                     val (scale, mkIndex) =
+                        case Scale.fromBytes (Type.bytes elt) of
+                           NONE =>
+                              (Scale.One, fn index =>
+                               M.Operand.word
+                               (WordX.mul
+                                (WordX.fromIntInf (IntInf.fromInt index,
+                                                   WordSize.seqIndex ()),
+                                 WordX.fromBytes (Type.bytes elt, WordSize.seqIndex ()),
+                                 {signed = false})))
+                         | SOME s =>
+                              (s, fn index =>
+                               M.Operand.word
+                               (WordX.fromIntInf (IntInf.fromInt index,
+                                                  WordSize.seqIndex ())))
+                  in
+                     Vector.concat
+                     (M.Statement.sequence {dst = dst,
+                                            header = header,
+                                            length = Vector.length init,
+                                            size = Object.size obj}
+                      :: (List.concat o Vector.toListMapi)
+                         (init, fn (index, init) =>
+                          let
+                             fun mkDst {offset, ty} =
+                                M.Operand.SequenceOffset
+                                {base = dst,
+                                 index = mkIndex index,
+                                 offset = offset,
+                                 scale = scale,
+                                 ty = ty}
+                          in
+                             mkInit (init, mkDst)
+                          end))
+                  end
              | PrimApp {dst, prim, args} =>
                   let
                      datatype z = datatype Prim.Name.t
                   in
                      case Prim.name prim of
                         MLton_touch => Vector.new0 ()
-                      | _ => 
+                      | _ =>
                            Vector.new1
                            (M.Statement.PrimApp
                             {args = translateOperands args,
@@ -744,10 +911,6 @@ fun toMachine (rssa: Rssa.Program.t) =
                                                    set (z, casts)
                                               | VarOperand.Allocate _ =>
                                                    normal ())
-                                       | R.Operand.Static (s as {static, ...}) =>
-                                            if M.Static.location static <> M.Static.Location.Heap
-                                               then set (globalStatic s, casts)
-                                               else normal ()
                                        | _ => normal ()
                                 in
                                    loop (src, [])
@@ -1172,13 +1335,14 @@ fun toMachine (rssa: Rssa.Program.t) =
          {chunks = chunks,
           frameInfos = frameInfos,
           frameOffsets = frameOffsets,
+          globals = {objptrs = allGlobalObjptrs (),
+                     reals = allGlobalReals ()},
           handlesSignals = handlesSignals,
           main = main,
           maxFrameSize = maxFrameSize,
           objectTypes = objectTypes,
-          reals = allReals (),
           sourceMaps = sourceMaps,
-          statics = allStatics ()}
+          staticHeaps = finishStaticHeaps ()}
    in
       machine
    end

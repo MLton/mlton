@@ -104,6 +104,7 @@ fun checkScopes (program as
                 | Object {args, con, ...} => (Option.app (con, getCon); getVars args)
                 | PrimApp {args, ...} => getVars args
                 | Select {base, ...} => Base.foreach (base, getVar)
+                | Sequence {args} => Vector.foreach (args, getVars)
                 | Var x => getVar x
          in
             ()
@@ -475,6 +476,23 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
          case Type.dest base of
             Type.Object {args, ...} => Prod.elt (args, offset)
           | _ => Error.bug "Ssa2.TypeCheck2.select (non object)"
+      fun sequence {args, resultType} =
+         let
+            fun err () = Error.bug "Ssa2.TypeCheck2.sequence (bad sequence)"
+         in
+            case Type.dest resultType of
+               Type.Object {args = args', con = ObjectCon.Sequence} =>
+                  (if (Vector.foreach
+                       (args, fn args =>
+                        Vector.foreach2
+                        (Prod.dest args, Prod.dest args',
+                         fn ({elt = t, isMutable = _}, {elt = t', ...}) =>
+                         coerce {from = t, to = t'}))
+                       ; true)
+                      then resultType
+                   else err ())
+             | _ => err ()
+         end
       fun update {base, offset, value} =
          case Type.dest base of
             Type.Object {args, ...} =>
@@ -532,6 +550,7 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
                   primApp = primApp,
                   program = program,
                   select = select,
+                  sequence = sequence,
                   update = update,
                   useFromTypeOnBinds = true}
       val _ = Program.clear program

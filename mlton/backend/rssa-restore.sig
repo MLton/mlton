@@ -1,4 +1,4 @@
-(* Copyright (C) 2019 Jason Carr, Matthew Fluet.
+(* Copyright (C) 2019-2020 Jason Carr, Matthew Fluet.
  * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -17,7 +17,7 @@ signature RSSA_RESTORE =
       include RSSA_RESTORE_STRUCTS
 
       val restoreFunction:
-         {main: Function.t} -> {main: Function.t,
-                                restore: Function.t -> Function.t}
+         {main: Function.t, statics: {dst: Var.t * Type.t, obj: Object.t} vector}
+         -> {main: Function.t, restore: Function.t -> Function.t}
       val restore: Program.t -> Program.t
    end

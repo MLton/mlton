@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 Matthew Fluet.
+/* Copyright (C) 2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -45,6 +45,10 @@ static inline pointer foreachObjptrInObject (GC_state s, pointer p,
 static inline pointer foreachObjptrInRange (GC_state s, pointer front, pointer *back,
                                             GC_foreachObjptrClosure f, bool skipWeaks);
 
+static inline void foreachObjptrInStaticHeap (GC_state s,
+                                              struct GC_staticHeap *staticHeap,
+                                              GC_foreachObjptrClosure f,
+                                              bool skipWeaks);
 
 typedef void (*GC_foreachStackFrameFun) (GC_state s, GC_frameIndex i, GC_frameInfo frameInfo, pointer frameTop, void *env);
 

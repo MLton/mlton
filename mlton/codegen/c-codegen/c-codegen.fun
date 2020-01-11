@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014-2017,2019 Matthew Fluet.
+(* Copyright (C) 2009,2014-2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -78,30 +78,6 @@ structure WordX =
                  toString (w, {suffix = false}), "ull)"]
    end
 
-structure WordXVector =
-   struct
-      local
-         structure WordX' = WordX
-      in
-         open WordXVector
-         structure WordX = WordX'
-      end
-
-      local
-         fun string v =
-            concat [C.string (String.implode (toListMap (v, WordX.toChar)))]
-         fun vector v =
-            concat ["{",
-                    String.concatWith (toListMap (v, WordX.toC), ","),
-                    "}"]
-      in
-         fun toC (v: t): string =
-            case WordSize.prim (elementSize v) of
-               W8 => string v
-             | _ => vector v
-      end
-   end
-
 structure Const =
    struct
       local
@@ -113,14 +89,6 @@ structure Const =
          structure WordX = WordX'
       end
 
-      fun toCType (c: t): CType.t =
-         case c of
-            CSymbol _ => CType.cpointer
-          | Null => CType.cpointer
-          | Real r => RealX.toCType r
-          | Word w => WordX.toCType w
-          | _ => Error.bug "CCodegen.Const.toC"
-
       fun toC (c: t): string =
          case c of
             CSymbol (CSymbol.T {name, ...}) =>
@@ -131,55 +99,35 @@ structure Const =
           | _ => Error.bug "CCodegen.Const.toC"
    end
 
-structure Static =
+structure Type =
    struct
-      local
-         structure Const' = Const
-         structure WordX' = WordX
-         structure WordXVector' = WordXVector
-      in
-         open Static
-         structure Const = Const'
-         structure WordX = WordX'
-         structure WordXVector = WordXVector'
-      end
+      open Type
 
-      structure Data =
-      struct
-         open Data
+      fun toC (t: t): string =
+         CType.toString (Type.toCType t)
+   end
 
-         structure Elem =
-            struct
-               open Elem
-
-               val toCType =
-                  fn Address _ => CType.objptr
-                   | Const c => Const.toCType c
-               fun toC indexToC =
-                  fn Address i => indexToC i
-                   | Const c => Const.toC c
-            end
-
-         fun toC indexToC =
-            fn Empty _ => NONE
-             | Vector v => SOME (WordXVector.toC v)
-             | Object es => (SOME o String.concatWith) (List.map (es, Elem.toC indexToC), ", ")
-      end
-
-      fun metadataToC (Static.T {metadata, ...}) =
-         let
-            val decl =
-               (concat o List.mapi)
-               (metadata, fn (i, w) =>
-                concat [if i > 0 then " " else "",
-                        CType.toString (WordX.toCType w),
-                        " meta_", C.int i, ";"])
-            val init =
-               String.concatWith
-               (List.map (metadata, WordX.toC),
-                ", ")
-         in
-            {decl = decl, init = init}
+structure StaticHeap =
+   struct
+      open StaticHeap
+      structure Ref =
+         struct
+            open Ref
+            fun toC (T {kind, index, ty, ...}) =
+               concat ["(", CType.toString (Type.toCType ty), ")(&",
+                       Label.toString (Kind.label kind),
+                       ".obj", C.int index,
+                       ".data)"]
+         end
+      structure Elem =
+         struct
+            open Elem
+            fun toC e =
+               case e of
+                  Cast (z, ty) =>
+                     concat ["(", Type.toC ty, ")", toC z]
+                | Const c => Const.toC c
+                | Ref r => Ref.toC r
          end
    end
 
@@ -298,8 +246,8 @@ fun outputDeclarations
     includes: string list,
     print: string -> unit,
     program = (Program.T
-               {frameInfos, frameOffsets, maxFrameSize,
-                objectTypes, reals, sourceMaps, statics, ...}),
+               {frameInfos, frameOffsets, globals, maxFrameSize,
+                objectTypes, sourceMaps, staticHeaps, ...}),
     rest: unit -> unit
     }: unit =
    let
@@ -325,17 +273,25 @@ fun outputDeclarations
                                                  ; print "}"))
                    ; print ";\n"
                 end
-             fun doitReal rs =
+             fun doit' (sel, check, default, toC) =
                 (doit o SOME o List.tabulate)
                 (n, fn i =>
-                 case List.peek (reals, fn (r, g) =>
-                                 RealSize.equals (rs, RealX.size r)
-                                 andalso Int.equals (i, Global.index g)) of
-                    NONE => RealX.toC (RealX.zero rs)
-                  | SOME (r, _) => RealX.toC r)
+                 case List.peek (sel globals, fn (v, g) =>
+                                 Int.equals (i, Global.index g)
+                                 andalso check v) of
+                    NONE => default
+                  | SOME (v, _) => toC v)
+             fun doitReal rs =
+                doit' (#reals, fn r => RealSize.equals (rs, RealX.size r),
+                       RealX.toC (RealX.zero rs), RealX.toC)
+             fun doitObjptr () =
+                doit' (#objptrs, fn _ => true,
+                       concat ["(", CType.toString CType.Objptr, ")",
+                               WordX.toC (WordX.one (WordSize.objptr ()))],
+                       StaticHeap.Ref.toC)
           in
              case (n > 0, t) of
-                (_, CType.Objptr) => doit NONE
+                (_, CType.Objptr) => doitObjptr ()
               | (true, CType.Real32) => doitReal RealSize.R32
               | (true, CType.Real64) => doitReal RealSize.R64
               | (true, _) => doit NONE
@@ -372,149 +328,283 @@ fun outputDeclarations
             ()
          end
 
-      fun staticVar i =
-         "static_" ^ Int.toString i
-      fun metadataSize i =
-         Bytes.toInt (Static.metadataSize (#1 (Vector.sub (statics, i))))
-      fun staticAddress i = concat
-         ["((Pointer)(&", staticVar i, ") + ",
-          C.int (metadataSize i), ")"]
-      fun declareStatics () =
-         (let
-             val seen = String.memoize (fn _ => ref false)
-             fun doit (name: string, declare: unit -> string): unit =
-                let
-                   val r = seen name
-                in
-                   if !r
-                      then ()
-                      else (r := true; print (declare ()))
-                end
-             fun doitCSymbol (CSymbol.T {name, cty, symbolScope}) =
-                let
-                   datatype z = datatype CSymbolScope.t
-                   val cty = Option.fold (cty, CType.Word8, #1)
-                in
-                   doit
-                   (name, fn () =>
-                    concat [case symbolScope of
-                               External => "EXTERNAL "
-                             | Private => "PRIVATE "
-                             | Public => "PUBLIC ",
-                            "extern ",
-                            CType.toString cty,
-                            " ",
-                            name,
-                            ";\n"])
+      fun declareStaticHeaps () =
+         let
+            open StaticHeap
+            val declareCSymbol =
+               let
+                  val seen = String.memoize (fn _ => ref false)
+               in
+                  fn CSymbol.T {name, cty, symbolScope} =>
+                  let
+                     fun doit () =
+                        (print o concat)
+                        [case symbolScope of
+                            CSymbolScope.External => "EXTERNAL "
+                          | CSymbolScope.Private => "PRIVATE "
+                          | CSymbolScope.Public => "PUBLIC ",
+                         "extern ",
+                         CType.toString (Option.fold (cty, CType.Word8, #1)),
+                         " ",
+                         name,
+                         ";\n"]
+                     val seen = seen name
+                  in
+                     if !seen
+                        then ()
+                        else (seen := true; doit ())
+                  end
                end
-          in
-             Vector.foreach
-             (statics, fn (Machine.Static.T {data, ...}, _) =>
-              case data of
-                 Static.Data.Object es =>
-                    List.foreach (es, fn e =>
-                                  case e of
-                                     Static.Data.Elem.Const (Const.CSymbol sym) =>
-                                        doitCSymbol sym
-                                   | _ => ())
-                    | _ => ())
-          end;
-          Vector.foreachi
-          (statics, fn (i, (static as Machine.Static.T {data, location, ...}, _)) =>
-             let
-                val dataC = Static.Data.toC staticAddress data
-                datatype dataType =
-                   TObject of string list
-                 | TVector of string * int
-                val dataType =
-                   case data of
-                      Static.Data.Object es =>
-                         (TObject o List.map) (es, CType.toString o Static.Data.Elem.toCType)
-                    | Static.Data.Vector v =>
-                         TVector ("Word" ^ WordSize.toString (WordXVector.elementSize v), WordXVector.length v)
-                    | Static.Data.Empty b =>
-                         TVector ("Word" ^ WordSize.toString WordSize.byte, Bytes.toInt b)
-                val dataDescr =
-                   case dataType of
-                      TObject strings => (concat o List.mapi) (strings,
-                           fn (i, s) => concat [s, " data_", C.int i, "; "])
-                    | TVector (str, length) => concat [str, " data[", C.int length, "];"]
-                val {decl = mdecl, init = minit} =
-                   Static.metadataToC static
-                val qualifier =
-                   let datatype z = datatype Machine.Static.Location.t in
-                   case location of
-                        MutStatic => ""
-                      | ImmStatic =>
-                           (case data of
-                                (* Requires initialization, and is likely an array anyway *)
-                                Machine.Static.Data.Empty _ => ""
-                              | _ => "const ")
-                      | Heap => "const static " (* Will just be handed to GC by address *)
-                   end
 
-                val decl = concat
-                   [ qualifier, "struct {", mdecl,
-                     if not (String.isEmpty mdecl) andalso not (String.isEmpty dataDescr)
-                        then " "
-                        else "",
-                     dataDescr, "}\n", staticVar i ]
-             in
-                case dataC of
-                     SOME dataC =>
-                       (print o concat)
-                       [decl, " = {", minit,
-                        if not (String.isEmpty minit) andalso not (String.isEmpty dataC)
-                           then ", "
-                           else "",
-                        dataC, "};\n"]
-                    (* needs code initialization *)
-                   | NONE => print (decl ^ ";\n")
-             end))
-      fun declareHeapStatics () =
-         (print "static struct GC_objectInit objectInits[] = {\n"
-          ; (Vector.foreachi
-             (statics, fn (i, (static, g)) =>
-             let
-                val dataBytes = Bytes.toInt (Static.dataSize static)
-                val metadataBytes = Bytes.toInt (Static.metadataSize static)
-             in
-                case g of
-                     NONE => ()
-                   | SOME g' =>
-                      (print o concat) ["\t{ ",
-                              C.int (Global.index g'), ", ",
-                              C.int metadataBytes, ", ",
-                              C.int (metadataBytes + dataBytes), ", ",
-                              "((Pointer) &", staticVar i, ")",
-                              " },\n"]
-             end))
-          ; print "};\n")
-      fun declareStaticInits () =
-         (print "static void static_Init() {\n"
-          ; (Vector.foreachi
-             (statics, fn (i, (static as Machine.Static.T {data, location, ...}, _)) =>
-              let
-                 val shouldInit =
-                    (case location of
-                        Machine.Static.Location.Heap => false
-                      | _ => true)
-                    andalso
-                    (case data of
-                        Machine.Static.Data.Empty _ => true
-                      | _ => false)
-                 val metadataBytes = Machine.Static.metadataSize static
-                 val {decl = mdecl, init = minit} =
-                    Static.metadataToC static
-              in
-                 if shouldInit
-                    then print (C.call ("\tmemcpy",
-                                        ["&" ^ staticVar i,
-                                         concat ["&((struct {", mdecl, "}){", minit, "})"],
-                                         C.bytes metadataBytes]))
-                    else ()
-              end))
-          ; print "};\n")
+            fun sym k = Label.toString (Kind.label k)
+            fun ty k = concat [sym k, "Ty"]
+
+            fun mkPadTy (next, offset) =
+               if Bytes.equals (next, offset)
+                  then NONE
+                  else let
+                          val psize = Bytes.- (offset, next)
+                          val pad =
+                             concat [CType.toString CType.Word8,
+                                     " pad", Bytes.toString next,
+                                     "[", Bytes.toString psize, "]"]
+                       in
+                          SOME pad
+                       end
+
+            fun mkFieldTys (init, ty) =
+               let
+                  fun maybePad (next, offset, fieldTys) =
+                     Option.fold (mkPadTy (next, offset), fieldTys, op ::)
+                  val (fieldTys, next) =
+                     Vector.fold
+                     (init, ([], Bytes.zero), fn ({offset, src}, (fieldTys, next)) =>
+                      let
+                         val fieldTys = maybePad (next, offset, fieldTys)
+                         val fldCType = Type.toCType (Elem.ty src)
+                         val fld = concat [CType.toString fldCType,
+                                           " fld", Bytes.toString offset]
+                      in
+                         (fld::fieldTys, Bytes.+ (offset, CType.size fldCType))
+                      end)
+                  val fieldTys = maybePad (next, Type.bytes ty, fieldTys)
+               in
+                  List.rev fieldTys
+               end
+
+            val headerTy = CType.objptrHeader ()
+            val counterTy = CType.seqIndex ()
+            val lengthTy = CType.seqIndex ()
+
+            fun mkPad (next, offset) =
+               if Bytes.equals (next, offset)
+                  then NONE
+                  else let
+                          val psize = Bytes.- (offset, next)
+                          val pad =
+                             (C.string o String.tabulate)
+                             (Bytes.toInt psize, fn _ => #"\000")
+                       in
+                          SOME pad
+                       end
+
+            fun mkFields (init, ty) =
+               let
+                  fun maybePad (next, offset, fields) =
+                     Option.fold (mkPad (next, offset), fields, op ::)
+                  val (fields, next) =
+                     Vector.fold
+                     (init, ([], Bytes.zero), fn ({offset, src}, (fields, next)) =>
+                      let
+                         val fields = maybePad (next, offset, fields)
+                         val fldCType = Type.toCType (Elem.ty src)
+                         val fld = Elem.toC src
+                      in
+                         (fld::fields, Bytes.+ (offset, CType.size fldCType))
+                      end)
+                  val fields = maybePad (next, Type.bytes ty, fields)
+               in
+                  List.rev fields
+               end
+
+            fun mkHeader tycon =
+               WordX.toC (ObjptrTycon.toHeader tycon)
+            val counter =
+               WordX.toC (WordX.zero (WordSize.seqIndex ()))
+            fun mkLength length =
+               WordX.toC (WordX.fromIntInf (Int.toIntInf length, WordSize.seqIndex ()))
+
+            val _ =
+               List.foreach
+               (Kind.all, fn k =>
+                (print "typedef "
+                 ; (case k of
+                       Kind.Dynamic => print "const "
+                     | Kind.Immutable => print "const "
+                     | _ => ())
+                 ; print "struct __attribute__ ((aligned(16), packed)) {\n"
+                 ; (Vector.foreachi
+                    (staticHeaps k, fn (i, obj) =>
+                     (print "struct __attribute__ ((packed)) {"
+                      ; (case obj of
+                            Object.Normal {init, ty, ...} =>
+                               (print "struct __attribute__ ((packed)) {"
+                                ; print (CType.toString headerTy)
+                                ; print " header;"
+                                ; print "} metadata;"
+                                ; print " "
+                                ; print "struct __attribute__ ((packed)) {"
+                                ; List.foreachi (mkFieldTys (init, ty), fn (i, fldTy) =>
+                                                 (if i > 0 then print " " else ()
+                                                     ; print fldTy
+                                                     ; print ";"))
+                                ; print "} data;")
+                          | Object.Sequence {elt, init, ...} =>
+                               let
+                                  val length = Vector.length init
+                               in
+                                  print "struct __attribute__ ((packed)) {"
+                                  ; print (CType.toString counterTy)
+                                  ; print " counter;"
+                                  ; print " "
+                                  ; print (CType.toString lengthTy)
+                                  ; print " length;"
+                                  ; print " "
+                                  ; print (CType.toString headerTy)
+                                  ; print " header;"
+                                  ; print "} metadata;"
+                                  ; print " "
+                                  ; if Type.equals (elt, Type.word WordSize.word8)
+                                       then print (CType.toString CType.Word8)
+                                       else (print "struct __attribute__ ((packed)) {"
+                                             ; if length > 0
+                                                  then List.foreachi (mkFieldTys (Vector.first init, elt),
+                                                                      fn (i, fldTy) =>
+                                                                      (if i > 0 then print " " else ()
+                                                                          ; print fldTy
+                                                                          ; print ";"))
+                                                  else ()
+                                             ; print "}")
+                                  ; print " data["
+                                  ; print (C.int length)
+                                  ; print "];"
+                                  ; let
+                                       val next = Bytes.+ (Runtime.sequenceMetaDataSize (),
+                                                           Bytes.* (Type.bytes elt,
+                                                                    IntInf.fromInt length))
+                                       val size =
+                                          case !Control.align of
+                                             Control.Align4 => Bytes.alignWord32 next
+                                           | Control.Align8 => Bytes.alignWord64 next
+                                    in
+                                       Option.app (mkPadTy (next, size), fn pad =>
+                                                   (print " "
+                                                    ; print pad
+                                                    ; print ";"))
+                                    end
+                               end)
+                      ; print "} obj"
+                      ; print (C.int i)
+                      ; print ";\n")))
+                 ; print "struct __attribute__ ((packed)) {} end;\n"
+                 ; print "} "
+                 ; print (ty k)
+                 ; print ";\n"))
+            val _ =
+               List.foreach
+               (Kind.all, fn k =>
+                (print "PRIVATE "
+                 ; print (ty k)
+                 ; print " "
+                 ; print (sym k)
+                 ; print ";\n"))
+            val _ =
+               List.foreach
+               (Kind.all, fn k =>
+                Vector.foreach
+                (staticHeaps k, fn obj =>
+                 let
+                    datatype z = datatype Elem.t
+                    fun loopElem e =
+                       case e of
+                          Cast (e, _) => loopElem e
+                        | Const (Const.CSymbol s) => declareCSymbol s
+                        | Const _ => ()
+                        | Ref _ => ()
+                    fun loopInit init =
+                       Vector.foreach
+                       (init, fn {offset = _, src} =>
+                        loopElem src)
+                 in
+                    case obj of
+                       Object.Normal {init, ...} =>
+                          loopInit init
+                     | Object.Sequence {init, ...} =>
+                          Vector.foreach (init, loopInit)
+                 end))
+            val _ =
+               List.foreach
+               (Kind.all, fn k =>
+                (print "PRIVATE "
+                 ; print (ty k)
+                 ; print " "
+                 ; print (sym k)
+                 ; print " = {\n"
+                 ; (Vector.foreach
+                    (staticHeaps k, fn obj =>
+                     (print "{"
+                      ; (case obj of
+                            Object.Normal {init, tycon, ty, ...} =>
+                               (print "{"
+                                ; print (mkHeader tycon)
+                                ; print ","
+                                ; print "},"
+                                ; print "{"
+                                ; List.foreach (mkFields (init, ty), fn fld =>
+                                                (print fld; print ","))
+                                ; print "},")
+                          | Object.Sequence (arg as {elt, init, tycon, ...}) =>
+                               let
+                                  val length = Vector.length init
+                               in
+                                  print "{"
+                                  ; print counter
+                                  ; print ","
+                                  ; print (mkLength length)
+                                  ; print ","
+                                  ; print (mkHeader tycon)
+                                  ; print ","
+                                  ; print "},"
+                                  ; (case (Object.deString arg, length > 0) of
+                                        (SOME s, true) => print (C.string s)
+                                      | _ => (print "{"
+                                              ; Vector.foreach (init, fn init =>
+                                                                (print "{"
+                                                                 ; List.foreach (mkFields (init, elt), fn fld =>
+                                                                                 (print fld; print ","))
+                                                                 ; print "},"))
+                                              ; print "}"))
+                                  ; print ","
+                                  ; let
+                                       val next = Bytes.+ (Runtime.sequenceMetaDataSize (),
+                                                           Bytes.* (Type.bytes elt,
+                                                                    IntInf.fromInt length))
+                                       val size =
+                                          case !Control.align of
+                                             Control.Align4 => Bytes.alignWord32 next
+                                           | Control.Align8 => Bytes.alignWord64 next
+                                    in
+                                       Option.app (mkPad (next, size), fn pad =>
+                                                   (print pad
+                                                    ; print ","))
+                                    end
+                               end)
+                      ; print "},\n")))
+                 ; print "{},\n"
+                 ; print "};\n"))
+         in
+            ()
+         end
 
       fun declareArray (ty: string,
                         name: string,
@@ -700,11 +790,9 @@ fun outputDeclarations
          end
    in
       outputIncludes (includes, print); print "\n"
+      ; declareStaticHeaps (); print "\n"
       ; declareGlobals (); print "\n"
       ; declareLoadSaveGlobals (); print "\n"
-      ; declareStatics (); print "\n"
-      ; declareHeapStatics (); print "\n"
-      ; declareStaticInits (); print "\n"
       ; declareFrameInfos (); print "\n"
       ; declareObjectTypes (); print "\n"
       ; declareSourceMaps (); print "\n"
@@ -712,14 +800,6 @@ fun outputDeclarations
       ; rest (); print "\n"
       ; declareMLtonMain (); declareMain (); print "\n"
       ; declareExports ()
-   end
-
-structure Type =
-   struct
-      open Type
-
-      fun toC (t: t): string =
-         CType.toString (Type.toCType t)
    end
 
 structure StackOffset =
@@ -802,7 +882,7 @@ fun declareFFI (chunks, print) =
       ; if !empty then () else print "\n"
    end
 
-fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...},
+fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
             outputC: unit -> {file: File.t,
                               print: string -> unit,
                               done: unit -> unit}} =
@@ -954,8 +1034,11 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
                                        C.bytes offset]]
              | StackOffset s => StackOffset.toString s
              | StackTop => "StackTop"
-             | Static {index, offset, ty} =>
-                  concat ["M", C.args [Type.toC ty, C.int index, C.bytes offset]]
+             | StaticHeapRef h =>
+                  concat ["H",
+                          C.args [Type.toC (StaticHeap.Ref.ty h),
+                                  StaticHeap.Kind.name (StaticHeap.Ref.kind h),
+                                  C.bytes (StaticHeap.Ref.offset h)]]
              | Temporary t =>
                   temporaryName (Type.toCType (Temporary.ty t), Temporary.index t)
       in
@@ -1630,12 +1713,12 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
             ()
          end
 
-      fun declareStatics (prefix: string, print) =
-         Vector.foreachi
-         (statics, fn (i, (Static.T {location, ...}, _)) =>
-          case location of
-             Static.Location.Heap => ()
-           | _ => print (concat [prefix, "PointerAux static_", C.int i, ";\n"]))
+      fun declareStaticHeaps (prefix: string, print) =
+         List.foreach
+         (StaticHeap.Kind.all, fn k =>
+          print (concat [prefix, "PointerAux ",
+                         Label.toString (StaticHeap.Kind.label k),
+                         ";\n"]))
 
       fun outputChunks chunks =
          let
@@ -1643,7 +1726,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, statics, ...
          in
             outputIncludes (["c-chunk.h"], print); print "\n"
             ; declareGlobals ("PRIVATE extern ", print); print "\n"
-            ; declareStatics ("PRIVATE extern ", print); print "\n"
+            ; declareStaticHeaps ("PRIVATE extern ", print); print "\n"
             ; declareNextChunks (chunks, print); print "\n"
             ; declareFFI (chunks, print)
             ; List.foreach (chunks, fn chunk => outputChunkFn (chunk, print))

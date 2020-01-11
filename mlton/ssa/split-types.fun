@@ -175,7 +175,14 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
 
          in
             case Prim.name prim of
-                 Prim.Name.Array_sub => derefPrim args
+                 Prim.Name.Array_array => TypeInfo.Heap
+                  let
+                     val ty = TypeInfo.fromType (Vector.sub (targs, 0))
+                     val _ = Vector.foreach (args, fn a => TypeInfo.coerce (a, ty))
+                  in
+                     (ty, TypeInfo.Array)
+                  end
+               | Prim.Name.Array_sub => derefPrim args
                | Prim.Name.Array_toArray => Vector.sub (args, 0)
                | Prim.Name.Array_toVector => Vector.sub (args, 0)
                | Prim.Name.Array_update => updatePrim TypeInfo.Array args

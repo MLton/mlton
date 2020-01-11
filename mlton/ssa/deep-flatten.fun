@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2017 Matthew Fluet.
+(* Copyright (C) 2009,2017,2019 Matthew Fluet.
  * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -132,7 +132,7 @@ structure VarTree =
                      end
             val (t, _, ac) = loop (t, offset, [])
          in
-            (t, ac)
+            (t, List.rev ac)
          end
 
       val fillInRoots =
@@ -747,6 +747,20 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
          coerce {from = value,
                  to = select {base = base, offset = offset}}
       fun const c = typeValue (Type.ofConst c)
+      fun sequence {args, resultType} =
+         let
+            val v = typeValue resultType
+            val _ =
+               Vector.foreach
+               (args, fn args =>
+                Vector.foreachi
+                (Prod.dest args, fn (offset, {elt, ...}) =>
+                 update {base = v,
+                         offset = offset,
+                         value = elt}))
+         in
+            v
+         end
       val {func, value = varValue, ...} =
          analyze {base = base,
                   coerce = coerce,
@@ -761,6 +775,7 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                   program = program,
                   select = fn {base, offset, ...} => select {base = base,
                                                              offset = offset},
+                  sequence = sequence,
                   update = update,
                   useFromTypeOnBinds = false}
       (* Don't flatten outermost part of formal parameters. *)
@@ -970,6 +985,59 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                                      val () = setVarTree (var, child)
                                   in
                                      ss
+                                  end
+                         end)
+             | Sequence {args} =>
+                  (case var of
+                      NONE => none ()
+                    | SOME var =>
+                         let
+                            val v = varValue var
+                         in
+                            case Value.deObject v of
+                               NONE => simple ()
+                             | SOME {args = expects, flat, ...} =>
+                                  let
+                                     val z =
+                                        Vector.map
+                                        (args, fn args =>
+                                         Vector.map2
+                                         (args, Prod.dest expects,
+                                          fn (arg, {elt, ...}) =>
+                                          let
+                                             val (vt, ss) =
+                                                coerceTree
+                                                {from = varTree arg,
+                                                 to = Value.finalTree elt}
+                                          in
+                                             (vt, ss)
+                                          end))
+                                     val () = simpleVarTree var
+                                  in
+                                     case !flat of
+                                        Flat => Error.bug "DeepFlatten.transformBind: Sequence, Flat"
+                                      | NotFlat =>
+                                           let
+                                              val ty = Value.finalType v
+                                              val args =
+                                                 Vector.map
+                                                 (z, fn z =>
+                                                  Vector.fromList
+                                                  (Vector.foldr
+                                                   (z, [], fn ((vt, _), ac) =>
+                                                    VarTree.rootsOnto (vt, ac))))
+                                              val obj =
+                                                 Bind
+                                                 {exp = Sequence {args = args},
+                                                  ty = ty,
+                                                  var = SOME var}
+                                           in
+                                              Vector.foldr
+                                              (z, [obj], fn (z, ac) =>
+                                               Vector.foldr
+                                               (z, ac, fn ((_, ss), ac) =>
+                                                ss @ ac))
+                                           end
                                   end
                          end)
              | Var x =>

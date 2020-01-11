@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014,2016-2017,2019 Matthew Fluet.
+(* Copyright (C) 2009,2014,2016-2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -13,67 +13,6 @@ struct
 open S
 
 structure ChunkLabel = Id (val noname = "Chunk")
-
-structure Temporary =
-   struct
-      datatype t = T of {index: int option ref,
-                         ty: Type.t}
-
-      local
-         fun make f (T r) = f r
-      in
-         val indexOpt = ! o (make #index)
-         val ty = make #ty
-      end
-
-      fun layout (T {index, ty, ...}) =
-         let
-            open Layout
-         in
-            seq [str (concat ["T", Type.name ty]),
-                 paren (case !index of
-                           NONE => str "NONE"
-                         | SOME i => Int.layout i),
-                 str ": ",
-                 Type.layout ty]
-         end
-
-      val toString = Layout.toString o layout
-
-      fun index (r as T {index, ...}) =
-         case !index of
-            NONE =>
-               Error.bug (concat ["Machine.Temporary: temporary ",
-                                  toString r, " missing index"])
-          | SOME i => i
-
-      fun setIndex (r as T {index, ...}, i) =
-         case !index of
-            NONE => index := SOME i
-          | SOME _ =>
-               Error.bug (concat ["Machine.Temporary: temporary ",
-                                  toString r, " index already set"])
-
-      fun new (ty, i) = T {index = ref i,
-                           ty = ty}
-
-      fun equals (r, r') =
-         (case (indexOpt r, indexOpt r') of
-             (SOME i, SOME i') => i = i'
-           | _ => false)
-         andalso CType.equals (Type.toCType (ty r), Type.toCType (ty r'))
-
-      val equals =
-         Trace.trace2 ("Machine.Temporary.equals", layout, layout, Bool.layout) equals
-
-      val isSubtype: t * t -> bool =
-         fn (T {index = i, ty = t}, T {index = i', ty = t'}) =>
-         (case (!i, !i') of
-             (SOME i, SOME i') => i = i'
-           | _ => false)
-         andalso Type.isSubtype (t, t')
-         andalso CType.equals (Type.toCType t, Type.toCType t')
-   end
 
 structure Global =
    struct
@@ -147,7 +86,7 @@ structure StackOffset =
 
       val interfere: t * t -> bool =
          fn (T {offset = b, ty = ty}, T {offset = b', ty = ty'}) =>
-         let 
+         let
             val max = Bytes.+ (b, Type.bytes ty)
             val max' = Bytes.+ (b', Type.bytes ty')
          in
@@ -157,6 +96,183 @@ structure StackOffset =
       fun shift (T {offset, ty}, size): t =
          T {offset = Bytes.- (offset, size),
             ty = ty}
+   end
+
+structure StaticHeap =
+   struct
+      structure Kind =
+         struct
+            datatype t = Dynamic | Immutable | Mutable | Root
+
+            val all = [Immutable, Mutable, Root, Dynamic]
+
+            val isDynamic = fn Dynamic => true | _ => false
+
+            fun equals (k1, k2) =
+               case (k1, k2) of
+                  (Dynamic, Dynamic) => true
+                | (Immutable, Immutable) => true
+                | (Mutable, Mutable) => true
+                | (Root, Root) => true
+                | _ => false
+
+            fun toString k =
+               case k of
+                  Dynamic => "dynamic"
+                | Immutable => "immutable"
+                | Mutable => "mutable"
+                | Root => "root"
+            val layout = Layout.str o toString
+
+            fun name k =
+               case k of
+                  Dynamic => "D"
+                | Immutable => "I"
+                | Mutable => "M"
+                | Root => "R"
+
+            fun memoize f =
+               let
+                  val dyn = f Dynamic
+                  val imm = f Immutable
+                  val mut = f Mutable
+                  val root = f Root
+               in
+                  fn Dynamic => dyn
+                   | Immutable => imm
+                   | Mutable => mut
+                   | Root => root
+               end
+
+            val label = memoize (fn k => Label.fromString (concat ["staticHeap", name k]))
+         end
+
+      structure Ref =
+         struct
+            datatype t = T of {index: int,
+                               kind: Kind.t,
+                               offset: Bytes.t,
+                               ty: Type.t}
+
+            local
+               fun mk sel (T r) = sel r
+            in
+               val index = mk #index
+               val kind = mk #kind
+               val offset = mk #offset
+               val ty = mk #ty
+            end
+
+            fun equals (T {index = index1, kind = kind1, offset = offset1, ...},
+                        T {index = index2, kind = kind2, offset = offset2, ...}) =
+               Int.equals (index1, index2)
+               andalso Kind.equals (kind1, kind2)
+               andalso Bytes.equals (offset1, offset2)
+
+            fun layout (T {index, kind, offset, ty}) =
+               let
+                  open Layout
+               in
+                  seq [str (concat ["H", Kind.name kind]),
+                       tuple [Int.layout index, Bytes.layout offset],
+                       str ": ",
+                       Type.layout ty]
+               end
+         end
+
+      structure Elem =
+         struct
+            datatype t =
+               Cast of t * Type.t
+             | Const of Const.t
+             | Ref of Ref.t
+
+            fun ty e =
+               case e of
+                  Cast (_, ty) => ty
+                | Const c => Type.ofConst c
+                | Ref r => Ref.ty r
+
+            fun layout e =
+               let
+                  open Layout
+               in
+                  case e of
+                     Cast (z, ty) =>
+                        seq [str "Cast ", tuple [layout z, Type.layout ty]]
+                   | Const c => Const.layout c
+                   | Ref r => Ref.layout r
+               end
+
+            val word = Const o Const.word
+            val deWord =
+               fn Const (Const.Word w) => SOME w
+                | _ => NONE
+         end
+
+      structure Object = Object (open S
+                                 structure Use = Elem)
+   end
+
+structure Temporary =
+   struct
+      datatype t = T of {index: int option ref,
+                         ty: Type.t}
+
+      local
+         fun make f (T r) = f r
+      in
+         val indexOpt = ! o (make #index)
+         val ty = make #ty
+      end
+
+      fun layout (T {index, ty, ...}) =
+         let
+            open Layout
+         in
+            seq [str (concat ["T", Type.name ty]),
+                 paren (case !index of
+                           NONE => str "NONE"
+                         | SOME i => Int.layout i),
+                 str ": ",
+                 Type.layout ty]
+         end
+
+      val toString = Layout.toString o layout
+
+      fun index (r as T {index, ...}) =
+         case !index of
+            NONE =>
+               Error.bug (concat ["Machine.Temporary: temporary ",
+                                  toString r, " missing index"])
+          | SOME i => i
+
+      fun setIndex (r as T {index, ...}, i) =
+         case !index of
+            NONE => index := SOME i
+          | SOME _ =>
+               Error.bug (concat ["Machine.Temporary: temporary ",
+                                  toString r, " index already set"])
+
+      fun new (ty, i) = T {index = ref i,
+                           ty = ty}
+
+      fun equals (r, r') =
+         (case (indexOpt r, indexOpt r') of
+             (SOME i, SOME i') => i = i'
+           | _ => false)
+         andalso CType.equals (Type.toCType (ty r), Type.toCType (ty r'))
+
+      val equals =
+         Trace.trace2 ("Machine.Temporary.equals", layout, layout, Bool.layout) equals
+
+      val isSubtype: t * t -> bool =
+         fn (T {index = i, ty = t}, T {index = i', ty = t'}) =>
+         (case (!i, !i') of
+             (SOME i, SOME i') => i = i'
+           | _ => false)
+         andalso Type.isSubtype (t, t')
+         andalso CType.equals (Type.toCType t, Type.toCType t')
    end
 
 structure Operand =
@@ -178,20 +294,16 @@ structure Operand =
                             ty: Type.t}
        | StackOffset of StackOffset.t
        | StackTop
-       | Static of {index: int,
-                    offset: Bytes.t,
-                    ty: Type.t}
+       | StaticHeapRef of StaticHeap.Ref.t
        | Temporary of Temporary.t
 
     val word = Const o Const.Word
 
+    val zero = word o WordX.zero
+
     val ty =
        fn Cast (_, ty) => ty
-        | Const (Const.CSymbol _) => Type.cpointer ()
-        | Const Const.Null => Type.cpointer ()
-        | Const (Const.Real r) => Type.ofRealX r
-        | Const (Const.Word w) => Type.ofWordX w
-        | Const _ => Error.bug "Machine.Operand.ty: Const"
+        | Const c => Type.ofConst c
         | Frontier => Type.cpointer ()
         | GCState => Type.gcState ()
         | Global g => Global.ty g
@@ -200,7 +312,7 @@ structure Operand =
         | SequenceOffset {ty, ...} => ty
         | StackOffset s => StackOffset.ty s
         | StackTop => Type.cpointer ()
-        | Static {ty, ...} => ty
+        | StaticHeapRef h => StaticHeap.Ref.ty h
         | Temporary t => Temporary.ty t
 
     fun layout (z: t): Layout.t =
@@ -230,10 +342,7 @@ structure Operand =
                        constrain ty]
              | StackOffset so => StackOffset.layout so
              | StackTop => str "<StackTop>"
-             | Static {index, offset, ty} =>
-                  seq [str "M",
-                       tuple [Int.layout index, Type.layout ty,
-                              Bytes.layout offset]]
+             | StaticHeapRef h => StaticHeap.Ref.layout h
              | Temporary t => Temporary.layout t
          end
 
@@ -253,11 +362,8 @@ structure Operand =
               SequenceOffset {base = b', index = i', ...}) =>
                 equals (b, b') andalso equals (i, i')
            | (StackOffset so, StackOffset so') => StackOffset.equals (so, so')
-           | (Static {index = i, offset = j, ty = t},
-              Static {index = i', offset = j', ty = t'}) =>
-              i = i'
-              andalso Bytes.equals (j, j')
-              andalso Type.equals (t, t')
+           | (StaticHeapRef h1, StaticHeapRef h2) =>
+              StaticHeap.Ref.equals (h1, h2)
            | (Temporary t, Temporary t') => Temporary.equals (t, t')
            | _ => false
 
@@ -281,8 +387,9 @@ structure Operand =
                   inter base orelse inter index
              | (StackOffset so, StackOffset so') =>
                   StackOffset.interfere (so, so')
-             | (Static {index, ...}, Static {index=index', ...}) => index = index'
              | (Temporary t, Temporary t') => Temporary.equals (t, t')
+             | (StaticHeapRef h1, StaticHeapRef h2) =>
+                  StaticHeap.Ref.equals (h1, h2)
              | _ => false
          end
 
@@ -296,8 +403,7 @@ structure Operand =
           | _ => false
    end
 
-structure Switch = Switch (open Atoms
-                           structure Type = Type
+structure Switch = Switch (open S
                            structure Use = Operand)
 
 structure Statement =
@@ -355,19 +461,62 @@ structure Statement =
                Operand.word (WordX.fromIntInf (Bytes.toIntInf b, WordSize.csize ()))
             val metaDataSize = Runtime.normalMetaDataSize ()
             val headerOffset = Runtime.headerOffset ()
-            val header =
-               Operand.word (WordX.fromIntInf (Word.toIntInf header,
-                                               WordSize.objptrHeader ()))
+            val header = Operand.word header
             val temp = Temporary (Temporary.new (Type.cpointer (), NONE))
          in
             Vector.new4
-            ((* tmp = Frontier + NORMAL_METADATA_SIZE; *)
+            ((* tmp = Frontier + GC_NORMAL_METADATA_SIZE; *)
              PrimApp {args = Vector.new2 (Frontier, bytes metaDataSize),
                       dst = SOME temp,
                       prim = Prim.cpointerAdd},
              (* CHECK; if objptr <> cpointer, need non-trivial coercion here. *)
              (* dst = pointerToObjptr(tmp); *)
              Move {dst = dst, src = Cast (temp, Operand.ty dst)},
+             (* OW(dst, -GC_HEADER_SIZE) = header; *)
+             Move {dst = Offset {base = dst,
+                                 offset = headerOffset,
+                                 ty = Type.objptrHeader ()},
+                   src = header},
+             (* Frontier += size; *)
+             PrimApp {args = Vector.new2 (Frontier, bytes size),
+                      dst = SOME Frontier,
+                      prim = Prim.cpointerAdd})
+         end
+
+      fun sequence {dst, header, length, size} =
+         let
+            datatype z = datatype Operand.t
+            fun bytes (b: Bytes.t): Operand.t =
+               Operand.word (WordX.fromIntInf (Bytes.toIntInf b, WordSize.csize ()))
+            val metaDataSize = Runtime.sequenceMetaDataSize ()
+            val headerOffset = Runtime.headerOffset ()
+            val lengthOffset = Runtime.sequenceLengthOffset ()
+            val counterOffset = Runtime.sequenceCounterOffset ()
+            val header = Operand.word header
+            val length =
+               Operand.word (WordX.fromIntInf (Int.toIntInf length,
+                                               WordSize.seqIndex ()))
+            val counter = Operand.zero (WordSize.seqIndex ())
+            val temp = Temporary (Temporary.new (Type.cpointer (), NONE))
+         in
+            Vector.new6
+            ((* tmp = Frontier + GC_SEQUENCE_METADATA_SIZE; *)
+             PrimApp {args = Vector.new2 (Frontier, bytes metaDataSize),
+                      dst = SOME temp,
+                      prim = Prim.cpointerAdd},
+             (* CHECK; if objptr <> cpointer, need non-trivial coercion here. *)
+             (* dst = pointerToObjptr(tmp); *)
+             Move {dst = dst, src = Cast (temp, Operand.ty dst)},
+             (* OW(dst, -(GC_HEADER_SIZE + GC_SEQUENCE_LENGTH_SIZE + GC_SEQUENCE_COUNTER_SIZE)) = 0x0; *)
+             Move {dst = Offset {base = dst,
+                                 offset = counterOffset,
+                                 ty = Type.seqIndex ()},
+                   src = counter},
+             (* OW(dst, -(GC_HEADER_SIZE + GC_SEQUENCE_LENGTH_SIZE)) = length; *)
+             Move {dst = Offset {base = dst,
+                                 offset = lengthOffset,
+                                 ty = Type.seqIndex ()},
+                   src = length},
              (* OW(dst, -GC_HEADER_SIZE) = header; *)
              Move {dst = Offset {base = dst,
                                  offset = headerOffset,
@@ -760,14 +909,15 @@ structure Program =
       datatype t = T of {chunks: Chunk.t list,
                          frameInfos: FrameInfo.t vector,
                          frameOffsets: FrameOffsets.t vector,
+                         globals: {objptrs: (StaticHeap.Ref.t * Global.t) list,
+                                   reals: (RealX.t * Global.t) list},
                          handlesSignals: bool,
                          main: {chunkLabel: ChunkLabel.t,
                                 label: Label.t},
                          maxFrameSize: Bytes.t,
                          objectTypes: ObjectType.t vector,
-                         reals: (RealX.t * Global.t) list,
                          sourceMaps: SourceMaps.t option,
-                         statics: (int Static.t * Global.t option) vector}
+                         staticHeaps: StaticHeap.Kind.t -> StaticHeap.Object.t vector}
 
       fun clear (T {chunks, sourceMaps, ...}) =
          (List.foreach (chunks, Chunk.clear)
@@ -775,7 +925,7 @@ structure Program =
 
       fun layouts (T {chunks, frameInfos, frameOffsets, handlesSignals,
                       main = {label, ...},
-                      maxFrameSize, objectTypes, sourceMaps, statics, ...},
+                      maxFrameSize, objectTypes, sourceMaps, staticHeaps, ...},
                    output': Layout.t -> unit) =
          let
             open Layout
@@ -795,14 +945,9 @@ structure Program =
                                output (seq [str "opt_", Int.layout i,
                                             str " = ", ObjectType.layout ty]))
             ; output (str "\n")
-            ; output (str "Statics:")
-            ; Vector.foreachi (statics, fn (i, (s, g)) => (output o seq)
-                     [str "static_", Int.layout i,
-                      str " = ",
-                      Static.layout (fn i => seq [str "&static_", Int.layout i]) s,
-                      case g of
-                         SOME g' => seq [str " -> ", Global.layout g']
-                       | NONE => empty])
+            ; List.foreach (StaticHeap.Kind.all, fn k =>
+                            (output (seq [Label.layout (StaticHeap.Kind.label k), str ":"])
+                             ; output (Vector.layout StaticHeap.Object.layout (staticHeaps k))))
             ; output (str "\n")
             ; List.foreach (chunks, fn chunk => Chunk.layouts (chunk, output))
          end
@@ -833,9 +978,9 @@ structure Program =
              seq [str "num object types in program = ", Int.layout (numObjectTypes)]]
          end
 
-      fun shuffle (T {chunks, frameInfos, frameOffsets,
+      fun shuffle (T {chunks, frameInfos, frameOffsets, globals,
                       handlesSignals, main, maxFrameSize,
-                      objectTypes, reals, sourceMaps, statics}) =
+                      objectTypes, sourceMaps, staticHeaps}) =
          let
             fun shuffle v =
                let
@@ -858,13 +1003,13 @@ structure Program =
             T {chunks = chunks,
                frameInfos = frameInfos,
                frameOffsets = frameOffsets,
+               globals = globals,
                handlesSignals = handlesSignals,
                main = main,
                maxFrameSize = maxFrameSize,
                objectTypes = objectTypes,
-               reals = reals,
                sourceMaps = sourceMaps,
-               statics = statics}
+               staticHeaps = staticHeaps}
          end
 
       structure Alloc =
@@ -902,9 +1047,8 @@ structure Program =
          end
 
       fun typeCheck (program as
-                     T {chunks, frameInfos, frameOffsets,
-                        maxFrameSize, objectTypes, sourceMaps, reals,
-                        statics, ...}) =
+                     T {chunks, frameInfos, frameOffsets, globals = {objptrs, reals, ...},
+                        maxFrameSize, objectTypes, sourceMaps, staticHeaps, ...}) =
          let
             val (checkProfileLabel, finishCheckProfileLabel) =
                Err.check'
@@ -1005,6 +1149,18 @@ structure Program =
                Vector.sub (objectTypes, ObjptrTycon.index opt)
             open Layout
 
+            val staticHeaps =
+               let
+                  open StaticHeap
+               in
+                  Kind.memoize
+                  (fn k =>
+                   (#1 o Vector.mapAndFold)
+                   (staticHeaps k, Bytes.zero, fn (obj, next) =>
+                    ((Bytes.+ (next, Object.metaDataSize obj), obj),
+                     Bytes.+ (next, Object.size obj))))
+               end
+
             fun checkGlobal (name, global, isOk, layoutVal) =
                let
                   val ty = Global.ty global
@@ -1017,18 +1173,18 @@ structure Program =
                end
             val _ =
                List.foreach
-               (reals, fn (r, g) => checkGlobal
-                  ("global real", g,
-                   fn t => Type.equals (t, Type.real (RealX.size r)),
-                   fn () => RealX.layout (r, {suffix=true})))
+               (objptrs, fn (r, g) =>
+                checkGlobal
+                ("global objptr", g,
+                 fn t => Type.equals (t, StaticHeap.Ref.ty r),
+                 fn () => StaticHeap.Ref.layout r))
             val _ =
-               Vector.foreach
-               (statics, fn (s, g) =>
-                  case g of
-                       NONE => ()
-                     | SOME g' =>
-                        checkGlobal ("static", g',
-                        Type.isObjptr, fn () => Static.layout Int.layout s))
+               List.foreach
+               (reals, fn (r, g) =>
+                checkGlobal
+                ("global real", g,
+                 fn t => Type.equals (t, Type.real (RealX.size r)),
+                 fn () => RealX.layout (r, {suffix=true})))
             (* Check for no duplicate labels. *)
             local
                val {get, ...} =
@@ -1058,6 +1214,13 @@ structure Program =
                 Vector.foreach
                 (blocks, fn b as Block.T {label, ...} =>
                  setLabelBlock (label, b)))
+            fun checkStaticHeapRef (StaticHeap.Ref.T {index, kind, offset, ty}) =
+               let
+                  val (dataOffset, obj) = Vector.sub (staticHeaps kind, index)
+               in
+                  Bytes.equals (dataOffset, offset)
+                  andalso Type.equals (StaticHeap.Object.ty obj, ty)
+               end
             fun checkOperand (x: Operand.t, alloc: Alloc.t): unit =
                let
                   datatype z = datatype Operand.t
@@ -1129,10 +1292,7 @@ structure Program =
                                                        tyconTy = tyconTy,
                                                        result = ty,
                                                        scale = scale})
-                      | Static {index, ty, ...} =>
-                           0 <= index andalso index < Vector.length statics
-                           andalso
-                           (Type.isCPointer ty orelse Type.isObjptr ty)
+                      | StaticHeapRef r => checkStaticHeapRef r
                       | StackTop => true
                       | Temporary t => Alloc.doesDefine (alloc, Live.Temporary t)
                in
@@ -1532,6 +1692,37 @@ structure Program =
                in
                   true
                end
+            fun checkStaticHeapElem (e: StaticHeap.Elem.t): unit =
+               let
+                  datatype z = datatype StaticHeap.Elem.t
+                  fun ok () =
+                     case e of
+                        Cast (z, t) =>
+                           (checkStaticHeapElem z
+                            ; Type.castIsOk
+                              {from = StaticHeap.Elem.ty e,
+                               to = t,
+                               tyconTy = tyconTy})
+                      | Const _ => true
+                      | Ref r => checkStaticHeapRef r
+               in
+                  Err.check ("elem", ok, fn () => StaticHeap.Elem.layout e)
+               end
+            val _ =
+               List.foreach
+               (StaticHeap.Kind.all, fn kind =>
+                Err.check
+                ("staticHeap",
+                 fn () =>
+                 (Vector.foreach
+                  (staticHeaps kind, fn (_, obj) =>
+                   Err.check
+                   ("object",
+                    fn () => StaticHeap.Object.isOk (obj, {checkUse = checkStaticHeapElem,
+                                                           tyconTy = tyconTy}),
+                    fn () => StaticHeap.Object.layout obj))
+                  ; true),
+                 fn () => Label.layout (StaticHeap.Kind.label kind)))
             val _ =
                List.foreach
                (chunks,

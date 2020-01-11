@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019 Matthew Fluet.
+(* Copyright (C) 2009,2019-2020 Matthew Fluet.
  * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -39,6 +39,10 @@ fun toString (opt: t): string =
    concat ["opt_", Int.toString (index opt)]
 
 val layout = Layout.str o toString
+
+fun toHeader (opt: t): WordX.t =
+   WordX.fromIntInf (Word.toIntInf (Runtime.typeIndexToHeader (index opt)),
+                     WordSize.objptrHeader ())
 
 val stack = new ()
 val thread = new ()

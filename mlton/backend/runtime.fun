@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2016-2017,2019 Matthew Fluet.
+(* Copyright (C) 2009,2016-2017,2019-2020 Matthew Fluet.
  * Copyright (C) 2002-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -167,8 +167,6 @@ in
                       0 <= typeIndex
                       andalso typeIndex < maxTypeIndex)
        ; Word.orb (0w1, Word.<< (Word.fromInt typeIndex, 0w1)))
-      
-   fun headerToTypeIndex w = Word.toInt (Word.>> (w, 0w1))
 end
 
 (* see gc/object.h *)
@@ -187,6 +185,14 @@ val sequenceLengthSize : unit -> Bytes.t =
 val sequenceLengthOffset : unit -> Bytes.t =
    Promise.lazy (fn () => Bytes.~ (Bytes.+ (headerSize (),
                                             sequenceLengthSize ())))
+
+(* see gc/sequence.h *)
+val sequenceCounterSize : unit -> Bytes.t =
+   Promise.lazy (Bits.toBytes o Control.Target.Size.seqIndex)
+val sequenceCounterOffset : unit -> Bytes.t =
+   Promise.lazy (fn () => Bytes.~ (Bytes.+ (Bytes.+ (headerSize (),
+                                                     sequenceLengthSize ()),
+                                            sequenceCounterSize ())))
 
 (* see gc/object.h and gc/sequence.h *)
 val sequenceMetaDataSize : unit -> Bytes.t =

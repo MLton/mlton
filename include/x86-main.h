@@ -1,4 +1,4 @@
-/* Copyright (C) 2009,2019 Matthew Fluet.
+/* Copyright (C) 2009,2019-2020 Matthew Fluet.
  * Copyright (C) 2000-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -86,7 +86,6 @@ PUBLIC int MLton_main (int argc, char* argv[]) {                        \
         GC_state s = MLton_gcState();                                   \
         Initialize (s, al, mg, mfs, mmc, pk, ps);                       \
         if (s->amOriginal) {                                            \
-                static_Init();                                            \
                 jump = (pointer)&ml;                                    \
         } else {                                                        \
                 jump = getJumpFromStackTop (s);                         \
@@ -102,7 +101,6 @@ PUBLIC void LIB_OPEN(LIBNAME) (int argc, char* argv[]) {                \
         GC_state s = MLton_gcState();                                   \
         Initialize (s, al, mg, mfs, mmc, pk, ps);                       \
         if (s->amOriginal) {                                            \
-                static_Init();                                            \
                 jump = (pointer)&ml;                                    \
         } else {                                                        \
                 jump = getJumpFromStackTop (s);                         \
