@@ -58,15 +58,15 @@ and <:Bugs20070826:>.
 == 20100608 binary packages ==
 
 * AMD64 (aka "x86-64" or "x64")
-** http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.amd64-darwin.gmp-macports.tgz[Darwin (.tgz)] 10.3 (Mac OS X Snow Leopard), dynamically linked against <:GnuMP:> in `/opt/local/lib` (suitable for http://macports.org[MacPorts] install of <:GnuMP:>)
-** http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.amd64-darwin.gmp-static.tgz[Darwin (.tgz)] 10.3 (Mac OS X Snow Leopard), statically linked against <:GnuMP:> (but requires <:GnuMP:> for generated executables)
+** http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.amd64-darwin.gmp-macports.tgz[Darwin (.tgz)] 10.3 (Mac OS X Snow Leopard), dynamically linked against <:GMP:> in `/opt/local/lib` (suitable for http://macports.org[MacPorts] install of <:GMP:>)
+** http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.amd64-darwin.gmp-static.tgz[Darwin (.tgz)] 10.3 (Mac OS X Snow Leopard), statically linked against <:GMP:> (but requires <:GMP:> for generated executables)
 ** http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.amd64-linux.tgz[Linux], glibc 2.11
 ** http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.amd64-linux.static.tgz[Linux], statically linked
 ** Windows MinGW 32/64 http://sourceforge.net/projects/mlton/files/mlton/20100608/MLton-20100608-1.exe[self-extracting] (28MB) or http://sourceforge.net/projects/mlton/files/mlton/20100608/MLton-20100608-1.msi[MSI] (61MB) installer
 * X86
 ** http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.x86-cygwin.tgz[Cygwin] 1.7.5
-** http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.x86-darwin.gmp-macports.tgz[Darwin (.tgz)] 9.8 (Mac OS X Leopard), dynamically linked against <:GnuMP:> in `/opt/local/lib` (suitable for http://macports.org[MacPorts] install of <:GnuMP:>)
-** http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.x86-darwin.gmp-static.tgz[Darwin (.tgz)] 9.8 (Mac OS X Leopard), statically linked against <:GnuMP:> (but requires <:GnuMP:> for generated executables)
+** http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.x86-darwin.gmp-macports.tgz[Darwin (.tgz)] 9.8 (Mac OS X Leopard), dynamically linked against <:GMP:> in `/opt/local/lib` (suitable for http://macports.org[MacPorts] install of <:GMP:>)
+** http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.x86-darwin.gmp-static.tgz[Darwin (.tgz)] 9.8 (Mac OS X Leopard), statically linked against <:GMP:> (but requires <:GMP:> for generated executables)
 ** http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.x86-linux.tgz[Linux], glibc 2.11
 ** http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.x86-linux.static.tgz[Linux], statically linked
 ** Windows MinGW 32/64 http://sourceforge.net/projects/mlton/files/mlton/20100608/MLton-20100608-1.exe[self-extracting] (28MB) or http://sourceforge.net/projects/mlton/files/mlton/20100608/MLton-20100608-1.msi[MSI] (61MB) installer

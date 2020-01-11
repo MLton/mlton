@@ -6,31 +6,27 @@ endif::[]
 
 ****
 MLton is a whole-program optimizing compiler for the Standard{nbsp}ML
-programming language.
+programming language.  MLton generates small executables with
+excellent runtime performance, utilizing untagged and unboxed native
+integers, reals, and words, unboxed native arrays, fast
+arbitrary-precision arithmetic based on GMP, and multiple code
+generation and garbage collection strategies.  In addition, MLton
+provides a feature rich Standard{nbsp}ML programming environment, with
+full support for SML97 as given in The Definition of Standard{nbsp}ML
+(Revised), a number of useful language extensions, a complete
+implementation of the Standard ML Basis Library, various useful
+libraries, a simple and fast C foreign function interface, the ML
+Basis system for programming with source libraries, and tools such as
+a lexer generator, a parser generator, and a profiler.
 ****
+
 
 == Features
 
- * Portability. Runs on the following platforms:
-
-   - ARM: Linux (Debian).
-   - Alpha: Linux (Debian).
-   - AMD64: Darwin (Mac OS X), FreeBSD, Linux (Debian, Fedora, Ubuntu, ...),
-     OpenBSD, Solaris (10 and above).
-   - HPPA: HPUX (11.11 and above), Linux (Debian).
-   - IA64: HPUX (11.11 and above), Linux (Debian).
-   - PowerPC: AIX (5.2 and above), Darwin (Mac OS X), Linux (Debian, Fedora).
-   - PowerPC64: AIX (5.2 and above).
-   - S390: Linux (Debian).
-   - Sparc: Linux (Debian), Solaris (8 and above).
-   - X86: Cygwin/Windows, Darwin (Mac OS X), FreeBSD, Linux (Debian, Fedora,
-     Ubuntu, ...), MinGW/Windows, NetBSD, OpenBSD, Solaris (10 and above).
-
  * Robustness.
 
-   - Supports the full SML 97 language as given in The Definition of
-     Standard{nbsp}ML (Revised).
-   - A complete implementation of the Basis Library.
+   - Supports the full SML{nbsp}97 language as given in The Definition of Standard{nbsp}ML (Revised).
+   - A complete implementation of the http://sml-family.org/Basis/[Basis Library].
    - Generates standalone executables.
    - Compiles large programs.
    - Support for large amounts of memory (up to 4G on 32-bit systems;
@@ -41,28 +37,30 @@ programming language.
 
  * Performance.
 
-   - Executables have excellent running times.
+   - Executables have excellent runtime performance.
    - Generates small executables.
    - Untagged and unboxed native integers, reals, and words.
    - Unboxed native arrays.
    - Multiple garbage collection strategies.
-   - Fast arbitrary-precision arithmetic based on the GMP.
+   - Fast arbitrary-precision arithmetic based on https://gmplib.org[GMP].
 
  * Tools.
 
-   - Source-level profiling for both time and allocation.
+   - Source-level http://mlton.org/Profiling[profiling] for both time and allocation.
    - MLLex lexer generator.
    - MLYacc parser generator.
    - MLNLFFIGEN foreign-function-interface generator.
 
  * Extensions.
 
-   - A simple and fast C FFI that supports calling from SML to C and from C
-     to SML.
-   - The ML Basis system for programming in the very large.
-   - Libraries for continuations, finalization, interval timers, random numbers,
-     resource limits, resource usage, signal handlers, object size, system
-     logging, threads, weak pointers, and world save and restore.
+   - The http://mlton.org/MLBasis[ML Basis system] for programming with source libraries.
+   - A number of useful http://mlton.org/SuccessorML[language extensions].
+   - A simple and fast http://mlton.org/ForeignFunctionInterface[C FFI] that supports calling from SML to C and from C to SML.
+   - Libraries for http://mlton.org/MLtonWeak[weak pointers] and http://mlton.org/MLtonFinalizable[finalization], http://mlton.org/MLtonThread[threads], http://mlton.org/MLtonCont[continuations], http://mlton.org/MLtonItimer[interval timers] and http://mlton.org/MLtonSignal[signal handlers], http://mlton.org/MLtonWorld[world save and restore], and http://mlton.org/MLtonStructure[more].
+
+ * Portability.
+
+   - Runs on a wide variety of platforms.
 
 
 == Build and Install (from source)
@@ -151,6 +149,7 @@ For example:
 $ make PREFIX=/opt/mlton install
 ----
 
+
 == Install (from binary package)
 
 === Requirements
@@ -208,10 +207,15 @@ For example:
 $ make PREFIX=/opt/mlton install
 ----
 
+
 == Resources
 
  * `http://mlton.org`
- * mailing lists
+ * Development
+   - `https://github.com/MLton/mlton`
+   - https://github.com/MLton/mlton/pulls[pull requests]
+   - https://github.com/MLton/mlton/issues[issue tracker]
+ * Mailing lists
    - `MLton-devel@mlton.org` -- MLton developers
      (https://sourceforge.net/mailarchive/forum.php?forum_name=mlton-devel[archive],
      https://lists.sourceforge.net/lists/listinfo/mlton-devel[subscribe])
@@ -219,7 +223,12 @@ $ make PREFIX=/opt/mlton install
      (https://sourceforge.net/mailarchive/forum.php?forum_name=mlton-user[archive],
      https://lists.sourceforge.net/lists/listinfo/mlton-user[subscribe])
 
-== Need help? Found a bug?
 
-https://github.com/MLton/mlton/issues[Submit an issue] if you need any help.
-We welcome pull requests with bug fixes or changes.
+== Support and Contributing
+
+To report bugs or suggest new features, use the
+https://github.com/MLton/mlton/issues[issue tracker] or ask on the
+mailto:mlton-user@mlton.org[mailing list].
+
+https://github.com/MLton/mlton/pulls[Pull requests] with bug fixes or
+changes are welcome.

@@ -33,7 +33,7 @@ Here are the changes from version 20180206 to version YYYYMMDD.
   is known to not be safe-for-space.
   ** Added `MLton.sizeAll: unit -> IntInf.int` that returns the size
   of reachable live data.
-  ** Changed `MLton.size`'s type from `'a -> int` to
+  ** Changed ``MLton.size``'s type from `'a -> int` to
   `'a -> IntInf.int`, because with 64-bit systems, the size of a
   single object can exceed that representable by a signed 32-bit
   integer.
@@ -61,8 +61,8 @@ Here are the changes from version 20180206 to version YYYYMMDD.
   https://github.com/MLton/mlton/pull/321 for details.
 
 * 2019-06-17
-  ** Various updates to `Makefile`s.  See `Makefile.config` for common
-  and user-customizable configuration.
+  ** Various updates to ``Makefile``s.  See `Makefile.config` for
+  common and user-customizable configuration.
 
 * 2019-06-07
   ** Refactor pass infrastructure. See

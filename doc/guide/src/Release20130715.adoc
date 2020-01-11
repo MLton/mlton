@@ -45,8 +45,8 @@ For a complete list of changes and bug fixes since
 == 20130715 binary packages ==
 
 * AMD64 (aka "x86-64" or "x64")
-** http://sourceforge.net/projects/mlton/files/mlton/20130715/mlton-20130715-1.amd64-darwin.gmp-macports.tgz[Darwin (.tgz)] 11.4 (Mac OS X Lion), dynamically linked against <:GnuMP:> in `/opt/local/lib` (suitable for http://macports.org[MacPorts] install of <:GnuMP:>)
-** http://sourceforge.net/projects/mlton/files/mlton/20130715/mlton-20130715-1.amd64-darwin.gmp-static.tgz[Darwin (.tgz)] 11.4 (Mac OS X Lion), statically linked against <:GnuMP:> (but requires <:GnuMP:> for generated executables)
+** http://sourceforge.net/projects/mlton/files/mlton/20130715/mlton-20130715-1.amd64-darwin.gmp-macports.tgz[Darwin (.tgz)] 11.4 (Mac OS X Lion), dynamically linked against <:GMP:> in `/opt/local/lib` (suitable for http://macports.org[MacPorts] install of <:GMP:>)
+** http://sourceforge.net/projects/mlton/files/mlton/20130715/mlton-20130715-1.amd64-darwin.gmp-static.tgz[Darwin (.tgz)] 11.4 (Mac OS X Lion), statically linked against <:GMP:> (but requires <:GMP:> for generated executables)
 ** http://sourceforge.net/projects/mlton/files/mlton/20130715/mlton-20130715-1.amd64-linux.tgz[Linux], glibc 2.15
 // ** http://sourceforge.net/projects/mlton/files/mlton/20130715/mlton-20130715-1.amd64-linux.static.tgz[Linux], statically linked
 // ** Windows MinGW 32/64 http://sourceforge.net/projects/mlton/files/mlton/20130715/MLton-20130715-1.exe[self-extracting] (28MB) or http://sourceforge.net/projects/mlton/files/mlton/20130715/MLton-20130715-1.msi[MSI] (61MB) installer

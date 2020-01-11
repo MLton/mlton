@@ -78,8 +78,8 @@ For a complete list of changes and bug fixes since
 == 20180207 binary packages ==
 
 * AMD64 (aka "x86-64" or "x64")
-** https://sourceforge.net/projects/mlton/files/mlton/20180207/mlton-20180207-1.amd64-darwin.gmp-homebrew.tgz[Darwin (.tgz)] 16.7 (Mac OS X Sierra), dynamically linked against <:GnuMP:> in `/usr/local/lib` (suitable for https://brew.sh/[Homebrew] install of <:GnuMP:>)
-** https://sourceforge.net/projects/mlton/files/mlton/20180207/mlton-20180207-1.amd64-darwin.gmp-static.tgz[Darwin (.tgz)] 16.7 (Mac OS X Sierra), statically linked against <:GnuMP:> (but requires <:GnuMP:> for generated executables)
+** https://sourceforge.net/projects/mlton/files/mlton/20180207/mlton-20180207-1.amd64-darwin.gmp-homebrew.tgz[Darwin (.tgz)] 16.7 (Mac OS X Sierra), dynamically linked against <:GMP:> in `/usr/local/lib` (suitable for https://brew.sh/[Homebrew] install of <:GMP:>)
+** https://sourceforge.net/projects/mlton/files/mlton/20180207/mlton-20180207-1.amd64-darwin.gmp-static.tgz[Darwin (.tgz)] 16.7 (Mac OS X Sierra), statically linked against <:GMP:> (but requires <:GMP:> for generated executables)
 ** https://sourceforge.net/projects/mlton/files/mlton/20180207/mlton-20180207-1.amd64-linux.tgz[Linux], glibc 2.23
 // ** Windows MinGW 32/64 https://sourceforge.net/projects/mlton/files/mlton/20180207/MLton-20180207-1.exe[self-extracting] (28MB) or https://sourceforge.net/projects/mlton/files/mlton/20180207/MLton-20180207-1.msi[MSI] (61MB) installer
 // * X86

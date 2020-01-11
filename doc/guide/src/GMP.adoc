@@ -1,18 +1,18 @@
-GnuMP
-=====
+GMP
+===
 
-The http://gmplib.org[GnuMP] library (GNU Multiple Precision
+The https://gmplib.org[GMP] library (GNU Multiple Precision
 arithmetic library) is a library for arbitrary precision integer
-arithmetic.  MLton uses the GnuMP library to implement the
+arithmetic.  MLton uses the GMP library to implement the
 <:BasisLibrary: Basis Library> `IntInf` module.
 
 == Known issues ==
 
-* There is a known problem with the GnuMP library (prior to version
+* There is a known problem with the GMP library (prior to version
 4.2.x), where it requires a lot of stack space for some computations,
 e.g. `IntInf.toString` of a million digit number.  If you run with
 stack size limited, you may see a segfault in such programs.  This
-problem is mentioned in the http://gmplib.org/#FAQ[GnuMP FAQ], where
+problem is mentioned in the https://gmplib.org/#FAQ[GMP FAQ], where
 they describe two solutions.
 
 ** Increase (or unlimit) your stack space.  From your program, use
@@ -22,39 +22,39 @@ they describe two solutions.
 cause it to allocate temporaries using `malloc` instead of on the
 stack.
 
-* On some platforms, the GnuMP library may be configured to use one of
+* On some platforms, the GMP library may be configured to use one of
 multiple ABIs (Application Binary Interfaces).  For example, on some
-32-bit architectures, GnuMP may be configured to represent a limb as
-either a 32-bit `long` or as a 64-bit `long long`.  Similarly, GnuMP
+32-bit architectures, GMP may be configured to represent a limb as
+either a 32-bit `long` or as a 64-bit `long long`.  Similarly, GMP
 may be configured to use specific CPU features.
 +
-In order to efficiently use the GnuMP library, MLton represents an
-`IntInf.int` value in a manner compatible with the GnuMP library's
+In order to efficiently use the GMP library, MLton represents an
+`IntInf.int` value in a manner compatible with the GMP library's
 representation of a limb.  Hence, it is important that MLton and the
-GnuMP library agree upon the representation of a limb.
+GMP library agree upon the representation of a limb.
 
 ** When using a source package of MLton, building will detect the
-GnuMP library's representation of a limb.
+GMP library's representation of a limb.
 
 ** When using a binary package of MLton that is dynamically linked
-against the GnuMP library, the build machine and the install machine
-must have the GnuMP library configured with the same representation of
-a limb.  (On the other hand, the build machine need not have the GnuMP
+against the GMP library, the build machine and the install machine
+must have the GMP library configured with the same representation of
+a limb.  (On the other hand, the build machine need not have the GMP
 library configured with CPU features compatible with the install
 machine.)
 
 ** When using a binary package of MLton that is statically linked
-against the GnuMP library, the build machine and the install machine
-need not have the GnuMP library configured with the same
+against the GMP library, the build machine and the install machine
+need not have the GMP library configured with the same
 representation of a limb.  (On the other hand, the build machine must
-have the GnuMP library configured with CPU features compatible with
+have the GMP library configured with CPU features compatible with
 the install machine.)
 +
 However, MLton will be configured with the representation of a limb
-from the GnuMP library of the build machine.  Executables produced by
-MLton will be incompatible with the GnuMP library of the install
+from the GMP library of the build machine.  Executables produced by
+MLton will be incompatible with the GMP library of the install
 machine.  To _reconfigure_ MLton with the representation of a limb
-from the GnuMP library of the install machine, one must edit:
+from the GMP library of the install machine, one must edit:
 +
 ----
 /usr/lib/mlton/self/sizes

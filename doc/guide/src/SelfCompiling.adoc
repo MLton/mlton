@@ -37,14 +37,14 @@ slow.  The only fix is to make sure that enough memory is available.
 
 === Possible Errors ===
 
-* The C compiler may not be able to find the <:GnuMP:> header file,
+* The C compiler may not be able to find the <:GMP:> header file,
 `gmp.h` leading to an error like the following.
 +
 ----
   cenv.h:49:18: fatal error: gmp.h: No such file or directory
 ----
 +
-The solution is to install (or build) GnuMP on your machine.  If you
+The solution is to install (or build) <:GMP:> on your machine.  If you
 install it at a location not on the default seach path, then run
 ++make WITH_GMP_INC_DIR=__/path/to/gmp/include__ WITH_GMP_LIB_DIR=__/path/to/gmp/lib__++.
 
