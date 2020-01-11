@@ -3,60 +3,9 @@ Features
 
 MLton has the following features.
 
-== Portability ==
-
-* Runs on a variety of platforms.
-
-** <:RunningOnARM:ARM>:
-*** <:RunningOnLinux:Linux> (Debian)
-*** <:RunningOnFreeBSD:FreeBSD>
-
-** <:RunningOnAlpha:Alpha>:
-*** <:RunningOnLinux:Linux> (Debian)
-
-** <:RunningOnAMD64:AMD64>:
-*** <:RunningOnDarwin:Darwin> (Mac OS X)
-*** <:RunningOnFreeBSD:FreeBSD>
-*** <:RunningOnLinux:Linux> (Debian, Fedora, Ubuntu, ...)
-*** <:RunningOnOpenBSD:OpenBSD>
-*** <:RunningOnSolaris:Solaris> (10 and above)
-
-** <:RunningOnHPPA:HPPA>:
-*** <:RunningOnHPUX:HPUX> (11.11 and above)
-*** <:RunningOnLinux:Linux> (Debian)
-
-** <:RunningOnIA64:IA64>:
-*** <:RunningOnHPUX:HPUX> (11.11 and above)
-*** <:RunningOnLinux:Linux> (Debian)
-
-** <:RunningOnPowerPC:PowerPC>:
-*** <:RunningOnAIX:AIX> (5.2 and above)
-*** <:RunningOnDarwin:Darwin> (Mac OS X)
-*** <:RunningOnLinux:Linux> (Debian, Fedora, ...)
-
-** <:RunningOnPowerPC64:PowerPC64>:
-*** <:RunningOnAIX:AIX> (5.2 and above)
-
-** <:RunningOnS390:S390>
-*** <:RunningOnLinux:Linux> (Debian)
-
-** <:RunningOnSparc:Sparc>
-*** <:RunningOnLinux:Linux> (Debian)
-*** <:RunningOnSolaris:Solaris> (8 and above)
-
-** <:RunningOnX86:X86>:
-*** <:RunningOnCygwin:Cygwin>/Windows
-*** <:RunningOnDarwin:Darwin> (Mac OS X)
-*** <:RunningOnFreeBSD:FreeBSD>
-*** <:RunningOnLinux:Linux> (Debian, Fedora, Ubuntu, ...)
-*** <:RunningOnMinGW:MinGW>/Windows
-*** <:RunningOnNetBSD:NetBSD>
-*** <:RunningOnOpenBSD:OpenBSD>
-*** <:RunningOnSolaris:Solaris> (10 and above)
-
 == Robustness ==
 
-* Supports the full SML 97 language as given in <:DefinitionOfStandardML:The Definition of Standard ML (Revised)>.
+* Supports the full SML{nbsp}97 language as given in <:DefinitionOfStandardML:The Definition of Standard{nbsp}ML (Revised)>.
 +
 If there is a program that is valid according to the
 <:DefinitionOfStandardML:Definition> that is rejected by MLton, or a
@@ -91,7 +40,7 @@ of MLton was compiled by MLton.
 
 == Performance ==
 
-* Executables have <:Performance:excellent running times>.
+* Executables have <:Performance:excellent runtime performance>.
 
 * Generates small executables.
 +
@@ -129,9 +78,11 @@ more faster than Poly/ML or SML/NJ.
 
 == Extensions ==
 
-* A simple and fast C <:ForeignFunctionInterface:> that supports calling from SML to C and from C to SML.
-
 * The <:MLBasis:ML Basis system> for programming in the very large, separate delivery of library sources, and more.
+
+* A number of useful <:SuccessorML:language extensions>.
+
+* A simple and fast C <:ForeignFunctionInterface:> that supports calling from SML to C and from C to SML.
 
 * A number of extension libraries that provide useful functionality
 that cannot be implemented with the <:BasisLibrary:Basis Library>.
@@ -196,3 +147,54 @@ MLton has a facility for saving the entire state of a computation to a
 file and restarting it later.  This facility can be used for staging
 and for checkpointing computations.  It can even be used from within
 signal handlers, allowing interrupt driven checkpointing.
+
+== Portability ==
+
+* Runs on a wide variety of platforms.
+
+** <:RunningOnARM:ARM>:
+*** <:RunningOnLinux:Linux> (Debian)
+*** <:RunningOnFreeBSD:FreeBSD>
+
+** <:RunningOnAlpha:Alpha>:
+*** <:RunningOnLinux:Linux> (Debian)
+
+** <:RunningOnAMD64:AMD64>:
+*** <:RunningOnDarwin:Darwin> (Mac OS X)
+*** <:RunningOnFreeBSD:FreeBSD>
+*** <:RunningOnLinux:Linux> (Debian, Fedora, Ubuntu, ...)
+*** <:RunningOnOpenBSD:OpenBSD>
+*** <:RunningOnSolaris:Solaris> (10 and above)
+
+** <:RunningOnHPPA:HPPA>:
+*** <:RunningOnHPUX:HPUX> (11.11 and above)
+*** <:RunningOnLinux:Linux> (Debian)
+
+** <:RunningOnIA64:IA64>:
+*** <:RunningOnHPUX:HPUX> (11.11 and above)
+*** <:RunningOnLinux:Linux> (Debian)
+
+** <:RunningOnPowerPC:PowerPC>:
+*** <:RunningOnAIX:AIX> (5.2 and above)
+*** <:RunningOnDarwin:Darwin> (Mac OS X)
+*** <:RunningOnLinux:Linux> (Debian, Fedora, ...)
+
+** <:RunningOnPowerPC64:PowerPC64>:
+*** <:RunningOnAIX:AIX> (5.2 and above)
+
+** <:RunningOnS390:S390>
+*** <:RunningOnLinux:Linux> (Debian)
+
+** <:RunningOnSparc:Sparc>
+*** <:RunningOnLinux:Linux> (Debian)
+*** <:RunningOnSolaris:Solaris> (8 and above)
+
+** <:RunningOnX86:X86>:
+*** <:RunningOnCygwin:Cygwin>/Windows
+*** <:RunningOnDarwin:Darwin> (Mac OS X)
+*** <:RunningOnFreeBSD:FreeBSD>
+*** <:RunningOnLinux:Linux> (Debian, Fedora, Ubuntu, ...)
+*** <:RunningOnMinGW:MinGW>/Windows
+*** <:RunningOnNetBSD:NetBSD>
+*** <:RunningOnOpenBSD:OpenBSD>
+*** <:RunningOnSolaris:Solaris> (10 and above)
