@@ -46,7 +46,7 @@ programming language.
    - Untagged and unboxed native integers, reals, and words.
    - Unboxed native arrays.
    - Multiple garbage collection strategies.
-   - Fast arbitrary-precision arithmetic based on the GMP.
+   - Fast arbitrary-precision arithmetic based on GMP.
 
  * Tools.
 
