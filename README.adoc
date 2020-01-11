@@ -11,20 +11,9 @@ programming language.
 
 == Features
 
- * Portability. Runs on the following platforms:
+ * Portability.
 
-   - ARM: Linux (Debian).
-   - Alpha: Linux (Debian).
-   - AMD64: Darwin (Mac OS X), FreeBSD, Linux (Debian, Fedora, Ubuntu, ...),
-     OpenBSD, Solaris (10 and above).
-   - HPPA: HPUX (11.11 and above), Linux (Debian).
-   - IA64: HPUX (11.11 and above), Linux (Debian).
-   - PowerPC: AIX (5.2 and above), Darwin (Mac OS X), Linux (Debian, Fedora).
-   - PowerPC64: AIX (5.2 and above).
-   - S390: Linux (Debian).
-   - Sparc: Linux (Debian), Solaris (8 and above).
-   - X86: Cygwin/Windows, Darwin (Mac OS X), FreeBSD, Linux (Debian, Fedora,
-     Ubuntu, ...), MinGW/Windows, NetBSD, OpenBSD, Solaris (10 and above).
+   - Runs on a wide variety of platforms.
 
  * Robustness.
 
