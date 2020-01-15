@@ -1,4 +1,4 @@
-## Copyright (C) 2009,2011,2013,2017-2019 Matthew Fluet.
+## Copyright (C) 2009,2011,2013,2017-2020 Matthew Fluet.
  # Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -23,7 +23,7 @@ ifeq (2, $(firstword $(sort $(BOOTSTRAP_STYLE) 2)))
 	$(MAKE) compiler SELF_COMPILE=true  CHECK_FIXPOINT=false  # tools1 + mlton1 -> mlton2
 ifeq (3, $(firstword $(sort $(BOOTSTRAP_STYLE) 3)))
 	$(MAKE) tools-clean
-	$(MAKE) tools    CHECK_FIXPOINT=true                      # tools1 + mlton1 -> tools2; tools2 == tools1
+	$(MAKE) tools    CHECK_FIXPOINT=true                      # tools1 + mlton2 -> tools2; tools2 == tools1
 	$(MAKE) compiler-clean
 	$(MAKE) compiler SELF_COMPILE=true  CHECK_FIXPOINT=true   # tools2 + mlton2 -> mlton3; mlton3 == mlton2
 endif
