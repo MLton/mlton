@@ -1,4 +1,4 @@
-## Copyright (C) 2010-2013,2018,2019 Matthew Fluet.
+## Copyright (C) 2010-2013,2018,2019-2020 Matthew Fluet.
  # Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -294,14 +294,11 @@ libmlton-pic.a: $(MLTON_PIC_OBJS)
 
 ### gen/sizes ###
 
-gen/sizes: gen/gen-sizes.stamp
-	@touch $@
-gen/gen-sizes.stamp: gen/gen-sizes.c libmlton.a $(HFILES)
-	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) -o gen/gen-sizes gen/gen-sizes.c -L. -lmlton
-	rm -f gen/sizes
-	cd gen && ./gen-sizes
-	rm -f gen/gen-sizes$(EXE) gen/gen-sizes
-	touch $@
+gen/sizes: gen/gen-sizes$(EXE)
+	./gen/gen-sizes > gen/sizes
+
+gen/gen-sizes$(EXE): gen/gen-sizes.c util.o $(HFILES)
+	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) -o gen/gen-sizes gen/gen-sizes.c util.o
 
 
 ######
