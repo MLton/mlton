@@ -5,7 +5,7 @@ diff -Naur gdtoa.2/gdtoa.h gdtoa.3/gdtoa.h
  
  #include "arith.h"
  #include <stddef.h> /* for size_t */
-+#include "../export.h"
++#include "export.h"
  
  #ifndef Long
  #define Long int

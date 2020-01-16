@@ -1,0 +1,12 @@
+diff -Naur gdtoa.5/gdtoaimp.h gdtoa/gdtoaimp.h
+--- gdtoa.5/gdtoaimp.h	2020-01-16 16:50:10.663906370 -0500
++++ gdtoa.6/gdtoaimp.h	2020-01-16 16:50:21.799657698 -0500
+@@ -198,7 +198,7 @@
+ #ifndef GDTOAIMP_H_INCLUDED
+ #define GDTOAIMP_H_INCLUDED
+ #include "gdtoa.h"
+-#include "gd_qnan.h"
++#include "gdtoa/gd_qnan.h"
+ #ifdef Honor_FLT_ROUNDS
+ #include <fenv.h>
+ #endif

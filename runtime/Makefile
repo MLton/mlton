@@ -113,23 +113,29 @@ ALL := libgdtoa.a libgdtoa-gdb.a libgdtoa-pic.a \
        libmlton.a libmlton-gdb.a libmlton-pic.a
 ALL += gen/c-types.sml gen/basis-ffi.sml gen/sizes
 
+.PHONY: all
 all: $(ALL)
 
+### pattern rules
 
-### util ###
+%.d: %.c
+	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) $($(<)_XCFLAGS) -M -MG -MT $(subst .d,.o,$@) -MT $@ -MF $@ $<
+%-gdb.d: %.c
+	$(CROSS_PREFIX)$(CC) $(DEBUGCFLAGS) $($(<)_XCFLAGS) -M -MG -MT $(subst .d,.o,$@) -MT $@ -MF $@ $<
+%-pic.d: %.c
+	$(CROSS_PREFIX)$(CC) $(PICCFLAGS) $($(<)_XCFLAGS) -M -MG -MT $(subst .d,.o,$@) -MT $@ -MF $@ $<
 
-UTILHFILES :=							\
-	util.h							\
-	$(shell $(FIND) util -type f -name '*.h')
-UTILCFILES :=							\
-	$(shell $(FIND) util -type f -name '*.c')
+%.o:
+	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) $($(<)_XCFLAGS) -c -o $@ $<
+%-gdb.o:
+	$(CROSS_PREFIX)$(CC) $(DEBUGCFLAGS) $($(<)_XCFLAGS) -c -o $@ $<
+%-pic.o:
+	$(CROSS_PREFIX)$(CC) $(PICCFLAGS) $($(<)_XCFLAGS) -c -o $@ $<
 
-util-pic.o: util.c $(UTILCFILES) cenv.h $(UTILHFILES)
-	$(CROSS_PREFIX)$(CC) $(PICCFLAGS) -c -o $@ $<
-util-gdb.o: util.c $(UTILCFILES) cenv.h $(UTILHFILES)
-	$(CROSS_PREFIX)$(CC) $(DEBUGCFLAGS) -c -o $@ $<
-util.o:     util.c $(UTILCFILES) cenv.h $(UTILHFILES)
-	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) -c -o $@ $<
+%.a:
+	rm -f $@
+	$(CROSS_PREFIX)$(AR) rc $@ $^
+	$(CROSS_PREFIX)$(RANLIB) $@
 
 ### c-types.h  ml-types.h  gen/c-types.sml ###
 
@@ -197,12 +203,14 @@ GDTOA_OBJS       := $(patsubst %.c,%.o,$(GDTOACFILES))
 GDTOA_DEBUG_OBJS := $(patsubst %.c,%-gdb.o,$(GDTOACFILES))
 GDTOA_PIC_OBJS   := $(patsubst %.c,%-pic.o,$(GDTOACFILES))
 
-gdtoa/README: gdtoa.tgz gdtoa.may_alias-unions.patch gdtoa.rename-public-fns.patch gdtoa.hide-private-fns.patch gdtoa.hide-public-fns.patch
+gdtoa/README: gdtoa.tgz gdtoa.may_alias-unions.patch gdtoa.rename-public-fns.patch gdtoa.hide-private-fns.patch gdtoa.hide-public-fns.patch gdtoa.include-arith.patch gdtoa.include-gd_qnan.patch
 	$(GZIP) -dc gdtoa.tgz | $(TAR) xf -
 	$(PATCH) -s -d gdtoa -p1 <gdtoa.may_alias-unions.patch
 	$(PATCH) -s -d gdtoa -p1 <gdtoa.rename-public-fns.patch
 	$(PATCH) -s -d gdtoa -p1 <gdtoa.hide-private-fns.patch
 	$(PATCH) -s -d gdtoa -p1 <gdtoa.hide-public-fns.patch
+	$(PATCH) -s -d gdtoa -p1 <gdtoa.include-arith.patch
+	$(PATCH) -s -d gdtoa -p1 <gdtoa.include-gd_qnan.patch
 	@touch $@
 
 gdtoa/gdtoa.h $(GDTOACFILES): gdtoa/README
@@ -233,35 +241,20 @@ gdtoa/%-gdb.o: gdtoa/%.c gdtoa/arith.h gdtoa/gd_qnan.h
 gdtoa/%.o:     gdtoa/%.c gdtoa/arith.h gdtoa/gd_qnan.h
 	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) -w -DINFNAN_CHECK -c -o $@ $<
 
+ifneq ($(MAKECMDGOALS),clean)
+-include $(patsubst %.o,%.d,$(GDTOA_OBJS))
+-include $(patsubst %.o,%.d,$(GDTOA_DEBUG_OBJS))
+-include $(patsubst %.o,%.d,$(GDTOA_PIC_OBJS))
+endif
+
 libgdtoa.a:     $(GDTOA_OBJS)
 libgdtoa-gdb.a: $(GDTOA_DEBUG_OBJS)
 libgdtoa-pic.a: $(GDTOA_PIC_OBJS)
 
 ### libmlton ###
 
-PLATFORMHFILES :=						\
-	platform.h						\
-	$(shell $(FIND) platform -type f -name '*.h')
-PLATFORMCFILES :=						\
-	$(shell $(FIND) platform -type f -name '*.c')
-
-GCHFILES :=							\
-	gc.h							\
-	$(shell $(FIND) gc -type f -name '*.h')
-GCCFILES :=							\
-	$(shell $(FIND) gc -type f -name '*.c')
-
 BASISCFILES :=							\
 	$(shell $(FIND) basis -type f -name '*.c')
-
-HFILES :=							\
-	cenv.h							\
-	$(UTILHFILES)						\
-	ml-types.h						\
-	c-types.h						\
-	basis-ffi.h						\
-	$(PLATFORMHFILES)					\
-	$(GCHFILES)
 
 MLTON_OBJS := 							\
 	util.o							\
@@ -272,43 +265,15 @@ MLTON_OBJS += $(foreach f, $(basename $(BASISCFILES)), $(f).o)
 MLTON_DEBUG_OBJS := $(patsubst %.o,%-gdb.o,$(MLTON_OBJS))
 MLTON_PIC_OBJS   := $(patsubst %.o,%-pic.o,$(MLTON_OBJS))
 
-platform/$(TARGET_OS)-pic.o: $(PLATFORMCFILES)
-platform/$(TARGET_OS)-gdb.o: $(PLATFORMCFILES)
-platform/$(TARGET_OS).o:     $(PLATFORMCFILES)
-
-gc-pic.o: $(GCCFILES)
-gc-gdb.o: $(GCCFILES)
-gc.o:     $(GCCFILES)
-
 gc.c_XCFLAGS := -Wno-unreachable-code
-
-basis/Real/Real-pic.o:  basis/Real/Real-ops.h
-basis/Real/Real-gdb.o:  basis/Real/Real-ops.h
-basis/Real/Real.o:      basis/Real/Real-ops.h
 basis/Real/Real.c_XCFLAGS := -Wno-float-equal
-basis/Real/gdtoa-pic.o: $(GDTOAHFILES)
-basis/Real/gdtoa-gdb.o: $(GDTOAHFILES)
-basis/Real/gdtoa.o:     $(GDTOAHFILES)
-basis/Real/strto-pic.o: $(GDTOAHFILES)
-basis/Real/strto-gdb.o: $(GDTOAHFILES)
-basis/Real/strto.o:     $(GDTOAHFILES)
 basis/System/Date.c_XCFLAGS := -Wno-format-nonliteral
-basis/Word/Word-pic.o:  basis/Word/Word-ops.h
-basis/Word/Word-gdb.o:  basis/Word/Word-ops.h
-basis/Word/Word.o:      basis/Word/Word-ops.h
-basis/coerce-pic.o:     basis/coerce.h
-basis/coerce-gdb.o:     basis/coerce.h
-basis/coerce.o:         basis/coerce.h
-basis/cpointer-pic.o:   basis/cpointer.h
-basis/cpointer-gdb.o:   basis/cpointer.h
-basis/cpointer.o:       basis/cpointer.h
 
-%-pic.o: %.c $(HFILES)
-	$(CROSS_PREFIX)$(CC) $(PICCFLAGS) $($(<)_XCFLAGS) -c -o $@ $<
-%-gdb.o: %.c $(HFILES)
-	$(CROSS_PREFIX)$(CC) $(DEBUGCFLAGS) $($(<)_XCFLAGS) -c -o $@ $<
-%.o: %.c $(HFILES)
-	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) $($(<)_XCFLAGS) -c -o $@ $<
+ifneq ($(MAKECMDGOALS),clean)
+-include $(patsubst %.o,%.d,$(MLTON_OBJS))
+-include $(patsubst %.o,%.d,$(MLTON_DEBUG_OBJS))
+-include $(patsubst %.o,%.d,$(MLTON_PIC_OBJS))
+endif
 
 libmlton.a: $(MLTON_OBJS)
 libmlton-gdb.a: $(MLTON_DEBUG_OBJS)
@@ -331,13 +296,6 @@ gen/gen-sizes$(EXE): util.o
 
 
 ######
-
-
-%.a:
-	rm -f $@
-	$(CROSS_PREFIX)$(AR) rc $@ $^
-	$(CROSS_PREFIX)$(RANLIB) $@
-
 
 
 .PHONY: flags
