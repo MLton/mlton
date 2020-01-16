@@ -116,14 +116,14 @@ ALL += gen/c-types.sml gen/basis-ffi.sml gen/sizes
 .PHONY: all
 all: $(ALL)
 
-### pattern rules
+### pattern rules ###
 
 %.d: %.c
-	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) $($(<)_XCFLAGS) -M -MG -MT $(subst .d,.o,$@) -MT $@ -MF $@ $<
+	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) $($(<)_XCFLAGS) -MM -MG -MT $(subst .d,.o,$@) -MT $@ -MF $@ $<
 %-gdb.d: %.c
-	$(CROSS_PREFIX)$(CC) $(DEBUGCFLAGS) $($(<)_XCFLAGS) -M -MG -MT $(subst .d,.o,$@) -MT $@ -MF $@ $<
+	$(CROSS_PREFIX)$(CC) $(DEBUGCFLAGS) $($(<)_XCFLAGS) -MM -MG -MT $(subst .d,.o,$@) -MT $@ -MF $@ $<
 %-pic.d: %.c
-	$(CROSS_PREFIX)$(CC) $(PICCFLAGS) $($(<)_XCFLAGS) -M -MG -MT $(subst .d,.o,$@) -MT $@ -MF $@ $<
+	$(CROSS_PREFIX)$(CC) $(PICCFLAGS) $($(<)_XCFLAGS) -MM -MG -MT $(subst .d,.o,$@) -MT $@ -MF $@ $<
 
 %.o:
 	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) $($(<)_XCFLAGS) -c -o $@ $<
@@ -186,8 +186,6 @@ gen/gen-basis-ffi$(EXE): gen/gen-basis-ffi.sml
 
 ### libgdtoa ###
 
-GDTOAHFILES := arith.h gdtoa.h
-GDTOAHFILES := $(patsubst %,gdtoa/%,$(GDTOAHFILES))
 GDTOACFILES :=									\
 	dmisc.c     g_ddfmt.c   g_ffmt_p.c  gdtoa.c     misc.c      strtoIf.c   strtodI.c   strtopdd.c  strtord.c   sum.c \
 	dtoa.c      g_ddfmt_p.c g_xLfmt.c   gethex.c    smisc.c     strtoIg.c   strtodg.c   strtopf.c   strtordd.c  ulp.c \
@@ -200,43 +198,7 @@ GDTOA_OBJS       := $(patsubst %.c,%.o,$(GDTOACFILES))
 GDTOA_DEBUG_OBJS := $(patsubst %.c,%-gdb.o,$(GDTOACFILES))
 GDTOA_PIC_OBJS   := $(patsubst %.c,%-pic.o,$(GDTOACFILES))
 
-gdtoa/README: gdtoa.tgz gdtoa.may_alias-unions.patch gdtoa.rename-public-fns.patch gdtoa.hide-private-fns.patch gdtoa.hide-public-fns.patch gdtoa.include-arith.patch gdtoa.include-gd_qnan.patch
-	$(GZIP) -dc gdtoa.tgz | $(TAR) xf -
-	$(PATCH) -s -d gdtoa -p1 <gdtoa.may_alias-unions.patch
-	$(PATCH) -s -d gdtoa -p1 <gdtoa.rename-public-fns.patch
-	$(PATCH) -s -d gdtoa -p1 <gdtoa.hide-private-fns.patch
-	$(PATCH) -s -d gdtoa -p1 <gdtoa.hide-public-fns.patch
-	$(PATCH) -s -d gdtoa -p1 <gdtoa.include-arith.patch
-	$(PATCH) -s -d gdtoa -p1 <gdtoa.include-gd_qnan.patch
-	@touch $@
-
-gdtoa/gdtoa.h $(GDTOACFILES): gdtoa/README
-	@touch $@
-
-gdtoa/arithchk.c: gdtoa/README
-	@touch $@
-
-gdtoa/arithchk.out: gdtoa/arithchk.c
-	cd gdtoa && $(CROSS_PREFIX)$(CC) $(OPTCFLAGS) -w -O1 -o arithchk.out arithchk.c
-
-gdtoa/arith.h: gdtoa/arithchk.out
-	cd gdtoa && ./arithchk.out >arith.h
-
-gdtoa/qnan.c: gdtoa/README
-	@touch $@
-
-gdtoa/qnan.out: gdtoa/arith.h gdtoa/qnan.c
-	cd gdtoa && $(CROSS_PREFIX)$(CC) $(OPTCFLAGS) -w -O1 -o qnan.out qnan.c
-
-gdtoa/gd_qnan.h: gdtoa/qnan.out
-	cd gdtoa && ./qnan.out >gd_qnan.h
-
-gdtoa/%-pic.o: gdtoa/%.c gdtoa/arith.h gdtoa/gd_qnan.h
-	$(CROSS_PREFIX)$(CC) $(PICCFLAGS) -w -DINFNAN_CHECK -c -o $@ $<
-gdtoa/%-gdb.o: gdtoa/%.c gdtoa/arith.h gdtoa/gd_qnan.h
-	$(CROSS_PREFIX)$(CC) $(DEBUGCFLAGS) -w -DINFNAN_CHECK -c -o $@ $<
-gdtoa/%.o:     gdtoa/%.c gdtoa/arith.h gdtoa/gd_qnan.h
-	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) -w -DINFNAN_CHECK -c -o $@ $<
+$(foreach GDTOACFILE,$(GDTOACFILES), $(eval $(GDTOACFILE)_XCFLAGS := -w -DINFNAN_CHECK))
 
 ifneq ($(MAKECMDGOALS),clean)
 -include $(patsubst %.o,%.d,$(GDTOA_OBJS))
@@ -247,6 +209,51 @@ endif
 libgdtoa.a:     $(GDTOA_OBJS)
 libgdtoa-gdb.a: $(GDTOA_DEBUG_OBJS)
 libgdtoa-pic.a: $(GDTOA_PIC_OBJS)
+
+
+gdtoa/gdtoa.h $(GDTOACFILES): gdtoa/README
+	@touch $@
+
+gdtoa/README: gdtoa.tgz gdtoa.may_alias-unions.patch gdtoa.rename-public-fns.patch gdtoa.hide-private-fns.patch gdtoa.hide-public-fns.patch gdtoa.include-via-gdtoa.patch
+	$(GZIP) -dc gdtoa.tgz | $(TAR) xf -
+	$(PATCH) -s -d gdtoa -p1 <gdtoa.may_alias-unions.patch
+	$(PATCH) -s -d gdtoa -p1 <gdtoa.rename-public-fns.patch
+	$(PATCH) -s -d gdtoa -p1 <gdtoa.hide-private-fns.patch
+	$(PATCH) -s -d gdtoa -p1 <gdtoa.hide-public-fns.patch
+	$(PATCH) -s -d gdtoa -p1 <gdtoa.include-via-gdtoa.patch
+	@touch $@
+
+
+gdtoa/arith.h: gdtoa/arithchk$(EXE)
+	./gdtoa/arithchk$(EXE) > gdtoa/arith.h
+
+gdtoa/arithchk.c: gdtoa/README
+	@touch $@
+
+gdtoa/arithchk.c_XCFLAGS := -w -O1
+
+ifneq ($(MAKECMDGOALS),clean)
+-include gdtoa/arithchk.d
+endif
+
+gdtoa/arithchk$(EXE): gdtoa/arithchk.o
+	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) -o gdtoa/arithchk$(EXE) gdtoa/arithchk.o
+
+
+gdtoa/gd_qnan.h: gdtoa/qnan$(EXE)
+	./gdtoa/qnan$(EXE) > gdtoa/gd_qnan.h
+
+gdtoa/qnan.c: gdtoa/README
+	@touch $@
+
+gdtoa/qnan.c_XCFLAGS := -w -O1
+
+ifneq ($(MAKECMDGOALS),clean)
+-include gdtoa/qnan.d
+endif
+
+gdtoa/qnan$(EXE): gdtoa/qnan.o
+	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) -o gdtoa/qnan$(EXE) gdtoa/qnan.o
 
 ### libmlton ###
 
