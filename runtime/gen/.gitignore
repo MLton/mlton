@@ -6,6 +6,5 @@
 /gen-sizes.exe
 /gen-types
 /gen-types.exe
-/gen-types.stamp
 /ml-types.h
 /sizes

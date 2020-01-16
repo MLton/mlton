@@ -1,4 +1,4 @@
-/* Copyright (C) 2012,2017 Matthew Fluet.
+/* Copyright (C) 2012,2017,2020 Matthew Fluet.
  * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -8,6 +8,8 @@
 
 #include "cenv.h"
 #include "util.h"
+
+enum tgt {mlTypesH, cTypesH, cTypesSML};
 
 static const char* mlTypesHPrefix[] = {
   "/* Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh",
@@ -148,31 +150,38 @@ static const char* mlTypesHStd[] = {
 
 #define booltype(t, bt, name)                       \
   do {                                              \
-  writeString (cTypesHFd, "typedef");               \
-  writeString (cTypesHFd, " /* ");                  \
-  writeString (cTypesHFd, #t);                      \
-  writeString (cTypesHFd, " */ ");                  \
-  writeString (cTypesHFd, bt);                      \
-  writeUintmaxU (cTypesHFd, CHAR_BIT * sizeof(t));  \
-  writeString (cTypesHFd, "_t");                    \
-  writeString (cTypesHFd, " ");                     \
-  writeString (cTypesHFd, "C_");                    \
-  writeString (cTypesHFd, name);                    \
-  writeString (cTypesHFd, "_t;");                   \
-  writeNewline (cTypesHFd);                         \
-  writeString (cTypesSMLFd, "structure C_");        \
-  writeString (cTypesSMLFd, name);                  \
-  writeString (cTypesSMLFd, " = WordToBool (");     \
-  writeString (cTypesSMLFd, "type t = ");           \
-  writeString (cTypesSMLFd, "Word");                \
-  writeUintmaxU (cTypesSMLFd, CHAR_BIT * sizeof(t));\
-  writeString (cTypesSMLFd, ".word");               \
-  writeString (cTypesSMLFd, " ");                   \
-  writeString (cTypesSMLFd, "val zero: t = 0wx0");  \
-  writeString (cTypesSMLFd, " ");                   \
-  writeString (cTypesSMLFd, "val one: t = 0wx1");   \
-  writeString (cTypesSMLFd, ")");                   \
-  writeNewline (cTypesSMLFd);                       \
+  switch (tgt) {                                    \
+  case mlTypesH:                                    \
+  break;                                            \
+  case cTypesH:                                     \
+  writeString (stdout, "typedef");                  \
+  writeString (stdout, " /* ");                     \
+  writeString (stdout, #t);                         \
+  writeString (stdout, " */ ");                     \
+  writeString (stdout, bt);                         \
+  writeUintmaxU (stdout, CHAR_BIT * sizeof(t));     \
+  writeString (stdout, "_t");                       \
+  writeString (stdout, " ");                        \
+  writeString (stdout, "C_");                       \
+  writeString (stdout, name);                       \
+  writeString (stdout, "_t;");                      \
+  break;                                            \
+  case cTypesSML:                                   \
+  writeString (stdout, "structure C_");             \
+  writeString (stdout, name);                       \
+  writeString (stdout, " = WordToBool (");          \
+  writeString (stdout, "type t = ");                \
+  writeString (stdout, "Word");                     \
+  writeUintmaxU (stdout, CHAR_BIT * sizeof(t));     \
+  writeString (stdout, ".word");                    \
+  writeString (stdout, " ");                        \
+  writeString (stdout, "val zero: t = 0wx0");       \
+  writeString (stdout, " ");                        \
+  writeString (stdout, "val one: t = 0wx1");        \
+  writeString (stdout, ")");                        \
+  break;                                            \
+  }                                                 \
+  writeNewline (stdout);                            \
   } while (0)
 #define systype(t, bt, name)                        \
   do {                                              \
@@ -182,51 +191,58 @@ static const char* mlTypesHStd[] = {
   char *btUpper = strdup(bt);                       \
   for (size_t i = 0; i < strlen(btUpper); i++)      \
     btUpper[i] = (char)(toupper((int)(bt[i])));     \
-  writeString (cTypesHFd, "typedef");               \
-  writeString (cTypesHFd, " /* ");                  \
-  writeString (cTypesHFd, #t);                      \
-  writeString (cTypesHFd, " */ ");                  \
-  writeString (cTypesHFd, bt);                      \
-  writeUintmaxU (cTypesHFd, CHAR_BIT * sizeof(t));  \
-  writeString (cTypesHFd, "_t");                    \
-  writeString (cTypesHFd, " ");                     \
-  writeString (cTypesHFd, "C_");                    \
-  writeString (cTypesHFd, name);                    \
-  writeString (cTypesHFd, "_t;");                   \
-  writeNewline (cTypesHFd);                         \
-  writeString (cTypesSMLFd, "structure C_");        \
-  writeString (cTypesSMLFd, name);                  \
-  writeString (cTypesSMLFd, " = struct open ");     \
-  writeString (cTypesSMLFd, bt);                    \
-  writeUintmaxU (cTypesSMLFd, CHAR_BIT * sizeof(t));\
-  writeString (cTypesSMLFd, " type t = ");          \
-  writeString (cTypesSMLFd, btLower);               \
-  writeString (cTypesSMLFd, " end");                \
-  writeNewline (cTypesSMLFd);                       \
-  writeString (cTypesSMLFd, "functor C_");          \
-  writeString (cTypesSMLFd, name);                  \
-  writeString (cTypesSMLFd, "_Choose");             \
-  writeString (cTypesSMLFd, bt);                    \
-  writeString (cTypesSMLFd, "N (A: CHOOSE_");       \
-  writeString (cTypesSMLFd, btUpper);               \
-  writeString (cTypesSMLFd, "N_ARG) = Choose");     \
-  writeString (cTypesSMLFd, bt);                    \
-  writeString (cTypesSMLFd, "N_");                  \
-  writeString (cTypesSMLFd, bt);                    \
-  writeUintmaxU (cTypesSMLFd, CHAR_BIT * sizeof(t));\
-  writeString (cTypesSMLFd, " (A)");                \
-  writeNewline (cTypesSMLFd);                       \
+  switch (tgt) {                                    \
+  case mlTypesH:                                    \
+  break;                                            \
+  case cTypesH:                                     \
+  writeString (stdout, "typedef");                  \
+  writeString (stdout, " /* ");                     \
+  writeString (stdout, #t);                         \
+  writeString (stdout, " */ ");                     \
+  writeString (stdout, bt);                         \
+  writeUintmaxU (stdout, CHAR_BIT * sizeof(t));     \
+  writeString (stdout, "_t");                       \
+  writeString (stdout, " ");                        \
+  writeString (stdout, "C_");                       \
+  writeString (stdout, name);                       \
+  writeString (stdout, "_t;");                      \
+  break;                                            \
+  case cTypesSML:                                   \
+  writeString (stdout, "structure C_");             \
+  writeString (stdout, name);                       \
+  writeString (stdout, " = struct open ");          \
+  writeString (stdout, bt);                         \
+  writeUintmaxU (stdout, CHAR_BIT * sizeof(t));     \
+  writeString (stdout, " type t = ");               \
+  writeString (stdout, btLower);                    \
+  writeString (stdout, " end");                     \
+  writeNewline (stdout);                            \
+  writeString (stdout, "functor C_");               \
+  writeString (stdout, name);                       \
+  writeString (stdout, "_Choose");                  \
+  writeString (stdout, bt);                         \
+  writeString (stdout, "N (A: CHOOSE_");            \
+  writeString (stdout, btUpper);                    \
+  writeString (stdout, "N_ARG) = Choose");          \
+  writeString (stdout, bt);                         \
+  writeString (stdout, "N_");                       \
+  writeString (stdout, bt);                         \
+  writeUintmaxU (stdout, CHAR_BIT * sizeof(t));     \
+  writeString (stdout, " (A)");                     \
+  break;                                            \
+  }                                                 \
+  writeNewline (stdout);                            \
   free (btLower);                                   \
   free (btUpper);                                   \
   } while (0)
-#define chksystype(t, name)                \
-  do {                                     \
-  if ((double)((t)(0.25)) > 0)             \
-  systype(t, "Real", name);                \
-  else if ((double)((t)(-1)) > 0)          \
-  systype(t, "Word", name);                \
-  else                                     \
-  systype(t, "Int", name);                 \
+#define chksystype(t, name)                         \
+  do {                                              \
+  if ((double)((t)(0.25)) > 0)                      \
+    systype(t, "Real", name);                       \
+  else if ((double)((t)(-1)) > 0)                   \
+    systype(t, "Word", name);                       \
+  else                                              \
+    systype(t, "Int", name);                        \
   } while (0)
 #define ptrtype(t, name)                            \
   do {                                              \
@@ -241,41 +257,50 @@ static const char* mlTypesHStd[] = {
   char *btUpper = strdup(bt);                       \
   for (size_t i = 0; i < strlen(btUpper); i++)      \
     btUpper[i] = (char)(toupper((int)(bt[i])));     \
-  writeString (cTypesHFd, "typedef ");              \
-  writeString (cTypesHFd, "C_");                    \
-  writeString (cTypesHFd, name1);                   \
-  writeString (cTypesHFd, "_t ");                   \
-  writeString (cTypesHFd, "C_");                    \
-  writeString (cTypesHFd, name2);                   \
-  writeString (cTypesHFd, "_t;");                   \
-  writeNewline (cTypesHFd);                         \
-  writeString (cTypesSMLFd, "structure C_");        \
-  writeString (cTypesSMLFd, name2);                 \
-  writeString (cTypesSMLFd, " = C_");               \
-  writeString (cTypesSMLFd, name1);                 \
-  writeNewline (cTypesSMLFd);                       \
-  writeString (cTypesSMLFd, "functor C_");          \
-  writeString (cTypesSMLFd, name2);                 \
-  writeString (cTypesSMLFd, "_Choose");             \
-  writeString (cTypesSMLFd, bt);                    \
-  writeString (cTypesSMLFd, "N (A: CHOOSE_");       \
-  writeString (cTypesSMLFd, btUpper);               \
-  writeString (cTypesSMLFd, "N_ARG) = C_");         \
-  writeString (cTypesSMLFd, name1);                 \
-  writeString (cTypesSMLFd, "_Choose");             \
-  writeString (cTypesSMLFd, bt);                    \
-  writeString (cTypesSMLFd, "N (A)");               \
-  writeNewline (cTypesSMLFd);                       \
+  switch (tgt) {                                    \
+  case mlTypesH:                                    \
+  break;                                            \
+  case cTypesH:                                     \
+  writeString (stdout, "typedef ");                 \
+  writeString (stdout, "C_");                       \
+  writeString (stdout, name1);                      \
+  writeString (stdout, "_t ");                      \
+  writeString (stdout, "C_");                       \
+  writeString (stdout, name2);                      \
+  writeString (stdout, "_t;");                      \
+  break;                                            \
+  case cTypesSML:                                   \
+  writeString (stdout, "structure C_");             \
+  writeString (stdout, name2);                      \
+  writeString (stdout, " = C_");                    \
+  writeString (stdout, name1);                      \
+  writeNewline (stdout);                            \
+  writeString (stdout, "functor C_");               \
+  writeString (stdout, name2);                      \
+  writeString (stdout, "_Choose");                  \
+  writeString (stdout, bt);                         \
+  writeString (stdout, "N (A: CHOOSE_");            \
+  writeString (stdout, btUpper);                    \
+  writeString (stdout, "N_ARG) = C_");              \
+  writeString (stdout, name1);                      \
+  writeString (stdout, "_Choose");                  \
+  writeString (stdout, bt);                         \
+  writeString (stdout, "N (A)");                    \
+  break;                                            \
+  }                                                 \
+  writeNewline (stdout);                            \
   free (btLower);                                   \
   free (btUpper);                                   \
   } while (0)
 
 static const char* mlTypesHSuffix[] = {
+  "",
   "#endif /* _MLTON_MLTYPES_H_ */",
   NULL
 };
 
 static const char* cTypesHSuffix[] = {
+  "",
   "#define C_Errno_t(t) t",
   "",
   "#endif /* _MLTON_CTYPES_H_ */",
@@ -286,137 +311,149 @@ static const char* cTypesSMLSuffix[] = {
   NULL
 };
 
-int main (__attribute__ ((unused)) int argc,
-          __attribute__ ((unused)) char* argv[]) {
-  FILE *mlTypesHFd;
-  FILE *cTypesHFd;
-  FILE *cTypesSMLFd;
+#define tgtCom(com)                                     \
+  (tgt == cTypesH ? "/* " com " */" : "(* " com " *)")
 
-  mlTypesHFd = fopen_safe ("ml-types.h", "w");
-  for (int i = 0; mlTypesHPrefix[i] != NULL; i++)
-    writeStringWithNewline (mlTypesHFd, mlTypesHPrefix[i]);
-  for (int i = 0; mlTypesHStd[i] != NULL; i++)
-    writeStringWithNewline (mlTypesHFd, mlTypesHStd[i]);
-  for (int i = 0; mlTypesHSuffix[i] != NULL; i++)
-    writeStringWithNewline (mlTypesHFd, mlTypesHSuffix[i]);
+int main (int argc, char* argv[]) {
 
-  cTypesHFd = fopen_safe ("c-types.h", "w");
-  cTypesSMLFd = fopen_safe ("c-types.sml", "w");
+  enum tgt tgt;
 
-  for (int i = 0; cTypesHPrefix[i] != NULL; i++)
-    writeStringWithNewline (cTypesHFd, cTypesHPrefix[i]);
-  for (int i = 0; cTypesSMLPrefix[i] != NULL; i++)
-    writeStringWithNewline (cTypesSMLFd, cTypesSMLPrefix[i]);
+  if (argc != 2)
+    die ("usage: %s ml-types.h|c-types.h|c-types.sml", argv[0]);
+  if (strcmp(argv[1], "ml-types.h") == 0)
+    tgt = mlTypesH;
+  else if (strcmp(argv[1], "c-types.h") == 0)
+    tgt = cTypesH;
+  else if (strcmp(argv[1], "c-types.sml") == 0)
+    tgt = cTypesSML;
+  else
+    die ("usage: %s ml-types.h|c-types.h|c-types.sml", argv[0]);
 
-  writeNewline (cTypesHFd);writeNewline (cTypesSMLFd);
-  writeStringWithNewline (cTypesHFd, "/* C */");
-  writeStringWithNewline (cTypesSMLFd, "(* C *)");
-  booltype(_Bool, "Word", "Bool");
-  chksystype(char, "Char");
-  chksystype(signed char, "SChar");
-  chksystype(unsigned char, "UChar");
-  chksystype(short, "Short");
-  chksystype(signed short, "SShort");
-  chksystype(unsigned short, "UShort");
-  chksystype(int, "Int");
-  chksystype(signed int, "SInt");
-  chksystype(unsigned int, "UInt");
-  chksystype(long, "Long");
-  chksystype(signed long, "SLong");
-  chksystype(unsigned long, "ULong");
-  chksystype(long long, "LongLong");
-  chksystype(signed long long, "SLongLong");
-  chksystype(unsigned long long, "ULongLong");
-  chksystype(float, "Float");
-  chksystype(double, "Double");
-  // chksystype(long double, "LongDouble");
-  chksystype(size_t, "Size");
-  writeNewline (cTypesHFd);writeNewline (cTypesSMLFd);
-  ptrtype(unsigned char*, "Pointer");
-  // ptrtype(void*, "Pointer");
-  // ptrtype(uintptr_t, "Pointer");
-  ptrtype(char*, "String");
-  ptrtype(char**, "StringArray");
+  switch (tgt) {
+  case mlTypesH:
+    for (int i = 0; mlTypesHPrefix[i] != NULL; i++)
+      writeStringWithNewline (stdout, mlTypesHPrefix[i]);
+    for (int i = 0; mlTypesHStd[i] != NULL; i++)
+      writeStringWithNewline (stdout, mlTypesHStd[i]);
+    for (int i = 0; mlTypesHSuffix[i] != NULL; i++)
+      writeStringWithNewline (stdout, mlTypesHSuffix[i]);
+    break;
+  case cTypesH:
+  case cTypesSML: {
+    const char* *cTypesPrefix = NULL;
+    const char* *cTypesSuffix = NULL;
 
-  writeNewline (cTypesHFd);writeNewline (cTypesSMLFd);
-  writeStringWithNewline (cTypesHFd, "/* Generic integers */");
-  writeStringWithNewline (cTypesSMLFd, "(* Generic integers *)");
-  aliastype("Int", "Int", "Fd");
-  aliastype("Int", "Int", "Signal");
-  aliastype("Int", "Int", "Status");
-  aliastype("Int", "Int", "Sock");
+    switch (tgt) {
+    case mlTypesH:
+      break;
+    case cTypesH:
+      cTypesPrefix = cTypesHPrefix;
+      cTypesSuffix = cTypesHSuffix;
+      break;
+    case cTypesSML:
+      cTypesPrefix = cTypesSMLPrefix;
+      cTypesSuffix = cTypesSMLSuffix;
+      break;
+    }
 
-  writeNewline (cTypesHFd);writeNewline (cTypesSMLFd);
-  writeStringWithNewline (cTypesHFd, "/* C99 */");
-  writeStringWithNewline (cTypesSMLFd, "(* C99 *)");
-  chksystype(ptrdiff_t, "Ptrdiff");
-  chksystype(intmax_t, "Intmax");
-  chksystype(uintmax_t, "UIntmax");
-  chksystype(intptr_t, "Intptr");
-  chksystype(uintptr_t, "UIntptr");
+    for (int i = 0; cTypesPrefix[i] != NULL; i++)
+      writeStringWithNewline (stdout, cTypesPrefix[i]);
 
-  writeNewline (cTypesHFd);writeNewline (cTypesSMLFd);
-  writeStringWithNewline (cTypesHFd, "/* from <dirent.h> */");
-  writeStringWithNewline (cTypesSMLFd, "(* from <dirent.h> *)");
-  // ptrtype(DIR*, "DirP");
-  systype(DIR*, "Word", "DirP");
+    writeStringWithNewline (stdout, tgtCom ("C"));
+    booltype(_Bool, "Word", "Bool");
+    chksystype(char, "Char");
+    chksystype(signed char, "SChar");
+    chksystype(unsigned char, "UChar");
+    chksystype(short, "Short");
+    chksystype(signed short, "SShort");
+    chksystype(unsigned short, "UShort");
+    chksystype(int, "Int");
+    chksystype(signed int, "SInt");
+    chksystype(unsigned int, "UInt");
+    chksystype(long, "Long");
+    chksystype(signed long, "SLong");
+    chksystype(unsigned long, "ULong");
+    chksystype(long long, "LongLong");
+    chksystype(signed long long, "SLongLong");
+    chksystype(unsigned long long, "ULongLong");
+    chksystype(float, "Float");
+    chksystype(double, "Double");
+    // chksystype(long double, "LongDouble");
+    chksystype(size_t, "Size");
 
-  writeNewline (cTypesHFd);writeNewline (cTypesSMLFd);
-  writeStringWithNewline (cTypesHFd, "/* from <poll.h> */");
-  writeStringWithNewline (cTypesSMLFd, "(* from <poll.h> *)");
-  chksystype(nfds_t, "NFds");
+    writeNewline (stdout);
+    ptrtype(unsigned char*, "Pointer");
+    // ptrtype(void*, "Pointer");
+    // ptrtype(uintptr_t, "Pointer");
+    ptrtype(char*, "String");
+    ptrtype(char**, "StringArray");
 
-  writeNewline (cTypesHFd);writeNewline (cTypesSMLFd);
-  writeStringWithNewline (cTypesHFd, "/* from <resource.h> */");
-  writeStringWithNewline (cTypesSMLFd, "(* from <resource.h> *)");
-  chksystype(rlim_t, "RLim");
+    writeNewline (stdout);
+    writeStringWithNewline (stdout, tgtCom ("Generic integers"));
+    aliastype("Int", "Int", "Fd");
+    aliastype("Int", "Int", "Signal");
+    aliastype("Int", "Int", "Status");
+    aliastype("Int", "Int", "Sock");
 
-  writeNewline (cTypesHFd);writeNewline (cTypesSMLFd);
-  writeStringWithNewline (cTypesHFd, "/* from <sys/types.h> */");
-  writeStringWithNewline (cTypesSMLFd, "(* from <sys/types.h> *)");
-  // chksystype(blkcnt_t, "BlkCnt");
-  // chksystype(blksize_t, "BlkSize");
-  chksystype(clock_t, "Clock");
-  chksystype(dev_t, "Dev");
-  chksystype(gid_t, "GId");
-  // chksystype(id_t, "Id");
-  chksystype(ino_t, "INo");
-  chksystype(mode_t, "Mode");
-  chksystype(nlink_t, "NLink");
-  chksystype(off_t, "Off");
-  chksystype(pid_t, "PId");
-  chksystype(ssize_t, "SSize");
-  chksystype(suseconds_t, "SUSeconds");
-  chksystype(time_t, "Time");
-  chksystype(uid_t, "UId");
-  // chksystype(useconds_t, "USeconds");
+    writeNewline (stdout);
+    writeStringWithNewline (stdout, tgtCom ("C99"));
+    chksystype(ptrdiff_t, "Ptrdiff");
+    chksystype(intmax_t, "Intmax");
+    chksystype(uintmax_t, "UIntmax");
+    chksystype(intptr_t, "Intptr");
+    chksystype(uintptr_t, "UIntptr");
 
-  writeNewline (cTypesHFd);writeNewline (cTypesSMLFd);
-  writeStringWithNewline (cTypesHFd, "/* from <sys/socket.h> */");
-  writeStringWithNewline (cTypesSMLFd, "(* from <sys/socket.h> *)");
-  chksystype(socklen_t, "Socklen");
+    writeNewline (stdout);
+    writeStringWithNewline (stdout, tgtCom ("from <dirent.h>"));
+    // ptrtype(DIR*, "DirP");
+    systype(DIR*, "Word", "DirP");
 
-  writeNewline (cTypesHFd);writeNewline (cTypesSMLFd);
-  writeStringWithNewline (cTypesHFd, "/* from <termios.h> */");
-  writeStringWithNewline (cTypesSMLFd, "(* from <termios.h> *)");
-  chksystype(cc_t, "CC");
-  chksystype(speed_t, "Speed");
-  chksystype(tcflag_t, "TCFlag");
+    writeNewline (stdout);
+    writeStringWithNewline (stdout, tgtCom ("from <poll.h>"));
+    chksystype(nfds_t, "NFds");
 
-  writeNewline (cTypesHFd);writeNewline (cTypesSMLFd);
-  writeStringWithNewline (cTypesHFd, "/* from \"gmp.h\" */");
-  writeStringWithNewline (cTypesSMLFd, "(* from \"gmp.h\" *)");
-  chksystype(mp_limb_t, "MPLimb");
+    writeNewline (stdout);
+    writeStringWithNewline (stdout, tgtCom ("from <resource.h>"));
+    chksystype(rlim_t, "RLim");
 
-  writeNewline (cTypesHFd);writeNewline (cTypesSMLFd);
-  for (int i = 0; cTypesHSuffix[i] != NULL; i++)
-    writeStringWithNewline (cTypesHFd, cTypesHSuffix[i]);
-  for (int i = 0; cTypesSMLSuffix[i] != NULL; i++)
-    writeStringWithNewline (cTypesSMLFd, cTypesSMLSuffix[i]);
+    writeNewline (stdout);
+    writeStringWithNewline (stdout, tgtCom ("from <sys/types.h>"));
+    // chksystype(blkcnt_t, "BlkCnt");
+    // chksystype(blksize_t, "BlkSize");
+    chksystype(clock_t, "Clock");
+    chksystype(dev_t, "Dev");
+    chksystype(gid_t, "GId");
+    // chksystype(id_t, "Id");
+    chksystype(ino_t, "INo");
+    chksystype(mode_t, "Mode");
+    chksystype(nlink_t, "NLink");
+    chksystype(off_t, "Off");
+    chksystype(pid_t, "PId");
+    chksystype(ssize_t, "SSize");
+    chksystype(suseconds_t, "SUSeconds");
+    chksystype(time_t, "Time");
+    chksystype(uid_t, "UId");
+    // chksystype(useconds_t, "USeconds");
 
-  fclose_safe(mlTypesHFd);
-  fclose_safe(cTypesHFd);
-  fclose_safe(cTypesSMLFd);
+    writeNewline (stdout);
+    writeStringWithNewline (stdout, tgtCom ("from <sys/socket.h>"));
+    chksystype(socklen_t, "Socklen");
+
+    writeNewline (stdout);
+    writeStringWithNewline (stdout, tgtCom ("from <termios.h>"));
+    chksystype(cc_t, "CC");
+    chksystype(speed_t, "Speed");
+    chksystype(tcflag_t, "TCFlag");
+
+    writeNewline (stdout);
+    writeStringWithNewline (stdout, tgtCom ("from \"gmp.h\""));
+    chksystype(mp_limb_t, "MPLimb");
+
+    for (int i = 0; cTypesSuffix[i] != NULL; i++)
+      writeStringWithNewline (stdout, cTypesSuffix[i]);
+
+    break; }
+  }
 
   return 0;
 }

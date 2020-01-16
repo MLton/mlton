@@ -137,14 +137,23 @@ c-types.h: gen/c-types.h
 	cp $< $@
 ml-types.h: gen/ml-types.h
 	cp $< $@
-gen/c-types.h gen/c-types.sml gen/ml-types.h: gen/gen-types.stamp
-	@touch $@
-gen/gen-types.stamp: gen/gen-types.c util.h util.o
+
+gen/ml-types.h: gen/gen-types$(EXE)
+	./gen/gen-types$(EXE) ml-types.h > gen/ml-types.h
+gen/c-types.h: gen/gen-types$(EXE)
+	./gen/gen-types$(EXE) c-types.h > gen/c-types.h
+gen/c-types.sml: gen/gen-types$(EXE)
+	./gen/gen-types$(EXE) c-types.sml > gen/c-types.sml
+
+gen/gen-types$(EXE).d: gen/gen-types.c
+	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) -M -MG -MT gen/gen-types$(EXE) -MT gen/gen-types$(EXE).d -MF gen/gen-types$(EXE).d gen/gen-types.c
+
+ifneq ($(MAKECMDGOALS),clean)
+-include gen/gen-types$(EXE).d
+endif
+
+gen/gen-types$(EXE): util.o
 	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) -o gen/gen-types gen/gen-types.c util.o
-	rm -f gen/c-types.h gen/c-types.sml gen/ml-types.h gen/gen-types.stamp
-	cd gen && ./gen-types
-	rm -f gen/gen-types$(EXE) gen/gen-types
-	touch $@
 
 ### basis-ffi.h  gen/basis-ffi.sml ###
 
