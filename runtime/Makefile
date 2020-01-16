@@ -151,15 +151,12 @@ gen/c-types.h: gen/gen-types$(EXE)
 gen/c-types.sml: gen/gen-types$(EXE)
 	./gen/gen-types$(EXE) c-types.sml > gen/c-types.sml
 
-gen/gen-types$(EXE).d: gen/gen-types.c
-	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) -M -MG -MT gen/gen-types$(EXE) -MT gen/gen-types$(EXE).d -MF gen/gen-types$(EXE).d gen/gen-types.c
-
 ifneq ($(MAKECMDGOALS),clean)
--include gen/gen-types$(EXE).d
+-include gen/gen-types.d
 endif
 
-gen/gen-types$(EXE): util.o
-	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) -o gen/gen-types gen/gen-types.c util.o
+gen/gen-types$(EXE): gen/gen-types.o util.o
+	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) -o gen/gen-types gen/gen-types.o util.o
 
 ### basis-ffi.h  gen/basis-ffi.sml ###
 
@@ -284,15 +281,12 @@ libmlton-pic.a: $(MLTON_PIC_OBJS)
 gen/sizes: gen/gen-sizes$(EXE)
 	./gen/gen-sizes > gen/sizes
 
-gen/gen-sizes$(EXE).d: gen/gen-sizes.c
-	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) -M -MG -MT gen/gen-sizes$(EXE) -MT gen/gen-sizes$(EXE).d -MF gen/gen-sizes$(EXE).d gen/gen-sizes.c
-
 ifneq ($(MAKECMDGOALS),clean)
--include gen/gen-sizes$(EXE).d
+-include gen/gen-sizes.d
 endif
 
-gen/gen-sizes$(EXE): util.o
-	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) -o gen/gen-sizes gen/gen-sizes.c util.o
+gen/gen-sizes$(EXE): gen/gen-sizes.o util.o
+	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) -o gen/gen-sizes gen/gen-sizes.o util.o
 
 
 ######
