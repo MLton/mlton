@@ -257,14 +257,9 @@ gdtoa/qnan$(EXE): gdtoa/qnan.o
 
 ### libmlton ###
 
-BASISCFILES :=							\
-	$(shell $(FIND) basis -type f -name '*.c')
+BASISCFILES := $(shell $(FIND) basis -type f -name '*.c')
 
-MLTON_OBJS := 							\
-	util.o							\
-	platform.o						\
-	platform/$(TARGET_OS).o					\
-	gc.o
+MLTON_OBJS := gc.o platform.o platform/$(TARGET_OS).o util.o
 MLTON_OBJS += $(foreach f, $(basename $(BASISCFILES)), $(f).o)
 MLTON_DEBUG_OBJS := $(patsubst %.o,%-gdb.o,$(MLTON_OBJS))
 MLTON_PIC_OBJS   := $(patsubst %.o,%-pic.o,$(MLTON_OBJS))
