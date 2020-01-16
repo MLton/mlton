@@ -297,7 +297,14 @@ libmlton-pic.a: $(MLTON_PIC_OBJS)
 gen/sizes: gen/gen-sizes$(EXE)
 	./gen/gen-sizes > gen/sizes
 
-gen/gen-sizes$(EXE): gen/gen-sizes.c util.o $(HFILES)
+gen/gen-sizes$(EXE).d: gen/gen-sizes.c
+	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) -M -MG -MT gen/gen-sizes$(EXE) -MT gen/gen-sizes$(EXE).d -MF gen/gen-sizes$(EXE).d gen/gen-sizes.c
+
+ifneq ($(MAKECMDGOALS),clean)
+-include gen/gen-sizes$(EXE).d
+endif
+
+gen/gen-sizes$(EXE): util.o
 	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) -o gen/gen-sizes gen/gen-sizes.c util.o
 
 
