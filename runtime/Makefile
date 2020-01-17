@@ -147,6 +147,17 @@ endef
 %$(EXE): %.o
 	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,LD) -o $@ $^
 
+ifeq ($(shell echo "__pic__" | $(CROSS_PREFIX)$(CC) $(call MK_FLAGS,-,C) -P -E -),2)
+WITH_DEFAULT_PIC := true
+else
+WITH_DEFAULT_PIC := false
+endif
+
+ifeq ($(WITH_DEFAULT_PIC),true)
+%-pic.a: %.a
+	$(CP) $< $@
+endif
+
 %.a:
 	$(RM) $@
 	$(CROSS_PREFIX)$(AR) rc $@ $^
@@ -232,8 +243,10 @@ endif
 
 libgdtoa.a:         $(GDTOA_OBJS)
 libgdtoa-dbg.a:     $(patsubst %.o,%-dbg.o,$(GDTOA_OBJS))
+ifeq ($(WITH_DEFAULT_PIC),false)
 libgdtoa-pic.a:     $(patsubst %.o,%-pic.o,$(GDTOA_OBJS))
 libgdtoa-dbg-pic.a: $(patsubst %.o,%-dbg-pic.o,$(GDTOA_OBJS))
+endif
 
 gdtoa/gdtoa.h $(GDTOACFILES): gdtoa/README
 	@touch $@
@@ -286,8 +299,10 @@ endif
 
 libmlton.a:         $(MLTON_OBJS)
 libmlton-dbg.a:     $(patsubst %.o,%-dbg.o,$(MLTON_OBJS))
+ifeq ($(WITH_DEFAULT_PIC),false)
 libmlton-pic.a:     $(patsubst %.o,%-pic.o,$(MLTON_OBJS))
 libmlton-dbg-pic.a: $(patsubst %.o,%-dbg-pic.o,$(MLTON_OBJS))
+endif
 
 ### gen/sizes ###
 
