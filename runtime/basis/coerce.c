@@ -1,6 +1,6 @@
 #include "platform.h"
 
-#include "coerce.h"
+#include "basis/coerce.h"
 
 /* Real coercions depend on rounding mode and can't be inlined where
  * gcc might constant-fold them. 
