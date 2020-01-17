@@ -29,16 +29,26 @@ GCC_VERSION := $(GCC_MAJOR_VERSION).$(GCC_MINOR_VERSION)
 EXE :=
 
 # These flags can be overridden by the user
+CCFLAGS :=
+MFLAGS :=
 CPPFLAGS :=
 CFLAGS :=
+LDFLAGS :=
 
-WARNXCFLAGS :=
-WARNXCFLAGS += -pedantic -Wall -Wextra
-
-XCFLAGS := -std=gnu11 -fno-common $(WARNXCFLAGS)
+XCCFLAGS := -std=gnu11
+XMFLAGS :=
+XCPPFLAGS :=
+XCFLAGS := -fno-common -pedantic -Wall -Wextra
 OPTXCFLAGS := -Wdisabled-optimization -O2
 DEBUGXCFLAGS := -DASSERT=1 -Wno-uninitialized -O0 -g
 PICXCFLAGS :=
+XLDFLAGS :=
+
+ifneq ($(WITH_GMP_INC_DIR),)
+XCPPFLAGS += -I$(WITH_GMP_INC_DIR)
+endif
+
+XCPPFLAGS += -I. -Iplatform
 
 # Win32&64 don't use PIC code, all other platforms do
 ifeq ($(findstring $(TARGET_OS), mingw cygwin),)
@@ -51,11 +61,11 @@ XCFLAGS += -fvisibility=hidden
 endif
 
 ifeq ($(TARGET_ARCH), alpha)
-XCFLAGS += -mieee -mbwx -mtune=ev6 -mfp-rounding-mode=d
+XMFLAGS += -mieee -mbwx -mtune=ev6 -mfp-rounding-mode=d
 endif
 
 ifeq ($(TARGET_ARCH), amd64)
-XCFLAGS += -m64
+XMFLAGS += -m64
 endif
 
 ifeq ($(findstring $(TARGET_ARCH), hppa ia64 powerpc sparc),$(TARGET_ARCH))
@@ -67,23 +77,24 @@ endif
 endif
 
 ifeq ($(TARGET_ARCH), ia64)
-XCFLAGS += -mtune=itanium2
+XMFLAGS += -mtune=itanium2
 ifeq ($(TARGET_OS), hpux)
-XCFLAGS += -mlp64
+XMFLAGS += -mlp64
 endif
 endif
 
 ifeq ($(TARGET_OS)-$(TARGET_ARCH), aix-powerpc64)
-XCFLAGS += -maix64
+XMFLAGS += -maix64
 AR := ar -X 64 rc
 endif
 
 ifeq ($(TARGET_ARCH), sparc)
-XCFLAGS += -m32 -mcpu=v8 -Wa,-xarch=v8plusa
+XMFLAGS += -m32 -mcpu=v8
+XCFLAGS := -Wa,-xarch=v8plusa
 endif
 
 ifeq ($(TARGET_ARCH), x86)
-XCFLAGS += -m32
+XMFLAGS += -m32
 endif
 
 ifeq ($(TARGET_OS), cygwin)
@@ -100,14 +111,7 @@ ifeq ($(TARGET_OS), solaris)
 XCFLAGS += -funroll-all-loops
 endif
 
-ifneq ($(WITH_GMP_INC_DIR),)
-XCFLAGS += -I$(WITH_GMP_INC_DIR)
-endif
-
-XCFLAGS += -I. -Iplatform
-OPTCFLAGS := $(CFLAGS) $(CPPFLAGS) $(XCFLAGS) $(OPTXCFLAGS)
-DEBUGCFLAGS := $(CFLAGS) $(CPPFLAGS) $(XCFLAGS) $(DEBUGXCFLAGS)
-PICCFLAGS := $(OPTCFLAGS) $(PICXCFLAGS)
+### all ###
 
 ALL := libgdtoa.a libgdtoa-gdb.a libgdtoa-pic.a \
        libmlton.a libmlton-gdb.a libmlton-pic.a
@@ -118,15 +122,34 @@ all: $(ALL)
 
 ### pattern rules ###
 
+## MK_FLAGS (SRC,PHASE[,KS])
+define MK_FLAGS
+$(strip \
+$(XCCFLAGS) $($(1)_XCCFLAGS) $(CCFLAGS) \
+$(XMFLAGS) $($(1)_XMFLAGS) $(MFLAGS) \
+$(if $(findstring $(2),CPP C),$(XCPPFLAGS) $($(1)_XCPPFLAGS) $(CPPFLAGS)) \
+$(if $(findstring $(2),C), \
+$(XCFLAGS) \
+$(foreach K,$(3),$($(K)XCFLAGS)) \
+$($(1)_XCFLAGS) \
+$(foreach K,$(3),$($(1)_$(K)XCFLAGS)) \
+$(CFLAGS)) \
+$(if $(findstring $(2),LD),$(XLDFLAGS) $($(1)_XLDFLAGS) $(LDFLAGS)) \
+)
+endef
+
 %.d: %.c
-	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) $($(<)_XCFLAGS) -MM -MG -MT $(subst .d,.o,$@) -MT $(subst .d,-gdb.o,$@) -MT $(subst .d,-pic.o,$@) -MT $@ -MM -MG -MF $@ $<
+	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,CPP) -MM -MG -MT $(subst .d,.o,$@) -MT $(subst .d,-gdb.o,$@) -MT $(subst .d,-pic.o,$@) -MT $@ -MM -MG -MF $@ $<
 
 %.o:
-	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) $($(<)_XCFLAGS) -c -o $@ $<
+	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,C,OPT) -c -o $@ $<
 %-gdb.o:
-	$(CROSS_PREFIX)$(CC) $(DEBUGCFLAGS) $($(<)_XCFLAGS) -c -o $@ $<
+	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,C,DEBUG) -c -o $@ $<
 %-pic.o:
-	$(CROSS_PREFIX)$(CC) $(PICCFLAGS) $($(<)_XCFLAGS) -c -o $@ $<
+	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,C,OPT PIC) -c -o $@ $<
+
+%$(EXE): %.o
+	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,LD) -o $@ $^
 
 %.a:
 	rm -f $@
@@ -151,8 +174,7 @@ ifneq ($(MAKECMDGOALS),clean)
 -include gen/gen-types.d
 endif
 
-gen/gen-types$(EXE): gen/gen-types.o util.o
-	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) -o gen/gen-types gen/gen-types.o util.o
+gen/gen-types$(EXE): util.o
 
 ### basis-ffi.h  gen/basis-ffi.sml ###
 
@@ -217,7 +239,6 @@ gdtoa/README: gdtoa.tgz gdtoa.may_alias-unions.patch gdtoa.rename-public-fns.pat
 	$(PATCH) -s -d gdtoa -p1 <gdtoa.include-via-gdtoa.patch
 	@touch $@
 
-
 gdtoa/arith.h: gdtoa/arithchk$(EXE)
 	./gdtoa/arithchk$(EXE) > gdtoa/arith.h
 
@@ -230,10 +251,6 @@ ifneq ($(MAKECMDGOALS),clean)
 -include gdtoa/arithchk.d
 endif
 
-gdtoa/arithchk$(EXE): gdtoa/arithchk.o
-	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) -o gdtoa/arithchk$(EXE) gdtoa/arithchk.o
-
-
 gdtoa/gd_qnan.h: gdtoa/qnan$(EXE)
 	./gdtoa/qnan$(EXE) > gdtoa/gd_qnan.h
 
@@ -245,9 +262,6 @@ gdtoa/qnan.c_XCFLAGS := -w -O1
 ifneq ($(MAKECMDGOALS),clean)
 -include gdtoa/qnan.d
 endif
-
-gdtoa/qnan$(EXE): gdtoa/qnan.o
-	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) -o gdtoa/qnan$(EXE) gdtoa/qnan.o
 
 ### libmlton ###
 
@@ -277,26 +291,11 @@ ifneq ($(MAKECMDGOALS),clean)
 -include gen/gen-sizes.d
 endif
 
-gen/gen-sizes$(EXE): gen/gen-sizes.o util.o
-	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) -o gen/gen-sizes gen/gen-sizes.o util.o
-
-
 ######
 
+SHOW_VARS += TARGET TARGET_ARCH TARGET_OS GCC_VERSION XCCFLAGS XMFLAGS XCPPFLAGS XCFLAGS OPTXCFLAGS DEBUGXCFLAGS PICXCFLAGS
 
-.PHONY: flags
-flags:
-	@echo TARGET = $(TARGET)
-	@echo TARGET_ARCH = $(TARGET_ARCH)
-	@echo TARGET_OS = $(TARGET_OS)
-	@echo GCC_MAJOR_VERSION = $(GCC_MAJOR_VERSION)
-	@echo GCC_MINOR_VERSION = $(GCC_MINOR_VERSION)
-	@echo GCC_VERSION = $(GCC_VERSION)
-	@echo EXE = $(EXE)
-	@echo XCFLAGS = $(XCFLAGS)
-	@echo OPTXCFLAGS = $(OPTXCFLAGS)
-	@echo DEBUGXCFLAGS = $(DEBUGXCFLAGS)
-	@echo PICXCFLAGS = $(PICXCFLAGS)
+$(eval $(MK_SHOW_CONFIG))
 
 
 .PHONY: clean
