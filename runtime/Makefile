@@ -258,9 +258,7 @@ MLTON_OBJS += $(foreach f, $(basename $(BASISCFILES)), $(f).o)
 MLTON_DEBUG_OBJS := $(patsubst %.o,%-gdb.o,$(MLTON_OBJS))
 MLTON_PIC_OBJS   := $(patsubst %.o,%-pic.o,$(MLTON_OBJS))
 
-gc.c_XCFLAGS := -Wno-unreachable-code
-basis/Real/Real.c_XCFLAGS := -Wno-float-equal
-basis/System/Date.c_XCFLAGS := -Wno-format-nonliteral
+gc.c_XCFLAGS := -Wno-address-of-packed-member
 
 ifneq ($(MAKECMDGOALS),clean)
 -include $(patsubst %.o,%.d,$(MLTON_OBJS))
