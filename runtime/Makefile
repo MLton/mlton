@@ -152,16 +152,16 @@ endef
 	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,LD) -o $@ $^
 
 %.a:
-	rm -f $@
+	$(RM) $@
 	$(CROSS_PREFIX)$(AR) rc $@ $^
 	$(CROSS_PREFIX)$(RANLIB) $@
 
 ### c-types.h  ml-types.h  gen/c-types.sml ###
 
 c-types.h: gen/c-types.h
-	cp $< $@
+	$(CP) $< $@
 ml-types.h: gen/ml-types.h
-	cp $< $@
+	$(CP) $< $@
 
 gen/ml-types.h: gen/gen-types$(EXE)
 	./gen/gen-types$(EXE) ml-types.h > gen/ml-types.h
@@ -179,7 +179,7 @@ gen/gen-types$(EXE): util.o
 ### basis-ffi.h  gen/basis-ffi.sml ###
 
 basis-ffi.h: gen/basis-ffi.h
-	cp $< $@
+	$(CP) $< $@
 
 ifeq ($(shell cat gen/gen-basis-ffi.sml gen/basis-ffi.def gen/basis-ffi.h | shasum -c -s gen/basis-ffi.h.chk && echo true),true)
 gen/basis-ffi.h: gen/gen-basis-ffi.sml gen/basis-ffi.def
