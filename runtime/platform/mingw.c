@@ -2,8 +2,8 @@
 
 #include "platform.h"
 
-#include "windows.c"
-#include "mremap.c"
+#include "platform/windows.c"
+#include "platform/mremap.c"
 
 void *GC_mmapAnon (void *start, size_t length) {
         return Windows_mmapAnon (start, length);

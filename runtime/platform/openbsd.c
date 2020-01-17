@@ -1,11 +1,11 @@
 #include "platform.h"
 
-#include "diskBack.unix.c"
-#include "displayMem.proc.c"
-#include "mmap-protect.c"
-#include "nonwin.c"
-#include "sysctl.c"
-#include "mmap.c"
+#include "platform/diskBack.unix.c"
+#include "platform/displayMem.proc.c"
+#include "platform/mmap-protect.c"
+#include "platform/nonwin.c"
+#include "platform/sysctl.c"
+#include "platform/mmap.c"
 
 void GC_release (void *base, size_t length) {
         munmap_safe (base, length);

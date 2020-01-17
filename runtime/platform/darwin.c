@@ -3,11 +3,11 @@
 #include <dlfcn.h>
 #include <stdio.h>
 
-#include "diskBack.unix.c"
-#include "mmap-protect.c"
-#include "nonwin.c"
-#include "sysctl.c"
-#include "use-mmap.c"
+#include "platform/diskBack.unix.c"
+#include "platform/mmap-protect.c"
+#include "platform/nonwin.c"
+#include "platform/sysctl.c"
+#include "platform/use-mmap.c"
 
 void GC_displayMem (void) {
         static char buffer[256];

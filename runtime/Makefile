@@ -51,7 +51,7 @@ ifneq ($(WITH_GMP_INC_DIR),)
 XCPPFLAGS += -I$(WITH_GMP_INC_DIR)
 endif
 
-XCPPFLAGS += -I. -Iplatform
+XCPPFLAGS += -I.
 
 # Win32&64 don't use PIC code, all other platforms do
 ifeq ($(findstring $(TARGET_OS), mingw cygwin),$(TARGET_OS))

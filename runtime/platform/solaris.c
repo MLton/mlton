@@ -2,13 +2,13 @@
 
 #include <ieeefp.h>
 
-#include "diskBack.unix.c"
-#include "float-math.c"
-#include "mmap.c"
-#include "mmap-protect.c"
-#include "nonwin.c"
-#include "sysconf.c"
-#include "setenv.putenv.c"
+#include "platform/diskBack.unix.c"
+#include "platform/float-math.c"
+#include "platform/mmap.c"
+#include "platform/mmap-protect.c"
+#include "platform/nonwin.c"
+#include "platform/sysconf.c"
+#include "platform/setenv.putenv.c"
 
 #ifdef __sparc__
 int fegetround (void) {

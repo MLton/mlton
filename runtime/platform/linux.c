@@ -2,11 +2,11 @@
 
 #include "platform.h"
 
-#include "diskBack.unix.c"
-#include "displayMem.proc.c"
-#include "mmap-protect.c"
-#include "nonwin.c"
-#include "use-mmap.c"
+#include "platform/diskBack.unix.c"
+#include "platform/displayMem.proc.c"
+#include "platform/mmap-protect.c"
+#include "platform/nonwin.c"
+#include "platform/use-mmap.c"
 
 static void catcher (__attribute__ ((unused)) int signo,
                      __attribute__ ((unused)) siginfo_t* info,
