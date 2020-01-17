@@ -28,6 +28,9 @@ GCC_VERSION := $(GCC_MAJOR_VERSION).$(GCC_MINOR_VERSION)
 
 EXE :=
 
+WITH_DBG_RUNTIME := true
+WITH_PIC_RUNTIME := true
+
 # These flags can be overridden by the user
 CCFLAGS :=
 MFLAGS :=
@@ -41,7 +44,7 @@ XCPPFLAGS :=
 XCFLAGS := -fno-common -pedantic -Wall -Wextra
 OPTXCFLAGS := -Wdisabled-optimization -O2
 DBGXCFLAGS := -DASSERT=1 -Wno-uninitialized -O0 -g
-PICXCFLAGS :=
+PICXCFLAGS := -fPIC
 XLDFLAGS :=
 
 ifneq ($(WITH_GMP_INC_DIR),)
@@ -51,8 +54,8 @@ endif
 XCPPFLAGS += -I. -Iplatform
 
 # Win32&64 don't use PIC code, all other platforms do
-ifeq ($(findstring $(TARGET_OS), mingw cygwin),)
-PICXCFLAGS += -fPIC
+ifeq ($(findstring $(TARGET_OS), mingw cygwin),$(TARGET_OS))
+WITH_PIC_RUNTIME := false
 endif
 
 # Make mlton library symbols private (win32&64 use another technique)
@@ -151,9 +154,14 @@ endef
 
 ### all ###
 
-ALL := libgdtoa.a libgdtoa-dbg.a libgdtoa-pic.a libgdtoa-dbg-pic.a \
-       libmlton.a libmlton-dbg.a libmlton-pic.a libmlton-dbg-pic.a
-ALL += gen/c-types.sml gen/basis-ffi.sml gen/sizes
+LIBS := libgdtoa.a libmlton.a
+ifeq ($(WITH_DBG_RUNTIME),true)
+LIBS += $(patsubst %.a,%-dbg.a,$(LIBS))
+endif
+ifeq ($(WITH_PIC_RUNTIME),true)
+LIBS += $(patsubst %.a,%-pic.a,$(LIBS))
+endif
+ALL += $(LIBS) gen/c-types.sml gen/basis-ffi.sml gen/sizes
 
 .PHONY: all
 all: $(ALL)
@@ -227,7 +235,6 @@ libgdtoa-dbg.a:     $(patsubst %.o,%-dbg.o,$(GDTOA_OBJS))
 libgdtoa-pic.a:     $(patsubst %.o,%-pic.o,$(GDTOA_OBJS))
 libgdtoa-dbg-pic.a: $(patsubst %.o,%-dbg-pic.o,$(GDTOA_OBJS))
 
-
 gdtoa/gdtoa.h $(GDTOACFILES): gdtoa/README
 	@touch $@
 
@@ -293,7 +300,9 @@ endif
 
 ######
 
-SHOW_VARS += TARGET TARGET_ARCH TARGET_OS GCC_VERSION XCCFLAGS XMFLAGS XCPPFLAGS XCFLAGS OPTXCFLAGS DBGXCFLAGS PICXCFLAGS
+SHOW_VARS += TARGET TARGET_ARCH TARGET_OS GCC_VERSION
+SHOW_VARS += XCCFLAGS XMFLAGS XCPPFLAGS XCFLAGS OPTXCFLAGS DBGXCFLAGS PICXCFLAGS XLDFLAGS
+SHOW_VARS += LIBS
 
 $(eval $(MK_SHOW_CONFIG))
 
