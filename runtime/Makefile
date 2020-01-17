@@ -119,11 +119,7 @@ all: $(ALL)
 ### pattern rules ###
 
 %.d: %.c
-	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) $($(<)_XCFLAGS) -MM -MG -MT $(subst .d,.o,$@) -MT $@ -MF $@ $<
-%-gdb.d: %.c
-	$(CROSS_PREFIX)$(CC) $(DEBUGCFLAGS) $($(<)_XCFLAGS) -MM -MG -MT $(subst .d,.o,$@) -MT $@ -MF $@ $<
-%-pic.d: %.c
-	$(CROSS_PREFIX)$(CC) $(PICCFLAGS) $($(<)_XCFLAGS) -MM -MG -MT $(subst .d,.o,$@) -MT $@ -MF $@ $<
+	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) $($(<)_XCFLAGS) -MM -MG -MT $(subst .d,.o,$@) -MT $(subst .d,-gdb.o,$@) -MT $(subst .d,-pic.o,$@) -MT $@ -MM -MG -MF $@ $<
 
 %.o:
 	$(CROSS_PREFIX)$(CC) $(OPTCFLAGS) $($(<)_XCFLAGS) -c -o $@ $<
@@ -202,8 +198,6 @@ $(foreach GDTOACFILE,$(GDTOACFILES), $(eval $(GDTOACFILE)_XCFLAGS := -w -DINFNAN
 
 ifneq ($(MAKECMDGOALS),clean)
 -include $(patsubst %.o,%.d,$(GDTOA_OBJS))
--include $(patsubst %.o,%.d,$(GDTOA_DEBUG_OBJS))
--include $(patsubst %.o,%.d,$(GDTOA_PIC_OBJS))
 endif
 
 libgdtoa.a:     $(GDTOA_OBJS)
@@ -270,8 +264,6 @@ basis/System/Date.c_XCFLAGS := -Wno-format-nonliteral
 
 ifneq ($(MAKECMDGOALS),clean)
 -include $(patsubst %.o,%.d,$(MLTON_OBJS))
--include $(patsubst %.o,%.d,$(MLTON_DEBUG_OBJS))
--include $(patsubst %.o,%.d,$(MLTON_PIC_OBJS))
 endif
 
 libmlton.a: $(MLTON_OBJS)
