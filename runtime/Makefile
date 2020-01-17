@@ -111,15 +111,6 @@ ifeq ($(TARGET_OS), solaris)
 XCFLAGS += -funroll-all-loops
 endif
 
-### all ###
-
-ALL := libgdtoa.a libgdtoa-dbg.a libgdtoa-pic.a \
-       libmlton.a libmlton-dbg.a libmlton-pic.a
-ALL += gen/c-types.sml gen/basis-ffi.sml gen/sizes
-
-.PHONY: all
-all: $(ALL)
-
 ### pattern rules ###
 
 ## MK_FLAGS (SRC,PHASE[,KS])
@@ -139,14 +130,16 @@ $(if $(findstring $(2),LD),$(XLDFLAGS) $($(1)_XLDFLAGS) $(LDFLAGS)) \
 endef
 
 %.d: %.c
-	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,CPP) -MM -MG -MT $(subst .d,.o,$@) -MT $(subst .d,-dbg.o,$@) -MT $(subst .d,-pic.o,$@) -MT $@ -MM -MG -MF $@ $<
+	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,CPP) -MM -MG -MT $(subst .d,.o,$@) -MT $(subst .d,-dbg.o,$@) -MT $(subst .d,-pic.o,$@) -MT $(subst .d,-dbg-pic.o,$@) -MT $@ -MM -MG -MF $@ $<
 
-%.o:
+%.o: %.c
 	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,C,OPT) -c -o $@ $<
-%-dbg.o:
+%-dbg.o: %.c
 	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,C,DBG) -c -o $@ $<
-%-pic.o:
+%-pic.o: %.c
 	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,C,OPT PIC) -c -o $@ $<
+%-dbg-pic.o: %.c
+	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,C,DBG PIC) -c -o $@ $<
 
 %$(EXE): %.o
 	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,LD) -o $@ $^
@@ -155,6 +148,15 @@ endef
 	$(RM) $@
 	$(CROSS_PREFIX)$(AR) rc $@ $^
 	$(CROSS_PREFIX)$(RANLIB) $@
+
+### all ###
+
+ALL := libgdtoa.a libgdtoa-dbg.a libgdtoa-pic.a libgdtoa-dbg-pic.a \
+       libmlton.a libmlton-dbg.a libmlton-pic.a libmlton-dbg-pic.a
+ALL += gen/c-types.sml gen/basis-ffi.sml gen/sizes
+
+.PHONY: all
+all: $(ALL)
 
 ### c-types.h  ml-types.h  gen/c-types.sml ###
 
@@ -204,27 +206,26 @@ gen/gen-basis-ffi$(EXE): gen/gen-basis-ffi.sml
 
 ### libgdtoa ###
 
-GDTOACFILES :=									\
+GDTOA_CFILES := \
 	dmisc.c     g_ddfmt.c   g_ffmt_p.c  gdtoa.c     misc.c      strtoIf.c   strtodI.c   strtopdd.c  strtord.c   sum.c \
 	dtoa.c      g_ddfmt_p.c g_xLfmt.c   gethex.c    smisc.c     strtoIg.c   strtodg.c   strtopf.c   strtordd.c  ulp.c \
 	g_Qfmt.c    g_dfmt.c    g_xLfmt_p.c gmisc.c     strtoIQ.c   strtoIx.c   strtof.c    strtopx.c   strtorf.c \
 	g_Qfmt_p.c  g_dfmt_p.c  g_xfmt.c    hd_init.c   strtoId.c   strtoIxL.c  strtopQ.c   strtopxL.c  strtorx.c \
 	g__fmt.c    g_ffmt.c    g_xfmt_p.c  hexnan.c    strtoIdd.c  strtod.c    strtopd.c   strtorQ.c   strtorxL.c
-GDTOACFILES := $(patsubst %,gdtoa/%,$(GDTOACFILES))
+GDTOA_CFILES := $(patsubst %,gdtoa/%,$(GDTOA_CFILES))
 
-GDTOA_OBJS     := $(patsubst %.c,%.o,$(GDTOACFILES))
-GDTOA_DBG_OBJS := $(patsubst %.c,%-dbg.o,$(GDTOACFILES))
-GDTOA_PIC_OBJS := $(patsubst %.c,%-pic.o,$(GDTOACFILES))
+GDTOA_OBJS := $(patsubst %.c,%.o,$(GDTOA_CFILES))
 
-$(foreach GDTOACFILE,$(GDTOACFILES), $(eval $(GDTOACFILE)_XCFLAGS := -w -DINFNAN_CHECK))
+$(foreach F,$(GDTOA_CFILES), $(eval $(F)_XCFLAGS := -w -DINFNAN_CHECK))
 
 ifneq ($(MAKECMDGOALS),clean)
 -include $(patsubst %.o,%.d,$(GDTOA_OBJS))
 endif
 
-libgdtoa.a:     $(GDTOA_OBJS)
-libgdtoa-dbg.a: $(GDTOA_DBG_OBJS)
-libgdtoa-pic.a: $(GDTOA_PIC_OBJS)
+libgdtoa.a:         $(GDTOA_OBJS)
+libgdtoa-dbg.a:     $(patsubst %.o,%-dbg.o,$(GDTOA_OBJS))
+libgdtoa-pic.a:     $(patsubst %.o,%-pic.o,$(GDTOA_OBJS))
+libgdtoa-dbg-pic.a: $(patsubst %.o,%-dbg-pic.o,$(GDTOA_OBJS))
 
 
 gdtoa/gdtoa.h $(GDTOACFILES): gdtoa/README
@@ -265,12 +266,10 @@ endif
 
 ### libmlton ###
 
-BASISCFILES := $(shell $(FIND) basis -type f -name '*.c')
+BASIS_CFILES := $(shell $(FIND) basis -type f -name '*.c')
 
-MLTON_OBJS     := gc.o platform.o platform/$(TARGET_OS).o util.o
-MLTON_OBJS     += $(foreach f, $(basename $(BASISCFILES)), $(f).o)
-MLTON_DBG_OBJS := $(patsubst %.o,%-dbg.o,$(MLTON_OBJS))
-MLTON_PIC_OBJS := $(patsubst %.o,%-pic.o,$(MLTON_OBJS))
+MLTON_OBJS := gc.o platform.o platform/$(TARGET_OS).o util.o
+MLTON_OBJS += $(patsubst %.c,%.o,$(BASIS_CFILES))
 
 gc.c_XCFLAGS := -Wno-address-of-packed-member
 
@@ -278,9 +277,10 @@ ifneq ($(MAKECMDGOALS),clean)
 -include $(patsubst %.o,%.d,$(MLTON_OBJS))
 endif
 
-libmlton.a:     $(MLTON_OBJS)
-libmlton-dbg.a: $(MLTON_DBG_OBJS)
-libmlton-pic.a: $(MLTON_PIC_OBJS)
+libmlton.a:         $(MLTON_OBJS)
+libmlton-dbg.a:     $(patsubst %.o,%-dbg.o,$(MLTON_OBJS))
+libmlton-pic.a:     $(patsubst %.o,%-pic.o,$(MLTON_OBJS))
+libmlton-dbg-pic.a: $(patsubst %.o,%-dbg-pic.o,$(MLTON_OBJS))
 
 ### gen/sizes ###
 

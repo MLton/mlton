@@ -1121,6 +1121,13 @@ fun commandLine (args: string list): unit =
           | Self => !cc
       val arScript = !arScript
 
+      local
+         fun mk (b, suf) s =
+            if b then s ^ "-" ^ suf else s
+      in
+         val addDBG = mk (!debugRuntime, "dbg")
+         val addPIC = mk (positionIndependent, "pic")
+      end
       fun addTargetOpts opts =
          List.fold
          (!opts, [], fn ({opt, pred}, ac) =>
@@ -1139,24 +1146,14 @@ fun commandLine (args: string list): unit =
       val asOpts = addTargetOpts asOpts
       val ccOpts = addTargetOpts ccOpts
       val linkOpts = addTargetOpts linkOpts
-      val linkOpts = if !debugRuntime then
-                     "-lmlton-dbg" :: "-lgdtoa-dbg" :: linkOpts
-                     else if positionIndependent then
-                     "-lmlton-pic" :: "-lgdtoa-pic" :: linkOpts
-                     else
-                     "-lmlton" :: "-lgdtoa" :: linkOpts
+      val linkOpts =
+         List.map (["mlton", "gdtoa"], fn lib => "-l" ^ addPIC (addDBG lib)) @ linkOpts
       val linkOpts = ("-L" ^ targetLibDir) :: linkOpts
 
       val linkArchives =
-         if !debugRuntime then
-         [OS.Path.joinDirFile {dir = targetLibDir, file = "libmlton-dbg.a"},
-          OS.Path.joinDirFile {dir = targetLibDir, file = "libgdtoa-dbg.a"}]
-         else if positionIndependent then
-         [OS.Path.joinDirFile {dir = targetLibDir, file = "libmlton-pic.a"},
-          OS.Path.joinDirFile {dir = targetLibDir, file = "libgdtoa-pic.a"}]
-         else
-         [OS.Path.joinDirFile {dir = targetLibDir, file =  "libmlton.a"},
-          OS.Path.joinDirFile {dir = targetLibDir, file =  "libgdtoa.a"}]
+         List.map (["mlton", "gdtoa"], fn lib =>
+                   OS.Path.joinDirFile {dir = targetLibDir,
+                                        file = "lib" ^ addPIC (addDBG lib) ^ ".a"})
 
       val llvm_as = !llvm_as
       val llvm_llc = !llvm_llc
