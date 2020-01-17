@@ -1140,7 +1140,7 @@ fun commandLine (args: string list): unit =
       val ccOpts = addTargetOpts ccOpts
       val linkOpts = addTargetOpts linkOpts
       val linkOpts = if !debugRuntime then
-                     "-lmlton-gdb" :: "-lgdtoa-gdb" :: linkOpts
+                     "-lmlton-dbg" :: "-lgdtoa-dbg" :: linkOpts
                      else if positionIndependent then
                      "-lmlton-pic" :: "-lgdtoa-pic" :: linkOpts
                      else
@@ -1149,8 +1149,8 @@ fun commandLine (args: string list): unit =
 
       val linkArchives =
          if !debugRuntime then
-         [OS.Path.joinDirFile {dir = targetLibDir, file = "libmlton-gdb.a"},
-          OS.Path.joinDirFile {dir = targetLibDir, file = "libgdtoa-gdb.a"}]
+         [OS.Path.joinDirFile {dir = targetLibDir, file = "libmlton-dbg.a"},
+          OS.Path.joinDirFile {dir = targetLibDir, file = "libgdtoa-dbg.a"}]
          else if positionIndependent then
          [OS.Path.joinDirFile {dir = targetLibDir, file = "libmlton-pic.a"},
           OS.Path.joinDirFile {dir = targetLibDir, file = "libgdtoa-pic.a"}]

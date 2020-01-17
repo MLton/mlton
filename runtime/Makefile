@@ -40,7 +40,7 @@ XMFLAGS :=
 XCPPFLAGS :=
 XCFLAGS := -fno-common -pedantic -Wall -Wextra
 OPTXCFLAGS := -Wdisabled-optimization -O2
-DEBUGXCFLAGS := -DASSERT=1 -Wno-uninitialized -O0 -g
+DBGXCFLAGS := -DASSERT=1 -Wno-uninitialized -O0 -g
 PICXCFLAGS :=
 XLDFLAGS :=
 
@@ -113,8 +113,8 @@ endif
 
 ### all ###
 
-ALL := libgdtoa.a libgdtoa-gdb.a libgdtoa-pic.a \
-       libmlton.a libmlton-gdb.a libmlton-pic.a
+ALL := libgdtoa.a libgdtoa-dbg.a libgdtoa-pic.a \
+       libmlton.a libmlton-dbg.a libmlton-pic.a
 ALL += gen/c-types.sml gen/basis-ffi.sml gen/sizes
 
 .PHONY: all
@@ -139,12 +139,12 @@ $(if $(findstring $(2),LD),$(XLDFLAGS) $($(1)_XLDFLAGS) $(LDFLAGS)) \
 endef
 
 %.d: %.c
-	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,CPP) -MM -MG -MT $(subst .d,.o,$@) -MT $(subst .d,-gdb.o,$@) -MT $(subst .d,-pic.o,$@) -MT $@ -MM -MG -MF $@ $<
+	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,CPP) -MM -MG -MT $(subst .d,.o,$@) -MT $(subst .d,-dbg.o,$@) -MT $(subst .d,-pic.o,$@) -MT $@ -MM -MG -MF $@ $<
 
 %.o:
 	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,C,OPT) -c -o $@ $<
-%-gdb.o:
-	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,C,DEBUG) -c -o $@ $<
+%-dbg.o:
+	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,C,DBG) -c -o $@ $<
 %-pic.o:
 	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,C,OPT PIC) -c -o $@ $<
 
@@ -212,9 +212,9 @@ GDTOACFILES :=									\
 	g__fmt.c    g_ffmt.c    g_xfmt_p.c  hexnan.c    strtoIdd.c  strtod.c    strtopd.c   strtorQ.c   strtorxL.c
 GDTOACFILES := $(patsubst %,gdtoa/%,$(GDTOACFILES))
 
-GDTOA_OBJS       := $(patsubst %.c,%.o,$(GDTOACFILES))
-GDTOA_DEBUG_OBJS := $(patsubst %.c,%-gdb.o,$(GDTOACFILES))
-GDTOA_PIC_OBJS   := $(patsubst %.c,%-pic.o,$(GDTOACFILES))
+GDTOA_OBJS     := $(patsubst %.c,%.o,$(GDTOACFILES))
+GDTOA_DBG_OBJS := $(patsubst %.c,%-dbg.o,$(GDTOACFILES))
+GDTOA_PIC_OBJS := $(patsubst %.c,%-pic.o,$(GDTOACFILES))
 
 $(foreach GDTOACFILE,$(GDTOACFILES), $(eval $(GDTOACFILE)_XCFLAGS := -w -DINFNAN_CHECK))
 
@@ -223,7 +223,7 @@ ifneq ($(MAKECMDGOALS),clean)
 endif
 
 libgdtoa.a:     $(GDTOA_OBJS)
-libgdtoa-gdb.a: $(GDTOA_DEBUG_OBJS)
+libgdtoa-dbg.a: $(GDTOA_DBG_OBJS)
 libgdtoa-pic.a: $(GDTOA_PIC_OBJS)
 
 
@@ -267,10 +267,10 @@ endif
 
 BASISCFILES := $(shell $(FIND) basis -type f -name '*.c')
 
-MLTON_OBJS := gc.o platform.o platform/$(TARGET_OS).o util.o
-MLTON_OBJS += $(foreach f, $(basename $(BASISCFILES)), $(f).o)
-MLTON_DEBUG_OBJS := $(patsubst %.o,%-gdb.o,$(MLTON_OBJS))
-MLTON_PIC_OBJS   := $(patsubst %.o,%-pic.o,$(MLTON_OBJS))
+MLTON_OBJS     := gc.o platform.o platform/$(TARGET_OS).o util.o
+MLTON_OBJS     += $(foreach f, $(basename $(BASISCFILES)), $(f).o)
+MLTON_DBG_OBJS := $(patsubst %.o,%-dbg.o,$(MLTON_OBJS))
+MLTON_PIC_OBJS := $(patsubst %.o,%-pic.o,$(MLTON_OBJS))
 
 gc.c_XCFLAGS := -Wno-address-of-packed-member
 
@@ -278,8 +278,8 @@ ifneq ($(MAKECMDGOALS),clean)
 -include $(patsubst %.o,%.d,$(MLTON_OBJS))
 endif
 
-libmlton.a: $(MLTON_OBJS)
-libmlton-gdb.a: $(MLTON_DEBUG_OBJS)
+libmlton.a:     $(MLTON_OBJS)
+libmlton-dbg.a: $(MLTON_DBG_OBJS)
 libmlton-pic.a: $(MLTON_PIC_OBJS)
 
 ### gen/sizes ###
@@ -293,7 +293,7 @@ endif
 
 ######
 
-SHOW_VARS += TARGET TARGET_ARCH TARGET_OS GCC_VERSION XCCFLAGS XMFLAGS XCPPFLAGS XCFLAGS OPTXCFLAGS DEBUGXCFLAGS PICXCFLAGS
+SHOW_VARS += TARGET TARGET_ARCH TARGET_OS GCC_VERSION XCCFLAGS XMFLAGS XCPPFLAGS XCFLAGS OPTXCFLAGS DBGXCFLAGS PICXCFLAGS
 
 $(eval $(MK_SHOW_CONFIG))
 
