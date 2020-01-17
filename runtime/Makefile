@@ -181,22 +181,22 @@ gen/gen-types$(EXE): util.o
 basis-ffi.h: gen/basis-ffi.h
 	$(CP) $< $@
 
-ifeq ($(shell cat gen/gen-basis-ffi.sml gen/basis-ffi.def gen/basis-ffi.h | shasum -c -s gen/basis-ffi.h.chk && echo true),true)
+ifeq ($(shell cat gen/gen-basis-ffi.sml gen/basis-ffi.def gen/basis-ffi.h | $(SHASUM) -c -s gen/basis-ffi.h.chk && echo true),true)
 gen/basis-ffi.h: gen/gen-basis-ffi.sml gen/basis-ffi.def
 	touch gen/basis-ffi.h
 else
 gen/basis-ffi.h: gen/gen-basis-ffi$(EXE) gen/basis-ffi.def
 	./gen/gen-basis-ffi$(EXE) basis-ffi.h < gen/basis-ffi.def > gen/basis-ffi.h
-	cat gen/gen-basis-ffi.sml gen/basis-ffi.def gen/basis-ffi.h | shasum > gen/basis-ffi.h.chk
+	cat gen/gen-basis-ffi.sml gen/basis-ffi.def gen/basis-ffi.h | $(SHASUM) > gen/basis-ffi.h.chk
 endif
 
-ifeq ($(shell cat gen/gen-basis-ffi.sml gen/basis-ffi.def gen/basis-ffi.sml | shasum -c -s gen/basis-ffi.sml.chk && echo true),true)
+ifeq ($(shell cat gen/gen-basis-ffi.sml gen/basis-ffi.def gen/basis-ffi.sml | $(SHASUM) -c -s gen/basis-ffi.sml.chk && echo true),true)
 gen/basis-ffi.sml: gen/gen-basis-ffi.sml gen/basis-ffi.def
 	touch gen/basis-ffi.sml
 else
 gen/basis-ffi.sml: gen/gen-basis-ffi$(EXE) gen/basis-ffi.def
 	./gen/gen-basis-ffi$(EXE) basis-ffi.sml < gen/basis-ffi.def > gen/basis-ffi.sml
-	cat gen/gen-basis-ffi.sml gen/basis-ffi.def gen/basis-ffi.sml | shasum > gen/basis-ffi.sml.chk
+	cat gen/gen-basis-ffi.sml gen/basis-ffi.def gen/basis-ffi.sml | $(SHASUM) > gen/basis-ffi.sml.chk
 endif
 
 gen/gen-basis-ffi$(EXE): gen/gen-basis-ffi.sml
