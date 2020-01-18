@@ -1,0 +1,815 @@
+diff -Naur gdtoa.4/dmisc.c gdtoa.5/dmisc.c
+--- gdtoa.4/dmisc.c	2020-01-16 20:30:12.480569884 -0500
++++ gdtoa.5/dmisc.c	2020-01-16 20:30:15.908493017 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+ #ifndef MULTIPLE_THREADS
+  char *dtoa_result;
+diff -Naur gdtoa.4/dtoa.c gdtoa.5/dtoa.c
+--- gdtoa.4/dtoa.c	2020-01-16 20:30:12.476569973 -0500
++++ gdtoa.5/dtoa.c	2020-01-16 20:30:15.908493017 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+ /* dtoa for IEEE arithmetic (dmg): convert double to ASCII string.
+  *
+diff -Naur gdtoa.4/g_ddfmt.c gdtoa.5/g_ddfmt.c
+--- gdtoa.4/g_ddfmt.c	2020-01-16 20:30:12.476569973 -0500
++++ gdtoa.5/g_ddfmt.c	2020-01-16 20:30:15.912492926 -0500
+@@ -28,7 +28,7 @@
+ 
+ /* Please send bug reports to David M. Gay (dmg@acm.org). */
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ #include <string.h>
+ 
+  char *
+diff -Naur gdtoa.4/g_ddfmt_p.c gdtoa.5/g_ddfmt_p.c
+--- gdtoa.4/g_ddfmt_p.c	2020-01-16 20:30:12.476569973 -0500
++++ gdtoa.5/g_ddfmt_p.c	2020-01-16 20:30:15.912492926 -0500
+@@ -28,7 +28,7 @@
+ 
+ /* Please send bug reports to David M. Gay (dmg@acm.org). */
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ #include <string.h>
+ 
+  extern ULong NanDflt_d_D2A[2];
+diff -Naur gdtoa.4/g_dfmt.c gdtoa.5/g_dfmt.c
+--- gdtoa.4/g_dfmt.c	2020-01-16 20:30:12.476569973 -0500
++++ gdtoa.5/g_dfmt.c	2020-01-16 20:30:15.912492926 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+  char*
+ #ifdef KR_headers
+@@ -43,7 +43,7 @@
+ 	ULong bits[2], *L, sign;
+ 	int decpt, ex, i, mode;
+ #ifdef Honor_FLT_ROUNDS
+-#include "gdtoa_fltrnds.h"
++#include "gdtoa/gdtoa_fltrnds.h"
+ #else
+ #define fpi &fpi0
+ #endif
+diff -Naur gdtoa.4/g_dfmt_p.c gdtoa.5/g_dfmt_p.c
+--- gdtoa.4/g_dfmt_p.c	2020-01-16 20:30:12.476569973 -0500
++++ gdtoa.5/g_dfmt_p.c	2020-01-16 20:30:15.912492926 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+  extern ULong NanDflt_d_D2A[2];
+ 
+@@ -45,7 +45,7 @@
+ 	ULong bits[2], *L, sign;
+ 	int decpt, ex, i, mode;
+ #ifdef Honor_FLT_ROUNDS
+-#include "gdtoa_fltrnds.h"
++#include "gdtoa/gdtoa_fltrnds.h"
+ #else
+ #define fpi &fpi0
+ #endif
+diff -Naur gdtoa.4/gdtoa.c gdtoa.5/gdtoa.c
+--- gdtoa.4/gdtoa.c	2020-01-16 20:30:12.476569973 -0500
++++ gdtoa.5/gdtoa.c	2020-01-16 20:30:15.912492926 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+  static Bigint *
+ #ifdef KR_headers
+diff -Naur gdtoa.4/gdtoa.h gdtoa.5/gdtoa.h
+--- gdtoa.4/gdtoa.h	2020-01-16 20:30:12.476569973 -0500
++++ gdtoa.5/gdtoa.h	2020-01-16 20:30:15.912492926 -0500
+@@ -32,7 +32,7 @@
+ #ifndef GDTOA_H_INCLUDED
+ #define GDTOA_H_INCLUDED
+ 
+-#include "arith.h"
++#include "gdtoa/arith.h"
+ #include <stddef.h> /* for size_t */
+ #include "export.h"
+ 
+diff -Naur gdtoa.4/gdtoaimp.h gdtoa.5/gdtoaimp.h
+--- gdtoa.4/gdtoaimp.h	2020-01-16 20:30:12.476569973 -0500
++++ gdtoa.5/gdtoaimp.h	2020-01-16 20:30:15.912492926 -0500
+@@ -197,19 +197,19 @@
+ 
+ #ifndef GDTOAIMP_H_INCLUDED
+ #define GDTOAIMP_H_INCLUDED
+-#include "gdtoa.h"
+-#include "gd_qnan.h"
++#include "gdtoa/gdtoa.h"
++#include "gdtoa/gd_qnan.h"
+ #ifdef Honor_FLT_ROUNDS
+ #include <fenv.h>
+ #endif
+ 
+ #ifdef DEBUG
+-#include "stdio.h"
++#include <stdio.h>
+ #define Bug(x) {fprintf(stderr, "%s\n", x); exit(1);}
+ #endif
+ 
+-#include "stdlib.h"
+-#include "string.h"
++#include <stdlib.h>
++#include <string.h>
+ 
+ #ifdef KR_headers
+ #define Char char
+@@ -238,7 +238,7 @@
+ #define IEEE_Arith
+ #endif
+ 
+-#include "errno.h"
++#include <errno.h>
+ #ifdef Bad_float_h
+ 
+ #ifdef IEEE_Arith
+@@ -271,7 +271,7 @@
+ #endif
+ 
+ #else /* ifndef Bad_float_h */
+-#include "float.h"
++#include <float.h>
+ #endif /* Bad_float_h */
+ 
+ #ifdef IEEE_Arith
+@@ -288,7 +288,7 @@
+ #endif
+ 
+ #ifndef __MATH_H__
+-#include "math.h"
++#include <math.h>
+ #endif
+ 
+ #ifdef __cplusplus
+diff -Naur gdtoa.4/gethex.c gdtoa.5/gethex.c
+--- gdtoa.4/gethex.c	2020-01-16 20:30:12.476569973 -0500
++++ gdtoa.5/gethex.c	2020-01-16 20:30:15.912492926 -0500
+@@ -29,10 +29,10 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+ #ifdef USE_LOCALE
+-#include "locale.h"
++#include <locale.h>
+ #endif
+ 
+  int
+diff -Naur gdtoa.4/g_ffmt.c gdtoa.5/g_ffmt.c
+--- gdtoa.4/g_ffmt.c	2020-01-16 20:30:12.476569973 -0500
++++ gdtoa.5/g_ffmt.c	2020-01-16 20:30:15.912492926 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+  char*
+ #ifdef KR_headers
+@@ -43,7 +43,7 @@
+ 	ULong bits[1], *L, sign;
+ 	int decpt, ex, i, mode;
+ #ifdef Honor_FLT_ROUNDS
+-#include "gdtoa_fltrnds.h"
++#include "gdtoa/gdtoa_fltrnds.h"
+ #else
+ #define fpi &fpi0
+ #endif
+diff -Naur gdtoa.4/g_ffmt_p.c gdtoa.5/g_ffmt_p.c
+--- gdtoa.4/g_ffmt_p.c	2020-01-16 20:30:12.476569973 -0500
++++ gdtoa.5/g_ffmt_p.c	2020-01-16 20:30:15.912492926 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+  extern ULong NanDflt_f_D2A[1];
+ 
+@@ -45,7 +45,7 @@
+ 	ULong bits[1], *L, sign;
+ 	int decpt, ex, i, mode;
+ #ifdef Honor_FLT_ROUNDS
+-#include "gdtoa_fltrnds.h"
++#include "gdtoa/gdtoa_fltrnds.h"
+ #else
+ #define fpi &fpi0
+ #endif
+diff -Naur gdtoa.4/g__fmt.c gdtoa.5/g__fmt.c
+--- gdtoa.4/g__fmt.c	2020-01-16 20:30:12.476569973 -0500
++++ gdtoa.5/g__fmt.c	2020-01-16 20:30:15.912492926 -0500
+@@ -29,10 +29,10 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+ #ifdef USE_LOCALE
+-#include "locale.h"
++#include <locale.h>
+ #endif
+ 
+ #ifndef ldus_QNAN0
+diff -Naur gdtoa.4/gmisc.c gdtoa.5/gmisc.c
+--- gdtoa.4/gmisc.c	2020-01-16 20:30:12.476569973 -0500
++++ gdtoa.5/gmisc.c	2020-01-16 20:30:15.912492926 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+  void
+ #ifdef KR_headers
+diff -Naur gdtoa.4/g_Qfmt.c gdtoa.5/g_Qfmt.c
+--- gdtoa.4/g_Qfmt.c	2020-01-16 20:30:12.476569973 -0500
++++ gdtoa.5/g_Qfmt.c	2020-01-16 20:30:15.912492926 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+ #undef _0
+ #undef _1
+@@ -61,7 +61,7 @@
+ 	ULong bits[4], *L, sign;
+ 	int decpt, ex, i, mode;
+ #ifdef Honor_FLT_ROUNDS
+-#include "gdtoa_fltrnds.h"
++#include "gdtoa/gdtoa_fltrnds.h"
+ #else
+ #define fpi &fpi0
+ #endif
+diff -Naur gdtoa.4/g_Qfmt_p.c gdtoa.5/g_Qfmt_p.c
+--- gdtoa.4/g_Qfmt_p.c	2020-01-16 20:30:12.476569973 -0500
++++ gdtoa.5/g_Qfmt_p.c	2020-01-16 20:30:15.916492837 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+  extern ULong NanDflt_Q_D2A[4];
+ 
+@@ -63,7 +63,7 @@
+ 	ULong bits[4], *L, sign;
+ 	int decpt, ex, i, mode;
+ #ifdef Honor_FLT_ROUNDS
+-#include "gdtoa_fltrnds.h"
++#include "gdtoa/gdtoa_fltrnds.h"
+ #else
+ #define fpi &fpi0
+ #endif
+diff -Naur gdtoa.4/g_xfmt.c gdtoa.5/g_xfmt.c
+--- gdtoa.4/g_xfmt.c	2020-01-16 20:30:12.476569973 -0500
++++ gdtoa.5/g_xfmt.c	2020-01-16 20:30:15.916492837 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+ #undef _0
+ #undef _1
+@@ -64,7 +64,7 @@
+ 	UShort *L;
+ 	int decpt, ex, i, mode;
+ #ifdef Honor_FLT_ROUNDS
+-#include "gdtoa_fltrnds.h"
++#include "gdtoa/gdtoa_fltrnds.h"
+ #else
+ #define fpi &fpi0
+ #endif
+diff -Naur gdtoa.4/g_xfmt_p.c gdtoa.5/g_xfmt_p.c
+--- gdtoa.4/g_xfmt_p.c	2020-01-16 20:30:12.476569973 -0500
++++ gdtoa.5/g_xfmt_p.c	2020-01-16 20:30:15.916492837 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+  extern UShort NanDflt_ldus_D2A[5];
+ 
+@@ -66,7 +66,7 @@
+ 	UShort *L;
+ 	int decpt, ex, i, mode;
+ #ifdef Honor_FLT_ROUNDS
+-#include "gdtoa_fltrnds.h"
++#include "gdtoa/gdtoa_fltrnds.h"
+ #else
+ #define fpi &fpi0
+ #endif
+diff -Naur gdtoa.4/g_xLfmt.c gdtoa.5/g_xLfmt.c
+--- gdtoa.4/g_xLfmt.c	2020-01-16 20:30:12.476569973 -0500
++++ gdtoa.5/g_xLfmt.c	2020-01-16 20:30:15.916492837 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+ #undef _0
+ #undef _1
+@@ -59,7 +59,7 @@
+ 	ULong bits[2], *L, sign;
+ 	int decpt, ex, i, mode;
+ #ifdef Honor_FLT_ROUNDS
+-#include "gdtoa_fltrnds.h"
++#include "gdtoa/gdtoa_fltrnds.h"
+ #else
+ #define fpi &fpi0
+ #endif
+diff -Naur gdtoa.4/g_xLfmt_p.c gdtoa.5/g_xLfmt_p.c
+--- gdtoa.4/g_xLfmt_p.c	2020-01-16 20:30:12.476569973 -0500
++++ gdtoa.5/g_xLfmt_p.c	2020-01-16 20:30:15.916492837 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+  extern ULong NanDflt_xL_D2A[3];
+ 
+@@ -61,7 +61,7 @@
+ 	ULong bits[2], *L, sign;
+ 	int decpt, ex, i, mode;
+ #ifdef Honor_FLT_ROUNDS
+-#include "gdtoa_fltrnds.h"
++#include "gdtoa/gdtoa_fltrnds.h"
+ #else
+ #define fpi &fpi0
+ #endif
+diff -Naur gdtoa.4/hd_init.c gdtoa.5/hd_init.c
+--- gdtoa.4/hd_init.c	2020-01-16 20:30:12.476569973 -0500
++++ gdtoa.5/hd_init.c	2020-01-16 20:30:15.916492837 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+ #if 0
+  unsigned char hexdig[256];
+diff -Naur gdtoa.4/hexnan.c gdtoa.5/hexnan.c
+--- gdtoa.4/hexnan.c	2020-01-16 20:30:12.476569973 -0500
++++ gdtoa.5/hexnan.c	2020-01-16 20:30:15.916492837 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+  static void
+ #ifdef KR_headers
+diff -Naur gdtoa.4/misc.c gdtoa.5/misc.c
+--- gdtoa.4/misc.c	2020-01-16 20:30:12.476569973 -0500
++++ gdtoa.5/misc.c	2020-01-16 20:30:15.916492837 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+ #ifndef Omit_Private_Memory
+ #ifndef PRIVATE_MEM
+diff -Naur gdtoa.4/qnan.c gdtoa.5/qnan.c
+--- gdtoa.4/qnan.c	2020-01-16 20:30:12.476569973 -0500
++++ gdtoa.5/qnan.c	2020-01-16 20:30:27.488233353 -0500
+@@ -43,7 +43,7 @@
+ /* distributed?							*/
+ 
+ #include <stdio.h>
+-#include "arith.h"
++#include "gdtoa/arith.h"
+ 
+ #ifndef Long
+ #define Long long
+diff -Naur gdtoa.4/smisc.c gdtoa.5/smisc.c
+--- gdtoa.4/smisc.c	2020-01-16 20:30:12.480569884 -0500
++++ gdtoa.5/smisc.c	2020-01-16 20:30:15.916492837 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+  Bigint *
+ s2b
+diff -Naur gdtoa.4/strtod.c gdtoa.5/strtod.c
+--- gdtoa.4/strtod.c	2020-01-16 20:30:12.480569884 -0500
++++ gdtoa.5/strtod.c	2020-01-16 20:30:15.916492837 -0500
+@@ -29,13 +29,13 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ #ifndef NO_FENV_H
+ #include <fenv.h>
+ #endif
+ 
+ #ifdef USE_LOCALE
+-#include "locale.h"
++#include <locale.h>
+ #endif
+ 
+ #ifdef IEEE_Arith
+diff -Naur gdtoa.4/strtodg.c gdtoa.5/strtodg.c
+--- gdtoa.4/strtodg.c	2020-01-16 20:30:12.480569884 -0500
++++ gdtoa.5/strtodg.c	2020-01-16 20:30:15.916492837 -0500
+@@ -29,10 +29,10 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+ #ifdef USE_LOCALE
+-#include "locale.h"
++#include <locale.h>
+ #endif
+ 
+  static CONST int
+diff -Naur gdtoa.4/strtodI.c gdtoa.5/strtodI.c
+--- gdtoa.4/strtodI.c	2020-01-16 20:30:12.480569884 -0500
++++ gdtoa.5/strtodI.c	2020-01-16 20:30:15.916492837 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+  static double
+ #ifdef KR_headers
+diff -Naur gdtoa.4/strtof.c gdtoa.5/strtof.c
+--- gdtoa.4/strtof.c	2020-01-16 20:30:12.480569884 -0500
++++ gdtoa.5/strtof.c	2020-01-16 20:30:15.920492747 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+  float
+ #ifdef KR_headers
+@@ -44,7 +44,7 @@
+ 	int k;
+ 	union { ULong L[1]; float f; } __attribute__((__may_alias__)) u;
+ #ifdef Honor_FLT_ROUNDS
+-#include "gdtoa_fltrnds.h"
++#include "gdtoa/gdtoa_fltrnds.h"
+ #else
+ #define fpi &fpi0
+ #endif
+diff -Naur gdtoa.4/strtoId.c gdtoa.5/strtoId.c
+--- gdtoa.4/strtoId.c	2020-01-16 20:30:12.480569884 -0500
++++ gdtoa.5/strtoId.c	2020-01-16 20:30:15.920492747 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+  int
+ #ifdef KR_headers
+diff -Naur gdtoa.4/strtoIdd.c gdtoa.5/strtoIdd.c
+--- gdtoa.4/strtoIdd.c	2020-01-16 20:30:12.480569884 -0500
++++ gdtoa.5/strtoIdd.c	2020-01-16 20:30:15.920492747 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+  int
+ #ifdef KR_headers
+diff -Naur gdtoa.4/strtoIf.c gdtoa.5/strtoIf.c
+--- gdtoa.4/strtoIf.c	2020-01-16 20:30:12.480569884 -0500
++++ gdtoa.5/strtoIf.c	2020-01-16 20:30:15.920492747 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+  int
+ #ifdef KR_headers
+diff -Naur gdtoa.4/strtoIg.c gdtoa.5/strtoIg.c
+--- gdtoa.4/strtoIg.c	2020-01-16 20:30:12.480569884 -0500
++++ gdtoa.5/strtoIg.c	2020-01-16 20:30:15.920492747 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+  int
+ #ifdef KR_headers
+diff -Naur gdtoa.4/strtoIQ.c gdtoa.5/strtoIQ.c
+--- gdtoa.4/strtoIQ.c	2020-01-16 20:30:12.476569973 -0500
++++ gdtoa.5/strtoIQ.c	2020-01-16 20:30:15.920492747 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+  int
+ #ifdef KR_headers
+diff -Naur gdtoa.4/strtoIx.c gdtoa.5/strtoIx.c
+--- gdtoa.4/strtoIx.c	2020-01-16 20:30:12.480569884 -0500
++++ gdtoa.5/strtoIx.c	2020-01-16 20:30:15.920492747 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+  int
+ #ifdef KR_headers
+diff -Naur gdtoa.4/strtoIxL.c gdtoa.5/strtoIxL.c
+--- gdtoa.4/strtoIxL.c	2020-01-16 20:30:12.480569884 -0500
++++ gdtoa.5/strtoIxL.c	2020-01-16 20:30:15.920492747 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+  int
+ #ifdef KR_headers
+diff -Naur gdtoa.4/strtopd.c gdtoa.5/strtopd.c
+--- gdtoa.4/strtopd.c	2020-01-16 20:30:12.480569884 -0500
++++ gdtoa.5/strtopd.c	2020-01-16 20:30:15.920492747 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+  int
+ #ifdef KR_headers
+@@ -43,7 +43,7 @@
+ 	Long exp;
+ 	int k;
+ #ifdef Honor_FLT_ROUNDS
+-#include "gdtoa_fltrnds.h"
++#include "gdtoa/gdtoa_fltrnds.h"
+ #else
+ #define fpi &fpi0
+ #endif
+diff -Naur gdtoa.4/strtopdd.c gdtoa.5/strtopdd.c
+--- gdtoa.4/strtopdd.c	2020-01-16 20:30:12.480569884 -0500
++++ gdtoa.5/strtopdd.c	2020-01-16 20:30:15.920492747 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+  int
+ #ifdef KR_headers
+@@ -52,7 +52,7 @@
+ 		} __attribute__((__may_alias__)) U;
+ 	U *u;
+ #ifdef Honor_FLT_ROUNDS
+-#include "gdtoa_fltrnds.h"
++#include "gdtoa/gdtoa_fltrnds.h"
+ #else
+ #define fpi &fpi0
+ #endif
+diff -Naur gdtoa.4/strtopf.c gdtoa.5/strtopf.c
+--- gdtoa.4/strtopf.c	2020-01-16 20:30:12.480569884 -0500
++++ gdtoa.5/strtopf.c	2020-01-16 20:30:15.920492747 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+  int
+ #ifdef KR_headers
+@@ -43,7 +43,7 @@
+ 	Long exp;
+ 	int k;
+ #ifdef Honor_FLT_ROUNDS
+-#include "gdtoa_fltrnds.h"
++#include "gdtoa/gdtoa_fltrnds.h"
+ #else
+ #define fpi &fpi0
+ #endif
+diff -Naur gdtoa.4/strtopQ.c gdtoa.5/strtopQ.c
+--- gdtoa.4/strtopQ.c	2020-01-16 20:30:12.480569884 -0500
++++ gdtoa.5/strtopQ.c	2020-01-16 20:30:15.920492747 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+ #undef _0
+ #undef _1
+@@ -65,7 +65,7 @@
+ 	int k;
+ 	ULong *L = (ULong*)V;
+ #ifdef Honor_FLT_ROUNDS
+-#include "gdtoa_fltrnds.h"
++#include "gdtoa/gdtoa_fltrnds.h"
+ #else
+ #define fpi &fpi0
+ #endif
+diff -Naur gdtoa.4/strtopx.c gdtoa.5/strtopx.c
+--- gdtoa.4/strtopx.c	2020-01-16 20:30:12.480569884 -0500
++++ gdtoa.5/strtopx.c	2020-01-16 20:30:15.920492747 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+  extern UShort NanDflt_ldus_D2A[5];
+ 
+@@ -66,7 +66,7 @@
+ 	int k;
+ 	UShort *L = (UShort*)V;
+ #ifdef Honor_FLT_ROUNDS
+-#include "gdtoa_fltrnds.h"
++#include "gdtoa/gdtoa_fltrnds.h"
+ #else
+ #define fpi &fpi0
+ #endif
+diff -Naur gdtoa.4/strtopxL.c gdtoa.5/strtopxL.c
+--- gdtoa.4/strtopxL.c	2020-01-16 20:30:12.480569884 -0500
++++ gdtoa.5/strtopxL.c	2020-01-16 20:30:15.920492747 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+  extern ULong NanDflt_xL_D2A[3];
+ 
+@@ -62,7 +62,7 @@
+ 	int k;
+ 	ULong *L = (ULong*)V;
+ #ifdef Honor_FLT_ROUNDS
+-#include "gdtoa_fltrnds.h"
++#include "gdtoa/gdtoa_fltrnds.h"
+ #else
+ #define fpi &fpi0
+ #endif
+diff -Naur gdtoa.4/strtord.c gdtoa.5/strtord.c
+--- gdtoa.4/strtord.c	2020-01-16 20:30:12.480569884 -0500
++++ gdtoa.5/strtord.c	2020-01-16 20:30:15.920492747 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+  extern ULong NanDflt_d_D2A[2];
+ 
+diff -Naur gdtoa.4/strtordd.c gdtoa.5/strtordd.c
+--- gdtoa.4/strtordd.c	2020-01-16 20:30:12.480569884 -0500
++++ gdtoa.5/strtordd.c	2020-01-16 20:30:15.920492747 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+  extern ULong NanDflt_d_D2A[2];
+ 
+diff -Naur gdtoa.4/strtorf.c gdtoa.5/strtorf.c
+--- gdtoa.4/strtorf.c	2020-01-16 20:30:12.480569884 -0500
++++ gdtoa.5/strtorf.c	2020-01-16 20:30:15.920492747 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+  extern ULong NanDflt_f_D2A[1];
+ 
+diff -Naur gdtoa.4/strtorQ.c gdtoa.5/strtorQ.c
+--- gdtoa.4/strtorQ.c	2020-01-16 20:30:12.480569884 -0500
++++ gdtoa.5/strtorQ.c	2020-01-16 20:30:15.920492747 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+ #undef _0
+ #undef _1
+diff -Naur gdtoa.4/strtorx.c gdtoa.5/strtorx.c
+--- gdtoa.4/strtorx.c	2020-01-16 20:30:12.480569884 -0500
++++ gdtoa.5/strtorx.c	2020-01-16 20:30:15.920492747 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+ #undef _0
+ #undef _1
+diff -Naur gdtoa.4/strtorxL.c gdtoa.5/strtorxL.c
+--- gdtoa.4/strtorxL.c	2020-01-16 20:30:12.480569884 -0500
++++ gdtoa.5/strtorxL.c	2020-01-16 20:30:15.920492747 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+ #undef _0
+ #undef _1
+diff -Naur gdtoa.4/sum.c gdtoa.5/sum.c
+--- gdtoa.4/sum.c	2020-01-16 20:30:12.480569884 -0500
++++ gdtoa.5/sum.c	2020-01-16 20:30:15.924492657 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+  Bigint *
+ #ifdef KR_headers
+diff -Naur gdtoa.4/ulp.c gdtoa.5/ulp.c
+--- gdtoa.4/ulp.c	2020-01-16 20:30:12.484569794 -0500
++++ gdtoa.5/ulp.c	2020-01-16 20:30:15.924492657 -0500
+@@ -29,7 +29,7 @@
+ /* Please send bug reports to David M. Gay (dmg at acm dot org,
+  * with " at " changed at "@" and " dot " changed to ".").	*/
+ 
+-#include "gdtoaimp.h"
++#include "gdtoa/gdtoaimp.h"
+ 
+  double
+ ulp

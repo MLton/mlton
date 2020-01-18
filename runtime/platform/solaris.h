@@ -35,8 +35,8 @@
 #include <utime.h>
 
 #ifdef __sparc__
-#include "float-math.h"
-#include "setenv.h"
+#include "platform/float-math.h"
+#include "platform/setenv.h"
 #endif
 
 #define HAS_MSG_DONTWAIT TRUE

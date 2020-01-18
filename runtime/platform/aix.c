@@ -4,11 +4,11 @@
 #include <sys/procfs.h>
 #include <sys/vminfo.h>
 
-#include "diskBack.unix.c"
-#include "mmap-protect.c"
-#include "nonwin.c"
-#include "recv.nonblock.c"
-#include "use-mmap.c"
+#include "platform/diskBack.unix.c"
+#include "platform/mmap-protect.c"
+#include "platform/nonwin.c"
+#include "platform/recv.nonblock.c"
+#include "platform/use-mmap.c"
 
 size_t GC_pageSize (void) {
         long pageSize;

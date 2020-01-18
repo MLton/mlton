@@ -30,7 +30,7 @@
 #include <termios.h>
 #include <utime.h>
 
-#include "setenv.h"
+#include "platform/setenv.h"
 
 #if defined(SO_TOE)
 #define HPUX_VERSION 1123

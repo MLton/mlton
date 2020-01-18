@@ -1,5 +1,6 @@
-## Ignore all *.a and *.o files
+## Ignore all *.a, *.d, and *.o files
 *.a
+*.d
 *.o
 
 /gdtoa/
