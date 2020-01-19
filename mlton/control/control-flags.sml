@@ -10,6 +10,50 @@
 structure ControlFlags: CONTROL_FLAGS =
 struct
 
+structure StrMap =
+struct
+   type t = (string, string) HashTable.t
+
+   fun new (): t =
+      HashTable.new {hash = String.hash, equals = String.equals}
+
+   fun add (table, name, value) =
+      (ignore o HashTable.lookupOrInsert)
+      (table, name, fn () => value)
+
+   fun load (f: File.t): t =
+      let
+         val table = new ()
+         val () =
+            File.withIn
+            (f, fn ins =>
+             In.foreachLine
+             (ins, fn l =>
+              case String.tokens (l, Char.isSpace) of
+                 [name, "=", value] => add (table, name, value)
+               | _ => Error.bug (concat ["Control.StrMap.load: strange line: ", l])))
+      in
+         table
+      end
+
+   fun peek (table, name) =
+      HashTable.peek (table, name)
+
+   fun lookup (table, name) =
+      case peek (table, name) of
+         NONE => Error.bug (concat ["Control.StrMap.lookup: ", name])
+       | SOME value => value
+
+   fun lookupIntInf (table, name) =
+      let
+         val value = lookup (table, name)
+      in
+         case IntInf.fromString value of
+            NONE => Error.bug (concat ["Control.StrMap.lookupIntInf: ", name, ", ", value])
+          | SOME ii => ii
+      end
+end
+
 structure C = Control ()
 open C
 fun layout' {pre, suf} =

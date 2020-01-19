@@ -18,6 +18,15 @@ signature CONTROL_FLAGS =
       val layout': {pre: string, suf: string} -> Layout.t
       val layout: unit -> Layout.t
 
+      structure StrMap:
+         sig
+            type t
+            val load: File.t -> t
+            val lookup: t * string -> string
+            val lookupIntInf: t * string -> IntInf.t
+            val peek: t * string -> string option
+         end
+
       (*------------------------------------*)
       (*            Begin Flags             *)
       (*------------------------------------*)
