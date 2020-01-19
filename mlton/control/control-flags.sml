@@ -1505,29 +1505,35 @@ structure Target =
 
       structure Size =
          struct
-            val (cint: unit -> Bits.t, set_cint) = make "Size.cint"
-            val (cpointer: unit -> Bits.t, set_cpointer) = make "Size.cpointer"
-            val (cptrdiff: unit -> Bits.t, set_cptrdiff) = make "Size.cptrdiff"
-            val (csize: unit -> Bits.t, set_csize) = make "Size.csize"
-            val (header: unit -> Bits.t, set_header) = make "Size.header"
-            val (mplimb: unit -> Bits.t, set_mplimb) = make "Size.mplimb"
-            val (normalMetaData: unit -> Bits.t, set_normalMetaData) = make "Size.normalMetaData"
-            val (objptr: unit -> Bits.t, set_objptr) = make "Size.objptr"
-            val (seqIndex: unit -> Bits.t, set_seqIndex) = make "Size.seqIndex"
-            val (sequenceMetaData: unit -> Bits.t, set_sequenceMetaData) = make "Size.sequenceMetaData"
+            val map =
+               Promise.delay
+               (fn () =>
+                StrMap.load
+                (OS.Path.joinDirFile {dir = !libTargetDir,
+                                      file = "sizes"}))
+
+            fun make name =
+               let
+                  val p =
+                     Promise.delay
+                     (fn () =>
+                      (Bytes.toBits o Bytes.fromIntInf)
+                      (StrMap.lookupIntInf (Promise.force map, name)))
+               in
+                  fn () => Promise.force p
+               end
+
+            val cint = make "cint"
+            val cpointer = make "cpointer"
+            val cptrdiff = make "cptrdiff"
+            val csize = make "csize"
+            val header = make "header"
+            val mplimb = make "mplimb"
+            val normalMetaData = make "normalMetaData"
+            val objptr = make "objptr"
+            val seqIndex = make "seqIndex"
+            val sequenceMetaData = make "sequenceMetaData"
          end
-      fun setSizes {cint, cpointer, cptrdiff, csize, header, mplimb,
-                    normalMetaData, objptr, seqIndex, sequenceMetaData} =
-         (Size.set_cint cint
-          ; Size.set_cpointer cpointer
-          ; Size.set_cptrdiff cptrdiff
-          ; Size.set_csize csize
-          ; Size.set_header header
-          ; Size.set_mplimb mplimb
-          ; Size.set_normalMetaData normalMetaData
-          ; Size.set_objptr objptr
-          ; Size.set_seqIndex seqIndex
-          ; Size.set_sequenceMetaData sequenceMetaData)
    end
 
 fun mlbPathMap () =

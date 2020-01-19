@@ -470,16 +470,6 @@ signature CONTROL_FLAGS =
                   val seqIndex: unit -> Bits.t
                   val sequenceMetaData: unit -> Bits.t
                end
-            val setSizes: {cint: Bits.t,
-                           cpointer: Bits.t,
-                           cptrdiff: Bits.t,
-                           csize: Bits.t,
-                           header: Bits.t,
-                           mplimb: Bits.t,
-                           normalMetaData: Bits.t,
-                           objptr: Bits.t,
-                           seqIndex: Bits.t,
-                           sequenceMetaData: Bits.t} -> unit
          end
 
       (* Type check ILs. *)

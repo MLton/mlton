@@ -1066,38 +1066,6 @@ fun commandLine (args: string list): unit =
          {name = "CallStack.keep",
           value = Bool.toString (!Control.profile = Control.ProfileCallStack)}
 
-      val () =
-         let
-            val sizeMap =
-               List.map
-               (File.lines (OS.Path.joinDirFile {dir = targetDir,
-                                                 file = "sizes"}),
-                fn line =>
-                case String.tokens (line, Char.isSpace) of
-                   [ty, "=", size] =>
-                      (case Int.fromString size of
-                          NONE => Error.bug (concat ["strange size: ", size])
-                        | SOME size =>
-                             (ty, Bytes.toBits (Bytes.fromInt size)))
-                 | _ => Error.bug (concat ["strange size mapping: ", line]))
-            fun lookup ty' =
-               case List.peek (sizeMap, fn (ty, _) => String.equals (ty, ty')) of
-                  NONE => Error.bug (concat ["missing size mapping: ", ty'])
-                | SOME (_, size) => size
-         in
-            Control.Target.setSizes
-            {cint = lookup "cint",
-             cpointer = lookup "cpointer",
-             cptrdiff = lookup "cptrdiff",
-             csize = lookup "csize",
-             header = lookup "header",
-             mplimb = lookup "mplimb",
-             normalMetaData = lookup "normalMetaData",
-             objptr = lookup "objptr",
-             seqIndex = lookup "seqIndex",
-             sequenceMetaData = lookup "sequenceMetaData"}
-         end
-
       fun tokenize l =
          String.tokens (concat (List.separate (l, " ")), Char.isSpace)
 
