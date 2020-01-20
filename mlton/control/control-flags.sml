@@ -1503,22 +1503,22 @@ structure Target =
          end
       val (bigEndian: unit -> bool, setBigEndian) = make "bigEndian"
 
+      val rconsts =
+         Promise.delay
+         (fn () =>
+          StrMap.load
+          (OS.Path.joinDirFile {dir = !libTargetDir,
+                                file = "rconsts"}))
+
       structure Size =
          struct
-            val map =
-               Promise.delay
-               (fn () =>
-                StrMap.load
-                (OS.Path.joinDirFile {dir = !libTargetDir,
-                                      file = "sizes"}))
-
             fun make name =
                let
                   val p =
                      Promise.delay
                      (fn () =>
                       (Bytes.toBits o Bytes.fromIntInf)
-                      (StrMap.lookupIntInf (Promise.force map, name)))
+                      (StrMap.lookupIntInf (Promise.force rconsts, "size." ^ name)))
                in
                   fn () => Promise.force p
                end

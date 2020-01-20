@@ -2,9 +2,9 @@
 /c-types.sml
 /gen-basis-ffi
 /gen-basis-ffi.exe
-/gen-sizes
-/gen-sizes.exe
+/gen-rconsts
+/gen-rconsts.exe
 /gen-types
 /gen-types.exe
 /ml-types.h
-/sizes
+/rconsts
