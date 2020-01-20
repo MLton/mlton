@@ -215,6 +215,7 @@ endef
 
 $(eval $(call BASIS_FFI_TEMPLATE,basis-ffi.h))
 $(eval $(call BASIS_FFI_TEMPLATE,basis-ffi.sml))
+$(eval $(call BASIS_FFI_TEMPLATE,gen-basis-ffi-consts.c))
 
 gen/gen-basis-ffi$(EXE): gen/gen-basis-ffi.sml
 	$(RUN_MLTON) -output gen/gen-basis-ffi$(EXE) gen/gen-basis-ffi.sml
@@ -308,6 +309,8 @@ gen/rconsts: gen/gen-rconsts$(EXE)
 ifneq ($(MAKECMDGOALS),clean)
 -include gen/gen-rconsts.d
 endif
+
+gen/gen-rconsts$(EXE): libmlton.a
 
 ######
 
