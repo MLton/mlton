@@ -152,23 +152,6 @@ val lookupConstant =
       fn z => f () z
    end
 
-fun setupRuntimeConstants() : unit =
-   let
-      (* Setup endianness *)
-      val _ =
-         let
-            fun get (name:string): bool =
-                case lookupConstant ({default = NONE, name = name},
-                                     ConstType.Bool) of
-                   Const.Word w => 1 = WordX.toInt w
-                 | _ => Error.bug "Compile.setupRuntimeConstants: endian unknown"
-         in
-            Control.Target.setBigEndian (get "MLton_Platform_Arch_bigendian")
-         end
-   in
-      ()
-   end
-
 (* ------------------------------------------------- *)   
 (*                   Primitive Env                   *)
 (* ------------------------------------------------- *)
@@ -637,7 +620,6 @@ fun mkCompile {outputC, outputLL, outputS} =
          end
       fun toRssa ssa2 =
          let
-            val _ = setupRuntimeConstants ()
             val codegenImplementsPrim =
                case !Control.codegen of
                   Control.AMD64Codegen => amd64Codegen.implementsPrim

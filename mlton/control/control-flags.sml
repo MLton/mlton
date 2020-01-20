@@ -52,6 +52,15 @@ struct
             NONE => Error.bug (concat ["Control.StrMap.lookupIntInf: ", name, ", ", value])
           | SOME ii => ii
       end
+
+   fun lookupBool (table, name) =
+      let
+         val value = lookup (table, name)
+      in
+         case Bool.fromString value of
+            NONE => Error.bug (concat ["Control.StrMap.lookupBool: ", name, ", ", value])
+          | SOME b => b
+      end
 end
 
 structure C = Control ()
@@ -1477,7 +1486,14 @@ val target = control {name = "target",
 structure Target =
    struct
       open Target
-      
+
+      val rconsts =
+         Promise.delay
+         (fn () =>
+          StrMap.load
+          (OS.Path.joinDirFile {dir = !libTargetDir,
+                                file = "rconsts"}))
+
       datatype arch = datatype MLton.Platform.Arch.t
          
       val arch = control {name = "target arch",
@@ -1490,25 +1506,10 @@ structure Target =
                         default = Linux,
                         toString = MLton.Platform.OS.toString}
 
-      fun make s =
-         let
-            val r = ref NONE
-            fun get () =
-               case !r of
-                  NONE => Error.bug ("ControlFlags.Target." ^ s ^ ": not set")
-                | SOME x => x
-            fun set x = r := SOME x
-         in
-            (get, set)
-         end
-      val (bigEndian: unit -> bool, setBigEndian) = make "bigEndian"
-
-      val rconsts =
-         Promise.delay
+      val bigEndian =
+         Promise.lazy
          (fn () =>
-          StrMap.load
-          (OS.Path.joinDirFile {dir = !libTargetDir,
-                                file = "rconsts"}))
+          StrMap.lookupBool (Promise.force rconsts, "MLton_Platform_Arch_bigendian"))
 
       structure Size =
          struct

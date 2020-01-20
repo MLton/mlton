@@ -452,7 +452,6 @@ signature CONTROL_FLAGS =
             val arch: arch ref
 
             val bigEndian: unit -> bool
-            val setBigEndian: bool -> unit
 
             datatype os = datatype MLton.Platform.OS.t
             val os: os ref
