@@ -364,6 +364,8 @@ signature CONTROL_FLAGS =
             val split: int option ref
          end
 
+      val numExports: int ref
+
       val optFuel: int option ref
 
       val optFuelAvailAndUse: unit -> bool

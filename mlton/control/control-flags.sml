@@ -1258,6 +1258,8 @@ structure Native =
                            toString = Option.toString Int.toString}
    end
 
+val numExports: int ref = ref 0
+
 val optFuel =
    control {name = "optFuel",
             default = NONE,
@@ -1661,7 +1663,7 @@ val buildConsts =
                                            | X86Codegen => 1
                                            | AMD64Codegen => 2
                                            | LLVMCodegen => 3)),
-           (* ("MLton_FFI_numExports", int (Ffi.numExports ())), *)
+           ("MLton_FFI_numExports", int (!numExports)),
            ("MLton_Platform_Format", (case !format of
                                          Archive => "archive"
                                        | Executable => "executable"
