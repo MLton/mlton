@@ -30,7 +30,7 @@ structure GCField =
          fun make name =
             Bytes.fromIntInf
             (Control.StrMap.lookupIntInf
-             (Promise.force Control.Target.constants,
+             (Promise.force Control.Target.consts,
               "offset::gcState." ^ name))
       in
          val offset =

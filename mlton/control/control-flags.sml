@@ -1487,7 +1487,7 @@ structure Target =
    struct
       open Target
 
-      val constants =
+      val consts =
          Promise.delay
          (fn () =>
           StrMap.load
@@ -1509,7 +1509,7 @@ structure Target =
       val bigEndian =
          Promise.lazy
          (fn () =>
-          StrMap.lookupBool (Promise.force constants, "MLton_Platform_Arch_bigendian"))
+          StrMap.lookupBool (Promise.force consts, "MLton_Platform_Arch_bigendian"))
 
       structure Size =
          struct
@@ -1517,7 +1517,7 @@ structure Target =
                Promise.lazy
                (fn () =>
                 (Bytes.toBits o Bytes.fromIntInf)
-                (StrMap.lookupIntInf (Promise.force constants, "size::" ^ name)))
+                (StrMap.lookupIntInf (Promise.force consts, "size::" ^ name)))
 
             val cint = make "cint"
             val cpointer = make "cpointer"
@@ -1622,5 +1622,62 @@ val zoneCutDepth: int ref =
 val defaults = setDefaults
 
 val _ = defaults ()
+
+
+val commandLineConsts = StrMap.new ()
+fun setCommandLineConst {name, value} =
+   let
+      fun make (fromString, control) =
+         let
+            fun set () =
+               case fromString value of
+                  NONE => Error.bug (concat ["bad value for ", name])
+                | SOME v => control := v
+         in
+            set
+         end
+      val () =
+         case List.peek ([("Exn.keepHistory",
+                           make (Bool.fromString, exnHistory))],
+                         fn (s, _) => s = name) of
+            NONE => ()
+          | SOME (_,set) => set ()
+   in
+      StrMap.add (commandLineConsts, name, value)
+   end
+
+val buildConsts =
+   Promise.delay
+   (fn () =>
+    let
+       val bool = Bool.toString
+       val int = Int.toString
+       val buildConsts =
+          [("MLton_Align_align", int (case !align of
+                                         Align4 => 4
+                                       | Align8 => 8)),
+           ("MLton_Codegen_codegen", int (case !codegen of
+                                             CCodegen => 0
+                                           | X86Codegen => 1
+                                           | AMD64Codegen => 2
+                                           | LLVMCodegen => 3)),
+           (* ("MLton_FFI_numExports", int (Ffi.numExports ())), *)
+           ("MLton_Platform_Format", (case !format of
+                                         Archive => "archive"
+                                       | Executable => "executable"
+                                       | LibArchive => "libarchive"
+                                       | Library => "library")),
+           ("MLton_Profile_isOn", bool (case !profile of
+                                           ProfileNone => false
+                                         | ProfileCallStack => false
+                                         | ProfileDrop => false
+                                         | ProfileLabel => false
+                                         | _ => true))]
+       val table = StrMap.new ()
+       val () = List.foreach (buildConsts, fn (name, value) =>
+                              StrMap.add (table, name, value))
+    in
+       table
+    end)
 
 end

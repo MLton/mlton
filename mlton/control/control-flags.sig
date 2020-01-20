@@ -41,6 +41,8 @@ signature CONTROL_FLAGS =
       val bounceRssaLoopCutoff: int option ref
       val bounceRssaUsageCutoff: int option ref
 
+      val buildConsts: StrMap.t Promise.t
+
       val chunkBatch: int ref
 
       structure Chunkify:
@@ -88,6 +90,9 @@ signature CONTROL_FLAGS =
 
       (* whether or not to fuse `op` and `opCheckP` primitives in codegen *)
       val codegenFuseOpAndChk: bool ref
+
+      val commandLineConsts: StrMap.t
+      val setCommandLineConst: {name: string, value: string} -> unit
 
       val contifyIntoMain: bool ref
 
@@ -456,7 +461,7 @@ signature CONTROL_FLAGS =
             datatype os = datatype MLton.Platform.OS.t
             val os: os ref
 
-            val constants: StrMap.t Promise.t
+            val consts: StrMap.t Promise.t
 
             structure Size:
                sig
