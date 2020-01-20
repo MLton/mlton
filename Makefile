@@ -144,7 +144,7 @@ runtime:
 	$(MAKE) -C "$(SRC)/runtime"
 	$(CP) "$(SRC)/include/"*.h "$(INC)/"
 	$(CP) "$(SRC)/runtime/"*.a "$(LIB)/targets/$(TARGET)/"
-	$(CP) "$(SRC)/runtime/gen/rconsts" "$(LIB)/targets/$(TARGET)/"
+	$(CP) "$(SRC)/runtime/gen/constants" "$(LIB)/targets/$(TARGET)/"
 	$(CP) "$(SRC)/runtime/gen/c-types.sml" "$(LIB)/targets/$(TARGET)/sml/"
 	echo "$(TARGET_OS)" > "$(LIB)/targets/$(TARGET)/os"
 	echo "$(TARGET_ARCH)" > "$(LIB)/targets/$(TARGET)/arch"

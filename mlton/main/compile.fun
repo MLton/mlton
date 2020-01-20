@@ -124,7 +124,7 @@ val lookupConstant =
          Promise.lazy
          (fn () =>
           File.withIn
-          (concat [!Control.libTargetDir, "/rconsts"], fn ins =>
+          (concat [!Control.libTargetDir, "/constants"], fn ins =>
            LookupConstant.load (ins, !commandLineConstants)))
    in
       fn z => f () z

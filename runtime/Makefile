@@ -172,7 +172,7 @@ endif
 ifeq ($(WITH_PIC_RUNTIME),true)
 LIBS += $(patsubst %.a,%-pic.a,$(LIBS))
 endif
-ALL += $(LIBS) gen/rconsts gen/c-types.sml gen/basis-ffi.sml
+ALL += $(LIBS) gen/constants gen/c-types.sml gen/basis-ffi.sml
 
 .PHONY: all
 all: $(ALL)
@@ -301,16 +301,16 @@ libmlton-pic.a:     $(patsubst %.o,%-pic.o,$(MLTON_OBJS))
 libmlton-dbg-pic.a: $(patsubst %.o,%-dbg-pic.o,$(MLTON_OBJS))
 endif
 
-### gen/rconsts ###
+### gen/constants ###
 
-gen/rconsts: gen/gen-rconsts$(EXE)
-	./gen/gen-rconsts > gen/rconsts
+gen/constants: gen/gen-constants$(EXE)
+	./gen/gen-constants > gen/constants
 
 ifneq ($(MAKECMDGOALS),clean)
--include gen/gen-rconsts.d
+-include gen/gen-constants.d
 endif
 
-gen/gen-rconsts$(EXE): libmlton.a
+gen/gen-constants$(EXE): libmlton.a
 
 ######
 

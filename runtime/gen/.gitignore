@@ -1,10 +1,10 @@
 /c-types.h
 /c-types.sml
+/constants
 /gen-basis-ffi
 /gen-basis-ffi.exe
-/gen-rconsts
-/gen-rconsts.exe
+/gen-constants
+/gen-constants.exe
 /gen-types
 /gen-types.exe
 /ml-types.h
-/rconsts

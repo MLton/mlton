@@ -456,7 +456,7 @@ signature CONTROL_FLAGS =
             datatype os = datatype MLton.Platform.OS.t
             val os: os ref
 
-            val rconsts: StrMap.t Promise.t
+            val constants: StrMap.t Promise.t
 
             structure Size:
                sig

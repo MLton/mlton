@@ -1487,12 +1487,12 @@ structure Target =
    struct
       open Target
 
-      val rconsts =
+      val constants =
          Promise.delay
          (fn () =>
           StrMap.load
           (OS.Path.joinDirFile {dir = !libTargetDir,
-                                file = "rconsts"}))
+                                file = "constants"}))
 
       datatype arch = datatype MLton.Platform.Arch.t
          
@@ -1509,7 +1509,7 @@ structure Target =
       val bigEndian =
          Promise.lazy
          (fn () =>
-          StrMap.lookupBool (Promise.force rconsts, "MLton_Platform_Arch_bigendian"))
+          StrMap.lookupBool (Promise.force constants, "MLton_Platform_Arch_bigendian"))
 
       structure Size =
          struct
@@ -1517,7 +1517,7 @@ structure Target =
                Promise.lazy
                (fn () =>
                 (Bytes.toBits o Bytes.fromIntInf)
-                (StrMap.lookupIntInf (Promise.force rconsts, "size::" ^ name)))
+                (StrMap.lookupIntInf (Promise.force constants, "size::" ^ name)))
 
             val cint = make "cint"
             val cpointer = make "cpointer"
