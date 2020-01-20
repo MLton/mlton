@@ -16,7 +16,7 @@ include $(ROOT)/Makefile.config
 all:
 	$(MAKE) dirs runtime
 	$(MAKE) compiler CHECK_FIXPOINT=false                     # tools0 + mlton0 -> mlton1
-	$(MAKE) script basis-no-check constants basis-check libraries
+	$(MAKE) script basis libraries
 	$(MAKE) tools    CHECK_FIXPOINT=false                     # tools0 + mlton1 -> tools1
 ifeq (2, $(firstword $(sort $(BOOTSTRAP_STYLE) 2)))
 	$(MAKE) compiler-clean
@@ -78,14 +78,6 @@ endif
 .PHONY: compiler-clean
 compiler-clean:
 	$(MAKE) -C "$(SRC)/mlton" clean
-
-.PHONY: constants
-constants:
-	@echo 'Creating constants file.'
-	"$(BIN)/$(MLTON)" -target "$(TARGET)" -build-constants true > build-constants.c
-	"$(BIN)/$(MLTON)" -target "$(TARGET)" -output build-constants build-constants.c
-	./build-constants$(EXE) >"$(LIB)/targets/$(TARGET)/constants"
-	$(RM) build-constants$(EXE) build-constants.c
 
 .PHONY: dirs
 dirs:
@@ -278,7 +270,7 @@ smlnj-mlton:
 	$(MAKE) dirs runtime
 	$(MAKE) -C "$(SRC)/mlton" smlnj-mlton
 	smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | sml 2>&1 1> /dev/null` && $(CP) "$(SRC)/mlton/$(MLTON_OUTPUT)-smlnj.$$smlnj_heap_suffix" "$(LIB)/"
-	$(MAKE) script basis-no-check constants libraries-no-check
+	$(MAKE) script basis-no-check libraries-no-check
 	$(SED) \
 		-e 's;doitMLton "$$@";# doitMLton "$$@";' \
 		-e 's;doitPolyML "$$@";# doitPolyML "$$@";' \
@@ -320,7 +312,7 @@ polyml-mlton:
 	$(MAKE) dirs runtime
 	$(MAKE) -C "$(SRC)/mlton" polyml-mlton
 	$(CP) "$(SRC)/mlton/mlton-polyml$(EXE)" "$(LIB)/"
-	$(MAKE) script basis-no-check constants libraries-no-check
+	$(MAKE) script basis-no-check libraries-no-check
 	$(SED) \
 		-e 's;doitMLton "$$@";# doitMLton "$$@";' \
 		-e 's;doitSMLNJ "$$@";# doitSMLNJ "$$@";' \

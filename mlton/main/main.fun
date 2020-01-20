@@ -70,7 +70,6 @@ val llvm_llcOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val llvm_opt: string ref = ref "opt"
 val llvm_optOpts: {opt: string, pred: OptPred.t} list ref = ref []
 
-val buildConstants: bool ref = ref false
 val debugRuntime: bool ref = ref false
 val expert: bool ref = ref false
 val explicitAlign: Control.align option ref = ref NONE
@@ -263,9 +262,6 @@ fun makeOptions {usage} =
        (Expert, "bounce-rssa-usage-cutoff", "<n>",
         "Maximum variable use count to consider",
         Int (fn i => bounceRssaUsageCutoff := (if i < 0 then NONE else SOME i))),
-       (Expert, "build-constants", " {false|true}",
-        "output C file that prints basis constants",
-        boolRef buildConstants),
        (Expert, "cc", " <cc>", "set C compiler",
         SpaceString
         (fn s => cc := String.tokens (s, Char.isSpace))),
@@ -1206,12 +1202,10 @@ fun commandLine (args: string list): unit =
       Result.No msg => usage msg
     | Result.Yes [] =>
          (inputFile := "<none>"
-          ; if !buildConstants
-               then Compile.outputBasisConstants Out.standard
-            else (Out.outputl (Out.standard, Version.banner)
-                  ; if Verbosity.< (!verbosity, Detail)
-                       then ()
-                       else Layout.outputl (Control.layout (), Out.standard)))
+          ; Out.outputl (Out.standard, Version.banner)
+          ; if Verbosity.< (!verbosity, Detail)
+               then ()
+               else Layout.outputl (Control.layout (), Out.standard))
     | Result.Yes (input :: rest) =>
          let
             val _ = inputFile := File.base (File.fileOf input)

@@ -1,4 +1,4 @@
-(* Copyright (C) 2019 Matthew Fluet.
+(* Copyright (C) 2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -44,6 +44,4 @@ signature COMPILE =
                  frontend: File.t -> unit,
                  sourceFiles: File.t -> File.t vector}}
       val setCommandLineConstant: {name: string, value: string} -> unit
-      (* output a C file to print out the basis constants. *)
-      val outputBasisConstants: Out.t -> unit
    end

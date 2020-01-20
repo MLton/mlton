@@ -49,45 +49,6 @@ val buildConstants: (string * (unit -> string)) list =
 
 datatype z = datatype ConstType.t
 
-fun build (constants, out) =
-   let
-      val constants =
-         List.fold
-         (constants, [], fn ((name, ty), ac) =>
-          if List.exists (buildConstants, fn (name', _) => name = name')
-             then ac
-          else {name = name, value = name, ty = ty} :: ac)
-   in
-      List.foreach
-      (List.concat
-       [["#define MLTON_GC_INTERNAL_TYPES",
-         "#include \"platform.h\"",
-         "struct GC_state gcState;",
-         "",
-         "int main (void) {"],
-        List.revMap
-        (constants, fn {name, value, ty} =>
-         let
-            val (format, value) =
-               case ty of
-                  Bool => ("%s", concat [value, "? \"true\" : \"false\""])
-                | Real _ => ("%.20f", value)
-                | String => ("%s", value)
-                | Word ws => 
-                     (case WordSize.prim (WordSize.roundUpToPrim ws) of
-                         WordSize.W8 => "%\"PRIu8\""
-                       | WordSize.W16 => "%\"PRIu16\""
-                       | WordSize.W32 => "%\"PRIu32\""
-                       | WordSize.W64 => "%\"PRIu64\"",
-                      value)
-         in
-            concat ["fprintf (stdout, \"", name, " = ", format, "\\n\", ",
-                    value, ");"]
-         end),
-        ["return 0;}"]],
-       fn l => (Out.output (out, l); Out.newline out))
-   end
-
 fun load (ins: In.t, commandLineConstants)
    : {default: string option, name: string} * ConstType.t -> Const.t =
    let

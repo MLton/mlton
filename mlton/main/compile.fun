@@ -24,8 +24,6 @@ in
    structure ConstType = Const.ConstType
    structure Ffi = Ffi
    structure Symbol = Symbol
-   structure WordSize = WordSize
-   structure WordX = WordX
 end
 structure Ast = Ast (open Atoms)
 structure TypeEnv = TypeEnv (open Atoms)
@@ -94,7 +92,6 @@ structure x86Codegen = x86Codegen (structure CCodegen = CCodegen
 structure amd64Codegen = amd64Codegen (structure CCodegen = CCodegen
                                        structure Machine = Machine)
 
-
 (* ------------------------------------------------- *)
 (*                 Lookup Constant                   *)
 (* ------------------------------------------------- *)
@@ -121,33 +118,14 @@ fun setCommandLineConstant (c as {name, value}) =
       List.push (commandLineConstants, c)
    end
 
-val allConstants: (string * ConstType.t) list ref = ref []
-val amBuildingConstants: bool ref = ref false
-
 val lookupConstant =
    let
-      val zero = Const.word (WordX.fromIntInf (0, WordSize.word32))
       val f =
          Promise.lazy
          (fn () =>
-          if !amBuildingConstants
-             then (fn ({name, default, ...}, t) =>
-                   let
-                      (* Don't keep constants that already have a default value.
-                       * These are defined by _command_line_const and set by
-                       * -const, and shouldn't be looked up.
-                       *)
-                      val () =
-                         if isSome default
-                            then ()
-                         else List.push (allConstants, (name, t))
-                   in
-                      zero
-                   end)
-          else
-             File.withIn
-             (concat [!Control.libTargetDir, "/rconsts"], fn ins =>
-              LookupConstant.load (ins, !commandLineConstants)))
+          File.withIn
+          (concat [!Control.libTargetDir, "/rconsts"], fn ins =>
+           LookupConstant.load (ins, !commandLineConstants)))
    in
       fn z => f () z
    end
@@ -377,23 +355,6 @@ fun parseAndElaborateMLB (input: MLBString.t): (CoreML.Dec.t list * bool) vector
                          style = #style CoreML.Program.toFile,
                          suffix = #suffix CoreML.Program.toFile},
        tgtTypeCheck = NONE}
-   end
-
-(* ------------------------------------------------- *)
-(*                   Basis Library                   *)
-(* ------------------------------------------------- *)
-
-fun outputBasisConstants (out: Out.t): unit =
-   let
-      val _ = amBuildingConstants := true
-      val decs =
-         parseAndElaborateMLB (MLBString.fromMLBFile "$(SML_LIB)/basis/primitive/primitive.mlb")
-      val decs = Vector.concatV (Vector.map (decs, Vector.fromList o #1))
-      (* Need to defunctorize so the constants are forced. *)
-      val _ = Defunctorize.defunctorize (CoreML.Program.T {decs = decs})
-      val _ = LookupConstant.build (!allConstants, out)
-   in
-      ()
    end
 
 (* ------------------------------------------------- *)
