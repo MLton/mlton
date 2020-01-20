@@ -202,23 +202,19 @@ gen/gen-types$(EXE): util.o
 basis-ffi.h: gen/basis-ffi.h
 	$(CP) $< $@
 
-ifeq ($(shell cat gen/gen-basis-ffi.sml gen/basis-ffi.def gen/basis-ffi.h | $(SHASUM) -c -s gen/basis-ffi.h.chk && echo true),true)
-gen/basis-ffi.h: gen/gen-basis-ffi.sml gen/basis-ffi.def
-	touch gen/basis-ffi.h
+define BASIS_FFI_TEMPLATE
+ifeq ($(shell cat gen/gen-basis-ffi.sml gen/basis-ffi.def gen/$(1) | $(SHASUM) -c -s gen/$(1).chk && echo true),true)
+gen/$(1): gen/gen-basis-ffi.sml gen/basis-ffi.def
+	touch gen/$(1)
 else
-gen/basis-ffi.h: gen/gen-basis-ffi$(EXE) gen/basis-ffi.def
-	./gen/gen-basis-ffi$(EXE) basis-ffi.h < gen/basis-ffi.def > gen/basis-ffi.h
-	cat gen/gen-basis-ffi.sml gen/basis-ffi.def gen/basis-ffi.h | $(SHASUM) > gen/basis-ffi.h.chk
+gen/$(1): gen/gen-basis-ffi$(EXE) gen/basis-ffi.def
+	./gen/gen-basis-ffi$(EXE) $(1) < gen/basis-ffi.def > gen/$(1)
+	cat gen/gen-basis-ffi.sml gen/basis-ffi.def gen/$(1) | $(SHASUM) > gen/$(1).chk
 endif
+endef
 
-ifeq ($(shell cat gen/gen-basis-ffi.sml gen/basis-ffi.def gen/basis-ffi.sml | $(SHASUM) -c -s gen/basis-ffi.sml.chk && echo true),true)
-gen/basis-ffi.sml: gen/gen-basis-ffi.sml gen/basis-ffi.def
-	touch gen/basis-ffi.sml
-else
-gen/basis-ffi.sml: gen/gen-basis-ffi$(EXE) gen/basis-ffi.def
-	./gen/gen-basis-ffi$(EXE) basis-ffi.sml < gen/basis-ffi.def > gen/basis-ffi.sml
-	cat gen/gen-basis-ffi.sml gen/basis-ffi.def gen/basis-ffi.sml | $(SHASUM) > gen/basis-ffi.sml.chk
-endif
+$(eval $(call BASIS_FFI_TEMPLATE,basis-ffi.h))
+$(eval $(call BASIS_FFI_TEMPLATE,basis-ffi.sml))
 
 gen/gen-basis-ffi$(EXE): gen/gen-basis-ffi.sml
 	$(RUN_MLTON) -output gen/gen-basis-ffi$(EXE) gen/gen-basis-ffi.sml
