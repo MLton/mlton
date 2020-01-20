@@ -146,7 +146,7 @@ val lookupConstant =
                    end)
           else
              File.withIn
-             (concat [!Control.libTargetDir, "/constants"], fn ins =>
+             (concat [!Control.libTargetDir, "/rconsts"], fn ins =>
               LookupConstant.load (ins, !commandLineConstants)))
    in
       fn z => f () z
