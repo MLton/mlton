@@ -54,12 +54,6 @@ structure BackendAtoms = BackendAtoms (open Atoms)
 structure Rssa = Rssa (open BackendAtoms)
 structure Machine = Machine (open BackendAtoms)
 
-local
-   open Machine
-in
-   structure Runtime = Runtime
-end
-
 (*---------------------------------------------------*)
 (*                  Compiler Passes                  *)
 (*---------------------------------------------------*)
@@ -159,31 +153,7 @@ val lookupConstant =
    end
 
 fun setupRuntimeConstants() : unit =
-   (* Set GC_state offsets and sizes. *)
    let
-      val _ =
-         let
-            fun get (name: string): Bytes.t =
-               case lookupConstant ({default = NONE, name = name},
-                                    ConstType.Word WordSize.word32) of
-                  Const.Word w => Bytes.fromInt (WordX.toInt w)
-                | _ => Error.bug "Compile.setupRuntimeConstants: GC_state offset must be an int"
-         in
-            Runtime.GCField.setOffsets
-            {
-             atomicState = get "atomicState_Offset",
-             cardMapAbsolute = get "generationalMaps.cardMapAbsolute_Offset",
-             curSourceSeqIndex = get "sourceMaps.curSourceSeqIndex_Offset",
-             exnStack = get "exnStack_Offset",
-             frontier = get "frontier_Offset",
-             limit = get "limit_Offset",
-             limitPlusSlop = get "limitPlusSlop_Offset",
-             signalIsPending = get "signalsInfo.signalIsPending_Offset",
-             stackBottom = get "stackBottom_Offset",
-             stackLimit = get "stackLimit_Offset",
-             stackTop = get "stackTop_Offset"
-             }
-         end
       (* Setup endianness *)
       val _ =
          let

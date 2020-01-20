@@ -10,7 +10,11 @@
 #include "platform.h"
 
 #define MkSize(name, value) \
-  fprintf (stdout, "size." #name " = %"PRIuMAX"\n", (uintmax_t)(value))
+  fprintf (stdout, "size::" #name " = %"PRIuMAX"\n", (uintmax_t)(value))
+
+#define MkGCFieldOffset(field) \
+  fprintf (stdout, "offset::gcState." #field " = %"PRIuMAX"\n", (uintmax_t)(offsetof (struct GC_state, field)))
+
 
 int main (__attribute__ ((unused)) int argc,
           __attribute__ ((unused)) char* argv[]) {
@@ -25,6 +29,18 @@ int main (__attribute__ ((unused)) int argc,
   MkSize (objptr, sizeof(objptr));
   MkSize (seqIndex, sizeof(GC_sequenceLength));
   MkSize (sequenceMetaData, GC_SEQUENCE_METADATA_SIZE);
+
+  MkGCFieldOffset (atomicState);
+  MkGCFieldOffset (exnStack);
+  MkGCFieldOffset (frontier);
+  MkGCFieldOffset (generationalMaps.cardMapAbsolute);
+  MkGCFieldOffset (limit);
+  MkGCFieldOffset (limitPlusSlop);
+  MkGCFieldOffset (signalsInfo.signalIsPending);
+  MkGCFieldOffset (sourceMaps.curSourceSeqIndex);
+  MkGCFieldOffset (stackBottom);
+  MkGCFieldOffset (stackLimit);
+  MkGCFieldOffset (stackTop);
 
   return 0;
 }

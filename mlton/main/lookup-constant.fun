@@ -49,33 +49,11 @@ val buildConstants: (string * (unit -> string)) list =
 
 datatype z = datatype ConstType.t
 
-val gcFields =
-   [
-    "atomicState",
-    "sourceMaps.curSourceSeqIndex",
-    "exnStack",
-    "frontier",
-    "generationalMaps.cardMapAbsolute",
-    "limit",
-    "limitPlusSlop",
-    "signalsInfo.signalIsPending",
-    "stackBottom",
-    "stackLimit",
-    "stackTop"
-    ]
-
-val gcFieldsOffsets =
-   List.map (gcFields, fn s =>
-             {name = s ^ "_Offset",
-              value = concat ["(", Ffi.CType.toString Ffi.CType.Word32 ,")",
-                              "(offsetof (struct GC_state, ", s, "))"],
-              ty = ConstType.Word WordSize.word32})
-
 fun build (constants, out) =
    let
       val constants =
          List.fold
-         (constants, gcFieldsOffsets, fn ((name, ty), ac) =>
+         (constants, [], fn ((name, ty), ac) =>
           if List.exists (buildConstants, fn (name', _) => name = name')
              then ac
           else {name = name, value = name, ty = ty} :: ac)

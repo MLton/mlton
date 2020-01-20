@@ -26,45 +26,26 @@ structure GCField =
        | StackLimit
        | StackTop
 
-      val atomicStateOffset: Bytes.t ref = ref Bytes.zero
-      val cardMapAbsoluteOffset: Bytes.t ref = ref Bytes.zero
-      val curSourceSeqIndexOffset: Bytes.t ref = ref Bytes.zero
-      val exnStackOffset: Bytes.t ref = ref Bytes.zero
-      val frontierOffset: Bytes.t ref = ref Bytes.zero
-      val limitOffset: Bytes.t ref = ref Bytes.zero
-      val limitPlusSlopOffset: Bytes.t ref = ref Bytes.zero
-      val signalIsPendingOffset: Bytes.t ref = ref Bytes.zero
-      val stackBottomOffset: Bytes.t ref = ref Bytes.zero
-      val stackLimitOffset: Bytes.t ref = ref Bytes.zero
-      val stackTopOffset: Bytes.t ref = ref Bytes.zero
-
-      fun setOffsets {atomicState, cardMapAbsolute, curSourceSeqIndex,
-                      exnStack, frontier, limit, limitPlusSlop,
-                      signalIsPending, stackBottom, stackLimit, stackTop} =
-         (atomicStateOffset := atomicState
-          ; cardMapAbsoluteOffset := cardMapAbsolute
-          ; curSourceSeqIndexOffset := curSourceSeqIndex
-          ; exnStackOffset := exnStack
-          ; frontierOffset := frontier
-          ; limitOffset := limit
-          ; limitPlusSlopOffset := limitPlusSlop
-          ; signalIsPendingOffset := signalIsPending
-          ; stackBottomOffset := stackBottom
-          ; stackLimitOffset := stackLimit
-          ; stackTopOffset := stackTop)
-
-      val offset =
-         fn AtomicState => !atomicStateOffset
-          | CardMapAbsolute => !cardMapAbsoluteOffset
-          | CurSourceSeqIndex => !curSourceSeqIndexOffset
-          | ExnStack => !exnStackOffset
-          | Frontier => !frontierOffset
-          | Limit => !limitOffset
-          | LimitPlusSlop => !limitPlusSlopOffset
-          | SignalIsPending => !signalIsPendingOffset
-          | StackBottom => !stackBottomOffset
-          | StackLimit => !stackLimitOffset
-          | StackTop => !stackTopOffset
+      local
+         fun make name =
+            Bytes.fromIntInf
+            (Control.StrMap.lookupIntInf
+             (Promise.force Control.Target.rconsts,
+              "offset::gcState." ^ name))
+      in
+         val offset =
+            fn AtomicState => make "atomicState"
+             | CardMapAbsolute => make "generationalMaps.cardMapAbsolute"
+             | CurSourceSeqIndex => make "sourceMaps.curSourceSeqIndex"
+             | ExnStack => make "exnStack"
+             | Frontier => make "frontier"
+             | Limit => make "limit"
+             | LimitPlusSlop => make "limitPlusSlop"
+             | SignalIsPending => make "signalsInfo.signalIsPending"
+             | StackBottom => make "stackBottom"
+             | StackLimit => make "stackLimit"
+             | StackTop => make "stackTop"
+      end
 
       val toString =
          fn AtomicState => "AtomicState"

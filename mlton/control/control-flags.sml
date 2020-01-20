@@ -1513,15 +1513,10 @@ structure Target =
       structure Size =
          struct
             fun make name =
-               let
-                  val p =
-                     Promise.delay
-                     (fn () =>
-                      (Bytes.toBits o Bytes.fromIntInf)
-                      (StrMap.lookupIntInf (Promise.force rconsts, "size." ^ name)))
-               in
-                  fn () => Promise.force p
-               end
+               Promise.lazy
+               (fn () =>
+                (Bytes.toBits o Bytes.fromIntInf)
+                (StrMap.lookupIntInf (Promise.force rconsts, "size::" ^ name)))
 
             val cint = make "cint"
             val cpointer = make "cpointer"
