@@ -1,4 +1,4 @@
-## Copyright (C) 2010,2013,2016,2018-2019 Matthew Fluet.
+## Copyright (C) 2010,2013,2016,2018-2020 Matthew Fluet.
  # Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -52,7 +52,8 @@ FRONT_END_SOURCES :=		\
 SOURCES :=			\
 	$(MLTON_MLB)		\
 	$(FRONT_END_SOURCES)	\
-	$(filter-out control/version.sml,$(shell if [ -r $(MLTON_MLB) ]; then "$(RUN_MLTON)" -stop f $(MLTON_MLB); fi))
+	control/version.sml     \
+	$(shell if [ -r $(MLTON_MLB) ]; then "$(RUN_MLTON)" -stop f $(MLTON_MLB); fi)
 
 .PHONY: all
 all: $(MLTON_OUTPUT)
@@ -77,12 +78,18 @@ $(MLTON_OUTPUT): $(SOURCES)
 		-target $(TARGET) -output $(MLTON_OUTPUT)			\
 		$(MLTON_MLB)
 
+ifeq ($(shell if [ -f control/version_sml.chk ] && (cat control/version_sml.src; echo $(MLTON_NAME) $(MLTON_VERSION); cat control/version.sml) | $(SHASUM) -c -s control/version_sml.chk; then echo true; else $(RM) control/version.sml; fi),true)
+control/version.sml: control/version_sml.src
+	touch control/version.sml
+else
 control/version.sml: control/version_sml.src
 	$(SED) \
 		-e "s/MLTON_NAME/$(MLTON_NAME)/" \
 		-e "s/MLTON_VERSION/$(MLTON_VERSION)/" \
 		< control/version_sml.src \
 		> control/version.sml
+	(cat control/version_sml.src; echo $(MLTON_NAME) $(MLTON_VERSION); cat control/version.sml) | $(SHASUM) > control/version_sml.chk
+endif
 
 front-end/%.lex.sml: front-end/%.lex
 	rm -f $<.*
@@ -128,7 +135,7 @@ mlton-stubs.mlb: $(shell "$(RUN_MLTON)" -stop f ../lib/stubs/mlton-stubs/sources
 .PHONY: def-use
 def-use: mlton.def-use
 
-mlton.def-use: $(SOURCES) control/version.sml
+mlton.def-use: $(SOURCES)
 	"$(RUN_MLTON)" \
 		@MLton $(RUN_MLTON_RUNTIME_XARGS) $(RUN_MLTON_RUNTIME_ARGS) --	\
 		$(RUN_MLTON_COMPILE_XARGS) -verbose 0 $(RUN_MLTON_COMPILE_ARGS)	\
@@ -144,9 +151,7 @@ SMLNJ := sml
 SMLNJ_CM_SERVERS_NUM := 0
 
 .PHONY: smlnj-mlton
-smlnj-mlton: $(FRONT_END_SOURCES)
-	rm -f control/version.sml
-	$(MAKE) control/version.sml
+smlnj-mlton: mlton-smlnj.cm control/version.sml $(FRONT_END_SOURCES)
 	(									\
 		echo 'SMLofNJ.Internals.GC.messages false;';			\
 		echo '#set CM.Control.verbose false;';				\
@@ -172,9 +177,7 @@ smlnj-mlton: $(FRONT_END_SOURCES)
 POLYML := poly
 
 .PHONY: polyml-mlton
-polyml-mlton: mlton-polyml.use $(FRONT_END_SOURCES)
-	rm -f control/version.sml
-	$(MAKE) control/version.sml
+polyml-mlton: mlton-polyml.use $(shell [ -f mlton-polyml.use ] && cat mlton-polyml.use | $(SED) 's/use "\(.*\)";/\1/') control/version.sml $(FRONT_END_SOURCES)
 	(									\
 		echo 'use "mlton-polyml.use";';					\
 		echo 'PolyML.export("$(MLTON_OUTPUT)-polyml", Main.mainWrapped);'; \
