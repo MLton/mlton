@@ -334,10 +334,8 @@ fun makeOptions {usage} =
         SpaceString (fn s =>
                      case String.tokens (s, Char.isSpace) of
                         [name, value] =>
-                           (Compile.setCommandLineConstant {name = name,
-                                                           value = value}
-                            ; Control.setCommandLineConst {name = name,
-                                                           value = value})
+                           Control.setCommandLineConst {name = name,
+                                                        value = value}
                       | _ => usage (concat ["invalid -const flag: ", s]))),
        (Expert, "contify-into-main", " {false|true}",
         "contify functions into main",
@@ -1060,7 +1058,7 @@ fun commandLine (args: string list): unit =
                   else ()
 
       val () =
-         Compile.setCommandLineConstant
+         Control.setCommandLineConst
          {name = "CallStack.keep",
           value = Bool.toString (!Control.profile = Control.ProfileCallStack)}
 

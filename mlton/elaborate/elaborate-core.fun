@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2012,2015,2017,2019 Matthew Fluet.
+(* Copyright (C) 2009-2012,2015,2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -134,7 +134,6 @@ in
    structure CharSize = CharSize
    structure Con = Con
    structure Const = Const
-   structure ConstType = Const.ConstType
    structure Convention = CFunction.Convention
    structure Cdec = Dec
    structure Cexp = Exp
@@ -473,6 +472,88 @@ fun 'a elabConst (c: Aconst.t,
                      (if WordSize.isInRange (s, w, {signed = false})
                          then WordX.fromIntInf (w, s)
                       else (error ("word constant", ty); WordX.zero s))))
+   end
+
+fun lookConst {default: string option, expandedTy, name, region}: unit -> Const.t =
+   let
+      fun badType () =
+         let
+            val _ =
+               Control.error
+               (region,
+                seq [str "strange constant type: ",
+                     Type.layout expandedTy],
+                empty)
+         in
+            Error.bug "ElaborateCore.lookConst"
+         end
+      fun notFound () =
+         Error.bug
+         (concat ["ElaborateCore.lookConst: constant ", name,
+                  " not found"])
+      fun badConversion (value, ty) =
+         Error.bug
+         (concat ["ElaborateCore.lookConst: constant ", name,
+                  " expects a ", ty, " but got ", value])
+      fun boolConstFromString v =
+         case Bool.fromString v of
+            NONE => badConversion (v, "bool")
+          | SOME b => Const.Word (WordX.fromIntInf (if b then 1 else 0, WordSize.bool))
+      fun realConstFromString rs v =
+         case RealX.make (v, rs) of
+            NONE => badConversion (v, "real")
+          | SOME r => Const.Real r
+      fun strConstFromString v = Const.string v
+      fun wordConstFromString ws v =
+         case IntInf.fromString v of
+            NONE => badConversion (v, "word")
+          | SOME ii => Const.Word (WordX.fromIntInf (ii, ws))
+      fun intInfConstFromString v =
+         case IntInf.fromString v of
+            NONE => badConversion (v, "intInf")
+          | SOME ii => Const.IntInf ii
+   in
+      case Type.deConOpt expandedTy of
+         NONE => badType ()
+       | SOME (c, ts) =>
+            let
+               val constFromString =
+                  if Tycon.equals (c, Tycon.bool)
+                     then boolConstFromString
+                  else if Tycon.isIntX c
+                     then (case Tycon.deIntX c of
+                              NONE => intInfConstFromString
+                            | SOME is => wordConstFromString (WordSize.fromBits (IntSize.bits is)))
+                  else if Tycon.isRealX c
+                     then realConstFromString (Tycon.deRealX c)
+                  else if Tycon.isWordX c
+                     then wordConstFromString (Tycon.deWordX c)
+                  else if Tycon.equals (c, Tycon.vector)
+                          andalso 1 = Vector.length ts
+                          andalso (case Type.deConOpt (Vector.first ts) of
+                                      NONE => false
+                                    | SOME (c, _) =>
+                                         Tycon.isCharX c
+                                         andalso (Tycon.deCharX c = CharSize.C8))
+                     then strConstFromString
+                  else badType ()
+            in
+               fn () =>
+               let
+                  val value =
+                     case List.peekMap ([Control.commandLineConsts,
+                                         Promise.force Control.buildConsts,
+                                         Promise.force Control.Target.consts], fn consts =>
+                                        Control.StrMap.peek (consts, name)) of
+                        NONE => (case default of
+                                    NONE => notFound ()
+                                  | SOME value => value)
+                      | SOME value => value
+                  val const = constFromString value
+               in
+                  const
+               end
+            end
    end
 
 local
@@ -3339,56 +3420,15 @@ fun elaborateDec (d, {env = E, nest}) =
                          wrap (etaNoWrap {expandedTy = expandedTy,
                                           prim = prim},
                                elabedTy)
-                      fun lookConst {default: string option,
-                                     elabedTy, expandedTy,
-                                     name: string} =
+                      val lookConst = fn {default, elabedTy, expandedTy, name} =>
                          let
-                            fun bug () =
-                               let
-                                  val _ =
-                                     Control.error
-                                     (region,
-                                      seq [str "strange constant type: ",
-                                           Type.layout expandedTy],
-                                      empty)
-                               in
-                                  Error.bug "ElaborateCore.elabExp.lookConst"
-                               end
+                            val finish =
+                               lookConst {default = default,
+                                          expandedTy = expandedTy,
+                                          name = name,
+                                          region = region}
                          in
-                            case Type.deConOpt expandedTy of
-                               NONE => bug ()
-                             | SOME (c, ts) =>
-                                  let
-                                     val ct =
-                                        if Tycon.equals (c, Tycon.bool)
-                                           then ConstType.Bool
-                                        else if Tycon.isIntX c
-                                           then case Tycon.deIntX c of
-                                                   NONE => bug ()
-                                                 | SOME is =>
-                                                      ConstType.Word
-                                                      (WordSize.fromBits (IntSize.bits is))
-                                        else if Tycon.isRealX c
-                                           then ConstType.Real (Tycon.deRealX c)
-                                        else if Tycon.isWordX c
-                                           then ConstType.Word (Tycon.deWordX c)
-                                        else if Tycon.equals (c, Tycon.vector)
-                                           andalso 1 = Vector.length ts
-                                           andalso
-                                           (case (Type.deConOpt
-                                                  (Vector.first ts)) of
-                                               NONE => false
-                                             | SOME (c, _) =>
-                                                  Tycon.isCharX c
-                                                  andalso (Tycon.deCharX c = CharSize.C8))
-                                           then ConstType.String
-                                        else bug ()
-                                  val finish =
-                                     fn () => ! Const.lookup ({default = default,
-                                                               name = name}, ct)
-                                  in
-                                     Cexp.make (Cexp.Const finish, elabedTy)
-                                  end
+                            Cexp.make (Cexp.Const finish, elabedTy)
                          end
                       val check = fn (c, n) => check (c, n, region)
                       datatype z = datatype Ast.PrimKind.t

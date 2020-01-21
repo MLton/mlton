@@ -43,5 +43,4 @@ signature COMPILE =
           ssa2: {compile: File.t -> unit,
                  frontend: File.t -> unit,
                  sourceFiles: File.t -> File.t vector}}
-      val setCommandLineConstant: {name: string, value: string} -> unit
    end

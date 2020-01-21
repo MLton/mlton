@@ -1,4 +1,4 @@
-(* Copyright (C) 2014,2017,2019 Matthew Fluet.
+(* Copyright (C) 2014,2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -11,11 +11,6 @@ functor Const (S: CONST_STRUCTS): CONST =
 struct
 
 open S
-
-structure ConstType = ConstType (struct
-                                    structure RealSize = RealX.RealSize
-                                    structure WordSize = WordX.WordSize
-                                 end)
 
 structure IntInfRep =
    struct
@@ -160,8 +155,5 @@ fun equals (c, c') =
     | _ => false
 
 val equals = Trace.trace2 ("Const.equals", layout, layout, Bool.layout) equals
-
-val lookup: ({default: string option, name: string} * ConstType.t -> t) ref =
-   ref (fn _ => Error.bug "Const.lookup: not set")
 
 end

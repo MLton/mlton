@@ -1,4 +1,4 @@
-(* Copyright (C) 2017,2019 Matthew Fluet.
+(* Copyright (C) 2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -35,8 +35,6 @@ local
    c-symbol.fun
    c-function.sig
    c-function.fun
-   const-type.sig
-   const-type.fun
    const.sig
    const.fun
    symbol.sig
@@ -97,10 +95,8 @@ in
    signature ATOMS
    signature CHAR_SIZE
    signature CONST
-   signature CONST_TYPE
    signature C_FUNCTION
    signature C_TYPE
-   signature FFI
    signature HASH_TYPE
    signature ID
    signature INT_SIZE

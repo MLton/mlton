@@ -20,8 +20,6 @@ structure Atoms = Atoms ()
 local
    open Atoms
 in
-   structure Const = Const
-   structure ConstType = Const.ConstType
    structure Ffi = Ffi
    structure Symbol = Symbol
 end
@@ -70,9 +68,6 @@ local
 in
    structure Env = Env
 end
-structure LookupConstant = LookupConstant (structure Const = Const
-                                           structure ConstType = ConstType
-                                           structure Ffi = Ffi)
 structure Monomorphise = Monomorphise (structure Xml = Xml
                                        structure Sxml = Sxml)
 structure ClosureConvert = ClosureConvert (structure Ssa = Ssa
@@ -91,44 +86,6 @@ structure x86Codegen = x86Codegen (structure CCodegen = CCodegen
                                    structure Machine = Machine)
 structure amd64Codegen = amd64Codegen (structure CCodegen = CCodegen
                                        structure Machine = Machine)
-
-(* ------------------------------------------------- *)
-(*                 Lookup Constant                   *)
-(* ------------------------------------------------- *)
-
-val commandLineConstants: {name: string, value: string} list ref = ref []
-fun setCommandLineConstant (c as {name, value}) =
-   let
-      fun make (fromString, control) =
-         let
-            fun set () =
-               case fromString value of
-                  NONE => Error.bug (concat ["bad value for ", name])
-                | SOME v => control := v
-         in
-            set
-         end
-      val () =
-         case List.peek ([("Exn.keepHistory", 
-                           make (Bool.fromString, Control.exnHistory))],
-                         fn (s, _) => s = name) of
-            NONE => ()
-          | SOME (_,set) => set ()
-   in
-      List.push (commandLineConstants, c)
-   end
-
-val lookupConstant =
-   let
-      val f =
-         Promise.lazy
-         (fn () =>
-          File.withIn
-          (concat [!Control.libTargetDir, "/constants"], fn ins =>
-           LookupConstant.load (ins, !commandLineConstants)))
-   in
-      fn z => f () z
-   end
 
 (* ------------------------------------------------- *)   
 (*                   Primitive Env                   *)
@@ -325,7 +282,6 @@ fun parseAndElaborateMLB (input: MLBString.t): (CoreML.Dec.t list * bool) vector
             val _ = if !Control.keepAST
                        then File.remove (concat [!Control.inputFile, ".ast"])
                        else ()
-            val _ = Const.lookup := lookupConstant
             val (E, decs) = Elaborate.elaborateMLB (lexAndParseMLB input, {addPrim = addPrim})
             val _ = Control.checkForErrors ()
             val _ = Option.map (!Control.showBasis, fn f => Env.showBasis (E, f))
