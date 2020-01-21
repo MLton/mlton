@@ -96,6 +96,17 @@ structure Type =
        | Unit 
        | Vector of t
 
+      local
+         fun make s t =
+            case t of
+               Base name =>
+                  Name.compare (name, Name.T [s, "t"]) = EQUAL
+             | _ => false
+      in
+         val isString = make "String8"
+         val isBool = make "Bool"
+      end
+
       fun toC t =
          case t of
             Array t => concat ["Array(", toC t, ")"]
@@ -166,6 +177,8 @@ structure Entry =
                     name: Name.t,
                     ty: {args: Type.t list,
                          ret: Type.t}}
+       | SymConst of {name: Name.t,
+                      ty: Type.t}
        | Symbol of {name: Name.t,
                     ty: Type.t}
 
@@ -173,6 +186,7 @@ structure Entry =
          case entry of
             Const {name,...} => name
           | Import {name,...} => name
+          | SymConst {name, ...} => name
           | Symbol {name,...} => name
 
       fun compare (entry1, entry2) =
@@ -198,6 +212,13 @@ structure Entry =
                 "(",
                 String.concatWith "," (List.map Type.toC args),
                 ");"]
+          | SymConst {name, ty} =>
+               String.concat
+               ["PRIVATE extern const ",
+                Type.toC ty,
+                " ",
+                Name.toC name,
+                ";"]
           | Symbol {name, ty} =>
                String.concat
                ["PRIVATE extern ",
@@ -230,6 +251,17 @@ structure Entry =
                 " -> ",
                 Type.toML ret,
                 ";"]
+          | SymConst {name, ty} =>
+               String.concat
+               ["val ",
+                Name.last name,
+                " = #1 (_symbol \"",
+                Name.toC name,
+                "\" private : (unit -> (",
+                Type.toML ty,
+                ")) * ((",
+                Type.toML ty,
+                ") -> unit);) ()"]
           | Symbol {name, ty} =>
                String.concat
                ["val (",
@@ -244,20 +276,28 @@ structure Entry =
                 Type.toML ty, 
                 ") -> unit);"]
 
-      fun parseConst (s, name) =
+      fun parseType (s, kw) =
          let
-            val s = #2 (Substring.splitAt (s, 6))
+            val s = #2 (Substring.splitAt (s, 1 + String.size kw))
             val s = Substring.droplSpace s
             val s = if Substring.isPrefix ":" s
-                      then #2 (Substring.splitAt (s, 1))
-                       else raise Fail (concat ["Entry.parseConst: \"", Substring.string s, "\""])
+                       then #2 (Substring.splitAt (s, 1))
+                       else raise Fail (concat ["Entry.parse", kw, ": \"", Substring.string s, "\""])
             val (ret, rest) = Type.parse s
             val () = if Substring.isEmpty rest
                         then ()
-                        else raise Fail (concat ["Entry.parseConst: \"", Substring.string s, "\""])
+                        else raise Fail (concat ["Entry.parse", kw, ": \"", Substring.string s, "\""])
+         in
+            ret
+         end
+
+
+      fun parseConst (s, name) =
+         let
+            val ty = parseType (s, "Const")
          in
             Const {name = name,
-                   ty = ret}
+                   ty = ty}
          end
 
       fun parseImport (s, name) =
@@ -282,20 +322,20 @@ structure Entry =
                     ty = {args = args, ret = ret}}
          end
 
+      fun parseSymConst (s, name) =
+         let
+            val ty = parseType (s, "SymConst")
+         in
+            SymConst {name = name,
+                      ty = ty}
+         end
+
       fun parseSymbol (s, name) =
          let
-            val s = #2 (Substring.splitAt (s, 7))
-            val s = Substring.droplSpace s
-            val s = if Substring.isPrefix ":" s
-                      then #2 (Substring.splitAt (s, 1))
-                       else raise Fail (concat ["Entry.parseSymbol: \"", Substring.string s, "\""])
-            val (ret, rest) = Type.parse s
-            val () = if Substring.isEmpty rest
-                        then ()
-                        else raise Fail (concat ["Entry.parseSymbol: \"", Substring.string s, "\""])
+            val ty = parseType (s, "Symbol")
          in
             Symbol {name = name,
-                    ty = ret}
+                    ty = ty}
          end
 
       fun parse s =
@@ -311,6 +351,8 @@ structure Entry =
                              then parseConst (rest, name)
                           else if Substring.isPrefix "_import" rest
                              then parseImport (rest, name)
+                          else if Substring.isPrefix "_symconst" rest
+                             then parseSymConst (rest, name)
                           else if Substring.isPrefix "_symbol" rest
                              then parseSymbol (rest, name)
                           else raise Fail (concat ["Entry.parse: \"", Substring.string s, "\""])
@@ -404,12 +446,40 @@ fun outputML entries =
       ()
    end
 
+fun outputGenConsts entries =
+   let
+      fun println s = if s <> "" then (print s; print "\n") else ()
+
+      val () = println "/* This file is automatically generated.  Do not edit. */\n"
+      val () = List.app (fn entry =>
+                         case entry of
+                            Entry.Const {name, ty} =>
+                               if Type.isBool ty
+                                  then println (concat ["MkBoolConst (",
+                                                        Name.toC name,
+                                                        ");"])
+                               else if Type.isString ty
+                                  then println (concat ["MkStrConst (",
+                                                        Name.toC name,
+                                                        ");"])
+                               else println (concat ["MkNumConst (",
+                                                     Name.toC name,
+                                                     ", ",
+                                                     Type.toC ty,
+                                                     ");"])
+                          | _ => ())
+                        entries
+   in
+      ()
+   end
+
 val () =
    case CommandLine.arguments () of
       ["basis-ffi.h"] => outputC entries
     | ["basis-ffi.sml"] => outputML entries
+    | ["gen-basis-ffi-consts.c"] => outputGenConsts entries
     | _ => (TextIO.output (TextIO.stdErr,
                            concat ["usage: ",
                                    CommandLine.name (),
-                                   " basis-ffi.h|basis-ffi.sml\n"])
+                                   " basis-ffi.h|basis-ffi.sml|gen-basis-ffi-consts.c\n"])
             ; OS.Process.exit OS.Process.failure)

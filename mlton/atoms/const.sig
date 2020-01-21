@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014,2017,2019 Matthew Fluet.
+(* Copyright (C) 2009,2014,2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -19,10 +19,6 @@ signature CONST_STRUCTS =
 signature CONST = 
    sig
       include CONST_STRUCTS
-
-      structure ConstType: CONST_TYPE
-      sharing ConstType.RealSize = RealX.RealSize
-      sharing ConstType.WordSize = WordX.WordSize
 
       structure IntInfRep:
          sig
@@ -47,11 +43,6 @@ signature CONST =
       val intInf: IntInf.t -> t
       val hash: t -> word
       val layout: t -> Layout.t
-      (* lookup is for constants defined by _const, _build_const, and
-       * _command_line_const.  It is set in main/compile.fun.
-       *)
-      val lookup: ({default: string option,
-                    name: string} * ConstType.t -> t) ref
       val null: t
       val parse: t Parse.t
       val real: RealX.t -> t

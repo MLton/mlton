@@ -32,17 +32,6 @@ signature RUNTIME =
 
             val layout: t -> Layout.t
             val offset: t -> Bytes.t (* Field offset in struct GC_state. *)
-            val setOffsets: {atomicState: Bytes.t,
-                             cardMapAbsolute: Bytes.t,
-                             curSourceSeqIndex: Bytes.t,
-                             exnStack: Bytes.t,
-                             frontier: Bytes.t,
-                             limit: Bytes.t,
-                             limitPlusSlop: Bytes.t,
-                             signalIsPending: Bytes.t,
-                             stackBottom: Bytes.t,
-                             stackLimit: Bytes.t,
-                             stackTop: Bytes.t} -> unit
             val toString: t -> string
          end
       structure RObjectType:

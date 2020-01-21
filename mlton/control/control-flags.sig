@@ -18,6 +18,15 @@ signature CONTROL_FLAGS =
       val layout': {pre: string, suf: string} -> Layout.t
       val layout: unit -> Layout.t
 
+      structure StrMap:
+         sig
+            type t
+            val load: File.t -> t
+            val lookup: t * string -> string
+            val lookupIntInf: t * string -> IntInf.t
+            val peek: t * string -> string option
+         end
+
       (*------------------------------------*)
       (*            Begin Flags             *)
       (*------------------------------------*)
@@ -31,6 +40,8 @@ signature CONTROL_FLAGS =
       val bounceRssaLiveCutoff: int option ref
       val bounceRssaLoopCutoff: int option ref
       val bounceRssaUsageCutoff: int option ref
+
+      val buildConsts: StrMap.t Promise.t
 
       val chunkBatch: int ref
 
@@ -79,6 +90,9 @@ signature CONTROL_FLAGS =
 
       (* whether or not to fuse `op` and `opCheckP` primitives in codegen *)
       val codegenFuseOpAndChk: bool ref
+
+      val commandLineConsts: StrMap.t
+      val setCommandLineConst: {name: string, value: string} -> unit
 
       val contifyIntoMain: bool ref
 
@@ -350,6 +364,8 @@ signature CONTROL_FLAGS =
             val split: int option ref
          end
 
+      val numExports: int ref
+
       val optFuel: int option ref
 
       val optFuelAvailAndUse: unit -> bool
@@ -443,10 +459,11 @@ signature CONTROL_FLAGS =
             val arch: arch ref
 
             val bigEndian: unit -> bool
-            val setBigEndian: bool -> unit
 
             datatype os = datatype MLton.Platform.OS.t
             val os: os ref
+
+            val consts: StrMap.t Promise.t
 
             structure Size:
                sig
@@ -461,16 +478,6 @@ signature CONTROL_FLAGS =
                   val seqIndex: unit -> Bits.t
                   val sequenceMetaData: unit -> Bits.t
                end
-            val setSizes: {cint: Bits.t,
-                           cpointer: Bits.t,
-                           cptrdiff: Bits.t,
-                           csize: Bits.t,
-                           header: Bits.t,
-                           mplimb: Bits.t,
-                           normalMetaData: Bits.t,
-                           objptr: Bits.t,
-                           seqIndex: Bits.t,
-                           sequenceMetaData: Bits.t} -> unit
          end
 
       (* Type check ILs. *)

@@ -172,7 +172,7 @@ endif
 ifeq ($(WITH_PIC_RUNTIME),true)
 LIBS += $(patsubst %.a,%-pic.a,$(LIBS))
 endif
-ALL += $(LIBS) gen/c-types.sml gen/basis-ffi.sml gen/sizes
+ALL += $(LIBS) gen/constants gen/c-types.sml gen/basis-ffi.sml
 
 .PHONY: all
 all: $(ALL)
@@ -202,23 +202,20 @@ gen/gen-types$(EXE): util.o
 basis-ffi.h: gen/basis-ffi.h
 	$(CP) $< $@
 
-ifeq ($(shell cat gen/gen-basis-ffi.sml gen/basis-ffi.def gen/basis-ffi.h | $(SHASUM) -c -s gen/basis-ffi.h.chk && echo true),true)
-gen/basis-ffi.h: gen/gen-basis-ffi.sml gen/basis-ffi.def
-	touch gen/basis-ffi.h
+define BASIS_FFI_TEMPLATE
+ifeq ($(shell cat gen/gen-basis-ffi.sml gen/basis-ffi.def gen/$(1) | $(SHASUM) -c -s gen/$(1).chk && echo true),true)
+gen/$(1): gen/gen-basis-ffi.sml gen/basis-ffi.def
+	touch gen/$(1)
 else
-gen/basis-ffi.h: gen/gen-basis-ffi$(EXE) gen/basis-ffi.def
-	./gen/gen-basis-ffi$(EXE) basis-ffi.h < gen/basis-ffi.def > gen/basis-ffi.h
-	cat gen/gen-basis-ffi.sml gen/basis-ffi.def gen/basis-ffi.h | $(SHASUM) > gen/basis-ffi.h.chk
+gen/$(1): gen/gen-basis-ffi$(EXE) gen/basis-ffi.def
+	./gen/gen-basis-ffi$(EXE) $(1) < gen/basis-ffi.def > gen/$(1)
+	cat gen/gen-basis-ffi.sml gen/basis-ffi.def gen/$(1) | $(SHASUM) > gen/$(1).chk
 endif
+endef
 
-ifeq ($(shell cat gen/gen-basis-ffi.sml gen/basis-ffi.def gen/basis-ffi.sml | $(SHASUM) -c -s gen/basis-ffi.sml.chk && echo true),true)
-gen/basis-ffi.sml: gen/gen-basis-ffi.sml gen/basis-ffi.def
-	touch gen/basis-ffi.sml
-else
-gen/basis-ffi.sml: gen/gen-basis-ffi$(EXE) gen/basis-ffi.def
-	./gen/gen-basis-ffi$(EXE) basis-ffi.sml < gen/basis-ffi.def > gen/basis-ffi.sml
-	cat gen/gen-basis-ffi.sml gen/basis-ffi.def gen/basis-ffi.sml | $(SHASUM) > gen/basis-ffi.sml.chk
-endif
+$(eval $(call BASIS_FFI_TEMPLATE,basis-ffi.h))
+$(eval $(call BASIS_FFI_TEMPLATE,basis-ffi.sml))
+$(eval $(call BASIS_FFI_TEMPLATE,gen-basis-ffi-consts.c))
 
 gen/gen-basis-ffi$(EXE): gen/gen-basis-ffi.sml
 	$(RUN_MLTON) -output gen/gen-basis-ffi$(EXE) gen/gen-basis-ffi.sml
@@ -304,14 +301,16 @@ libmlton-pic.a:     $(patsubst %.o,%-pic.o,$(MLTON_OBJS))
 libmlton-dbg-pic.a: $(patsubst %.o,%-dbg-pic.o,$(MLTON_OBJS))
 endif
 
-### gen/sizes ###
+### gen/constants ###
 
-gen/sizes: gen/gen-sizes$(EXE)
-	./gen/gen-sizes > gen/sizes
+gen/constants: gen/gen-constants$(EXE)
+	./gen/gen-constants > gen/constants
 
 ifneq ($(MAKECMDGOALS),clean)
--include gen/gen-sizes.d
+-include gen/gen-constants.d
 endif
+
+gen/gen-constants$(EXE): libmlton.a
 
 ######
 

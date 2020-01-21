@@ -70,7 +70,6 @@ val llvm_llcOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val llvm_opt: string ref = ref "opt"
 val llvm_optOpts: {opt: string, pred: OptPred.t} list ref = ref []
 
-val buildConstants: bool ref = ref false
 val debugRuntime: bool ref = ref false
 val expert: bool ref = ref false
 val explicitAlign: Control.align option ref = ref NONE
@@ -263,9 +262,6 @@ fun makeOptions {usage} =
        (Expert, "bounce-rssa-usage-cutoff", "<n>",
         "Maximum variable use count to consider",
         Int (fn i => bounceRssaUsageCutoff := (if i < 0 then NONE else SOME i))),
-       (Expert, "build-constants", " {false|true}",
-        "output C file that prints basis constants",
-        boolRef buildConstants),
        (Expert, "cc", " <cc>", "set C compiler",
         SpaceString
         (fn s => cc := String.tokens (s, Char.isSpace))),
@@ -338,8 +334,8 @@ fun makeOptions {usage} =
         SpaceString (fn s =>
                      case String.tokens (s, Char.isSpace) of
                         [name, value] =>
-                           Compile.setCommandLineConstant {name = name,
-                                                           value = value}
+                           Control.setCommandLineConst {name = name,
+                                                        value = value}
                       | _ => usage (concat ["invalid -const flag: ", s]))),
        (Expert, "contify-into-main", " {false|true}",
         "contify functions into main",
@@ -1062,41 +1058,9 @@ fun commandLine (args: string list): unit =
                   else ()
 
       val () =
-         Compile.setCommandLineConstant
+         Control.setCommandLineConst
          {name = "CallStack.keep",
           value = Bool.toString (!Control.profile = Control.ProfileCallStack)}
-
-      val () =
-         let
-            val sizeMap =
-               List.map
-               (File.lines (OS.Path.joinDirFile {dir = targetDir,
-                                                 file = "sizes"}),
-                fn line =>
-                case String.tokens (line, Char.isSpace) of
-                   [ty, "=", size] =>
-                      (case Int.fromString size of
-                          NONE => Error.bug (concat ["strange size: ", size])
-                        | SOME size =>
-                             (ty, Bytes.toBits (Bytes.fromInt size)))
-                 | _ => Error.bug (concat ["strange size mapping: ", line]))
-            fun lookup ty' =
-               case List.peek (sizeMap, fn (ty, _) => String.equals (ty, ty')) of
-                  NONE => Error.bug (concat ["missing size mapping: ", ty'])
-                | SOME (_, size) => size
-         in
-            Control.Target.setSizes
-            {cint = lookup "cint",
-             cpointer = lookup "cpointer",
-             cptrdiff = lookup "cptrdiff",
-             csize = lookup "csize",
-             header = lookup "header",
-             mplimb = lookup "mplimb",
-             normalMetaData = lookup "normalMetaData",
-             objptr = lookup "objptr",
-             seqIndex = lookup "seqIndex",
-             sequenceMetaData = lookup "sequenceMetaData"}
-         end
 
       fun tokenize l =
          String.tokens (concat (List.separate (l, " ")), Char.isSpace)
@@ -1238,12 +1202,10 @@ fun commandLine (args: string list): unit =
       Result.No msg => usage msg
     | Result.Yes [] =>
          (inputFile := "<none>"
-          ; if !buildConstants
-               then Compile.outputBasisConstants Out.standard
-            else (Out.outputl (Out.standard, Version.banner)
-                  ; if Verbosity.< (!verbosity, Detail)
-                       then ()
-                       else Layout.outputl (Control.layout (), Out.standard)))
+          ; Out.outputl (Out.standard, Version.banner)
+          ; if Verbosity.< (!verbosity, Detail)
+               then ()
+               else Layout.outputl (Control.layout (), Out.standard))
     | Result.Yes (input :: rest) =>
          let
             val _ = inputFile := File.base (File.fileOf input)

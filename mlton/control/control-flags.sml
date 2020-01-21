@@ -10,6 +10,72 @@
 structure ControlFlags: CONTROL_FLAGS =
 struct
 
+structure StrMap =
+struct
+   type t = (string, string) HashTable.t
+
+   fun new (): t =
+      HashTable.new {hash = String.hash, equals = String.equals}
+
+   fun add (table, name, value) =
+      (ignore o HashTable.lookupOrInsert)
+      (table, name, fn () => value)
+
+   fun load (f: File.t): t =
+      let
+         val table = new ()
+         val () =
+            File.withIn
+            (f, fn ins =>
+             In.foreachLine
+             (ins, fn l =>
+              let
+                 fun err () =
+                    Error.bug (concat ["Control.StrMap.load: strange line: ", l])
+              in
+                 case String.peeki (l, fn (_, c) => c = #"=") of
+                    NONE => err ()
+                  | SOME (i, _) =>
+                       let
+                          val name = String.prefix (l, i)
+                          val name = String.deleteSurroundingWhitespace name
+                          val value = String.dropPrefix (l, i + 1)
+                          val value = String.deleteSurroundingWhitespace value
+                       in
+                          add (table, name, value)
+                       end
+              end))
+      in
+         table
+      end
+
+   fun peek (table, name) =
+      HashTable.peek (table, name)
+
+   fun lookup (table, name) =
+      case peek (table, name) of
+         NONE => Error.bug (concat ["Control.StrMap.lookup: ", name])
+       | SOME value => value
+
+   fun lookupIntInf (table, name) =
+      let
+         val value = lookup (table, name)
+      in
+         case IntInf.fromString value of
+            NONE => Error.bug (concat ["Control.StrMap.lookupIntInf: ", name, ", ", value])
+          | SOME ii => ii
+      end
+
+   fun lookupBool (table, name) =
+      let
+         val value = lookup (table, name)
+      in
+         case Bool.fromString value of
+            NONE => Error.bug (concat ["Control.StrMap.lookupBool: ", name, ", ", value])
+          | SOME b => b
+      end
+end
+
 structure C = Control ()
 open C
 fun layout' {pre, suf} =
@@ -1205,6 +1271,8 @@ structure Native =
                            toString = Option.toString Int.toString}
    end
 
+val numExports: int ref = ref 0
+
 val optFuel =
    control {name = "optFuel",
             default = NONE,
@@ -1433,7 +1501,14 @@ val target = control {name = "target",
 structure Target =
    struct
       open Target
-      
+
+      val consts =
+         Promise.delay
+         (fn () =>
+          StrMap.load
+          (OS.Path.joinDirFile {dir = !libTargetDir,
+                                file = "constants"}))
+
       datatype arch = datatype MLton.Platform.Arch.t
          
       val arch = control {name = "target arch",
@@ -1446,44 +1521,30 @@ structure Target =
                         default = Linux,
                         toString = MLton.Platform.OS.toString}
 
-      fun make s =
-         let
-            val r = ref NONE
-            fun get () =
-               case !r of
-                  NONE => Error.bug ("ControlFlags.Target." ^ s ^ ": not set")
-                | SOME x => x
-            fun set x = r := SOME x
-         in
-            (get, set)
-         end
-      val (bigEndian: unit -> bool, setBigEndian) = make "bigEndian"
+      val bigEndian =
+         Promise.lazy
+         (fn () =>
+          StrMap.lookupBool (Promise.force consts, "const::MLton_Platform_Arch_bigendian"))
 
       structure Size =
          struct
-            val (cint: unit -> Bits.t, set_cint) = make "Size.cint"
-            val (cpointer: unit -> Bits.t, set_cpointer) = make "Size.cpointer"
-            val (cptrdiff: unit -> Bits.t, set_cptrdiff) = make "Size.cptrdiff"
-            val (csize: unit -> Bits.t, set_csize) = make "Size.csize"
-            val (header: unit -> Bits.t, set_header) = make "Size.header"
-            val (mplimb: unit -> Bits.t, set_mplimb) = make "Size.mplimb"
-            val (normalMetaData: unit -> Bits.t, set_normalMetaData) = make "Size.normalMetaData"
-            val (objptr: unit -> Bits.t, set_objptr) = make "Size.objptr"
-            val (seqIndex: unit -> Bits.t, set_seqIndex) = make "Size.seqIndex"
-            val (sequenceMetaData: unit -> Bits.t, set_sequenceMetaData) = make "Size.sequenceMetaData"
+            fun make name =
+               Promise.lazy
+               (fn () =>
+                (Bytes.toBits o Bytes.fromIntInf)
+                (StrMap.lookupIntInf (Promise.force consts, "size::" ^ name)))
+
+            val cint = make "cint"
+            val cpointer = make "cpointer"
+            val cptrdiff = make "cptrdiff"
+            val csize = make "csize"
+            val header = make "header"
+            val mplimb = make "mplimb"
+            val normalMetaData = make "normalMetaData"
+            val objptr = make "objptr"
+            val seqIndex = make "seqIndex"
+            val sequenceMetaData = make "sequenceMetaData"
          end
-      fun setSizes {cint, cpointer, cptrdiff, csize, header, mplimb,
-                    normalMetaData, objptr, seqIndex, sequenceMetaData} =
-         (Size.set_cint cint
-          ; Size.set_cpointer cpointer
-          ; Size.set_cptrdiff cptrdiff
-          ; Size.set_csize csize
-          ; Size.set_header header
-          ; Size.set_mplimb mplimb
-          ; Size.set_normalMetaData normalMetaData
-          ; Size.set_objptr objptr
-          ; Size.set_seqIndex seqIndex
-          ; Size.set_sequenceMetaData sequenceMetaData)
    end
 
 fun mlbPathMap () =
@@ -1576,5 +1637,62 @@ val zoneCutDepth: int ref =
 val defaults = setDefaults
 
 val _ = defaults ()
+
+
+val commandLineConsts = StrMap.new ()
+fun setCommandLineConst {name, value} =
+   let
+      fun make (fromString, control) =
+         let
+            fun set () =
+               case fromString value of
+                  NONE => Error.bug (concat ["bad value for ", name])
+                | SOME v => control := v
+         in
+            set
+         end
+      val () =
+         case List.peek ([("Exn.keepHistory",
+                           make (Bool.fromString, exnHistory))],
+                         fn (s, _) => s = name) of
+            NONE => ()
+          | SOME (_,set) => set ()
+   in
+      StrMap.add (commandLineConsts, "cmdLineConst::" ^ name, value)
+   end
+
+val buildConsts =
+   Promise.delay
+   (fn () =>
+    let
+       val bool = Bool.toString
+       val int = Int.toString
+       val buildConsts =
+          [("MLton_Align_align", int (case !align of
+                                         Align4 => 4
+                                       | Align8 => 8)),
+           ("MLton_Codegen_codegen", int (case !codegen of
+                                             CCodegen => 0
+                                           | X86Codegen => 1
+                                           | AMD64Codegen => 2
+                                           | LLVMCodegen => 3)),
+           ("MLton_FFI_numExports", int (!numExports)),
+           ("MLton_Platform_Format", (case !format of
+                                         Archive => "archive"
+                                       | Executable => "executable"
+                                       | LibArchive => "libarchive"
+                                       | Library => "library")),
+           ("MLton_Profile_isOn", bool (case !profile of
+                                           ProfileNone => false
+                                         | ProfileCallStack => false
+                                         | ProfileDrop => false
+                                         | ProfileLabel => false
+                                         | _ => true))]
+       val table = StrMap.new ()
+       val () = List.foreach (buildConsts, fn (name, value) =>
+                              StrMap.add (table, "buildConst::" ^ name, value))
+    in
+       table
+    end)
 
 end

@@ -20,12 +20,8 @@ structure Atoms = Atoms ()
 local
    open Atoms
 in
-   structure Const = Const
-   structure ConstType = Const.ConstType
    structure Ffi = Ffi
    structure Symbol = Symbol
-   structure WordSize = WordSize
-   structure WordX = WordX
 end
 structure Ast = Ast (open Atoms)
 structure TypeEnv = TypeEnv (open Atoms)
@@ -54,12 +50,6 @@ structure BackendAtoms = BackendAtoms (open Atoms)
 structure Rssa = Rssa (open BackendAtoms)
 structure Machine = Machine (open BackendAtoms)
 
-local
-   open Machine
-in
-   structure Runtime = Runtime
-end
-
 (*---------------------------------------------------*)
 (*                  Compiler Passes                  *)
 (*---------------------------------------------------*)
@@ -78,9 +68,6 @@ local
 in
    structure Env = Env
 end
-structure LookupConstant = LookupConstant (structure Const = Const
-                                           structure ConstType = ConstType
-                                           structure Ffi = Ffi)
 structure Monomorphise = Monomorphise (structure Xml = Xml
                                        structure Sxml = Sxml)
 structure ClosureConvert = ClosureConvert (structure Ssa = Ssa
@@ -99,105 +86,6 @@ structure x86Codegen = x86Codegen (structure CCodegen = CCodegen
                                    structure Machine = Machine)
 structure amd64Codegen = amd64Codegen (structure CCodegen = CCodegen
                                        structure Machine = Machine)
-
-
-(* ------------------------------------------------- *)
-(*                 Lookup Constant                   *)
-(* ------------------------------------------------- *)
-
-val commandLineConstants: {name: string, value: string} list ref = ref []
-fun setCommandLineConstant (c as {name, value}) =
-   let
-      fun make (fromString, control) =
-         let
-            fun set () =
-               case fromString value of
-                  NONE => Error.bug (concat ["bad value for ", name])
-                | SOME v => control := v
-         in
-            set
-         end
-      val () =
-         case List.peek ([("Exn.keepHistory", 
-                           make (Bool.fromString, Control.exnHistory))],
-                         fn (s, _) => s = name) of
-            NONE => ()
-          | SOME (_,set) => set ()
-   in
-      List.push (commandLineConstants, c)
-   end
-
-val allConstants: (string * ConstType.t) list ref = ref []
-val amBuildingConstants: bool ref = ref false
-
-val lookupConstant =
-   let
-      val zero = Const.word (WordX.fromIntInf (0, WordSize.word32))
-      val f =
-         Promise.lazy
-         (fn () =>
-          if !amBuildingConstants
-             then (fn ({name, default, ...}, t) =>
-                   let
-                      (* Don't keep constants that already have a default value.
-                       * These are defined by _command_line_const and set by
-                       * -const, and shouldn't be looked up.
-                       *)
-                      val () =
-                         if isSome default
-                            then ()
-                         else List.push (allConstants, (name, t))
-                   in
-                      zero
-                   end)
-          else
-             File.withIn
-             (concat [!Control.libTargetDir, "/constants"], fn ins =>
-              LookupConstant.load (ins, !commandLineConstants)))
-   in
-      fn z => f () z
-   end
-
-fun setupRuntimeConstants() : unit =
-   (* Set GC_state offsets and sizes. *)
-   let
-      val _ =
-         let
-            fun get (name: string): Bytes.t =
-               case lookupConstant ({default = NONE, name = name},
-                                    ConstType.Word WordSize.word32) of
-                  Const.Word w => Bytes.fromInt (WordX.toInt w)
-                | _ => Error.bug "Compile.setupRuntimeConstants: GC_state offset must be an int"
-         in
-            Runtime.GCField.setOffsets
-            {
-             atomicState = get "atomicState_Offset",
-             cardMapAbsolute = get "generationalMaps.cardMapAbsolute_Offset",
-             curSourceSeqIndex = get "sourceMaps.curSourceSeqIndex_Offset",
-             exnStack = get "exnStack_Offset",
-             frontier = get "frontier_Offset",
-             limit = get "limit_Offset",
-             limitPlusSlop = get "limitPlusSlop_Offset",
-             signalIsPending = get "signalsInfo.signalIsPending_Offset",
-             stackBottom = get "stackBottom_Offset",
-             stackLimit = get "stackLimit_Offset",
-             stackTop = get "stackTop_Offset"
-             }
-         end
-      (* Setup endianness *)
-      val _ =
-         let
-            fun get (name:string): bool =
-                case lookupConstant ({default = NONE, name = name},
-                                     ConstType.Bool) of
-                   Const.Word w => 1 = WordX.toInt w
-                 | _ => Error.bug "Compile.setupRuntimeConstants: endian unknown"
-         in
-            Control.Target.setBigEndian (get "MLton_Platform_Arch_bigendian")
-         end
-   in
-      ()
-   end
 
 (* ------------------------------------------------- *)   
 (*                   Primitive Env                   *)
@@ -394,7 +282,6 @@ fun parseAndElaborateMLB (input: MLBString.t): (CoreML.Dec.t list * bool) vector
             val _ = if !Control.keepAST
                        then File.remove (concat [!Control.inputFile, ".ast"])
                        else ()
-            val _ = Const.lookup := lookupConstant
             val (E, decs) = Elaborate.elaborateMLB (lexAndParseMLB input, {addPrim = addPrim})
             val _ = Control.checkForErrors ()
             val _ = Option.map (!Control.showBasis, fn f => Env.showBasis (E, f))
@@ -424,23 +311,6 @@ fun parseAndElaborateMLB (input: MLBString.t): (CoreML.Dec.t list * bool) vector
                          style = #style CoreML.Program.toFile,
                          suffix = #suffix CoreML.Program.toFile},
        tgtTypeCheck = NONE}
-   end
-
-(* ------------------------------------------------- *)
-(*                   Basis Library                   *)
-(* ------------------------------------------------- *)
-
-fun outputBasisConstants (out: Out.t): unit =
-   let
-      val _ = amBuildingConstants := true
-      val decs =
-         parseAndElaborateMLB (MLBString.fromMLBFile "$(SML_LIB)/basis/primitive/primitive.mlb")
-      val decs = Vector.concatV (Vector.map (decs, Vector.fromList o #1))
-      (* Need to defunctorize so the constants are forced. *)
-      val _ = Defunctorize.defunctorize (CoreML.Program.T {decs = decs})
-      val _ = LookupConstant.build (!allConstants, out)
-   in
-      ()
    end
 
 (* ------------------------------------------------- *)
@@ -667,7 +537,6 @@ fun mkCompile {outputC, outputLL, outputS} =
          end
       fun toRssa ssa2 =
          let
-            val _ = setupRuntimeConstants ()
             val codegenImplementsPrim =
                case !Control.codegen of
                   Control.AMD64Codegen => amd64Codegen.implementsPrim

@@ -1,4 +1,4 @@
-(* Copyright (C) 2019 Matthew Fluet.
+(* Copyright (C) 2019-2020 Matthew Fluet.
  * Copyright (C) 2004-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -34,14 +34,13 @@ val symbols: {name: string,
               ty: CType.t,
               symbolScope: SymbolScope.t} list ref = ref []
 
-fun numExports () = List.length (!exports)
-
 local
    val nextId = Counter.generator 0
 in
    fun addExport {args, convention, name, res, symbolScope} =
       let
          val id = nextId ()
+         val _ = Int.inc Control.numExports
          val _ = List.push (exports, {args = args,
                                       convention = convention,
                                       id = id,
