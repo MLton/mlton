@@ -1416,7 +1416,7 @@ fun commandLine (args: string list): unit =
                               if !format = Executable
                               then [] else [ "-DLIBNAME=" ^ !libname ],
                               if positionIndependent
-                              then [ "-fPIC", "-DPIC" ] else [],
+                              then [ "-fPIC" ] else [],
                               [ "-I" ^ targetIncDir ],
                               ccOpts,
                               ["-o", output],
