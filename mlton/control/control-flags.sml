@@ -1269,6 +1269,10 @@ structure Native =
       val split = control {name = "native split",
                            default = SOME 20000,
                            toString = Option.toString Int.toString}
+
+      val pic = control {name = "native pic",
+                         default = false,
+                         toString = Bool.toString}
    end
 
 val numExports: int ref = ref 0
@@ -1343,8 +1347,6 @@ val polyvariance =
                              ("small", Int.layout small),
                              ("product", Int.layout product)])
              p)}
-
-val positionIndependent = ref false
 
 val preferAbsPaths = control {name = "prefer abs paths",
                               default = false,

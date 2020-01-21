@@ -362,6 +362,9 @@ signature CONTROL_FLAGS =
 
             (* whether or not to split assembly file in native codegen *)
             val split: int option ref
+
+            (* whether or not to use position-independent code in native codegen *)
+            val pic: bool ref
          end
 
       val numExports: int ref
@@ -378,8 +381,6 @@ signature CONTROL_FLAGS =
             val set: {il: string, passes: string} -> unit Result.t
             val setAll: string -> unit Result.t
          end
-
-      val positionIndependent : bool ref
 
       (* Only duplicate big functions when
        * (size - small) * (number of occurrences - 1) <= product

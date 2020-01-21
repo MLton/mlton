@@ -76,6 +76,7 @@ val explicitAlign: Control.align option ref = ref NONE
 val explicitChunkify: Control.Chunkify.t option ref = ref NONE
 datatype explicitCodegen = Native | Explicit of Control.Codegen.t
 val explicitCodegen: explicitCodegen option ref = ref NONE
+val explicitNativePIC: bool option ref = ref NONE
 val keepGenerated = ref false
 val keepO = ref false
 val output: string option ref = ref NONE
@@ -650,6 +651,8 @@ fun makeOptions {usage} =
         boolRef Native.moveHoist),
        (Expert, "native-optimize", " <n>", "level of optimizations",
         intRef Native.optimize),
+       (Expert, "native-pic", " {false|true}", "generate position-independent code",
+        Bool (fn b => explicitNativePIC := SOME b)),
        (Expert, "native-split", " <n>", "split assembly files at ~n lines",
         Int (fn i => Native.split := SOME i)),
        (Expert, "native-shuffle", " {true|false}",
@@ -1009,7 +1012,11 @@ fun commandLine (args: string list): unit =
           | (_, _, Library) => true
           | (_, _, LibArchive) => true
           | _ => false
-      val () = Control.positionIndependent := positionIndependent
+
+      val () =
+         Native.pic := (case !explicitNativePIC of
+                           NONE => positionIndependent
+                         | SOME b => b)
 
       val stop = !stop
 

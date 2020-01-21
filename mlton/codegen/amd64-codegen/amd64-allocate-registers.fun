@@ -1,4 +1,4 @@
-(* Copyright (C) 1999-2010 Matthew Fluet.
+(* Copyright (C) 2010,2020 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -3824,7 +3824,7 @@ struct
                       assembly = AppendList.empty,
                       registerAllocation = registerAllocation}
                   | (_, NONE, SOME memIndex) (* label + index => use lea if PIC *)
-                  => if !Control.positionIndependent = false
+                  => if not (!Control.Native.pic)
                         then {disp = SOME disp,
                               register = NONE,
                               assembly = AppendList.empty,

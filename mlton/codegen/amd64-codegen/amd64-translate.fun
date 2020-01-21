@@ -186,7 +186,7 @@ struct
                in
                   case (symbolScope,
                         !Control.Target.os,
-                        !Control.positionIndependent) of
+                        !Control.Native.pic) of
                    (* As long as the symbol is private (this means it is not
                     * exported to code outside this text segment), then
                     * RIP-relative addressing works on every OS/format.

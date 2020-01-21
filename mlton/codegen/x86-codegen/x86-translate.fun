@@ -202,7 +202,7 @@ struct
                in
                   case (symbolScope,
                         !Control.Target.os,
-                        !Control.positionIndependent) of
+                        !Control.Native.pic) of
                    (* Even private PIC symbols on darwin need indirection. *)
                      (Private, Darwin, true) => indirect ()
                    (* As long as the symbol is private (thus it is not
