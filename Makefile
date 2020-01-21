@@ -14,9 +14,12 @@ include $(ROOT)/Makefile.config
 
 .PHONY: all
 all:
-	$(MAKE) dirs runtime
+	$(MAKE) dirs
+	$(MAKE) runtime
 	$(MAKE) compiler CHECK_FIXPOINT=false                     # tools0 + mlton0 -> mlton1
-	$(MAKE) script basis libraries
+	$(MAKE) script
+	$(MAKE) basis
+	$(MAKE) libraries
 	$(MAKE) tools    CHECK_FIXPOINT=false                     # tools0 + mlton1 -> tools1
 ifeq (2, $(firstword $(sort $(BOOTSTRAP_STYLE) 2)))
 	$(MAKE) compiler-clean
@@ -239,6 +242,7 @@ profiled-time:
 	$(call PROFILED_TEMPLATE,time)
 
 .PHONY: profiled
+profiled:
 	$(MAKE) profiled-alloc
 	$(MAKE) profiled-count
 	$(MAKE) profiled-time
@@ -267,10 +271,13 @@ bootstrap-smlnj:
 
 .PHONY: smlnj-mlton
 smlnj-mlton:
-	$(MAKE) dirs runtime
+	$(MAKE) dirs
+	$(MAKE) runtime
 	$(MAKE) -C "$(SRC)/mlton" smlnj-mlton
 	smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | sml 2>&1 1> /dev/null` && $(CP) "$(SRC)/mlton/$(MLTON_OUTPUT)-smlnj.$$smlnj_heap_suffix" "$(LIB)/"
-	$(MAKE) script basis-no-check libraries-no-check
+	$(MAKE) script
+	$(MAKE) basis-no-check
+	$(MAKE) libraries-no-check
 	$(SED) \
 		-e 's;doitMLton "$$@";# doitMLton "$$@";' \
 		-e 's;doitPolyML "$$@";# doitPolyML "$$@";' \
@@ -309,10 +316,13 @@ bootstrap-polyml:
 
 .PHONY: polyml-mlton
 polyml-mlton:
-	$(MAKE) dirs runtime
+	$(MAKE) dirs
+	$(MAKE) runtime
 	$(MAKE) -C "$(SRC)/mlton" polyml-mlton
 	$(CP) "$(SRC)/mlton/mlton-polyml$(EXE)" "$(LIB)/"
-	$(MAKE) script basis-no-check libraries-no-check
+	$(MAKE) script
+	$(MAKE) basis-no-check
+	$(MAKE) libraries-no-check
 	$(SED) \
 		-e 's;doitMLton "$$@";# doitMLton "$$@";' \
 		-e 's;doitSMLNJ "$$@";# doitSMLNJ "$$@";' \
@@ -364,7 +374,7 @@ GZIP_MAN := false
 endif
 
 .PHONY: install
-install: install-no-strip install-strip install-docs
+install: install-no-strip install-strip
 
 MAN_PAGES :=  \
 	mllex.1 \
@@ -464,7 +474,8 @@ MLTON_BINARY_RELEASE := 1
 MLTON_BINARY_RELEASE_SUFFIX :=
 .PHONY: binary-release
 binary-release:
-	$(MAKE) all docs
+	$(MAKE) all
+	$(MAKE) docs
 	$(RM) "$(SRC)/mlton-$(MLTON_VERSION)-$(MLTON_BINARY_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)$(MLTON_BINARY_RELEASE_SUFFIX)"
 	$(MKDIR) "$(SRC)/mlton-$(MLTON_VERSION)-$(MLTON_BINARY_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)$(MLTON_BINARY_RELEASE_SUFFIX)"
 	$(MAKE) DESTDIR="$(SRC)/mlton-$(MLTON_VERSION)-$(MLTON_BINARY_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)$(MLTON_BINARY_RELEASE_SUFFIX)" PREFIX="" install
