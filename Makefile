@@ -365,7 +365,7 @@ GZIP_MAN := false
 endif
 
 .PHONY: install
-install: install-no-strip install-strip install-docs
+install: install-no-strip install-strip
 
 MAN_PAGES :=  \
 	mllex.1 \
