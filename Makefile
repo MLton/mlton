@@ -339,9 +339,7 @@ polyml-mlton:
 version:
 	@echo 'Instantiating version numbers.'
 	for f in							\
-		"$(SRC)/Makefile"					\
-		"$(SRC)/mlton/Makefile"					\
-		"$(SRC)/doc/guide/Makefile"				\
+		"$(SRC)/Makefile.config"				\
 	; do								\
 		$(SED) -e "s/^MLTON_VERSION := .*/MLTON_VERSION := $(MLTON_VERSION)/" <"$$f" >z && 	\
 		mv z "$$f";						\
