@@ -1,5 +1,7 @@
-GIT := git
-MLTON_VERSION := $(shell TZ=UTC $(GIT) log -n1 --date=format-local:"%Y%m%d.%H%M%S" --pretty=format:"%cd-g%h$$([ "$$($(GIT) status --porcelain 2> /dev/null)" ] && echo '-dirty')" 2> /dev/null || echo '????????')
+ROOT := ../..
+include $(ROOT)/Makefile.config
+
+######################################################################
 
 export LC_ALL = C
 
@@ -180,16 +182,14 @@ mlton-guide.pdf : src/mlton-guide.xml src/Logo.attachments/mlton-128.pdf conf/ml
 check-git-links:
 	@./bin/check-git-links.sh $(SRC_PAGES)
 
+######
+
+SHOW_VARS += ASCIIDOC_CONF_DIR ASCIIDOC_HTML5_FLAGS ASCIIDOC_HTML5_DEPS
+SHOW_VARS += GEN_PAGES GEN_ATTACHMENTS SRC_PAGES SRC_ATTACHMENTS
+
+$(eval $(MK_SHOW_CONFIG))
+
+
 .PHONY: clean
 clean:
 	../../bin/clean
-
-.PHONY: vars
-vars:
-	@echo ASCIIDOC_CONF_DIR=$(ASCIIDOC_CONF_DIR)
-	@echo ASCIIDOC_HTML5_FLAGS=$(ASCIIDOC_HTML5_FLAGS)
-	@echo ASCIIDOC_HTML5_DEPS=$(ASCIIDOC_HTML5_DEPS)
-	@echo GEN_PAGES=$(GEN_PAGES)
-	@echo GEN_ATTACHMENTS=$(GEN_ATTACHMENTS)
-	@echo SRC_PAGES=$(SRC_PAGES)
-	@echo SRC_ATTACHMENTS=$(SRC_ATTACHMENTS)
