@@ -29,9 +29,22 @@ struct
             (f, fn ins =>
              In.foreachLine
              (ins, fn l =>
-              case String.tokens (l, Char.isSpace) of
-                 [name, "=", value] => add (table, name, value)
-               | _ => Error.bug (concat ["Control.StrMap.load: strange line: ", l])))
+              let
+                 fun err () =
+                    Error.bug (concat ["Control.StrMap.load: strange line: ", l])
+              in
+                 case String.peeki (l, fn (_, c) => c = #"=") of
+                    NONE => err ()
+                  | SOME (i, _) =>
+                       let
+                          val name = String.prefix (l, i)
+                          val name = String.deleteSurroundingWhitespace name
+                          val value = String.dropPrefix (l, i + 1)
+                          val value = String.deleteSurroundingWhitespace value
+                       in
+                          add (table, name, value)
+                       end
+              end))
       in
          table
       end
