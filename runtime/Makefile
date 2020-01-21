@@ -43,7 +43,7 @@ XMFLAGS :=
 XCPPFLAGS :=
 XCFLAGS := -fno-common -pedantic -Wall -Wextra
 OPTXCFLAGS := -Wdisabled-optimization -O2
-DBGXCFLAGS := -DASSERT=1 -Wno-uninitialized -O0 -g
+DBGXCFLAGS := -g -DASSERT=1 -Wno-uninitialized -O0
 PICXCFLAGS := -fPIC
 XLDFLAGS :=
 
