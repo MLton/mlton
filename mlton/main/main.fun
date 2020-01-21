@@ -71,6 +71,7 @@ val llvm_opt: string ref = ref "opt"
 val llvm_optOpts: {opt: string, pred: OptPred.t} list ref = ref []
 
 val debugRuntime: bool ref = ref false
+val picRuntime: bool option ref = ref NONE
 val expert: bool ref = ref false
 val explicitAlign: Control.align option ref = ref NONE
 val explicitChunkify: Control.Chunkify.t option ref = ref NONE
@@ -344,7 +345,7 @@ fun makeOptions {usage} =
        (Expert, "debug", " {false|true}", "produce executable with debug info",
         Bool (fn b => (debug := b
                        ; debugRuntime := b))),
-       (Expert, "debug-runtime", " {false|true}", "produce executable with debug info",
+       (Expert, "debug-runtime", " {false|true}", "link with debug runtime",
         boolRef debugRuntime),
        let
           val flag = "default-ann"
@@ -667,6 +668,8 @@ fun makeOptions {usage} =
                       | Result.Yes () => ())),
        (Normal, "output", " <file>", "name of output file",
         SpaceString (fn s => output := SOME s)),
+       (Expert, "pic-runtime", " {false|true}", "link with pic runtime",
+        Bool (fn b => picRuntime := SOME b)),
        (Expert, "polyvariance", " {true|false}", "use polyvariance",
         Bool (fn b => if b then () else polyvariance := NONE)),
        (Expert, "polyvariance-hofo", " {true|false}", "duplicate higher-order fns only",
@@ -1017,6 +1020,10 @@ fun commandLine (args: string list): unit =
          Native.pic := (case !explicitNativePIC of
                            NONE => positionIndependent
                          | SOME b => b)
+      val picRuntime =
+         case !picRuntime of
+            NONE => positionIndependent
+          | SOME b => b
 
       val stop = !stop
 
@@ -1097,7 +1104,7 @@ fun commandLine (args: string list): unit =
             if b then s ^ "-" ^ suf else s
       in
          val addDBG = mk (!debugRuntime, "dbg")
-         val addPIC = mk (positionIndependent, "pic")
+         val addPIC = mk (picRuntime, "pic")
       end
       fun addTargetOpts opts =
          List.fold
