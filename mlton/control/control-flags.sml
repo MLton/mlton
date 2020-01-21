@@ -1524,7 +1524,7 @@ structure Target =
       val bigEndian =
          Promise.lazy
          (fn () =>
-          StrMap.lookupBool (Promise.force consts, "MLton_Platform_Arch_bigendian"))
+          StrMap.lookupBool (Promise.force consts, "const::MLton_Platform_Arch_bigendian"))
 
       structure Size =
          struct
@@ -1658,7 +1658,7 @@ fun setCommandLineConst {name, value} =
             NONE => ()
           | SOME (_,set) => set ()
    in
-      StrMap.add (commandLineConsts, name, value)
+      StrMap.add (commandLineConsts, "cmdLineConst::" ^ name, value)
    end
 
 val buildConsts =
@@ -1690,7 +1690,7 @@ val buildConsts =
                                          | _ => true))]
        val table = StrMap.new ()
        val () = List.foreach (buildConsts, fn (name, value) =>
-                              StrMap.add (table, name, value))
+                              StrMap.add (table, "buildConst::" ^ name, value))
     in
        table
     end)

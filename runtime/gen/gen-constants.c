@@ -16,21 +16,21 @@
   fprintf (stdout, "offset::gcState." #field " = %"PRIuMAX"\n", (uintmax_t)(offsetof (struct GC_state, field)))
 
 #define MkBoolConst(name)                                \
-  fprintf (stdout, #name " = %s\n", name ? "true" : "false")
+  fprintf (stdout, "const::" #name " = %s\n", name ? "true" : "false")
 
 #define MkNumConst(name, ty)                                            \
   do {                                                                  \
     if ((double)((ty)(0.25)) > 0) {                                     \
-      fprintf (stdout, #name " = %.20f\n", (double)name);     \
+      fprintf (stdout, "const::" #name " = %.20f\n", (double)name);     \
     } else if ((double)((ty)(-1)) > 0) {                                \
-      fprintf (stdout, #name " = %"PRIuMAX"\n", (uintmax_t)name); \
+      fprintf (stdout, "const::" #name " = %"PRIuMAX"\n", (uintmax_t)name); \
     } else {                                                            \
-      fprintf (stdout, #name " = %"PRIdMAX"\n", (intmax_t)name); \
+      fprintf (stdout, "const::" #name " = %"PRIdMAX"\n", (intmax_t)name); \
     }                                                                   \
   } while (0)
 
 #define MkStrConst(name)                                \
-  fprintf (stdout, #name " = %s\n", name)
+  fprintf (stdout, "const::" #name " = %s\n", name)
 
 int main (__attribute__ ((unused)) int argc,
           __attribute__ ((unused)) char* argv[]) {

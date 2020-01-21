@@ -3459,7 +3459,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                lookConst {default = NONE,
                                           elabedTy = elabedTy,
                                           expandedTy = expandedTy,
-                                          name = name}
+                                          name = "buildConst::" ^ name}
                             end
                        | CommandLineConst {name, ty, value} =>
                             let
@@ -3482,7 +3482,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                lookConst {default = SOME value,
                                           elabedTy = elabedTy,
                                           expandedTy = expandedTy,
-                                          name = name}
+                                          name = "cmdLineConst::" ^ name}
                             end
                        | Const {name, ty} =>
                             let
@@ -3495,7 +3495,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                lookConst {default = NONE,
                                           elabedTy = elabedTy,
                                           expandedTy = expandedTy,
-                                          name = name}
+                                          name = "const::" ^ name}
                             end
                        | Export {attributes, name, ty} =>
                             let
