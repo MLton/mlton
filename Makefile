@@ -239,6 +239,7 @@ profiled-time:
 	$(call PROFILED_TEMPLATE,time)
 
 .PHONY: profiled
+profiled:
 	$(MAKE) profiled-alloc
 	$(MAKE) profiled-count
 	$(MAKE) profiled-time
