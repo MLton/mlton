@@ -208,17 +208,6 @@ $(eval $(call O_C_TEMPLATE,$(MD),$(PI)))))
 %$(EXE): %.o
 	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,LD) -o $@ $^
 
-ifeq ($(WITH_DEFAULT_PIE),true)
-%-pie.a: %.a
-	$(CP) $< $@
-else ifeq ($(WITH_DEFAULT_PIC),true)
-%-pic.a: %.a
-	$(CP) $< $@
-else ifeq ($(WITH_DEFAULT_NPI),true)
-%-npi.a: %.a
-	$(CP) $< $@
-endif
-
 %.a:
 	$(RM) $@
 	$(CROSS_PREFIX)$(AR) rc $@ $^
@@ -226,7 +215,14 @@ endif
 
 define A_TEMPLATE
 $(foreach MD,$(MDVARIANTS),$(foreach PI,$(PIVARIANTS),
-ifneq ($(WITH_DEFAULT_$(PI)),true)
+ifeq ($(and $(findstring DPI,$(PI)),$(findstring true,$(foreach PIX,$(PIVARIANTS),$(WITH_DEFAULT_$(PIX))))),true)
+$(foreach PIX,$(PIVARIANTS),
+ifeq ($(WITH_DEFAULT_$(PIX)),true)
+lib$(1)$($(MD)SUFFIX).a: lib$(1)$($(MD)SUFFIX)$($(PIX)SUFFIX).a
+	$$(CP) $$< $$@
+endif
+)
+else
 lib$(1)$($(MD)SUFFIX)$($(PI)SUFFIX).a: $(patsubst %.o,%$($(MD)SUFFIX)$($(PI)SUFFIX).o,$($(2)_OBJS))
 endif
 ))
