@@ -66,17 +66,17 @@ XLDFLAGS :=
 
 ## MK_FLAGS (SRC,PHASE[,KS])
 define MK_FLAGS
-$(strip \
-$(XCCFLAGS) $($(1)_XCCFLAGS) $(CCFLAGS) \
-$(XMFLAGS) $($(1)_XMFLAGS) $(MFLAGS) \
-$(if $(findstring $(2),CPP C),$(CPPFLAGS) $(XCPPFLAGS) $($(1)_XCPPFLAGS)) \
-$(if $(findstring $(2),C), \
-$(CFLAGS) \
-$(XCFLAGS) \
-$(foreach K,$(3),$($(K)XCFLAGS)) \
-$($(1)_XCFLAGS) \
-$(foreach K,$(3),$($(1)_$(K)XCFLAGS))) \
-$(if $(findstring $(2),LD),$(LDFLAGS) $(XLDFLAGS) $($(1)_XLDFLAGS)) \
+$(strip
+$(XCCFLAGS) $($(1)_XCCFLAGS) $(CCFLAGS)
+$(XMFLAGS) $($(1)_XMFLAGS) $(MFLAGS)
+$(if $(findstring $(2),CPP C),$(CPPFLAGS) $(XCPPFLAGS) $($(1)_XCPPFLAGS))
+$(if $(findstring $(2),C),
+$(CFLAGS)
+$(XCFLAGS)
+$(foreach K,$(3),$($(K)XCFLAGS))
+$($(1)_XCFLAGS)
+$(foreach K,$(3),$($(1)_$(K)XCFLAGS)))
+$(if $(findstring $(2),LD),$(LDFLAGS) $(XLDFLAGS) $($(1)_XLDFLAGS))
 )
 endef
 
@@ -225,7 +225,7 @@ endif
 	$(CROSS_PREFIX)$(RANLIB) $@
 
 define A_TEMPLATE
-$(foreach MD,$(MDVARIANTS),$(foreach PI,$(PIVARIANTS), \
+$(foreach MD,$(MDVARIANTS),$(foreach PI,$(PIVARIANTS),
 ifneq ($(WITH_DEFAULT_$(PI)),true)
 lib$(1)$($(MD)SUFFIX)$($(PI)SUFFIX).a: $(patsubst %.o,%$($(MD)SUFFIX)$($(PI)SUFFIX).o,$($(2)_OBJS))
 endif
