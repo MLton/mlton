@@ -19,7 +19,16 @@ fi
 MLTON_RUNTIME_ARGS="ram-slop 0.90"
 
 echo "Building MLton..."
-make -j4 CC="$CC" OLD_MLTON_RUNTIME_ARGS="$MLTON_RUNTIME_ARGS" MLTON_RUNTIME_ARGS="$MLTON_RUNTIME_ARGS" MLTON_COMPILE_ARGS="$MLTON_COMPILE_ARGS" WITH_DBG_RUNTIME=false all
+make -j4 \
+     CC="$CC" \
+     OLD_MLTON_RUNTIME_ARGS="$MLTON_RUNTIME_ARGS" \
+     MLTON_RUNTIME_ARGS="$MLTON_RUNTIME_ARGS" \
+     MLTON_COMPILE_ARGS="$MLTON_COMPILE_ARGS" \
+     WITH_DBG_RUNTIME=false \
+     WITH_NPI_RUNTIME=false \
+     WITH_PIC_RUNTIME=true \
+     WITH_PIE_RUNTIME=false \
+     all
 
 if [ "$REGRESSION" == "true" ]; then
 echo "Running regression tests..."
