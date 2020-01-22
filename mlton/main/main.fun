@@ -71,7 +71,6 @@ val llvm_opt: string ref = ref "opt"
 val llvm_optOpts: {opt: string, pred: OptPred.t} list ref = ref []
 
 val debugRuntime: bool ref = ref false
-val picRuntime: bool option ref = ref NONE
 val expert: bool ref = ref false
 val explicitAlign: Control.align option ref = ref NONE
 val explicitChunkify: Control.Chunkify.t option ref = ref NONE
@@ -668,8 +667,6 @@ fun makeOptions {usage} =
                       | Result.Yes () => ())),
        (Normal, "output", " <file>", "name of output file",
         SpaceString (fn s => output := SOME s)),
-       (Expert, "pic-runtime", " {false|true}", "link with pic runtime",
-        Bool (fn b => picRuntime := SOME b)),
        (Expert, "polyvariance", " {true|false}", "use polyvariance",
         Bool (fn b => if b then () else polyvariance := NONE)),
        (Expert, "polyvariance-hofo", " {true|false}", "duplicate higher-order fns only",
@@ -708,6 +705,12 @@ fun makeOptions {usage} =
                                          rounds = rounds,
                                          small = small}
               | _ => ())),
+       (Expert, "pi-style", " {default|static|pic|pie}", "position-independent style",
+        SpaceString (fn s =>
+                     (case (s, PositionIndependentStyle.fromString s) of
+                         ("default", NONE) => positionIndependentStyle := NONE
+                       | (_, SOME pis) => positionIndependentStyle := SOME pis
+                       | _ => usage (concat ["invalid -pi-style flag: ", s])))),
        (Expert, "prefer-abs-paths", " {false|true}",
         "prefer absolute paths when referring to files",
         boolRef preferAbsPaths),
@@ -992,38 +995,52 @@ fun commandLine (args: string list): unit =
       val targetOSStr = String.toLower (MLton.Platform.OS.toString targetOS)
       val targetArchOSStr = concat [targetArchStr, "-", targetOSStr]
 
-      (* Determine whether code should be PIC (position independent) or not.
-       * This decision depends on the platform and output format.
-       *)
-      val positionIndependent =
+      val pisTargetDefault =
+         let
+            fun get s =
+               Control.StrMap.lookupIntInf (Promise.force Control.Target.consts, "default::" ^ s)
+         in
+            if get "pie" > 0
+               then Control.PositionIndependentStyle.PIE
+            else if get "pic" > 0
+               then Control.PositionIndependentStyle.PIC
+            else Control.PositionIndependentStyle.NPI
+         end
+      val pisFormat =
          case (targetOS, targetArch, !format) of
-            (* Windows is never position independent *)
-            (MinGW, _, _) => false
-          | (Cygwin, _, _) => false
-            (* GCC on AMD64 now produces PIC by default in many Linux distros. *)
-          | (Linux, AMD64, _) => true
-            (* Technically, Darwin should always be PIC.
-             * However, PIC on i386/darwin is unimplemented so we avoid it.
-             * PowerPC PIC is bad too, but the C codegen will use PIC behind
-             * our back unless forced, so let's just admit that it's PIC.
-             *)
-          | (Darwin, X86, Executable) => false
-          | (Darwin, X86, Archive) => false
-          | (Darwin, _, _) => true
-          | (OpenBSD, _, _) => true
-            (* On ELF systems, we only need PIC for LibArchive/Library *)
-          | (_, _, Library) => true
-          | (_, _, LibArchive) => true
-          | _ => false
+            (MinGW, _, _) => NONE
+          | (Cygwin, _, _) => NONE
+          | (_, _, Executable) => NONE
+          | (_, _, Archive) => NONE
+          | (_, _, Library) => SOME Control.PositionIndependentStyle.PIC
+          | (_, _, LibArchive) => SOME Control.PositionIndependentStyle.PIC
+      val () =
+         positionIndependentStyle
+         := (case (!positionIndependentStyle, pisFormat) of
+                (SOME pis, _) => SOME pis
+              | (NONE, NONE) => NONE
+              | (NONE, SOME pisFormat) =>
+                   (case Control.PositionIndependentStyle.compare (pisFormat, pisTargetDefault) of
+                       LESS => NONE
+                     | EQUAL => NONE
+                     | GREATER => SOME pisFormat))
+      val positionIndependentStyle = !positionIndependentStyle
 
       val () =
          Native.pic := (case !explicitNativePIC of
-                           NONE => positionIndependent
+                           NONE =>
+                              let
+                                 val pis =
+                                    case positionIndependentStyle of
+                                       NONE => pisTargetDefault
+                                     | SOME pis => pis
+                              in
+                                 case pis of
+                                    Control.PositionIndependentStyle.NPI => false
+                                  | Control.PositionIndependentStyle.PIC => true
+                                  | Control.PositionIndependentStyle.PIE => true
+                              end
                          | SOME b => b)
-      val picRuntime =
-         case !picRuntime of
-            NONE => positionIndependent
-          | SOME b => b
 
       val stop = !stop
 
@@ -1099,13 +1116,10 @@ fun commandLine (args: string list): unit =
           | Self => !cc
       val arScript = !arScript
 
-      local
-         fun mk (b, suf) s =
-            if b then s ^ "-" ^ suf else s
-      in
-         val addDBG = mk (!debugRuntime, "dbg")
-         val addPIC = mk (picRuntime, "pic")
-      end
+      fun addMD s =
+         if !debugRuntime then s ^ "-dbg" else s
+      fun addPI s =
+         s ^ (Control.PositionIndependentStyle.toSuffix positionIndependentStyle)
       fun addTargetOpts opts =
          List.fold
          (!opts, [], fn ({opt, pred}, ac) =>
@@ -1125,13 +1139,13 @@ fun commandLine (args: string list): unit =
       val ccOpts = addTargetOpts ccOpts
       val linkOpts = addTargetOpts linkOpts
       val linkOpts =
-         List.map (["mlton", "gdtoa"], fn lib => "-l" ^ addPIC (addDBG lib)) @ linkOpts
+         List.map (["mlton", "gdtoa"], fn lib => "-l" ^ addPI (addMD lib)) @ linkOpts
       val linkOpts = ("-L" ^ targetLibDir) :: linkOpts
 
       val linkArchives =
          List.map (["mlton", "gdtoa"], fn lib =>
                    OS.Path.joinDirFile {dir = targetLibDir,
-                                        file = "lib" ^ addPIC (addDBG lib) ^ ".a"})
+                                        file = "lib" ^ addPI (addMD lib) ^ ".a"})
 
       val llvm_as = !llvm_as
       val llvm_llc = !llvm_llc
@@ -1347,8 +1361,7 @@ fun commandLine (args: string list): unit =
                            val _ =
                               trace (Top, "Link")
                               (fn () =>
-                               if !format = Archive orelse
-                                  !format = LibArchive
+                               if !format = Archive orelse !format = LibArchive
                                then System.system
                                     (arScript,
                                      List.concat
@@ -1359,7 +1372,12 @@ fun commandLine (args: string list): unit =
                                     (hd cc,
                                      List.concat
                                       [tl cc,
-                                       if !format = Library then libOpts else [],
+                                       case !format of
+                                          Executable =>
+                                             Control.PositionIndependentStyle.linkOpts
+                                             positionIndependentStyle
+                                        | Library => libOpts
+                                        | _ => [],
                                        ["-o", output],
                                        inputs,
                                        linkOpts]))
@@ -1422,8 +1440,8 @@ fun commandLine (args: string list): unit =
                               then [ "-g", "-DASSERT=1" ] else [],
                               if !format = Executable
                               then [] else [ "-DLIBNAME=" ^ !libname ],
-                              if positionIndependent
-                              then [ "-fPIC" ] else [],
+                              Control.PositionIndependentStyle.ccOpts
+                              positionIndependentStyle,
                               [ "-I" ^ targetIncDir ],
                               ccOpts,
                               ["-o", output],
@@ -1471,8 +1489,9 @@ fun commandLine (args: string list): unit =
                            (llvm_llc,
                             List.concat
                             [["-filetype=obj"],
-                             if positionIndependent
-                             then [ "-relocation-model=pic" ] else [],
+                             Control.PositionIndependentStyle.llvm_llcOpts
+                             (positionIndependentStyle,
+                              {targetDefault = pisTargetDefault}),
                              llvm_llcOpts,
                              ["-o", output],
                              [optBC]])

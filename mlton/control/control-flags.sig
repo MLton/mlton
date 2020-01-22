@@ -393,6 +393,24 @@ signature CONTROL_FLAGS =
           product: int
          } option ref
 
+      structure PositionIndependentStyle:
+         sig
+            datatype t =
+               NPI
+             | PIC
+             | PIE
+
+            val ccOpts: t option -> string list
+            val compare: t * t -> order
+            val fromString: string -> t option
+            val linkOpts: t option -> string list
+            val llvm_llcOpts: t option * {targetDefault: t} -> string list
+            val toString: t -> string
+            val toSuffix: t option -> string
+         end
+
+      val positionIndependentStyle: PositionIndependentStyle.t option ref
+
       val preferAbsPaths: bool ref
 
       (* List of pass names to keep profiling info on. *)

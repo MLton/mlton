@@ -1348,6 +1348,72 @@ val polyvariance =
                              ("product", Int.layout product)])
              p)}
 
+structure PositionIndependentStyle =
+   struct
+      datatype t =
+         NPI
+       | PIC
+       | PIE
+
+      fun fromString s =
+         case s of
+            "static" => SOME NPI
+          | "pic" => SOME PIC
+          | "pie" => SOME PIE
+          | _ => NONE
+      fun toString pis =
+         case pis of
+            NPI => "npi"
+          | PIC => "pic"
+          | PIE => "pie"
+      fun toSuffix pis =
+         case pis of
+            NONE => ""
+          | SOME NPI => "-npi"
+          | SOME PIC => "-pic"
+          | SOME PIE => "-pie"
+
+      fun compare (pis1, pis2) =
+         case (pis1, pis2) of
+            (NPI, NPI) => EQUAL
+          | (NPI, _) => LESS
+          | (_, NPI) => GREATER
+          | (PIC, PIC) => EQUAL
+          | (PIC, _) => LESS
+          | (_, PIC) => GREATER
+          | (PIE, PIE) => EQUAL
+
+      fun ccOpts pis =
+         case pis of
+            NONE => []
+          | SOME NPI => ["-fno-pic", "-fno-pie"]
+          | SOME PIC => ["-fPIC"]
+          | SOME PIE => ["-fPIE"]
+      fun llvm_llcOpts (pis, {targetDefault}) =
+         let
+            fun llcOpts pis =
+               case pis of
+                  NPI => [] (* ["--relocation-model=static"] *)
+                | PIC => ["--relocation-model=pic"]
+                | PIE => ["--relocation-model=pic"]
+         in
+            case pis of
+               NONE => llcOpts targetDefault
+             | SOME pis => llcOpts pis
+         end
+      fun linkOpts pis =
+         case pis of
+            NONE => []
+          | SOME NPI => ["-no-pie"]
+          | SOME PIC => []
+          | SOME PIE => ["-pie"]
+   end
+
+val positionIndependentStyle = control {name = "position independent style",
+                                        default = NONE,
+                                        toString = Option.toString PositionIndependentStyle.toString}
+
+
 val preferAbsPaths = control {name = "prefer abs paths",
                               default = false,
                               toString = Bool.toString}

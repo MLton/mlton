@@ -8,14 +8,16 @@ Here are the changes from version 20180206 to version YYYYMMDD.
 
 === Details
 
+* 2020-01-22
+  ** Added expert `-pi-style {default|npi|pic|pie}` option, which can
+  be used to override a target-determined default.
+
 * 2020-01-21
-  ** Added expert `-pic-runtime {false|true}` option, which can be used
-  to override a target-determined default.
   ** Added expert `-native-pic {false|true}` option, which can be used
   to override a target-determined default.
   ** Support parallel build (i.e., `make -j`).  This mainly supports
-  platforms/packagers tht use a parallel `make` by default; it does not obtain
-  significant build speedups.
+  platforms/packagers tht use a parallel `make` by default; it does
+  not obtain significant build speedups.
 
 * 2020-01-11
   ** Revise implementation of statically allocated and initialized
