@@ -1353,7 +1353,7 @@ fun commandLine (args: string list): unit =
                                                 maybeOut ".a",
                                              "-Wl,--output-def," ^
                                                 !libname ^ ".def"]
-                               | _ =>      [ "-shared" ]
+                               | _ =>      [ "-fPIC", "-shared" ]
                            val _ =
                               trace (Top, "Link")
                               (fn () =>
