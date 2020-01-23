@@ -64,22 +64,6 @@ PICXCFLAGS := -fPIC
 PIEXCFLAGS := -fPIE
 XLDFLAGS :=
 
-## MK_FLAGS (SRC,PHASE[,KS])
-define MK_FLAGS
-$(strip
-$(XCCFLAGS) $($(1)_XCCFLAGS) $(CCFLAGS)
-$(XMFLAGS) $($(1)_XMFLAGS) $(MFLAGS)
-$(if $(findstring $(2),CPP C),$(CPPFLAGS) $(XCPPFLAGS) $($(1)_XCPPFLAGS))
-$(if $(findstring $(2),C),
-$(CFLAGS)
-$(XCFLAGS)
-$(foreach K,$(3),$($(K)XCFLAGS))
-$($(1)_XCFLAGS)
-$(foreach K,$(3),$($(1)_$(K)XCFLAGS)))
-$(if $(findstring $(2),LD),$(LDFLAGS) $(XLDFLAGS) $($(1)_XLDFLAGS))
-)
-endef
-
 ifneq ($(WITH_GMP_INC_DIR),)
 XCPPFLAGS += -I$(WITH_GMP_INC_DIR)
 endif
@@ -148,6 +132,24 @@ ifeq ($(TARGET_OS), solaris)
 XCFLAGS += -funroll-all-loops
 endif
 
+### MK_FLAGS ###
+
+## MK_FLAGS (SRC,PHASE[,KS])
+define MK_FLAGS
+$(strip \
+$(XCCFLAGS) $($(1)_XCCFLAGS) $(CCFLAGS) \
+$(XMFLAGS) $($(1)_XMFLAGS) $(MFLAGS) \
+$(if $(findstring $(2),CPP C),$(CPPFLAGS) $(XCPPFLAGS) $($(1)_XCPPFLAGS)) \
+$(if $(findstring $(2),C), \
+$(CFLAGS) \
+$(XCFLAGS) \
+$(foreach K,$(3),$($(K)XCFLAGS)) \
+$($(1)_XCFLAGS) \
+$(foreach K,$(3),$($(1)_$(K)XCFLAGS))) \
+$(if $(findstring $(2),LD),$(LDFLAGS) $(XLDFLAGS) $($(1)_XLDFLAGS)) \
+)
+endef
+
 ### Position-independent (or not) ###
 
 ifeq ($(shell echo "__pie__" | $(CROSS_PREFIX)$(CC) $(call MK_FLAGS,-,C,PIE) -P -E -),2)
@@ -214,9 +216,9 @@ $(eval $(call O_C_TEMPLATE,$(MD),$(PI)))))
 	$(CROSS_PREFIX)$(RANLIB) $@
 
 define A_TEMPLATE
-$(foreach MD,$(MDVARIANTS),$(foreach PI,$(PIVARIANTS),
+$(foreach MD,$(MDVARIANTS),$(foreach PI,$(PIVARIANTS), \
 ifeq ($(and $(findstring DPI,$(PI)),$(findstring true,$(foreach PIX,$(PIVARIANTS),$(WITH_DEFAULT_$(PIX))))),true)
-$(foreach PIX,$(PIVARIANTS),
+$(foreach PIX,$(PIVARIANTS), \
 ifeq ($(WITH_DEFAULT_$(PIX)),true)
 lib$(1)$($(MD)SUFFIX).a: lib$(1)$($(MD)SUFFIX)$($(PIX)SUFFIX).a
 	$$(CP) $$< $$@
