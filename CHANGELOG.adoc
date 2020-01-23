@@ -8,8 +8,19 @@ Here are the changes from version 20180206 to version YYYYMMDD.
 
 === Details
 
+* 2020-01-22
+  ** Added expert `-pi-style {default|npi|pic|pie}` and
+  `-native-pic {false|true}` options, which can be used to override a
+  target-determined default.  See
+  https://github.com/MLton/mlton/pull/365 for details.
+
+* 2020-01-21
+  ** Support parallel build (i.e., `make -j`).  This mainly supports
+  platforms/packagers tht use a parallel `make` by default; it does
+  not obtain significant build speedups.
+
 * 2020-01-11
-  ** Revised implementation of statically allocated and initialized
+  ** Revise implementation of statically allocated and initialized
   global objects.
 
 * 2019-11-22
@@ -29,14 +40,13 @@ Here are the changes from version 20180206 to version YYYYMMDD.
 
 * 2019-10-25
   ** Fix a number of instances of excessive live data during compilation.
-  ** Disabled `Zone` SSA optimization pass by default; the `Zone` pass
+  ** Disable `Zone` SSA optimization pass by default; the `Zone` pass
   is known to not be safe-for-space.
-  ** Added `MLton.sizeAll: unit -> IntInf.int` that returns the size
-  of reachable live data.
-  ** Changed ``MLton.size``'s type from `'a -> int` to
-  `'a -> IntInf.int`, because with 64-bit systems, the size of a
-  single object can exceed that representable by a signed 32-bit
-  integer.
+  ** Add `MLton.sizeAll: unit -> IntInf.int` that returns the size of
+  reachable live data.
+  ** Chang ``MLton.size``'s type from `'a -> int` to `'a ->
+  IntInf.int`, because with 64-bit systems, the size of a single
+  object can exceed that representable by a signed 32-bit integer.
 
 * 2019-09-19
   ** Statically allocate and initialize some global objects.  See

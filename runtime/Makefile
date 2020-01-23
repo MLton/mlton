@@ -28,8 +28,22 @@ GCC_VERSION := $(GCC_MAJOR_VERSION).$(GCC_MINOR_VERSION)
 
 EXE :=
 
+MDVARIANTS := OPT DBG
+PIVARIANTS := DPI NPI PIC PIE
+
+OPTSUFFIX :=
+DBGSUFFIX := -dbg
+DPISUFFIX :=
+NPISUFFIX := -npi
+PICSUFFIX := -pic
+PIESUFFIX := -pie
+
+WITH_OPT_RUNTIME := true
 WITH_DBG_RUNTIME := true
-WITH_PIC_RUNTIME := true
+WITH_DPI_RUNTIME := true
+WITH_NPI_RUNTIME := $(or $(findstring true,$(RELEASE) $(WITH_ALL_RUNTIME)),false)
+WITH_PIC_RUNTIME := $(or $(findstring true,$(RELEASE) $(WITH_ALL_RUNTIME)),false)
+WITH_PIE_RUNTIME := $(or $(findstring true,$(RELEASE) $(WITH_ALL_RUNTIME)),false)
 
 # These flags can be overridden by the user
 CCFLAGS :=
@@ -43,8 +57,11 @@ XMFLAGS :=
 XCPPFLAGS :=
 XCFLAGS := -fno-common -pedantic -Wall -Wextra
 OPTXCFLAGS := -Wdisabled-optimization -O2
-DBGXCFLAGS := -DASSERT=1 -Wno-uninitialized -O0 -g
+DBGXCFLAGS := -g -DASSERT=1 -Wno-uninitialized -O0
+DPIXCFLAGS :=
+NPIXCFLAGS := -fno-pic -fno-pie
 PICXCFLAGS := -fPIC
+PIEXCFLAGS := -fPIE
 XLDFLAGS :=
 
 ifneq ($(WITH_GMP_INC_DIR),)
@@ -56,6 +73,7 @@ XCPPFLAGS += -I.
 # Win32&64 don't use PIC code, all other platforms do
 ifeq ($(findstring $(TARGET_OS), mingw cygwin),$(TARGET_OS))
 WITH_PIC_RUNTIME := false
+WITH_PIE_RUNTIME := false
 endif
 
 # Make mlton library symbols private (win32&64 use another technique)
@@ -114,64 +132,112 @@ ifeq ($(TARGET_OS), solaris)
 XCFLAGS += -funroll-all-loops
 endif
 
-### pattern rules ###
+### MK_FLAGS ###
 
 ## MK_FLAGS (SRC,PHASE[,KS])
 define MK_FLAGS
 $(strip \
 $(XCCFLAGS) $($(1)_XCCFLAGS) $(CCFLAGS) \
 $(XMFLAGS) $($(1)_XMFLAGS) $(MFLAGS) \
-$(if $(findstring $(2),CPP C),$(XCPPFLAGS) $($(1)_XCPPFLAGS) $(CPPFLAGS)) \
+$(if $(findstring $(2),CPP C),$(CPPFLAGS) $(XCPPFLAGS) $($(1)_XCPPFLAGS)) \
 $(if $(findstring $(2),C), \
+$(CFLAGS) \
 $(XCFLAGS) \
 $(foreach K,$(3),$($(K)XCFLAGS)) \
 $($(1)_XCFLAGS) \
-$(foreach K,$(3),$($(1)_$(K)XCFLAGS)) \
-$(CFLAGS)) \
-$(if $(findstring $(2),LD),$(XLDFLAGS) $($(1)_XLDFLAGS) $(LDFLAGS)) \
+$(foreach K,$(3),$($(1)_$(K)XCFLAGS))) \
+$(if $(findstring $(2),LD),$(LDFLAGS) $(XLDFLAGS) $($(1)_XLDFLAGS)) \
 )
 endef
 
-%.d: %.c
-	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,CPP) -MM -MG -MT $(subst .d,.o,$@) -MT $(subst .d,-dbg.o,$@) -MT $(subst .d,-pic.o,$@) -MT $(subst .d,-dbg-pic.o,$@) -MT $@ -MM -MG -MF $@ $<
+### Position-independent (or not) ###
 
-%.o: %.c
-	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,C,OPT) -c -o $@ $<
-%-dbg.o: %.c
-	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,C,DBG) -c -o $@ $<
-%-pic.o: %.c
-	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,C,OPT PIC) -c -o $@ $<
-%-dbg-pic.o: %.c
-	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,C,DBG PIC) -c -o $@ $<
+ifeq ($(shell echo "__pie__" | $(CROSS_PREFIX)$(CC) $(call MK_FLAGS,-,C,PIE) -P -E -),2)
+HAVE_PIE := true
+ifeq ($(shell echo "__pie__" | $(CROSS_PREFIX)$(CC) $(call MK_FLAGS,-,C) -P -E -),2)
+WITH_DEFAULT_PIE := true
+else
+WITH_DEFAULT_PIE := false
+endif
+else
+HAVE_PIE := false
+WITH_PIE_RUNTIME := false
+WITH_DEFAULT_PIE := false
+endif
 
-%$(EXE): %.o
-	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,LD) -o $@ $^
-
-ifeq ($(shell echo "__pic__" | $(CROSS_PREFIX)$(CC) $(call MK_FLAGS,-,C) -P -E -),2)
+ifeq ($(shell echo "__pic__" | $(CROSS_PREFIX)$(CC) $(call MK_FLAGS,-,C,PIC) -P -E -),2)
+HAVE_PIC := true
+ifeq ($(WITH_DEFAULT_PIE),true)
+WITH_DEFAULT_PIC := false
+else ifeq ($(shell echo "__pic__" | $(CROSS_PREFIX)$(CC) $(call MK_FLAGS,-,C) -P -E -),2)
 WITH_DEFAULT_PIC := true
 else
 WITH_DEFAULT_PIC := false
 endif
-
-ifeq ($(WITH_DEFAULT_PIC),true)
-%-pic.a: %.a
-	$(CP) $< $@
+else
+HAVE_PIC := false
+WITH_PIC_RUNTIME := false
+WITH_DEFAULT_PIC := false
 endif
+
+ifeq ($(shell echo "__pic__" | $(CROSS_PREFIX)$(CC) $(call MK_FLAGS,-,C,NPI) -P -E -),__pic__)
+HAVE_NPI := true
+ifeq ($(shell echo "__pic__" | $(CROSS_PREFIX)$(CC) $(call MK_FLAGS,-,C) -P -E -),__pic__)
+WITH_DEFAULT_NPI := true
+else
+WITH_DEFAULT_NPI := false
+endif
+else
+HAVE_NPI := false
+WITH_NPI_RUNTIME := false
+WITH_DEFAULT_NPI := false
+endif
+
+### pattern rules ###
+
+%.d: %.c
+	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,CPP) -MM -MG $(foreach MD,$(MDVARIANTS),$(foreach PI,$(PIVARIANTS),-MT $(subst .d,$($(MD)SUFFIX)$($(PI)SUFFIX).o,$@))) -MT $@ -MM -MG -MF $@ $<
+
+## O_C_TEMPLATE (MD,PI)
+define O_C_TEMPLATE
+%$($(1)SUFFIX)$($(2)SUFFIX).o: %.c
+	$$(CROSS_PREFIX)$$(CC) $$(call MK_FLAGS,$$<,C,$(1) $(2)) -c -o $$@ $$<
+endef
+
+$(foreach MD,$(MDVARIANTS),$(foreach PI,$(PIVARIANTS), \
+$(eval $(call O_C_TEMPLATE,$(MD),$(PI)))))
+
+%$(EXE): %.o
+	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,LD) -o $@ $^
 
 %.a:
 	$(RM) $@
 	$(CROSS_PREFIX)$(AR) rc $@ $^
 	$(CROSS_PREFIX)$(RANLIB) $@
 
+define A_TEMPLATE
+$(foreach MD,$(MDVARIANTS),$(foreach PI,$(PIVARIANTS), \
+ifeq ($(and $(findstring DPI,$(PI)),$(findstring true,$(foreach PIX,$(PIVARIANTS),$(WITH_DEFAULT_$(PIX))))),true)
+$(foreach PIX,$(PIVARIANTS), \
+ifeq ($(WITH_DEFAULT_$(PIX)),true)
+lib$(1)$($(MD)SUFFIX).a: lib$(1)$($(MD)SUFFIX)$($(PIX)SUFFIX).a
+	$$(CP) $$< $$@
+endif
+)
+else
+lib$(1)$($(MD)SUFFIX)$($(PI)SUFFIX).a: $(patsubst %.o,%$($(MD)SUFFIX)$($(PI)SUFFIX).o,$($(2)_OBJS))
+endif
+))
+endef
+
 ### all ###
 
-LIBS := libgdtoa.a libmlton.a
-ifeq ($(WITH_DBG_RUNTIME),true)
-LIBS += $(patsubst %.a,%-dbg.a,$(LIBS))
-endif
-ifeq ($(WITH_PIC_RUNTIME),true)
-LIBS += $(patsubst %.a,%-pic.a,$(LIBS))
-endif
+LIBS := \
+$(foreach MD,$(MDVARIANTS), \
+$(if $(findstring true,$(WITH_$(MD)_RUNTIME)),\
+$(foreach PI,$(PIVARIANTS), \
+$(if $(findstring true,$(WITH_$(PI)_RUNTIME)),\
+$(patsubst %.a,%$($(MD)SUFFIX)$($(PI)SUFFIX).a,libgdtoa.a libmlton.a)))))
 ALL += $(LIBS) gen/constants gen/c-types.sml gen/basis-ffi.sml
 
 .PHONY: all
@@ -238,12 +304,7 @@ ifneq ($(MAKECMDGOALS),clean)
 -include $(patsubst %.o,%.d,$(GDTOA_OBJS))
 endif
 
-libgdtoa.a:         $(GDTOA_OBJS)
-libgdtoa-dbg.a:     $(patsubst %.o,%-dbg.o,$(GDTOA_OBJS))
-ifeq ($(WITH_DEFAULT_PIC),false)
-libgdtoa-pic.a:     $(patsubst %.o,%-pic.o,$(GDTOA_OBJS))
-libgdtoa-dbg-pic.a: $(patsubst %.o,%-dbg-pic.o,$(GDTOA_OBJS))
-endif
+$(eval $(call A_TEMPLATE,gdtoa,GDTOA))
 
 gdtoa/gdtoa.h $(GDTOACFILES): gdtoa/README
 	@touch $@
@@ -294,12 +355,7 @@ ifneq ($(MAKECMDGOALS),clean)
 -include $(patsubst %.o,%.d,$(MLTON_OBJS))
 endif
 
-libmlton.a:         $(MLTON_OBJS)
-libmlton-dbg.a:     $(patsubst %.o,%-dbg.o,$(MLTON_OBJS))
-ifeq ($(WITH_DEFAULT_PIC),false)
-libmlton-pic.a:     $(patsubst %.o,%-pic.o,$(MLTON_OBJS))
-libmlton-dbg-pic.a: $(patsubst %.o,%-dbg-pic.o,$(MLTON_OBJS))
-endif
+$(eval $(call A_TEMPLATE,mlton,MLTON))
 
 ### gen/constants ###
 
@@ -315,7 +371,9 @@ gen/gen-constants$(EXE): libmlton.a
 ######
 
 SHOW_VARS += TARGET TARGET_ARCH TARGET_OS GCC_VERSION
-SHOW_VARS += XCCFLAGS XMFLAGS XCPPFLAGS XCFLAGS OPTXCFLAGS DBGXCFLAGS PICXCFLAGS XLDFLAGS
+SHOW_VARS += WITH_OPT_RUNTIME WITH_DBG_RUNTIME WITH_DPI_RUNTIME WITH_NPI_RUNTIME WITH_PIC_RUNTIME WITH_PIE_RUNTIME
+SHOW_VARS += XCCFLAGS XMFLAGS XCPPFLAGS XCFLAGS OPTXCFLAGS DBGXCFLAGS DPIXCFLAGS NPIXCFLAGS PICXCFLAGS PIEXCFLAGS XLDFLAGS
+SHOW_VARS += HAVE_NPI WITH_DEFAULT_NPI HAVE_PIE WITH_DEFAULT_PIE HAVE_PIC WITH_DEFAULT_PIC
 SHOW_VARS += LIBS
 
 $(eval $(MK_SHOW_CONFIG))

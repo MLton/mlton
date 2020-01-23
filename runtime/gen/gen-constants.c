@@ -35,6 +35,17 @@
 int main (__attribute__ ((unused)) int argc,
           __attribute__ ((unused)) char* argv[]) {
 
+#ifdef __pie__
+  fprintf (stdout, "default::pie = %d\n", __pie__);
+#else
+  fprintf (stdout, "default::pie = %d\n", 0);
+#endif
+#ifdef __pic__
+  fprintf (stdout, "default::pic = %d\n", __pic__);
+#else
+  fprintf (stdout, "default::pic = %d\n", 0);
+#endif
+
   MkSize (cint, sizeof(C_Int_t));
   MkSize (cpointer, sizeof(C_Pointer_t));
   MkSize (cptrdiff, sizeof(C_Ptrdiff_t));

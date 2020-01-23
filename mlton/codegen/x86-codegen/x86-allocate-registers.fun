@@ -1,4 +1,4 @@
-(* Copyright (C) 2010 Matthew Fluet.
+(* Copyright (C) 2010,2020 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -38,7 +38,7 @@ struct
          fun mungeLabelDarwin l =
            Label.fromString (Label.toString l ^ "-MLtonLocalBaseSymbol")
       in
-        case (!Control.Target.os, !Control.positionIndependent) of
+        case (!Control.Target.os, !Control.Native.pic) of
             (* Only darwin and ELF might be using PIC *)
             (Darwin, true) => (mungeLabelDarwin, SOME Register.esp)
           | (_, true) => (mungeLabelELF, SOME Register.ebx)

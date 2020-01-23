@@ -1550,7 +1550,7 @@ struct
                               in
                                 case (symbolScope,
                                       !Control.Target.os, 
-                                      !Control.positionIndependent) of
+                                      !Control.Native.pic) of
                                    (* Private functions can be easily reached
                                     * with a direct (rip-relative) call.
                                     *)

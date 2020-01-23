@@ -362,6 +362,9 @@ signature CONTROL_FLAGS =
 
             (* whether or not to split assembly file in native codegen *)
             val split: int option ref
+
+            (* whether or not to use position-independent code in native codegen *)
+            val pic: bool ref
          end
 
       val numExports: int ref
@@ -379,8 +382,6 @@ signature CONTROL_FLAGS =
             val setAll: string -> unit Result.t
          end
 
-      val positionIndependent : bool ref
-
       (* Only duplicate big functions when
        * (size - small) * (number of occurrences - 1) <= product
        *)
@@ -391,6 +392,23 @@ signature CONTROL_FLAGS =
           small: int,
           product: int
          } option ref
+
+      structure PositionIndependentStyle:
+         sig
+            datatype t =
+               NPI
+             | PIC
+             | PIE
+
+            val ccOpts: t option -> string list
+            val fromString: string -> t option
+            val linkOpts: t option -> string list
+            val llvm_llcOpts: t option * {targetDefault: t} -> string list
+            val toString: t -> string
+            val toSuffix: t option -> string
+         end
+
+      val positionIndependentStyle: PositionIndependentStyle.t option ref
 
       val preferAbsPaths: bool ref
 
