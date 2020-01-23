@@ -1019,11 +1019,7 @@ fun commandLine (args: string list): unit =
          := (case (!positionIndependentStyle, pisFormat) of
                 (SOME pis, _) => SOME pis
               | (NONE, NONE) => NONE
-              | (NONE, SOME pisFormat) =>
-                   (case Control.PositionIndependentStyle.compare (pisFormat, pisTargetDefault) of
-                       LESS => NONE
-                     | EQUAL => NONE
-                     | GREATER => SOME pisFormat))
+              | (NONE, SOME pisFormat) => SOME pisFormat)
       val positionIndependentStyle = !positionIndependentStyle
 
       val () =
