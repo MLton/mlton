@@ -41,9 +41,9 @@ PIESUFFIX := -pie
 WITH_OPT_RUNTIME := true
 WITH_DBG_RUNTIME := true
 WITH_DPI_RUNTIME := true
-WITH_NPI_RUNTIME := true
-WITH_PIC_RUNTIME := true
-WITH_PIE_RUNTIME := true
+WITH_NPI_RUNTIME := $(or $(findstring true,$(RELEASE) $(WITH_ALL_RUNTIME)),false)
+WITH_PIC_RUNTIME := $(or $(findstring true,$(RELEASE) $(WITH_ALL_RUNTIME)),false)
+WITH_PIE_RUNTIME := $(or $(findstring true,$(RELEASE) $(WITH_ALL_RUNTIME)),false)
 
 # These flags can be overridden by the user
 CCFLAGS :=

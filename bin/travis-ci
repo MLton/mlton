@@ -25,9 +25,6 @@ make -j4 \
      MLTON_RUNTIME_ARGS="$MLTON_RUNTIME_ARGS" \
      MLTON_COMPILE_ARGS="$MLTON_COMPILE_ARGS" \
      WITH_DBG_RUNTIME=false \
-     WITH_NPI_RUNTIME=false \
-     WITH_PIC_RUNTIME=true \
-     WITH_PIE_RUNTIME=false \
      all
 
 if [ "$REGRESSION" == "true" ]; then
