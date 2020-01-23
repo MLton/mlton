@@ -338,12 +338,12 @@ polyml-mlton:
 .PHONY: version
 version:
 	@echo 'Instantiating version numbers.'
-	for f in							\
-		"$(SRC)/Makefile.config"				\
-	; do								\
-		$(SED) -e "s/^MLTON_VERSION := .*/MLTON_VERSION := $(MLTON_VERSION)/" <"$$f" >z && 	\
-		mv z "$$f";						\
-	done
+	$(SED) \
+		-e "s/^MLTON_VERSION := .*/MLTON_VERSION := $(MLTON_VERSION)/" \
+		-e "s/^RELEASE := .*/RELEASE := true/" \
+		< "$(SRC)/Makefile.config" \
+		> z && \
+		$(MV) z "$(SRC)/Makefile.config";
 
 ######################################################################
 
