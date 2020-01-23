@@ -1373,16 +1373,6 @@ structure PositionIndependentStyle =
           | SOME PIC => "-pic"
           | SOME PIE => "-pie"
 
-      fun compare (pis1, pis2) =
-         case (pis1, pis2) of
-            (NPI, NPI) => EQUAL
-          | (NPI, _) => LESS
-          | (_, NPI) => GREATER
-          | (PIC, PIC) => EQUAL
-          | (PIC, _) => LESS
-          | (_, PIC) => GREATER
-          | (PIE, PIE) => EQUAL
-
       fun ccOpts pis =
          case pis of
             NONE => []

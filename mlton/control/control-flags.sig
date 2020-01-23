@@ -401,7 +401,6 @@ signature CONTROL_FLAGS =
              | PIE
 
             val ccOpts: t option -> string list
-            val compare: t * t -> order
             val fromString: string -> t option
             val linkOpts: t option -> string list
             val llvm_llcOpts: t option * {targetDefault: t} -> string list
