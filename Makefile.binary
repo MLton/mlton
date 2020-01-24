@@ -72,4 +72,10 @@ update:
 		-e "s;^GMP_LIB_DIR=.*;GMP_LIB_DIR=\"$(WITH_GMP_LIB_DIR)\";" \
 		< "$(SBIN)/mlton.bak" > "$(SBIN)/mlton"
 	chmod a+x "$(SBIN)/mlton"
-	rm "$(SBIN)/mlton.bak"
+	$(RM) "$(SBIN)/mlton.bak"
+	$(CP) "$(SLIB)/targets/self/constants" "$(SLIB)/targets/self/constants.bak"
+	$(SED) \
+		-e "s;^default::pie=.*;default::pie=$(subst __pie__,0,$(shell echo "__pie__" | $(CC) -P -E -));" \
+		-e "s;^default::pic=.*;default::pic=$(subst __pic__,0,$(shell echo "__pic__" | $(CC) -P -E -));" \
+		< "$(SLIB)/targets/self/constants.bak" > "$(SLIB)/targets/self/constants"
+	$(RM) "$(SLIB)/targets/self/constants.bak"
