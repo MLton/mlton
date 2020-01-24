@@ -68,8 +68,8 @@ update:
 	$(CP) "$(SBIN)/mlton" "$(SBIN)/mlton.bak"
 	$(SED) \
 		-e "s;^CC=.*;CC=\"$(CC)\";" \
-		-e "s;^GMP_INC_DIR=.*;GMP_INC_DIR=\"$(WITH_GMP_INC_DIR)\";" \
-		-e "s;^GMP_LIB_DIR=.*;GMP_LIB_DIR=\"$(WITH_GMP_LIB_DIR)\";" \
+		-e "s;^GMP_INC_DIR=.*;GMP_INC_DIR=$(if $(WITH_GMP_INC_DIR),\"$(WITH_GMP_INC_DIR)\");" \
+		-e "s;^GMP_LIB_DIR=.*;GMP_LIB_DIR=$(if $(WITH_GMP_LIB_DIR),\"$(WITH_GMP_LIB_DIR)\");" \
 		< "$(SBIN)/mlton.bak" > "$(SBIN)/mlton"
 	chmod a+x "$(SBIN)/mlton"
 	$(RM) "$(SBIN)/mlton.bak"
