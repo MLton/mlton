@@ -705,7 +705,7 @@ fun makeOptions {usage} =
                                          rounds = rounds,
                                          small = small}
               | _ => ())),
-       (Expert, "pi-style", " {default|static|pic|pie}", "position-independent style",
+       (Expert, "pi-style", " {default|npi|pic|pie}", "position-independent style",
         SpaceString (fn s =>
                      (case (s, PositionIndependentStyle.fromString s) of
                          ("default", NONE) => positionIndependentStyle := NONE
