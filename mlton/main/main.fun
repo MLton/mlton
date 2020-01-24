@@ -1112,10 +1112,14 @@ fun commandLine (args: string list): unit =
           | Self => !cc
       val arScript = !arScript
 
-      fun addMD s =
-         if !debugRuntime then s ^ "-dbg" else s
-      fun addPI s =
-         s ^ (Control.PositionIndependentStyle.toSuffix positionIndependentStyle)
+      local
+         fun addMD s =
+            if !debugRuntime then s ^ "-dbg" else s
+         fun addPI s =
+            s ^ (Control.PositionIndependentStyle.toSuffix positionIndependentStyle)
+      in
+         val mkLibName = addPI o addMD
+      end
       fun addTargetOpts opts =
          List.fold
          (!opts, [], fn ({opt, pred}, ac) =>
@@ -1135,13 +1139,13 @@ fun commandLine (args: string list): unit =
       val ccOpts = addTargetOpts ccOpts
       val linkOpts = addTargetOpts linkOpts
       val linkOpts =
-         List.map (["mlton", "gdtoa"], fn lib => "-l" ^ addPI (addMD lib)) @ linkOpts
+         List.map (["mlton", "gdtoa"], fn lib => "-l" ^ mkLibName lib) @ linkOpts
       val linkOpts = ("-L" ^ targetLibDir) :: linkOpts
 
       val linkArchives =
          List.map (["mlton", "gdtoa"], fn lib =>
                    OS.Path.joinDirFile {dir = targetLibDir,
-                                        file = "lib" ^ addPI (addMD lib) ^ ".a"})
+                                        file = "lib" ^ mkLibName lib ^ ".a"})
 
       val llvm_as = !llvm_as
       val llvm_llc = !llvm_llc
