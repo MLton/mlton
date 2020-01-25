@@ -1394,8 +1394,8 @@ structure PositionIndependentStyle =
       fun linkOpts pis =
          case pis of
             NONE => []
-          | SOME NPI => ["-no-pie"]
-          | SOME PIC => ["-no-pie"]
+          | SOME NPI => ["-fno-pic", "-fno-pie", "-no-pie"]
+          | SOME PIC => ["-fno-pie", "-no-pie"]
           | SOME PIE => ["-fPIE -pie"]
    end
 
