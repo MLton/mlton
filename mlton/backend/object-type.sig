@@ -1,4 +1,5 @@
-(* Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2020 Matthew Fluet
+ * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a HPND-style license.
@@ -17,7 +18,7 @@ signature OBJECT_TYPE =
        | Sequence of {elt: ty,
                       hasIdentity: bool}
        | Stack
-       | Weak of ty option (* in Weak (SOME t), must have Type.isPointer t *)
+       | Weak of ty option (* in Weak (SOME t), must have Type.isObjptr t *)
 
       val basic: unit -> (ObjptrTycon.t * t) vector
       val isOk: t -> bool
