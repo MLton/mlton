@@ -12,10 +12,8 @@ open S
 datatype t =
    Normal of {init: {offset: Bytes.t,
                      src: Use.t} vector,
-              ty: Type.t,
               tycon: ObjptrTycon.t}
- | Sequence of {elt: Type.t,
-                init: {offset: Bytes.t,
+ | Sequence of {init: {offset: Bytes.t,
                        src: Use.t} vector vector,
                 tycon: ObjptrTycon.t}
 
@@ -31,11 +29,14 @@ fun metaDataSize obj =
       Normal _ => Runtime.normalMetaDataSize ()
     | Sequence _ => Runtime.sequenceMetaDataSize ()
 
-fun size obj =
+fun size (obj, {tyconTy: ObjptrTycon.t -> ObjectType.t}) =
    case obj of
-      Normal {ty, ...} => Bytes.+ (Runtime.normalMetaDataSize (), Type.bytes ty)
-    | Sequence {elt, init, ...} =>
+      Normal {tycon, ...} =>
+         Bytes.+ (Runtime.normalMetaDataSize (),
+                  Type.bytes (#ty (ObjectType.deNormal (tyconTy tycon))))
+    | Sequence {init, tycon} =>
          let
+            val elt = #elt (ObjectType.deSequence (tyconTy tycon))
             val length = Vector.length init
             val size =
                Bytes.+ (Runtime.sequenceMetaDataSize (),
@@ -56,8 +57,7 @@ fun fromWordXVector wv =
                        src = Use.word w})
    in
       Sequence
-      {elt = Type.word ws,
-       init = init,
+      {init = init,
        tycon = ObjptrTycon.wordVector ws}
    end
 
@@ -82,21 +82,18 @@ fun replace (s:t, {use: Use.t -> Use.t}): t =
                       src = use src})
    in
       case s of
-         Normal {init, ty, tycon} =>
+         Normal {init, tycon} =>
             Normal {init = replaceInit init,
-                    ty = ty,
                     tycon = tycon}
-       | Sequence {elt, init, tycon} =>
-            Sequence {elt = elt,
-                      init = Vector.map (init, replaceInit),
+       | Sequence {init, tycon} =>
+            Sequence {init = Vector.map (init, replaceInit),
                       tycon = tycon}
    end
 
-fun deString {elt: Type.t,
-              init: {offset: Bytes.t,
+fun deString {init: {offset: Bytes.t,
                      src: Use.t} vector vector,
-              tycon = _ : ObjptrTycon.t} =
-   if Type.equals (elt, Type.word WordSize.word8)
+              tycon: ObjptrTycon.t} =
+   if ObjptrTycon.equals (tycon, ObjptrTycon.wordVector WordSize.word8)
       then Exn.withEscape
            (fn escape =>
             SOME
@@ -118,15 +115,13 @@ fun layout obj =
                   ("src", Use.layout src)])
    in
       case obj of
-         Normal {init, ty, tycon} =>
+         Normal {init, tycon} =>
             seq [str "NormalObject ",
                  record [("init", initLayout init),
-                         ("ty", Type.layout ty),
                          ("tycon", ObjptrTycon.layout tycon)]]
-       | Sequence (arg as {elt, init, tycon}) =>
+       | Sequence (arg as {init, tycon}) =>
             seq [str "SequenceObject ",
-                 record [("elt", Type.layout elt),
-                         ("init", (case deString arg of
+                 record [("init", (case deString arg of
                                       NONE => Vector.layout initLayout init
                                     | SOME s => seq [str String.dquote,
                                                      str (String.escapeSML s),
@@ -159,28 +154,21 @@ fun isOk (obj: t,
           end)
    in
       case obj of
-         Normal {init, ty, tycon} =>
+         Normal {init, tycon} =>
+            let
+               val base = Type.objptr tycon
+               fun offsetIsOk {offset, result} =
+                  Type.offsetIsOk
+                  {base = base,
+                   offset = offset,
+                   tyconTy = tyconTy,
+                   result = result}
+            in
+               initOk (init, offsetIsOk)
+            end
+       | Sequence {init, tycon} =>
             (case tyconTy tycon of
-                ObjectType.Normal {ty = ty', ...} =>
-                   Type.equals (ty, ty')
-                   andalso
-                   let
-                      val base = Type.objptr tycon
-                      fun offsetIsOk {offset, result} =
-                         Type.offsetIsOk
-                         {base = base,
-                          offset = offset,
-                          tyconTy = tyconTy,
-                          result = result}
-                   in
-                      initOk (init, offsetIsOk)
-                   end
-              | _ => false)
-       | Sequence {elt, init, tycon} =>
-            (case tyconTy tycon of
-                ObjectType.Sequence {elt = elt', ...} =>
-                   Type.equals (elt, elt')
-                   andalso
+                ObjectType.Sequence {elt, ...} =>
                    let
                       val base = Type.objptr tycon
                       val index = Type.seqIndex ()
@@ -204,7 +192,7 @@ fun isOk (obj: t,
                           initOk (init, offsetIsOk)
                        end)
                    end
-              | _ => false)
+              | _ => Error.bug "Object.isOk")
    end
 
 end

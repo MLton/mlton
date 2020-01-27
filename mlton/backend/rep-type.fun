@@ -412,6 +412,18 @@ structure ObjectType =
        | Stack
        | Weak of Type.t option
 
+      fun deNormal t =
+         case t of
+            Normal {hasIdentity, ty} =>
+               {hasIdentity = hasIdentity, ty = ty}
+          | _ => Error.bug "ObjectType.deNormal"
+
+      fun deSequence t =
+         case t of
+            Sequence {elt, hasIdentity} =>
+               {elt = elt, hasIdentity = hasIdentity}
+          | _ => Error.bug "ObjectType.deSequence"
+
       fun layout (t: t) =
          let
             open Layout

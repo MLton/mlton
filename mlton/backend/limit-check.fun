@@ -98,9 +98,9 @@ structure Statement =
    struct
       open Statement
 
-      fun bytesAllocated (s: t): Bytes.t =
+      fun bytesAllocated (s: t, {tyconTy}): Bytes.t =
          case s of
-            Object {obj, ...} => Object.size obj
+            Object {obj, ...} => Object.size (obj, {tyconTy = tyconTy})
           | _ => Bytes.zero
    end
 
@@ -143,10 +143,14 @@ structure Block =
    struct
       open Block
 
-      fun objectBytesAllocated (T {statements, transfer, ...}): Bytes.t =
+      fun objectBytesAllocated (T {statements, transfer, ...}, {tyconTy}): Bytes.t =
          Bytes.+
          (Vector.fold (statements, Bytes.zero, fn (s, ac) =>
-                       Bytes.+ (ac, Statement.bytesAllocated s)),
+                       let
+                          val b = Statement.bytesAllocated (s, {tyconTy = tyconTy})
+                       in
+                          Bytes.+ (ac, b)
+                       end),
           case Transfer.bytesAllocated transfer of
              Transfer.Big _ => Bytes.zero
            | Transfer.Small b => b)
@@ -502,11 +506,13 @@ fun insertFunction (f: Function.t,
                     start = start}
    end
 
-fun insertPerBlock (f: Function.t, handlesSignals, newFlag) =
+fun insertPerBlock (f: Function.t, handlesSignals, newFlag, tyconTy) =
    let
       val {blocks, ...} = Function.dest f
       fun blockCheckAmount {blockIndex} =
-         Block.objectBytesAllocated (Vector.sub (blocks, blockIndex))
+         Block.objectBytesAllocated
+         (Vector.sub (blocks, blockIndex),
+          {tyconTy = tyconTy})
    in
       insertFunction (f, handlesSignals, newFlag, blockCheckAmount, fn _ => Bytes.zero)
    end
@@ -556,7 +562,7 @@ fun isolateBigTransfers (f: Function.t): Function.t =
                     start = start}
    end
 
-fun insertCoalesce (f: Function.t, handlesSignals, newFlag) =
+fun insertCoalesce (f: Function.t, handlesSignals, newFlag, tyconTy) =
    let
       val f = isolateBigTransfers f
       val {blocks, start, ...} = Function.dest f
@@ -654,7 +660,9 @@ fun insertCoalesce (f: Function.t, handlesSignals, newFlag) =
                       else addEdge from
               end)
           end)
-      val objectBytesAllocated = Vector.map (blocks, Block.objectBytesAllocated)
+      val objectBytesAllocated =
+         Vector.map (blocks, fn b =>
+                     Block.objectBytesAllocated (b, {tyconTy = tyconTy}))
       fun insertCoalesceExtBasicBlocks () =
          let
             val preds = Array.new (n, 0)
@@ -825,6 +833,9 @@ fun insertCoalesce (f: Function.t, handlesSignals, newFlag) =
 
 fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileInfo, statics}) =
    let
+      fun tyconTy tycon =
+         Vector.sub (objectTypes, ObjptrTycon.index tycon)
+
       val _ = Control.diagnostic (fn () => Layout.str "Limit Check maxPaths")
 
       val (newFlag, finishFlags) =
@@ -857,8 +868,7 @@ fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileI
                          [statics,
                           Vector.new1 {dst = (flagsVar, flagsTy),
                                        obj = Object.Sequence
-                                             {elt = flagTy,
-                                              init = Vector.tabulate
+                                             {init = Vector.tabulate
                                                      (Counter.value c, fn _ =>
                                                       Vector.new1
                                                       {offset = Bytes.zero,
@@ -870,8 +880,8 @@ fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileI
       datatype z = datatype Control.limitCheck
       fun insert f =
          case !Control.limitCheck of
-            PerBlock => insertPerBlock (f, handlesSignals, newFlag)
-          | _ => insertCoalesce (f, handlesSignals, newFlag)
+            PerBlock => insertPerBlock (f, handlesSignals, newFlag, tyconTy)
+          | _ => insertCoalesce (f, handlesSignals, newFlag, tyconTy)
 
       val main = insert main
       val functions = List.revMap (functions, insert)

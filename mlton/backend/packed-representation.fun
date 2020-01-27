@@ -943,7 +943,7 @@ structure ObjptrRep =
                   tycon = opt}
          end
 
-      fun tuple (T {components, componentsTy, ty, tycon, ...},
+      fun tuple (T {components, ty, tycon, ...},
                  {dst = dst: Var.t,
                   src: {index: int} -> Operand.t}) =
          let
@@ -968,7 +968,6 @@ structure ObjptrRep =
             ([Object {dst = (dst, ty),
                       obj = Object.Normal
                             {init = Vector.fromListRev init,
-                             ty = componentsTy,
                              tycon = tycon}}]
              :: pre)
          end
@@ -979,7 +978,7 @@ structure ObjptrRep =
           layout, Var.layout o #dst, List.layout Statement.layout)
          tuple
 
-      fun sequence (T {components, componentsTy, ty, tycon, ...},
+      fun sequence (T {components, ty, tycon, ...},
                     {dst = dst: Var.t,
                      src: ({index: int} -> Operand.t) vector}) =
          let
@@ -1010,8 +1009,7 @@ structure ObjptrRep =
             List.concatRev
             ([Object {dst = (dst, ty),
                       obj = Object.Sequence
-                            {elt = componentsTy,
-                             init = Vector.fromListRev init,
+                            {init = Vector.fromListRev init,
                              tycon = tycon}}]
              :: pre)
          end

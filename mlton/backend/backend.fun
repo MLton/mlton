@@ -137,6 +137,9 @@ fun eliminateDeadCode (f: R.Function.t): R.Function.t =
 fun toMachine (rssa: Rssa.Program.t) =
    let
       val R.Program.T {functions, handlesSignals, main, objectTypes, profileInfo, statics} = rssa
+      (* tyconTy *)
+      fun tyconTy tycon =
+         Vector.sub (objectTypes, ObjptrTycon.index tycon)
       (* returnsTo and raisesTo info *)
       val rflow = R.Program.rflow rssa
       (* Chunk info *)
@@ -369,13 +372,10 @@ fun toMachine (rssa: Rssa.Program.t) =
                 end)
             fun translateObject obj =
                case obj of
-                  R.Object.Normal {init, ty, tycon, ...} =>
+                  R.Object.Normal {init, tycon} =>
                      let
+                        val {hasIdentity, ty} = ObjectType.deNormal (tyconTy tycon)
                         val (init, hasDynamic) = translateInit init
-                        val hasIdentity =
-                           case Vector.sub (objectTypes, ObjptrTycon.index tycon) of
-                              ObjectType.Normal {hasIdentity, ...} => hasIdentity
-                            | _ => Error.bug "Backend.staticHeaps.translateObject: Normal,hasIdentity"
                         val kind =
                            if hasDynamic
                               then Kind.Dynamic
@@ -396,14 +396,14 @@ fun toMachine (rssa: Rssa.Program.t) =
                      in
                         {kind = kind,
                          obj = Object.Normal {init = init,
-                                              ty = ty,
                                               tycon = tycon},
                          offset = Runtime.normalMetaDataSize (),
-                         size = R.Object.size obj,
+                         size = R.Object.size (obj, {tyconTy = tyconTy}),
                          tycon = tycon}
                      end
-                | R.Object.Sequence {elt, init, tycon, ...} =>
+                | R.Object.Sequence {init, tycon} =>
                      let
+                        val {elt, hasIdentity} = ObjectType.deSequence (tyconTy tycon)
                         val (init, hasDynamic) =
                            Vector.mapAndFold
                            (init, false, fn (init, hasDynamic') =>
@@ -412,10 +412,6 @@ fun toMachine (rssa: Rssa.Program.t) =
                             in
                                (init, hasDynamic' orelse hasDynamic)
                             end)
-                        val hasIdentity =
-                           case Vector.sub (objectTypes, ObjptrTycon.index tycon) of
-                              ObjectType.Sequence {hasIdentity, ...} => hasIdentity
-                            | _ => Error.bug "Backend.staticHeaps.translateObject: Sequence,hasIdentity"
                         val kind =
                            if hasDynamic
                               then Kind.Dynamic
@@ -438,11 +434,10 @@ fun toMachine (rssa: Rssa.Program.t) =
                               else Kind.Immutable
                      in
                         {kind = kind,
-                         obj = Object.Sequence {elt = elt,
-                                                init = init,
+                         obj = Object.Sequence {init = init,
                                                 tycon = tycon},
                          offset = Runtime.sequenceMetaDataSize (),
-                         size = R.Object.size obj,
+                         size = R.Object.size (obj, {tyconTy = tyconTy}),
                          tycon = tycon}
                      end
 
@@ -652,7 +647,7 @@ fun toMachine (rssa: Rssa.Program.t) =
              | Move {dst, src} =>
                   move {dst = translateOperand dst,
                         src = translateOperand src}
-             | Object {dst = (dst, _), obj as Object.Normal {init, tycon, ...}} =>
+             | Object {dst = (dst, _), obj as Object.Normal {init, tycon}} =>
                   let
                      val dst = varOperand dst
                      val header = ObjptrTycon.toHeader tycon
@@ -664,13 +659,14 @@ fun toMachine (rssa: Rssa.Program.t) =
                      Vector.concat
                      (M.Statement.object {dst = dst,
                                           header = header,
-                                          size = Object.size obj}
+                                          size = Object.size (obj, {tyconTy = tyconTy})}
                       :: mkInit (init, mkDst))
                   end
-             | Object {dst = (dst, _), obj as Object.Sequence {elt, init, tycon, ...}} =>
+             | Object {dst = (dst, _), obj as Object.Sequence {init, tycon}} =>
                   let
                      val dst = varOperand dst
                      val header = ObjptrTycon.toHeader tycon
+                     val elt = #elt (ObjectType.deSequence (tyconTy tycon))
                      val (scale, mkIndex) =
                         case Scale.fromBytes (Type.bytes elt) of
                            NONE =>
@@ -689,7 +685,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                      (M.Statement.sequence {dst = dst,
                                             header = header,
                                             length = Vector.length init,
-                                            size = Object.size obj}
+                                            size = Object.size (obj, {tyconTy = tyconTy})}
                       :: (List.concat o Vector.toListMapi)
                          (init, fn (index, init) =>
                           let

@@ -255,6 +255,9 @@ fun outputDeclarations
       fun declareExports () =
          Ffi.declareExports {print = print}
 
+      fun tyconTy tycon =
+         Vector.sub (objectTypes, ObjptrTycon.index tycon)
+
       fun declareGlobals () =
          List.foreach
          (CType.all, fn t =>
@@ -447,20 +450,26 @@ fun outputDeclarations
                     (staticHeaps k, fn (i, obj) =>
                      (print "struct __attribute__ ((packed)) {"
                       ; (case obj of
-                            Object.Normal {init, ty, ...} =>
-                               (print "struct __attribute__ ((packed)) {"
-                                ; print (CType.toString headerTy)
-                                ; print " header;"
-                                ; print "} metadata;"
-                                ; print " "
-                                ; print "struct __attribute__ ((packed)) {"
-                                ; List.foreachi (mkFieldTys (init, ty), fn (i, fldTy) =>
-                                                 (if i > 0 then print " " else ()
-                                                     ; print fldTy
-                                                     ; print ";"))
-                                ; print "} data;")
-                          | Object.Sequence {elt, init, ...} =>
+                            Object.Normal {init, tycon} =>
                                let
+                                  val ty = #ty (ObjectType.deNormal (tyconTy tycon))
+                               in
+                                  print "struct __attribute__ ((packed)) {"
+                                  ; print (CType.toString headerTy)
+                                  ; print " header;"
+                                  ; print "} metadata;"
+                                  ; print " "
+                                  ; print "struct __attribute__ ((packed)) {"
+                                  ; List.foreachi
+                                    (mkFieldTys (init, ty), fn (i, fldTy) =>
+                                     (if i > 0 then print " " else ()
+                                      ; print fldTy
+                                      ; print ";"))
+                                  ; print "} data;"
+                               end
+                          | Object.Sequence {init, tycon} =>
+                               let
+                                  val elt = #elt (ObjectType.deSequence (tyconTy tycon))
                                   val length = Vector.length init
                                in
                                   print "struct __attribute__ ((packed)) {"
@@ -478,11 +487,12 @@ fun outputDeclarations
                                        then print (CType.toString CType.Word8)
                                        else (print "struct __attribute__ ((packed)) {"
                                              ; if length > 0
-                                                  then List.foreachi (mkFieldTys (Vector.first init, elt),
-                                                                      fn (i, fldTy) =>
-                                                                      (if i > 0 then print " " else ()
-                                                                          ; print fldTy
-                                                                          ; print ";"))
+                                                  then List.foreachi
+                                                       (mkFieldTys (Vector.first init, elt),
+                                                        fn (i, fldTy) =>
+                                                        (if i > 0 then print " " else ()
+                                                         ; print fldTy
+                                                         ; print ";"))
                                                   else ()
                                              ; print "}")
                                   ; print " data["
@@ -554,17 +564,23 @@ fun outputDeclarations
                     (staticHeaps k, fn obj =>
                      (print "{"
                       ; (case obj of
-                            Object.Normal {init, tycon, ty, ...} =>
-                               (print "{"
-                                ; print (mkHeader tycon)
-                                ; print ","
-                                ; print "},"
-                                ; print "{"
-                                ; List.foreach (mkFields (init, ty), fn fld =>
-                                                (print fld; print ","))
-                                ; print "},")
-                          | Object.Sequence (arg as {elt, init, tycon, ...}) =>
+                            Object.Normal {init, tycon} =>
                                let
+                                  val ty = #ty (ObjectType.deNormal (tyconTy tycon))
+                               in
+                                  print "{"
+                                  ; print (mkHeader tycon)
+                                  ; print ","
+                                  ; print "},"
+                                  ; print "{"
+                                  ; List.foreach
+                                    (mkFields (init, ty), fn fld =>
+                                     (print fld; print ","))
+                                  ; print "},"
+                               end
+                          | Object.Sequence (arg as {init, tycon}) =>
+                               let
+                                  val elt = #elt (ObjectType.deSequence (tyconTy tycon))
                                   val length = Vector.length init
                                in
                                   print "{"
@@ -578,11 +594,13 @@ fun outputDeclarations
                                   ; (case (Object.deString arg, length > 0) of
                                         (SOME s, true) => print (C.string s)
                                       | _ => (print "{"
-                                              ; Vector.foreach (init, fn init =>
-                                                                (print "{"
-                                                                 ; List.foreach (mkFields (init, elt), fn fld =>
-                                                                                 (print fld; print ","))
-                                                                 ; print "},"))
+                                              ; Vector.foreach
+                                                (init, fn init =>
+                                                 (print "{"
+                                                  ; List.foreach
+                                                    (mkFields (init, elt), fn fld =>
+                                                     (print fld; print ","))
+                                                  ; print "},"))
                                               ; print "}"))
                                   ; print ","
                                   ; let
@@ -595,8 +613,7 @@ fun outputDeclarations
                                            | Control.Align8 => Bytes.alignWord64 next
                                     in
                                        Option.app (mkPad (next, size), fn pad =>
-                                                   (print pad
-                                                    ; print ","))
+                                                   (print pad ; print ","))
                                     end
                                end)
                       ; print "},\n")))

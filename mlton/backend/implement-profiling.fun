@@ -144,6 +144,8 @@ fun transform program =
    else
    let
       val Program.T {functions, handlesSignals, main, objectTypes, statics, ...} = program
+      fun tyconTy tycon =
+         Vector.sub (objectTypes, ObjptrTycon.index tycon)
       val debug = false
       datatype z = datatype Control.profile
       val profile = !Control.profile
@@ -748,7 +750,9 @@ fun transform program =
                                Object {obj, ...} =>
                                   {args = args,
                                    bytesAllocated = Bytes.+ (bytesAllocated,
-                                                             Object.size obj),
+                                                             Object.size
+                                                             (obj,
+                                                              {tyconTy = tyconTy})),
                                    kind = kind,
                                    label = label,
                                    leaves = leaves,

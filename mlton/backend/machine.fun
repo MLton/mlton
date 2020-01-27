@@ -1157,7 +1157,7 @@ structure Program =
                    (#1 o Vector.mapAndFold)
                    (staticHeaps k, Bytes.zero, fn (obj, next) =>
                     ((Bytes.+ (next, Object.metaDataSize obj), obj),
-                     Bytes.+ (next, Object.size obj))))
+                     Bytes.+ (next, Object.size (obj, {tyconTy = tyconTy})))))
                end
 
             fun checkGlobal (name, global, isOk, layoutVal) =

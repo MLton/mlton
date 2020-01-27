@@ -21,6 +21,8 @@ signature OBJECT_TYPE =
        | Weak of ty option (* in Weak (SOME t), must have Type.isObjptr t *)
 
       val basic: unit -> (ObjptrTycon.t * t) vector
+      val deNormal: t -> {hasIdentity: bool, ty: ty}
+      val deSequence: t -> {elt: ty, hasIdentity: bool}
       val isOk: t -> bool
       val layout: t -> Layout.t
       val toRuntime: t -> Runtime.RObjectType.t
