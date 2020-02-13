@@ -552,10 +552,16 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                       PrimApp {prim = prim,
                                targs = simplifyTypes targs,
                                args = args}
+                   fun length () =
+                      case simplifyTypeOpt (Vector.first targs) of
+                         NONE => Exp.Const (Const.word (WordX.zero (WordSize.seqIndex ())))
+                       | SOME _ => normal ()
                    datatype z = datatype Prim.Name.t
                 in
                    case Prim.name prim of
-                      _ => normal ()
+                      Array_length => length ()
+                    | Vector_length => length ()
+                    | _ => normal ()
                 end)
           | Select {tuple, offset} =>
                let
