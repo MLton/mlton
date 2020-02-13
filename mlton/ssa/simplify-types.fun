@@ -518,14 +518,24 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
          if 1 = Vector.length xs
             then Var (Vector.first xs)
             else Tuple xs
+      fun simplifyFormals xts =
+         let
+            val dead = ref false
+            val xts =
+               Vector.keepAllMap
+               (xts, fn (x, t) =>
+                case simplifyVarType (x, t) of
+                   NONE => (dead := true; NONE)
+                 | SOME t => SOME (x, t))
+         in
+            ({dead = !dead}, xts)
+         end
       fun simplifyFormalsOpt xts =
-         Exn.withEscape
-         (fn escape =>
-          SOME (Vector.map
-                (xts, fn (x, t) =>
-                 case simplifyVarType (x, t) of
-                    NONE => escape NONE
-                  | SOME t => (x, t))))
+         let
+            val ({dead}, xts) = simplifyFormals xts
+         in
+            if dead then NONE else SOME xts
+         end
       datatype result = datatype Result.t
       fun simplifyExp (e: Exp.t): Exp.t result =
          case e of
@@ -672,13 +682,16 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
           Result.layout Statement.layout)
          simplifyStatement
       fun simplifyBlock (Block.T {label, args, statements, transfer}) =
-         case simplifyFormalsOpt args of
-            NONE =>
+         case simplifyFormals args of
+            ({dead = true}, args) =>
                (* It is impossible for a block to be called with a value of an
                 * uninhabited type; block must be unreachable.
                 *)
-               NONE
-          | SOME args =>
+               ({dead = true}, Block.T {label = label,
+                                        args = args,
+                                        statements = Vector.new0 (),
+                                        transfer = Bug})
+          | ({dead = false}, args) =>
                let
                   val statements =
                      Vector.fold'
@@ -690,21 +703,21 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                       SOME o Vector.fromListRev)
                in
                   case statements of
-                     NONE => SOME ({dead = true},
-                                   Block.T {label = label,
-                                            args = args,
-                                            statements = Vector.new0 (),
-                                            transfer = Bug})
+                     NONE => ({dead = true},
+                              Block.T {label = label,
+                                       args = args,
+                                       statements = Vector.new0 (),
+                                       transfer = Bug})
                    | SOME statements =>
                         let
                            val (stmts, transfer) = simplifyTransfer transfer
                            val statements = Vector.concat [statements, stmts]
                         in
-                           SOME ({dead = false},
-                                 Block.T {label = label,
-                                          args = args,
-                                          statements = statements,
-                                          transfer = transfer})
+                           ({dead = false},
+                            Block.T {label = label,
+                                     args = args,
+                                     statements = statements,
+                                     transfer = transfer})
                         end
                end
       fun simplifyFunction f =
@@ -722,16 +735,14 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                   let
                      val blocks = ref []
                      fun loop (Tree.T (b, children)) =
-                        case simplifyBlock b of
-                           NONE => ()
-                         | SOME ({dead}, b) =>
-                              let
-                                 val _ = List.push (blocks, b)
-                              in
-                                 if dead
-                                    then ()
-                                    else Tree.Seq.foreach (children, loop)
-                              end
+                        let
+                           val ({dead}, b) = simplifyBlock b
+                           val _ = List.push (blocks, b)
+                        in
+                           if dead
+                              then ()
+                              else Tree.Seq.foreach (children, loop)
+                        end
                      val _ = loop (Function.dominatorTree f)
 
                      val returns = Option.map (returns, keepSimplifyTypes)
