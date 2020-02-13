@@ -429,47 +429,69 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                   :: accum
           else (transparent (tycon, con, args)
                 ; accum))
-      fun makeKeepSimplifyTypes simplifyType ts =
-         Vector.keepAllMap (ts, fn t =>
-                            let
-                               val t = simplifyType t
-                            in
-                               if Type.isUnit t
-                                  then NONE
-                                  else SOME t
-                            end)
-      val {get = simplifyType, destroy = destroySimplifyType} =
+
+      fun makeSimplifyTypeFns simplifyTypeOpt =
+         let
+            fun simplifyType t =
+               case simplifyTypeOpt t of
+                  NONE => Error.bug (concat ["SimplifyTypes.simplifyType: ",
+                                             Layout.toString (Type.layout t)])
+                | SOME t => t
+            fun simplifyTypeAsUnit t =
+               case simplifyTypeOpt t of
+                  NONE => Type.unit
+                | SOME t => t
+            fun simplifyTypesOpt ts =
+               Exn.withEscape
+               (fn escape =>
+                SOME (Vector.map (ts, fn t =>
+                                  case simplifyTypeOpt t of
+                                     NONE => escape NONE
+                                   | SOME t => t)))
+            fun simplifyTypes ts = Vector.map (ts, simplifyType)
+            fun keepSimplifyTypes ts = Vector.keepAllMap (ts, simplifyTypeOpt)
+         in
+            {simplifyType = simplifyType,
+             simplifyTypeAsUnit = simplifyTypeAsUnit,
+             simplifyTypes = simplifyTypes,
+             simplifyTypesOpt = simplifyTypesOpt,
+             keepSimplifyTypes = keepSimplifyTypes}
+         end
+      val {get = simplifyTypeOpt, destroy = destroySimplifyTypeOpt} =
          Property.destGet
          (Type.plist,
           Property.initRec
-          (fn (t, simplifyType) =>
-           let
-              val keepSimplifyTypes = makeKeepSimplifyTypes simplifyType
-              open Type
-           in
-              case dest t of
-                 Array t => array (simplifyType t)
-               | Datatype tycon =>
-                    (case tyconReplacement tycon of
-                        SOME t =>
-                           let
-                              val t = simplifyType t
-                              val _ = setTyconReplacement (tycon, SOME t)
-                           in
-                              t
-                           end
-                      | NONE => t)
-               | Ref t => reff (simplifyType t)
-               | Tuple ts => Type.tuple (keepSimplifyTypes ts)
-               | Vector t => vector (simplifyType t)
-               | Weak t => weak (simplifyType t)
-               | _ => t
-           end))
-      val simplifyType =
-         Trace.trace ("SimplifyTypes.simplifyType", Type.layout, Type.layout)
-         simplifyType
-      fun simplifyTypes ts = Vector.map (ts, simplifyType)
-      val keepSimplifyTypes = makeKeepSimplifyTypes simplifyType
+          (fn (t, simplifyTypeOpt) =>
+           if Cardinality.isZero (typeCardinality t)
+              then NONE
+              else SOME (let
+                            val {simplifyType, simplifyTypeAsUnit, simplifyTypes, ...} =
+                               makeSimplifyTypeFns simplifyTypeOpt
+                            open Type
+                         in
+                            case dest t of
+                               Array t => array (simplifyTypeAsUnit t)
+                             | Datatype tycon =>
+                                  (case tyconReplacement tycon of
+                                      SOME t =>
+                                         let
+                                            val t = simplifyType t
+                                            val _ = setTyconReplacement (tycon, SOME t)
+                                         in
+                                            t
+                                         end
+                                    | NONE => t)
+                             | Ref t => reff (simplifyType t)
+                             | Tuple ts => Type.tuple (simplifyTypes ts)
+                             | Vector t => vector (simplifyTypeAsUnit t)
+                             | Weak t => weak (simplifyType t)
+                             | _ => t
+                         end)))
+      val simplifyTypeOpt =
+         Trace.trace ("SimplifyTypes.simplifyTypeOpt", Type.layout, Option.layout Type.layout)
+         simplifyTypeOpt
+      val {simplifyType, simplifyTypes, keepSimplifyTypes, ...} =
+         makeSimplifyTypeFns simplifyTypeOpt
       (* Simplify constructor argument types. *)
       val datatypes =
          Vector.fromListMap
@@ -491,12 +513,10 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
             SOME x => simplifyVarType (x, t)
           | NONE => simplifyType t
       val oldVarType = varInfo
-      val newVarType = simplifyType o oldVarType
+      val newVarType = simplifyTypeOpt o oldVarType
+      val varIsUseless = Option.isNone o newVarType
       fun simplifyVar (x: Var.t): Var.t =
-         if Type.isUnit (newVarType x)
-            then unitVar
-            else x
-      val varIsUseless = Type.isUnit o newVarType
+         if varIsUseless x then unitVar else x
       fun removeUselessVars xs = Vector.keepAll (xs, not o varIsUseless)
       fun tuple xs =
          let
@@ -749,7 +769,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                     functions = functions,
                     main = main}
       val _ = destroyTypeCardinality ()
-      val _ = destroySimplifyType ()
+      val _ = destroySimplifyTypeOpt ()
       val _ = Program.clearTop program
    in
       program
