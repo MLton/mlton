@@ -543,7 +543,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                (case conRep con of
                    ConRep.Transparent => Keep (tuple args)
                  | ConRep.Useful => Keep (ConApp {con = con, args = args})
-                 | ConRep.Useless => Dead)
+                 | ConRep.Useless => Error.bug "SimplifyTypes.simplfyExp: ConApp, ConRep.Useless")
           | PrimApp {prim, targs, args} =>
                Keep
                (let
