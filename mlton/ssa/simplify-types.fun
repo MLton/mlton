@@ -498,7 +498,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
            ; Datatype.T {tycon = tycon,
                          cons = Vector.map (cons, fn {con, args} =>
                                             {con = con,
-                                             args = keepSimplifyTypes args})}))
+                                             args = simplifyTypes args})}))
       val datatypes =
          Vector.concat
          [Vector.new1 (Datatype.T {tycon = void, cons = Vector.new0 ()}),
@@ -514,17 +514,10 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
             SOME x => simplifyVarType (x, t)
           | NONE => simplifyTypeOpt t
       val oldVarType = varInfo
-      val newVarType = simplifyTypeOpt o oldVarType
-      val varIsUseless = Option.isNone o newVarType
-      fun removeUselessVars xs = Vector.keepAll (xs, not o varIsUseless)
       fun tuple xs =
-         let
-            val xs = removeUselessVars xs
-         in
-            if 1 = Vector.length xs
-               then Var (Vector.first xs)
-               else Tuple xs
-         end
+         if 1 = Vector.length xs
+            then Var (Vector.first xs)
+            else Tuple xs
       fun simplifyFormalsOpt xts =
          Exn.withEscape
          (fn escape =>
@@ -533,16 +526,13 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                  case simplifyVarType (x, t) of
                     NONE => escape NONE
                   | SOME t => (x, t))))
-      val typeIsUseful = Option.isSome o simplifyTypeOpt
       datatype result = datatype Result.t
       fun simplifyExp (e: Exp.t): Exp.t result =
          case e of
             ConApp {con, args} =>
                (case conRep con of
                    ConRep.Transparent => Keep (tuple args)
-                 | ConRep.Useful =>
-                      Keep (ConApp {con = con,
-                                    args = removeUselessVars args})
+                 | ConRep.Useful => Keep (ConApp {con = con, args = args})
                  | ConRep.Useless => Dead)
           | PrimApp {prim, targs, args} =>
                Keep
@@ -563,27 +553,14 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                     | _ => normal ()
                 end)
           | Select {tuple, offset} =>
-               let
-                  val ts = Type.deTuple (oldVarType tuple)
-               in
-                  Vector.fold'
-                  (ts, 0, (offset, 0), fn (pos, t, (n, offset)) =>
-                   if n = 0
-                      then (Vector.Done
-                            (Keep
-                             (if offset = 0
-                                 andalso not (Vector.existsR
-                                              (ts, pos + 1, Vector.length ts,
-                                               typeIsUseful))
-                                 then Var tuple
-                                 else Select {tuple = tuple,
-                                              offset = offset})))
-                      else Vector.Continue (n - 1,
-                                            if typeIsUseful t
-                                               then offset + 1
-                                               else offset),
-                   fn _ => Error.bug "SimplifyTypes.simplifyExp: Select:newOffset")
-               end
+               Keep
+               (let
+                   val ts = Type.deTuple (oldVarType tuple)
+                in
+                   if Vector.length ts = 1
+                      then Var tuple
+                      else Select {tuple = tuple, offset = offset}
+                end)
           | Tuple xs => Keep (tuple xs)
           | _ => Keep e
       val simplifyExp =
@@ -595,8 +572,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
             Bug => (Vector.new0 (), t)
           | Call {func, args, return} =>
                (Vector.new0 (),
-                Call {func = func, return = return,
-                      args = removeUselessVars args})
+                Call {func = func, return = return, args = args})
           | Case {test, cases = Cases.Con cases, default} =>
                let
                   val cases =
@@ -631,7 +607,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                               normal ()
                         else (* The type has become a tuple.  Do the selects. *)
                            let
-                              val ts = keepSimplifyTypes (conArgs con)
+                              val ts = simplifyTypes (conArgs con)
                               val (args, stmts) =
                                  if 1 = Vector.length ts
                                     then (Vector.new1 test, Vector.new0 ())
@@ -657,9 +633,9 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                end
           | Case _ => (Vector.new0 (), t)
           | Goto {dst, args} =>
-               (Vector.new0 (), Goto {dst = dst, args = removeUselessVars args})
-          | Raise xs => (Vector.new0 (), Raise (removeUselessVars xs))
-          | Return xs => (Vector.new0 (), Return (removeUselessVars xs))
+               (Vector.new0 (), Goto {dst = dst, args = args})
+          | Raise xs => (Vector.new0 (), Raise xs)
+          | Return xs => (Vector.new0 (), Return xs)
           | Runtime {prim, args, return} =>
                (Vector.new0 (), Runtime {prim = prim,
                                          args = args,
