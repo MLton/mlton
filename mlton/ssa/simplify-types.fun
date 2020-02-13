@@ -149,23 +149,6 @@ structure ConRep =
       val layout = Layout.str o toString
    end
 
-structure Result =
-   struct
-      datatype 'a t =
-         Dead
-       | Delete
-       | Keep of 'a
-
-      fun layout layoutX =
-         let
-            open Layout
-         in
-            fn Dead => str "Dead"
-             | Delete => str "Delete"
-             | Keep x => seq [str "Keep ", layoutX x]
-         end
-   end
-
 fun transform (Program.T {datatypes, globals, functions, main}) =
    let
       val {get = conInfo: Con.t -> {args: Type.t vector,
@@ -664,17 +647,17 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                 * the vector of length 0; this `Vector_sub` is unreachable due
                 * to a dominating bounds check that must necessarily fail.
                 *)
-               Dead
+               NONE
           | SOME ty =>
                (* It is wrong to omit calling simplifyExp when var = NONE because
                 * targs in a PrimApp may still need to be simplified.
                 *)
-               Keep (Statement.T {var = var, ty = ty, exp = simplifyExp exp})
+               SOME (Statement.T {var = var, ty = ty, exp = simplifyExp exp})
       val simplifyStatement =
          Trace.trace
          ("SimplifyTypes.simplifyStatement",
           Statement.layout,
-          Result.layout Statement.layout)
+          Option.layout Statement.layout)
          simplifyStatement
       fun simplifyBlock (Block.T {label, args, statements, transfer}) =
          case simplifyFormals args of
@@ -689,13 +672,12 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
           | ({dead = false}, args) =>
                let
                   val statements =
-                     Vector.fold'
-                     (statements, 0, [], fn (_, statement, statements) =>
-                      case simplifyStatement statement of
-                         Dead => Vector.Done NONE
-                       | Delete => Vector.Continue statements
-                       | Keep s => Vector.Continue (s :: statements),
-                      SOME o Vector.fromListRev)
+                     Exn.withEscape
+                     (fn escape =>
+                      SOME (Vector.map (statements, fn s =>
+                                        case simplifyStatement s of
+                                           NONE => escape NONE
+                                         | SOME s => s)))
                in
                   case statements of
                      NONE => ({dead = true},
@@ -755,9 +737,8 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
       val globals =
          Vector.keepAllMap (globals, fn s =>
                             case simplifyStatement s of
-                               Dead => Error.bug "SimplifyTypes.globals: Dead"
-                             | Delete => NONE
-                             | Keep b => SOME b)
+                               NONE => Error.bug "SimplifyTypes.globals: NONE"
+                             | SOME s => SOME s)
       val shrink = shrinkFunction {globals = globals}
       val simplifyFunction = fn f => Option.map (simplifyFunction f, shrink)
       val functions = List.revKeepAllMap (functions, simplifyFunction)
