@@ -710,19 +710,21 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                 SOME o Vector.fromListRev)
          in
             case statements of
-               NONE => Block.T {label = label,
-                                args = args,
-                                statements = Vector.new0 (),
-                                transfer = Bug}
+               NONE => ({dead = true},
+                        Block.T {label = label,
+                                 args = args,
+                                 statements = Vector.new0 (),
+                                 transfer = Bug})
              | SOME statements =>
                   let
                      val (stmts, transfer) = simplifyTransfer transfer
                      val statements = Vector.concat [statements, stmts]
                   in
-                     Block.T {label = label,
-                              args = args,
-                              statements = statements,
-                              transfer = transfer}
+                     ({dead = false},
+                      Block.T {label = label,
+                               args = args,
+                               statements = statements,
+                               transfer = transfer})
                   end
          end
       fun simplifyFunction f =
@@ -731,10 +733,18 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                Function.dest f
              val args = simplifyFormals args
              val blocks = ref []
-             val _ =
-                Function.dfs (f, fn block =>
-                              (List.push (blocks, simplifyBlock block)
-                               ; fn () => ()))
+
+             fun loop (Tree.T (b, children)) =
+                let
+                   val ({dead}, b) = simplifyBlock b
+                   val _ = List.push (blocks, b)
+                in
+                   if dead
+                      then ()
+                      else Tree.Seq.foreach (children, loop)
+                end
+             val _ = loop (Function.dominatorTree f)
+
              val returns = Option.map (returns, keepSimplifyTypes)
              val raises = Option.map (raises, keepSimplifyTypes)
          in
