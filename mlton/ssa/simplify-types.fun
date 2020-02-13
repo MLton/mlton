@@ -430,6 +430,8 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
           else (transparent (tycon, con, args)
                 ; accum))
 
+      val void = Tycon.newString "void"
+
       fun makeSimplifyTypeFns simplifyTypeOpt =
          let
             fun simplifyType t =
@@ -437,9 +439,9 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                   NONE => Error.bug (concat ["SimplifyTypes.simplifyType: ",
                                              Layout.toString (Type.layout t)])
                 | SOME t => t
-            fun simplifyTypeAsUnit t =
+            fun simplifyTypeAsVoid t =
                case simplifyTypeOpt t of
-                  NONE => Type.unit
+                  NONE => Type.datatypee void
                 | SOME t => t
             fun simplifyTypesOpt ts =
                Exn.withEscape
@@ -452,7 +454,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
             fun keepSimplifyTypes ts = Vector.keepAllMap (ts, simplifyTypeOpt)
          in
             {simplifyType = simplifyType,
-             simplifyTypeAsUnit = simplifyTypeAsUnit,
+             simplifyTypeAsVoid = simplifyTypeAsVoid,
              simplifyTypes = simplifyTypes,
              simplifyTypesOpt = simplifyTypesOpt,
              keepSimplifyTypes = keepSimplifyTypes}
@@ -465,12 +467,12 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
            if Cardinality.isZero (typeCardinality t)
               then NONE
               else SOME (let
-                            val {simplifyType, simplifyTypeAsUnit, simplifyTypes, ...} =
+                            val {simplifyType, simplifyTypeAsVoid, simplifyTypes, ...} =
                                makeSimplifyTypeFns simplifyTypeOpt
                             open Type
                          in
                             case dest t of
-                               Array t => array (simplifyTypeAsUnit t)
+                               Array t => array (simplifyTypeAsVoid t)
                              | Datatype tycon =>
                                   (case tyconReplacement tycon of
                                       SOME t =>
@@ -483,7 +485,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                                     | NONE => t)
                              | Ref t => reff (simplifyType t)
                              | Tuple ts => Type.tuple (simplifyTypes ts)
-                             | Vector t => vector (simplifyTypeAsUnit t)
+                             | Vector t => vector (simplifyTypeAsVoid t)
                              | Weak t => weak (simplifyType t)
                              | _ => t
                          end)))
@@ -501,6 +503,10 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                          cons = Vector.map (cons, fn {con, args} =>
                                             {con = con,
                                              args = keepSimplifyTypes args})}))
+      val datatypes =
+         Vector.concat
+         [Vector.new1 (Datatype.T {tycon = void, cons = Vector.new0 ()}),
+          datatypes]
       val unitVar = Var.newNoname ()
       val {get = varInfo: Var.t -> Type.t, set = setVarInfo, ...} =
          Property.getSetOnce
