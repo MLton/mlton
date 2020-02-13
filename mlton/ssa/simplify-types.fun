@@ -490,7 +490,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
       val simplifyTypeOpt =
          Trace.trace ("SimplifyTypes.simplifyTypeOpt", Type.layout, Option.layout Type.layout)
          simplifyTypeOpt
-      val {simplifyType, simplifyTypes, keepSimplifyTypes, ...} =
+      val {simplifyTypes, keepSimplifyTypes, ...} =
          makeSimplifyTypeFns simplifyTypeOpt
       (* Simplify constructor argument types. *)
       val datatypes =
@@ -505,13 +505,13 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
       val {get = varInfo: Var.t -> Type.t, set = setVarInfo, ...} =
          Property.getSetOnce
          (Var.plist, Property.initRaise ("varInfo", Var.layout))
-      fun simplifyVarType (x: Var.t, t: Type.t): Type.t =
+      fun simplifyVarType (x: Var.t, t: Type.t): Type.t option =
          (setVarInfo (x, t)
-          ; simplifyType t)
-      fun simplifyMaybeVarType (x: Var.t option, t: Type.t): Type.t =
+          ; simplifyTypeOpt t)
+      fun simplifyMaybeVarType (x: Var.t option, t: Type.t): Type.t option =
          case x of
             SOME x => simplifyVarType (x, t)
-          | NONE => simplifyType t
+          | NONE => simplifyTypeOpt t
       val oldVarType = varInfo
       val newVarType = simplifyTypeOpt o oldVarType
       val varIsUseless = Option.isNone o newVarType
@@ -529,14 +529,10 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
       fun simplifyFormals xts =
          Vector.keepAllMap
          (xts, fn (x, t) =>
-          let
-             val t = simplifyVarType (x, t)
-          in
-             if Type.isUnit t
-                then NONE
-                else SOME (x, t)
-          end)
-      val typeIsUseful = not o Type.isUnit o simplifyType
+          case simplifyVarType (x, t) of
+             NONE => NONE
+           | SOME t => SOME (x, t))
+      val typeIsUseful = Option.isSome o simplifyTypeOpt
       datatype result = datatype Result.t
       fun simplifyExp (e: Exp.t): Exp.t result =
          case e of
@@ -677,25 +673,24 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
           Layout.tuple2 (Vector.layout Statement.layout, Transfer.layout))
          simplifyTransfer
       fun simplifyStatement (Statement.T {var, ty, exp}) =
-         let
-            val ty = simplifyMaybeVarType (var, ty)
-         in
-            (* It is wrong to omit calling simplifyExp when var = NONE because
-             * targs in a PrimApp may still need to be simplified.
-             *)
-            if not (Type.isUnit ty)
-               orelse Exp.maySideEffect exp
-               orelse (case exp of
-                          Profile _ => true
-                        | _ => false)
-               then
-                  (case simplifyExp exp of
-                      Bugg => Bugg
-                    | Delete => Delete
-                    | Keep exp =>
-                         Keep (Statement.T {var = var, ty = ty, exp = exp}))
-            else Delete
-         end
+         case simplifyMaybeVarType (var, ty) of
+            NONE =>
+               (* It is impossible for a statement to produce a value of an
+                * uninhabited type; block must be unreachable.
+                * Example: `Vector_sub` from a `(ty) vector`, where `ty` is
+                * uninhabited.  The `(ty) vector` type is inhabited, but only by
+                * the vector of length 0; this `Vector_sub` is unreachable due
+                * to a dominating bounds check that must necessarily fail.
+                *)
+               Bugg
+          | SOME ty =>
+               (* It is wrong to omit calling simplifyExp when var = NONE because
+                * targs in a PrimApp may still need to be simplified.
+                *)
+               (case simplifyExp exp of
+                   Bugg => Bugg
+                 | Delete => Delete
+                 | Keep exp => Keep (Statement.T {var = var, ty = ty, exp = exp}))
       val simplifyStatement =
          Trace.trace
          ("SimplifyTypes.simplifyStatement",
