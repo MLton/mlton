@@ -503,7 +503,6 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
          Vector.concat
          [Vector.new1 (Datatype.T {tycon = void, cons = Vector.new0 ()}),
           datatypes]
-      val unitVar = Var.newNoname ()
       val {get = varInfo: Var.t -> Type.t, set = setVarInfo, ...} =
          Property.getSetOnce
          (Var.plist, Property.initRaise ("varInfo", Var.layout))
@@ -772,15 +771,11 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                   end
          end
       val globals =
-         Vector.concat
-         [Vector.new1 (Statement.T {var = SOME unitVar,
-                                    ty = Type.unit,
-                                    exp = Exp.unit}),
-          Vector.keepAllMap (globals, fn s =>
-                             case simplifyStatement s of
-                                Dead => Error.bug "SimplifyTypes.globals: Dead"
-                              | Delete => NONE
-                              | Keep b => SOME b)]
+         Vector.keepAllMap (globals, fn s =>
+                            case simplifyStatement s of
+                               Dead => Error.bug "SimplifyTypes.globals: Dead"
+                             | Delete => NONE
+                             | Keep b => SOME b)
       val shrink = shrinkFunction {globals = globals}
       val simplifyFunction = fn f => Option.map (simplifyFunction f, shrink)
       val functions = List.revKeepAllMap (functions, simplifyFunction)
