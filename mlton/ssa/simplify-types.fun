@@ -8,8 +8,7 @@
  *)
 
 (* This pass must happen before polymorphic equality is implemented because
- * 1. it will make polymorphic equality faster because some types are simpler
- * 2. it removes uses of polymorphic equality that must return true
+ * it will make polymorphic equality faster because some types are simpler
  *
  * This pass computes a "cardinality" of each datatype, which is an
  * abstraction of the number of values of the datatype.
@@ -518,8 +517,6 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
       val oldVarType = varInfo
       val newVarType = simplifyTypeOpt o oldVarType
       val varIsUseless = Option.isNone o newVarType
-      fun simplifyVar (x: Var.t): Var.t =
-         if varIsUseless x then unitVar else x
       fun removeUselessVars xs = Vector.keepAll (xs, not o varIsUseless)
       fun tuple xs =
          let
@@ -554,20 +551,11 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                    fun normal () =
                       PrimApp {prim = prim,
                                targs = simplifyTypes targs,
-                               args = Vector.map (args, simplifyVar)}
-                   fun equal () =
-                      if 2 = Vector.length args
-                         then if varIsUseless (Vector.first args)
-                                 then ConApp {con = Con.truee,
-                                              args = Vector.new0 ()}
-                                 else normal ()
-                         else Error.bug "SimplifyTypes.simplifyExp: strange eq/equal PrimApp"
-                   open Prim.Name
+                               args = args}
+                   datatype z = datatype Prim.Name.t
                 in
                    case Prim.name prim of
-                      MLton_eq => equal ()
-                    | MLton_equal => equal ()
-                    | _ => normal ()
+                      _ => normal ()
                 end)
           | Select {tuple, offset} =>
                let
@@ -669,7 +657,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
           | Return xs => (Vector.new0 (), Return (removeUselessVars xs))
           | Runtime {prim, args, return} =>
                (Vector.new0 (), Runtime {prim = prim,
-                                         args = Vector.map (args, simplifyVar),
+                                         args = args,
                                          return = return})
       val simplifyTransfer =
          Trace.trace
