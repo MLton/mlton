@@ -537,45 +537,43 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
             if dead then NONE else SOME xts
          end
       datatype result = datatype Result.t
-      fun simplifyExp (e: Exp.t): Exp.t result =
+      fun simplifyExp (e: Exp.t): Exp.t =
          case e of
             ConApp {con, args} =>
                (case conRep con of
-                   ConRep.Transparent => Keep (tuple args)
-                 | ConRep.Useful => Keep (ConApp {con = con, args = args})
+                   ConRep.Transparent => tuple args
+                 | ConRep.Useful => ConApp {con = con, args = args}
                  | ConRep.Useless => Error.bug "SimplifyTypes.simplfyExp: ConApp, ConRep.Useless")
           | PrimApp {prim, targs, args} =>
-               Keep
-               (let
-                   fun normal () =
-                      PrimApp {prim = prim,
-                               targs = simplifyTypes targs,
-                               args = args}
-                   fun length () =
-                      case simplifyTypeOpt (Vector.first targs) of
-                         NONE => Exp.Const (Const.word (WordX.zero (WordSize.seqIndex ())))
-                       | SOME _ => normal ()
-                   datatype z = datatype Prim.Name.t
-                in
-                   case Prim.name prim of
-                      Array_length => length ()
-                    | Vector_length => length ()
-                    | _ => normal ()
-                end)
+               let
+                  fun normal () =
+                     PrimApp {prim = prim,
+                              targs = simplifyTypes targs,
+                              args = args}
+                  fun length () =
+                     case simplifyTypeOpt (Vector.first targs) of
+                        NONE => Exp.Const (Const.word (WordX.zero (WordSize.seqIndex ())))
+                      | SOME _ => normal ()
+                  datatype z = datatype Prim.Name.t
+               in
+                  case Prim.name prim of
+                     Array_length => length ()
+                   | Vector_length => length ()
+                   | _ => normal ()
+               end
           | Select {tuple, offset} =>
-               Keep
-               (let
-                   val ts = Type.deTuple (oldVarType tuple)
-                in
-                   if Vector.length ts = 1
-                      then Var tuple
-                      else Select {tuple = tuple, offset = offset}
-                end)
-          | Tuple xs => Keep (tuple xs)
-          | _ => Keep e
+               let
+                  val ts = Type.deTuple (oldVarType tuple)
+               in
+                  if Vector.length ts = 1
+                     then Var tuple
+                     else Select {tuple = tuple, offset = offset}
+               end
+          | Tuple xs => tuple xs
+          | _ => e
       val simplifyExp =
          Trace.trace ("SimplifyTypes.simplifyExp",
-                      Exp.layout, Result.layout Exp.layout)
+                      Exp.layout, Exp.layout)
          simplifyExp
       fun simplifyTransfer (t : Transfer.t): Statement.t vector * Transfer.t =
          case t of
@@ -671,10 +669,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                (* It is wrong to omit calling simplifyExp when var = NONE because
                 * targs in a PrimApp may still need to be simplified.
                 *)
-               (case simplifyExp exp of
-                   Dead => Dead
-                 | Delete => Delete
-                 | Keep exp => Keep (Statement.T {var = var, ty = ty, exp = exp}))
+               Keep (Statement.T {var = var, ty = ty, exp = simplifyExp exp})
       val simplifyStatement =
          Trace.trace
          ("SimplifyTypes.simplifyStatement",
