@@ -537,12 +537,6 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                  case simplifyVarType (x, t) of
                     NONE => escape NONE
                   | SOME t => (x, t))))
-      fun simplifyFormals xts =
-         Vector.keepAllMap
-         (xts, fn (x, t) =>
-          case simplifyVarType (x, t) of
-             NONE => NONE
-           | SOME t => SOME (x, t))
       val typeIsUseful = Option.isSome o simplifyTypeOpt
       datatype result = datatype Result.t
       fun simplifyExp (e: Exp.t): Exp.t result =
@@ -748,32 +742,40 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
          let
             val {args, mayInline, name, raises, returns, start, ...} =
                Function.dest f
-             val args = simplifyFormals args
-             val blocks = ref []
-
-             fun loop (Tree.T (b, children)) =
-                case simplifyBlock b of
-                   NONE => ()
-                 | SOME ({dead}, b) =>
-                      let
-                         val _ = List.push (blocks, b)
-                      in
-                         if dead
-                            then ()
-                            else Tree.Seq.foreach (children, loop)
-                      end
-             val _ = loop (Function.dominatorTree f)
-
-             val returns = Option.map (returns, keepSimplifyTypes)
-             val raises = Option.map (raises, keepSimplifyTypes)
          in
-            Function.new {args = args,
-                          blocks = Vector.fromList (!blocks),
-                          mayInline = mayInline,
-                          name = name,
-                          raises = raises,
-                          returns = returns,
-                          start = start}
+            case simplifyFormalsOpt args of
+               NONE =>
+                  (* It is impossible for a function to be called with a value of an
+                   * uninhabited type; function must be unreachable.
+                   *)
+                  NONE
+             | SOME args =>
+                  let
+                     val blocks = ref []
+                     fun loop (Tree.T (b, children)) =
+                        case simplifyBlock b of
+                           NONE => ()
+                         | SOME ({dead}, b) =>
+                              let
+                                 val _ = List.push (blocks, b)
+                              in
+                                 if dead
+                                    then ()
+                                    else Tree.Seq.foreach (children, loop)
+                              end
+                     val _ = loop (Function.dominatorTree f)
+
+                     val returns = Option.map (returns, keepSimplifyTypes)
+                     val raises = Option.map (raises, keepSimplifyTypes)
+                  in
+                     SOME (Function.new {args = args,
+                                         blocks = Vector.fromList (!blocks),
+                                         mayInline = mayInline,
+                                         name = name,
+                                         raises = raises,
+                                         returns = returns,
+                                         start = start})
+                  end
          end
       val globals =
          Vector.concat
@@ -786,7 +788,8 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                               | Delete => NONE
                               | Keep b => SOME b)]
       val shrink = shrinkFunction {globals = globals}
-      val functions = List.revMap (functions, shrink o simplifyFunction)
+      val simplifyFunction = fn f => Option.map (simplifyFunction f, shrink)
+      val functions = List.revKeepAllMap (functions, simplifyFunction)
       val program =
          Program.T {datatypes = datatypes,
                     globals = globals,
