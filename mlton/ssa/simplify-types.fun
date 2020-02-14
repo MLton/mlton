@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2018 Matthew Fluet.
+(* Copyright (C) 2009,2018,2020 Matthew Fluet.
  * Copyright (C) 1999-2005, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -39,7 +39,7 @@
  * the datatype and replace the lhs by the rhs, i.e. we must keep the
  * circularity around.
  * Must do similar things for vectors.
- * 
+ *
  * Also, to eliminate as many Transparent constructors as possible, for
  * something like the following,
  *   datatype t = T of u array
@@ -50,7 +50,7 @@
  * where all uses of t are replaced by u array.
  *)
 
-functor SimplifyTypes (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM = 
+functor SimplifyTypes (S: SSA_TRANSFORM_STRUCTS): SSA_TRANSFORM =
 struct
 
 open S
@@ -150,21 +150,6 @@ structure ConRep =
       val layout = Layout.str o toString
    end
 
-structure Result =
-   struct
-      datatype 'a t =
-         Bugg
-       | Delete
-       | Keep of 'a
-
-      fun layout layoutX =
-         let open Layout
-         in fn Bugg => str "Bug"
-       | Delete => str "Delete"
-       | Keep x => seq [str "Keep ", layoutX x]
-         end
-   end
-
 fun transform (Program.T {datatypes, globals, functions, main}) =
    let
       val {get = conInfo: Con.t -> {args: Type.t vector,
@@ -197,8 +182,8 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
          setConRep
       val conIsUseful = ConRep.isUseful o conRep
       val conIsUseful =
-         Trace.trace 
-         ("SimplifyTypes.conIsUseful", Con.layout, Bool.layout) 
+         Trace.trace
+         ("SimplifyTypes.conIsUseful", Con.layout, Bool.layout)
          conIsUseful
       val {get = tyconInfo: Tycon.t -> {cardinality: Cardinality.t,
                                         numCons: int ref,
@@ -251,7 +236,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
             val _ = setConRepUseful Con.truee
             val _ = setConRepUseful Con.falsee
             val _ = Vector.foreach (globals, handleStatement)
-            val _ = List.foreach 
+            val _ = List.foreach
                     (functions, fn f =>
                      Vector.foreach
                      (Function.blocks f, fn Block.T {statements, ...} =>
@@ -318,16 +303,17 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                   conCardinality con))
           in
              if Vector.isEmpty cons
-                then (setTyconReplacement (tycon, SOME Type.unit)
-                      ; NONE)
-             else SOME (Datatype.T {tycon = tycon, cons = cons})
+                then NONE
+                else SOME (Datatype.T {tycon = tycon, cons = cons})
           end)
       (* diagnostic *)
       val _ =
          Control.diagnostics
          (fn display =>
-          let open Layout
-          in Vector.foreach 
+          let
+             open Layout
+          in
+             Vector.foreach
              (origDatatypes, fn Datatype.T {tycon, cons} =>
               (display (seq [str "cardinality of ",
                              Tycon.layout tycon,
@@ -347,7 +333,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
       (* "unary" is datatypes with one constructor whose rhs contains an
        * array (or vector) type.
        * For datatypes with one variant not containing an array type, eliminate
-       * the datatype. 
+       * the datatype.
        *)
       fun containsArrayOrVector (ty: Type.t): bool =
          let
@@ -374,22 +360,21 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                     then (setConRep (con, ConRep.Useless)
                           ; NONE)
                     else SOME c)
-          in case Vector.length cons of
-             0 => (setTyconNumCons (tycon, 0)
-                    ; setTyconReplacement (tycon, SOME Type.unit)
-                    ; (datatypes, unary))
-           | 1 =>
-                let
-                   val {con, args} = Vector.first cons
-                in
-                   if Vector.exists (args, containsArrayOrVector)
-                      then (datatypes,
-                            {tycon = tycon, con = con, args = args} :: unary)
-                   else (transparent (tycon, con, args)
-                         ; (datatypes, unary))
-                end
-           | _ => (Datatype.T {tycon = tycon, cons = cons} :: datatypes,
-                   unary)
+          in
+             case Vector.length cons of
+                0 => (datatypes, unary)
+              | 1 =>
+                   let
+                      val {con, args} = Vector.first cons
+                   in
+                      if Vector.exists (args, containsArrayOrVector)
+                         then (datatypes,
+                               {tycon = tycon, con = con, args = args} :: unary)
+                         else (transparent (tycon, con, args)
+                               ; (datatypes, unary))
+                   end
+              | _ => (Datatype.T {tycon = tycon, cons = cons} :: datatypes,
+                      unary)
           end)
       fun containsTycon (ty: Type.t, tyc: Tycon.t): bool =
          let
@@ -420,50 +405,75 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
          (unary, datatypes, fn ({tycon, con, args}, accum) =>
           if Vector.exists (args, fn arg => containsTycon (arg, tycon))
              then Datatype.T {tycon = tycon,
-                              cons = Vector.new1 {con = con, args = args}} 
+                              cons = Vector.new1 {con = con, args = args}}
                   :: accum
           else (transparent (tycon, con, args)
                 ; accum))
-      fun makeKeepSimplifyTypes simplifyType ts =
-         Vector.keepAllMap (ts, fn t =>
-                            let
-                               val t = simplifyType t
-                            in
-                               if Type.isUnit t
-                                  then NONE
-                               else SOME t
-                            end)
-      val {get = simplifyType, destroy = destroySimplifyType} =
+
+      val void = Tycon.newString "void"
+
+      fun makeSimplifyTypeFns simplifyTypeOpt =
+         let
+            fun simplifyType t =
+               case simplifyTypeOpt t of
+                  NONE => Error.bug (concat ["SimplifyTypes.simplifyType: ",
+                                             Layout.toString (Type.layout t)])
+                | SOME t => t
+            fun simplifyTypeAsVoid t =
+               case simplifyTypeOpt t of
+                  NONE => Type.datatypee void
+                | SOME t => t
+            fun simplifyTypesOpt ts =
+               Exn.withEscape
+               (fn escape =>
+                SOME (Vector.map (ts, fn t =>
+                                  case simplifyTypeOpt t of
+                                     NONE => escape NONE
+                                   | SOME t => t)))
+            fun simplifyTypes ts = Vector.map (ts, simplifyType)
+            fun keepSimplifyTypes ts = Vector.keepAllMap (ts, simplifyTypeOpt)
+         in
+            {simplifyType = simplifyType,
+             simplifyTypeAsVoid = simplifyTypeAsVoid,
+             simplifyTypes = simplifyTypes,
+             simplifyTypesOpt = simplifyTypesOpt,
+             keepSimplifyTypes = keepSimplifyTypes}
+         end
+      val {get = simplifyTypeOpt, destroy = destroySimplifyTypeOpt} =
          Property.destGet
          (Type.plist,
           Property.initRec
-          (fn (t, simplifyType) =>
-           let
-              val keepSimplifyTypes = makeKeepSimplifyTypes simplifyType
-              open Type
-           in case dest t of
-              Array t => array (simplifyType t)
-            | Datatype tycon => 
-                 (case tyconReplacement tycon of
-                     SOME t =>
-                        let
-                           val t = simplifyType t
-                           val _ = setTyconReplacement (tycon, SOME t)
-                        in
-                           t
-                        end
-                   | NONE => t)
-            | Ref t => reff (simplifyType t)
-            | Tuple ts => Type.tuple (keepSimplifyTypes ts)
-            | Vector t => vector (simplifyType t)
-            | Weak t => weak (simplifyType t)
-            | _ => t
-           end))
-      val simplifyType =
-         Trace.trace ("SimplifyTypes.simplifyType", Type.layout, Type.layout)
-         simplifyType
-      fun simplifyTypes ts = Vector.map (ts, simplifyType)
-      val keepSimplifyTypes = makeKeepSimplifyTypes simplifyType
+          (fn (t, simplifyTypeOpt) =>
+           if Cardinality.isZero (typeCardinality t)
+              then NONE
+              else SOME (let
+                            val {simplifyType, simplifyTypeAsVoid, simplifyTypes, ...} =
+                               makeSimplifyTypeFns simplifyTypeOpt
+                            open Type
+                         in
+                            case dest t of
+                               Array t => array (simplifyTypeAsVoid t)
+                             | Datatype tycon =>
+                                  (case tyconReplacement tycon of
+                                      SOME t =>
+                                         let
+                                            val t = simplifyType t
+                                            val _ = setTyconReplacement (tycon, SOME t)
+                                         in
+                                            t
+                                         end
+                                    | NONE => t)
+                             | Ref t => reff (simplifyType t)
+                             | Tuple ts => Type.tuple (simplifyTypes ts)
+                             | Vector t => vector (simplifyTypeAsVoid t)
+                             | Weak t => weak (simplifyType t)
+                             | _ => t
+                         end)))
+      val simplifyTypeOpt =
+         Trace.trace ("SimplifyTypes.simplifyTypeOpt", Type.layout, Option.layout Type.layout)
+         simplifyTypeOpt
+      val {simplifyTypes, keepSimplifyTypes, ...} =
+         makeSimplifyTypeFns simplifyTypeOpt
       (* Simplify constructor argument types. *)
       val datatypes =
          Vector.fromListMap
@@ -472,107 +482,95 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
            ; Datatype.T {tycon = tycon,
                          cons = Vector.map (cons, fn {con, args} =>
                                             {con = con,
-                                             args = keepSimplifyTypes args})}))
-      val unitVar = Var.newNoname ()
+                                             args = simplifyTypes args})}))
+      val datatypes =
+         Vector.concat
+         [Vector.new1 (Datatype.T {tycon = void, cons = Vector.new0 ()}),
+          datatypes]
       val {get = varInfo: Var.t -> Type.t, set = setVarInfo, ...} =
-         Property.getSetOnce  
+         Property.getSetOnce
          (Var.plist, Property.initRaise ("varInfo", Var.layout))
-      fun simplifyVarType (x: Var.t, t: Type.t): Type.t =
+      fun simplifyVarType (x: Var.t, t: Type.t): Type.t option =
          (setVarInfo (x, t)
-          ; simplifyType t)
-      fun simplifyMaybeVarType (x: Var.t option, t: Type.t): Type.t =
+          ; simplifyTypeOpt t)
+      fun simplifyMaybeVarType (x: Var.t option, t: Type.t): Type.t option =
          case x of
             SOME x => simplifyVarType (x, t)
-          | NONE => simplifyType t
+          | NONE => simplifyTypeOpt t
       val oldVarType = varInfo
-      val newVarType = simplifyType o oldVarType
-      fun simplifyVar (x: Var.t): Var.t =
-         if Type.isUnit (newVarType x)
-            then unitVar
-         else x
-      val varIsUseless = Type.isUnit o newVarType
-      fun removeUselessVars xs = Vector.keepAll (xs, not o varIsUseless)
       fun tuple xs =
-         let
-            val xs = removeUselessVars xs
-         in if 1 = Vector.length xs
-               then Var (Vector.first xs)
+         if 1 = Vector.length xs
+            then Var (Vector.first xs)
             else Tuple xs
-         end
       fun simplifyFormals xts =
-         Vector.keepAllMap
-         (xts, fn (x, t) =>
-          let val t = simplifyVarType (x, t)
-          in if Type.isUnit t
-                then NONE
-             else SOME (x, t)
-          end)
-      val typeIsUseful = not o Type.isUnit o simplifyType
+         let
+            val dead = ref false
+            val xts =
+               Vector.keepAllMap
+               (xts, fn (x, t) =>
+                case simplifyVarType (x, t) of
+                   NONE => (dead := true; NONE)
+                 | SOME t => SOME (x, t))
+         in
+            ({dead = !dead}, xts)
+         end
+      fun simplifyFormalsOpt xts =
+         let
+            val ({dead}, xts) = simplifyFormals xts
+         in
+            if dead then NONE else SOME xts
+         end
       datatype result = datatype Result.t
-      fun simplifyExp (e: Exp.t): Exp.t result =
+      fun simplifyExp (e: Exp.t): Exp.t =
          case e of
             ConApp {con, args} =>
                (case conRep con of
-                   ConRep.Transparent => Keep (tuple args)
-                 | ConRep.Useful =>
-                      Keep (ConApp {con = con,
-                                    args = removeUselessVars args})
-                 | ConRep.Useless => Bugg)
+                   ConRep.Transparent => tuple args
+                 | ConRep.Useful => ConApp {con = con, args = args}
+                 | ConRep.Useless => Error.bug "SimplifyTypes.simplfyExp: ConApp, ConRep.Useless")
           | PrimApp {prim, targs, args} =>
-               Keep
-               (let 
-                   fun normal () =
-                      PrimApp {prim = prim,
-                               targs = simplifyTypes targs,
-                               args = Vector.map (args, simplifyVar)}
-                   fun equal () =
-                      if 2 = Vector.length args
-                         then
-                            if varIsUseless (Vector.first args)
-                               then ConApp {con = Con.truee,
-                                            args = Vector.new0 ()}
-                            else normal ()
-                      else Error.bug "SimplifyTypes.simplifyExp: strange eq/equal PrimApp"
-                   open Prim.Name
-                in case Prim.name prim of
-                   MLton_eq => equal ()
-                 | MLton_equal => equal ()
-                 | _ => normal ()
-                end)
+               let
+                  fun normal () =
+                     PrimApp {prim = prim,
+                              targs = simplifyTypes targs,
+                              args = args}
+                  fun equal () =
+                     if Cardinality.isOne (typeCardinality (Vector.first targs))
+                        then ConApp {con = Con.truee, args = Vector.new0 ()}
+                        else normal ()
+                  fun length () =
+                     if Cardinality.isZero (typeCardinality (Vector.first targs))
+                        then Exp.Const (Const.word (WordX.zero (WordSize.seqIndex ())))
+                        else normal ()
+                  datatype z = datatype Prim.Name.t
+               in
+                  case Prim.name prim of
+                     Array_length => length ()
+                   | MLton_eq => equal ()
+                   | MLton_equal => equal ()
+                   | Vector_length => length ()
+                   | _ => normal ()
+               end
           | Select {tuple, offset} =>
                let
                   val ts = Type.deTuple (oldVarType tuple)
-               in Vector.fold'
-                  (ts, 0, (offset, 0), fn (pos, t, (n, offset)) =>
-                   if n = 0
-                      then (Vector.Done
-                            (Keep
-                             (if offset = 0
-                                 andalso not (Vector.existsR
-                                              (ts, pos + 1, Vector.length ts,
-                                               typeIsUseful))
-                                 then Var tuple
-                              else Select {tuple = tuple,
-                                           offset = offset})))
-                   else Vector.Continue (n - 1,
-                                         if typeIsUseful t
-                                            then offset + 1
-                                         else offset),
-                      fn _ => Error.bug "SimplifyTypes.simplifyExp: Select:newOffset")
+               in
+                  if Vector.length ts = 1
+                     then Var tuple
+                     else Select {tuple = tuple, offset = offset}
                end
-          | Tuple xs => Keep (tuple xs)
-          | _ => Keep e
+          | Tuple xs => tuple xs
+          | _ => e
       val simplifyExp =
          Trace.trace ("SimplifyTypes.simplifyExp",
-                      Exp.layout, Result.layout Exp.layout)
+                      Exp.layout, Exp.layout)
          simplifyExp
       fun simplifyTransfer (t : Transfer.t): Statement.t vector * Transfer.t =
          case t of
             Bug => (Vector.new0 (), t)
           | Call {func, args, return} =>
                (Vector.new0 (),
-                Call {func = func, return = return,
-                      args = removeUselessVars args})
+                Call {func = func, return = return, args = args})
           | Case {test, cases = Cases.Con cases, default} =>
                let
                   val cases =
@@ -585,7 +583,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                       | (n,     SOME l)  =>
                            if n = tyconNumCons (Type.deDatatype (oldVarType test))
                               then NONE
-                           else SOME l
+                              else SOME l
                   fun normal () =
                      (Vector.new0 (),
                       Case {test = test,
@@ -604,10 +602,10 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                               (* This case can occur because an array or vector
                                * tycon was kept around.
                                *)
-                              normal () 
+                              normal ()
                         else (* The type has become a tuple.  Do the selects. *)
                            let
-                              val ts = keepSimplifyTypes (conArgs con)
+                              val ts = simplifyTypes (conArgs con)
                               val (args, stmts) =
                                  if 1 = Vector.length ts
                                     then (Vector.new1 test, Vector.new0 ())
@@ -615,27 +613,30 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                                     Vector.unzip
                                     (Vector.mapi
                                      (ts, fn (i, ty) =>
-                                      let val x = Var.newNoname ()
-                                      in (x,
-                                          Statement.T 
-                                          {var = SOME x, 
+                                      let
+                                         val x = Var.newNoname ()
+                                      in
+                                         (x,
+                                          Statement.T
+                                          {var = SOME x,
                                            ty = ty,
                                            exp = Select {tuple = test,
                                                          offset = i}})
                                       end))
-                           in (stmts, Goto {dst = l, args = args})
+                           in
+                              (stmts, Goto {dst = l, args = args})
                            end
                      end
                 | _ => normal ()
                end
           | Case _ => (Vector.new0 (), t)
           | Goto {dst, args} =>
-               (Vector.new0 (), Goto {dst = dst, args = removeUselessVars args})
-          | Raise xs => (Vector.new0 (), Raise (removeUselessVars xs))
-          | Return xs => (Vector.new0 (), Return (removeUselessVars xs))
+               (Vector.new0 (), Goto {dst = dst, args = args})
+          | Raise xs => (Vector.new0 (), Raise xs)
+          | Return xs => (Vector.new0 (), Return xs)
           | Runtime {prim, args, return} =>
                (Vector.new0 (), Runtime {prim = prim,
-                                         args = Vector.map (args, simplifyVar),
+                                         args = args,
                                          return = return})
       val simplifyTransfer =
          Trace.trace
@@ -644,99 +645,117 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
           Layout.tuple2 (Vector.layout Statement.layout, Transfer.layout))
          simplifyTransfer
       fun simplifyStatement (Statement.T {var, ty, exp}) =
-         let
-            val ty = simplifyMaybeVarType (var, ty)      
-         in
-            (* It is wrong to omit calling simplifyExp when var = NONE because
-             * targs in a PrimApp may still need to be simplified.
-             *)
-            if not (Type.isUnit ty)
-               orelse Exp.maySideEffect exp
-               orelse (case exp of
-                          Profile _ => true
-                        | _ => false)
-               then
-                  (case simplifyExp exp of
-                      Bugg => Bugg
-                    | Delete => Delete
-                    | Keep exp =>
-                         Keep (Statement.T {var = var, ty = ty, exp = exp}))
-            else Delete
-         end
+         case simplifyMaybeVarType (var, ty) of
+            NONE =>
+               (* It is impossible for a statement to produce a value of an
+                * uninhabited type; block must be unreachable.
+                * Example: `Vector_sub` from a `(ty) vector`, where `ty` is
+                * uninhabited.  The `(ty) vector` type is inhabited, but only by
+                * the vector of length 0; this `Vector_sub` is unreachable due
+                * to a dominating bounds check that must necessarily fail.
+                *)
+               NONE
+          | SOME ty =>
+               (* It is wrong to omit calling simplifyExp when var = NONE because
+                * targs in a PrimApp may still need to be simplified.
+                *)
+               SOME (Statement.T {var = var, ty = ty, exp = simplifyExp exp})
       val simplifyStatement =
          Trace.trace
          ("SimplifyTypes.simplifyStatement",
           Statement.layout,
-          Result.layout Statement.layout)
+          Option.layout Statement.layout)
          simplifyStatement
       fun simplifyBlock (Block.T {label, args, statements, transfer}) =
-         let
-            val args = simplifyFormals args
-            val statements =
-               Vector.fold'
-               (statements, 0, [], fn (_, statement, statements) =>
-                case simplifyStatement statement of
-                   Bugg => Vector.Done NONE
-                 | Delete => Vector.Continue statements
-                 | Keep s => Vector.Continue (s :: statements),
-                SOME o Vector.fromListRev)
-         in
-            case statements of
-               NONE => Block.T {label = label,
-                                args = args,
-                                statements = Vector.new0 (),
-                                transfer = Bug}
-             | SOME statements =>
-                  let
-                     val (stmts, transfer) = simplifyTransfer transfer
-                     val statements = Vector.concat [statements, stmts]
-                  in
-                     Block.T {label = label,
-                              args = args,
-                              statements = statements,
-                              transfer = transfer}
-                  end
-         end
+         case simplifyFormals args of
+            ({dead = true}, args) =>
+               (* It is impossible for a block to be called with a value of an
+                * uninhabited type; block must be unreachable.
+                *)
+               ({dead = true}, Block.T {label = label,
+                                        args = args,
+                                        statements = Vector.new0 (),
+                                        transfer = Bug})
+          | ({dead = false}, args) =>
+               let
+                  val statements =
+                     Exn.withEscape
+                     (fn escape =>
+                      SOME (Vector.map (statements, fn s =>
+                                        case simplifyStatement s of
+                                           NONE => escape NONE
+                                         | SOME s => s)))
+               in
+                  case statements of
+                     NONE => ({dead = true},
+                              Block.T {label = label,
+                                       args = args,
+                                       statements = Vector.new0 (),
+                                       transfer = Bug})
+                   | SOME statements =>
+                        let
+                           val (stmts, transfer) = simplifyTransfer transfer
+                           val statements = Vector.concat [statements, stmts]
+                        in
+                           ({dead = false},
+                            Block.T {label = label,
+                                     args = args,
+                                     statements = statements,
+                                     transfer = transfer})
+                        end
+               end
       fun simplifyFunction f =
          let
             val {args, mayInline, name, raises, returns, start, ...} =
                Function.dest f
-             val args = simplifyFormals args
-             val blocks = ref []
-             val _ =
-                Function.dfs (f, fn block =>
-                              (List.push (blocks, simplifyBlock block)
-                               ; fn () => ()))
-             val returns = Option.map (returns, keepSimplifyTypes)
-             val raises = Option.map (raises, keepSimplifyTypes)
          in
-            Function.new {args = args,
-                          blocks = Vector.fromList (!blocks),
-                          mayInline = mayInline,
-                          name = name,
-                          raises = raises,
-                          returns = returns,
-                          start = start}
+            case simplifyFormalsOpt args of
+               NONE =>
+                  (* It is impossible for a function to be called with a value of an
+                   * uninhabited type; function must be unreachable.
+                   *)
+                  NONE
+             | SOME args =>
+                  let
+                     val blocks = ref []
+                     fun loop (Tree.T (b, children)) =
+                        let
+                           val ({dead}, b) = simplifyBlock b
+                           val _ = List.push (blocks, b)
+                        in
+                           if dead
+                              then ()
+                              else Tree.Seq.foreach (children, loop)
+                        end
+                     val _ = loop (Function.dominatorTree f)
+
+                     val returns = Option.map (returns, keepSimplifyTypes)
+                     val raises = Option.map (raises, keepSimplifyTypes)
+                  in
+                     SOME (Function.new {args = args,
+                                         blocks = Vector.fromList (!blocks),
+                                         mayInline = mayInline,
+                                         name = name,
+                                         raises = raises,
+                                         returns = returns,
+                                         start = start})
+                  end
          end
       val globals =
-         Vector.concat
-         [Vector.new1 (Statement.T {var = SOME unitVar,
-                                    ty = Type.unit,
-                                    exp = Exp.unit}),
-          Vector.keepAllMap (globals, fn s =>
-                             case simplifyStatement s of
-                                Bugg => Error.bug "SimplifyTypes.globals: bind can't fail"
-                              | Delete => NONE
-                              | Keep b => SOME b)]
+         Vector.keepAllMap (globals, fn s =>
+                            case simplifyStatement s of
+                               NONE => Error.bug "SimplifyTypes.globals: NONE"
+                             | SOME s => SOME s)
       val shrink = shrinkFunction {globals = globals}
-      val functions = List.revMap (functions, shrink o simplifyFunction)
+      val simplifyFunction = fn f => Option.map (simplifyFunction f, shrink)
+      val functions = List.revKeepAllMap (functions, simplifyFunction)
       val program =
          Program.T {datatypes = datatypes,
                     globals = globals,
                     functions = functions,
                     main = main}
       val _ = destroyTypeCardinality ()
-      val _ = destroySimplifyType ()
+      val _ = destroySimplifyTypeOpt ()
       val _ = Program.clearTop program
    in
       program
