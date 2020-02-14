@@ -8,7 +8,8 @@
  *)
 
 (* This pass must happen before polymorphic equality is implemented because
- * it will make polymorphic equality faster because some types are simpler
+ * 1. it will make polymorphic equality faster because some types are simpler
+ * 2. it removes uses of polymorphic equality that must return true
  *
  * This pass computes a "cardinality" of each datatype, which is an
  * abstraction of the number of values of the datatype.
@@ -533,14 +534,20 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                      PrimApp {prim = prim,
                               targs = simplifyTypes targs,
                               args = args}
+                  fun equal () =
+                     if Cardinality.isOne (typeCardinality (Vector.first targs))
+                        then ConApp {con = Con.truee, args = Vector.new0 ()}
+                        else normal ()
                   fun length () =
-                     case simplifyTypeOpt (Vector.first targs) of
-                        NONE => Exp.Const (Const.word (WordX.zero (WordSize.seqIndex ())))
-                      | SOME _ => normal ()
+                     if Cardinality.isZero (typeCardinality (Vector.first targs))
+                        then Exp.Const (Const.word (WordX.zero (WordSize.seqIndex ())))
+                        else normal ()
                   datatype z = datatype Prim.Name.t
                in
                   case Prim.name prim of
                      Array_length => length ()
+                   | MLton_eq => equal ()
+                   | MLton_equal => equal ()
                    | Vector_length => length ()
                    | _ => normal ()
                end
