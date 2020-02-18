@@ -33,19 +33,18 @@ fun size (obj, {tyconTy: ObjptrTycon.t -> ObjectType.t}) =
    case obj of
       Normal {tycon, ...} =>
          Bytes.+ (Runtime.normalMetaDataSize (),
-                  Type.bytes (#ty (ObjectType.deNormal (tyconTy tycon))))
+                  ObjectType.componentsSize (tyconTy tycon))
     | Sequence {init, tycon} =>
-         let
-            val elt = #elt (ObjectType.deSequence (tyconTy tycon))
-            val length = Vector.length init
-            val size =
-               Bytes.+ (Runtime.sequenceMetaDataSize (),
-                        Bytes.* (Type.bytes elt, IntInf.fromInt length))
-         in
-            case !Control.align of
-               Control.Align4 => Bytes.alignWord32 size
-             | Control.Align8 => Bytes.alignWord64 size
-         end
+            let
+               val size =
+                  Bytes.+ (Runtime.sequenceMetaDataSize (),
+                           Bytes.* (ObjectType.componentsSize (tyconTy tycon),
+                                    IntInf.fromInt (Vector.length init)))
+            in
+               case !Control.align of
+                  Control.Align4 => Bytes.alignWord32 size
+                | Control.Align8 => Bytes.alignWord64 size
+            end
 
 fun fromWordXVector wv =
    let
@@ -167,32 +166,29 @@ fun isOk (obj: t,
                initOk (init, offsetIsOk)
             end
        | Sequence {init, tycon} =>
-            (case tyconTy tycon of
-                ObjectType.Sequence {elt, ...} =>
-                   let
-                      val base = Type.objptr tycon
-                      val index = Type.seqIndex ()
-                      val scale =
-                         case Scale.fromBytes (Type.bytes elt) of
-                            NONE => Scale.One
-                          | SOME s => s
-                   in
-                      Vector.forall
-                      (init, fn init =>
-                       let
-                          fun offsetIsOk {offset, result} =
-                             Type.sequenceOffsetIsOk
-                             {base = base,
-                              index = index,
-                              offset = offset,
-                              result = result,
-                              scale = scale,
-                              tyconTy = tyconTy}
-                       in
-                          initOk (init, offsetIsOk)
-                       end)
-                   end
-              | _ => Error.bug "Object.isOk")
+            let
+               val base = Type.objptr tycon
+               val index = Type.seqIndex ()
+               val scale =
+                  case Scale.fromBytes (ObjectType.componentsSize (tyconTy tycon)) of
+                     NONE => Scale.One
+                   | SOME s => s
+            in
+               Vector.forall
+               (init, fn init =>
+                let
+                   fun offsetIsOk {offset, result} =
+                      Type.sequenceOffsetIsOk
+                      {base = base,
+                       index = index,
+                       offset = offset,
+                       result = result,
+                       scale = scale,
+                       tyconTy = tyconTy}
+                in
+                   initOk (init, offsetIsOk)
+                end)
+            end
    end
 
 end

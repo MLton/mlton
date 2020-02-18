@@ -863,7 +863,9 @@ fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileI
                 then (ObjptrTycon.setIndex (flagsTycon, Vector.length objectTypes)
                       ; (Vector.concat
                          [objectTypes,
-                          Vector.new1 (ObjectType.Sequence {elt = flagTy, hasIdentity = true})],
+                          Vector.new1 (ObjectType.Sequence
+                                       {components = Vector.new1 flagTy,
+                                        hasIdentity = true})],
                          Vector.concat
                          [statics,
                           Vector.new1 {dst = (flagsVar, flagsTy),

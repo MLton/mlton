@@ -374,17 +374,17 @@ fun toMachine (rssa: Rssa.Program.t) =
                case obj of
                   R.Object.Normal {init, tycon} =>
                      let
-                        val {hasIdentity, ty} = ObjectType.deNormal (tyconTy tycon)
+                        val {components, hasIdentity} = ObjectType.deNormal (tyconTy tycon)
                         val (init, hasDynamic) = translateInit init
                         val kind =
                            if hasDynamic
                               then Kind.Dynamic
                               else if hasIdentity
-                                      then if Type.isUnit ty
+                                      then if Vector.isEmpty components
                                               then (* A `unit ref`; will never be updated. *)
                                                    Kind.Immutable
                                               else (* Conservative; the objptr field might not be mutable. *)
-                                                   if Type.exists (ty, Type.isObjptr)
+                                                   if Vector.exists (components, Type.isObjptr)
                                                       then (* Reference to root static heap
                                                             * won't map to valid card slot.
                                                             *)
@@ -403,7 +403,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                      end
                 | R.Object.Sequence {init, tycon} =>
                      let
-                        val {elt, hasIdentity} = ObjectType.deSequence (tyconTy tycon)
+                        val {components, hasIdentity} = ObjectType.deSequence (tyconTy tycon)
                         val (init, hasDynamic) =
                            Vector.mapAndFold
                            (init, false, fn (init, hasDynamic') =>
@@ -423,7 +423,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                                                     *)
                                                    Kind.Mutable
                                               else (* Conservative; the objptr field might not be mutable. *)
-                                                 if Type.exists (elt, Type.isObjptr)
+                                                 if Vector.exists (components, Type.isObjptr)
                                                     then (* Reference to root static heap
                                                           * won't map to valid card slot.
                                                           *)
@@ -666,15 +666,15 @@ fun toMachine (rssa: Rssa.Program.t) =
                   let
                      val dst = varOperand dst
                      val header = ObjptrTycon.toHeader tycon
-                     val elt = #elt (ObjectType.deSequence (tyconTy tycon))
+                     val elt = ObjectType.componentsSize (tyconTy tycon)
                      val (scale, mkIndex) =
-                        case Scale.fromBytes (Type.bytes elt) of
+                        case Scale.fromBytes elt of
                            NONE =>
                               (Scale.One, fn index =>
                                M.Operand.word
                                (WordX.mul
                                 (WordX.fromInt (index, WordSize.seqIndex ()),
-                                 WordX.fromBytes (Type.bytes elt, WordSize.seqIndex ()),
+                                 WordX.fromBytes (elt, WordSize.seqIndex ()),
                                  {signed = false})))
                          | SOME s =>
                               (s, fn index =>

@@ -681,15 +681,23 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 
       val newObjectTypes = ref []
       local
-         val h = HashTable.new {hash = Bits.toWord, equals = Bits.equals }
+         fun componentsHash ts =
+            Hash.vectorMap (ts, Type.hash)
+         fun componentsEquals (ts1, ts2) =
+            Vector.equals (ts1, ts2, Type.equals)
+         val h = HashTable.new {hash = componentsHash, equals = componentsEquals}
       in
-         fun allocRawOpt width =
+         fun allocRawOpt components =
             HashTable.lookupOrInsert
-            (h, width,
+            (h, components,
              fn () =>
              let
-                val rawElt = Type.bits width
-                val rawTy = ObjectType.Sequence {elt = rawElt, hasIdentity = true}
+                val rawComponents =
+                   Vector.map (components, fn ty =>
+                               if Type.isObjptr ty
+                                  then Type.bits (Type.width ty)
+                                  else ty)
+                val rawTy = ObjectType.Sequence {components = rawComponents, hasIdentity = true}
                 val rawOpt = ObjptrTycon.new ()
                 val () =
                    ObjptrTycon.setIndex
@@ -1168,11 +1176,11 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                  | SOME arrOpt => arrOpt
                                              val arrTy =
                                                 Vector.sub (objectTypes, ObjptrTycon.index arrOpt)
-                                             val arrElt =
+                                             val arrComponents =
                                                 case arrTy of
-                                                   ObjectType.Sequence {elt, ...} => elt
+                                                   ObjectType.Sequence {components, ...} => components
                                                  | _ => Error.bug "SsaToRssa.translateStatementsTransfer: PrimApp,Array_allocRaw"
-                                             val rawOpt = allocRawOpt (Type.width arrElt)
+                                             val rawOpt = allocRawOpt arrComponents
                                           in
                                              rawOpt
                                           end

@@ -362,6 +362,10 @@ fun outputDeclarations
             fun sym k = Label.toString (Kind.label k)
             fun ty k = concat [sym k, "Ty"]
 
+            fun componentsSize components =
+               Vector.fold (components, Bytes.zero, fn (ty, b) =>
+                            Bytes.+ (b, Type.bytes ty))
+
             fun mkPadTy (next, offset) =
                if Bytes.equals (next, offset)
                   then NONE
@@ -375,7 +379,7 @@ fun outputDeclarations
                           SOME pad
                        end
 
-            fun mkFieldTys (init, ty) =
+            fun mkFieldTys (init, size) =
                let
                   fun maybePad (next, offset, fieldTys) =
                      Option.fold (mkPadTy (next, offset), fieldTys, op ::)
@@ -390,7 +394,7 @@ fun outputDeclarations
                       in
                          (fld::fieldTys, Bytes.+ (offset, CType.size fldCType))
                       end)
-                  val fieldTys = maybePad (next, Type.bytes ty, fieldTys)
+                  val fieldTys = maybePad (next, size, fieldTys)
                in
                   List.rev fieldTys
                end
@@ -411,7 +415,7 @@ fun outputDeclarations
                           SOME pad
                        end
 
-            fun mkFields (init, ty) =
+            fun mkFields (init, size) =
                let
                   fun maybePad (next, offset, fields) =
                      Option.fold (mkPad (next, offset), fields, op ::)
@@ -425,7 +429,7 @@ fun outputDeclarations
                       in
                          (fld::fields, Bytes.+ (offset, CType.size fldCType))
                       end)
-                  val fields = maybePad (next, Type.bytes ty, fields)
+                  val fields = maybePad (next, size, fields)
                in
                   List.rev fields
                end
@@ -452,7 +456,8 @@ fun outputDeclarations
                       ; (case obj of
                             Object.Normal {init, tycon} =>
                                let
-                                  val ty = #ty (ObjectType.deNormal (tyconTy tycon))
+                                  val {components, ...} = ObjectType.deNormal (tyconTy tycon)
+                                  val size = componentsSize components
                                in
                                   print "struct __attribute__ ((packed)) {"
                                   ; print (CType.toString headerTy)
@@ -461,7 +466,7 @@ fun outputDeclarations
                                   ; print " "
                                   ; print "struct __attribute__ ((packed)) {"
                                   ; List.foreachi
-                                    (mkFieldTys (init, ty), fn (i, fldTy) =>
+                                    (mkFieldTys (init, size), fn (i, fldTy) =>
                                      (if i > 0 then print " " else ()
                                       ; print fldTy
                                       ; print ";"))
@@ -469,7 +474,8 @@ fun outputDeclarations
                                end
                           | Object.Sequence {init, tycon} =>
                                let
-                                  val elt = #elt (ObjectType.deSequence (tyconTy tycon))
+                                  val {components, ...} = ObjectType.deSequence (tyconTy tycon)
+                                  val size = componentsSize components
                                   val length = Vector.length init
                                in
                                   print "struct __attribute__ ((packed)) {"
@@ -483,12 +489,14 @@ fun outputDeclarations
                                   ; print " header;"
                                   ; print "} metadata;"
                                   ; print " "
-                                  ; if Type.equals (elt, Type.word WordSize.word8)
+                                  ; if Vector.length components = 1
+                                       andalso Type.equals (Vector.first components,
+                                                            Type.word WordSize.word8)
                                        then print (CType.toString CType.Word8)
                                        else (print "struct __attribute__ ((packed)) {"
                                              ; if length > 0
                                                   then List.foreachi
-                                                       (mkFieldTys (Vector.first init, elt),
+                                                       (mkFieldTys (Vector.first init, size),
                                                         fn (i, fldTy) =>
                                                         (if i > 0 then print " " else ()
                                                          ; print fldTy
@@ -500,7 +508,7 @@ fun outputDeclarations
                                   ; print "];"
                                   ; let
                                        val next = Bytes.+ (Runtime.sequenceMetaDataSize (),
-                                                           Bytes.* (Type.bytes elt,
+                                                           Bytes.* (size,
                                                                     IntInf.fromInt length))
                                        val size =
                                           case !Control.align of
@@ -566,7 +574,8 @@ fun outputDeclarations
                       ; (case obj of
                             Object.Normal {init, tycon} =>
                                let
-                                  val ty = #ty (ObjectType.deNormal (tyconTy tycon))
+                                  val {components, ...} = ObjectType.deNormal (tyconTy tycon)
+                                  val size = componentsSize components
                                in
                                   print "{"
                                   ; print (mkHeader tycon)
@@ -574,13 +583,14 @@ fun outputDeclarations
                                   ; print "},"
                                   ; print "{"
                                   ; List.foreach
-                                    (mkFields (init, ty), fn fld =>
+                                    (mkFields (init, size), fn fld =>
                                      (print fld; print ","))
                                   ; print "},"
                                end
                           | Object.Sequence (arg as {init, tycon}) =>
                                let
-                                  val elt = #elt (ObjectType.deSequence (tyconTy tycon))
+                                  val {components, ...} = ObjectType.deSequence (tyconTy tycon)
+                                  val size = componentsSize components
                                   val length = Vector.length init
                                in
                                   print "{"
@@ -598,15 +608,14 @@ fun outputDeclarations
                                                 (init, fn init =>
                                                  (print "{"
                                                   ; List.foreach
-                                                    (mkFields (init, elt), fn fld =>
+                                                    (mkFields (init, size), fn fld =>
                                                      (print fld; print ","))
                                                   ; print "},"))
                                               ; print "}"))
                                   ; print ","
                                   ; let
                                        val next = Bytes.+ (Runtime.sequenceMetaDataSize (),
-                                                           Bytes.* (Type.bytes elt,
-                                                                    IntInf.fromInt length))
+                                                           Bytes.* (size, IntInf.fromInt length))
                                        val size =
                                           case !Control.align of
                                              Control.Align4 => Bytes.alignWord32 next

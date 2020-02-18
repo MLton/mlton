@@ -387,6 +387,8 @@ structure Component =
 
       val ty = Rep.ty o rep
 
+      val size = Type.bytes o ty
+
       val unit = Word WordRep.unit
 
       val equals: t * t -> bool =
@@ -763,12 +765,11 @@ structure ObjptrRep =
    struct
       datatype t = T of {components: {component: Component.t,
                                       offset: Bytes.t} vector,
-                         componentsTy: Type.t,
                          selects: Selects.t,
                          ty: Type.t,
                          tycon: ObjptrTycon.t}
 
-      fun layout (T {components, componentsTy, selects, ty, tycon}) =
+      fun layout (T {components, selects, ty, tycon}) =
          let
             open Layout
          in
@@ -778,7 +779,6 @@ structure ObjptrRep =
                              record [("component", Component.layout component),
                                      ("offset", Bytes.layout offset)])
               components),
-             ("componentsTy", Type.layout componentsTy),
              ("selects", Selects.layout selects),
              ("ty", Type.layout ty),
              ("tycon", ObjptrTycon.layout tycon)]
@@ -787,9 +787,15 @@ structure ObjptrRep =
       local
          fun make f (T r) = f r
       in
-         val componentsTy = make #componentsTy
          val ty = make #ty
       end
+
+      fun componentsTys (T {components, ...}) =
+         Vector.map (components, Component.ty o #component)
+
+      fun componentsSize (T {components, ...}) =
+         Vector.fold (components, Bytes.zero, fn ({component, ...}, b) =>
+                      Bytes.+ (Component.size component, b))
 
       fun equals (T {tycon = c, ...}, T {tycon = c', ...}) =
          ObjptrTycon.equals (c, c')
@@ -889,11 +895,8 @@ structure ObjptrRep =
                   in
                      (components, selects)
                   end
-            val componentsTy =
-               Type.seq (Vector.map (components, Component.ty o #component))
          in
             T {components = components,
-               componentsTy = componentsTy,
                selects = selects,
                ty = Type.objptr tycon,
                tycon = tycon}
@@ -2622,16 +2625,16 @@ fun compute (program as Ssa2.Program.T {datatypes, ...}) =
                                             * may not be known yet.
                                             *)
                                            val tr = tupleRep opt
-                                           val ty =
+                                           val componentsTys =
                                               case tr of
                                                  TupleRep.Direct _ =>
-                                                    TupleRep.ty tr
+                                                    Vector.new1 (TupleRep.ty tr)
                                                | TupleRep.Indirect opr =>
-                                                    ObjptrRep.componentsTy opr
+                                                    ObjptrRep.componentsTys opr
                                         in
                                            SOME (opt,
                                                  ObjectType.Sequence
-                                                 {elt = ty,
+                                                 {components = componentsTys,
                                                   hasIdentity = hasIdentity})
                                         end)
                                  in
@@ -2690,8 +2693,8 @@ fun compute (program as Ssa2.Program.T {datatypes, ...}) =
                                      TupleRep.Indirect opr =>
                                         SOME
                                         (opt, (ObjectType.Normal
-                                               {hasIdentity = hasIdentity,
-                                                ty = ObjptrRep.componentsTy opr}))
+                                               {components = ObjptrRep.componentsTys opr,
+                                                hasIdentity = hasIdentity}))
                                    | _ => NONE)
                               val () = setTupleRep (t, tr)
                               fun compute () = TupleRep.rep (Value.get tr)
@@ -2765,8 +2768,8 @@ fun compute (program as Ssa2.Program.T {datatypes, ...}) =
            case conRep con of
               ConRep.Tuple (TupleRep.Indirect opr) =>
                  (objptrTycon,
-                  ObjectType.Normal {hasIdentity = Prod.someIsMutable args,
-                                     ty = ObjptrRep.componentsTy opr}) :: ac
+                  ObjectType.Normal {components = ObjptrRep.componentsTys opr,
+                                     hasIdentity = Prod.someIsMutable args}) :: ac
             | _ => ac))
       val objectTypes = ref objectTypes
       val () =
@@ -2845,7 +2848,7 @@ fun compute (program as Ssa2.Program.T {datatypes, ...}) =
                   (case sequenceRep objectTy of
                      tr as TupleRep.Indirect pr =>
                         (TupleRep.selects tr,
-                         SOME (Type.bytes (ObjptrRep.componentsTy pr)))
+                         SOME (ObjptrRep.componentsSize pr))
                    | _ => Error.bug "PackedRepresentation.getSelects: Sequence,non-Indirect")
              | Tuple => (TupleRep.selects (tupleRep objectTy), NONE)
          end

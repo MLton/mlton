@@ -381,21 +381,6 @@ structure Type =
          val align: t * Bytes.t -> Bytes.t =
             fn (t, n) => C.align (toCType t, n)
       end
-
-      fun bytesAndObjptrs (t: t): Bytes.t * int =
-         case node t of
-            Objptr _ => (Bytes.zero, 1)
-          | Seq ts =>
-               (case Vector.peeki (ts, isObjptr o #2) of
-                   NONE => (bytes t, 0)
-                 | SOME (i, _) =>
-                      let
-                         val b = bytes (seq (Vector.prefix (ts, i)))
-                         val j = (Vector.length ts) - i
-                      in
-                         (b, j)
-                      end)
-          | _ => (bytes t, 0)
    end
 
 structure ObjectType =
@@ -405,62 +390,84 @@ structure ObjectType =
 
       type ty = Type.t
       datatype t =
-         Normal of {hasIdentity: bool,
-                    ty: ty}
-       | Sequence of {elt: ty,
+         Normal of {components: ty vector,
+                    hasIdentity: bool}
+       | Sequence of {components: ty vector,
                       hasIdentity: bool}
        | Stack
        | Weak of Type.t option
 
       fun deNormal t =
          case t of
-            Normal {hasIdentity, ty} =>
-               {hasIdentity = hasIdentity, ty = ty}
+            Normal {components, hasIdentity} =>
+               {components = components, hasIdentity = hasIdentity}
           | _ => Error.bug "ObjectType.deNormal"
 
       fun deSequence t =
          case t of
-            Sequence {elt, hasIdentity} =>
-               {elt = elt, hasIdentity = hasIdentity}
+            Sequence {components, hasIdentity} =>
+               {components = components, hasIdentity = hasIdentity}
           | _ => Error.bug "ObjectType.deSequence"
+
+      fun components t =
+         case t of
+            Normal {components, ...} => components
+          | Sequence {components, ...} => components
+          | _ => Error.bug "ObjectType.components"
+
+      fun componentsSize t =
+         Vector.fold (components t, Bytes.zero, fn (ty, b) =>
+                      Bytes.+ (b, Type.bytes ty))
 
       fun layout (t: t) =
          let
             open Layout
          in
             case t of
-               Normal {hasIdentity, ty} =>
+               Normal {components, hasIdentity} =>
                   seq [str "Normal ",
-                       record [("hasIdentity", Bool.layout hasIdentity),
-                               ("ty", Type.layout ty)]]
-             | Sequence {elt, hasIdentity} =>
+                       record [("components", Vector.layout Type.layout components),
+                               ("hasIdentity", Bool.layout hasIdentity)]]
+             | Sequence {components, hasIdentity} =>
                   seq [str "Sequence ",
-                       record [("elt", Type.layout elt),
+                       record [("components", Vector.layout Type.layout components),
                                ("hasIdentity", Bool.layout hasIdentity)]]
              | Stack => str "Stack"
              | Weak t => seq [str "Weak ", Option.layout Type.layout t]
          end
 
       fun isOk (t: t): bool =
-         case t of
-            Normal {ty, ...} =>
-               let
-                  val b = Bits.+ (Type.width ty,
-                                  Type.width (Type.objptrHeader ()))
-               in
-                  case !Control.align of
-                     Control.Align4 => Bits.isWord32Aligned b
-                   | Control.Align8 => Bits.isWord64Aligned b
-               end
-          | Sequence {elt, ...} =>
-               let
-                  val b = Type.width elt
-               in
-                  Bits.isByteAligned b
-               end
-          | Stack => true
-          | Weak to => Option.fold (to, true, fn (t,_) => Type.isObjptr t)
-
+         let
+            fun componentsOk components =
+               Exn.withEscape
+               (fn escape =>
+                ((ignore o Vector.fold)
+                 (components, false, fn (ty, hasObjptr) =>
+                  if Bits.isPrim (Type.width ty)
+                     then if Type.isObjptr ty
+                             then true
+                             else if hasObjptr
+                                     then escape false
+                                     else false
+                     else escape false)
+                 ; true))
+         in
+            case t of
+               Normal {components, ...} =>
+                  componentsOk components
+                  andalso
+                  let
+                     val b = Vector.fold (components, Type.width (Type.objptrHeader ()),
+                                          fn (ty, b) => Bits.+ (b, Type.width ty))
+                  in
+                     case !Control.align of
+                        Control.Align4 => Bits.isWord32Aligned b
+                      | Control.Align8 => Bits.isWord64Aligned b
+                  end
+             | Sequence {components, ...} => componentsOk components
+             | Stack => true
+             | Weak to => Option.fold (to, true, fn (t,_) => Type.isObjptr t)
+         end
       val stack = Stack
 
       val thread = fn () =>
@@ -491,12 +498,18 @@ structure ObjectType =
                in
                   Type.bits (Bytes.toBits bytesPad)
                end
+            val components =
+               if Type.isUnit padding
+                  then Vector.new3 (Type.csize (),
+                                    Type.exnStack (),
+                                    Type.stack ())
+                  else Vector.new4 (padding,
+                                    Type.csize (),
+                                    Type.exnStack (),
+                                    Type.stack ())
          in
-            Normal {hasIdentity = true,
-                    ty = Type.seq (Vector.new4 (padding,
-                                                Type.csize (),
-                                                Type.exnStack (),
-                                                Type.stack ()))}
+            Normal {components = components,
+                    hasIdentity = true}
          end
 
       (* Order in the following vector matters.  The basic pointer tycons must
@@ -515,12 +528,12 @@ structure ObjectType =
          let
             fun realVec rs =
                (ObjptrTycon.realVector rs,
-                Sequence {hasIdentity = false,
-                          elt = Type.real rs})
+                Sequence {components = Vector.new1 (Type.real rs),
+                          hasIdentity = false})
             fun wordVec ws =
                (ObjptrTycon.wordVector ws,
-                Sequence {hasIdentity = false,
-                          elt = Type.word ws})
+                Sequence {components = Vector.new1 (Type.word ws),
+                          hasIdentity = false})
          in
             Vector.fromList
             [(ObjptrTycon.stack, stack),
@@ -536,24 +549,38 @@ structure ObjectType =
 
       local
          structure R = Runtime.RObjectType
+         fun componentsToBytes components =
+            (Bits.toBytes o Vector.fold)
+            (components, Bits.zero, fn (ty, b) =>
+             Bits.+ (b, Type.width ty))
+         fun componentsToRuntime components =
+            case Vector.peeki (components, Type.isObjptr o #2) of
+               NONE =>
+                  {bytesNonObjptrs = componentsToBytes components,
+                   numObjptrs = 0}
+             | SOME (i, _) =>
+                  {bytesNonObjptrs = componentsToBytes (Vector.prefix (components, i)),
+                   numObjptrs = Vector.length components - i}
       in
          fun toRuntime (t: t): R.t =
             case t of
-               Normal {hasIdentity, ty} =>
+               Normal {components, hasIdentity} =>
                   let
-                     val (b, nops) = Type.bytesAndObjptrs ty
+                     val {bytesNonObjptrs, numObjptrs} =
+                        componentsToRuntime components
                   in
                      R.Normal {hasIdentity = hasIdentity,
-                               bytesNonObjptrs = b,
-                               numObjptrs = nops}
+                               bytesNonObjptrs = bytesNonObjptrs,
+                               numObjptrs = numObjptrs}
                   end
-             | Sequence {elt, hasIdentity} =>
+             | Sequence {components, hasIdentity} =>
                   let
-                     val (b, nops) = Type.bytesAndObjptrs elt
+                     val {bytesNonObjptrs, numObjptrs} =
+                        componentsToRuntime components
                   in
                      R.Sequence {hasIdentity = hasIdentity,
-                                 bytesNonObjptrs = b,
-                                 numObjptrs = nops}
+                                 bytesNonObjptrs = bytesNonObjptrs,
+                                 numObjptrs = numObjptrs}
                   end
              | Stack => R.Stack
              | Weak to => R.Weak {gone = Option.isNone to}
@@ -846,8 +873,8 @@ fun offsetIsOk {base, offset, tyconTy, result} =
                  andalso (equals (result, seqIndex ()))
          else (1 = Vector.length opts)
               andalso (case tyconTy (Vector.sub (opts, 0)) of
-                          ObjectType.Normal {ty, ...} => 
-                             checkOffset {base = ty,
+                          ObjectType.Normal {components, ...} =>
+                             checkOffset {base = Type.seq components,
                                           isVector = false,
                                           offset = offset,
                                           result = result}
@@ -872,7 +899,8 @@ fun sequenceOffsetIsOk {base, index, offset, tyconTy, result, scale} =
          (equals (index, seqIndex ()))
          andalso (1 = Vector.length opts)
          andalso (case tyconTy (Vector.first opts) of
-                     ObjectType.Sequence {elt, ...} =>
+                     ObjectType.Sequence {components, ...} =>
+                        let val elt = Type.seq components in
                         if equals (elt, word8)
                            then (* special case for PackWord operations *)
                                 (case node result of
@@ -889,6 +917,7 @@ fun sequenceOffsetIsOk {base, index, offset, tyconTy, result, scale} =
                                                    isVector = true,
                                                    offset = offset,
                                                    result = result})
+                        end
                    | _ => false)
     | _ => false
 
