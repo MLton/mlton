@@ -108,6 +108,8 @@ cases.sig
 cases.fun
 prim.sig
 prim.fun
+prod.sig
+prod.fun
 handler.sig
 handler.fun
 return.sig
