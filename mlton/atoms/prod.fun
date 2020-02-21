@@ -39,6 +39,7 @@ fun allAreMutable (T v) = Vector.forall (v, #isMutable)
 fun someIsImmutable (T v) = Vector.exists (v, not o #isMutable)
 fun someIsMutable (T v) = Vector.exists (v, #isMutable)
 
+fun first (T p) = Vector.first p
 fun sub (T p, i) = Vector.sub (p, i)
 
 fun elt (p, i) = #elt (sub (p, i))
@@ -51,6 +52,11 @@ val equals: 'a t * 'a t * ('a * 'a -> bool) -> bool =
                   fn ({elt = e1, isMutable = m1},
                       {elt = e2, isMutable = m2}) =>
                   m1 = m2 andalso equals (e1, e2))
+
+val hash: 'a t * ('a -> word) -> word =
+   fn (p, hash) =>
+   Hash.vectorMap (dest p, fn {elt = e, isMutable = m} =>
+                   Hash.combine (Bool.hash m, hash e))
 
 fun layout (p, layoutElt) =
    let

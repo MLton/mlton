@@ -21,8 +21,10 @@ signature PROD =
       val elt: 'a t * int -> 'a
       val equals: 'a t * 'a t * ('a * 'a -> bool) -> bool
       val empty: unit -> 'a t
+      val first: 'a t -> {elt: 'a, isMutable: bool}
       val fold: 'a t * 'b * ('a * 'b -> 'b) -> 'b
       val foreach: 'a t * ('a -> unit) -> unit
+      val hash: 'a t * ('a -> word) -> word
       val isEmpty: 'a t -> bool
       val keepAllMap: 'a t * ('a -> 'b option) -> 'b t
       val layout: 'a t * ('a -> Layout.t) -> Layout.t
