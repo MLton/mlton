@@ -22,6 +22,7 @@ signature LABEL
 signature PRIM
 signature PRIM_CONS
 signature PRIM_TYCONS
+signature PROD
 signature PROFILE_LABEL
 signature REAL_SIZE
 signature REAL_X
