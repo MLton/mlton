@@ -362,10 +362,6 @@ fun outputDeclarations
             fun sym k = Label.toString (Kind.label k)
             fun ty k = concat [sym k, "Ty"]
 
-            fun componentsSize components =
-               Vector.fold (components, Bytes.zero, fn (ty, b) =>
-                            Bytes.+ (b, Type.bytes ty))
-
             fun mkPadTy (next, offset) =
                if Bytes.equals (next, offset)
                   then NONE
@@ -456,8 +452,7 @@ fun outputDeclarations
                       ; (case obj of
                             Object.Normal {init, tycon} =>
                                let
-                                  val {components, ...} = ObjectType.deNormal (tyconTy tycon)
-                                  val size = componentsSize components
+                                  val size = ObjectType.componentsSize (tyconTy tycon)
                                in
                                   print "struct __attribute__ ((packed)) {"
                                   ; print (CType.toString headerTy)
@@ -475,7 +470,7 @@ fun outputDeclarations
                           | Object.Sequence {init, tycon} =>
                                let
                                   val {components, ...} = ObjectType.deSequence (tyconTy tycon)
-                                  val size = componentsSize components
+                                  val size = ObjectType.componentsSize (tyconTy tycon)
                                   val length = Vector.length init
                                in
                                   print "struct __attribute__ ((packed)) {"
@@ -489,8 +484,8 @@ fun outputDeclarations
                                   ; print " header;"
                                   ; print "} metadata;"
                                   ; print " "
-                                  ; if Vector.length components = 1
-                                       andalso Type.equals (Vector.first components,
+                                  ; if Prod.length components = 1
+                                       andalso Type.equals (#elt (Prod.first components),
                                                             Type.word WordSize.word8)
                                        then print (CType.toString CType.Word8)
                                        else (print "struct __attribute__ ((packed)) {"
@@ -574,8 +569,7 @@ fun outputDeclarations
                       ; (case obj of
                             Object.Normal {init, tycon} =>
                                let
-                                  val {components, ...} = ObjectType.deNormal (tyconTy tycon)
-                                  val size = componentsSize components
+                                  val size = ObjectType.componentsSize (tyconTy tycon)
                                in
                                   print "{"
                                   ; print (mkHeader tycon)
@@ -589,8 +583,7 @@ fun outputDeclarations
                                end
                           | Object.Sequence (arg as {init, tycon}) =>
                                let
-                                  val {components, ...} = ObjectType.deSequence (tyconTy tycon)
-                                  val size = componentsSize components
+                                  val size = ObjectType.componentsSize (tyconTy tycon)
                                   val length = Vector.length init
                                in
                                   print "{"

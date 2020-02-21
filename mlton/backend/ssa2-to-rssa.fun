@@ -681,10 +681,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
 
       val newObjectTypes = ref []
       local
-         fun componentsHash ts =
-            Hash.vectorMap (ts, Type.hash)
-         fun componentsEquals (ts1, ts2) =
-            Vector.equals (ts1, ts2, Type.equals)
+         fun componentsHash cs =
+            Prod.hash (cs, Type.hash)
+         fun componentsEquals (cs1, cs2) =
+            Prod.equals (cs1, cs2, Type.equals)
          val h = HashTable.new {hash = componentsHash, equals = componentsEquals}
       in
          fun allocRawOpt components =
@@ -693,10 +693,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
              fn () =>
              let
                 val rawComponents =
-                   Vector.map (components, fn ty =>
-                               if Type.isObjptr ty
-                                  then Type.bits (Type.width ty)
-                                  else ty)
+                   Prod.map (components, fn ty =>
+                             if Type.isObjptr ty
+                                then Type.bits (Type.width ty)
+                                else ty)
                 val rawTy = ObjectType.Sequence {components = rawComponents, hasIdentity = true}
                 val rawOpt = ObjptrTycon.new ()
                 val () =

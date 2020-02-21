@@ -22,6 +22,7 @@ structure BackendAtoms =
                                    structure Label = Label
                                    structure ObjptrTycon = ObjptrTycon
                                    structure Prim = Prim
+                                   structure Prod = Prod
                                    structure RealSize = RealSize
                                    structure RealX = RealX
                                    structure Runtime = Runtime

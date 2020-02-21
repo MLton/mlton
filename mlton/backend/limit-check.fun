@@ -864,7 +864,7 @@ fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileI
                       ; (Vector.concat
                          [objectTypes,
                           Vector.new1 (ObjectType.Sequence
-                                       {components = Vector.new1 flagTy,
+                                       {components = Prod.new1Mutable flagTy,
                                         hasIdentity = true})],
                          Vector.concat
                          [statics,

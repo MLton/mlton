@@ -385,14 +385,15 @@ structure Type =
 
 structure ObjectType =
    struct
+      structure Prod = Prod
       structure ObjptrTycon = ObjptrTycon
       structure Runtime = Runtime
 
       type ty = Type.t
       datatype t =
-         Normal of {components: ty vector,
+         Normal of {components: ty Prod.t,
                     hasIdentity: bool}
-       | Sequence of {components: ty vector,
+       | Sequence of {components: ty Prod.t,
                       hasIdentity: bool}
        | Stack
        | Weak of Type.t option
@@ -416,8 +417,8 @@ structure ObjectType =
           | _ => Error.bug "ObjectType.components"
 
       fun componentsSize t =
-         Vector.fold (components t, Bytes.zero, fn (ty, b) =>
-                      Bytes.+ (b, Type.bytes ty))
+         Prod.fold (components t, Bytes.zero, fn (ty, b) =>
+                    Bytes.+ (b, Type.bytes ty))
 
       fun layout (t: t) =
          let
@@ -426,11 +427,11 @@ structure ObjectType =
             case t of
                Normal {components, hasIdentity} =>
                   seq [str "Normal ",
-                       record [("components", Vector.layout Type.layout components),
+                       record [("components", Prod.layout (components, Type.layout)),
                                ("hasIdentity", Bool.layout hasIdentity)]]
              | Sequence {components, hasIdentity} =>
                   seq [str "Sequence ",
-                       record [("components", Vector.layout Type.layout components),
+                       record [("components", Prod.layout (components, Type.layout)),
                                ("hasIdentity", Bool.layout hasIdentity)]]
              | Stack => str "Stack"
              | Weak t => seq [str "Weak ", Option.layout Type.layout t]
@@ -441,7 +442,7 @@ structure ObjectType =
             fun componentsOk components =
                Exn.withEscape
                (fn escape =>
-                ((ignore o Vector.fold)
+                ((ignore o Prod.fold)
                  (components, false, fn (ty, hasObjptr) =>
                   if Bits.isPrim (Type.width ty)
                      then if Type.isObjptr ty
@@ -457,8 +458,8 @@ structure ObjectType =
                   componentsOk components
                   andalso
                   let
-                     val b = Vector.fold (components, Type.width (Type.objptrHeader ()),
-                                          fn (ty, b) => Bits.+ (b, Type.width ty))
+                     val b = Prod.fold (components, Type.width (Type.objptrHeader ()),
+                                        fn (ty, b) => Bits.+ (b, Type.width ty))
                   in
                      case !Control.align of
                         Control.Align4 => Bits.isWord32Aligned b
@@ -499,16 +500,16 @@ structure ObjectType =
                   Type.bits (Bytes.toBits bytesPad)
                end
             val components =
+               Vector.new3 (Type.csize (), Type.exnStack (), Type.stack ())
+            val components =
+               Vector.map (components, fn ty => {elt = ty, isMutable = true})
+            val components =
                if Type.isUnit padding
-                  then Vector.new3 (Type.csize (),
-                                    Type.exnStack (),
-                                    Type.stack ())
-                  else Vector.new4 (padding,
-                                    Type.csize (),
-                                    Type.exnStack (),
-                                    Type.stack ())
+                  then components
+                  else Vector.concat [Vector.new1 {elt = padding, isMutable = false},
+                                      components]
          in
-            Normal {components = components,
+            Normal {components = Prod.make components,
                     hasIdentity = true}
          end
 
@@ -528,11 +529,11 @@ structure ObjectType =
          let
             fun realVec rs =
                (ObjptrTycon.realVector rs,
-                Sequence {components = Vector.new1 (Type.real rs),
+                Sequence {components = Prod.new1Immutable (Type.real rs),
                           hasIdentity = false})
             fun wordVec ws =
                (ObjptrTycon.wordVector ws,
-                Sequence {components = Vector.new1 (Type.word ws),
+                Sequence {components = Prod.new1Immutable (Type.word ws),
                           hasIdentity = false})
          in
             Vector.fromList
@@ -550,17 +551,21 @@ structure ObjectType =
       local
          structure R = Runtime.RObjectType
          fun componentsToBytes components =
-            (Bits.toBytes o Vector.fold)
-            (components, Bits.zero, fn (ty, b) =>
-             Bits.+ (b, Type.width ty))
+            Vector.fold
+            (components, Bytes.zero, fn ({elt = ty, isMutable = _}, b) =>
+             Bytes.+ (Type.bytes ty, b))
          fun componentsToRuntime components =
-            case Vector.peeki (components, Type.isObjptr o #2) of
-               NONE =>
-                  {bytesNonObjptrs = componentsToBytes components,
-                   numObjptrs = 0}
-             | SOME (i, _) =>
-                  {bytesNonObjptrs = componentsToBytes (Vector.prefix (components, i)),
-                   numObjptrs = Vector.length components - i}
+            let
+               val components = Prod.dest components
+            in
+               case Vector.peeki (components, Type.isObjptr o #elt o #2) of
+                  NONE =>
+                     {bytesNonObjptrs = componentsToBytes components,
+                      numObjptrs = 0}
+                | SOME (i, _) =>
+                     {bytesNonObjptrs = componentsToBytes (Vector.prefix (components, i)),
+                      numObjptrs = Vector.length components - i}
+            end
       in
          fun toRuntime (t: t): R.t =
             case t of
@@ -847,7 +852,7 @@ fun checkOffset {base, isVector, offset, result} =
    in
       List.exists 
       ([Bits.inWord8, Bits.inWord16, Bits.inWord32, Bits.inWord64], fn primBits =>
-       Bits.equals (resultBits, primBits) 
+       Bits.equals (resultBits, primBits)
        andalso Bits.isAligned (offsetBits, {alignment = Bits.min (primBits, alignBits)}))
       andalso
       equalsTys (resultTys, extractTys (baseTys, adjOffsetBits, resultBits))
@@ -874,7 +879,7 @@ fun offsetIsOk {base, offset, tyconTy, result} =
          else (1 = Vector.length opts)
               andalso (case tyconTy (Vector.sub (opts, 0)) of
                           ObjectType.Normal {components, ...} =>
-                             checkOffset {base = Type.seq components,
+                             checkOffset {base = Type.seq (Vector.map (Prod.dest components, #elt)),
                                           isVector = false,
                                           offset = offset,
                                           result = result}
@@ -900,7 +905,7 @@ fun sequenceOffsetIsOk {base, index, offset, tyconTy, result, scale} =
          andalso (1 = Vector.length opts)
          andalso (case tyconTy (Vector.first opts) of
                      ObjectType.Sequence {components, ...} =>
-                        let val elt = Type.seq components in
+                        let val elt = Type.seq (Vector.map (Prod.dest components, #elt)) in
                         if equals (elt, word8)
                            then (* special case for PackWord operations *)
                                 (case node result of
