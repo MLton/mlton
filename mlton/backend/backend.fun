@@ -46,6 +46,7 @@ in
    structure Object = Object
    structure ObjectType = ObjectType
    structure Prim = Prim
+   structure Prod = Prod
    structure Type = Type
    structure Var = Var
 end 
@@ -374,24 +375,22 @@ fun toMachine (rssa: Rssa.Program.t) =
                case obj of
                   R.Object.Normal {init, tycon} =>
                      let
-                        val {components, hasIdentity} = ObjectType.deNormal (tyconTy tycon)
+                        val {components, ...} = ObjectType.deNormal (tyconTy tycon)
                         val (init, hasDynamic) = translateInit init
                         val kind =
                            if hasDynamic
                               then Kind.Dynamic
-                              else if hasIdentity
-                                      then if Vector.isEmpty components
-                                              then (* A `unit ref`; will never be updated. *)
-                                                   Kind.Immutable
-                                              else (* Conservative; the objptr field might not be mutable. *)
-                                                   if Vector.exists (components, Type.isObjptr)
-                                                      then (* Reference to root static heap
-                                                            * won't map to valid card slot.
-                                                            *)
-                                                           if !Control.markCards
-                                                              then Kind.Dynamic
-                                                              else Kind.Root
-                                                      else Kind.Mutable
+                              else if Prod.someIsMutable components
+                                      then if Vector.exists (Prod.dest components,
+                                                             fn {elt, isMutable} =>
+                                                             isMutable andalso Type.isObjptr elt)
+                                              then (* Reference to root static heap
+                                                    * won't map to valid card slot.
+                                                    *)
+                                                   if !Control.markCards
+                                                      then Kind.Dynamic
+                                                      else Kind.Root
+                                              else Kind.Mutable
                               else Kind.Immutable
                      in
                         {kind = kind,
@@ -422,15 +421,16 @@ fun toMachine (rssa: Rssa.Program.t) =
                                                     * but header may be updated.
                                                     *)
                                                    Kind.Mutable
-                                              else (* Conservative; the objptr field might not be mutable. *)
-                                                 if Vector.exists (components, Type.isObjptr)
-                                                    then (* Reference to root static heap
-                                                          * won't map to valid card slot.
-                                                          *)
-                                                         if !Control.markCards
-                                                            then Kind.Dynamic
-                                                            else Kind.Root
-                                                    else Kind.Mutable
+                                              else if Vector.exists (Prod.dest components,
+                                                                     fn {elt, isMutable} =>
+                                                                     isMutable andalso Type.isObjptr elt)
+                                                      then (* Reference to root static heap
+                                                            * won't map to valid card slot.
+                                                            *)
+                                                           if !Control.markCards
+                                                              then Kind.Dynamic
+                                                              else Kind.Root
+                                                      else Kind.Mutable
                               else Kind.Immutable
                      in
                         {kind = kind,
