@@ -262,65 +262,57 @@ structure WordComponent =
 
       fun equals (wr, wr') = Rep.equals (rep wr, rep wr')
 
-      fun make {components, rep} =
-         if Bits.<= (Rep.width rep, Control.Target.Size.objptr ())
-            andalso Bits.equals (Vector.fold (components, Bits.zero,
-                                              fn ({rep, ...}, ac) =>
-                                              Bits.+ (ac, Rep.width rep)),
-                                 Rep.width rep)
-            then T {components = components,
-                    isMutable = Vector.exists (components, #isMutable),
-                    rep = rep}
-         else Error.bug "PackedRepresentation.WordComponent.make"
+      fun make components =
+         let
+            val repTy = Type.seq (Vector.map (components, Rep.ty o #rep))
+            val rep = Rep.T {rep = Rep.NonObjptr,
+                             ty = repTy}
+         in
+            if Bits.<= (Rep.width rep, Control.Target.Size.objptr ())
+               then T {components = components,
+                       isMutable = Vector.exists (components, #isMutable),
+                       rep = rep}
+               else Error.bug "PackedRepresentation.WordComponent.make"
+         end
 
       val make =
          Trace.trace
          ("PackedRepresentation.WordComponent.make",
-          fn {components, rep} =>
+          fn components =>
           let
              open Layout
           in
-             record [("components",
-                      Vector.layout (fn {index, isMutable, rep} =>
-                                     record [("index", Int.layout index),
-                                             ("isMutable", Bool.layout isMutable),
-                                             ("rep", Rep.layout rep)])
-                      components),
-                     ("rep", Rep.layout rep)]
+             Vector.layout (fn {index, isMutable, rep} =>
+                            record [("index", Int.layout index),
+                                    ("isMutable", Bool.layout isMutable),
+                                    ("rep", Rep.layout rep)])
+             components
           end,
           layout)
          make
 
-      fun padToWidth (T {components, rep, ...}, b: Bits.t): t =
-         let
-            val newRep = Rep.padToWidth (rep, b)
-            val padBits = Bits.- (Rep.width newRep, Rep.width rep)
-            val newComponent =
-               {index = ~1,
-                isMutable = false,
-                rep = Rep.nonObjptr (Type.bits padBits)}
-            val newComponents =
-               Vector.concat
-               [components, Vector.new1 newComponent]
-         in
-            make {components = newComponents,
-                  rep = newRep}
-         end
-      fun padToWidthLow (T {components, rep, ...}, b: Bits.t): t =
-         let
-            val newRep = Rep.padToWidthLow (rep, b)
-            val padBits = Bits.- (Rep.width newRep, Rep.width rep)
-            val newComponent =
-               {index = ~1,
-                isMutable = false,
-                rep = Rep.nonObjptr (Type.bits padBits)}
-            val newComponents =
-               Vector.concat
-               [Vector.new1 newComponent, components]
-         in
-            make {components = newComponents,
-                  rep = newRep}
-         end
+      local
+         fun mkPadToWidth (wc as T {components, rep, ...}, b: Bits.t, mk): t =
+            let
+               val padBits = Bits.- (b, Rep.width rep)
+            in
+               if Bits.isZero padBits
+                  then wc
+                  else let
+                          val pad =
+                             {index = ~1,
+                              isMutable = false,
+                              rep = Rep.nonObjptr (Type.bits padBits)}
+                       in
+                          make (mk (components, Vector.new1 pad))
+                       end
+            end
+         fun mk (cs, pad) = Vector.concat [cs, pad]
+         fun mkLow (cs, pad) = Vector.concat [pad, cs]
+      in
+         fun padToWidth (c, b) = mkPadToWidth (c, b, mk)
+         fun padToWidthLow (c, b) = mkPadToWidth (c, b, mkLow)
+      end
 
       fun tuple (T {components, ...},
                  {dst = (dstVar, dstTy): Var.t * Type.t,
@@ -1261,21 +1253,15 @@ structure TupleRep =
                      let
                         val components =
                            getSubword32Components (max, Bits.inWord32, [])
-                        val componentTy =
-                           Type.seq (Vector.map (components, Rep.ty o #rep))
                         val component =
-                           (Component.Word o WordComponent.make)
-                           {components = components,
-                            rep = Rep.T {rep = Rep.NonObjptr,
-                                         ty = componentTy}}
-                        val (component, componentTy) =
+                           Component.Word (WordComponent.make components)
+                        val component =
                            if needsBox
                               then if padToPrim
-                                      then (Component.padToPrim component,
-                                            Type.padToPrim componentTy)
-                                   else (Component.padToWidth (component, Bits.inWord32),
-                                         Type.padToWidth (componentTy, Bits.inWord32))
-                           else (component, componentTy)
+                                      then Component.padToPrim component
+                                   else Component.padToWidth (component, Bits.inWord32)
+                           else component
+                        val componentTy = Component.ty component
                         val _ =
                            Vector.fold
                            (components, Bits.zero,
@@ -1345,13 +1331,8 @@ structure TupleRep =
                            if isBigEndian
                               then Vector.rev origComponents
                            else origComponents
-                        val componentTy =
-                           Type.seq (Vector.map (components, Rep.ty o #rep))
                         val component =
-                           (Component.Word o WordComponent.make)
-                           {components = components,
-                            rep = Rep.T {rep = Rep.NonObjptr,
-                                         ty = componentTy}}
+                           Component.Word (WordComponent.make components)
                         val component =
                            if padToPrim
                               then if isBigEndian
