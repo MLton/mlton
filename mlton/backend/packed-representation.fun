@@ -831,7 +831,7 @@ structure ObjptrRep =
             val width =
                Vector.fold
                (components, Bytes.zero, fn ({component = c, ...}, ac) =>
-                Bytes.+ (ac, Type.bytes (Component.ty c)))
+                Bytes.+ (ac, Component.size c))
             val padBytes: Bytes.t =
                if isSequence
                   then let
@@ -887,15 +887,24 @@ structure ObjptrRep =
                         if Vector.isEmpty objptrs
                            then width
                         else #offset (Vector.first objptrs)
-                     val pad =
-                        (#1 o Vector.unfoldi)
-                        ((Bytes.toInt padBytes) div (Bytes.toInt Bytes.inWord32),
-                         padOffset,
-                         fn (_, padOffset) =>
-                         ({component = (Component.padToWidth
-                                        (Component.unit, Bits.inWord32)),
-                           offset = padOffset},
-                          Bytes.+ (padOffset, Bytes.inWord32)))
+                     fun mkPad (padBytes, padOffset, pads) =
+                        if Bytes.isZero padBytes
+                           then Vector.fromList pads
+                           else let
+                                   fun try (b, k) () =
+                                      if Bytes.<= (b, padBytes)
+                                         then mkPad (Bytes.- (padBytes, b),
+                                                     Bytes.+ (padOffset, b),
+                                                     {component = (Component.padToWidth
+                                                                   (Component.unit, Bytes.toBits b)),
+                                                      offset = padOffset}::pads)
+                                         else k ()
+                                   fun bug () =
+                                      Error.bug "PackedRepresentation.ObjptrRep.make: mkPad"
+                                in
+                                   List.fold (Bytes.prims, bug, try) ()
+                                end
+                     val pad = mkPad (padBytes, padOffset, [])
                      val objptrs =
                         Vector.map (objptrs, fn {component = c, offset} =>
                                     {component = c,
