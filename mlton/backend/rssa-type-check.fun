@@ -21,7 +21,6 @@ structure Operand =
           | Offset _ => true
           | Runtime _ => true
           | SequenceOffset _ => true
-          | Var _ => true
           | _ => false
    end
 
