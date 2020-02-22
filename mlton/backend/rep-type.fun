@@ -827,55 +827,7 @@ fun getTys ty =
 
 in
 
-fun checkOffset {components, isSequence, offset, result} =
-   let
-      val base = Type.seq (Vector.map (Prod.dest components, #elt))
-
-      val alignBits =
-         case !Control.align of
-            Control.Align4 => Bits.inWord32
-          | Control.Align8 => Bits.inWord64
-
-      val baseBits = width base
-      val baseTys = getTys base
-
-      val offsetBytes = offset
-      val offsetBits = Bytes.toBits offsetBytes
-
-      val resultBits = width result
-      val resultTys = getTys result
-
-      val adjOffsetBits =
-         if Control.Target.bigEndian () 
-            andalso Bits.< (resultBits, Bits.inWord32)
-            andalso Bits.> (baseBits, resultBits)
-            then let
-                    val paddedComponentBits = 
-                       if isSequence
-                          then Bits.min (baseBits, Bits.inWord32)
-                       else Bits.inWord32
-                    val paddedComponentOffsetBits =
-                       Bits.alignDown (offsetBits, {alignment = paddedComponentBits})
-                 in
-                    Bits.+ (paddedComponentOffsetBits,
-                            Bits.- (paddedComponentBits,
-                                    Bits.- (Bits.+ (resultBits, offsetBits),
-                                            paddedComponentOffsetBits)))
-                 end
-         else offsetBits
-   in
-      List.exists 
-      (Bits.prims, fn primBits =>
-       Bits.equals (resultBits, primBits)
-       andalso Bits.isAligned (offsetBits, {alignment = Bits.min (primBits, alignBits)}))
-      andalso
-      (case extractTys (baseTys, adjOffsetBits, resultBits) of
-          NONE => false
-        | SOME tys => List.equals (resultTys,  tys, Type.equals))
-   end
-val checkOffset0 = checkOffset
-
-fun checkOffset1 {components, isSequence, offset, result} =
+fun checkOffset0 {components, isSequence, offset, result} =
    Exn.withEscape
    (fn escape0 =>
     let
@@ -950,7 +902,7 @@ fun checkOffset1 {components, isSequence, offset, result} =
  * selected individually; see `makeSubword32s{,AllPrims}` in
  * `PackedRepresentation`.
  *)
-fun checkOffset2 {components, isSequence = _, offset, result} =
+fun checkOffset1 {components, isSequence = _, offset, result} =
    Exn.withEscape
    (fn escape =>
     (ignore
@@ -965,7 +917,6 @@ fun checkOffset arg =
    case !Control.repTypeCheckOffsetStyle of
       0 => checkOffset0 arg
     | 1 => checkOffset1 arg
-    | 2 => checkOffset2 arg
     | _ => Error.bug "RepType.checkOffset: !Control.repTypeCheckOffsetStyle"
 end
 
