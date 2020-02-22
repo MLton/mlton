@@ -1331,6 +1331,11 @@ structure OptimizationPasses =
                                            | Result.Yes () => Result.Yes ()))
    end
 
+val packedRepresentationMakeSubWord32sAllPrimsStyle =
+   control {name = "packedRepresentationMakeSubWord32sAllPrimsStyle",
+            default = 0,
+            toString = Int.toString}
+
 val polyvariance =
    control {name = "polyvariance",
             default = SOME {hofo = true,

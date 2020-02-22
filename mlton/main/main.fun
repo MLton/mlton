@@ -667,6 +667,8 @@ fun makeOptions {usage} =
                       | Result.Yes () => ())),
        (Normal, "output", " <file>", "name of output file",
         SpaceString (fn s => output := SOME s)),
+       (Normal, "PackedRepresentation.makeSubWord32sAllPrims-style", " <n>", "representation style for PackedRepresentation.makeSubWord32sAllPrims",
+        intRef packedRepresentationMakeSubWord32sAllPrimsStyle),
        (Expert, "polyvariance", " {true|false}", "use polyvariance",
         Bool (fn b => if b then () else polyvariance := NONE)),
        (Expert, "polyvariance-hofo", " {true|false}", "duplicate higher-order fns only",

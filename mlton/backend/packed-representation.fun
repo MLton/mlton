@@ -1376,6 +1376,26 @@ structure TupleRep =
                          Bytes.+ (offset, Bytes.inWord32),
                          ac)
                      end
+            val makeSubWord32sAllPrims0 = makeSubWord32sAllPrims
+            fun makeSubWord32sAllPrims1 (_, offset: Bytes.t, components) =
+               let
+                  fun doit (b, offset, components) =
+                     simple (List.map (Array.sub (subWord32s, b), fn {index, isMutable, rep} =>
+                                       {component = Component.Direct {index = index,
+                                                                      isMutable = isMutable,
+                                                                      rep = rep},
+                                        index = index}),
+                             Bits.toBytes (Bits.fromInt b), offset, components)
+                  val (offset, components) = doit (16, offset, components)
+                  val (offset, components) = doit (8, offset, components)
+               in
+                  (offset, components)
+               end
+            val makeSubWord32sAllPrims =
+               case !Control.packedRepresentationMakeSubWord32sAllPrimsStyle of
+                  0 => makeSubWord32sAllPrims0
+                | 1 => makeSubWord32sAllPrims1
+                | _ => Error.bug "PackedRepresentation.TupleRep.make: Control.packedRepresentationMakeSubWord32sStyle"
             val (offset, components) =
                if (not hasNonPrim) andalso needsBox
                   then makeSubWord32sAllPrims (Array.length subWord32s - 1, offset, components)

@@ -382,6 +382,8 @@ signature CONTROL_FLAGS =
             val setAll: string -> unit Result.t
          end
 
+      val packedRepresentationMakeSubWord32sAllPrimsStyle: int ref
+
       (* Only duplicate big functions when
        * (size - small) * (number of occurrences - 1) <= product
        *)
