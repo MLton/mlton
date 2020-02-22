@@ -1145,8 +1145,8 @@ structure TupleRep =
             val numWord64s = ref 0
             val word32s = ref []
             val numWord32s = ref 0
-            val subword32s = Array.array (Bits.toInt Bits.inWord32, [])
-            val widthSubword32s = ref 0
+            val subWord32s = Array.array (Bits.toInt Bits.inWord32, [])
+            val widthSubWord32s = ref 0
             val hasNonPrim = ref false
             val () =
                Vector.foreachi
@@ -1158,11 +1158,11 @@ structure TupleRep =
                                                                     rep = rep},
                                       index = i})
                        ; Int.inc n)
-                   fun addSubword32 b =
+                   fun addSubWord32 b =
                       (Array.update
-                       (subword32s, b,
-                        {index = i, isMutable = isMutable, rep = rep} :: Array.sub (subword32s, b))
-                       ; widthSubword32s := !widthSubword32s + b)
+                       (subWord32s, b,
+                        {index = i, isMutable = isMutable, rep = rep} :: Array.sub (subWord32s, b))
+                       ; widthSubWord32s := !widthSubWord32s + b)
                 in
                    case Rep.rep rep of
                       Rep.NonObjptr =>
@@ -1171,11 +1171,11 @@ structure TupleRep =
                          in
                             case b of
                                0 => ()
-                             | 8 => addSubword32 b
-                             | 16 => addSubword32 b
+                             | 8 => addSubWord32 b
+                             | 16 => addSubWord32 b
                              | 32 => addDirect (word32s, numWord32s)
                              | 64 => addDirect (word64s, numWord64s)
-                             | _ => (addSubword32 b
+                             | _ => (addSubWord32 b
                                      ; hasNonPrim := true)
                          end
                     | Rep.Objptr _ => addDirect (objptrs, numObjptrs)
@@ -1185,10 +1185,10 @@ structure TupleRep =
             val numComponents =
                !numObjptrs + !numWord64s + !numWord32s +
                (let
-                   val widthSubword32s = !widthSubword32s
+                   val widthSubWord32s = !widthSubWord32s
                 in
-                   Int.quot (widthSubword32s, 32)
-                   + Int.min (1, Int.rem (widthSubword32s, 32))
+                   Int.quot (widthSubWord32s, 32)
+                   + Int.min (1, Int.rem (widthSubWord32s, 32))
                 end)
             val needsBox =
                forceBox
@@ -1224,25 +1224,25 @@ structure TupleRep =
             val (offset, components) =
                simple (!word32s, Bytes.inWord32, offset, components)
             (* j is the maximum index <= remainingWidth at which an
-             * element of subword32s may be nonempty.
+             * element of subWord32s may be nonempty.
              *)
-            fun getSubword32Components (j: int,
+            fun getSubWord32Components (j: int,
                                         remainingWidth: Bits.t,
                                         components) =
                if 0 = j
                   then Vector.fromListRev components
                else
                   let
-                     val elts = Array.sub (subword32s, j)
+                     val elts = Array.sub (subWord32s, j)
                   in
                      case elts of
-                        [] => getSubword32Components (j - 1, remainingWidth, components)
+                        [] => getSubWord32Components (j - 1, remainingWidth, components)
                       | {index, isMutable, rep} :: elts =>
                            let
-                              val () = Array.update (subword32s, j, elts)
+                              val () = Array.update (subWord32s, j, elts)
                               val remainingWidth = Bits.- (remainingWidth, Rep.width rep)
                            in
-                              getSubword32Components
+                              getSubWord32Components
                               (Bits.toInt remainingWidth,
                                remainingWidth,
                                {index = index, isMutable = isMutable, rep = rep}
@@ -1250,18 +1250,18 @@ structure TupleRep =
                            end
                   end
             (* max is the maximum index at which an element of
-             * subword32s may be nonempty.
+             * subWord32s may be nonempty.
              *)
-            fun makeSubword32s (max: int, offset: Bytes.t, ac) =
+            fun makeSubWord32s (max: int, offset: Bytes.t, ac) =
                if 0 = max
                   then (offset, ac)
                else
-                  if List.isEmpty (Array.sub (subword32s, max))
-                     then makeSubword32s (max - 1, offset, ac)
+                  if List.isEmpty (Array.sub (subWord32s, max))
+                     then makeSubWord32s (max - 1, offset, ac)
                   else
                      let
                         val components =
-                           getSubword32Components (max, Bits.inWord32, [])
+                           getSubWord32Components (max, Bits.inWord32, [])
                         val component =
                            Component.Word (WordComponent.make components)
                         val component =
@@ -1316,7 +1316,7 @@ structure TupleRep =
                         val ac = {component = component,
                                   offset = offset} :: ac
                      in
-                        makeSubword32s
+                        makeSubWord32s
                         (max,
                          (* Either the width of the word rep component
                           * is 32 bits, or this is the only
@@ -1325,17 +1325,17 @@ structure TupleRep =
                          Bytes.+ (offset, Bytes.inWord32),
                          ac)
                      end
-            fun makeSubword32sAllPrims (max: int, offset: Bytes.t, ac) =
+            fun makeSubWord32sAllPrims (max: int, offset: Bytes.t, ac) =
                (* hasNonPrim = false, needsBox = true *)
                if 0 = max
                   then (offset, ac)
                else
-                  if List.isEmpty (Array.sub (subword32s, max))
-                     then makeSubword32sAllPrims (max - 1, offset, ac)
+                  if List.isEmpty (Array.sub (subWord32s, max))
+                     then makeSubWord32sAllPrims (max - 1, offset, ac)
                   else
                      let
                         val origComponents =
-                           getSubword32Components (max, Bits.inWord32, [])
+                           getSubWord32Components (max, Bits.inWord32, [])
                         val components =
                            if isBigEndian
                               then Vector.rev origComponents
@@ -1367,7 +1367,7 @@ structure TupleRep =
                         val ac = {component = component,
                                   offset = offset} :: ac
                      in
-                        makeSubword32sAllPrims
+                        makeSubWord32sAllPrims
                         (max,
                          (* Either the width of the word rep component
                           * is 32 bits, or this is the only
@@ -1378,8 +1378,8 @@ structure TupleRep =
                      end
             val (offset, components) =
                if (not hasNonPrim) andalso needsBox
-                  then makeSubword32sAllPrims (Array.length subword32s - 1, offset, components)
-               else makeSubword32s (Array.length subword32s - 1, offset, components)
+                  then makeSubWord32sAllPrims (Array.length subWord32s - 1, offset, components)
+               else makeSubWord32s (Array.length subWord32s - 1, offset, components)
             val (_, components) =
                simple (!objptrs, Runtime.objptrSize (), offset, components)
             val components = Vector.fromListRev components
