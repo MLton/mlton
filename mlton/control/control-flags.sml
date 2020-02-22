@@ -1494,6 +1494,11 @@ val profileVal = control {name = "profile val",
                           default = false,
                           toString = Bool.toString}
 
+val repTypeCheckOffsetStyle =
+   control {name = "repTypeCheckOffsetStyle",
+            default = 0,
+            toString = Int.toString}
+
 val showBasis = control {name = "show basis",
                          default = NONE,
                          toString = Option.toString File.toString}

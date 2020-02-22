@@ -873,7 +873,100 @@ fun checkOffset {components, isSequence, offset, result} =
           NONE => false
         | SOME tys => List.equals (resultTys,  tys, Type.equals))
    end
+val checkOffset0 = checkOffset
 
+fun checkOffset1 {components, isSequence, offset, result} =
+   Exn.withEscape
+   (fn escape0 =>
+    let
+       val ({elt = componentTy, ...}, componentOffset) =
+          Exn.withEscape
+          (fn escape1 =>
+           let
+              val _ =
+                 Vector.fold
+                 (Prod.dest components, Bytes.zero,
+                  fn (comp as {elt = compTy, ...}, compOffset) =>
+                  let
+                     val compOffset' = Bytes.+ (compOffset, Type.bytes compTy)
+                  in
+                     if Bytes.< (offset, compOffset')
+                        then escape1 (comp, compOffset)
+                        else compOffset'
+                  end)
+           in
+              escape0 false
+           end)
+
+       val componentBits = Type.width componentTy
+       val componentTys = getTys componentTy
+
+       val offsetBytes = Bytes.- (offset, componentOffset)
+       val offsetBits = Bytes.toBits offsetBytes
+
+       val resultBits = Type.width result
+       val resultTys = getTys result
+
+       val alignBits =
+          case !Control.align of
+             Control.Align4 => Bits.inWord32
+           | Control.Align8 => Bits.inWord64
+
+       val adjOffsetBits =
+          if Control.Target.bigEndian ()
+             andalso Bits.< (resultBits, Bits.inWord32)
+             andalso Bits.> (componentBits, resultBits)
+             then let
+                     val paddedComponentBits =
+                        if isSequence
+                           then Bits.min (componentBits, Bits.inWord32)
+                           else Bits.inWord32
+                     val paddedComponentOffsetBits =
+                        Bits.alignDown (offsetBits, {alignment = paddedComponentBits})
+                  in
+                     Bits.+ (paddedComponentOffsetBits,
+                             Bits.- (paddedComponentBits,
+                                     Bits.- (Bits.+ (resultBits, offsetBits),
+                                             paddedComponentOffsetBits)))
+                  end
+             else offsetBits
+    in
+       List.exists
+       (Bits.prims, fn primBits =>
+        Bits.equals (resultBits, primBits)
+        andalso Bits.isAligned (offsetBits, {alignment = Bits.min (primBits, alignBits)}))
+       andalso
+       (case extractTys (componentTys, adjOffsetBits, resultBits) of
+           NONE => false
+         | SOME tys => List.equals (resultTys, tys, Type.equals))
+    end)
+
+(* Check that offset/result exactly corresponds to a component;
+ * Doesn't work with something like:
+ *   components = (Word32, Word32, [Word8, Word8, Bits16], Bits32)
+ *   offset = 9
+ *   result = Word8
+ * because the Word8 sub-components are packed for object initialization, but
+ * selected individually; see `makeSubword32s{,AllPrims}` in
+ * `PackedRepresentation`.
+ *)
+fun checkOffset2 {components, isSequence = _, offset, result} =
+   Exn.withEscape
+   (fn escape =>
+    (ignore
+     (Vector.fold
+      (Prod.dest components, Bytes.zero, fn ({elt = compTy, ...}, compOffset) =>
+       if Bytes.equals (compOffset, offset)
+          then escape (equals (compTy, result))
+          else Bytes.+ (compOffset, Type.bytes compTy)))
+     ; false))
+
+fun checkOffset arg =
+   case !Control.repTypeCheckOffsetStyle of
+      0 => checkOffset0 arg
+    | 1 => checkOffset1 arg
+    | 2 => checkOffset2 arg
+    | _ => Error.bug "RepType.checkOffset: !Control.repTypeCheckOffsetStyle"
 end
 
 val checkOffset =

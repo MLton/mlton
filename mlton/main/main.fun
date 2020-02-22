@@ -801,6 +801,8 @@ fun makeOptions {usage} =
        (Normal, "profile-val", " {false|true}",
         "profile val bindings in addition to functions",
         boolRef profileVal),
+       (Normal, "RepType.checkOffset-style", " <n>", "style for RepType.checkOffset",
+        intRef repTypeCheckOffsetStyle),
        (Normal, "runtime", " <arg>", "pass arg to runtime via @MLton",
         SpaceString (fn s => List.push (runtimeArgs, s))),
        (Expert, "seed-rand", " <w>", "seed the pseudo-random number generator",
