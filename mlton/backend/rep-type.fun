@@ -827,11 +827,11 @@ fun getTys ty =
 
 in
 
-fun checkOffset0 {components, isSequence, offset, result} =
+fun checkOffset0 {components, isSequence, mustBeMutable, offset, result} =
    Exn.withEscape
    (fn escape0 =>
     let
-       val ({elt = componentTy, ...}, componentOffset) =
+       val ({elt = componentTy, isMutable = componentIsMutable, ...}, componentOffset) =
           Exn.withEscape
           (fn escape1 =>
            let
@@ -891,6 +891,8 @@ fun checkOffset0 {components, isSequence, offset, result} =
        (case extractTys (componentTys, adjOffsetBits, resultBits) of
            NONE => false
          | SOME tys => List.equals (resultTys, tys, Type.equals))
+       andalso
+       (not mustBeMutable orelse componentIsMutable)
     end)
 
 (* Check that offset/result exactly corresponds to a component;
@@ -902,14 +904,17 @@ fun checkOffset0 {components, isSequence, offset, result} =
  * selected individually; see `makeSubword32s{,AllPrims}` in
  * `PackedRepresentation`.
  *)
-fun checkOffset1 {components, isSequence = _, offset, result} =
+fun checkOffset1 {components, isSequence = _, mustBeMutable, offset, result} =
    Exn.withEscape
    (fn escape =>
     (ignore
      (Vector.fold
-      (Prod.dest components, Bytes.zero, fn ({elt = compTy, ...}, compOffset) =>
+      (Prod.dest components, Bytes.zero,
+       fn ({elt = compTy, isMutable = compIsMutable}, compOffset) =>
        if Bytes.equals (compOffset, offset)
-          then escape (equals (compTy, result))
+          then escape (equals (compTy, result)
+                       andalso
+                       (not mustBeMutable orelse compIsMutable))
           else Bytes.+ (compOffset, Type.bytes compTy)))
      ; false))
 
@@ -923,19 +928,20 @@ end
 val checkOffset =
    Trace.trace
    ("RepType.checkOffset",
-    fn {components, isSequence, offset, result} =>
+    fn {components, isSequence, mustBeMutable, offset, result} =>
     let
        open Layout
     in
        record [("components", Prod.layout (components, Type.layout)),
                ("isSequence", Bool.layout isSequence),
+               ("mustBeMutable", Bool.layout mustBeMutable),
                ("offset", Bytes.layout offset),
                ("result", Type.layout result)]
     end,
     Bool.layout)
    checkOffset
 
-fun offsetIsOk {base, offset, tyconTy, result} = 
+fun offsetIsOk {base, mustBeMutable, offset, tyconTy, result} =
    case node base of
       CPointer => true
     | Objptr opts =>
@@ -958,12 +964,13 @@ fun offsetIsOk {base, offset, tyconTy, result} =
                           ObjectType.Normal {components, ...} =>
                              checkOffset {components = components,
                                           isSequence = false,
+                                          mustBeMutable = mustBeMutable,
                                           offset = offset,
                                           result = result}
                         | _ => false)
     | _ => false
 
-fun sequenceOffsetIsOk {base, index, offset, tyconTy, result, scale} =
+fun sequenceOffsetIsOk {base, mustBeMutable, index, offset, tyconTy, result, scale} =
    case node base of
       CPointer => 
          (equals (index, csize ()))
@@ -997,6 +1004,7 @@ fun sequenceOffsetIsOk {base, index, offset, tyconTy, result, scale} =
                                | SOME s => scale = s)
                              andalso (checkOffset {components = components,
                                                    isSequence = true,
+                                                   mustBeMutable = mustBeMutable,
                                                    offset = offset,
                                                    result = result})
                         end

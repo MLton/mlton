@@ -411,30 +411,33 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, static
          Trace.trace2 ("Rssa.setVarType", Var.layout, Type.layout,
                        Unit.layout)
          setVarType
-      fun checkOperand (x: Operand.t): unit =
+      fun checkOperandAux (x: Operand.t, isLHS): unit =
           let
              datatype z = datatype Operand.t
              fun ok () =
                 case x of
                    Cast (z, ty) =>
-                      (checkOperand z
-                      ; Type.castIsOk {from = Operand.ty z,
-                                       to = ty,
-                                       tyconTy = tyconTy})
+                      (checkOperandAux (z, isLHS)
+                       ; Type.castIsOk {from = Operand.ty z,
+                                        to = ty,
+                                        tyconTy = tyconTy})
                  | Const _ => true
                  | GCState => true
                  | Offset {base, offset, ty} =>
-                      Type.offsetIsOk {base = Operand.ty base,
-                                       offset = offset,
-                                       tyconTy = tyconTy,
-                                       result = ty}
+                      (checkOperandAux (base, false)
+                       ; Type.offsetIsOk {base = Operand.ty base,
+                                          mustBeMutable = isLHS,
+                                          offset = offset,
+                                          tyconTy = tyconTy,
+                                          result = ty})
                  | ObjptrTycon _ => true
                  | Runtime _ => true
                  | SequenceOffset {base, index, offset, scale, ty} =>
-                      (checkOperand base
-                       ; checkOperand index
+                      (checkOperandAux (base, false)
+                       ; checkOperandAux (index, false)
                        ; Type.sequenceOffsetIsOk {base = Operand.ty base,
                                                   index = Operand.ty index,
+                                                  mustBeMutable = isLHS,
                                                   offset = offset,
                                                   tyconTy = tyconTy,
                                                   result = ty,
@@ -443,9 +446,12 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, static
           in
              Err.check ("operand", ok, fn () => Operand.layout x)
           end
-      val checkOperand =
-         Trace.trace ("Rssa.checkOperand", Operand.layout, Unit.layout)
-         checkOperand
+      val checkOperandAux =
+         Trace.trace2 ("Rssa.checkOperandAux",
+                       Operand.layout, Bool.layout, Unit.layout)
+         checkOperandAux
+      fun checkLhsOperand z = checkOperandAux (z, true)
+      fun checkOperand z = checkOperandAux (z, false)
       fun checkOperands v = Vector.foreach (v, checkOperand)
       fun check' (x, name, isOk, layout) =
          Err.check (name, fn () => isOk x, fn () => layout x)
@@ -460,7 +466,7 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, static
                   (checkOperand src
                    ; Type.isSubtype (Operand.ty src, dstTy))
              | Move {dst, src} =>
-                  (checkOperand dst
+                  (checkLhsOperand dst
                    ; checkOperand src
                    ; (Type.isSubtype (Operand.ty src, Operand.ty dst)
                       andalso Operand.isLocation dst))

@@ -82,6 +82,7 @@ signature REP_TYPE =
       val ofWordXVector: WordXVector.t -> t
       val ofWordX: WordX.t -> t
       val offsetIsOk: {base: t,
+                       mustBeMutable: bool,
                        offset: Bytes.t,
                        tyconTy: ObjptrTycon.t -> ObjectType.t,
                        result: t} -> bool
@@ -93,6 +94,7 @@ signature REP_TYPE =
       val seqIndex: unit -> t
       val sequenceOffsetIsOk: {base: t,
                                index: t,
+                               mustBeMutable: bool,
                                offset: Bytes.t,
                                tyconTy: ObjptrTycon.t -> ObjectType.t,
                                result: t,

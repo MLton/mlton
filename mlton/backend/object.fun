@@ -159,6 +159,10 @@ fun isOk (obj: t,
                fun offsetIsOk {offset, result} =
                   Type.offsetIsOk
                   {base = base,
+                   (* initialization of object field
+                    * does not require the field to be mutable.
+                    *)
+                   mustBeMutable = false,
                    offset = offset,
                    tyconTy = tyconTy,
                    result = result}
@@ -181,6 +185,10 @@ fun isOk (obj: t,
                       Type.sequenceOffsetIsOk
                       {base = base,
                        index = index,
+                       (* initialization of object field
+                        * does not require the field to be mutable.
+                        *)
+                       mustBeMutable = false,
                        offset = offset,
                        result = result,
                        scale = scale,
