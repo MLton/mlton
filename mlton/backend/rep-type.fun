@@ -748,74 +748,88 @@ fun checkPrimApp {args, prim, result} =
                                  Prim.toString prim])
    end
 
-fun checkOffset {base, isVector, offset, result} =
-   Exn.withEscape (fn escape =>
+local
+
+fun extractTys (tys, dropBits, takeBits) =
+   Exn.withEscape
+   (fn escape =>
+    let
+       fun dropTys (tys, bits) =
+          let
+             fun loop (tys, bits) =
+                if Bits.equals (bits, Bits.zero)
+                   then tys
+                else (case tys of
+                         [] => escape NONE
+                       | ty::tys =>
+                            let
+                               val b = width ty
+                            in
+                               if Bits.>= (bits, b)
+                                  then loop (tys, Bits.- (bits, b))
+                               else (case node ty of
+                                        Bits => (Type.bits (Bits.- (b, bits))) :: tys
+                                      | _ => escape NONE)
+                            end)
+          in
+             if Bits.< (bits, Bits.zero)
+                then escape NONE
+             else loop (tys, bits)
+          end
+       val dropTys =
+          Trace.trace2
+          ("RepType.checkOffset.dropTys",
+           List.layout Type.layout, Bits.layout,
+           List.layout Type.layout)
+          dropTys
+       fun takeTys (tys, bits) =
+          let
+             fun loop (tys, bits, acc) =
+                if Bits.equals (bits, Bits.zero)
+                   then acc
+                else (case tys of
+                         [] => escape NONE
+                       | ty::tys =>
+                            let
+                               val b = width ty
+                            in
+                               if Bits.>= (bits, b)
+                                  then loop (tys, Bits.- (bits, b), ty :: acc)
+                               else (case node ty of
+                                        Bits => (Type.bits bits) :: acc
+                                      | _ => escape NONE)
+                            end)
+          in
+             if Bits.< (bits, Bits.zero)
+                then escape NONE
+             else List.rev (loop (tys, bits, []))
+          end
+       val takeTys =
+          Trace.trace2
+          ("RepType.checkOffset.takeTys",
+           List.layout Type.layout, Bits.layout,
+           List.layout Type.layout)
+          takeTys
+    in
+       SOME (takeTys (dropTys (tys, dropBits), takeBits))
+    end)
+val extractTys =
+   Trace.trace3
+   ("RepType.checkOffset.extractTys",
+    List.layout Type.layout, Bits.layout, Bits.layout,
+    Option.layout (List.layout Type.layout))
+   extractTys
+
+fun getTys ty =
+   case node ty of
+      Seq tys => Vector.toList tys
+    | _ => [ty]
+
+in
+
+fun checkOffset {components, isSequence, offset, result} =
    let
-      fun getTys ty =
-         case node ty of
-            Seq tys => Vector.toList tys
-          | _ => [ty]
-
-      fun dropTys (tys, bits) =
-         let
-            fun loop (tys, bits) =
-               if Bits.equals (bits, Bits.zero)
-                  then tys
-               else (case tys of
-                        [] => escape false
-                      | ty::tys => 
-                           let
-                              val b = width ty
-                           in
-                              if Bits.>= (bits, b)
-                                 then loop (tys, Bits.- (bits, b))
-                              else (case node ty of
-                                       Bits => (Type.bits (Bits.- (b, bits))) :: tys
-                                     | _ => escape false)
-                           end)
-         in
-            if Bits.< (bits, Bits.zero)
-               then escape false
-            else loop (tys, bits)
-         end
-      val dropTys =
-         Trace.trace2 
-         ("RepType.checkOffset.dropTys",
-          List.layout Type.layout, Bits.layout,
-          List.layout Type.layout)
-         dropTys
-      fun takeTys (tys, bits) =
-         let
-            fun loop (tys, bits, acc) =
-               if Bits.equals (bits, Bits.zero)
-                  then acc
-               else (case tys of
-                        [] => escape false
-                      | ty::tys =>
-                           let
-                              val b = width ty
-                           in
-                              if Bits.>= (bits, b)
-                                 then loop (tys, Bits.- (bits, b), ty :: acc)
-                              else (case node ty of
-                                       Bits => (Type.bits bits) :: acc
-                                     | _ => escape false)
-                           end)
-         in
-            if Bits.< (bits, Bits.zero)
-               then escape false
-            else List.rev (loop (tys, bits, []))
-         end
-      fun extractTys (tys, dropBits, takeBits) =
-         takeTys (dropTys (tys, dropBits), takeBits)
-
-      fun equalsTys (tys1, tys2) =
-         case (tys1, tys2) of
-            ([], []) => true
-          | (ty1::tys1, ty2::tys2) =>
-               equals (ty1, ty2)
-               andalso equalsTys (tys1, tys2)
-          | _ => false
+      val base = Type.seq (Vector.map (Prod.dest components, #elt))
 
       val alignBits =
          case !Control.align of
@@ -837,7 +851,7 @@ fun checkOffset {base, isVector, offset, result} =
             andalso Bits.> (baseBits, resultBits)
             then let
                     val paddedComponentBits = 
-                       if isVector
+                       if isSequence
                           then Bits.min (baseBits, Bits.inWord32)
                        else Bits.inWord32
                     val paddedComponentOffsetBits =
@@ -851,12 +865,31 @@ fun checkOffset {base, isVector, offset, result} =
          else offsetBits
    in
       List.exists 
-      ([Bits.inWord8, Bits.inWord16, Bits.inWord32, Bits.inWord64], fn primBits =>
+      (Bits.prims, fn primBits =>
        Bits.equals (resultBits, primBits)
        andalso Bits.isAligned (offsetBits, {alignment = Bits.min (primBits, alignBits)}))
       andalso
-      equalsTys (resultTys, extractTys (baseTys, adjOffsetBits, resultBits))
-   end)
+      (case extractTys (baseTys, adjOffsetBits, resultBits) of
+          NONE => false
+        | SOME tys => List.equals (resultTys,  tys, Type.equals))
+   end
+
+end
+
+val checkOffset =
+   Trace.trace
+   ("RepType.checkOffset",
+    fn {components, isSequence, offset, result} =>
+    let
+       open Layout
+    in
+       record [("components", Prod.layout (components, Type.layout)),
+               ("isSequence", Bool.layout isSequence),
+               ("offset", Bytes.layout offset),
+               ("result", Type.layout result)]
+    end,
+    Bool.layout)
+   checkOffset
 
 fun offsetIsOk {base, offset, tyconTy, result} = 
    case node base of
@@ -879,8 +912,8 @@ fun offsetIsOk {base, offset, tyconTy, result} =
          else (1 = Vector.length opts)
               andalso (case tyconTy (Vector.sub (opts, 0)) of
                           ObjectType.Normal {components, ...} =>
-                             checkOffset {base = Type.seq (Vector.map (Prod.dest components, #elt)),
-                                          isVector = false,
+                             checkOffset {components = components,
+                                          isSequence = false,
                                           offset = offset,
                                           result = result}
                         | _ => false)
@@ -918,8 +951,8 @@ fun sequenceOffsetIsOk {base, index, offset, tyconTy, result, scale} =
                         else (case Scale.fromBytes (bytes elt) of
                                  NONE => scale = Scale.One
                                | SOME s => scale = s)
-                             andalso (checkOffset {base = elt,
-                                                   isVector = true,
+                             andalso (checkOffset {components = components,
+                                                   isSequence = true,
                                                    offset = offset,
                                                    result = result})
                         end
