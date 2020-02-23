@@ -93,31 +93,19 @@ structure Type =
                Error.bug "PackedRepresentation.Type.mkPadToWidth")
             end
          fun mk (t, pad) = seq (Vector.new2 (t, pad))
-         fun mkLow (t, pad) = seq (Vector.new2 (pad, t))
       in
          fun padToPrim (t: t): t = mkPadToPrim (t, mk)
-         fun padToPrimLow (t: t): t = mkPadToPrim (t, mkLow)
          fun padToWidth (t: t, b: Bits.t): t = mkPadToWidth (t, b, mk)
-         fun padToWidthLow (t: t, b: Bits.t): t = mkPadToWidth (t, b, mkLow)
       end
 
       val padToPrim =
          Trace.trace
          ("PackedRepresentation.Type.padToPrim", layout, layout)
          padToPrim
-      val padToPrimLow =
-         Trace.trace
-         ("PackedRepresentation.Type.padToPrimLow", layout, layout)
-         padToPrimLow
       val padToWidth =
          Trace.trace2
          ("PackedRepresentation.Type.padToWidth", layout, Bits.layout, layout)
          padToWidth
-      val padToWidthLow =
-         Trace.trace2
-         ("PackedRepresentation.Type.padToWidthLow", layout, Bits.layout, layout)
-         padToWidthLow
-
    end
 
 structure Rep =
@@ -184,16 +172,6 @@ structure Rep =
                NonObjptr =>
                   T {rep = NonObjptr,
                      ty = Type.padToWidth (ty, width)}
-             | Objptr _ => Error.bug "PackedRepresentation.Rep.padToWidth"
-
-      fun padToWidthLow (r as T {rep, ty}, width: Bits.t) =
-         if Bits.equals (Type.width ty, width)
-            then r
-         else
-            case rep of
-               NonObjptr =>
-                  T {rep = NonObjptr,
-                     ty = Type.padToWidthLow (ty, width)}
              | Objptr _ => Error.bug "PackedRepresentation.Rep.padToWidth"
    end
 
@@ -308,10 +286,8 @@ structure WordComponent =
                        end
             end
          fun mk (cs, pad) = Vector.concat [cs, pad]
-         fun mkLow (cs, pad) = Vector.concat [pad, cs]
       in
          fun padToWidth (c, b) = mkPadToWidth (c, b, mk)
-         fun padToWidthLow (c, b) = mkPadToWidth (c, b, mkLow)
       end
 
       fun tuple (T {components, ...},
@@ -427,8 +403,6 @@ structure Component =
       in
          fun padToWidth (c, b) =
             mkPadToWidth (c, b, Rep.padToWidth, WordComponent.padToWidth)
-         fun padToWidthLow (c, b) =
-            mkPadToWidth (c, b, Rep.padToWidthLow, WordComponent.padToWidthLow)
       end
 
       local
@@ -443,7 +417,6 @@ structure Component =
             end
       in
          fun padToPrim c = mkPadToPrim (c, Type.padToPrim, padToWidth)
-         fun padToPrimLow c = mkPadToPrim (c, Type.padToPrimLow, padToWidthLow)
       end
 
       fun tuple (c: t, {dst: Var.t * Type.t,
@@ -1325,59 +1298,7 @@ structure TupleRep =
                          Bytes.+ (offset, Bytes.inWord32),
                          ac)
                      end
-            fun makeSubWord32sAllPrims (max: int, offset: Bytes.t, ac) =
-               (* hasNonPrim = false, needsBox = true *)
-               if 0 = max
-                  then (offset, ac)
-               else
-                  if List.isEmpty (Array.sub (subWord32s, max))
-                     then makeSubWord32sAllPrims (max - 1, offset, ac)
-                  else
-                     let
-                        val origComponents =
-                           getSubWord32Components (max, Bits.inWord32, [])
-                        val components =
-                           if isBigEndian
-                              then Vector.rev origComponents
-                           else origComponents
-                        val component =
-                           Component.Word (WordComponent.make components)
-                        val component =
-                           if padToPrim
-                              then if isBigEndian
-                                      then Component.padToPrimLow component
-                                      else Component.padToPrim component
-                           else if isBigEndian
-                                   then Component.padToWidthLow (component, Bits.inWord32)
-                                   else Component.padToWidth (component, Bits.inWord32)
-                        val _ =
-                           Vector.fold
-                           (origComponents, offset,
-                            fn ({index, rep, ...}, offset) =>
-                            let
-                               val () =
-                                  Array.update
-                                  (selects, index,
-                                   Select.Indirect
-                                   {offset = offset,
-                                    ty = Rep.ty rep})
-                            in
-                               Bytes.+ (offset, Bits.toBytes (Rep.width rep))
-                            end)
-                        val ac = {component = component,
-                                  offset = offset} :: ac
-                     in
-                        makeSubWord32sAllPrims
-                        (max,
-                         (* Either the width of the word rep component
-                          * is 32 bits, or this is the only
-                          * component, so offset doesn't matter.
-                          *)
-                         Bytes.+ (offset, Bytes.inWord32),
-                         ac)
-                     end
-            val makeSubWord32sAllPrims0 = makeSubWord32sAllPrims
-            fun makeSubWord32sAllPrims1 (_, offset: Bytes.t, components) =
+            fun makeSubWord32sAllPrims (_, offset: Bytes.t, components) =
                let
                   fun doit (b, offset, components) =
                      simple (List.map (Array.sub (subWord32s, b), fn {index, isMutable, rep} =>
@@ -1391,11 +1312,6 @@ structure TupleRep =
                in
                   (offset, components)
                end
-            val makeSubWord32sAllPrims =
-               case !Control.packedRepresentationMakeSubWord32sAllPrimsStyle of
-                  0 => makeSubWord32sAllPrims0
-                | 1 => makeSubWord32sAllPrims1
-                | _ => Error.bug "PackedRepresentation.TupleRep.make: Control.packedRepresentationMakeSubWord32sStyle"
             val (offset, components) =
                if (not hasNonPrim) andalso needsBox
                   then makeSubWord32sAllPrims (Array.length subWord32s - 1, offset, components)
