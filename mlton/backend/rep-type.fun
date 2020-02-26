@@ -827,7 +827,7 @@ fun getTys ty =
 
 in
 
-fun checkOffset0 {components, isSequence, mustBeMutable, offset, result} =
+fun checkOffset {components, isSequence, mustBeMutable, offset, result} =
    Exn.withEscape
    (fn escape0 =>
     let
@@ -897,14 +897,17 @@ fun checkOffset0 {components, isSequence, mustBeMutable, offset, result} =
 
 (* Check that offset/result exactly corresponds to a component;
  * Doesn't work with something like:
- *   components = (Word32, Word32, [Word8, Word8, Bits16], Bits32)
- *   offset = 9
+ *   components = ([Word10, Word14, Word8])
+ *   offset = 3
  *   result = Word8
- * because the Word8 sub-components are packed for object initialization, but
- * selected individually; see `makeSubword32s{,AllPrims}` in
+ * because while the Word10 and Word14 sub-components are accessed with
+ * `Select.IndirectUnpack` (by reading/writing the whole `Word32` with
+ * shifting/masking), the `Word8` sub-component is accessed with
+ * `Select.Indirect` (because the packing results in the `Word8` sub-component
+ * ending up with an 8-bit aligned offset); see `makeSubword32s` in
  * `PackedRepresentation`.
  *)
-fun checkOffset1 {components, isSequence = _, mustBeMutable, offset, result} =
+fun checkOffsetAlt {components, isSequence = _, mustBeMutable, offset, result} =
    Exn.withEscape
    (fn escape =>
     (ignore
@@ -917,12 +920,8 @@ fun checkOffset1 {components, isSequence = _, mustBeMutable, offset, result} =
                        (not mustBeMutable orelse compIsMutable))
           else Bytes.+ (compOffset, Type.bytes compTy)))
      ; false))
+val _ = checkOffsetAlt
 
-fun checkOffset arg =
-   case !Control.repTypeCheckOffsetStyle of
-      0 => checkOffset0 arg
-    | 1 => checkOffset1 arg
-    | _ => Error.bug "RepType.checkOffset: !Control.repTypeCheckOffsetStyle"
 end
 
 val checkOffset =

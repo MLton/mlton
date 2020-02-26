@@ -444,8 +444,6 @@ signature CONTROL_FLAGS =
 
       val profileVal: bool ref
 
-      val repTypeCheckOffsetStyle: int ref
-
       (* Show the basis library. *)
       val showBasis: File.t option ref
 
