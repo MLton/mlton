@@ -22,6 +22,7 @@ signature LABEL
 signature PRIM
 signature PRIM_CONS
 signature PRIM_TYCONS
+signature PROD
 signature PROFILE_LABEL
 signature REAL_SIZE
 signature REAL_X
@@ -108,6 +109,8 @@ cases.sig
 cases.fun
 prim.sig
 prim.fun
+prod.sig
+prod.fun
 handler.sig
 handler.fun
 return.sig

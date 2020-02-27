@@ -37,15 +37,12 @@ signature OBJECT =
       datatype t =
          Normal of {init: {offset: Bytes.t,
                            src: Use.t} vector,
-                    ty: Type.t,
                     tycon: ObjptrTycon.t}
-       | Sequence of {elt: Type.t,
-                      init: {offset: Bytes.t,
+       | Sequence of {init: {offset: Bytes.t,
                              src: Use.t} vector vector,
                       tycon: ObjptrTycon.t}
 
-      val deString: {elt: Type.t,
-                     init: {offset: Bytes.t,
+      val deString: {init: {offset: Bytes.t,
                             src: Use.t} vector vector,
                      tycon: ObjptrTycon.t} -> string option
       val foldUse: t * 'a * (Use.t * 'a -> 'a) -> 'a
@@ -56,7 +53,7 @@ signature OBJECT =
       val layout: t -> Layout.t
       val metaDataSize: t -> Bytes.t
       val replace: t * {use: Use.t -> Use.t} -> t
-      val size: t -> Bytes.t
+      val size: t * {tyconTy: ObjptrTycon.t -> ObjectType.t} -> Bytes.t
       val toString: t -> string
       val ty: t -> Type.t
    end

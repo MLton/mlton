@@ -1,4 +1,4 @@
-(* Copyright (C) 2019 Matthew Fluet.
+(* Copyright (C) 2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -31,6 +31,7 @@ signature ATOMS' =
       structure IntSize: INT_SIZE
       structure Label: LABEL
       structure Prim: PRIM
+      structure Prod: PROD
       structure ProfileExp: PROFILE_EXP
       structure ProfileLabel: PROFILE_LABEL
       structure RealSize: REAL_SIZE
@@ -103,6 +104,7 @@ signature ATOMS =
       sharing IntSize = Atoms.IntSize
       sharing Label = Atoms.Label
       sharing Prim = Atoms.Prim
+      sharing Prod = Atoms.Prod
       sharing ProfileExp = Atoms.ProfileExp
       sharing ProfileLabel = Atoms.ProfileLabel
       sharing RealSize = Atoms.RealSize

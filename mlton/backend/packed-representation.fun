@@ -93,31 +93,19 @@ structure Type =
                Error.bug "PackedRepresentation.Type.mkPadToWidth")
             end
          fun mk (t, pad) = seq (Vector.new2 (t, pad))
-         fun mkLow (t, pad) = seq (Vector.new2 (pad, t))
       in
          fun padToPrim (t: t): t = mkPadToPrim (t, mk)
-         fun padToPrimLow (t: t): t = mkPadToPrim (t, mkLow)
          fun padToWidth (t: t, b: Bits.t): t = mkPadToWidth (t, b, mk)
-         fun padToWidthLow (t: t, b: Bits.t): t = mkPadToWidth (t, b, mkLow)
       end
 
       val padToPrim =
          Trace.trace
          ("PackedRepresentation.Type.padToPrim", layout, layout)
          padToPrim
-      val padToPrimLow =
-         Trace.trace
-         ("PackedRepresentation.Type.padToPrimLow", layout, layout)
-         padToPrimLow
       val padToWidth =
          Trace.trace2
          ("PackedRepresentation.Type.padToWidth", layout, Bits.layout, layout)
          padToWidth
-      val padToWidthLow =
-         Trace.trace2
-         ("PackedRepresentation.Type.padToWidthLow", layout, Bits.layout, layout)
-         padToWidthLow
-
    end
 
 structure Rep =
@@ -185,16 +173,6 @@ structure Rep =
                   T {rep = NonObjptr,
                      ty = Type.padToWidth (ty, width)}
              | Objptr _ => Error.bug "PackedRepresentation.Rep.padToWidth"
-
-      fun padToWidthLow (r as T {rep, ty}, width: Bits.t) =
-         if Bits.equals (Type.width ty, width)
-            then r
-         else
-            case rep of
-               NonObjptr =>
-                  T {rep = NonObjptr,
-                     ty = Type.padToWidthLow (ty, width)}
-             | Objptr _ => Error.bug "PackedRepresentation.Rep.padToWidth"
    end
 
 structure Statement =
@@ -220,87 +198,97 @@ structure Statement =
       end
    end
 
-structure WordRep =
+structure WordComponent =
    struct
-      (* WordRep describes the representation of (some of) the components in a
-       * tuple as a word.
+      (* WordComponent describes the representation of (some of) the
+       * components in a tuple as a word.
        * Components are stored from lowest to highest, just like in Type.seq.
        * The width of the rep must be less than the width of an objptr.
        * The sum of the widths of the component reps must be equal to the
        * width of the rep.
        *)
-      datatype t = T of {components: {index: int,
+      datatype t = T of {components: {isMutable: bool,
+                                      index: int,
                                       rep: Rep.t} vector,
+                         isMutable: bool,
                          rep: Rep.t}
 
-      fun layout (T {components, rep}) =
+      fun layout (T {components, isMutable, rep}) =
          let
             open Layout
          in
             record [("components",
-                     Vector.layout (fn {index, rep} =>
+                     Vector.layout (fn {index, isMutable, rep} =>
                                     record [("index", Int.layout index),
+                                            ("isMutable", Bool.layout isMutable),
                                             ("rep", Rep.layout rep)])
                      components),
+                    ("isMutable", Bool.layout isMutable),
                     ("rep", Rep.layout rep)]
          end
 
       local
          fun make f (T r) = f r
       in
+         val isMutable = make #isMutable
          val rep = make #rep
       end
 
       val unit = T {components = Vector.new0 (),
+                    isMutable = false,
                     rep = Rep.unit}
 
       fun equals (wr, wr') = Rep.equals (rep wr, rep wr')
 
-      fun make {components, rep} =
-         if Bits.<= (Rep.width rep, Control.Target.Size.objptr ())
-            andalso Bits.equals (Vector.fold (components, Bits.zero,
-                                              fn ({rep, ...}, ac) =>
-                                              Bits.+ (ac, Rep.width rep)),
-                                 Rep.width rep)
-            then T {components = components,
-                    rep = rep}
-         else Error.bug "PackedRepresentation.WordRep.make"
+      fun make components =
+         let
+            val repTy = Type.seq (Vector.map (components, Rep.ty o #rep))
+            val rep = Rep.T {rep = Rep.NonObjptr,
+                             ty = repTy}
+         in
+            if Bits.<= (Rep.width rep, Control.Target.Size.objptr ())
+               then T {components = components,
+                       isMutable = Vector.exists (components, #isMutable),
+                       rep = rep}
+               else Error.bug "PackedRepresentation.WordComponent.make"
+         end
 
       val make =
          Trace.trace
-         ("PackedRepresentation.WordRep.make",
-          layout o T,
+         ("PackedRepresentation.WordComponent.make",
+          fn components =>
+          let
+             open Layout
+          in
+             Vector.layout (fn {index, isMutable, rep} =>
+                            record [("index", Int.layout index),
+                                    ("isMutable", Bool.layout isMutable),
+                                    ("rep", Rep.layout rep)])
+             components
+          end,
           layout)
          make
 
-      fun padToWidth (T {components, rep}, b: Bits.t): t =
-         let
-            val newRep = Rep.padToWidth (rep, b)
-            val padBits = Bits.- (Rep.width newRep, Rep.width rep)
-            val newComponent =
-               {index = ~1,
-                rep = Rep.nonObjptr (Type.bits padBits)}
-            val newComponents =
-               Vector.concat
-               [components, Vector.new1 newComponent]
-         in
-            make {components = newComponents,
-                  rep = newRep}
-         end
-      fun padToWidthLow (T {components, rep}, b: Bits.t): t =
-         let
-            val newRep = Rep.padToWidthLow (rep, b)
-            val padBits = Bits.- (Rep.width newRep, Rep.width rep)
-            val newComponent =
-               {index = ~1,
-                rep = Rep.nonObjptr (Type.bits padBits)}
-            val newComponents =
-               Vector.concat
-               [Vector.new1 newComponent, components]
-         in
-            make {components = newComponents,
-                  rep = newRep}
-         end
+      local
+         fun mkPadToWidth (wc as T {components, rep, ...}, b: Bits.t, mk): t =
+            let
+               val padBits = Bits.- (b, Rep.width rep)
+            in
+               if Bits.isZero padBits
+                  then wc
+                  else let
+                          val pad =
+                             {index = ~1,
+                              isMutable = false,
+                              rep = Rep.nonObjptr (Type.bits padBits)}
+                       in
+                          make (mk (components, Vector.new1 pad))
+                       end
+            end
+         fun mk (cs, pad) = Vector.concat [cs, pad]
+      in
+         fun padToWidth (c, b) = mkPadToWidth (c, b, mk)
+      end
 
       fun tuple (T {components, ...},
                  {dst = (dstVar, dstTy): Var.t * Type.t,
@@ -355,7 +343,7 @@ structure WordRep =
 
       val tuple =
          Trace.trace
-         ("PackedRepresentation.WordRep.tuple",
+         ("PackedRepresentation.WordComponent.tuple",
           layout o #1, List.layout Statement.layout)
          tuple
 
@@ -365,49 +353,56 @@ structure Component =
    struct
       datatype t =
          Direct of {index: int,
+                    isMutable: bool,
                     rep: Rep.t}
-       | Word of WordRep.t
+       | Word of WordComponent.t
 
       fun layout c =
          let
             open Layout
          in
             case c of
-               Direct {index, rep} =>
+               Direct {index, isMutable, rep} =>
                   seq [str "Direct ",
                        record [("index", Int.layout index),
+                               ("isMutable", Bool.layout isMutable),
                                ("rep", Rep.layout rep)]]
-             | Word wr =>
-                  seq [str "Word ", WordRep.layout wr]
+             | Word wc =>
+                  seq [str "Word ", WordComponent.layout wc]
          end
 
       val rep: t -> Rep.t =
          fn Direct {rep, ...} => rep
-          | Word wr => WordRep.rep wr
+          | Word wc => WordComponent.rep wc
 
       val ty = Rep.ty o rep
 
-      val unit = Word WordRep.unit
+      val size = Type.bytes o ty
+
+      val isMutable: t -> bool =
+         fn Direct {isMutable, ...} => isMutable
+          | Word wc => WordComponent.isMutable wc
+
+      val unit = Word WordComponent.unit
 
       val equals: t * t -> bool =
          fn z =>
          case z of
             (Direct {rep = r, ...}, Direct {rep = r', ...}) => Rep.equals (r, r')
-          | (Word wr, Word wr') => WordRep.equals (wr, wr')
+          | (Word wc, Word wc') => WordComponent.equals (wc, wc')
           | _ => false
 
       local
          fun mkPadToWidth (c: t, b: Bits.t, repPadToWidth, wordRepPadToWidth): t =
             case c of
-               Direct {index, rep} =>
+               Direct {index, isMutable, rep} =>
                   Direct {index = index,
+                          isMutable = isMutable,
                           rep = repPadToWidth (rep, b)}
-             | Word r => Word (wordRepPadToWidth (r, b))
+             | Word wc => Word (wordRepPadToWidth (wc, b))
       in
          fun padToWidth (c, b) =
-            mkPadToWidth (c, b, Rep.padToWidth, WordRep.padToWidth)
-         fun padToWidthLow (c, b) =
-            mkPadToWidth (c, b, Rep.padToWidthLow, WordRep.padToWidthLow)
+            mkPadToWidth (c, b, Rep.padToWidth, WordComponent.padToWidth)
       end
 
       local
@@ -422,7 +417,6 @@ structure Component =
             end
       in
          fun padToPrim c = mkPadToPrim (c, Type.padToPrim, padToWidth)
-         fun padToPrimLow c = mkPadToPrim (c, Type.padToPrimLow, padToWidthLow)
       end
 
       fun tuple (c: t, {dst: Var.t * Type.t,
@@ -438,7 +432,7 @@ structure Component =
                               pinned = false,
                               src = src}]
                end
-          | Word wr => WordRep.tuple (wr, {dst = dst, src = src})
+          | Word wc => WordComponent.tuple (wc, {dst = dst, src = src})
 
       val tuple =
          Trace.trace2
@@ -763,12 +757,11 @@ structure ObjptrRep =
    struct
       datatype t = T of {components: {component: Component.t,
                                       offset: Bytes.t} vector,
-                         componentsTy: Type.t,
                          selects: Selects.t,
                          ty: Type.t,
                          tycon: ObjptrTycon.t}
 
-      fun layout (T {components, componentsTy, selects, ty, tycon}) =
+      fun layout (T {components, selects, ty, tycon}) =
          let
             open Layout
          in
@@ -778,7 +771,6 @@ structure ObjptrRep =
                              record [("component", Component.layout component),
                                      ("offset", Bytes.layout offset)])
               components),
-             ("componentsTy", Type.layout componentsTy),
              ("selects", Selects.layout selects),
              ("ty", Type.layout ty),
              ("tycon", ObjptrTycon.layout tycon)]
@@ -787,9 +779,18 @@ structure ObjptrRep =
       local
          fun make f (T r) = f r
       in
-         val componentsTy = make #componentsTy
          val ty = make #ty
       end
+
+      fun mkObjectTypeComponents (T {components, ...}) =
+         (Prod.make o Vector.map)
+         (components, fn {component, ...} =>
+          {elt = Component.ty component,
+           isMutable = Component.isMutable component})
+
+      fun componentsSize (T {components, ...}) =
+         Vector.fold (components, Bytes.zero, fn ({component, ...}, b) =>
+                      Bytes.+ (Component.size component, b))
 
       fun equals (T {tycon = c, ...}, T {tycon = c', ...}) =
          ObjptrTycon.equals (c, c')
@@ -803,7 +804,7 @@ structure ObjptrRep =
             val width =
                Vector.fold
                (components, Bytes.zero, fn ({component = c, ...}, ac) =>
-                Bytes.+ (ac, Type.bytes (Component.ty c)))
+                Bytes.+ (ac, Component.size c))
             val padBytes: Bytes.t =
                if isSequence
                   then let
@@ -859,15 +860,24 @@ structure ObjptrRep =
                         if Vector.isEmpty objptrs
                            then width
                         else #offset (Vector.first objptrs)
-                     val pad =
-                        (#1 o Vector.unfoldi)
-                        ((Bytes.toInt padBytes) div (Bytes.toInt Bytes.inWord32),
-                         padOffset,
-                         fn (_, padOffset) =>
-                         ({component = (Component.padToWidth
-                                        (Component.unit, Bits.inWord32)),
-                           offset = padOffset},
-                          Bytes.+ (padOffset, Bytes.inWord32)))
+                     fun mkPad (padBytes, padOffset, pads) =
+                        if Bytes.isZero padBytes
+                           then Vector.fromList pads
+                           else let
+                                   fun try (b, k) () =
+                                      if Bytes.<= (b, padBytes)
+                                         then mkPad (Bytes.- (padBytes, b),
+                                                     Bytes.+ (padOffset, b),
+                                                     {component = (Component.padToWidth
+                                                                   (Component.unit, Bytes.toBits b)),
+                                                      offset = padOffset}::pads)
+                                         else k ()
+                                   fun bug () =
+                                      Error.bug "PackedRepresentation.ObjptrRep.make: mkPad"
+                                in
+                                   List.fold (Bytes.prims, bug, try) ()
+                                end
+                     val pad = mkPad (padBytes, padOffset, [])
                      val objptrs =
                         Vector.map (objptrs, fn {component = c, offset} =>
                                     {component = c,
@@ -889,11 +899,8 @@ structure ObjptrRep =
                   in
                      (components, selects)
                   end
-            val componentsTy =
-               Type.seq (Vector.map (components, Component.ty o #component))
          in
             T {components = components,
-               componentsTy = componentsTy,
                selects = selects,
                ty = Type.objptr tycon,
                tycon = tycon}
@@ -943,7 +950,7 @@ structure ObjptrRep =
                   tycon = opt}
          end
 
-      fun tuple (T {components, componentsTy, ty, tycon, ...},
+      fun tuple (T {components, ty, tycon, ...},
                  {dst = dst: Var.t,
                   src: {index: int} -> Operand.t}) =
          let
@@ -968,7 +975,6 @@ structure ObjptrRep =
             ([Object {dst = (dst, ty),
                       obj = Object.Normal
                             {init = Vector.fromListRev init,
-                             ty = componentsTy,
                              tycon = tycon}}]
              :: pre)
          end
@@ -979,7 +985,7 @@ structure ObjptrRep =
           layout, Var.layout o #dst, List.layout Statement.layout)
          tuple
 
-      fun sequence (T {components, componentsTy, ty, tycon, ...},
+      fun sequence (T {components, ty, tycon, ...},
                     {dst = dst: Var.t,
                      src: ({index: int} -> Operand.t) vector}) =
          let
@@ -1010,8 +1016,7 @@ structure ObjptrRep =
             List.concatRev
             ([Object {dst = (dst, ty),
                       obj = Object.Sequence
-                            {elt = componentsTy,
-                             init = Vector.fromListRev init,
+                            {init = Vector.fromListRev init,
                              tycon = tycon}}]
              :: pre)
          end
@@ -1113,23 +1118,24 @@ structure TupleRep =
             val numWord64s = ref 0
             val word32s = ref []
             val numWord32s = ref 0
-            val subword32s = Array.array (Bits.toInt Bits.inWord32, [])
-            val widthSubword32s = ref 0
+            val subWord32s = Array.array (Bits.toInt Bits.inWord32, [])
+            val widthSubWord32s = ref 0
             val hasNonPrim = ref false
             val () =
                Vector.foreachi
-               (rs, fn (i, {rep, ...}) =>
+               (rs, fn (i, {isMutable, rep, ...}) =>
                 let
                    fun addDirect (l, n) =
                       (List.push (l, {component = Component.Direct {index = i,
+                                                                    isMutable = isMutable,
                                                                     rep = rep},
                                       index = i})
                        ; Int.inc n)
-                   fun addSubword32 b =
+                   fun addSubWord32 b =
                       (Array.update
-                       (subword32s, b,
-                        {index = i, rep = rep} :: Array.sub (subword32s, b))
-                       ; widthSubword32s := !widthSubword32s + b)
+                       (subWord32s, b,
+                        {index = i, isMutable = isMutable, rep = rep} :: Array.sub (subWord32s, b))
+                       ; widthSubWord32s := !widthSubWord32s + b)
                 in
                    case Rep.rep rep of
                       Rep.NonObjptr =>
@@ -1138,11 +1144,11 @@ structure TupleRep =
                          in
                             case b of
                                0 => ()
-                             | 8 => addSubword32 b
-                             | 16 => addSubword32 b
+                             | 8 => addSubWord32 b
+                             | 16 => addSubWord32 b
                              | 32 => addDirect (word32s, numWord32s)
                              | 64 => addDirect (word64s, numWord64s)
-                             | _ => (addSubword32 b
+                             | _ => (addSubWord32 b
                                      ; hasNonPrim := true)
                          end
                     | Rep.Objptr _ => addDirect (objptrs, numObjptrs)
@@ -1152,10 +1158,10 @@ structure TupleRep =
             val numComponents =
                !numObjptrs + !numWord64s + !numWord32s +
                (let
-                   val widthSubword32s = !widthSubword32s
+                   val widthSubWord32s = !widthSubWord32s
                 in
-                   Int.quot (widthSubword32s, 32)
-                   + Int.min (1, Int.rem (widthSubword32s, 32))
+                   Int.quot (widthSubWord32s, 32)
+                   + Int.min (1, Int.rem (widthSubWord32s, 32))
                 end)
             val needsBox =
                forceBox
@@ -1191,62 +1197,57 @@ structure TupleRep =
             val (offset, components) =
                simple (!word32s, Bytes.inWord32, offset, components)
             (* j is the maximum index <= remainingWidth at which an
-             * element of subword32s may be nonempty.
+             * element of subWord32s may be nonempty.
              *)
-            fun getSubword32Components (j: int,
+            fun getSubWord32Components (j: int,
                                         remainingWidth: Bits.t,
                                         components) =
                if 0 = j
                   then Vector.fromListRev components
                else
                   let
-                     val elts = Array.sub (subword32s, j)
+                     val elts = Array.sub (subWord32s, j)
                   in
                      case elts of
-                        [] => getSubword32Components (j - 1, remainingWidth, components)
-                      | {index, rep} :: elts =>
+                        [] => getSubWord32Components (j - 1, remainingWidth, components)
+                      | {index, isMutable, rep} :: elts =>
                            let
-                              val () = Array.update (subword32s, j, elts)
+                              val () = Array.update (subWord32s, j, elts)
                               val remainingWidth = Bits.- (remainingWidth, Rep.width rep)
                            in
-                              getSubword32Components
+                              getSubWord32Components
                               (Bits.toInt remainingWidth,
                                remainingWidth,
-                               {index = index, rep = rep} :: components)
+                               {index = index, isMutable = isMutable, rep = rep}
+                               :: components)
                            end
                   end
             (* max is the maximum index at which an element of
-             * subword32s may be nonempty.
+             * subWord32s may be nonempty.
              *)
-            fun makeSubword32s (max: int, offset: Bytes.t, ac) =
+            fun makeSubWord32s (max: int, offset: Bytes.t, ac) =
                if 0 = max
                   then (offset, ac)
                else
-                  if List.isEmpty (Array.sub (subword32s, max))
-                     then makeSubword32s (max - 1, offset, ac)
+                  if List.isEmpty (Array.sub (subWord32s, max))
+                     then makeSubWord32s (max - 1, offset, ac)
                   else
                      let
                         val components =
-                           getSubword32Components (max, Bits.inWord32, [])
-                        val componentTy =
-                           Type.seq (Vector.map (components, Rep.ty o #rep))
+                           getSubWord32Components (max, Bits.inWord32, [])
                         val component =
-                           (Component.Word o WordRep.T)
-                           {components = components,
-                            rep = Rep.T {rep = Rep.NonObjptr,
-                                         ty = componentTy}}
-                        val (component, componentTy) =
+                           Component.Word (WordComponent.make components)
+                        val component =
                            if needsBox
                               then if padToPrim
-                                      then (Component.padToPrim component,
-                                            Type.padToPrim componentTy)
-                                   else (Component.padToWidth (component, Bits.inWord32),
-                                         Type.padToWidth (componentTy, Bits.inWord32))
-                           else (component, componentTy)
+                                      then Component.padToPrim component
+                                   else Component.padToWidth (component, Bits.inWord32)
+                           else component
+                        val componentTy = Component.ty component
                         val _ =
                            Vector.fold
                            (components, Bits.zero,
-                            fn ({index, rep}, shift) =>
+                            fn ({index, rep, ...}, shift) =>
                             let
                                val repTy = Rep.ty rep
                                val repTyWidth = Type.width repTy
@@ -1288,7 +1289,7 @@ structure TupleRep =
                         val ac = {component = component,
                                   offset = offset} :: ac
                      in
-                        makeSubword32s
+                        makeSubWord32s
                         (max,
                          (* Either the width of the word rep component
                           * is 32 bits, or this is the only
@@ -1297,66 +1298,24 @@ structure TupleRep =
                          Bytes.+ (offset, Bytes.inWord32),
                          ac)
                      end
-            fun makeSubword32sAllPrims (max: int, offset: Bytes.t, ac) =
-               (* hasNonPrim = false, needsBox = true *)
-               if 0 = max
-                  then (offset, ac)
-               else
-                  if List.isEmpty (Array.sub (subword32s, max))
-                     then makeSubword32sAllPrims (max - 1, offset, ac)
-                  else
-                     let
-                        val origComponents =
-                           getSubword32Components (max, Bits.inWord32, [])
-                        val components =
-                           if isBigEndian
-                              then Vector.rev origComponents
-                           else origComponents
-                        val componentTy =
-                           Type.seq (Vector.map (components, Rep.ty o #rep))
-                        val component =
-                           (Component.Word o WordRep.T)
-                           {components = components,
-                            rep = Rep.T {rep = Rep.NonObjptr,
-                                         ty = componentTy}}
-                        val component =
-                           if padToPrim
-                              then if isBigEndian
-                                      then Component.padToPrimLow component
-                                      else Component.padToPrim component
-                           else if isBigEndian
-                                   then Component.padToWidthLow (component, Bits.inWord32)
-                                   else Component.padToWidth (component, Bits.inWord32)
-                        val _ =
-                           Vector.fold
-                           (origComponents, offset,
-                            fn ({index, rep}, offset) =>
-                            let
-                               val () =
-                                  Array.update
-                                  (selects, index,
-                                   Select.Indirect
-                                   {offset = offset,
-                                    ty = Rep.ty rep})
-                            in
-                               Bytes.+ (offset, Bits.toBytes (Rep.width rep))
-                            end)
-                        val ac = {component = component,
-                                  offset = offset} :: ac
-                     in
-                        makeSubword32sAllPrims
-                        (max,
-                         (* Either the width of the word rep component
-                          * is 32 bits, or this is the only
-                          * component, so offset doesn't matter.
-                          *)
-                         Bytes.+ (offset, Bytes.inWord32),
-                         ac)
-                     end
+            fun makeSubWord32sAllPrims (_, offset: Bytes.t, components) =
+               let
+                  fun doit (b, offset, components) =
+                     simple (List.map (Array.sub (subWord32s, b), fn {index, isMutable, rep} =>
+                                       {component = Component.Direct {index = index,
+                                                                      isMutable = isMutable,
+                                                                      rep = rep},
+                                        index = index}),
+                             Bits.toBytes (Bits.fromInt b), offset, components)
+                  val (offset, components) = doit (16, offset, components)
+                  val (offset, components) = doit (8, offset, components)
+               in
+                  (offset, components)
+               end
             val (offset, components) =
                if (not hasNonPrim) andalso needsBox
-                  then makeSubword32sAllPrims (Array.length subword32s - 1, offset, components)
-               else makeSubword32s (Array.length subword32s - 1, offset, components)
+                  then makeSubWord32sAllPrims (Array.length subWord32s - 1, offset, components)
+               else makeSubWord32s (Array.length subWord32s - 1, offset, components)
             val (_, components) =
                simple (!objptrs, Runtime.objptrSize (), offset, components)
             val components = Vector.fromListRev components
@@ -2624,16 +2583,16 @@ fun compute (program as Ssa2.Program.T {datatypes, ...}) =
                                             * may not be known yet.
                                             *)
                                            val tr = tupleRep opt
-                                           val ty =
+                                           val components =
                                               case tr of
                                                  TupleRep.Direct _ =>
-                                                    TupleRep.ty tr
+                                                    Prod.new1Mutable (TupleRep.ty tr)
                                                | TupleRep.Indirect opr =>
-                                                    ObjptrRep.componentsTy opr
+                                                    ObjptrRep.mkObjectTypeComponents opr
                                         in
                                            SOME (opt,
                                                  ObjectType.Sequence
-                                                 {elt = ty,
+                                                 {components = components,
                                                   hasIdentity = hasIdentity})
                                         end)
                                  in
@@ -2692,8 +2651,8 @@ fun compute (program as Ssa2.Program.T {datatypes, ...}) =
                                      TupleRep.Indirect opr =>
                                         SOME
                                         (opt, (ObjectType.Normal
-                                               {hasIdentity = hasIdentity,
-                                                ty = ObjptrRep.componentsTy opr}))
+                                               {components = ObjptrRep.mkObjectTypeComponents opr,
+                                                hasIdentity = hasIdentity}))
                                    | _ => NONE)
                               val () = setTupleRep (t, tr)
                               fun compute () = TupleRep.rep (Value.get tr)
@@ -2767,8 +2726,8 @@ fun compute (program as Ssa2.Program.T {datatypes, ...}) =
            case conRep con of
               ConRep.Tuple (TupleRep.Indirect opr) =>
                  (objptrTycon,
-                  ObjectType.Normal {hasIdentity = Prod.someIsMutable args,
-                                     ty = ObjptrRep.componentsTy opr}) :: ac
+                  ObjectType.Normal {components = ObjptrRep.mkObjectTypeComponents opr,
+                                     hasIdentity = Prod.someIsMutable args}) :: ac
             | _ => ac))
       val objectTypes = ref objectTypes
       val () =
@@ -2847,7 +2806,7 @@ fun compute (program as Ssa2.Program.T {datatypes, ...}) =
                   (case sequenceRep objectTy of
                      tr as TupleRep.Indirect pr =>
                         (TupleRep.selects tr,
-                         SOME (Type.bytes (ObjptrRep.componentsTy pr)))
+                         SOME (ObjptrRep.componentsSize pr))
                    | _ => Error.bug "PackedRepresentation.getSelects: Sequence,non-Indirect")
              | Tuple => (TupleRep.selects (tupleRep objectTy), NONE)
          end

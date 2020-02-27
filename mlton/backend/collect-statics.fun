@@ -141,8 +141,7 @@ structure RealConsts =
                                         src = Operand.Const (Const.Real r)})
                                    val obj =
                                       Object.Sequence
-                                      {elt = elt,
-                                       init = init,
+                                      {init = init,
                                        tycon = vecTycon}
                                 in
                                    SOME {dst = (vecVar, vecTy), obj = obj}

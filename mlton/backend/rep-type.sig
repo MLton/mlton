@@ -14,6 +14,7 @@ signature REP_TYPE_STRUCTS =
       structure Label: LABEL
       structure ObjptrTycon: OBJPTR_TYCON
       structure Prim: PRIM
+      structure Prod: PROD
       structure RealSize: REAL_SIZE
       structure RealX: REAL_X
       structure Runtime: RUNTIME
@@ -37,6 +38,7 @@ signature REP_TYPE =
 
       structure ObjectType: OBJECT_TYPE
       sharing type ObjectType.ty = t
+      sharing ObjectType.Prod = Prod
       (* sharing ObjectType.ObjptrTycon = ObjptrTycon *)
       (* sharing ObjectType.Runtime = Runtime *)
 
@@ -80,6 +82,7 @@ signature REP_TYPE =
       val ofWordXVector: WordXVector.t -> t
       val ofWordX: WordX.t -> t
       val offsetIsOk: {base: t,
+                       mustBeMutable: bool,
                        offset: Bytes.t,
                        tyconTy: ObjptrTycon.t -> ObjectType.t,
                        result: t} -> bool
@@ -91,6 +94,7 @@ signature REP_TYPE =
       val seqIndex: unit -> t
       val sequenceOffsetIsOk: {base: t,
                                index: t,
+                               mustBeMutable: bool,
                                offset: Bytes.t,
                                tyconTy: ObjptrTycon.t -> ObjectType.t,
                                result: t,

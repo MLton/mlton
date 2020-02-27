@@ -1157,7 +1157,7 @@ structure Program =
                    (#1 o Vector.mapAndFold)
                    (staticHeaps k, Bytes.zero, fn (obj, next) =>
                     ((Bytes.+ (next, Object.metaDataSize obj), obj),
-                     Bytes.+ (next, Object.size obj))))
+                     Bytes.+ (next, Object.size (obj, {tyconTy = tyconTy})))))
                end
 
             fun checkGlobal (name, global, isOk, layoutVal) =
@@ -1246,10 +1246,18 @@ structure Program =
                             end handle _ => false)
                       | Offset {base, offset, ty} =>
                            (checkOperand (base, alloc)
-                            ; Type.offsetIsOk {base = Operand.ty base,
-                                               offset = offset,
-                                               tyconTy = tyconTy,
-                                               result = ty})
+                            ; (Type.offsetIsOk
+                               {base = Operand.ty base,
+                                (* MachineIR doesn't distinguish
+                                 * initialization of object field
+                                 * from update of object field;
+                                 * only the latter requires
+                                 * the field to be mutable.
+                                 *)
+                                mustBeMutable = false,
+                                offset = offset,
+                                tyconTy = tyconTy,
+                                result = ty}))
                       | StackOffset (so as StackOffset.T {offset, ty, ...}) =>
                            Bytes.<= (Bytes.+ (offset, Type.bytes ty), maxFrameSize)
                            andalso Alloc.doesDefine (alloc, Live.StackOffset so)
@@ -1285,12 +1293,20 @@ structure Program =
                       | SequenceOffset {base, index, offset, scale, ty} =>
                            (checkOperand (base, alloc)
                             ; checkOperand (index, alloc)
-                            ; Type.sequenceOffsetIsOk {base = Operand.ty base,
-                                                       index = Operand.ty index,
-                                                       offset = offset,
-                                                       tyconTy = tyconTy,
-                                                       result = ty,
-                                                       scale = scale})
+                            ; (Type.sequenceOffsetIsOk
+                               {base = Operand.ty base,
+                                index = Operand.ty index,
+                                (* MachineIR doesn't distinguish
+                                 * initialization of object field
+                                 * from update of object field;
+                                 * only the latter requires
+                                 * the field to be mutable.
+                                 *)
+                                mustBeMutable = false,
+                                offset = offset,
+                                tyconTy = tyconTy,
+                                result = ty,
+                                scale = scale}))
                       | StaticHeapRef r => checkStaticHeapRef r
                       | StackTop => true
                       | Temporary t => Alloc.doesDefine (alloc, Live.Temporary t)

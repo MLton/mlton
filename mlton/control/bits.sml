@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019 Matthew Fluet.
+(* Copyright (C) 2009,2019-2020 Matthew Fluet.
  * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -39,6 +39,7 @@ local
                val inWord64: t
                val isAligned: t * {alignment: t} -> bool
                val isByteAligned: t -> bool
+               val isPrim: t -> bool
                val isWord8Aligned: t -> bool
                val isWord16Aligned: t -> bool
                val isWord32Aligned: t -> bool
@@ -48,6 +49,7 @@ local
                val max: t * t -> t
                val min: t * t -> t
                val one: t
+               val prims: t list
                val toBytes: t -> bytes
                val toInt: t -> int
                val toIntInf: t -> IntInf.t
@@ -79,8 +81,8 @@ local
                val fromInt: int -> t
                val fromIntInf: IntInf.t -> t
                val hash: t -> word
-               (* val inWord8: t *)
-               (* val inWord16: t *)
+               val inWord8: t
+               val inWord16: t
                val inWord32: t
                val inWord64: t
                val isAligned: t * {alignment: t} -> bool
@@ -91,6 +93,7 @@ local
                val max: t * t -> t
                val min: t * t -> t
                val one: t
+               val prims: t list
                val toBits: t -> Bits.t
                val toInt: t -> int
                val toIntInf: t -> IntInf.t
@@ -129,6 +132,9 @@ local
                val inWord32: bits = 32
                val inWord64: bits = 64
 
+               val prims = [inWord8, inWord16, inWord32, inWord64]
+               fun isPrim b = List.contains (prims, b, equals)
+
                fun isAligned (b, {alignment = a}) = 0 = rem (b, a)
                fun isByteAligned b = isAligned (b, {alignment = inByte})
                fun isWord8Aligned b = isAligned (b, {alignment = inWord8})
@@ -153,10 +159,12 @@ local
             struct
                open IntInf
 
-               (* val inWord8: bytes = 1 *)
-               (* val inWord16: bytes = 2 *)
+               val inWord8: bytes = 1
+               val inWord16: bytes = 2
                val inWord32: bytes = 4
                val inWord64: bytes = 8
+
+               val prims = [inWord8, inWord16, inWord32, inWord64]
 
                fun isAligned (b, {alignment = a}) = 0 = rem (b, a)
                (* fun isWord8Aligned b = isAligned (b, {alignment = inWord8}) *)

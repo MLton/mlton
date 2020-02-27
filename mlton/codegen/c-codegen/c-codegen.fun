@@ -255,6 +255,9 @@ fun outputDeclarations
       fun declareExports () =
          Ffi.declareExports {print = print}
 
+      fun tyconTy tycon =
+         Vector.sub (objectTypes, ObjptrTycon.index tycon)
+
       fun declareGlobals () =
          List.foreach
          (CType.all, fn t =>
@@ -372,7 +375,7 @@ fun outputDeclarations
                           SOME pad
                        end
 
-            fun mkFieldTys (init, ty) =
+            fun mkFieldTys (init, size) =
                let
                   fun maybePad (next, offset, fieldTys) =
                      Option.fold (mkPadTy (next, offset), fieldTys, op ::)
@@ -387,7 +390,7 @@ fun outputDeclarations
                       in
                          (fld::fieldTys, Bytes.+ (offset, CType.size fldCType))
                       end)
-                  val fieldTys = maybePad (next, Type.bytes ty, fieldTys)
+                  val fieldTys = maybePad (next, size, fieldTys)
                in
                   List.rev fieldTys
                end
@@ -408,7 +411,7 @@ fun outputDeclarations
                           SOME pad
                        end
 
-            fun mkFields (init, ty) =
+            fun mkFields (init, size) =
                let
                   fun maybePad (next, offset, fields) =
                      Option.fold (mkPad (next, offset), fields, op ::)
@@ -422,7 +425,7 @@ fun outputDeclarations
                       in
                          (fld::fields, Bytes.+ (offset, CType.size fldCType))
                       end)
-                  val fields = maybePad (next, Type.bytes ty, fields)
+                  val fields = maybePad (next, size, fields)
                in
                   List.rev fields
                end
@@ -447,20 +450,27 @@ fun outputDeclarations
                     (staticHeaps k, fn (i, obj) =>
                      (print "struct __attribute__ ((packed)) {"
                       ; (case obj of
-                            Object.Normal {init, ty, ...} =>
-                               (print "struct __attribute__ ((packed)) {"
-                                ; print (CType.toString headerTy)
-                                ; print " header;"
-                                ; print "} metadata;"
-                                ; print " "
-                                ; print "struct __attribute__ ((packed)) {"
-                                ; List.foreachi (mkFieldTys (init, ty), fn (i, fldTy) =>
-                                                 (if i > 0 then print " " else ()
-                                                     ; print fldTy
-                                                     ; print ";"))
-                                ; print "} data;")
-                          | Object.Sequence {elt, init, ...} =>
+                            Object.Normal {init, tycon} =>
                                let
+                                  val size = ObjectType.componentsSize (tyconTy tycon)
+                               in
+                                  print "struct __attribute__ ((packed)) {"
+                                  ; print (CType.toString headerTy)
+                                  ; print " header;"
+                                  ; print "} metadata;"
+                                  ; print " "
+                                  ; print "struct __attribute__ ((packed)) {"
+                                  ; List.foreachi
+                                    (mkFieldTys (init, size), fn (i, fldTy) =>
+                                     (if i > 0 then print " " else ()
+                                      ; print fldTy
+                                      ; print ";"))
+                                  ; print "} data;"
+                               end
+                          | Object.Sequence {init, tycon} =>
+                               let
+                                  val {components, ...} = ObjectType.deSequence (tyconTy tycon)
+                                  val size = ObjectType.componentsSize (tyconTy tycon)
                                   val length = Vector.length init
                                in
                                   print "struct __attribute__ ((packed)) {"
@@ -474,15 +484,18 @@ fun outputDeclarations
                                   ; print " header;"
                                   ; print "} metadata;"
                                   ; print " "
-                                  ; if Type.equals (elt, Type.word WordSize.word8)
+                                  ; if Prod.length components = 1
+                                       andalso Type.equals (#elt (Prod.first components),
+                                                            Type.word WordSize.word8)
                                        then print (CType.toString CType.Word8)
                                        else (print "struct __attribute__ ((packed)) {"
                                              ; if length > 0
-                                                  then List.foreachi (mkFieldTys (Vector.first init, elt),
-                                                                      fn (i, fldTy) =>
-                                                                      (if i > 0 then print " " else ()
-                                                                          ; print fldTy
-                                                                          ; print ";"))
+                                                  then List.foreachi
+                                                       (mkFieldTys (Vector.first init, size),
+                                                        fn (i, fldTy) =>
+                                                        (if i > 0 then print " " else ()
+                                                         ; print fldTy
+                                                         ; print ";"))
                                                   else ()
                                              ; print "}")
                                   ; print " data["
@@ -490,7 +503,7 @@ fun outputDeclarations
                                   ; print "];"
                                   ; let
                                        val next = Bytes.+ (Runtime.sequenceMetaDataSize (),
-                                                           Bytes.* (Type.bytes elt,
+                                                           Bytes.* (size,
                                                                     IntInf.fromInt length))
                                        val size =
                                           case !Control.align of
@@ -554,17 +567,23 @@ fun outputDeclarations
                     (staticHeaps k, fn obj =>
                      (print "{"
                       ; (case obj of
-                            Object.Normal {init, tycon, ty, ...} =>
-                               (print "{"
-                                ; print (mkHeader tycon)
-                                ; print ","
-                                ; print "},"
-                                ; print "{"
-                                ; List.foreach (mkFields (init, ty), fn fld =>
-                                                (print fld; print ","))
-                                ; print "},")
-                          | Object.Sequence (arg as {elt, init, tycon, ...}) =>
+                            Object.Normal {init, tycon} =>
                                let
+                                  val size = ObjectType.componentsSize (tyconTy tycon)
+                               in
+                                  print "{"
+                                  ; print (mkHeader tycon)
+                                  ; print ","
+                                  ; print "},"
+                                  ; print "{"
+                                  ; List.foreach
+                                    (mkFields (init, size), fn fld =>
+                                     (print fld; print ","))
+                                  ; print "},"
+                               end
+                          | Object.Sequence (arg as {init, tycon}) =>
+                               let
+                                  val size = ObjectType.componentsSize (tyconTy tycon)
                                   val length = Vector.length init
                                in
                                   print "{"
@@ -578,25 +597,25 @@ fun outputDeclarations
                                   ; (case (Object.deString arg, length > 0) of
                                         (SOME s, true) => print (C.string s)
                                       | _ => (print "{"
-                                              ; Vector.foreach (init, fn init =>
-                                                                (print "{"
-                                                                 ; List.foreach (mkFields (init, elt), fn fld =>
-                                                                                 (print fld; print ","))
-                                                                 ; print "},"))
+                                              ; Vector.foreach
+                                                (init, fn init =>
+                                                 (print "{"
+                                                  ; List.foreach
+                                                    (mkFields (init, size), fn fld =>
+                                                     (print fld; print ","))
+                                                  ; print "},"))
                                               ; print "}"))
                                   ; print ","
                                   ; let
                                        val next = Bytes.+ (Runtime.sequenceMetaDataSize (),
-                                                           Bytes.* (Type.bytes elt,
-                                                                    IntInf.fromInt length))
+                                                           Bytes.* (size, IntInf.fromInt length))
                                        val size =
                                           case !Control.align of
                                              Control.Align4 => Bytes.alignWord32 next
                                            | Control.Align8 => Bytes.alignWord64 next
                                     in
                                        Option.app (mkPad (next, size), fn pad =>
-                                                   (print pad
-                                                    ; print ","))
+                                                   (print pad ; print ","))
                                     end
                                end)
                       ; print "},\n")))
