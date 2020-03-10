@@ -1,18 +1,21 @@
+fun toString NONE = "NONE"
+  | toString (SOME s) = concat ["SOME [", s, "]"]
 fun check (s, s') =
-   case String.fromString s of
-      NONE => print "WRONG  NONE\n"
-    | SOME s'' =>
-         if s' = s''
-            then print (concat ["OK  [", s', "]\n"])
-         else print (concat ["WRONG  [", s', "] [", s'', "]\n"])
+    let val s'' = String.fromString s
+    in if s'' = s'
+          then print (concat ["OK ", toString s'', "\n"])
+       else print (concat ["WRONG ", toString s'', " ", toString s', "\n"])
+    end
 
 val _ =
    List.app check
-   [("abc\"def", "abc"),
-     ("\\q", ""),
-     ("a\^D", "a"),
-     ("a\\ \\\\q", "a"),
-     ("\\ \\", ""),
-     ("", ""),
-     ("\\ \\\^D", ""),
-     ("\\ a", "")]
+   [("abc\"def", SOME "abc"),
+    ("\n", NONE),
+    (* from SML Basis manual example *)
+    ("\\q", NONE),
+    ("a\^D", SOME "a"),
+    ("a\\ \\\\q", SOME "a"),
+    ("\\ \\", SOME ""),
+    ("", SOME ""),
+    ("\\ \\\^D", SOME ""),
+    ("\\ a", NONE)]
