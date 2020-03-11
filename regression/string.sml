@@ -241,8 +241,8 @@ val test19 =
                        andalso fromString arg = SOME res)
     end;
 
-val test20 = 
-    tst' "test20" (fn _ => List.all (fn arg => isSome (fromString arg))
+val test20 =
+    tst' "test20" (fn _ => List.all (fn arg => not (isSome (fromString arg)))
            ["\\",
             "\\c",
             "\\F",
@@ -260,8 +260,7 @@ val test20 =
             "\\^a",
             "\\^z",
             "\\   a",
-            "\\   a\\B",
-            "\\   \\"]);
+            "\\   a\\B"]);
 
 
 (* Test cases for C string escape functions *)

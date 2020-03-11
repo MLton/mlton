@@ -136,26 +136,35 @@ functor CharFn(Arg : CHAR_ARG)
             loop
          end
 
-      val 'a formatSequences: (Char.char, 'a) StringCvt.reader -> 'a -> 'a =
+      val 'a formatSequencesOpt: (Char.char, 'a) StringCvt.reader
+                                 -> (unit, 'a) StringCvt.reader =
          fn reader =>
          let
             fun loop state =
                case reader state of
                   SOME (#"\\", state1) =>
                      (case formatChar reader state1 of
-                         NONE => state
+                         NONE => NONE
                        | SOME ((), state2) =>
                             let
                                val state3 = formatChars reader state2
                             in
                                case reader state3 of
-                                  SOME (#"\\", state4) => loop state4
-                                | _ => state
+                                  SOME (#"\\", state4) =>
+                                  (case loop state4 of
+                                      state5 as SOME _ => state5
+                                    | NONE => SOME ((), state4))
+                                | _ => NONE
                             end)
-                | _ => state
+                | _ => NONE
          in
             loop
          end
+
+      fun formatSequences reader state =
+         case formatSequencesOpt reader state of
+            NONE => state
+          | SOME ((), state) => state
 
       fun 'a scan (reader: (Char.char, 'a) StringCvt.reader)
         : (char, 'a) StringCvt.reader =

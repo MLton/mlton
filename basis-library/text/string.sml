@@ -71,7 +71,16 @@ functor StringFn(Arg : STRING_ARG)
                                 Char.formatSequences reader state)
                 | SOME (c, state) => loop (state, c :: cs)
          in
-            fn state => loop (state, [])
+            fn state =>
+            case reader state of
+               NONE => SOME (implode [], state)
+             | SOME _ =>
+               case Char.scan reader state of
+                  SOME (c, state) => loop (state, [c])
+                | NONE =>
+                  case Char.formatSequencesOpt reader state of
+                     SOME ((), state) => SOME (implode [], state)
+                   | NONE => NONE
          end
 
       val fromString = StringCvt.scanString scan
