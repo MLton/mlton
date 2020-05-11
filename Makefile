@@ -490,8 +490,8 @@ freebsd:
 	$(MAKE) clean clean-git version
 	$(RM) "$(BSDSRC)"
 	$(MKDIR) "$(BSDSRC)"
-	( cd $(SRC) && tar -cpf - . ) | ( cd "$(BSDSRC)" && tar -xpf - )
-	cd /tmp && tar -cpf - mlton-$(MLTON_VERSION) | \
+	( cd $(SRC) && $(TAR) -cpf - . ) | ( cd "$(BSDSRC)" && $(TAR) -xpf - )
+	cd /tmp && $(TAR) -cpf - mlton-$(MLTON_VERSION) | \
 		 $(GZIP) --force --best >/usr/ports/distfiles/mlton-$(MLTON_VERSION)-$(MLTON_FREEBSD_RELEASE).freebsd.src.tgz
         # do not change "make" to "$(MAKE)" in the following line
 	cd "$(BSDSRC)/package/freebsd" && MAINTAINER_MODE=yes make build-package

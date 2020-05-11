@@ -69,7 +69,7 @@ $(eval $(MK_SHOW_CONFIG))
 
 
 $(MLTON_OUTPUT): $(SOURCES)
-	rm -f control/version.sml
+	$(RM) control/version.sml
 	$(MAKE) control/version.sml
 	@echo 'Compiling mlton'
 	"$(RUN_MLTON)" \
@@ -92,23 +92,23 @@ control/version.sml: control/version_sml.src
 endif
 
 front-end/%.lex.sml: front-end/%.lex
-	rm -f $<.*
+	$(RM) $<.*
 	$(RUN_MLLEX) $<
-	mv $<.sml $<.sml.in
+	$(MV) $<.sml $<.sml.in
 	$(SED) -e 's/val s = List.map f (List.rev (tl (List.rev s)))/val s = Pervasive.List.map f (Pervasive.List.rev (tl (Pervasive.List.rev s)))/' $<.sml.in > $<.sml
-	mv $<.sml $<.sml.in
+	$(MV) $<.sml $<.sml.in
 	$(SED) -e 's/in Vector.fromList(List.map g/in Vector.fromList(Pervasive.List.map g/' $<.sml.in > $<.sml
-	rm -f $<.sml.in
+	$(RM) $<.sml.in
 	chmod -w $<.*
 
 front-end/%.grm.sig front-end/%.grm.sml: front-end/%.grm
-	rm -f $<.*
+	$(RM) $<.*
 	$(RUN_MLYACC) $<
-	mv $<.sml $<.sml.in
+	$(MV) $<.sml $<.sml.in
 	$(SED) -e 's/in f 0 handle General.Subscript => ()/in f 0 handle Pervasive.General.Subscript => ()/' $<.sml.in > $<.sml
-	mv $<.sml $<.sml.in
+	$(MV) $<.sml $<.sml.in
 	$(SED) -e 's/in Array.fromList(List.map actionRowLookUp actionRowNumbers)/in Array.fromList(Pervasive.List.map actionRowLookUp actionRowNumbers)/' $<.sml.in > $<.sml
-	rm -f $<.sml.in
+	$(RM) $<.sml.in
 	chmod -w $<.*
 
 mlton-stubs.mlb: $(shell "$(RUN_MLTON)" -stop f ../lib/stubs/mlton-stubs/sources.mlb | $(GREP) 'mlb$$') $(shell "$(RUN_MLTON)" -stop f mlton.mlb | $(GREP) 'mlb$$')
@@ -183,7 +183,7 @@ polyml-mlton: mlton-polyml.use $(shell [ -f mlton-polyml.use ] && cat mlton-poly
 		echo 'PolyML.export("$(MLTON_OUTPUT)-polyml", Main.mainWrapped);'; \
 	) | "$(POLYML)"
 	$(CC) -o $(MLTON_OUTPUT)-polyml $(MLTON_OUTPUT)-polyml.o -lpolymain -lpolyml
-	rm -f $(MLTON_OUTPUT)-polyml.o
+	$(RM) $(MLTON_OUTPUT)-polyml.o
 
 mlton-polyml.use: ../lib/stubs/basis-stubs-for-polyml/sources.use ../lib/stubs/mlton-stubs-for-polyml/sources.use $(shell "$(RUN_MLTON)" -stop f ../lib/stubs/mlton-stubs/sources.mlb | $(GREP) 'mlb$$') $(shell "$(RUN_MLTON)" -stop f mlton.mlb | $(GREP) 'mlb$$')
 	(									\
