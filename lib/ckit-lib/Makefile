@@ -1,4 +1,4 @@
-## Copyright (C) 2009,2016,2018 Matthew Fluet.
+## Copyright (C) 2009,2016,2018,2020 Matthew Fluet.
  # Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -7,20 +7,17 @@
  # See the file MLton-LICENSE for details.
  ##
 
-FIND := find
-GZIP := gzip
-PATCH := patch
-TAR := tar
+ROOT := ../..
+include $(ROOT)/Makefile.config
 
-######################################################################
 ######################################################################
 
 all: ckit/README.mlton
 
 ckit/README.mlton: ckit.tgz ckit.patch
-	rm -rf ckit
+	$(RM) ckit
 	$(GZIP) -dc ckit.tgz | $(TAR) xf -
-	$(FIND) ckit -name '._*' -prune -exec rm -f '{}' ';'
+	$(FIND) ckit -name '._*' -prune -exec $(RM) '{}' ';'
 	chmod -R a+r ckit
 	chmod -R g-s ckit
 	chmod a-x ckit/src/ast/simplify-assign-ops.sml
