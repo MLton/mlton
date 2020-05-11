@@ -18,9 +18,9 @@ ckit/README.mlton: ckit.tgz ckit.patch
 	$(RM) ckit
 	$(GZIP) -dc ckit.tgz | $(TAR) xf -
 	$(FIND) ckit -name '._*' -prune -exec $(RM) '{}' ';'
-	chmod -R a+r ckit
-	chmod -R g-s ckit
-	chmod a-x ckit/src/ast/simplify-assign-ops.sml
+	$(CHMOD) -R a+r ckit
+	$(CHMOD) -R g-s ckit
+	$(CHMOD) a-x ckit/src/ast/simplify-assign-ops.sml
 	$(PATCH) -s -d ckit -p1 < ckit.patch
 
 .PHONY: clean

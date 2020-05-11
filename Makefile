@@ -170,7 +170,7 @@ script:
 		-e "s;^GMP_LIB_DIR=.*;GMP_LIB_DIR=\"$(WITH_GMP_LIB_DIR)\";" \
 		-e 's/mlton-compile/$(MLTON_OUTPUT)/' \
 		< "$(SRC)/bin/mlton-script" > "$(BIN)/$(MLTON)"
-	chmod a+x "$(BIN)/$(MLTON)"
+	$(CHMOD) a+x "$(BIN)/$(MLTON)"
 	$(CP) "$(SRC)/bin/static-library" "$(LIB)"
 ifeq (mingw, $(TARGET_OS))
 	$(CP) "$(SRC)/bin/static-library.bat" "$(LIB)"
@@ -217,7 +217,7 @@ debugged:
 	$(SED) -e 's/$(MLTON_OUTPUT)/$(MLTON_OUTPUT).debug/' \
 		< "$(BIN)/$(MLTON)" \
 		> "$(BIN)/$(MLTON).debug"
-	chmod u+x "$(BIN)/$(MLTON).debug"
+	$(CHMOD) u+x "$(BIN)/$(MLTON).debug"
 
 define PROFILED_TEMPLATE
 	$(MAKE) -C "$(SRC)/mlton" MLTON_NAME="$(MLTON_NAME) (profile-$(1))" MLTON_OUTPUT=$(MLTON_OUTPUT).$(1) \
@@ -226,7 +226,7 @@ define PROFILED_TEMPLATE
 	$(SED) -e "s/$(MLTON_OUTPUT)/$(MLTON_OUTPUT).$(1)/" \
 		< "$(BIN)/$(MLTON)" \
 		>"$(BIN)/$(MLTON).$(1)"
-	chmod u+x "$(BIN)/$(MLTON).$(1)"
+	$(CHMOD) u+x "$(BIN)/$(MLTON).$(1)"
 endef
 
 .PHONY: profiled-alloc
@@ -255,7 +255,7 @@ traced:
 	$(SED) -e 's/$(MLTON_OUTPUT)/$(MLTON_OUTPUT).trace/' \
 		< "$(BIN)/$(MLTON)" \
 		> "$(BIN)/$(MLTON).trace"
-	chmod u+x "$(BIN)/$(MLTON).trace"
+	$(CHMOD) u+x "$(BIN)/$(MLTON).trace"
 
 ######################################################################
 
@@ -283,7 +283,7 @@ smlnj-mlton:
 		-e 's;doitPolyML "$$@";# doitPolyML "$$@";' \
 		< "$(BIN)/$(MLTON)" \
 		> "$(BIN)/$(MLTON).smlnj"
-	chmod u+x "$(BIN)/$(MLTON).smlnj"
+	$(CHMOD) u+x "$(BIN)/$(MLTON).smlnj"
 	@echo 'Build of MLton (with SML/NJ) succeeded.'
 
 .PHONY: smlnj-mlton-x2
@@ -328,7 +328,7 @@ polyml-mlton:
 		-e 's;doitSMLNJ "$$@";# doitSMLNJ "$$@";' \
 		< "$(BIN)/$(MLTON)" \
 		> "$(BIN)/$(MLTON).polyml"
-	chmod u+x "$(BIN)/$(MLTON).polyml"
+	$(CHMOD) u+x "$(BIN)/$(MLTON).polyml"
 	@echo 'Build of MLton (with Poly/ML) succeeded.'
 
 ######################################################################
@@ -388,7 +388,7 @@ install-no-strip:
 	$(SED) \
 		-e "s;^LIB_REL_BIN=.*;LIB_REL_BIN=\"$(TLIB_REL_TBIN)\";" \
 		< "$(BIN)/$(MLTON)" > "$(TBIN)/$(MLTON)"
-	chmod a+x "$(TBIN)/$(MLTON)"
+	$(CHMOD) a+x "$(TBIN)/$(MLTON)"
 	$(CP) "$(LIB)/." "$(TLIB)/"
 	cd "$(SRC)/man" && $(CP) $(MAN_PAGES) "$(TMAN)/"
 ifeq (true, $(GZIP_MAN))

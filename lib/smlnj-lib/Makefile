@@ -18,8 +18,8 @@ smlnj-lib/README.mlton: smlnj-lib.tgz smlnj-lib.patch
 	$(RM) smlnj-lib
 	$(GZIP) -dc smlnj-lib.tgz | $(TAR) xf -
 	$(FIND) smlnj-lib -name '._*' -prune -exec $(RM) '{}' ';'
-	chmod -R a+r smlnj-lib
-	chmod -R g-s smlnj-lib
+	$(CHMOD) -R a+r smlnj-lib
+	$(CHMOD) -R g-s smlnj-lib
 	$(PATCH) -s -d smlnj-lib -p1 < smlnj-lib.patch
 	$(CP) smlnj-lib/LICENSE ../../doc/license/SMLNJ-LIB-LICENSE
 

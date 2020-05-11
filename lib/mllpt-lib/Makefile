@@ -16,8 +16,8 @@ ml-lpt/README: ml-lpt.tgz ml-lpt.patch
 	$(RM) ml-lpt
 	$(GZIP) -dc ml-lpt.tgz | $(TAR) xf -
 	$(FIND) ml-lpt -name '._*' -prune -exec $(RM) '{}' ';'
-	chmod -R a+r ml-lpt
-	chmod -R g-s ml-lpt
+	$(CHMOD) -R a+r ml-lpt
+	$(CHMOD) -R g-s ml-lpt
 	$(PATCH) -s -d ml-lpt -p1 < ml-lpt.patch
 	touch $@  # ml-lpt/README not created/updated by patch
 

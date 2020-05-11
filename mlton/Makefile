@@ -99,7 +99,7 @@ front-end/%.lex.sml: front-end/%.lex
 	$(MV) $<.sml $<.sml.in
 	$(SED) -e 's/in Vector.fromList(List.map g/in Vector.fromList(Pervasive.List.map g/' $<.sml.in > $<.sml
 	$(RM) $<.sml.in
-	chmod -w $<.*
+	$(CHMOD) -w $<.*
 
 front-end/%.grm.sig front-end/%.grm.sml: front-end/%.grm
 	$(RM) $<.*
@@ -109,7 +109,7 @@ front-end/%.grm.sig front-end/%.grm.sml: front-end/%.grm
 	$(MV) $<.sml $<.sml.in
 	$(SED) -e 's/in Array.fromList(List.map actionRowLookUp actionRowNumbers)/in Array.fromList(Pervasive.List.map actionRowLookUp actionRowNumbers)/' $<.sml.in > $<.sml
 	$(RM) $<.sml.in
-	chmod -w $<.*
+	$(CHMOD) -w $<.*
 
 mlton-stubs.mlb: $(shell "$(RUN_MLTON)" -stop f ../lib/stubs/mlton-stubs/sources.mlb | $(GREP) 'mlb$$') $(shell "$(RUN_MLTON)" -stop f mlton.mlb | $(GREP) 'mlb$$')
 	(									\

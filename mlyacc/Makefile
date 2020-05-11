@@ -27,12 +27,12 @@ clean:
 src/%.lex.sml: src/%.lex
 	$(RM) $<.*
 	$(RUN_MLLEX) $<
-	chmod -w $<.*
+	$(CHMOD) -w $<.*
 
 src/%.grm.sig src/%.grm.sml: src/%.grm
 	$(RM) $<.*
 	$(RUN_MLYACC) $<
-	chmod -w $<.*
+	$(CHMOD) -w $<.*
 
 
 PDFLATEX := pdflatex

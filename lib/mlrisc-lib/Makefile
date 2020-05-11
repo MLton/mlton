@@ -18,8 +18,8 @@ MLRISC/README.mlton: MLRISC.tgz MLRISC.patch
 	$(RM) MLRISC
 	$(GZIP) -dc MLRISC.tgz | $(TAR) xf -
 	$(FIND) MLRISC -name '._*' -prune -exec $(RM) '{}' ';'
-	chmod -R a+r MLRISC
-	chmod -R g-s MLRISC
+	$(CHMOD) -R a+r MLRISC
+	$(CHMOD) -R g-s MLRISC
 	$(PATCH) -s -d MLRISC -p1 < MLRISC.patch
 
 .PHONY: clean
