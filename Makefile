@@ -188,7 +188,7 @@ endif
 define TOOLS_TEMPLATE
 	$(MAKE) -C "$(SRC)/$(1)"
 	$(call TOOLS_TEMPLATE_CHECK_FIXPOINT,$(1))
-	$(CP) "$(1)/$(1)$(EXE)" "$(BIN)/"
+	$(CP) "$(SRC)/$(1)/$(1)$(EXE)" "$(BIN)/"
 endef
 
 .PHONY: tools
