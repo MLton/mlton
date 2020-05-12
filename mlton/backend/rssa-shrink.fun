@@ -43,7 +43,7 @@ fun shrinkFunction {main: Function.t, statics: {dst: Var.t * Type.t, obj: Object
       fun visitLabel l = Int.inc (#occurrences (labelInfo l))
       fun replaceLabel l =
          case (! o #replace o labelInfo) l of
-              SOME l' => replaceLabel l'
+              SOME l' => l'
             | NONE => l
       fun elimBlock l =
          let
@@ -94,6 +94,26 @@ fun shrinkFunction {main: Function.t, statics: {dst: Var.t * Type.t, obj: Object
                                 | _ => ()
                       end
                  | _ => ())
+            val () =
+               Vector.foreach
+               (blocks, fn Block.T {label, ...} =>
+                let
+                   val {replace, ...} = labelInfo label
+                   fun loop (l, seen) =
+                      case (! o #replace o labelInfo) l of
+                         SOME l' =>
+                            if List.exists (seen, fn l'' =>
+                                            Label.equals (l'', l'))
+                               then (replace := SOME l'
+                                     ; #replace (labelInfo l') := NONE)
+                               else loop (l', l'::seen)
+                       | NONE => replace := (case seen of
+                                                nil => NONE
+                                              | _::nil => NONE
+                                              | l'::_ => SOME l')
+                in
+                   loop (label, [label])
+                end)
 
             fun loopFormals args = Vector.foreach (args, dontReplaceVar)
             fun loopStatement (s: Statement.t): Statement.t option =
