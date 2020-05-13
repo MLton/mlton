@@ -20,6 +20,12 @@ Basis Library available to user programs.  You can also
 <:MLBasisAvailableLibraries:access the Basis Library> from
 <:MLBasis: ML Basis> files.
 
+MLton purposefully hides the representation of unspecified Basis
+Library types with opaque signature matching.  That is, unless the
+Basis Library specifies that a structure's type is equal to some other
+type, the type will be opaque and will not be seen as equal to any
+type but itself.
+
 Below is a complete list of what MLton implements.
 
 == Top-level types and constructors ==
