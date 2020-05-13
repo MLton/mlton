@@ -9,21 +9,6 @@ There are a few Emacs modes for SML.
 
 * <!ViewGitFile(mlton,master,ide/emacs/mlton.el)> contains the Emacs lisp that <:StephenWeeks:> uses to interact with MLton (in addition to using `sml-mode`).
 
-* http://primate.net/%7Eitz/mindent.tar, developed by Ian Zimmerman, who writes:
-+
-_____
-Unlike the widespread `sml-mode.el` it doesn't try to indent code
-based on ML syntax.  I gradually got skeptical about this approach
-after writing the initial indentation support for caml mode and
-watching it bloat insanely as the language added new features.  Also,
-any such attempts that I know of impose a particular coding style, or
-at best a choice among a limited set of styles, which I now oppose.
-Instead my mode is based on a generic package which provides manual
-bindable commands for common indentation operations (example: indent
-the current line under the n-th occurrence of a particular character
-in the previous non-blank line).
-_____
-
 == MLB modes ==
 
 There is a mode for editing <:MLBasis: ML Basis> files.
