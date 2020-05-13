@@ -13,8 +13,12 @@ reverse chronological list of changes to the specification, see
 http://www.standardml.org/Basis/history.html.
 
 MLton implements all of the required portions of the Basis Library.
-MLton also implements many of the optional structures.  You can obtain
-a complete and current list of what's available using
+MLton also implements many of the optional structures.  In the future,
+MLton will also implement
+https://github.com/SMLFamily/BasisLibrary/wiki[proposed improvements]
+to the Basis Library.
+
+You can obtain a complete and current list of what's available using
 `mlton -show-basis` (see <:ShowBasis:>).  By default, MLton makes the
 Basis Library available to user programs.  You can also
 <:MLBasisAvailableLibraries:access the Basis Library> from
