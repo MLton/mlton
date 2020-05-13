@@ -37,7 +37,7 @@ commands for navigation (e.g., `jump-to-def`, `jump-to-next`,
 MLton compiler source code.  See <:EmacsDefUseMode:> for further
 information.
 
-== Building on the background ==
+== Building in the background ==
 
 Tired of manually starting/stopping/restarting builds after editing
 files?  Now you don't have to.  See <:EmacsBgBuildMode:> for further
