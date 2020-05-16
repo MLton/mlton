@@ -78,7 +78,7 @@ $(MLTON_OUTPUT): $(SOURCES)
 		-target $(TARGET) -output $(MLTON_OUTPUT)			\
 		$(MLTON_MLB)
 
-ifeq ($(shell if [ -f control/version_sml.chk ] && (cat control/version_sml.src; echo $(MLTON_NAME) $(MLTON_VERSION); cat control/version.sml) | $(SHASUM) -c -s control/version_sml.chk; then echo true; else $(RM) control/version.sml; fi),true)
+ifeq ($(shell (cat control/version_sml.src; echo $(MLTON_NAME) $(MLTON_VERSION); cat control/version.sml) | $(SHA1DGST)),$(shell if [ -f control/version_sml.chk ]; then cat control/version_sml.chk; fi))
 control/version.sml: control/version_sml.src
 	touch control/version.sml
 else
@@ -88,7 +88,7 @@ control/version.sml: control/version_sml.src
 		-e "s/MLTON_VERSION/$(MLTON_VERSION)/" \
 		< control/version_sml.src \
 		> control/version.sml
-	(cat control/version_sml.src; echo $(MLTON_NAME) $(MLTON_VERSION); cat control/version.sml) | $(SHASUM) > control/version_sml.chk
+	(cat control/version_sml.src; echo $(MLTON_NAME) $(MLTON_VERSION); cat control/version.sml) | $(SHA1DGST) > control/version_sml.chk
 endif
 
 front-end/%.lex.sml: front-end/%.lex
