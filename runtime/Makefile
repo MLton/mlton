@@ -18,14 +18,6 @@ else
 CROSS_PREFIX := $(TARGET)-
 endif
 
-GCC_MAJOR_VERSION :=						\
-	$(shell $(CC) -v 2>&1 | $(GREP) 'gcc version' | 		\
-		sed 's/.*gcc version \([0-9][0-9]*\)\.\([0-9][0-9]*\).*/\1/')
-GCC_MINOR_VERSION :=						\
-	$(shell $(CC) -v 2>&1 | $(GREP) 'gcc version' | 		\
-		sed 's/.*gcc version \([0-9][0-9]*\)\.\([0-9][0-9]*\).*/\2/')
-GCC_VERSION := $(GCC_MAJOR_VERSION).$(GCC_MINOR_VERSION)
-
 EXE :=
 
 MDVARIANTS := OPT DBG
@@ -87,14 +79,6 @@ endif
 
 ifeq ($(TARGET_ARCH), amd64)
 XMFLAGS += -m64
-endif
-
-ifeq ($(findstring $(TARGET_ARCH), hppa ia64 powerpc sparc),$(TARGET_ARCH))
-ifeq (4.2, $(firstword $(sort $(GCC_VERSION) 4.2)))
-# GMP headers contain C99 inline functions which generate warnings
-# with a suggestion to use this flag to disable the warnings.
-XCFLAGS += -fgnu89-inline
-endif
 endif
 
 ifeq ($(TARGET_ARCH), ia64)
@@ -370,7 +354,7 @@ gen/gen-constants$(EXE): libmlton.a
 
 ######
 
-SHOW_VARS += TARGET TARGET_ARCH TARGET_OS GCC_VERSION
+SHOW_VARS += TARGET TARGET_ARCH TARGET_OS
 SHOW_VARS += WITH_OPT_RUNTIME WITH_DBG_RUNTIME WITH_DPI_RUNTIME WITH_NPI_RUNTIME WITH_PIC_RUNTIME WITH_PIE_RUNTIME
 SHOW_VARS += XCCFLAGS XMFLAGS XCPPFLAGS XCFLAGS OPTXCFLAGS DBGXCFLAGS DPIXCFLAGS NPIXCFLAGS PICXCFLAGS PIEXCFLAGS XLDFLAGS
 SHOW_VARS += HAVE_NPI WITH_DEFAULT_NPI HAVE_PIE WITH_DEFAULT_PIE HAVE_PIC WITH_DEFAULT_PIC
