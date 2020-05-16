@@ -7,7 +7,7 @@ LIB_REL_BIN="../lib/mlton"
 
 EXE=
 
-CC="gcc"
+CC="cc"
 
 # You may need to set 'GMP_INC_DIR' so the C compiler can find gmp.h.
 GMP_INC_DIR=
