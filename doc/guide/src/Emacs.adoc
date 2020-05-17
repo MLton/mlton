@@ -5,7 +5,7 @@ Emacs
 
 There are a few Emacs modes for SML.
 
-* http://elpa.gnu.org/packages/sml-mode.html
+* https://elpa.gnu.org/packages/sml-mode.html
 
 * <!ViewGitFile(mlton,master,ide/emacs/mlton.el)> contains the Emacs lisp that <:StephenWeeks:> uses to interact with MLton (in addition to using `sml-mode`).
 
@@ -21,7 +21,7 @@ There is a mode for editing <:MLBasis: ML Basis> files.
 +
 _____
 https://github.com/MatthewFluet/company-mlton[`company-mlton`] is a
-http://company-mode.github.io/[`company-mode`] completion back-end for
+https://company-mode.github.io/[`company-mode`] completion back-end for
 MLton/Standard ML. It provides completion for Standard ML keywords and for
 Standard ML (long) identifiers. Candidate completion identifiers for the latter
 are loaded from a basis file created by `mlton` using `-show-basis file` or
