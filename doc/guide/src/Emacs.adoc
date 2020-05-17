@@ -20,8 +20,8 @@ There is a mode for editing <:MLBasis: ML Basis> files.
 * https://github.com/MatthewFluet/company-mlton[`company-mlton`]
 +
 _____
-https://github.com/MatthewFluet/company-mlton[`company-mlton`] a
-http://company-mode.github.io/[`company-mode]` completion back-end for
+https://github.com/MatthewFluet/company-mlton[`company-mlton`] is a
+http://company-mode.github.io/[`company-mode`] completion back-end for
 MLton/Standard ML. It provides completion for Standard ML keywords and for
 Standard ML (long) identifiers. Candidate completion identifiers for the latter
 are loaded from a basis file created by `mlton` using `-show-basis file` or
