@@ -52,8 +52,8 @@ FRONT_END_SOURCES :=		\
 SOURCES :=			\
 	$(MLTON_MLB)		\
 	$(FRONT_END_SOURCES)	\
-	control/version.sml     \
-	$(shell if [ -r $(MLTON_MLB) ]; then "$(RUN_MLTON)" -stop f $(MLTON_MLB); fi)
+	control/version.sml	\
+	$(shell if [ -e $(MLTON_MLB) ]; then "$(RUN_MLTON)" -stop f $(MLTON_MLB); fi)
 
 .PHONY: all
 all: $(MLTON_OUTPUT)
@@ -67,10 +67,7 @@ $(eval $(MK_SHOW_CONFIG))
 
 ######################################################################
 
-
 $(MLTON_OUTPUT): $(SOURCES)
-	$(RM) control/version.sml
-	$(MAKE) control/version.sml
 	@echo 'Compiling mlton'
 	"$(RUN_MLTON)" \
 		@MLton $(RUN_MLTON_RUNTIME_XARGS) $(RUN_MLTON_RUNTIME_ARGS) gc-summary -- \
@@ -78,10 +75,11 @@ $(MLTON_OUTPUT): $(SOURCES)
 		-target $(TARGET) -output $(MLTON_OUTPUT)			\
 		$(MLTON_MLB)
 
-ifeq ($(shell (cat control/version_sml.src; echo $(MLTON_NAME) $(MLTON_VERSION); cat control/version.sml) | $(SHA1DGST)),$(shell if [ -f control/version_sml.chk ]; then cat control/version_sml.chk; fi))
+ifeq ($(shell (cat control/version_sml.src; echo $(MLTON_NAME) $(MLTON_VERSION); if [ -e control/version.sml ]; then cat control/version.sml; fi) | $(SHA1DGST)),$(shell if [ -e control/version_sml.chk ]; then cat control/version_sml.chk; fi))
 control/version.sml: control/version_sml.src
 	touch control/version.sml
 else
+$(shell $(RM) control/version.sml)
 control/version.sml: control/version_sml.src
 	$(SED) \
 		-e "s/MLTON_NAME/$(MLTON_NAME)/" \
