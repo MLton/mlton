@@ -175,7 +175,7 @@ smlnj-mlton: mlton-smlnj.cm control/version.sml $(FRONT_END_SOURCES)
 POLYML := poly
 
 .PHONY: polyml-mlton
-polyml-mlton: mlton-polyml.use $(shell [ -f mlton-polyml.use ] && cat mlton-polyml.use | $(SED) 's/use "\(.*\)";/\1/') control/version.sml $(FRONT_END_SOURCES)
+polyml-mlton: mlton-polyml.use $(shell [ -e mlton-polyml.use ] && cat mlton-polyml.use | $(SED) 's/use "\(.*\)";/\1/') control/version.sml $(FRONT_END_SOURCES)
 	(									\
 		echo 'use "mlton-polyml.use";';					\
 		echo 'PolyML.export("$(MLTON_OUTPUT)-polyml", Main.mainWrapped);'; \
