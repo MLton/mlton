@@ -60,6 +60,10 @@ ifneq ($(WITH_GMP_INC_DIR),)
 XCPPFLAGS += -I$(WITH_GMP_INC_DIR)
 endif
 
+ifneq ($(WITH_GMP_LIB_DIR),)
+XLDFLAGS += -L$(WITH_GMP_LIB_DIR)
+endif
+
 XCPPFLAGS += -I.
 
 # Win32&64 don't use PIC code, all other platforms do
@@ -351,6 +355,20 @@ ifneq ($(MAKECMDGOALS),clean)
 endif
 
 gen/gen-constants$(EXE): libmlton.a
+
+### bootstrap ###
+
+ifeq (true,$(shell if [ -d bootstrap ]; then echo true; else echo false; fi))
+BOOTSTRAP_CFILES := $(shell $(FIND) bootstrap -type f -name '*.c')
+
+BOOTSTRAP_OBJS := $(patsubst %.c,%.o,$(BOOTSTRAP_CFILES))
+
+bootstrap/$(MLTON_OUTPUT)$(EXE): $(BOOTSTRAP_OBJS) libmlton.a libgdtoa.a
+	$(CC) $(call MK_FLAGS,-,LD) -L. -o $@ $(BOOTSTRAP_OBJS) -lmlton -lgdtoa -lgmp -lm
+
+bootstrap/%.o: bootstrap/%.c
+	$(CC) $(call MK_FLAGS,-,C) -O1 -fno-strict-aliasing -foptimize-sibling-calls -w -I$(ROOT)/include -w -c -o $@ $<
+endif
 
 ######
 

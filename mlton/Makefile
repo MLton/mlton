@@ -142,6 +142,20 @@ mlton.def-use: $(SOURCES)
 
 ######################################################################
 
+ifneq (,$(REMOTE_TARGET))
+mlton-bootstrap-$(REMOTE_TARGET).tgz: $(SOURCES)
+	"$(RUN_MLTON)" \
+		@MLton $(RUN_MLTON_RUNTIME_XARGS) $(RUN_MLTON_RUNTIME_ARGS) gc-summary -- \
+		$(RUN_MLTON_COMPILE_XARGS) -verbose 2 $(RUN_MLTON_COMPILE_ARGS)	\
+		-target $(REMOTE_TARGET) -output $(MLTON_OUTPUT) \
+		-codegen c -stop g \
+		$(MLTON_MLB)
+	$(TAR) czf $@ $(MLTON_OUTPUT).*.c
+	$(RM) $(MLTON_OUTPUT).*.c
+endif
+
+######################################################################
+
 #
 # The following rebuilds the heap file for the SML/NJ compiled version of MLton.
 #
