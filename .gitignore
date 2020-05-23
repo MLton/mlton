@@ -1,2 +1,4 @@
+/boot/
 /build/
 /install/
+mlton-*.tgz

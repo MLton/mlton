@@ -22,3 +22,5 @@
 /mlton*-compile-smlnj.*-*
 /mlton-stubs.mlb
 /mlton.def-use
+
+/mlton-bootstrap-*.tgz

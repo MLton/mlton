@@ -18,14 +18,6 @@ else
 CROSS_PREFIX := $(TARGET)-
 endif
 
-GCC_MAJOR_VERSION :=						\
-	$(shell $(CC) -v 2>&1 | $(GREP) 'gcc version' | 		\
-		sed 's/.*gcc version \([0-9][0-9]*\)\.\([0-9][0-9]*\).*/\1/')
-GCC_MINOR_VERSION :=						\
-	$(shell $(CC) -v 2>&1 | $(GREP) 'gcc version' | 		\
-		sed 's/.*gcc version \([0-9][0-9]*\)\.\([0-9][0-9]*\).*/\2/')
-GCC_VERSION := $(GCC_MAJOR_VERSION).$(GCC_MINOR_VERSION)
-
 EXE :=
 
 MDVARIANTS := OPT DBG
@@ -68,6 +60,10 @@ ifneq ($(WITH_GMP_INC_DIR),)
 XCPPFLAGS += -I$(WITH_GMP_INC_DIR)
 endif
 
+ifneq ($(WITH_GMP_LIB_DIR),)
+XLDFLAGS += -L$(WITH_GMP_LIB_DIR)
+endif
+
 XCPPFLAGS += -I.
 
 # Win32&64 don't use PIC code, all other platforms do
@@ -87,14 +83,6 @@ endif
 
 ifeq ($(TARGET_ARCH), amd64)
 XMFLAGS += -m64
-endif
-
-ifeq ($(findstring $(TARGET_ARCH), hppa ia64 powerpc sparc),$(TARGET_ARCH))
-ifeq (4.2, $(firstword $(sort $(GCC_VERSION) 4.2)))
-# GMP headers contain C99 inline functions which generate warnings
-# with a suggestion to use this flag to disable the warnings.
-XCFLAGS += -fgnu89-inline
-endif
 endif
 
 ifeq ($(TARGET_ARCH), ia64)
@@ -269,13 +257,13 @@ basis-ffi.h: gen/basis-ffi.h
 	$(CP) $< $@
 
 define BASIS_FFI_TEMPLATE
-ifeq ($(shell cat gen/gen-basis-ffi.sml gen/basis-ffi.def gen/$(1) | $(SHASUM) -c -s gen/$(1).chk && echo true),true)
+ifeq ($(shell cat gen/gen-basis-ffi.sml gen/basis-ffi.def gen/$(1) | $(SHA1DGST)),$(shell cat gen/$(1).chk))
 gen/$(1): gen/gen-basis-ffi.sml gen/basis-ffi.def
 	touch gen/$(1)
 else
 gen/$(1): gen/gen-basis-ffi$(EXE) gen/basis-ffi.def
 	./gen/gen-basis-ffi$(EXE) $(1) < gen/basis-ffi.def > gen/$(1)
-	cat gen/gen-basis-ffi.sml gen/basis-ffi.def gen/$(1) | $(SHASUM) > gen/$(1).chk
+	cat gen/gen-basis-ffi.sml gen/basis-ffi.def gen/$(1) | $(SHA1DGST) > gen/$(1).chk
 endif
 endef
 
@@ -368,9 +356,23 @@ endif
 
 gen/gen-constants$(EXE): libmlton.a
 
+### bootstrap ###
+
+ifeq (true,$(shell if [ -d bootstrap ]; then echo true; else echo false; fi))
+BOOTSTRAP_CFILES := $(shell $(FIND) bootstrap -type f -name '*.c')
+
+BOOTSTRAP_OBJS := $(patsubst %.c,%.o,$(BOOTSTRAP_CFILES))
+
+bootstrap/$(MLTON_OUTPUT)$(EXE): $(BOOTSTRAP_OBJS) libmlton.a libgdtoa.a
+	$(CC) $(call MK_FLAGS,-,LD) -L. -o $@ $(BOOTSTRAP_OBJS) -lmlton -lgdtoa -lgmp -lm
+
+bootstrap/%.o: bootstrap/%.c
+	$(CC) $(call MK_FLAGS,-,C) -O1 -fno-strict-aliasing -foptimize-sibling-calls -w -I$(ROOT)/include -w -c -o $@ $<
+endif
+
 ######
 
-SHOW_VARS += TARGET TARGET_ARCH TARGET_OS GCC_VERSION
+SHOW_VARS += TARGET TARGET_ARCH TARGET_OS
 SHOW_VARS += WITH_OPT_RUNTIME WITH_DBG_RUNTIME WITH_DPI_RUNTIME WITH_NPI_RUNTIME WITH_PIC_RUNTIME WITH_PIE_RUNTIME
 SHOW_VARS += XCCFLAGS XMFLAGS XCPPFLAGS XCFLAGS OPTXCFLAGS DBGXCFLAGS DPIXCFLAGS NPIXCFLAGS PICXCFLAGS PIEXCFLAGS XLDFLAGS
 SHOW_VARS += HAVE_NPI WITH_DEFAULT_NPI HAVE_PIE WITH_DEFAULT_PIE HAVE_PIC WITH_DEFAULT_PIC

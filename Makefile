@@ -470,18 +470,226 @@ source-release:
 
 MLTON_BINARY_RELEASE := 1
 MLTON_BINARY_RELEASE_SUFFIX :=
+MLTON_BINARY_RELEASE_NAME := mlton-$(MLTON_VERSION)-$(MLTON_BINARY_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)$(MLTON_BINARY_RELEASE_SUFFIX)
+MLTON_BINARY_RELEASE_WITH_DOCS := true
 .PHONY: binary-release
 binary-release:
 	$(MAKE) all
+ifeq (true,$(MLTON_BINARY_RELEASE_WITH_DOCS))
 	$(MAKE) docs
-	$(RM) "$(SRC)/mlton-$(MLTON_VERSION)-$(MLTON_BINARY_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)$(MLTON_BINARY_RELEASE_SUFFIX)"
-	$(MKDIR) "$(SRC)/mlton-$(MLTON_VERSION)-$(MLTON_BINARY_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)$(MLTON_BINARY_RELEASE_SUFFIX)"
-	$(MAKE) DESTDIR="$(SRC)/mlton-$(MLTON_VERSION)-$(MLTON_BINARY_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)$(MLTON_BINARY_RELEASE_SUFFIX)" PREFIX="" install
-	$(CP) "$(SRC)/Makefile.binary" "$(SRC)/mlton-$(MLTON_VERSION)-$(MLTON_BINARY_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)$(MLTON_BINARY_RELEASE_SUFFIX)/Makefile"
-	$(CP) "$(SRC)/CHANGELOG.adoc" "$(SRC)/LICENSE" "$(SRC)/README.adoc" "$(SRC)/mlton-$(MLTON_VERSION)-$(MLTON_BINARY_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)$(MLTON_BINARY_RELEASE_SUFFIX)/"
-	$(TAR) cvzf ../mlton-$(MLTON_VERSION)-$(MLTON_BINARY_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)$(MLTON_BINARY_RELEASE_SUFFIX).tgz \
-		mlton-$(MLTON_VERSION)-$(MLTON_BINARY_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)$(MLTON_BINARY_RELEASE_SUFFIX)
-	$(RM) mlton-$(MLTON_VERSION)-$(MLTON_BINARY_RELEASE).$(TARGET_ARCH)-$(TARGET_OS)$(MLTON_BINARY_RELEASE_SUFFIX)
+endif
+	$(RM) "$(SRC)/$(MLTON_BINARY_RELEASE_NAME)"
+	$(MKDIR) "$(SRC)/$(MLTON_BINARY_RELEASE_NAME)"
+	$(MAKE) DESTDIR="$(SRC)/$(MLTON_BINARY_RELEASE_NAME)" PREFIX="" install
+ifeq (true,$(MLTON_BINARY_RELEASE_WITH_DOCS))
+	$(MAKE) DESTDIR="$(SRC)/$(MLTON_BINARY_RELEASE_NAME)" PREFIX="" install-docs
+endif
+	$(CP) "$(SRC)/Makefile.binary" "$(SRC)/$(MLTON_BINARY_RELEASE_NAME)/Makefile"
+	$(CP) "$(SRC)/CHANGELOG.adoc" "$(SRC)/LICENSE" "$(SRC)/README.adoc" "$(SRC)/$(MLTON_BINARY_RELEASE_NAME)/"
+	$(TAR) cvzf $(MLTON_BINARY_RELEASE_NAME).tgz $(MLTON_BINARY_RELEASE_NAME)
+	$(RM) $(MLTON_BINARY_RELEASE_NAME)
+
+######################################################################
+
+# remote-bootstrap and remote-add-cross-target
+
+# The `remote-bootstrap` goal automates the process of bootstraping MLton on a
+# remote machine that doesn't have a suitable pre-compiled `mlton` binary.  It
+# works as follows:
+#  * send the current sources to a remote machine (using ssh)
+#  * build the MLton runtime system on the remote machine
+#  * receive the built runtime system from the remote machine as a new target on
+#    the host machine
+#  * build bootstrap compiler sources on the host machine for the new target
+#  * send the boostrap sources to the remote machine
+#  * build the boostrap compiler on the remote machine using the boostrap
+#    compiler sources
+#  * complete the MLton build on the remote machine with the boostrap compiler to
+#    obtain a boot package
+#  * build MLton on the remote machine from clean sources using the boot package
+#  * receive the built binary release from the remote machine
+#
+# The `remote-add-cross-target` goal automates the process of adding a cross
+# compiler target.  It works as follows:
+#  * send the current sources to a remote machine (using ssh)
+#  * build the MLton runtime system on the remote machine
+#  * receive the built runtime system from the remote machine as a new target on
+#    the host machine
+#
+#
+# For both `remote-bootstrap` and `remote-add-cross`, the following `Makefile`
+# variables are used:
+#  * REMOTE_MACHINE (required): Specify the remote machine to be used as an
+#    `ssh` destination, either `[user@]hostname` or
+#    `ssh://[user@]hostname[:port]`.
+#  * REMOTE_TMP: Specify (absolute) path on remote machine for building; default
+#    is `/tmp`.
+#  * REMOTE_MAKE: Specify `make` on remote machine.
+#  * REMOTE_MAKEFLAGS: Specify `Makefile` variables to set when invoking `make`
+#    on the remote machine.
+# For `remote-add-cross`, the following additional `Makefile` variable is used:
+#  * CROSS_TARGET (required): Specify target machine triple for host
+#    cross-compiler; that is the value of `<machine>` in `<machine>-gcc` or
+#    `<triple>` in `clang -target=<triple>` on the host machine, such as
+#    `arm-linux-gnu`.
+#
+#
+# For example, on OpenBSD, GNU Make is named `gmake` (and `make` is BSD Make)
+# and GMP is provided at `/usr/local` (and not on the default search paths).  To
+# boostrap on an OpenBSD virtual machine (with localhost port 2222 forwarded to
+# guest VM port 22), one could use:
+#
+# $ make REMOTE_MACHINE=ssh://localhost:2222 REMOTE_MAKE=gmake REMOTE_MAKEFLAGS=WITH_GMP_DIR=/usr/local remote-bootstrap
+
+ifneq (,$(findstring remote-,$(MAKECMDGOALS)))
+
+ifneq (,$(findstring dirty,$(MLTON_VERSION)))
+$(warning 'MLTON_VERSION' appears dirty; $(MLTON_VERSION))
+endif
+
+ifeq (,$(REMOTE_MACHINE))
+$(error 'REMOTE_MACHINE' not defined)
+endif
+
+SSH := ssh
+
+ifeq (false,$(shell $(SSH) $(REMOTE_MACHINE) true > /dev/null 2>&1 || echo false))
+$(error '$(SSH) $(REMOTE_MACHINE) true' failed)
+endif
+
+REMOTE_TMP := /tmp
+REMOTE_ROOT := $(REMOTE_TMP)/mlton-$(MLTON_VERSION)
+
+REMOTE_BASH := bash
+REMOTE_TAR := $(TAR)
+
+REMOTE_CP := $(CP)
+REMOTE_MKDIR := $(MKDIR)
+REMOTE_RM := $(RM)
+
+REMOTE_MAKE := make
+REMOTE_MAKEFLAGS :=
+REMOTE_XMAKEFLAGS := CHECK_MLCMD=
+
+REMOTE_PLATFORM := $(shell cat bin/platform | $(SSH) $(REMOTE_MACHINE) "$(REMOTE_BASH) -s")
+REMOTE_ARCH := $(patsubst HOST_ARCH=%,%,$(filter HOST_ARCH=%,$(REMOTE_PLATFORM)))
+REMOTE_OS := $(patsubst HOST_OS=%,%,$(filter HOST_OS=%,$(REMOTE_PLATFORM)))
+REMOTE_TARGET := $(REMOTE_ARCH)-$(REMOTE_OS)
+CROSS_TARGET := $(REMOTE_ARCH)-$(REMOTE_OS)
+
+.PHONY: remote-bootstrap
+remote-bootstrap:
+	$(MAKE) remote--send-src
+	$(MAKE) remote--make-version
+	$(MAKE) remote--make-dirs
+	$(MAKE) remote--make-runtime
+	$(MAKE) remote--recv-runtime
+	$(MAKE) remote--gen-bootstrap-compiler-files
+	$(MAKE) remote--send-bootstrap-compiler-files
+	$(MAKE) remote--make-bootstrap-compiler
+	$(MAKE) remote--make-script
+	$(MAKE) remote--make-basis
+	$(MAKE) remote--make-libraries
+	$(MAKE) remote--send-mlyacc-yacc-files
+	$(MAKE) remote--make-tools
+	$(MAKE) remote--recv-boot-files
+	$(MAKE) remote--make-clean
+	$(MAKE) remote--send-boot-files
+	$(MAKE) remote--make-all
+	$(MAKE) remote--make-binary-release
+	$(MAKE) remote--recv-binary-release
+	$(MAKE) remote--rm-root
+
+.PHONY: remote-add-target
+remote-add-target:
+	$(MAKE) remote--send-src
+	$(MAKE) remote--make-version
+	$(MAKE) remote--make-dirs
+	$(MAKE) remote--make-runtime
+	$(MAKE) remote--recv-runtime
+ifneq ($(REMOTE_TARGET),$(CROSS_TARGET))
+	$(MV) "$(LIB)/targets/$(REMOTE_TARGET)" "$(LIB)/targets/$(CROSS_TARGET)"
+endif
+	$(MAKE) remote--rm-root
+
+
+.PHONY: remote--send-src
+remote--send-src:
+	$(SSH) $(REMOTE_MACHINE) "$(REMOTE_RM) $(REMOTE_ROOT) && $(REMOTE_MKDIR) $(REMOTE_ROOT)"
+	$(GIT) archive --format=tar HEAD | $(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && $(REMOTE_TAR) xf -"
+
+.PHONY: remote--send-mlyacc-yacc-files
+remote--send-mlyacc-yacc-files:
+	$(MAKE) -C mlyacc src/yacc.lex.sml src/yacc.grm.sig src/yacc.grm.sml
+	$(TAR) cf - mlyacc/src/yacc.lex.* mlyacc/src/yacc.grm.* | $(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && $(REMOTE_TAR) xf -"
+	$(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && touch mlyacc/src/yacc.lex.* mlyacc/src/yacc.grm.*"
+
+.PHONY: remote--recv-runtime
+remote--recv-runtime:
+	$(RM) "$(LIB)/targets/$(REMOTE_TARGET)" && $(MKDIR) "$(LIB)/targets/$(REMOTE_TARGET)"
+	$(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT)/build/lib/mlton/targets/self && $(REMOTE_TAR) cf - ." | (cd "$(LIB)/targets/$(REMOTE_TARGET)" && $(TAR) xf -)
+
+.PHONY: remote-bootstrap-gen-bootstrap-compiler-files
+remote--gen-bootstrap-compiler-files:
+	$(MAKE) REMOTE_TARGET=$(REMOTE_TARGET) -C mlton mlton-bootstrap-$(REMOTE_TARGET).tgz
+
+.PHONY: remote--send-bootstrap-compiler-files
+remote--send-bootstrap-compiler-files:
+	$(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && $(REMOTE_RM) runtime/bootstrap && $(REMOTE_MKDIR) runtime/bootstrap"
+	cat mlton/mlton-bootstrap-$(REMOTE_TARGET).tgz | $(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT)/runtime/bootstrap && $(REMOTE_TAR) xzf -"
+
+.PHONY: remote--recv-boot-files
+remote--recv-boot-files:
+	$(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && $(REMOTE_RM) boot && $(REMOTE_CP) build boot"
+	$(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && $(REMOTE_TAR) czf - boot" | cat - > "$(LIB)/targets/$(REMOTE_TARGET)/boot.tgz"
+
+.PHONY: remote--send-boot-files
+remote--send-boot-files:
+	$(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && $(REMOTE_RM) boot"
+	cat "$(LIB)/targets/$(REMOTE_TARGET)/boot.tgz" | $(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && $(REMOTE_TAR) xzf -"
+
+.PHONY: remote--recv-binary-release
+remote--recv-binary-release:
+	$(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && cat mlton-$(MLTON_VERSION)-$(MLTON_BINARY_RELEASE).$(REMOTE_ARCH)-$(REMOTE_OS)$(MLTON_BINARY_RELEASE_SUFFIX).tgz" | cat - > mlton-$(MLTON_VERSION)-$(MLTON_BINARY_RELEASE).$(REMOTE_ARCH)-$(REMOTE_OS)$(MLTON_BINARY_RELEASE_SUFFIX).tgz
+
+.PHONY: remote--rm-root
+remote--rm-root:
+	$(SSH) $(REMOTE_MACHINE) "$(REMOTE_RM) $(REMOTE_ROOT)"
+
+define MK_REMOTE_MAKE_TEMPLATE
+.PHONY: remote--make-$(1)
+remote--make-$(1):
+	$$(SSH) $$(REMOTE_MACHINE) "cd $$(REMOTE_ROOT) && $$(REMOTE_MAKE) $$(REMOTE_MAKEFLAGS) $$(REMOTE_XMAKEFLAGS) $$($(1)_REMOTE_XMAKEFLAGS) $(1)"
+endef
+
+$(eval $(call MK_REMOTE_MAKE_TEMPLATE,show-config))
+$(eval $(call MK_REMOTE_MAKE_TEMPLATE,clean))
+version_REMOTE_XMAKEFLAGS := MLTON_VERSION=$(MLTON_VERSION)
+$(eval $(call MK_REMOTE_MAKE_TEMPLATE,version))
+$(eval $(call MK_REMOTE_MAKE_TEMPLATE,dirs))
+runtime_REMOTE_XMAKEFLAGS := RELEASE=false
+$(eval $(call MK_REMOTE_MAKE_TEMPLATE,runtime))
+$(eval $(call MK_REMOTE_MAKE_TEMPLATE,bootstrap-compiler))
+$(eval $(call MK_REMOTE_MAKE_TEMPLATE,script))
+$(eval $(call MK_REMOTE_MAKE_TEMPLATE,basis))
+$(eval $(call MK_REMOTE_MAKE_TEMPLATE,libraries))
+$(eval $(call MK_REMOTE_MAKE_TEMPLATE,check))
+$(eval $(call MK_REMOTE_MAKE_TEMPLATE,tools))
+all_REMOTE_XMAKEFLAGS := OLD_MLTON_DIR=$(REMOTE_ROOT)/boot/bin
+$(eval $(call MK_REMOTE_MAKE_TEMPLATE,all))
+binary-release_REMOTE_XMAKEFLAGS := MLTON_BINARY_RELEASE_WITH_DOCS=false
+$(eval $(call MK_REMOTE_MAKE_TEMPLATE,binary-release))
+
+endif
+
+.PHONY: bootstrap-compiler
+bootstrap-compiler:
+	$(MAKE) -C "$(SRC)/runtime" "bootstrap/$(MLTON_OUTPUT)"
+	$(CP) "$(SRC)/runtime/bootstrap/$(MLTON_OUTPUT)$(EXE)" "$(LIB)/"
+
+######################################################################
+
+# ?????
 
 BSDSRC := /tmp/mlton-$(MLTON_VERSION)
 MLTON_FREEBSD_RELEASE := 1
