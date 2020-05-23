@@ -9,7 +9,7 @@ the following steps.
 
 2. Get the regressions working using a cross compiler.
 
-3. <:CrossCompiling: Cross compile> MLton and bootstrap on the target.
+3. Bootstrap MLton on the target.
 
 MLton has a native code generator only for AMD64 and X86, so, if you
 are porting to another architecture, you must use the C code
@@ -17,7 +17,7 @@ generator.  These notes do not cover building a new native code
 generator.
 
 Some of the following steps will not be necessary if MLton already
-supports the architecture or operating system you are porting to.
+supports the architecture or operating system being ported to.
 
 
 == What code to change ==
@@ -48,7 +48,7 @@ The goal of this step is to be able to successfully run `make` in the
 
 * Add rounding mode control to `basis/Real/IEEEReal.c` for the new arch (if not `HAS_FEROUND`)
 
-* Compile and install the <:GMP:> development library.  This varies from platform to platform.  In `platform/<os>.h`, you need to include the appropriate `gmp.h`.
+* Build and install the <:GMP:> development library.  This varies from platform to platform.
 --
 
 * Basis Library implementation (`basis-library/*`)
@@ -130,59 +130,33 @@ until all the regressions pass.
 
 == Bootstrap ==
 
-Once you've got all the regressions working, you can build MLton for
-the new target.  As with the regressions, the idea for bootstrapping
-is to generate the C and assembly on a working machine, copy it to the
-target machine, and then compile and link there.  Here's the sequence
-of steps.
+The idea for bootstrapping MLton on a new platform is as follows:
+ * send the current sources to a remote machine (using ssh)
+ * build the MLton runtime system on the remote machine
+ * receive the built runtime system from the remote machine as a new target on
+   the host machine
+ * build bootstrap compiler sources on the host machine for the new target
+ * send the boostrap sources to the remote machine
+ * build the boostrap compiler on the remote machine using the boostrap
+   compiler sources
+ * complete the MLton build on the remote machine with the boostrap compiler to
+   obtain a boot package
+ * build MLton on the remote machine from clean sources using the boot package
+ * receive the built binary release from the remote machine
 
-1. On a working machine, with the newly rebuilt compiler, do:
-+
-----
-bin/save-bootstrap-source <target>
-----
+The `remote-bootstrap` goal of the root `Makefile` automates this process; see
+comments in the root `Makefile`.  Here is an example bootstrapping on an OpenBSD
+machine (named `thunder`):
+-----
+$ make REMOTE_MACHINE=thunder REMOTE_MAKE=gmake REMOTE_MAKEFLAGS=WITH_GMP_DIR=/usr/local remote-bootstrap
+-----
 
-2. Copy the resulting file `mlton-bootstrap-<target>.tar.gz` to the target machine.
-
-3. On the target machine, build the runtime.
-+
-----
-make dirs runtime
-----
-
-4. On the target machine, untar the bootstrap file in the source directory.
-+
-----
-tar xvf mlton-bootstrap-<target>.tar.gz
-----
-
-5. On the target machine, compile and link MLton.  That is, in the source directory, do:
-+
-----
-rm -f mlton/mlton.*.o
-for s in mlton/mlton.*.c; do echo $s; gcc -c -Ibuild/lib/mlton/include -Ibuild/lib/mlton/targets/self/include -O1 -w $s; done
-gcc -o build/lib/mlton/mlton-compile \
-        -Lbuild/lib/mlton/targets/self \
-        -L/usr/local/lib \
-        mlton.*.o \
-        -lmlton -lgmp -lgdtoa -lm
-----
-
-6. At this point, MLton should be working and you can finish the rest of a usual make on the target machine.
-+
-----
-make basis-no-check script constants libraries tools
-----
-
-Once you've got a compiler on the target machine, you should test it
-by running all the regressions normally (i.e. without the `-cross`
-flag) and by running a couple rounds of self compiles.
+Once you've got a compiler on the target machine, you should test it by running
+all the regressions normally and by running a couple rounds of self compiles.
 
 
 == Also see ==
 
-The above description is based on the following emails sent to the
-MLton list.
-
 * http://www.mlton.org/pipermail/mlton/2002-October/013110.html
 * http://www.mlton.org/pipermail/mlton/2004-July/016029.html
+* https://github.com/MLton/mlton/issues/296
