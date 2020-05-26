@@ -247,7 +247,6 @@ signature PRIM =
        *)
       val isFunctional: 'a t -> bool
       val layout: 'a t -> Layout.t
-      val layoutApp: 'a t * 'b vector * ('b -> Layout.t) -> Layout.t
       val layoutFull: 'a t * ('a -> Layout.t) -> Layout.t
       val map: 'a t * ('a -> 'b) -> 'b t
       (* examples: Array_update, Ref_assign

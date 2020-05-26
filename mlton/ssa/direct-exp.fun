@@ -176,12 +176,19 @@ in
                              seq [Var.layout var, str " = ", layout exp])),
                      layout body)
        | Name _ => str "Name"
-       | PrimApp {args, prim, ...} =>
-            Prim.layoutApp (prim, args, layout)
+       | PrimApp {args, prim, targs, ty} =>
+            seq [Prim.layoutFull (prim, Type.layout),
+                 Layout.list (Vector.toListMap (targs, Type.layout)),
+                 str " ",
+                 layouts args,
+                 str ": ", Type.layout ty]
        | Profile e => ProfileExp.layout e
        | Raise e => seq [str "raise ", layout e]
-       | Runtime {args, prim, ...} =>
-            Prim.layoutApp (prim, args, layout)
+       | Runtime {args, prim, ty} =>
+            seq [Prim.layoutFull (prim, Type.layout),
+                 str " ",
+                 layouts args,
+                 str ": ", Type.layout ty]
        | Select {tuple, offset, ...} =>
             seq [str "#", str (Int.toString (1 + offset)), str " ",
                  layout tuple]
