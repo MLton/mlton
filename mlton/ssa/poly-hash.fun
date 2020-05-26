@@ -678,8 +678,8 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                  (statements, fn Statement.T {exp, ...} =>
                   (case exp of
                       PrimApp {prim, ...} =>
-                         (case Prim.name prim of
-                             Prim.Name.MLton_hash => setHasHash ()
+                         (case prim of
+                             Prim.MLton_hash => setHasHash ()
                            | _ => ())
                     | _ => ()))
               end)
@@ -713,8 +713,8 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                        in
                          case exp of
                             PrimApp {prim, targs, args, ...} =>
-                               (case (Prim.name prim, Vector.length targs) of
-                                   (Prim.Name.MLton_hash, 1) =>
+                               (case (prim, Vector.length targs) of
+                                   (Prim.MLton_hash, 1) =>
                                       let
                                          val ty = Vector.first targs
                                          val x = Vector.first args

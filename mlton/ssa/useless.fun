@@ -622,9 +622,9 @@ fun transform (program: Program.t): Program.t =
                   in arg 1 dependsOn a
                      ; coerce {from = arg 2, to = a}
                   end
-               datatype z = datatype Prim.Name.t
+               datatype z = datatype Prim.t
                val _ =
-                  case Prim.name prim of
+                  case prim of
                      Array_alloc _ =>
                         coerce {from = arg 0, to = arrayLength result}
                    | Array_array =>
@@ -946,9 +946,9 @@ fun transform (program: Program.t): Program.t =
                                       targs = Vector.new1 Type.unit,
                                       args = Vector.new1 unitVar}
                         else doit ()
-                  datatype z = datatype Prim.Name.t
+                  datatype z = datatype Prim.t
                in
-                  case Prim.name prim of
+                  case prim of
                      Array_uninitIsNop =>
                         if varExists (Vector.sub (args, 0))
                            then doit ()
@@ -1033,9 +1033,9 @@ fun transform (program: Program.t): Program.t =
                                    fun array () =
                                       Value.isUseful
                                       (Value.dearray (value (arg 0)))
-                                   datatype z = datatype Prim.Name.t
+                                   datatype z = datatype Prim.t
                                 in
-                                   case Prim.name prim of
+                                   case prim of
                                       Array_copyArray => array ()
                                     | Array_copyVector => array ()
                                     | Array_uninit => array ()

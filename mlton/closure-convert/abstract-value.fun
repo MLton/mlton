@@ -1,4 +1,4 @@
-(* Copyright (C) 2017,2019 Matthew Fluet.
+(* Copyright (C) 2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -417,9 +417,9 @@ fun primApply {prim: Type.t Prim.t, args: t vector, resultTy: Type.t}: t =
          if n = 5
             then (arg 0, arg 1, arg 2, arg 3, arg 4)
          else Error.bug "AbstractValue.primApply.fiveArgs"
-      datatype z = datatype Prim.Name.t
+      datatype z = datatype Prim.t
    in
-      case Prim.name prim of
+      case prim of
          Array_array =>
             let
                 val r = result ()

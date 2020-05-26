@@ -702,9 +702,9 @@ fun toMachine (rssa: Rssa.Program.t) =
                   end
              | PrimApp {dst, prim, args} =>
                   let
-                     datatype z = datatype Prim.Name.t
+                     datatype z = datatype Prim.t
                   in
-                     case Prim.name prim of
+                     case prim of
                         MLton_touch => Vector.new0 ()
                       | _ =>
                            Vector.new1

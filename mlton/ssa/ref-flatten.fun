@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2017,2019 Matthew Fluet.
+(* Copyright (C) 2009,2017,2019-2020 Matthew Fluet.
  * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -430,7 +430,7 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                 | Make _ => Value.weak v
             fun arg i = Vector.sub (args, i)
             fun result () = typeValue resultType
-            datatype z = datatype Prim.Name.t
+            datatype z = datatype Prim.t
             fun dontFlatten () =
                (Vector.foreach (args, Value.dontFlatten)
                 ; result ())
@@ -438,7 +438,7 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                (Value.unify (arg 0, arg 1)
                 ; result ())
          in
-            case Prim.name prim of
+            case prim of
                Array_toArray =>
                   let
                      val res = result ()

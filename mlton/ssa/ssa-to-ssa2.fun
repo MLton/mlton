@@ -1,4 +1,4 @@
-(* Copyright (C) 2017,2019 Matthew Fluet.
+(* Copyright (C) 2017,2019-2020 Matthew Fluet.
  * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -122,9 +122,9 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
                         (S2.Exp.Select {base = Base.SequenceSub {index = arg 1,
                                                                  sequence = arg 0},
                                         offset = 0})
-                     datatype z = datatype Prim.Name.t
+                     datatype z = datatype Prim.t
                    in
-                      case Prim.name prim of
+                      case prim of
                          Array_array => sequence ()
                        | Array_sub => sub ()
                        | Array_update =>

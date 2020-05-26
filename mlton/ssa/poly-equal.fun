@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014 Matthew Fluet.
+(* Copyright (C) 2009,2014,2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -502,9 +502,9 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                   (setBind stmt;
                    case exp of
                       PrimApp {prim, ...} =>
-                         (case Prim.name prim of
-                             Prim.Name.MLton_eq => setHasEqual ()
-                           | Prim.Name.MLton_equal => setHasEqual ()
+                         (case prim of
+                             Prim.MLton_eq => setHasEqual ()
+                           | Prim.MLton_equal => setHasEqual ()
                            | _ => ())
                     | _ => ()))
               end)
@@ -542,8 +542,8 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                        in
                          case exp of
                             PrimApp {prim, targs, args, ...} =>
-                               (case (Prim.name prim, Vector.length targs) of
-                                   (Prim.Name.MLton_eq, 1) =>
+                               (case (prim, Vector.length targs) of
+                                   (Prim.MLton_eq, 1) =>
                                       (case Type.dest (Vector.first targs) of
                                           Type.CPointer => 
                                              let
@@ -605,7 +605,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                                                 adds [wordEqStmt]
                                              end
                                         | _ => normal ())
-                                 | (Prim.Name.MLton_equal, 1) =>
+                                 | (Prim.MLton_equal, 1) =>
                                       let
                                          val ty = Vector.sub (targs, 0)
                                          fun arg i = Vector.sub (args, i)

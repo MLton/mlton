@@ -330,14 +330,14 @@ structure Type =
             val default = fn () =>
                (default ()) handle BadPrimApp => false
 
-            datatype z = datatype Prim.Name.t
+            datatype z = datatype Prim.t
             fun arg i = Vector.sub (args, i)
             fun oneArg f = 1 = Vector.length args andalso f (arg 0)
             fun twoArgs f = 2 = Vector.length args andalso f (arg 0, arg 1)
             fun fiveArgs f = 5 = Vector.length args andalso f (arg 0, arg 1, arg 2, arg 3, arg 4)
             val seqIndex = word (WordSize.seqIndex ())
          in
-            case Prim.name prim of
+            case prim of
                Array_alloc _ =>
                   oneArg
                   (fn n =>

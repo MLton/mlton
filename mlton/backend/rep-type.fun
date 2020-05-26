@@ -619,7 +619,7 @@ fun castIsOk {from, to, tyconTy = _} =
 
 fun checkPrimApp {args, prim, result} = 
    let
-      datatype z = datatype Prim.Name.t
+      datatype z = datatype Prim.t
       fun done (argsP, resultP) =
          let
             val argsP = Vector.fromList argsP
@@ -679,7 +679,7 @@ fun checkPrimApp {args, prim, result} =
       fun realTernary s = done ([real s, real s, real s], SOME (real s))
       fun wordShift s = done ([wordOrBitsOrSeq s, shiftArg], SOME (wordOrBitsOrSeq s))
    in
-      case Prim.name prim of
+      case prim of
          CFunction f => done (Vector.toListMap (CFunction.args f,
                                                 fn t' => fn t => equals (t', t)),
                               SOME (fn t => equals (t, CFunction.return f)))

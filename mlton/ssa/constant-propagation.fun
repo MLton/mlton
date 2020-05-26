@@ -994,7 +994,7 @@ fun transform (program: Program.t): Program.t =
                   (coerce {from = v, to = dearray a}
                    ; unit ())
                fun arg i = Vector.sub (args, i)
-               datatype z = datatype Prim.Name.t
+               datatype z = datatype Prim.t
                fun array (raw, length, birth) =
                   let
                      val a = fromType resultType
@@ -1019,7 +1019,7 @@ fun transform (program: Program.t): Program.t =
                      v
                   end
             in
-               case Prim.name prim of
+               case prim of
                   Array_alloc {raw} => array (raw, arg 0, bear ())
                 | Array_array =>
                      let

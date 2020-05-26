@@ -1,4 +1,4 @@
-(* Copyright (C) 2017 Matthew Fluet.
+(* Copyright (C) 2017,2020 Matthew Fluet.
  * Copyright (C) 1999-2005, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -22,11 +22,9 @@ val expEquals =
     | (PrimApp {prim = p, targs = ts, args = xs},
        PrimApp {prim = p', targs = ts', args = xs'}) =>
          let
-            datatype z = datatype Prim.Name.t
-            val n = Prim.name p
-            val n' = Prim.name p'
+            datatype z = datatype Prim.t
          in
-            case (n, n') of
+            case (p, p') of
                (Vector_vector, Vector_vector) =>
                   Vector.equals (ts, ts', Type.equals)
                   andalso equalss (xs, xs')

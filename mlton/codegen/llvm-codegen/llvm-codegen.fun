@@ -586,9 +586,9 @@ fun primApp (prim: 'a Prim.t): ({args: LLVM.Value.t list,
          in
             res
          end
-      datatype z = datatype Prim.Name.t
+      datatype z = datatype Prim.t
    in
-      case Prim.name prim of
+      case prim of
          CPointer_add => SOME cpointerAdd
        | CPointer_diff => SOME (fn {args, mc = _, newTemp, $} =>
             let
@@ -717,9 +717,9 @@ fun primAppOpAndCheck {args: LLVM.Value.t list,
             (res1, res2)
          end
       fun doit (oper, ws) = doit' (oper, ws, fn args => args)
-      datatype z = datatype Prim.Name.t
+      datatype z = datatype Prim.t
    in
-      case Prim.name prim of
+      case prim of
          Word_addCheckP (ws, {signed}) => doit (if signed then "sadd" else "uadd", ws)
        | Word_mulCheckP (ws, {signed}) => doit (if signed then "smul" else "umul", ws)
        | Word_negCheckP (ws, {signed}) => doit' (if signed then "ssub" else "usub", ws, fn args => (LLVM.Value.zero ws)::args)
@@ -1639,69 +1639,69 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                  | _ => default ())
                                handle Subscript => default ()
                          in
-                            case Prim.name prim1 of
-                               Prim.Name.Word_add ws1 =>
+                            case prim1 of
+                               Prim.Word_add ws1 =>
                                   fuse (fn prim2 =>
-                                        case Prim.name prim2 of
-                                           Prim.Name.Word_addCheckP (ws2, _) =>
+                                        case prim2 of
+                                           Prim.Word_addCheckP (ws2, _) =>
                                               if WordSize.equals (ws1, ws2)
                                                  then SOME prim2
                                                  else NONE
                                          | _ => NONE)
-                             | Prim.Name.Word_addCheckP (ws1, _) =>
+                             | Prim.Word_addCheckP (ws1, _) =>
                                   fuse (fn prim2 =>
-                                        case Prim.name prim2 of
-                                           Prim.Name.Word_add ws2 =>
+                                        case prim2 of
+                                           Prim.Word_add ws2 =>
                                               if WordSize.equals (ws1, ws2)
                                                  then SOME prim1
                                                  else NONE
                                          | _ => NONE)
-                             | Prim.Name.Word_mul (ws1, {signed = signed1}) =>
+                             | Prim.Word_mul (ws1, {signed = signed1}) =>
                                   fuse (fn prim2 =>
-                                        case Prim.name prim2 of
-                                           Prim.Name.Word_mulCheckP (ws2, {signed = signed2}) =>
+                                        case prim2 of
+                                           Prim.Word_mulCheckP (ws2, {signed = signed2}) =>
                                               if WordSize.equals (ws1, ws2)
                                                  andalso Bool.equals (signed1, signed2)
                                                  then SOME prim2
                                                  else NONE
                                          | _ => NONE)
-                             | Prim.Name.Word_mulCheckP (ws1, {signed = signed1}) =>
+                             | Prim.Word_mulCheckP (ws1, {signed = signed1}) =>
                                   fuse (fn prim2 =>
-                                        case Prim.name prim2 of
-                                           Prim.Name.Word_mul (ws2, {signed = signed2}) =>
+                                        case prim2 of
+                                           Prim.Word_mul (ws2, {signed = signed2}) =>
                                               if WordSize.equals (ws1, ws2)
                                                  andalso Bool.equals (signed1, signed2)
                                                  then SOME prim1
                                                  else NONE
                                          | _ => NONE)
-                             | Prim.Name.Word_neg ws1 =>
+                             | Prim.Word_neg ws1 =>
                                   fuse (fn prim2 =>
-                                        case Prim.name prim2 of
-                                           Prim.Name.Word_negCheckP (ws2, _) =>
+                                        case prim2 of
+                                           Prim.Word_negCheckP (ws2, _) =>
                                               if WordSize.equals (ws1, ws2)
                                                  then SOME prim2
                                                  else NONE
                                          | _ => NONE)
-                             | Prim.Name.Word_negCheckP (ws1, _) =>
+                             | Prim.Word_negCheckP (ws1, _) =>
                                   fuse (fn prim2 =>
-                                        case Prim.name prim2 of
-                                           Prim.Name.Word_neg ws2 =>
+                                        case prim2 of
+                                           Prim.Word_neg ws2 =>
                                               if WordSize.equals (ws1, ws2)
                                                  then SOME prim1
                                                  else NONE
                                          | _ => NONE)
-                             | Prim.Name.Word_sub ws1 =>
+                             | Prim.Word_sub ws1 =>
                                   fuse (fn prim2 =>
-                                        case Prim.name prim2 of
-                                           Prim.Name.Word_subCheckP (ws2, _) =>
+                                        case prim2 of
+                                           Prim.Word_subCheckP (ws2, _) =>
                                               if WordSize.equals (ws1, ws2)
                                                  then SOME prim2
                                                  else NONE
                                          | _ => NONE)
-                             | Prim.Name.Word_subCheckP (ws1, _) =>
+                             | Prim.Word_subCheckP (ws1, _) =>
                                   fuse (fn prim2 =>
-                                        case Prim.name prim2 of
-                                           Prim.Name.Word_sub ws2 =>
+                                        case prim2 of
+                                           Prim.Word_sub ws2 =>
                                               if WordSize.equals (ws1, ws2)
                                                  then SOME prim1
                                                  else NONE

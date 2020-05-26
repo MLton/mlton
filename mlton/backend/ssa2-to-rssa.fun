@@ -29,13 +29,6 @@ in
    structure GCField = GCField
 end
 
-structure Prim =
-   struct
-      open Prim
-
-      type t = Type.t Prim.t
-   end
-
 structure CFunction =
    struct
       open CFunction
@@ -347,7 +340,7 @@ structure CFunction =
                                    SOME CType.intInf),
                       return = Type.intInf (),
                       symbolScope = Private,
-                      target = Direct (Prim.Name.toString name)}
+                      target = Direct (Prim.toString name)}
       val intInfCompare = fn name =>
          (* CHECK; cint would be better? *)
          CFunction.T {args = Vector.new3 (Type.gcState (),
@@ -369,7 +362,7 @@ structure CFunction =
                                    SOME CType.compareRes),
                       return = Type.compareRes,
                       symbolScope = Private,
-                      target = Direct (Prim.Name.toString name)}
+                      target = Direct (Prim.toString name)}
       val intInfShift = fn name =>
          CFunction.T {args = Vector.new4 (Type.gcState (),
                                           Type.intInf (),
@@ -392,7 +385,7 @@ structure CFunction =
                                    SOME CType.intInf),
                       return = Type.intInf (),
                       symbolScope = Private,
-                      target = Direct (Prim.Name.toString name)}
+                      target = Direct (Prim.toString name)}
       val intInfToString = fn name =>
          (* CHECK; cint would be better? *)
          CFunction.T {args = Vector.new4 (Type.gcState (),
@@ -416,7 +409,7 @@ structure CFunction =
                                    SOME CType.string),
                       return = Type.string (),
                       symbolScope = Private,
-                      target = Direct (Prim.Name.toString name)}
+                      target = Direct (Prim.toString name)}
       val intInfUnary = fn name =>
          CFunction.T {args = Vector.new3 (Type.gcState (),
                                           Type.intInf (),
@@ -437,21 +430,27 @@ structure CFunction =
                                    SOME CType.intInf),
                       return = Type.intInf (),
                       symbolScope = Private,
-                      target = Direct (Prim.Name.toString name)}
+                      target = Direct (Prim.toString name)}
    end
 
-structure Name =
+structure Prim =
    struct
-      open Prim.Name
+      local
+         structure CFunction' = CFunction
+      in
+         open Prim
+         structure CFunction = CFunction'
+      end
 
+      datatype u = datatype t
       type t = Type.t t
 
-      fun cFunctionRaise (n: t): CFunction.t =
+      fun cFunctionRaise (p: t): CFunction.t =
          let
             datatype z = datatype CFunction.Convention.t
             datatype z = datatype CFunction.SymbolScope.t
             datatype z = datatype CFunction.Target.t
-            val name = toString n
+            val name = toString p
             val real = Type.real
             val word = Type.word
             val vanilla = CFunction.vanilla
@@ -539,7 +538,7 @@ structure Name =
                            return = t}
                end
          in
-            case n of
+            case p of
                Real_Math_acos s => realUnary s
              | Real_Math_asin s => realUnary s
              | Real_Math_atan s => realUnary s
@@ -616,7 +615,7 @@ structure Name =
              | _ => Error.bug "SsaToRssa.Name.cFunctionRaise"
          end
 
-      fun cFunction n = SOME (cFunctionRaise n) handle _ => NONE
+      fun cFunction p = SOME (cFunctionRaise p) handle _ => NONE
    end
 
 datatype z = datatype Operand.t
@@ -860,8 +859,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
       val handlesSignals =
          S.Program.hasPrim
          (program, fn p =>
-          case Prim.name p of
-             Prim.Name.MLton_installSignalHandler => true
+          case p of
+             Prim.MLton_installSignalHandler => true
            | _ => false)
       fun translateFormals v =
          Vector.keepAllMap (v, fn (x, t) =>
@@ -906,9 +905,9 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
           | S.Transfer.Return xs => ([], Transfer.Return (vos xs))
           | S.Transfer.Runtime {args, prim, return} =>
                let
-                  datatype z = datatype Prim.Name.t
+                  datatype z = datatype Prim.u
                in
-                  case Prim.name prim of
+                  case prim of
                      Thread_copyCurrent =>
                         let
                            val func = CFunction.copyCurrentThread ()
@@ -1062,7 +1061,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                  add (PrimApp {dst = dst (),
                                                prim = prim,
                                                args = args})
-                              datatype z = datatype Prim.Name.t
                               fun bumpAtomicState n =
                                  let
                                     val atomicState = Runtime GCField.AtomicState
@@ -1138,23 +1136,19 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                       src = a 2})
                         end
                      fun codegenOrC (p: Prim.t, args) =
-                        let
-                           val n = Prim.name p
-                        in
-                           if codegenImplementsPrim p
-                              then primApp (p, args)
-                           else (case Name.cFunction n of
-                                    NONE =>
-                                       Error.bug (concat ["SsaToRssa.codegenOrC: ",
-                                                          "unimplemented prim:",
-                                                          Name.toString n])
-                                  | SOME func => ccall {args = args, func = func})
-                        end
+                        if codegenImplementsPrim p
+                           then primApp (p, args)
+                        else (case Prim.cFunction p of
+                                 NONE =>
+                                    Error.bug (concat ["SsaToRssa.codegenOrC: ",
+                                                       "unimplemented prim:",
+                                                       Prim.toString p])
+                               | SOME func => ccall {args = args, func = func})
                      fun simpleCodegenOrC (p: Prim.t) =
                         codegenOrC (p, varOps args)
-                     datatype z = datatype Prim.Name.t
+                     datatype z = datatype Prim.u
                            in
-                              case Prim.name prim of
+                              case prim of
                                  Array_alloc {raw} =>
                                     let
                                        val allocOpt = fn () =>

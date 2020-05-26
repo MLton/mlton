@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019 Matthew Fluet.
+(* Copyright (C) 2009,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -483,22 +483,22 @@ fun transform2 (Program.T {datatypes, globals, functions, main}) =
                         ()
                      end
                   val () =
-                     case Prim.name prim of
-                        Prim.Name.MLton_eq =>
+                     case prim of
+                        Prim.MLton_eq =>
                            (* MLton_eq may be used on datatypes used as enums. *)
                            deconType (tyVar (Vector.first args))
-                      | Prim.Name.MLton_equal =>
+                      | Prim.MLton_equal =>
                            (* MLton_equal will be expanded by poly-equal into uses
                             * of constructors as patterns.
                             *)
                            deconType (tyVar (Vector.first args))
-                      | Prim.Name.MLton_hash =>
+                      | Prim.MLton_hash =>
                            (* MLton_hash will be expanded by poly-hash into uses
                             * of constructors as patterns.
                             *)
                            deconType (tyVar (Vector.first args))
 (*
-                      | Prim.Name.MLton_size =>
+                      | Prim.MLton_size =>
                            deconType (tyVar (Vector.first args))
 *)
                       | _ => ()

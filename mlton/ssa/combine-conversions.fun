@@ -85,8 +85,8 @@ fun markStatement stmt =
       Statement.T { exp = Exp.PrimApp { args, prim, targs=_ },
                     ty = _,
                     var = SOME v } =>
-        (case Prim.name prim of
-            Prim.Name.Word_extdToWord a => rules v (a, Vector.first args)
+        (case prim of
+            Prim.Word_extdToWord a => rules v (a, Vector.first args)
           | _ => ())
     | _ => ()
 

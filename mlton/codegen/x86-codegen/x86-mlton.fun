@@ -1,4 +1,4 @@
-(* Copyright (C) 2019 Matthew Fluet.
+(* Copyright (C) 2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -38,9 +38,9 @@ struct
             | W16 => true
             | W32 => true
             | W64 => false
-        datatype z = datatype Prim.Name.t
+        datatype z = datatype Prim.t
      in
-        case Prim.name p of
+        case p of
            CPointer_add => true
          | CPointer_diff => true
          | CPointer_equal => true
@@ -112,7 +112,7 @@ struct
             transInfo = {...} : transInfo}
     = let
         val primName = Prim.toString prim
-        datatype z = datatype Prim.Name.t
+        datatype z = datatype Prim.t
 
         fun getDst1 ()
           = Vector.sub (dsts, 0)
@@ -925,7 +925,7 @@ struct
       in
         AppendList.appends
         [comment_begin,
-         (case Prim.name prim of
+         (case prim of
                CPointer_add => binal Instruction.ADD
              | CPointer_diff => binal Instruction.SUB
              | CPointer_equal => cmp Instruction.E

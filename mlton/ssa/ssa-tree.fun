@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014,2017-2019 Matthew Fluet.
+(* Copyright (C) 2009,2014,2017-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -261,9 +261,9 @@ structure Type =
             val default = fn () =>
                (default ()) handle BadPrimApp => false
 
-            datatype z = datatype Prim.Name.t
+            datatype z = datatype Prim.t
          in
-            case Prim.name prim of
+            case prim of
                _ => default ()
          end
    end

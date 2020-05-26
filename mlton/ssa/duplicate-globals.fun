@@ -32,10 +32,10 @@ struct
                   case (var, exp) of
                      (SOME var, Exp.ConApp _) => duplicatable var
                    | (SOME var, Exp.PrimApp {prim, ...}) =>
-                        (case Prim.name prim of
+                        (case prim of
                              (* we might want to duplicate this due to the targ *)
-                             Prim.Name.MLton_bogus => duplicatable var
-                           | Prim.Name.Vector_vector => duplicatable var
+                             Prim.MLton_bogus => duplicatable var
+                           | Prim.Vector_vector => duplicatable var
                            | _ => ())
                    | _ => ()
             in

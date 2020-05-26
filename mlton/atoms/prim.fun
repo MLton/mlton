@@ -195,8 +195,6 @@ datatype 'a t =
  | Word8Vector_toString (* defunctorize *)
  | World_save (* to rssa (as runtime C fn) *)
 
-fun name p = p
-
 (* The values of these strings are important since they are referred to
  * in the basis library code.  See basis-library/misc/primitive.sml.
  *)
@@ -2209,12 +2207,6 @@ fun ('a, 'b) layoutApp (p: 'a t,
        | Word_sub _ => two "-"
        | Word_xorb _ => two "^"
        | _ => seq [layout p, str " ", Vector.layout layoutArg args]
-   end
-
-structure Name =
-   struct
-      datatype t = datatype t
-      val toString = toString
    end
 
 end

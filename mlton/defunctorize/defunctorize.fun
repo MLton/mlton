@@ -1,4 +1,4 @@
-(* Copyright (C) 2015,2017,2019 Matthew Fluet.
+(* Copyright (C) 2015,2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1045,9 +1045,9 @@ fun defunctorize (CoreML.Program.T {decs}) =
                 | PrimApp {args, prim, targs} =>
                      let
                         val args = Vector.map (args, #1 o loopExp)
-                        datatype z = datatype Prim.Name.t
+                        datatype z = datatype Prim.t
                      in
-                        if (case Prim.name prim of
+                        if (case prim of
                                Real_rndToReal (s1, s2) =>
                                   RealSize.equals (s1, s2)
                              | String_toWord8Vector => true

@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2020 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -135,8 +136,8 @@ fun multi (p as Program.T {functions, main, ...})
   = let
       val usesThreadsOrConts 
         = Program.hasPrim (p, fn p =>
-                           case Prim.name p of
-                              Prim.Name.Thread_switchTo => true
+                           case p of
+                              Prim.Thread_switchTo => true
                             | _ => false)
 
       (* funcNode *)
@@ -215,8 +216,8 @@ fun multi (p as Program.T {functions, main, ...})
                       | Runtime {prim, ...}
                       => if usesThreadsOrConts
                             andalso
-                            (case Prim.name prim of
-                                Prim.Name.Thread_copyCurrent => true
+                            (case prim of
+                                Prim.Thread_copyCurrent => true
                               | _ => false)
                            then (ThreadCopyCurrent.force
                                  (LabelInfo.threadCopyCurrent li) ;

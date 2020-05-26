@@ -1,4 +1,4 @@
-(* Copyright (C) 2017,2019 Matthew Fluet.
+(* Copyright (C) 2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2005, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -666,8 +666,8 @@ fun closureConvert
       val convertVarExp = convertVar o SvarExp.var
       val handlesSignals =
          Sexp.hasPrim (body, fn p =>
-                       case Prim.name p of
-                          Prim.Name.MLton_installSignalHandler => true
+                       case p of
+                          Prim.MLton_installSignalHandler => true
                         | _ => false)
       (*------------------------------------*)                 
       (*               apply                *)
@@ -945,7 +945,6 @@ fun closureConvert
              | SprimExp.PrimApp {prim, targs, args} =>
                   let
                      val prim = Prim.map (prim, convertType)
-                     open Prim.Name
                      fun arg i = Vector.sub (args, i)
                      val v1 = Vector.new1
                      val v2 = Vector.new2
@@ -957,10 +956,10 @@ fun closureConvert
                                       ty = ty}
                   in
                       let
-                         datatype z = datatype Prim.Name.t
+                         datatype z = datatype Prim.t
                       in
                          simple
-                         (case Prim.name prim of
+                         (case prim of
                              Array_array =>
                                 let
                                    val ys = Vector.map (args, varExpInfo)

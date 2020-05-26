@@ -1,4 +1,4 @@
-(* Copyright (C) 2019 Matthew Fluet.
+(* Copyright (C) 2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -31,10 +31,10 @@ fun transform (Program.T {datatypes, body, ...}): Program.t =
                 (body, fn (_, _, e) =>
                  case e of
                     PrimApp {prim, targs, ...} =>
-                       (case Prim.name prim of
-                           Prim.Name.Exn_extra =>
+                       (case prim of
+                           Prim.Exn_extra =>
                               escape (Vector.first targs)
-                         | Prim.Name.Exn_setExtendExtra =>
+                         | Prim.Exn_setExtendExtra =>
                               escape (Vector.first targs)
                          | _ => ())
                   | _ => ())
@@ -381,7 +381,7 @@ fun transform (Program.T {datatypes, body, ...}): Program.t =
              | Lambda l => primExp (Lambda (loopLambda l))
              | PrimApp {args, prim, ...} =>
                   let
-                     datatype z = datatype Prim.Name.t
+                     datatype z = datatype Prim.t
                      fun deref (var, ty) =
                         primExp
                         (PrimApp {prim = Prim.deref,
@@ -394,7 +394,7 @@ fun transform (Program.T {datatypes, body, ...}): Program.t =
                                   args = Vector.new2 (VarExp.mono var,
                                                       Vector.first args)})
                   in
-                     case Prim.name prim of
+                     case prim of
                         Exn_extra =>
                            (makeExp o projectExtra)
                            (VarExp.var (Vector.first args))

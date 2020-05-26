@@ -146,9 +146,9 @@ structure Operand =
 
 fun implementsPrim (p: 'a Prim.t): bool =
    let
-      datatype z = datatype Prim.Name.t
+      datatype z = datatype Prim.t
    in
-      case Prim.name p of
+      case p of
          CPointer_add => true
        | CPointer_diff => true
        | CPointer_equal => true
@@ -1538,69 +1538,69 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                  | _ => default ())
                                handle Subscript => default ()
                          in
-                            case Prim.name prim1 of
-                               Prim.Name.Word_add ws1 =>
+                            case prim1 of
+                               Prim.Word_add ws1 =>
                                   fuse (fn prim2 =>
-                                        case Prim.name prim2 of
-                                           Prim.Name.Word_addCheckP (z as (ws2, _)) =>
+                                        case prim2 of
+                                           Prim.Word_addCheckP (z as (ws2, _)) =>
                                               if WordSize.equals (ws1, ws2)
                                                  then SOME (prim2, z)
                                                  else NONE
                                          | _ => NONE)
-                             | Prim.Name.Word_addCheckP (z as (ws1, _)) =>
+                             | Prim.Word_addCheckP (z as (ws1, _)) =>
                                   fuse (fn prim2 =>
-                                        case Prim.name prim2 of
-                                           Prim.Name.Word_add ws2 =>
+                                        case prim2 of
+                                           Prim.Word_add ws2 =>
                                               if WordSize.equals (ws1, ws2)
                                                  then SOME (prim1, z)
                                                  else NONE
                                          | _ => NONE)
-                             | Prim.Name.Word_mul (ws1, {signed = signed1}) =>
+                             | Prim.Word_mul (ws1, {signed = signed1}) =>
                                   fuse (fn prim2 =>
-                                        case Prim.name prim2 of
-                                           Prim.Name.Word_mulCheckP (z as (ws2, {signed = signed2})) =>
+                                        case prim2 of
+                                           Prim.Word_mulCheckP (z as (ws2, {signed = signed2})) =>
                                               if WordSize.equals (ws1, ws2)
                                                  andalso Bool.equals (signed1, signed2)
                                                  then SOME (prim2, z)
                                                  else NONE
                                          | _ => NONE)
-                             | Prim.Name.Word_mulCheckP (z as (ws1, {signed = signed1})) =>
+                             | Prim.Word_mulCheckP (z as (ws1, {signed = signed1})) =>
                                   fuse (fn prim2 =>
-                                        case Prim.name prim2 of
-                                           Prim.Name.Word_mul (ws2, {signed = signed2}) =>
+                                        case prim2 of
+                                           Prim.Word_mul (ws2, {signed = signed2}) =>
                                               if WordSize.equals (ws1, ws2)
                                                  andalso Bool.equals (signed1, signed2)
                                                  then SOME (prim1, z)
                                                  else NONE
                                          | _ => NONE)
-                             | Prim.Name.Word_neg ws1 =>
+                             | Prim.Word_neg ws1 =>
                                   fuse (fn prim2 =>
-                                        case Prim.name prim2 of
-                                           Prim.Name.Word_negCheckP (z as (ws2, _)) =>
+                                        case prim2 of
+                                           Prim.Word_negCheckP (z as (ws2, _)) =>
                                               if WordSize.equals (ws1, ws2)
                                                  then SOME (prim2, z)
                                                  else NONE
                                          | _ => NONE)
-                             | Prim.Name.Word_negCheckP (z as (ws1, _)) =>
+                             | Prim.Word_negCheckP (z as (ws1, _)) =>
                                   fuse (fn prim2 =>
-                                        case Prim.name prim2 of
-                                           Prim.Name.Word_neg ws2 =>
+                                        case prim2 of
+                                           Prim.Word_neg ws2 =>
                                               if WordSize.equals (ws1, ws2)
                                                  then SOME (prim1, z)
                                                  else NONE
                                          | _ => NONE)
-                             | Prim.Name.Word_sub ws1 =>
+                             | Prim.Word_sub ws1 =>
                                   fuse (fn prim2 =>
-                                        case Prim.name prim2 of
-                                           Prim.Name.Word_subCheckP (z as (ws2, _)) =>
+                                        case prim2 of
+                                           Prim.Word_subCheckP (z as (ws2, _)) =>
                                               if WordSize.equals (ws1, ws2)
                                                  then SOME (prim2, z)
                                                  else NONE
                                          | _ => NONE)
-                             | Prim.Name.Word_subCheckP (z as (ws1, _)) =>
+                             | Prim.Word_subCheckP (z as (ws1, _)) =>
                                   fuse (fn prim2 =>
-                                        case Prim.name prim2 of
-                                           Prim.Name.Word_sub ws2 =>
+                                        case prim2 of
+                                           Prim.Word_sub ws2 =>
                                               if WordSize.equals (ws1, ws2)
                                                  then SOME (prim1, z)
                                                  else NONE

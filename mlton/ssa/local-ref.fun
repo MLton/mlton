@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2020 Matthew Fluet.
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -18,8 +19,8 @@ structure Prim =
 
       val isReff: 'a t -> bool =
          fn p =>
-         case name p of
-            Name.Ref_ref => true
+         case p of
+            Ref_ref => true
           | _ => false
    end
 
@@ -284,7 +285,7 @@ fun transform (program: Program.t): Program.t =
             (* Rewrite. *)
             fun rewriteStatement (s: Statement.t as Statement.T {exp, var, ...})
                = let
-                    datatype z = datatype Prim.Name.t
+                    datatype z = datatype Prim.t
                  in
                     case exp
                        of PrimApp {prim, args, ...}
@@ -324,7 +325,7 @@ fun transform (program: Program.t): Program.t =
                                 val rewriteDeref
                                    = fn () => rewriteDeref (arg 0)
                              in
-                                case Prim.name prim
+                                case prim
                                    of Ref_ref => rewriteReff ()
                                  | Ref_assign => rewriteAssign ()
                                  | Ref_deref => rewriteDeref ()
@@ -420,14 +421,14 @@ fun transform (program: Program.t): Program.t =
                      = (List.push (VarInfo.derefs (varInfo var), label) ;
                         List.push (LabelInfo.derefs li, var))
                    fun default () = Exp.foreachVar (exp, nonLocal)
-                   datatype z = datatype Prim.Name.t
+                   datatype z = datatype Prim.t
                  in
                    case exp
                      of PrimApp {prim, args, ...}
                       => let
                            fun arg n = Vector.sub (args, n)
                          in
-                           case Prim.name prim
+                           case prim
                              of Ref_ref => (setReff (); default ())
                               | Ref_assign => (setAssign (arg 0); 
                                                nonLocal (arg 1))

@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2020 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -121,9 +121,9 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                              lhs = arg a,
                              rhs = arg b})
             fun doit rel = z (rel, 0, 1)
-            datatype z = datatype Prim.Name.t
+            datatype z = datatype Prim.t
          in
-            case Prim.name prim of
+            case prim of
                MLton_eq => doit EQ
              | Word_equal _ => doit EQ
              | Word_lt (_, sg) => doit (LT sg)
@@ -360,8 +360,7 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
 
                            fun checkPrimApp (args, prim) =
                               let
-                                open Prim.Name
-
+                                datatype z = datatype Prim.t
                                 fun add1 (x: Var.t, s: WordSize.t, sg) =
                                    if add1Eligible (x, s, sg) then falsee ()
                                    else statement
@@ -380,7 +379,7 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                                               else statement
                                     | _ => Error.bug ("RedundantTests.add: strange const")
                               in
-                                case Prim.name prim of
+                                case prim of
                                     Word_addCheckP s =>
                                        let
                                           val x1 = Vector.sub (args, 0)

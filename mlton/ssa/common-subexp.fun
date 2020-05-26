@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2011,2017,2019 Matthew Fluet.
+(* Copyright (C) 2009,2011,2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -74,12 +74,12 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                            then (a0, a1)
                         else (a1, a0)
                      end
-                  datatype z = datatype Prim.Name.t
+                  datatype z = datatype Prim.t
                in
                   if Prim.isCommutative prim
                      then doit (Vector.new2 (canon2 ()))
                   else
-                     if (case Prim.name prim of
+                     if (case prim of
                             IntInf_add => true
                           | IntInf_andb => true
                           | IntInf_gcd => true
@@ -152,9 +152,9 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                                   case getLength (arg ()) of
                                      NONE => doit ()
                                    | SOME var' => replace var'
-                               datatype z = datatype Prim.Name.t
+                               datatype z = datatype Prim.t
                             in
-                               case Prim.name prim of
+                               case prim of
                                   Array_alloc _ => knownLength (arg ())
                                 | Array_length => length ()
                                 | Array_toArray => conv ()
