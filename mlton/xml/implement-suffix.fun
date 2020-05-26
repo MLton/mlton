@@ -61,7 +61,6 @@ fun transform (Program.T {datatypes, body, ...}): Program.t =
              | Lambda l => primExp (Lambda (loopLambda l))
              | PrimApp {args, prim, ...} =>
                   let
-                     datatype z = datatype Prim.t
                      fun deref (var, ty) =
                         primExp
                         (PrimApp {prim = Prim.Ref_deref,
@@ -75,10 +74,10 @@ fun transform (Program.T {datatypes, body, ...}): Program.t =
                                                       Vector.first args)})
                   in
                      case prim of
-                        TopLevel_getSuffix =>
+                        Prim.TopLevel_getSuffix =>
                            deref (topLevelSuffixVar,
                                   topLevelSuffixType)
-                      | TopLevel_setSuffix =>
+                      | Prim.TopLevel_setSuffix =>
                            assign (topLevelSuffixVar,
                                    topLevelSuffixType)
                       | _ => keep ()

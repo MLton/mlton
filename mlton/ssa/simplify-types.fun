@@ -581,13 +581,12 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                      if Cardinality.isZero (typeCardinality (Vector.first targs))
                         then Exp.Const (Const.word (WordX.zero (WordSize.seqIndex ())))
                         else normal ()
-                  datatype z = datatype Prim.t
                in
                   case prim of
-                     Array_length => length ()
-                   | MLton_eq => equal ()
-                   | MLton_equal => equal ()
-                   | Vector_length => length ()
+                     Prim.Array_length => length ()
+                   | Prim.MLton_eq => equal ()
+                   | Prim.MLton_equal => equal ()
+                   | Prim.Vector_length => length ()
                    | _ => normal ()
                end
           | Select {tuple, offset} =>

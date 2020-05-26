@@ -330,7 +330,6 @@ structure Type =
             val default = fn () =>
                (default ()) handle BadPrimApp => false
 
-            datatype z = datatype Prim.t
             fun arg i = Vector.sub (args, i)
             fun oneArg f = 1 = Vector.length args andalso f (arg 0)
             fun twoArgs f = 2 = Vector.length args andalso f (arg 0, arg 1)
@@ -338,7 +337,7 @@ structure Type =
             val seqIndex = word (WordSize.seqIndex ())
          in
             case prim of
-               Array_alloc _ =>
+               Prim.Array_alloc _ =>
                   oneArg
                   (fn n =>
                    case deSequenceOpt result of
@@ -346,7 +345,7 @@ structure Type =
                          Prod.allAreMutable resp
                          andalso equals (n, seqIndex)
                     | _ => false)
-             | Array_copyArray =>
+             | Prim.Array_copyArray =>
                   fiveArgs
                   (fn (dst, di, src, si, len) =>
                    case (deSequenceOpt dst, deSequenceOpt src) of
@@ -361,7 +360,7 @@ structure Type =
                          andalso equals (len, seqIndex)
                          andalso isUnit result
                     | _ => false)
-             | Array_copyVector =>
+             | Prim.Array_copyVector =>
                   fiveArgs
                   (fn (dst, di, src, si, len) =>
                    case (deSequenceOpt dst, deSequenceOpt src) of
@@ -376,11 +375,11 @@ structure Type =
                          andalso equals (len, seqIndex)
                          andalso isUnit result
                     | _ => false)
-             | Array_length =>
+             | Prim.Array_length =>
                   oneArg
                   (fn a =>
                    isSequence a andalso equals (result, seqIndex))
-             | Array_toArray =>
+             | Prim.Array_toArray =>
                   oneArg
                   (fn arr =>
                    case (deSequenceOpt arr, deSequenceOpt result) of
@@ -391,7 +390,7 @@ structure Type =
                                         arrIsMutable andalso resIsMutable
                                         andalso equals (arrElt, resElt))
                     | _ => false)
-             | Array_toVector =>
+             | Prim.Array_toVector =>
                   oneArg
                   (fn arr =>
                    case (deSequenceOpt arr, deSequenceOpt result) of
@@ -402,7 +401,7 @@ structure Type =
                                         arrIsMutable
                                         andalso equals (arrElt, resElt))
                     | _ => false)
-             | Array_uninit =>
+             | Prim.Array_uninit =>
                   twoArgs
                   (fn (arr, i) =>
                    case deSequenceOpt arr of
@@ -411,7 +410,7 @@ structure Type =
                          andalso equals (i, seqIndex)
                          andalso isUnit result
                     | _ => false)
-             | Array_uninitIsNop =>
+             | Prim.Array_uninitIsNop =>
                   oneArg
                   (fn arr =>
                    case deSequenceOpt arr of

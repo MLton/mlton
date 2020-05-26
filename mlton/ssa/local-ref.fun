@@ -284,55 +284,51 @@ fun transform (program: Program.t): Program.t =
                 end)
             (* Rewrite. *)
             fun rewriteStatement (s: Statement.t as Statement.T {exp, var, ...})
-               = let
-                    datatype z = datatype Prim.t
-                 in
-                    case exp
-                       of PrimApp {prim, args, ...}
-                          => let
-                                fun arg n = Vector.sub (args, n)
+               = (case exp
+                     of PrimApp {prim, args, ...}
+                        => let
+                              fun arg n = Vector.sub (args, n)
 
-                                fun rewriteReffAssign rvar var
-                                   = let
-                                        val vi = varInfo rvar
-                                     in
-                                        if VarInfo.isLocal vi
-                                           then Statement.T
-                                              {var = SOME rvar,
-                                               ty = #2 (valOf (VarInfo.reff vi)),
-                                               exp = Var var}
-                                        else s
-                                     end
-                                fun rewriteReff ()
-                                   = case var 
-                                   of NONE => s
-                                 | SOME var => rewriteReffAssign var (arg 0)
-                                fun rewriteAssign () = rewriteReffAssign (arg 0) (arg 1)
-                                fun rewriteDeref rvar
-                                   = let
-                                        val vi = varInfo rvar
-                                     in
-                                        if VarInfo.isLocal vi
-                                           then let
-                                                in
-                                                   Statement.T
-                                                   {var = var,
-                                                    ty = #2 (valOf (VarInfo.reff vi)),
-                                                    exp = Var rvar}
-                                                end
-                                        else s
-                                     end
-                                val rewriteDeref
-                                   = fn () => rewriteDeref (arg 0)
-                             in
-                                case prim
-                                   of Ref_ref => rewriteReff ()
-                                 | Ref_assign => rewriteAssign ()
-                                 | Ref_deref => rewriteDeref ()
-                                 | _ => s
-                             end
-                        | _ => s
-                 end
+                              fun rewriteReffAssign rvar var
+                                 = let
+                                      val vi = varInfo rvar
+                                   in
+                                      if VarInfo.isLocal vi
+                                         then Statement.T
+                                            {var = SOME rvar,
+                                             ty = #2 (valOf (VarInfo.reff vi)),
+                                             exp = Var var}
+                                      else s
+                                   end
+                              fun rewriteReff ()
+                                 = case var
+                                 of NONE => s
+                               | SOME var => rewriteReffAssign var (arg 0)
+                              fun rewriteAssign () = rewriteReffAssign (arg 0) (arg 1)
+                              fun rewriteDeref rvar
+                                 = let
+                                      val vi = varInfo rvar
+                                   in
+                                      if VarInfo.isLocal vi
+                                         then let
+                                              in
+                                                 Statement.T
+                                                 {var = var,
+                                                  ty = #2 (valOf (VarInfo.reff vi)),
+                                                  exp = Var rvar}
+                                              end
+                                      else s
+                                   end
+                              val rewriteDeref
+                                 = fn () => rewriteDeref (arg 0)
+                           in
+                              case prim
+                                 of Prim.Ref_ref => rewriteReff ()
+                               | Prim.Ref_assign => rewriteAssign ()
+                               | Prim.Ref_deref => rewriteDeref ()
+                               | _ => s
+                           end
+                      | _ => s)
             fun rewriteBlock (Block.T {label, args, statements, transfer})
                = let
                     val li = labelInfo label
@@ -421,7 +417,6 @@ fun transform (program: Program.t): Program.t =
                      = (List.push (VarInfo.derefs (varInfo var), label) ;
                         List.push (LabelInfo.derefs li, var))
                    fun default () = Exp.foreachVar (exp, nonLocal)
-                   datatype z = datatype Prim.t
                  in
                    case exp
                      of PrimApp {prim, args, ...}
@@ -429,10 +424,10 @@ fun transform (program: Program.t): Program.t =
                            fun arg n = Vector.sub (args, n)
                          in
                            case prim
-                             of Ref_ref => (setReff (); default ())
-                              | Ref_assign => (setAssign (arg 0); 
-                                               nonLocal (arg 1))
-                              | Ref_deref => setDeref (arg 0)
+                             of Prim.Ref_ref => (setReff (); default ())
+                              | Prim.Ref_assign => (setAssign (arg 0);
+                                                    nonLocal (arg 1))
+                              | Prim.Ref_deref => setDeref (arg 0)
                               | _ => default ()
                          end
                       | _ => default ()

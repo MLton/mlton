@@ -414,7 +414,6 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
          end
       fun primApp {args, prim, resultType, resultVar = _, targs} =
          let
-            datatype z = datatype Prim.t
             val () =
                if Type.checkPrimApp {args = args,
                                      prim = prim,

@@ -21,15 +21,11 @@ val expEquals =
     | (Const c, Const c') => Const.equals (c, c')
     | (PrimApp {prim = p, targs = ts, args = xs},
        PrimApp {prim = p', targs = ts', args = xs'}) =>
-         let
-            datatype z = datatype Prim.t
-         in
-            case (p, p') of
-               (Vector_vector, Vector_vector) =>
-                  Vector.equals (ts, ts', Type.equals)
-                  andalso equalss (xs, xs')
-             | _ => false
-         end
+         (case (p, p') of
+             (Prim.Vector_vector, Prim.Vector_vector) =>
+                Vector.equals (ts, ts', Type.equals)
+                andalso equalss (xs, xs')
+           | _ => false)
     | (Tuple xs, Tuple xs') => equalss (xs, xs')
     | _ => false
 

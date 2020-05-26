@@ -701,18 +701,14 @@ fun toMachine (rssa: Rssa.Program.t) =
                           end))
                   end
              | PrimApp {dst, prim, args} =>
-                  let
-                     datatype z = datatype Prim.t
-                  in
-                     case prim of
-                        MLton_touch => Vector.new0 ()
-                      | _ =>
-                           Vector.new1
-                           (M.Statement.PrimApp
-                            {args = translateOperands args,
-                             dst = Option.map (dst, varOperand o #1),
-                             prim = prim})
-                  end
+                  (case prim of
+                      Prim.MLton_touch => Vector.new0 ()
+                    | _ =>
+                         Vector.new1
+                         (M.Statement.PrimApp
+                          {args = translateOperands args,
+                           dst = Option.map (dst, varOperand o #1),
+                           prim = prim}))
              | ProfileLabel s => Vector.new1 (M.Statement.ProfileLabel s)
              | SetExnStackLocal =>
                   (* ExnStack = stackTop + (handlerOffset + LABEL_SIZE) - StackBottom; *)

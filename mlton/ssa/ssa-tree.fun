@@ -260,8 +260,6 @@ structure Type =
                             word = word}})
             val default = fn () =>
                (default ()) handle BadPrimApp => false
-
-            datatype z = datatype Prim.t
          in
             case prim of
                _ => default ()

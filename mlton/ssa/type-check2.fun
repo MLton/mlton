@@ -518,7 +518,6 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
       fun filterWord (from, s) = coerce {from = from, to = Type.word s}
       fun primApp {args, prim, resultType, resultVar = _} =
          let
-            datatype z = datatype Prim.t
             val () =
                if Type.checkPrimApp {args = args,
                                      prim = prim,

@@ -30,7 +30,6 @@ struct
 
   fun implementsPrim (p: 'a Prim.t) =
      let
-        datatype z = datatype RealSize.t
         datatype z = datatype WordSize.prim
         fun w32168 s =
            case WordSize.prim s of
@@ -112,7 +111,6 @@ struct
             transInfo = {...} : transInfo}
     = let
         val primName = Prim.toString prim
-        datatype z = datatype Prim.t
 
         fun getDst1 ()
           = Vector.sub (dsts, 0)
@@ -781,6 +779,8 @@ struct
 
         fun flag {signed} =
            if signed then amd64.Instruction.O else amd64.Instruction.C
+
+        datatype z = datatype Prim.t
       in
         AppendList.appends
         [comment_begin,

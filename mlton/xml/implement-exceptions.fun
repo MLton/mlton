@@ -381,7 +381,6 @@ fun transform (Program.T {datatypes, body, ...}): Program.t =
              | Lambda l => primExp (Lambda (loopLambda l))
              | PrimApp {args, prim, ...} =>
                   let
-                     datatype z = datatype Prim.t
                      fun deref (var, ty) =
                         primExp
                         (PrimApp {prim = Prim.Ref_deref,
@@ -395,20 +394,20 @@ fun transform (Program.T {datatypes, body, ...}): Program.t =
                                                       Vector.first args)})
                   in
                      case prim of
-                        Exn_extra =>
+                        Prim.Exn_extra =>
                            (makeExp o projectExtra)
                            (VarExp.var (Vector.first args))
-                      | Exn_name =>
+                      | Prim.Exn_name =>
                            (primExp o App)
                            {func = VarExp.mono exnNameVar,
                             arg = Vector.first args}
-                      | Exn_setExtendExtra =>
+                      | Prim.Exn_setExtendExtra =>
                            assign (extendExtraVar,
                                    extendExtraType)
-                      | TopLevel_getHandler =>
+                      | Prim.TopLevel_getHandler =>
                            deref (topLevelHandlerVar,
                                   topLevelHandlerType)
-                      | TopLevel_setHandler =>
+                      | Prim.TopLevel_setHandler =>
                            assign (topLevelHandlerVar,
                                    topLevelHandlerType)
                       | _ => primExp exp

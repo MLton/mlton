@@ -622,12 +622,11 @@ fun transform (program: Program.t): Program.t =
                   in arg 1 dependsOn a
                      ; coerce {from = arg 2, to = a}
                   end
-               datatype z = datatype Prim.t
                val _ =
                   case prim of
-                     Array_alloc _ =>
+                     Prim.Array_alloc _ =>
                         coerce {from = arg 0, to = arrayLength result}
-                   | Array_array =>
+                   | Prim.Array_array =>
                         let
                            val l =
                               (const o S.Const.word o WordX.fromInt)
@@ -639,7 +638,7 @@ fun transform (program: Program.t): Program.t =
                               (args, fn arg =>
                                coerce {from = arg, to = dearray result}))
                         end
-                   | Array_copyArray =>
+                   | Prim.Array_copyArray =>
                         let
                            val a = dearray (arg 0)
                         in
@@ -651,7 +650,7 @@ fun transform (program: Program.t): Program.t =
                                    unifySlot (e, e')
                               | _ => Error.bug "Useless.primApp: Array_copyArray"
                          end
-                   | Array_copyVector =>
+                   | Prim.Array_copyVector =>
                         let
                            val a = dearray (arg 0)
                         in
@@ -663,61 +662,61 @@ fun transform (program: Program.t): Program.t =
                                    unifySlot (e, e')
                               | _ => Error.bug "Useless.primApp: Array_copyVector"
                          end
-                   | Array_length => return (arrayLength (arg 0))
-                   | Array_sub => sub ()
-                   | Array_toArray =>
+                   | Prim.Array_length => return (arrayLength (arg 0))
+                   | Prim.Array_sub => sub ()
+                   | Prim.Array_toArray =>
                         (case (value (arg 0), value result) of
                             (Array {length = l, elt = e, ...},
                              Array {length = l', elt = e', ...}) =>
                                (unify (l, l'); unifySlot (e, e'))
                            | _ => Error.bug "Useless.primApp: Array_toArray")
-                   | Array_toVector =>
+                   | Prim.Array_toVector =>
                         (case (value (arg 0), value result) of
                             (Array {length = l, elt = e, ...},
                              Vector {length = l', elt = e', ...}) =>
                                (unify (l, l'); unifySlot (e, e'))
                            | _ => Error.bug "Useless.primApp: Array_toVector")
-                   | Array_uninit =>
+                   | Prim.Array_uninit =>
                         let
                            val a = dearray (arg 0)
                         in
                            arg 1 dependsOn a
                         end
-                   | Array_uninitIsNop =>
+                   | Prim.Array_uninitIsNop =>
                         Useful.whenUseful
                         (deground result, fn () =>
                          Useful.makeUseful (arrayUseful (arg 0)))
-                   | Array_update => update ()
-                   | CFunction _ =>
+                   | Prim.Array_update => update ()
+                   | Prim.CFunction _ =>
                         (Vector.foreach (args, deepMakeUseful);
                          deepMakeUseful result)
-                   | MLton_eq =>
+                   | Prim.MLton_eq =>
                         Useful.whenUseful
                         (deground result, fn () =>
                          (unify (arg 0, arg 1)
                           ; makeWanted (arg 1)))
-                   | MLton_equal =>
+                   | Prim.MLton_equal =>
                         Useful.whenUseful
                         (deground result, fn () =>
                          (shallowMakeUseful (arg 0)
                           ; shallowMakeUseful (arg 1)))
-                   | MLton_hash =>
+                   | Prim.MLton_hash =>
                         Useful.whenUseful
                         (deground result, fn () =>
                          shallowMakeUseful (arg 0))
-                   | MLton_share => makeWanted (arg 0)
-                   | MLton_size =>
+                   | Prim.MLton_share => makeWanted (arg 0)
+                   | Prim.MLton_size =>
                         Useful.whenUseful
                         (deground result, fn () =>
                          makeWanted (arg 0))
-                   | MLton_touch => shallowMakeUseful (arg 0)
-                   | Ref_assign => coerce {from = arg 1, to = deref (arg 0)}
-                   | Ref_deref => return (deref (arg 0))
-                   | Ref_ref => coerce {from = arg 0, to = deref result}
-                   | Vector_length => return (vectorLength (arg 0))
-                   | Vector_sub => (arg 1 dependsOn result
-                                    ; return (devector (arg 0)))
-                   | Vector_vector =>
+                   | Prim.MLton_touch => shallowMakeUseful (arg 0)
+                   | Prim.Ref_assign => coerce {from = arg 1, to = deref (arg 0)}
+                   | Prim.Ref_deref => return (deref (arg 0))
+                   | Prim.Ref_ref => coerce {from = arg 0, to = deref result}
+                   | Prim.Vector_length => return (vectorLength (arg 0))
+                   | Prim.Vector_sub => (arg 1 dependsOn result
+                                         ; return (devector (arg 0)))
+                   | Prim.Vector_vector =>
                         let
                            val l =
                               (const o S.Const.word o WordX.fromInt)
@@ -728,14 +727,14 @@ fun transform (program: Program.t): Program.t =
                               (args, fn arg =>
                                coerce {from = arg, to = devector result}))
                         end
-                   | Weak_canGet =>
+                   | Prim.Weak_canGet =>
                         Useful.whenUseful
                         (deground result, fn () =>
                          Useful.makeUseful (weakUseful (arg 0)))
-                   | Weak_get => return (deweak (arg 0))
-                   | Weak_new => coerce {from = arg 0, to = deweak result}
-                   | WordArray_subWord _ => sub ()
-                   | WordArray_updateWord _ => update ()
+                   | Prim.Weak_get => return (deweak (arg 0))
+                   | Prim.Weak_new => coerce {from = arg 0, to = deweak result}
+                   | Prim.WordArray_subWord _ => sub ()
+                   | Prim.WordArray_updateWord _ => update ()
                    | _ =>
                         let
                            (* allOrNothing so the type doesn't change *)
@@ -946,15 +945,14 @@ fun transform (program: Program.t): Program.t =
                                       targs = Vector.new1 Type.unit,
                                       args = Vector.new1 unitVar}
                         else doit ()
-                  datatype z = datatype Prim.t
                in
                   case prim of
-                     Array_uninitIsNop =>
+                     Prim.Array_uninitIsNop =>
                         if varExists (Vector.sub (args, 0))
                            then doit ()
                            else ConApp {args = Vector.new0 (),
                                         con = Con.truee}
-                   | MLton_equal =>
+                   | Prim.MLton_equal =>
                         let
                            val (t0, _) = Value.getNew (value (arg 0))
                            val (t1, _) = Value.getNew (value (arg 1))
@@ -972,8 +970,8 @@ fun transform (program: Program.t): Program.t =
                                    ConApp {args = Vector.new0 (),
                                            con = Con.falsee}
                         end
-                   | Ref_ref => makePtr Type.deRef
-                   | Weak_new => makePtr Type.deWeak
+                   | Prim.Ref_ref => makePtr Type.deRef
+                   | Prim.Weak_new => makePtr Type.deWeak
                    | _ => doit ()
                end
           | Select {tuple, offset} =>
@@ -1033,17 +1031,16 @@ fun transform (program: Program.t): Program.t =
                                    fun array () =
                                       Value.isUseful
                                       (Value.dearray (value (arg 0)))
-                                   datatype z = datatype Prim.t
                                 in
                                    case prim of
-                                      Array_copyArray => array ()
-                                    | Array_copyVector => array ()
-                                    | Array_uninit => array ()
-                                    | Array_update => array ()
-                                    | Ref_assign =>
+                                      Prim.Array_copyArray => array ()
+                                    | Prim.Array_copyVector => array ()
+                                    | Prim.Array_uninit => array ()
+                                    | Prim.Array_update => array ()
+                                    | Prim.Ref_assign =>
                                          Value.isUseful
                                          (Value.deref (value (arg 0)))
-                                    | WordArray_updateWord _ => array ()
+                                    | Prim.WordArray_updateWord _ => array ()
                                     | _ => true
                                 end
                         then yes ty

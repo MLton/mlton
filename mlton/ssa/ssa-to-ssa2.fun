@@ -122,35 +122,34 @@ fun convert (S.Program.T {datatypes, functions, globals, main}) =
                         (S2.Exp.Select {base = Base.SequenceSub {index = arg 1,
                                                                  sequence = arg 0},
                                         offset = 0})
-                     datatype z = datatype Prim.t
                    in
                       case prim of
-                         Array_array => sequence ()
-                       | Array_sub => sub ()
-                       | Array_update =>
+                         Prim.Array_array => sequence ()
+                       | Prim.Array_sub => sub ()
+                       | Prim.Array_update =>
                             maybeBindUnit
                             (S2.Statement.Update
                              {base = Base.SequenceSub {index = arg 1,
                                                        sequence = arg 0},
                               offset = 0,
                               value = arg 2})
-                       | Ref_assign =>
+                       | Prim.Ref_assign =>
                             maybeBindUnit
                             (S2.Statement.Update
                              {base = Base.Object (arg 0),
                               offset = 0,
                               value = arg 1})
-                       | Ref_deref =>
+                       | Prim.Ref_deref =>
                             simple (S2.Exp.Select {base = Base.Object (arg 0),
                                                    offset = 0})
-                       | Ref_ref =>
+                       | Prim.Ref_ref =>
                             simple (S2.Exp.Object {args = Vector.new1 (arg 0),
                                                    con = NONE})
-                       | Vector_length =>
+                       | Prim.Vector_length =>
                             simple (S2.Exp.PrimApp {args = args,
                                                     prim = Prim.Array_length})
-                       | Vector_sub => sub ()
-                       | Vector_vector => sequence ()
+                       | Prim.Vector_sub => sub ()
+                       | Prim.Vector_vector => sequence ()
                        | _ =>
                             simple (S2.Exp.PrimApp {args = args,
                                                     prim = convertPrim prim})

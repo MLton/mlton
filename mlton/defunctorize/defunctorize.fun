@@ -1045,15 +1045,14 @@ fun defunctorize (CoreML.Program.T {decs}) =
                 | PrimApp {args, prim, targs} =>
                      let
                         val args = Vector.map (args, #1 o loopExp)
-                        datatype z = datatype Prim.t
                      in
                         if (case prim of
-                               Real_rndToReal (s1, s2) =>
+                               Prim.Real_rndToReal (s1, s2) =>
                                   RealSize.equals (s1, s2)
-                             | String_toWord8Vector => true
-                             | Word_extdToWord (s1, s2, _) => 
+                             | Prim.String_toWord8Vector => true
+                             | Prim.Word_extdToWord (s1, s2, _) =>
                                   WordSize.equals (s1, s2)
-                             | Word8Vector_toString => true
+                             | Prim.Word8Vector_toString => true
                              | _ => false)
                            then Vector.first args
                         else

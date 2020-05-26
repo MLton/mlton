@@ -121,12 +121,11 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                              lhs = arg a,
                              rhs = arg b})
             fun doit rel = z (rel, 0, 1)
-            datatype z = datatype Prim.t
          in
             case prim of
-               MLton_eq => doit EQ
-             | Word_equal _ => doit EQ
-             | Word_lt (_, sg) => doit (LT sg)
+               Prim.MLton_eq => doit EQ
+             | Prim.Word_equal _ => doit EQ
+             | Prim.Word_lt (_, sg) => doit (LT sg)
              | _ => None
          end
       fun setConst (x, c) = setVarInfo (x, Const c)
@@ -360,7 +359,6 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
 
                            fun checkPrimApp (args, prim) =
                               let
-                                datatype z = datatype Prim.t
                                 fun add1 (x: Var.t, s: WordSize.t, sg) =
                                    if add1Eligible (x, s, sg) then falsee ()
                                    else statement
@@ -380,7 +378,7 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                                     | _ => Error.bug ("RedundantTests.add: strange const")
                               in
                                 case prim of
-                                    Word_addCheckP s =>
+                                    Prim.Word_addCheckP s =>
                                        let
                                           val x1 = Vector.sub (args, 0)
                                           val x2 = Vector.sub (args, 1)
@@ -391,7 +389,7 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                                                       Const c => add (c, x1, s)
                                                     | _ => statement)
                                        end
-                                  | Word_subCheckP (s, sg as {signed}) =>
+                                  | Prim.Word_subCheckP (s, sg as {signed}) =>
                                        let
                                           val x1 = Vector.sub (args, 0)
                                           val x2 = Vector.sub (args, 1)
