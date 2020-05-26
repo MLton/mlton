@@ -1139,7 +1139,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                            (size,
                                             WordSize.cptrdiff ()))),
                                   dst = SOME Operand.StackTop,
-                                  prim = Prim.cpointerAdd})
+                                  prim = Prim.CPointer_add})
                 ; if amTimeProfiling
                      then flushStackTop ()
                      else ())
@@ -1399,7 +1399,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                                   (Operand.gcField GCField.StackBottom,
                                                    Operand.gcField GCField.ExnStack),
                                            dst = SOME Operand.StackTop,
-                                           prim = Prim.cpointerAdd})
+                                           prim = Prim.CPointer_add})
                          ; rtrans raisesTo)
                    | Return {returnsTo} => rtrans returnsTo
                    | Switch (Switch.T {cases, default, expect, test, ...}) =>

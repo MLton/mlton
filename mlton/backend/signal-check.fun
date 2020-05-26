@@ -83,7 +83,7 @@ fun insertInFunction (f: Function.t): Function.t =
                          (Operand.Runtime Runtime.GCField.Limit,
                           Operand.null)),
                  dst = SOME (res, Type.bool),
-                 prim = Prim.cpointerEqual})
+                 prim = Prim.CPointer_equal})
             val compareTransfer =
                Transfer.ifBool
                (Operand.Var {var = res, ty = Type.bool},

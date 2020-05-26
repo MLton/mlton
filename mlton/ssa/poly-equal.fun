@@ -74,13 +74,13 @@ structure Dexp =
                      args = Vector.new2 (e1, e2),
                      ty = Type.word s}
       in
-         val add = mk Prim.wordAdd
-         val andb = mk Prim.wordAndb
-         val orb = mk Prim.wordOrb
+         val add = mk Prim.Word_add
+         val andb = mk Prim.Word_andb
+         val orb = mk Prim.Word_orb
       end
 
       fun wordEqual (e1: t, e2: t, s): t =
-         primApp {prim = Prim.wordEqual s,
+         primApp {prim = Prim.Word_equal s,
                   targs = Vector.new0 (),
                   args = Vector.new2 (e1, e2),
                   ty = Type.bool}
@@ -222,7 +222,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                val body =
                   let
                      fun length dvec =
-                        Dexp.primApp {prim = Prim.vectorLength,
+                        Dexp.primApp {prim = Prim.Vector_length,
                                       targs = Vector.new1 ty,
                                       args = Vector.new1 dvec,
                                       ty = Type.word seqIndexWordSize}
@@ -269,7 +269,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                val body =
                   let
                      fun sub (dvec, di) =
-                        Dexp.primApp {prim = Prim.vectorSub,
+                        Dexp.primApp {prim = Prim.Vector_sub,
                                       targs = Vector.new1 ty,
                                       args = Vector.new2 (dvec, di),
                                       ty = ty}
@@ -339,13 +339,13 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                      val darg2 = Dexp.var arg2
                      fun toWord dx =
                         Dexp.primApp
-                        {prim = Prim.intInfToWord,
+                        {prim = Prim.IntInf_toWord,
                          targs = Vector.new0 (),
                          args = Vector.new1 dx,
                          ty = Type.word sws}
                      fun toVector dx =
                         Dexp.primApp
-                        {prim = Prim.intInfToVector,
+                        {prim = Prim.IntInf_toVector,
                          targs = Vector.new0 (),
                          args = Vector.new1 dx,
                          ty = Type.vector (Type.word bws)}
@@ -395,12 +395,12 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                              targs = targs, 
                              args = Vector.new2 (dx1, dx2),
                              ty = Type.bool}
-            fun eq () = prim (Prim.eq, Vector.new1 ty)
+            fun eq () = prim (Prim.MLton_eq, Vector.new1 ty)
             fun hasConstArg () = #isConst (varInfo x1) orelse #isConst (varInfo x2)
          in
             case Type.dest ty of
                Type.Array _ => eq ()
-             | Type.CPointer => prim (Prim.cpointerEqual, Vector.new0 ())
+             | Type.CPointer => prim (Prim.CPointer_equal, Vector.new0 ())
              | Type.Datatype tycon =>
                   if isEnum tycon orelse hasConstArg ()
                      then eq ()
@@ -418,7 +418,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                      val ws = WordSize.fromBits (RealSize.bits rs)
                      fun toWord dx =
                         Dexp.primApp
-                        {prim = Prim.realCastToWord (rs, ws),
+                        {prim = Prim.Real_castToWord (rs, ws),
                          targs = Vector.new0 (),
                          args = Vector.new1 dx,
                          ty = Type.word ws}
@@ -453,7 +453,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                              args = Vector.new2 (dx1, dx2),
                              ty = Type.bool}
              | Type.Weak _ => eq ()
-             | Type.Word ws => prim (Prim.wordEqual ws, Vector.new0 ())
+             | Type.Word ws => prim (Prim.Word_equal ws, Vector.new0 ())
          end
 
       val _ =
@@ -554,7 +554,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                                                    {var = var,
                                                     ty = Type.bool,
                                                     exp = Exp.PrimApp
-                                                          {prim = Prim.cpointerEqual,
+                                                          {prim = Prim.CPointer_equal,
                                                            targs = Vector.new0 (),
                                                            args = Vector.new2 (cp0,cp1)}}
                                              in
@@ -573,7 +573,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                                                    {var = SOME w,
                                                     ty = wt,
                                                     exp = Exp.PrimApp
-                                                          {prim = Prim.realCastToWord (rs, ws),
+                                                          {prim = Prim.Real_castToWord (rs, ws),
                                                            targs = Vector.new0 (),
                                                            args = Vector.new1 r}}
                                                 val wordEqStmt =
@@ -581,7 +581,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                                                    {var = var,
                                                     ty = Type.bool,
                                                     exp = Exp.PrimApp
-                                                          {prim = Prim.wordEqual ws,
+                                                          {prim = Prim.Word_equal ws,
                                                            targs = Vector.new0 (),
                                                            args = Vector.new2 (w0,w1)}}
                                              in
@@ -598,7 +598,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                                                    {var = var,
                                                     ty = Type.bool,
                                                     exp = Exp.PrimApp
-                                                          {prim = Prim.wordEqual ws,
+                                                          {prim = Prim.Word_equal ws,
                                                            targs = Vector.new0 (),
                                                            args = Vector.new2 (w0,w1)}}
                                              in

@@ -111,7 +111,7 @@ in
 end
 
 fun eq (e1, e2, ty) =
-   primApp {prim = Prim.eq,
+   primApp {prim = Prim.MLton_eq,
             targs = Vector.new1 ty,
             args = Vector.new2 (e1, e2),
             ty = Type.bool}

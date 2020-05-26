@@ -840,7 +840,7 @@ fun transform (program: Program.t): Program.t =
                          Statement.T
                          {var = SOME var, 
                           ty = ty,
-                          exp = PrimApp {prim = Prim.bogus,
+                          exp = PrimApp {prim = Prim.MLton_bogus,
                                          targs = Vector.new1 ty,
                                          args = Vector.new0 ()}})
               ; var

@@ -524,7 +524,7 @@ structure Value =
                                       case !raw of
                                          Raw.Raw raw =>
                                             Exp.PrimApp {args = args,
-                                                         prim = Prim.arrayAlloc {raw = raw},
+                                                         prim = Prim.Array_alloc {raw = raw},
                                                          targs = targs}
                                        | _ => Error.bug "ConstantPropagation.Value.global: Array, raw",
                                       Type.deArray ty)
@@ -548,7 +548,7 @@ structure Value =
                                unary (birth, fn {init} => init,
                                       fn {args, targs} =>
                                       Exp.PrimApp {args = args,
-                                                   prim = Prim.reff,
+                                                   prim = Prim.Ref_ref,
                                                    targs = targs},
                                       Type.deRef ty)
                                else No
@@ -567,7 +567,7 @@ structure Value =
                                          fun mkVec args =
                                             yes (Exp.PrimApp
                                                  {args = args,
-                                                  prim = Prim.vector,
+                                                  prim = Prim.Vector_vector,
                                                   targs = Vector.new1 eltTy})
                                          fun mkConst (ws, elts) =
                                             yes (Exp.Const

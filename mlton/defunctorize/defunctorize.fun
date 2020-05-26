@@ -936,7 +936,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
             fun conApp {arg, con, targs, ty} =
                if Con.equals (con, Con.reff)
                   then Xexp.primApp {args = Vector.new1 arg,
-                                     prim = Prim.reff,
+                                     prim = Prim.Ref_ref,
                                      targs = targs,
                                      ty = ty}
                else Xexp.conApp {arg = SOME arg,
@@ -1086,7 +1086,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
                                var = var ()}
                 | Vector es =>
                      Xexp.primApp {args = Vector.map (es, #1 o loopExp),
-                                   prim = Prim.vector,
+                                   prim = Prim.Vector_vector,
                                    targs = Vector.new1 (Xtype.deVector ty),
                                    ty = ty}
          in

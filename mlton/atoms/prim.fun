@@ -697,18 +697,6 @@ val map: 'a t * ('a -> 'b) -> 'b t =
 
 val cast: 'a t -> 'b t = fn p => map (p, fn _ => Error.bug "Prim.cast")
 
-val arrayAlloc = fn {raw} => Array_alloc {raw = raw}
-val arrayArray = Array_array
-val arrayLength = Array_length
-val arrayToVector = Array_toVector
-val arrayUpdate = Array_update
-val assign = Ref_assign
-val bogus = MLton_bogus
-val bug = MLton_bug
-val cfunction = CFunction
-val cpointerAdd = CPointer_add
-val cpointerDiff = CPointer_diff
-val cpointerEqual = CPointer_equal
 fun cpointerGet ctype = 
    let datatype z = datatype CType.t
    in
@@ -726,7 +714,6 @@ fun cpointerGet ctype =
        | Word32 => CPointer_getWord (WordSize.fromBits (Bits.fromInt 32))
        | Word64 => CPointer_getWord (WordSize.fromBits (Bits.fromInt 64))
    end
-val cpointerLt = CPointer_lt
 fun cpointerSet ctype = 
    let datatype z = datatype CType.t
    in
@@ -744,41 +731,6 @@ fun cpointerSet ctype =
        | Word32 => CPointer_setWord (WordSize.fromBits (Bits.fromInt 32))
        | Word64 => CPointer_setWord (WordSize.fromBits (Bits.fromInt 64))
    end
-val cpointerSub = CPointer_sub
-val cpointerToWord = CPointer_toWord
-val deref = Ref_deref
-val eq = MLton_eq
-val equal = MLton_equal
-val hash = MLton_hash
-val intInfToVector = IntInf_toVector
-val intInfToWord = IntInf_toWord
-val intInfNeg = IntInf_neg
-val intInfNotb = IntInf_notb
-val realCastToWord = Real_castToWord
-val reff = Ref_ref
-val touch = MLton_touch
-val vector = Vector_vector
-val vectorLength = Vector_length
-val vectorSub = Vector_sub
-val wordAdd = Word_add
-val wordAddCheckP = Word_addCheckP
-val wordAndb = Word_andb
-val wordCastToReal = Word_castToReal
-val wordEqual = Word_equal
-val wordExtdToWord = Word_extdToWord
-val wordLshift = Word_lshift
-val wordLt = Word_lt
-val wordMul = Word_mul
-val wordMulCheckP = Word_mulCheckP
-val wordNeg = Word_neg
-val wordNegCheckP = Word_negCheckP
-val wordNotb = Word_notb
-val wordOrb = Word_orb
-val wordQuot = Word_quot
-val wordRshift = Word_rshift
-val wordSub = Word_sub
-val wordSubCheckP = Word_subCheckP
-val wordXorb = Word_xorb
 
 val isCommutative =
    fn MLton_eq => true
@@ -1841,8 +1793,8 @@ fun ('a, 'b) apply (p: 'a t,
             datatype z = datatype ApplyResult.t
             fun varIntInf (x, i: IntInf.t, space, inOrder) =
                let
-                  fun neg () = Apply (intInfNeg, [x, space])
-                  fun notb () = Apply (intInfNotb, [x, space])
+                  fun neg () = Apply (IntInf_neg, [x, space])
+                  fun notb () = Apply (IntInf_notb, [x, space])
                   val i = IntInf.toInt i
                in
                   case p of
@@ -2011,7 +1963,7 @@ fun ('a, 'b) apply (p: 'a t,
                         else if WordX.isOne w
                                 then Var x
                              else if signed andalso WordX.isNegOne w
-                                     then Apply (wordNeg s, [x])
+                                     then Apply (Word_neg s, [x])
                                   else Unknown
                    | Word_mulCheckP _ =>
                         if WordX.isZero w orelse WordX.isOne w
@@ -2029,7 +1981,7 @@ fun ('a, 'b) apply (p: 'a t,
                               if WordX.isOne w
                                  then Var x
                               else if signed andalso WordX.isNegOne w
-                                      then Apply (wordNeg s, [x])
+                                      then Apply (Word_neg s, [x])
                                    else Unknown
                         else Unknown
                    | Word_rem (s, {signed}) =>
@@ -2054,7 +2006,7 @@ fun ('a, 'b) apply (p: 'a t,
                         if WordX.isZero w
                            then if inOrder
                                    then Var x
-                                else Apply (wordNeg s, [x])
+                                else Apply (Word_neg s, [x])
                         else Unknown
                    | Word_subCheckP _ =>
                         if WordX.isZero w andalso inOrder
@@ -2064,7 +2016,7 @@ fun ('a, 'b) apply (p: 'a t,
                         if WordX.isZero w
                            then Var x
                         else if WordX.isAllOnes w
-                                then Apply (wordNotb s, [x])
+                                then Apply (Word_notb s, [x])
                              else Unknown
                    | _ => Unknown
                end

@@ -650,7 +650,7 @@ fun updateCard (addr: Operand.t): Statement.t list =
                          Operand.word
                          (WordX.fromIntInf (cardSizeLog2, WordSize.shiftArg)))),
                 dst = SOME (index, indexTy),
-                prim = Prim.wordRshift (sz, {signed = false})},
+                prim = Prim.Word_rshift (sz, {signed = false})},
        Move {dst = (SequenceOffset
                     {base = Runtime GCField.CardMapAbsolute,
                      index = Var {ty = indexTy, var = index},
@@ -1073,7 +1073,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                (Operand.word
                                                 (WordX.fromInt (n, WordSize.word32))))),
                                       dst = SOME (res, resTy),
-                                      prim = Prim.wordAdd WordSize.word32},
+                                      prim = Prim.Word_add WordSize.word32},
                                      Statement.Move
                                      {dst = atomicState,
                                       src = Var {ty = resTy, var = res}}]
@@ -1348,12 +1348,12 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                       | SOME t =>
                                            let
                                               val ws = WordSize.fromBits (Type.width t)
-                                              val wordEqual = Prim.wordEqual ws
+                                              val wordEqual = Prim.Word_equal ws
                                               val args = varOps args
                                               val (prim, args) =
                                                  case Type.toCType t of
                                                     CType.CPointer =>
-                                                       (Prim.cpointerEqual, args)
+                                                       (Prim.CPointer_equal, args)
                                                   | CType.Objptr =>
                                                        (wordEqual,
                                                         Vector.map
@@ -1420,7 +1420,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                        (Runtime.limitSlop,
                                                         size)))),
                                              dst = SOME (tmp, ty),
-                                             prim = Prim.cpointerSub},
+                                             prim = Prim.CPointer_sub},
                                             Statement.Move
                                             {dst = Runtime Limit,
                                              src = Var {ty = ty, var = tmp}})
@@ -1557,7 +1557,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                      none)
                                | Word_equal s =>
                                     simpleCodegenOrC
-                                    (Prim.wordEqual
+                                    (Prim.Word_equal
                                      (WordSize.roundUpToPrim s))
                                | Word_toIntInf => cast ()
                                | Word_extdToWord (s1, s2, {signed}) =>
@@ -1576,7 +1576,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                              then cast ()
                                           else
                                              simpleCodegenOrC
-                                             (Prim.wordExtdToWord
+                                             (Prim.Word_extdToWord
                                               (s1, s2, {signed = signed}))
                                        end
                                | WordVector_toIntInf => cast ()

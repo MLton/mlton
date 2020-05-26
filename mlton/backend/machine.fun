@@ -468,7 +468,7 @@ structure Statement =
             ((* tmp = Frontier + GC_NORMAL_METADATA_SIZE; *)
              PrimApp {args = Vector.new2 (Frontier, bytes metaDataSize),
                       dst = SOME temp,
-                      prim = Prim.cpointerAdd},
+                      prim = Prim.CPointer_add},
              (* CHECK; if objptr <> cpointer, need non-trivial coercion here. *)
              (* dst = pointerToObjptr(tmp); *)
              Move {dst = dst, src = Cast (temp, Operand.ty dst)},
@@ -480,7 +480,7 @@ structure Statement =
              (* Frontier += size; *)
              PrimApp {args = Vector.new2 (Frontier, bytes size),
                       dst = SOME Frontier,
-                      prim = Prim.cpointerAdd})
+                      prim = Prim.CPointer_add})
          end
 
       fun sequence {dst, header, length, size} =
@@ -502,7 +502,7 @@ structure Statement =
             ((* tmp = Frontier + GC_SEQUENCE_METADATA_SIZE; *)
              PrimApp {args = Vector.new2 (Frontier, bytes metaDataSize),
                       dst = SOME temp,
-                      prim = Prim.cpointerAdd},
+                      prim = Prim.CPointer_add},
              (* CHECK; if objptr <> cpointer, need non-trivial coercion here. *)
              (* dst = pointerToObjptr(tmp); *)
              Move {dst = dst, src = Cast (temp, Operand.ty dst)},
@@ -524,7 +524,7 @@ structure Statement =
              (* Frontier += size; *)
              PrimApp {args = Vector.new2 (Frontier, bytes size),
                       dst = SOME Frontier,
-                      prim = Prim.cpointerAdd})
+                      prim = Prim.CPointer_add})
          end
 
       fun foldOperands (s, ac, f) =

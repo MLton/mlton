@@ -305,7 +305,7 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
                                             symbolScope=symbolScope, target=target}
                                       | _ => cfunc
                               in
-                                 Prim.cfunction newCFunc
+                                 Prim.CFunction newCFunc
                               end
                          | _ => prim
                   in

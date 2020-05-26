@@ -384,12 +384,12 @@ fun transform (Program.T {datatypes, body, ...}): Program.t =
                      datatype z = datatype Prim.t
                      fun deref (var, ty) =
                         primExp
-                        (PrimApp {prim = Prim.deref,
+                        (PrimApp {prim = Prim.Ref_deref,
                                   targs = Vector.new1 ty,
                                   args = Vector.new1 (VarExp.mono var)})
                      fun assign (var, ty) =
                         primExp
-                        (PrimApp {prim = Prim.assign,
+                        (PrimApp {prim = Prim.Ref_assign,
                                   targs = Vector.new1 ty,
                                   args = Vector.new2 (VarExp.mono var,
                                                       Vector.first args)})

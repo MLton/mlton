@@ -99,7 +99,7 @@ fun mapStatement stmt =
                if WordSize.equals (W2, W3)
                then Exp.Var x2
                else Exp.PrimApp { args  = Vector.new1 x2,
-                                  prim  = Prim.wordExtdToWord prim,
+                                  prim  = Prim.Word_extdToWord prim,
                                   targs = Vector.new0 () }
           | _ => exp
    in

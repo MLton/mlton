@@ -172,7 +172,7 @@ structure Loop =
       let
         val (cVar, cStmt) = makeConstStmt (v, wsize)
         val newExp = Exp.PrimApp {args = Vector.new2 (var, cVar),
-                                  prim = Prim.wordAdd wsize,
+                                  prim = Prim.Word_add wsize,
                                   targs = Vector.new0 ()}
         val newType = Type.word wsize
         val newVar = Var.newNoname()
@@ -1024,7 +1024,7 @@ fun expandLoop (oldHeader, loopBlocks, loop, tBlock, argi, argSize, oldArg,
             val newTy = Type.datatypee Tycon.bool
             val newExp =
               PrimApp {args = Vector.new2 (iterVar, newLimitVar),
-                       prim = Prim.wordLt (argSize, {signed = true}),
+                       prim = Prim.Word_lt (argSize, {signed = true}),
                        targs = Vector.new0 ()}
           in
             (Statement.T {exp = newExp,

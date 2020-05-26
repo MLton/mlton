@@ -55,7 +55,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                     ty = Type.array ty,
                     exp = PrimApp
                     {args = Vector.new0 (),
-                     prim = Prim.arrayArray,
+                     prim = Prim.Array_array,
                      targs = Vector.new1 ty}}
                 val () = List.push (newGlobals, statement)
              in
@@ -112,7 +112,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                              ty = Type.bool,
                              exp = PrimApp
                                    {args = Vector.new2 (zeroVar, lenVar),
-                                    prim = Prim.wordEqual seqIndexSize,
+                                    prim = Prim.Word_equal seqIndexSize,
                                     targs = Vector.new0 ()}})
                         val transfer =
                            Transfer.Case
@@ -154,7 +154,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                              ty = arrTy,
                              exp = PrimApp
                                    {args = Vector.new1 lenVar,
-                                    prim = Prim.arrayAlloc {raw = false},
+                                    prim = Prim.Array_alloc {raw = false},
                                     targs = Vector.new1 eltTy}})
                         val transfer =
                            Transfer.Goto

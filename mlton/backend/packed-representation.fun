@@ -191,10 +191,10 @@ structure Statement =
                 Var {ty = ty, var = tmp})
             end
       in
-         val andb = make Prim.wordAndb
-         val lshift = make Prim.wordLshift
-         val orb = make Prim.wordOrb
-         val rshift = make (fn s => Prim.wordRshift (s, {signed = false}))
+         val andb = make Prim.Word_andb
+         val lshift = make Prim.Word_lshift
+         val orb = make Prim.Word_orb
+         val rshift = make (fn s => Prim.Word_rshift (s, {signed = false}))
       end
    end
 
@@ -578,7 +578,7 @@ structure Base =
                                                  (eltWidth,
                                                   seqIndexSize)))),
                                        dst = SOME (prod, seqIndexTy),
-                                       prim = (Prim.wordMul
+                                       prim = (Prim.Word_mul
                                                (seqIndexSize,
                                                 {signed = false}))}
                         in

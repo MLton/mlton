@@ -209,15 +209,6 @@ signature PRIM =
 
       val apply:
          'a t * 'b ApplyArg.t list * ('b * 'b -> bool) -> ('a, 'b) ApplyResult.t
-      val arrayAlloc: {raw: bool} -> 'a t
-      val arrayArray: 'a t
-      val arrayLength: 'a t
-      val arrayToVector: 'a t
-      val arrayUpdate: 'a t
-      val assign: 'a t
-      val bogus: 'a t
-      val bug: 'a t
-      val cfunction: 'a CFunction.t -> 'a t
       val checkApp: 'a t * {args: 'a vector,
                             result: 'a,
                             targs: 'a vector,
@@ -235,17 +226,8 @@ signature PRIM =
                                       vector: 'a -> 'a,
                                       weak: 'a -> 'a,
                                       word: WordSize.t -> 'a}} -> bool
-      val cpointerAdd: 'a t
-      val cpointerDiff: 'a t
-      val cpointerEqual: 'a t
       val cpointerGet: CType.t -> 'a t 
-      val cpointerLt: 'a t
       val cpointerSet: CType.t -> 'a t 
-      val cpointerSub: 'a t
-      val cpointerToWord: 'a t
-      val deref: 'a t
-      val eq: 'a t    (* pointer equality *)
-      val equal: 'a t (* polymorphic equality *)
       val equals: 'a t * 'a t -> bool
       val extractTargs: 'a t * {args: 'b vector,
                                 result: 'b,
@@ -255,9 +237,6 @@ signature PRIM =
                                           deVector: 'b -> 'b,
                                           deWeak: 'b -> 'b}} -> 'b vector
       val fromString: string -> 'a t option
-      val hash: 'a t (* polymorphic hash *)
-      val intInfToWord: 'a t
-      val intInfToVector: 'a t
       val isCommutative: 'a t -> bool
       (*
        * isFunctional p = true iff p always returns same result when given
@@ -277,30 +256,5 @@ signature PRIM =
       val maySideEffect: 'a t -> bool
       val parse: unit -> 'a t Parse.t
       val parseFull: 'a Parse.t -> 'a t Parse.t
-      val realCastToWord: RealSize.t * WordSize.t -> 'a t
-      val reff: 'a t
       val toString: 'a t -> string
-      val touch: 'a t
-      val vector: 'a t
-      val vectorLength: 'a t
-      val vectorSub: 'a t
-      val wordAdd: WordSize.t -> 'a t
-      val wordAddCheckP: WordSize.t * {signed: bool} -> 'a t
-      val wordAndb: WordSize.t -> 'a t
-      val wordCastToReal : WordSize.t * RealSize.t -> 'a t
-      val wordEqual: WordSize.t -> 'a t
-      val wordExtdToWord: WordSize.t * WordSize.t * {signed: bool} -> 'a t
-      val wordLshift: WordSize.t -> 'a t
-      val wordLt: WordSize.t * {signed: bool} -> 'a t
-      val wordMul: WordSize.t * {signed: bool} -> 'a t
-      val wordMulCheckP: WordSize.t * {signed: bool} -> 'a t
-      val wordNeg: WordSize.t -> 'a t
-      val wordNegCheckP: WordSize.t * {signed: bool} -> 'a t
-      val wordNotb: WordSize.t -> 'a t
-      val wordOrb: WordSize.t -> 'a t
-      val wordQuot: WordSize.t * {signed: bool} -> 'a t
-      val wordRshift: WordSize.t * {signed: bool} -> 'a t
-      val wordSub: WordSize.t -> 'a t
-      val wordSubCheckP: WordSize.t * {signed: bool} -> 'a t
-      val wordXorb: WordSize.t -> 'a t
    end

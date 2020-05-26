@@ -730,11 +730,11 @@ fun toMachine (rssa: Rssa.Program.t) =
                                  (Bytes.+ (handlerOffset (), Runtime.labelSize ()),
                                   WordSize.cptrdiff ())))),
                        dst = SOME tmp,
-                       prim = Prim.cpointerAdd},
+                       prim = Prim.CPointer_add},
                       M.Statement.PrimApp
                       {args = Vector.new2 (tmp, stackBottomOp),
                        dst = SOME exnStackOp,
-                       prim = Prim.cpointerDiff})
+                       prim = Prim.CPointer_diff})
                   end
              | SetExnStackSlot =>
                   (* ExnStack = *(ptrdiff_t* )(stackTop + linkOffset); *)
@@ -1080,7 +1080,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                                      (M.Statement.PrimApp
                                       {args = Vector.new2 (stackBottomOp, exnStackOp),
                                        dst = SOME handlerStackTop,
-                                       prim = Prim.cpointerAdd}),
+                                       prim = Prim.CPointer_add}),
                                      parallelMove {dsts = dsts,
                                                    srcs = translateOperands srcs}],
                                     M.Transfer.Raise {raisesTo = raisesTo})

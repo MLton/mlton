@@ -163,7 +163,7 @@ fun insertFunction (f: Function.t,
                     ensureFree: Label.t -> Bytes.t) =
    let
       val {args, blocks, name, raises, returns, start} = Function.dest f
-      val lessThan = Prim.wordLt (WordSize.csize (), {signed = false})
+      val lessThan = Prim.Word_lt (WordSize.csize (), {signed = false})
       val newBlocks = ref []
       local
          val r: Label.t option ref = ref NONE
@@ -338,7 +338,7 @@ fun insertFunction (f: Function.t,
              fun stackCheck (maybeFirst, z): Label.t =
                 let
                    val (statements, transfer) =
-                      primApp (Prim.cpointerLt,
+                      primApp (Prim.CPointer_lt,
                                Operand.Runtime StackLimit,
                                Operand.Runtime StackTop,
                                z)
@@ -384,7 +384,7 @@ fun insertFunction (f: Function.t,
                       {args = Vector.new2 (Operand.Runtime LimitPlusSlop,
                                            Operand.Runtime Frontier),
                        dst = SOME (res, Type.csize ()),
-                       prim = Prim.cpointerDiff}
+                       prim = Prim.CPointer_diff}
                    val (statements, transfer) =
                       primApp (lessThan,
                                Operand.Var {var = res, ty = Type.csize ()},
@@ -395,7 +395,7 @@ fun insertFunction (f: Function.t,
                    if handlesSignals
                       then
                          frontierCheck (isFirst,
-                                        Prim.cpointerEqual,
+                                        Prim.CPointer_equal,
                                         Operand.Runtime Limit,
                                         Operand.null,
                                         {collect = collect,
@@ -415,7 +415,7 @@ fun insertFunction (f: Function.t,
                 ignore
                 (if Bytes.<= (bytes, Runtime.limitSlop)
                     then frontierCheck (true,
-                                        Prim.cpointerLt,
+                                        Prim.CPointer_lt,
                                         Operand.Runtime Limit,
                                         Operand.Runtime Frontier,
                                         insert (Operand.zero (WordSize.csize ())))
@@ -473,13 +473,13 @@ fun insertFunction (f: Function.t,
                                             (Operand.word extraBytes,
                                              bytesNeeded),
                                      dst = SOME (bytes, Type.csize ()),
-                                     prim = Prim.wordAdd (WordSize.csize ())},
+                                     prim = Prim.Word_add (WordSize.csize ())},
                                     Statement.PrimApp
                                     {args = Vector.new2
                                             (Operand.word extraBytes,
                                              bytesNeeded),
                                      dst = SOME (test, Type.bool),
-                                     prim = Prim.wordAddCheckP
+                                     prim = Prim.Word_addCheckP
                                             (WordSize.csize (),
                                              {signed = false})}),
                                    Transfer.ifBoolE
