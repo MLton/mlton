@@ -370,19 +370,22 @@ structure Event : EVENT_EXTRA =
                                   let
                                      val () = debug' "syncOnBEvts(2).ext([]).log" (* Atomic 1 *)
                                      val () = Assert.assertAtomic' ("Event.syncOnBEvts(2).ext([]).log", SOME 1)
-                                     val () = S.atomicBegin ()
                                   in
                                      case blockFns of
-                                        [] => (S.atomicEnd (); S.next ())
+                                        [] => S.next ()
                                       | blockFn::blockFns =>
-                                           (S.prep o S.new)
-                                           (fn _ => fn () =>
-                                            let 
-                                               val x = blockFn {transId = transId,
-                                                                cleanUp = cleanUp,
-                                                                next = fn () => log blockFns}
-                                            in S.switch(fn _ => S.prepVal (t, x))
-                                            end)
+                                           let
+                                              val () = S.atomicBegin ()
+                                           in
+                                              (S.prep o S.new)
+                                              (fn _ => fn () =>
+                                               let
+                                                  val x = blockFn {transId = transId,
+                                                                   cleanUp = cleanUp,
+                                                                   next = fn () => log blockFns}
+                                               in S.switch(fn _ => S.prepVal (t, x))
+                                               end)
+                                           end
                                   end
                             in
                                log blockFns
@@ -547,19 +550,22 @@ structure Event : EVENT_EXTRA =
                                   let
                                      val () = debug' "syncOnGrp(2).ext([]).log" (* Atomic 1 *)  
                                      val () = Assert.assertAtomic' ("Event.syncOnGrp(2).ext([]).log", SOME 1)
-                                     val () = S.atomicBegin ()
                                   in
                                      case blockFns of
-                                        [] => (S.atomicEnd (); S.next ())
+                                        [] => S.next ()
                                       | (blockFn,ackFlg)::blockFns =>
-                                           (S.prep o S.new)
-                                           (fn _ => fn () =>
-                                            let 
-                                               val x = blockFn {transId = transId,
-                                                                cleanUp = cleanUp ackFlg,
-                                                                next = fn () => log blockFns}
-                                            in S.switch(fn _ => S.prepVal (t, x))
-                                            end)
+                                           let
+                                              val () = S.atomicBegin ()
+                                           in
+                                              (S.prep o S.new)
+                                              (fn _ => fn () =>
+                                               let
+                                                  val x = blockFn {transId = transId,
+                                                                   cleanUp = cleanUp ackFlg,
+                                                                   next = fn () => log blockFns}
+                                               in S.switch(fn _ => S.prepVal (t, x))
+                                               end)
+                                           end
                                   end
                             in
                                log blockFns
