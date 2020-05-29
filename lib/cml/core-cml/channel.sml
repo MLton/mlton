@@ -74,7 +74,7 @@ structure Channel : CHANNEL_EXTRA =
       fun send (CHAN {prio, inQ, outQ}, msg) = 
          let
             val () = Assert.assertNonAtomic' "Channel.send"
-            val () = debug' "Chennel.send(1)" (* NonAtomic *)
+            val () = debug' "Channel.send(1)" (* NonAtomic *)
             val () = Assert.assertNonAtomic' "Channel.send(1)"
             val () = S.atomicBegin ()
             val () = debug' "Channel.send(2)" (* Atomic 1 *)
@@ -106,7 +106,7 @@ structure Channel : CHANNEL_EXTRA =
                         val () = debug' "Channel.send(3.2.2)" (* Atomic 1 *)
                         val () = Assert.assertAtomic' ("Channel.send(3.2.2)", SOME 1)
                         val () = S.atomicReadyAndSwitch (fn () => S.prepVal (rt, msg))
-                        val () = debug' "Chanell.send(3.2.3)" (* NonAtomic *)
+                        val () = debug' "Channel.send(3.2.3)" (* NonAtomic *)
                         val () = Assert.assertNonAtomic' "Channel.send(3.2.2)"
                      in
                         ()

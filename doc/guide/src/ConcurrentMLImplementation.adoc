@@ -119,26 +119,30 @@ datatype 'a status =
 type 'a base = unit -> 'a status
 
 fun ext ([], blockFns): 'a =
-     S.atomicSwitch
-     (fn (t: 'a S.thread) =>
-      let
-         val (transId, cleanUp) = TransID.mkFlg ()
-         fun log blockFns: S.rdy_thread =
-            case blockFns of
-               [] => S.next ()
-             | blockFn::blockFns =>
-                  (S.prep o S.new)
-                  (fn _ => fn () =>
-                   let
-                      val () = S.atomicBegin ()
-                      val x = blockFn {transId = transId,
-                                       cleanUp = cleanUp,
-                                       next = fn () => log blockFns}
-                   in S.switch(fn _ => S.prepVal (t, x))
-                   end)
-      in
-         log blockFns
-      end)
+   S.atomicSwitch
+   (fn (t: 'a S.thread) =>
+    let
+       val (transId, cleanUp) = TransID.mkFlg ()
+       fun log blockFns: S.rdy_thread =
+          let
+             val () = S.atomicBegin ()
+          in
+             case blockFns of
+                [] => (S.atomicEnd (); S.next ())
+              | blockFn::blockFns =>
+                   (S.prep o S.new)
+                   (fn _ => fn () =>
+                    let
+                       val () = S.atomicBegin ()
+                       val x = blockFn {transId = transId,
+                                        cleanUp = cleanUp,
+                                        next = fn () => log blockFns}
+                    in S.switch(fn _ => S.prepVal (t, x))
+                    end)
+          end
+    in
+       log blockFns
+    end)
 ----
 
 To avoid the nested `switch`-es, I run the `blockFn` in it's own

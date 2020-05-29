@@ -368,16 +368,16 @@ structure Event : EVENT_EXTRA =
                                val (transId, cleanUp) = TransID.mkFlg ()
                                fun log blockFns : S.rdy_thread =
                                   let
-                                     val () = debug' "syncOnBEvts(2).ext([]).log" (* Atomic 1 *)        
+                                     val () = debug' "syncOnBEvts(2).ext([]).log" (* Atomic 1 *)
                                      val () = Assert.assertAtomic' ("Event.syncOnBEvts(2).ext([]).log", SOME 1)
+                                     val () = S.atomicBegin ()
                                   in
                                      case blockFns of
-                                        [] => S.next ()
+                                        [] => (S.atomicEnd (); S.next ())
                                       | blockFn::blockFns =>
                                            (S.prep o S.new)
                                            (fn _ => fn () =>
                                             let 
-                                               val () = S.atomicBegin ()
                                                val x = blockFn {transId = transId,
                                                                 cleanUp = cleanUp,
                                                                 next = fn () => log blockFns}
@@ -547,14 +547,14 @@ structure Event : EVENT_EXTRA =
                                   let
                                      val () = debug' "syncOnGrp(2).ext([]).log" (* Atomic 1 *)  
                                      val () = Assert.assertAtomic' ("Event.syncOnGrp(2).ext([]).log", SOME 1)
+                                     val () = S.atomicBegin ()
                                   in
                                      case blockFns of
-                                        [] => S.next ()
+                                        [] => (S.atomicEnd (); S.next ())
                                       | (blockFn,ackFlg)::blockFns =>
                                            (S.prep o S.new)
                                            (fn _ => fn () =>
                                             let 
-                                               val () = S.atomicBegin ()
                                                val x = blockFn {transId = transId,
                                                                 cleanUp = cleanUp ackFlg,
                                                                 next = fn () => log blockFns}
