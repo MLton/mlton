@@ -124,12 +124,12 @@ fun ext ([], blockFns): 'a =
     let
        val (transId, cleanUp) = TransID.mkFlg ()
        fun log blockFns: S.rdy_thread =
-          let
-             val () = S.atomicBegin ()
-          in
-             case blockFns of
-                [] => (S.atomicEnd (); S.next ())
-              | blockFn::blockFns =>
+          case blockFns of
+             [] => (S.atomicEnd (); S.next ())
+           | blockFn::blockFns =>
+                let
+                   val () = S.atomicBegin ()
+                in
                    (S.prep o S.new)
                    (fn _ => fn () =>
                     let
@@ -139,7 +139,7 @@ fun ext ([], blockFns): 'a =
                                         next = fn () => log blockFns}
                     in S.switch(fn _ => S.prepVal (t, x))
                     end)
-          end
+                end
     in
        log blockFns
     end)
