@@ -115,7 +115,7 @@ structure RunCML : RUN_CML =
                 let
                    val () = R.isRunning := true 
                    val () = reset true
-                   val () = SH.shutdownHook := S.prepend (thrd, fn arg => (S.atomicBegin (); arg))
+                   val () = SH.shutdownHook := S.prepend (thrd, fn arg => (S.atomicBegin (); debug' "shutdownHook"; arg))
                    val () = SH.pauseHook := pauseHook
                    val () = installAlrmHandler alrmHandler
                    val () = ignore (Thread.spawn initialProc)
