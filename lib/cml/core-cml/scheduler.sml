@@ -105,6 +105,7 @@ structure Scheduler : SCHEDULER =
       fun next () =
          let
             val () = Assert.assertAtomic' ("Scheduler.next", NONE)
+            val () = debug' "Scheduler.next" (* Atomic 1 *)
             val thrd =
                case deque1 () of
                   NONE => !SH.pauseHook ()
@@ -122,6 +123,7 @@ structure Scheduler : SCHEDULER =
       local
          fun atomicSwitchAux msg f = 
             (Assert.assertAtomic (fn () => "Scheduler." ^ msg, NONE)
+             ; debug (fn () => "Scheduler." ^ msg)
              ; T.atomicSwitch (fn t => 
                                let
                                   val tid = getCurThreadId ()
