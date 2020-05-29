@@ -74,7 +74,7 @@ structure RunCML : RUN_CML =
       (* Note that SH.pauseHook is only invoked by S.next
        * when there are no threads on the ready queue;
        * Furthermore, note that alrmHandler always
-       * enqueues the preepted thread (via S.preempt).
+       * enqueues the preempted thread (via S.preempt).
        * Hence, the ready queue is never empty
        * at the S.next in alrmHandler.  Therefore,
        * pauseHook is never run within alrmHandler.
