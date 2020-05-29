@@ -1,4 +1,4 @@
-(* Copyright (C) 2019 Matthew Fluet.
+(* Copyright (C) 2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -19,8 +19,8 @@ fun globalize {program = Program.T {datatypes, body, ...},
    let
       val noConts =
          not (Exp.hasPrim (body, fn p =>
-                           case Prim.name p of
-                              Prim.Name.Thread_switchTo => true
+                           case p of
+                              Prim.Thread_switchTo => true
                             | _ => false))
       local
          val {get: Tycon.t -> bool, set, destroy} =
@@ -111,19 +111,19 @@ fun globalize {program = Program.T {datatypes, body, ...},
                                       * there. 
                                       *)
                                      andalso
-                                     (case Prim.name prim of
-                                         Prim.Name.MLton_equal => false
-                                       | Prim.Name.MLton_hash => false
+                                     (case prim of
+                                         Prim.MLton_equal => false
+                                       | Prim.MLton_hash => false
                                        | _ => true))
                                     orelse
                                     (once andalso
-                                     (case Prim.name prim of
-                                         Prim.Name.Ref_ref => typeIsSmall ty
+                                     (case prim of
+                                         Prim.Ref_ref => typeIsSmall ty
                                        | _ => false)))
                                 val once =
                                     once andalso
-                                    (case Prim.name prim of
-                                        Prim.Name.Thread_copyCurrent => false
+                                    (case prim of
+                                        Prim.Thread_copyCurrent => false
                                       | _ => true)
                              in
                                 (global, once)

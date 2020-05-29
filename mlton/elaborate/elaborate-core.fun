@@ -1307,7 +1307,7 @@ fun import {attributes: ImportExportAttribute.t list,
             let
                val () = invalidType ()
             in
-               Prim.bogus
+               Prim.MLton_bogus
             end
        | SOME (args, result) =>
             let
@@ -1386,7 +1386,7 @@ fun import {attributes: ImportExportAttribute.t list,
                                             NONE => Indirect
                                           | SOME name => Direct name)}
             in
-               Prim.cfunction func
+               Prim.CFunction func
             end
    end
 
@@ -1445,7 +1445,7 @@ local
          if not isBool then fetchExp else
          Cexp.iff (primApp
                    {args = Vector.new2 (fetchExp, zeroExpBool),
-                    prim = Prim.wordEqual WordSize.bool,
+                    prim = Prim.Word_equal WordSize.bool,
                     result = expandedCbTy},
                    Cexp.falsee,
                    Cexp.truee)
@@ -3647,7 +3647,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                           str (concat ["unknown primitive: ",
                                                        name]),
                                           empty)
-                                         ; Prim.bogus)
+                                         ; Prim.MLton_bogus)
                                    | SOME p => p
                             in
                                eta {elabedTy = elabedTy,

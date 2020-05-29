@@ -195,8 +195,6 @@ datatype 'a t =
  | Word8Vector_toString (* defunctorize *)
  | World_save (* to rssa (as runtime C fn) *)
 
-fun name p = p
-
 (* The values of these strings are important since they are referred to
  * in the basis library code.  See basis-library/misc/primitive.sml.
  *)
@@ -699,18 +697,6 @@ val map: 'a t * ('a -> 'b) -> 'b t =
 
 val cast: 'a t -> 'b t = fn p => map (p, fn _ => Error.bug "Prim.cast")
 
-val arrayAlloc = fn {raw} => Array_alloc {raw = raw}
-val arrayArray = Array_array
-val arrayLength = Array_length
-val arrayToVector = Array_toVector
-val arrayUpdate = Array_update
-val assign = Ref_assign
-val bogus = MLton_bogus
-val bug = MLton_bug
-val cfunction = CFunction
-val cpointerAdd = CPointer_add
-val cpointerDiff = CPointer_diff
-val cpointerEqual = CPointer_equal
 fun cpointerGet ctype = 
    let datatype z = datatype CType.t
    in
@@ -728,7 +714,6 @@ fun cpointerGet ctype =
        | Word32 => CPointer_getWord (WordSize.fromBits (Bits.fromInt 32))
        | Word64 => CPointer_getWord (WordSize.fromBits (Bits.fromInt 64))
    end
-val cpointerLt = CPointer_lt
 fun cpointerSet ctype = 
    let datatype z = datatype CType.t
    in
@@ -746,41 +731,6 @@ fun cpointerSet ctype =
        | Word32 => CPointer_setWord (WordSize.fromBits (Bits.fromInt 32))
        | Word64 => CPointer_setWord (WordSize.fromBits (Bits.fromInt 64))
    end
-val cpointerSub = CPointer_sub
-val cpointerToWord = CPointer_toWord
-val deref = Ref_deref
-val eq = MLton_eq
-val equal = MLton_equal
-val hash = MLton_hash
-val intInfToVector = IntInf_toVector
-val intInfToWord = IntInf_toWord
-val intInfNeg = IntInf_neg
-val intInfNotb = IntInf_notb
-val realCastToWord = Real_castToWord
-val reff = Ref_ref
-val touch = MLton_touch
-val vector = Vector_vector
-val vectorLength = Vector_length
-val vectorSub = Vector_sub
-val wordAdd = Word_add
-val wordAddCheckP = Word_addCheckP
-val wordAndb = Word_andb
-val wordCastToReal = Word_castToReal
-val wordEqual = Word_equal
-val wordExtdToWord = Word_extdToWord
-val wordLshift = Word_lshift
-val wordLt = Word_lt
-val wordMul = Word_mul
-val wordMulCheckP = Word_mulCheckP
-val wordNeg = Word_neg
-val wordNegCheckP = Word_negCheckP
-val wordNotb = Word_notb
-val wordOrb = Word_orb
-val wordQuot = Word_quot
-val wordRshift = Word_rshift
-val wordSub = Word_sub
-val wordSubCheckP = Word_subCheckP
-val wordXorb = Word_xorb
 
 val isCommutative =
    fn MLton_eq => true
@@ -1843,8 +1793,8 @@ fun ('a, 'b) apply (p: 'a t,
             datatype z = datatype ApplyResult.t
             fun varIntInf (x, i: IntInf.t, space, inOrder) =
                let
-                  fun neg () = Apply (intInfNeg, [x, space])
-                  fun notb () = Apply (intInfNotb, [x, space])
+                  fun neg () = Apply (IntInf_neg, [x, space])
+                  fun notb () = Apply (IntInf_notb, [x, space])
                   val i = IntInf.toInt i
                in
                   case p of
@@ -2013,7 +1963,7 @@ fun ('a, 'b) apply (p: 'a t,
                         else if WordX.isOne w
                                 then Var x
                              else if signed andalso WordX.isNegOne w
-                                     then Apply (wordNeg s, [x])
+                                     then Apply (Word_neg s, [x])
                                   else Unknown
                    | Word_mulCheckP _ =>
                         if WordX.isZero w orelse WordX.isOne w
@@ -2031,7 +1981,7 @@ fun ('a, 'b) apply (p: 'a t,
                               if WordX.isOne w
                                  then Var x
                               else if signed andalso WordX.isNegOne w
-                                      then Apply (wordNeg s, [x])
+                                      then Apply (Word_neg s, [x])
                                    else Unknown
                         else Unknown
                    | Word_rem (s, {signed}) =>
@@ -2056,7 +2006,7 @@ fun ('a, 'b) apply (p: 'a t,
                         if WordX.isZero w
                            then if inOrder
                                    then Var x
-                                else Apply (wordNeg s, [x])
+                                else Apply (Word_neg s, [x])
                         else Unknown
                    | Word_subCheckP _ =>
                         if WordX.isZero w andalso inOrder
@@ -2066,7 +2016,7 @@ fun ('a, 'b) apply (p: 'a t,
                         if WordX.isZero w
                            then Var x
                         else if WordX.isAllOnes w
-                                then Apply (wordNotb s, [x])
+                                then Apply (Word_notb s, [x])
                              else Unknown
                    | _ => Unknown
                end
@@ -2159,62 +2109,6 @@ fun ('a, 'b) apply (p: 'a t,
             (List.map
              (args, fn ApplyArg.Const c => c | _ => Error.bug "Prim.apply"))
       else someVars ()
-   end
-
-fun ('a, 'b) layoutApp (p: 'a t,
-                        args: 'b vector,
-                        layoutArg: 'b -> Layout.t): Layout.t =
-   let
-      fun arg i = layoutArg (Vector.sub (args, i))
-      open Layout
-      fun one name = seq [str name, str " ", arg 0]
-      fun two name = seq [arg 0, str " ", str name, str " ", arg 1]
-   in
-      case p of
-         Array_length => one "length"
-       | Real_Math_acos _ => one "acos"
-       | Real_Math_asin _ => one "asin"
-       | Real_Math_atan _ => one "atan"
-       | Real_Math_cos _ => one "cos"
-       | Real_Math_exp _ => one "exp"
-       | Real_Math_ln _ => one "ln"
-       | Real_Math_log10  _ => one "log10"
-       | Real_Math_sin _ => one "sin"
-       | Real_Math_sqrt _ => one "sqrt"
-       | Real_Math_tan _ => one "tan"
-       | Real_add _ => two "+"
-       | Real_div _ => two "/"
-       | Real_equal _ => two "=="
-       | Real_le _ => two "<="
-       | Real_lt _ => two "<"
-       | Real_mul _ => two "*"
-       | Real_neg _ => one "-"
-       | Real_qequal _ => two "?="
-       | Real_sub _ => two "-"
-       | Ref_assign => two ":="
-       | Ref_deref => one "!"
-       | Ref_ref => one "ref"
-       | Vector_length => one "length"
-       | Word_add _ => two "+"
-       | Word_andb _ => two "&"
-       | Word_equal _ => two "="
-       | Word_lshift _ => two "<<"
-       | Word_lt _ => two "<"
-       | Word_mul _ => two "*"
-       | Word_neg _ => one "-"
-       | Word_orb _ => two "|"
-       | Word_rol _ => two "rol"
-       | Word_ror _ => two "ror"
-       | Word_rshift (_, {signed}) => two (if signed then "~>>" else ">>")
-       | Word_sub _ => two "-"
-       | Word_xorb _ => two "^"
-       | _ => seq [layout p, str " ", Vector.layout layoutArg args]
-   end
-
-structure Name =
-   struct
-      datatype t = datatype t
-      val toString = toString
    end
 
 end

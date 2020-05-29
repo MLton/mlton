@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2011,2017,2019 Matthew Fluet.
+(* Copyright (C) 2009,2011,2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -518,7 +518,6 @@ fun typeCheck (program as Program.T {datatypes, ...}): unit =
       fun filterWord (from, s) = coerce {from = from, to = Type.word s}
       fun primApp {args, prim, resultType, resultVar = _} =
          let
-            datatype z = datatype Prim.Name.t
             val () =
                if Type.checkPrimApp {args = args,
                                      prim = prim,

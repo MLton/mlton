@@ -48,10 +48,10 @@ structure Dexp =
                      args = Vector.new2 (e1, e2),
                      ty = Type.word s}
       in
-         val add = mk Prim.wordAdd
-         val andb = mk Prim.wordAndb
-         val rshift = mk (fn s => Prim.wordRshift (s, {signed = false}))
-         val xorb = mk Prim.wordXorb
+         val add = mk Prim.Word_add
+         val andb = mk Prim.Word_andb
+         val rshift = mk (fn s => Prim.Word_rshift (s, {signed = false}))
+         val xorb = mk Prim.Word_xorb
       end
       local
          fun mk prim =
@@ -61,11 +61,11 @@ structure Dexp =
                      args = Vector.new2 (e1, e2),
                      ty = Type.word s}
       in
-         val mul = mk Prim.wordMul
+         val mul = mk Prim.Word_mul
       end
 
       fun wordEqual (e1: t, e2: t, s): t =
-         primApp {prim = Prim.wordEqual s,
+         primApp {prim = Prim.Word_equal s,
                   targs = Vector.new0 (),
                   args = Vector.new2 (e1, e2),
                   ty = Type.bool}
@@ -88,7 +88,7 @@ structure Hash =
                   fun extdW w =
                      if WordSize.equals (ws, workWordSize)
                         then w
-                     else Dexp.primApp {prim = Prim.wordExtdToWord 
+                     else Dexp.primApp {prim = Prim.Word_extdToWord
                                                (ws, workWordSize, 
                                                 {signed = false}),
                                         targs = Vector.new0 (),
@@ -427,7 +427,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                      val body =
                         Dexp.lett
                         {decs = [{var = #1 len, exp = 
-                                  Dexp.primApp {prim = Prim.vectorLength,
+                                  Dexp.primApp {prim = Prim.Vector_length,
                                                 targs = Vector.new1 ty,
                                                 args = Vector.new1 dvec,
                                                 ty = seqIndexTy}}],
@@ -466,7 +466,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                               Vector.new4
                               (hashExp 
                                (dst, 
-                                Dexp.primApp {prim = Prim.vectorSub,
+                                Dexp.primApp {prim = Prim.Vector_sub,
                                               targs = Vector.new1 ty,
                                               args = Vector.new2 (dvec, di),
                                               ty = ty},
@@ -526,7 +526,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                         val ws = WordSize.cpointer ()
                         val toWord =
                            Dexp.primApp
-                           {prim = Prim.cpointerToWord,
+                           {prim = Prim.CPointer_toWord,
                             targs = Vector.new0 (),
                             args = Vector.new1 dx,
                             ty = Type.word ws}
@@ -543,13 +543,13 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                         val bws = WordSize.bigIntInfWord ()
                         val toWord =
                            Dexp.primApp
-                           {prim = Prim.intInfToWord,
+                           {prim = Prim.IntInf_toWord,
                             targs = Vector.new0 (),
                             args = Vector.new1 dx,
                             ty = Type.word sws}
                         val toVector =
                            Dexp.primApp
-                           {prim = Prim.intInfToVector,
+                           {prim = Prim.IntInf_toVector,
                             targs = Vector.new0 (),
                             args = Vector.new1 dx,
                             ty = Type.vector (Type.word bws)}
@@ -581,7 +581,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                         val ws = WordSize.fromBits (RealSize.bits rs)
                         val toWord =
                            Dexp.primApp
-                           {prim = Prim.realCastToWord (rs, ws),
+                           {prim = Prim.Real_castToWord (rs, ws),
                             targs = Vector.new0 (),
                             args = Vector.new1 dx,
                             ty = Type.word ws}
@@ -678,8 +678,8 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                  (statements, fn Statement.T {exp, ...} =>
                   (case exp of
                       PrimApp {prim, ...} =>
-                         (case Prim.name prim of
-                             Prim.Name.MLton_hash => setHasHash ()
+                         (case prim of
+                             Prim.MLton_hash => setHasHash ()
                            | _ => ())
                     | _ => ()))
               end)
@@ -713,8 +713,8 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                        in
                          case exp of
                             PrimApp {prim, targs, args, ...} =>
-                               (case (Prim.name prim, Vector.length targs) of
-                                   (Prim.Name.MLton_hash, 1) =>
+                               (case (prim, Vector.length targs) of
+                                   (Prim.MLton_hash, 1) =>
                                       let
                                          val ty = Vector.first targs
                                          val x = Vector.first args

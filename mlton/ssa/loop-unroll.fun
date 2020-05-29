@@ -172,7 +172,7 @@ structure Loop =
       let
         val (cVar, cStmt) = makeConstStmt (v, wsize)
         val newExp = Exp.PrimApp {args = Vector.new2 (var, cVar),
-                                  prim = Prim.wordAdd wsize,
+                                  prim = Prim.Word_add wsize,
                                   targs = Vector.new0 ()}
         val newType = Type.word wsize
         val newVar = Var.newNoname()
@@ -364,12 +364,12 @@ fun varConst (args, loadVar, signed): (Var.t * IntInf.int * bool) option =
    Returns:
     -  The non-const variable and the constant value in terms of addition *)
 fun checkPrim (args, prim, loadVar) =
-  case Prim.name prim of
-    Name.Word_add _ =>
+  case prim of
+    Word_add _ =>
       (case varConst(args, loadVar, false) of
         SOME(nextVar, x, _) => SOME (nextVar, x)
       | NONE => NONE)
-  | Name.Word_sub _ =>
+  | Word_sub _ =>
       (case varConst(args, loadVar, false) of
         SOME(nextVar, x, _) => SOME (nextVar, ~x)
       | NONE => NONE)
@@ -635,14 +635,14 @@ fun checkArg ((argVar, _), argIndex, entryArg, header, loopBody,
                                         then
                                            NONE
                                         else
-                                          (case Prim.name prim of
-                                            Name.Word_lt (_, {signed}) =>
+                                          (case prim of
+                                            Word_lt (_, {signed}) =>
                                               ltOrGt
                                                 (varConst (args,
                                                            loadVar,
                                                            signed),
                                                  signed)
-                                          | Name.Word_equal _ =>
+                                          | Word_equal _ =>
                                               eq
                                                 (varConst (args,
                                                            loadVar,
@@ -1024,7 +1024,7 @@ fun expandLoop (oldHeader, loopBlocks, loop, tBlock, argi, argSize, oldArg,
             val newTy = Type.datatypee Tycon.bool
             val newExp =
               PrimApp {args = Vector.new2 (iterVar, newLimitVar),
-                       prim = Prim.wordLt (argSize, {signed = true}),
+                       prim = Prim.Word_lt (argSize, {signed = true}),
                        targs = Vector.new0 ()}
           in
             (Statement.T {exp = newExp,

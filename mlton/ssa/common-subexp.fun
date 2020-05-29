@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2011,2017,2019 Matthew Fluet.
+(* Copyright (C) 2009,2011,2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -74,18 +74,17 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                            then (a0, a1)
                         else (a1, a0)
                      end
-                  datatype z = datatype Prim.Name.t
                in
                   if Prim.isCommutative prim
                      then doit (Vector.new2 (canon2 ()))
                   else
-                     if (case Prim.name prim of
-                            IntInf_add => true
-                          | IntInf_andb => true
-                          | IntInf_gcd => true
-                          | IntInf_mul => true
-                          | IntInf_orb => true
-                          | IntInf_xorb => true
+                     if (case prim of
+                            Prim.IntInf_add => true
+                          | Prim.IntInf_andb => true
+                          | Prim.IntInf_gcd => true
+                          | Prim.IntInf_mul => true
+                          | Prim.IntInf_orb => true
+                          | Prim.IntInf_xorb => true
                           | _ => false)
                         then
                            let
@@ -152,14 +151,13 @@ fun transform (Program.T {globals, datatypes, functions, main}) =
                                   case getLength (arg ()) of
                                      NONE => doit ()
                                    | SOME var' => replace var'
-                               datatype z = datatype Prim.Name.t
                             in
-                               case Prim.name prim of
-                                  Array_alloc _ => knownLength (arg ())
-                                | Array_length => length ()
-                                | Array_toArray => conv ()
-                                | Array_toVector => conv ()
-                                | Vector_length => length ()
+                               case prim of
+                                  Prim.Array_alloc _ => knownLength (arg ())
+                                | Prim.Array_length => length ()
+                                | Prim.Array_toArray => conv ()
+                                | Prim.Array_toVector => conv ()
+                                | Prim.Vector_length => length ()
                                 | _ => if Prim.isFunctional prim
                                           then doit ()
                                        else keep ()

@@ -85,8 +85,8 @@ fun markStatement stmt =
       Statement.T { exp = Exp.PrimApp { args, prim, targs=_ },
                     ty = _,
                     var = SOME v } =>
-        (case Prim.name prim of
-            Prim.Name.Word_extdToWord a => rules v (a, Vector.first args)
+        (case prim of
+            Prim.Word_extdToWord a => rules v (a, Vector.first args)
           | _ => ())
     | _ => ()
 
@@ -99,7 +99,7 @@ fun mapStatement stmt =
                if WordSize.equals (W2, W3)
                then Exp.Var x2
                else Exp.PrimApp { args  = Vector.new1 x2,
-                                  prim  = Prim.wordExtdToWord prim,
+                                  prim  = Prim.Word_extdToWord prim,
                                   targs = Vector.new0 () }
           | _ => exp
    in

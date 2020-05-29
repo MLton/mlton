@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2017,2019 Matthew Fluet.
+(* Copyright (C) 2009,2017,2019-2020 Matthew Fluet.
  * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -670,7 +670,6 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                 | Make _ => Value.weak v
             fun arg i = Vector.sub (args, i)
             fun result () = typeValue resultType
-            datatype z = datatype Prim.Name.t
             fun dontFlatten () =
                (Vector.foreach (args, Value.dontFlatten)
                 ; result ())
@@ -679,8 +678,8 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                 ; Value.dontFlatten (arg 0)
                 ; result ())
          in
-            case Prim.name prim of
-               Array_toArray =>
+            case prim of
+               Prim.Array_toArray =>
                   let
                      val res = result ()
                      val () =
@@ -695,7 +694,7 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                   in
                      res
                   end
-             | Array_toVector =>
+             | Prim.Array_toVector =>
                   let
                      val res = result ()
                      val () =
@@ -710,17 +709,17 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                   in
                      res
                   end
-             | CFunction _ =>
+             | Prim.CFunction _ =>
                   (* Some imports, like Real64.modf, take ref cells that can not
                    * be flattened.
                    *)
                   dontFlatten ()
-             | MLton_eq => equal ()
-             | MLton_equal => equal ()
-             | MLton_size => dontFlatten ()
-             | MLton_share => dontFlatten ()
-             | Weak_get => deWeak (arg 0)
-             | Weak_new => 
+             | Prim.MLton_eq => equal ()
+             | Prim.MLton_equal => equal ()
+             | Prim.MLton_size => dontFlatten ()
+             | Prim.MLton_share => dontFlatten ()
+             | Prim.Weak_get => deWeak (arg 0)
+             | Prim.Weak_new =>
                   let val a = arg 0
                   in (Value.dontFlatten a; weak a)
                   end

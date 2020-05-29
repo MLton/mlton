@@ -1,4 +1,4 @@
-(* Copyright (C) 2015,2017,2019 Matthew Fluet.
+(* Copyright (C) 2015,2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -936,7 +936,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
             fun conApp {arg, con, targs, ty} =
                if Con.equals (con, Con.reff)
                   then Xexp.primApp {args = Vector.new1 arg,
-                                     prim = Prim.reff,
+                                     prim = Prim.Ref_ref,
                                      targs = targs,
                                      ty = ty}
                else Xexp.conApp {arg = SOME arg,
@@ -1045,15 +1045,14 @@ fun defunctorize (CoreML.Program.T {decs}) =
                 | PrimApp {args, prim, targs} =>
                      let
                         val args = Vector.map (args, #1 o loopExp)
-                        datatype z = datatype Prim.Name.t
                      in
-                        if (case Prim.name prim of
-                               Real_rndToReal (s1, s2) =>
+                        if (case prim of
+                               Prim.Real_rndToReal (s1, s2) =>
                                   RealSize.equals (s1, s2)
-                             | String_toWord8Vector => true
-                             | Word_extdToWord (s1, s2, _) => 
+                             | Prim.String_toWord8Vector => true
+                             | Prim.Word_extdToWord (s1, s2, _) =>
                                   WordSize.equals (s1, s2)
-                             | Word8Vector_toString => true
+                             | Prim.Word8Vector_toString => true
                              | _ => false)
                            then Vector.first args
                         else
@@ -1086,7 +1085,7 @@ fun defunctorize (CoreML.Program.T {decs}) =
                                var = var ()}
                 | Vector es =>
                      Xexp.primApp {args = Vector.map (es, #1 o loopExp),
-                                   prim = Prim.vector,
+                                   prim = Prim.Vector_vector,
                                    targs = Vector.new1 (Xtype.deVector ty),
                                    ty = ty}
          in

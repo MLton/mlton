@@ -174,34 +174,34 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
                  else TypeInfo.fromType resultType
 
          in
-            case Prim.name prim of
-                 Prim.Name.Array_array => TypeInfo.Heap
+            case prim of
+                 Prim.Array_array => TypeInfo.Heap
                   let
                      val ty = TypeInfo.fromType (Vector.sub (targs, 0))
                      val _ = Vector.foreach (args, fn a => TypeInfo.coerce (a, ty))
                   in
                      (ty, TypeInfo.Array)
                   end
-               | Prim.Name.Array_sub => derefPrim args
-               | Prim.Name.Array_toArray => Vector.sub (args, 0)
-               | Prim.Name.Array_toVector => Vector.sub (args, 0)
-               | Prim.Name.Array_update => updatePrim TypeInfo.Array args
-               | Prim.Name.Ref_ref => refPrim TypeInfo.Ref args
-               | Prim.Name.Ref_deref => derefPrim args
-               | Prim.Name.Ref_assign => assignPrim TypeInfo.Ref args
-               | Prim.Name.Vector_sub => derefPrim args
-               | Prim.Name.Vector_vector => TypeInfo.Heap
+               | Prim.Array_sub => derefPrim args
+               | Prim.Array_toArray => Vector.sub (args, 0)
+               | Prim.Array_toVector => Vector.sub (args, 0)
+               | Prim.Array_update => updatePrim TypeInfo.Array args
+               | Prim.Ref_ref => refPrim TypeInfo.Ref args
+               | Prim.Ref_deref => derefPrim args
+               | Prim.Ref_assign => assignPrim TypeInfo.Ref args
+               | Prim.Vector_sub => derefPrim args
+               | Prim.Vector_vector => TypeInfo.Heap
                   let
                      val ty = TypeInfo.fromType (Vector.sub (targs, 0))
                      val _ = Vector.foreach (args, fn a => TypeInfo.coerce (a, ty))
                   in
                      (ty, TypeInfo.Vector)
                   end
-               | Prim.Name.Weak_get => derefPrim args
-               | Prim.Name.Weak_new => refPrim TypeInfo.Weak args
-               | Prim.Name.MLton_equal => equalPrim args
-               | Prim.Name.MLton_eq => equalPrim args
-               | Prim.Name.CFunction (CFunction.T {args=cargs, ...}) =>
+               | Prim.Weak_get => derefPrim args
+               | Prim.Weak_new => refPrim TypeInfo.Weak args
+               | Prim.MLton_equal => equalPrim args
+               | Prim.MLton_eq => equalPrim args
+               | Prim.CFunction (CFunction.T {args=cargs, ...}) =>
                   let
                      (* for the C methods, we need false -> 0 and true -> 1 so they have to remain bools *)
                      val _ = Vector.foreach2 (args, cargs, fn (arg, carg) =>
@@ -291,8 +291,8 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
                                     deVector = Type.deVector,
                                     deWeak = Type.deWeak}})
                      val newPrim =
-                        case Prim.name prim of
-                           Prim.Name.CFunction (cfunc as CFunction.T {args=_, return=_,
+                        case prim of
+                           Prim.CFunction (cfunc as CFunction.T {args=_, return=_,
                                  convention, inline, kind, prototype, symbolScope, target}) =>
                               let
                                  val newArgs = argTys
@@ -305,7 +305,7 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
                                             symbolScope=symbolScope, target=target}
                                       | _ => cfunc
                               in
-                                 Prim.cfunction newCFunc
+                                 Prim.CFunction newCFunc
                               end
                          | _ => prim
                   in

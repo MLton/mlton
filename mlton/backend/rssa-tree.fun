@@ -283,7 +283,7 @@ structure Statement =
                          tmpTy,
                          [PrimApp {args = Vector.new1 src,
                                    dst = SOME (tmp, tmpTy),
-                                   prim = Prim.realCastToWord (rs, ws)}],
+                                   prim = Prim.Real_castToWord (rs, ws)}],
                          dstTy, fn dst => (dst, []))
                      end
                 | (NONE, SOME rs) =>
@@ -298,7 +298,7 @@ structure Statement =
                          (Operand.Var {ty = tmpTy, var = tmp},
                           [PrimApp {args = Vector.new1 dst,
                                     dst = SOME (tmp, tmpTy),
-                                    prim = Prim.wordCastToReal (ws, rs)}]))
+                                    prim = Prim.Word_castToReal (ws, rs)}]))
                      end
                 | (SOME _, SOME _) =>
                      (src, srcTy, [], dstTy, fn dst => (dst, []))
@@ -316,7 +316,7 @@ structure Statement =
                        (Operand.Var {ty = tmpTy, var = tmp},
                         [PrimApp {args = Vector.new1 src,
                                   dst = SOME (tmp, tmpTy),
-                                  prim = (Prim.wordExtdToWord 
+                                  prim = (Prim.Word_extdToWord
                                           (WordSize.fromBits srcW, 
                                            WordSize.fromBits dstW, 
                                            {signed = false}))}])

@@ -1,4 +1,4 @@
-(* Copyright (C) 2019 Matthew Fluet.
+(* Copyright (C) 2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -97,9 +97,9 @@ fun primApp {args, prim, targs, ty} =
                   targs = targs,
                   ty = ty}
    in
-      case Prim.name prim of
-         Prim.Name.MLton_bug => Seq (primApp (), Bug)
-       | Prim.Name.Thread_copyCurrent => runtime ()
+      case prim of
+         Prim.MLton_bug => Seq (primApp (), Bug)
+       | Prim.Thread_copyCurrent => runtime ()
        | _ => primApp ()
    end
 
@@ -111,7 +111,7 @@ in
 end
 
 fun eq (e1, e2, ty) =
-   primApp {prim = Prim.eq,
+   primApp {prim = Prim.MLton_eq,
             targs = Vector.new1 ty,
             args = Vector.new2 (e1, e2),
             ty = Type.bool}
@@ -176,12 +176,19 @@ in
                              seq [Var.layout var, str " = ", layout exp])),
                      layout body)
        | Name _ => str "Name"
-       | PrimApp {args, prim, ...} =>
-            Prim.layoutApp (prim, args, layout)
+       | PrimApp {args, prim, targs, ty} =>
+            seq [Prim.layoutFull (prim, Type.layout),
+                 Layout.list (Vector.toListMap (targs, Type.layout)),
+                 str " ",
+                 layouts args,
+                 str ": ", Type.layout ty]
        | Profile e => ProfileExp.layout e
        | Raise e => seq [str "raise ", layout e]
-       | Runtime {args, prim, ...} =>
-            Prim.layoutApp (prim, args, layout)
+       | Runtime {args, prim, ty} =>
+            seq [Prim.layoutFull (prim, Type.layout),
+                 str " ",
+                 layouts args,
+                 str ": ", Type.layout ty]
        | Select {tuple, offset, ...} =>
             seq [str "#", str (Int.toString (1 + offset)), str " ",
                  layout tuple]

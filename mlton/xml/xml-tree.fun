@@ -550,7 +550,7 @@ structure Exp =
                                   var = unit},
                          MonoVal
                          {exp = PrimApp {args = Vector.new1 (VarExp.mono unit),
-                                         prim = Prim.touch,
+                                         prim = Prim.MLton_touch,
                                          targs = Vector.new1 Type.unit},
                           ty = Type.unit,
                           var = Var.newNoname ()}]
@@ -937,7 +937,7 @@ structure DirectExp =
 
       fun reff (e: t): t =
          convert (e, fn (x, t) =>
-                  (PrimApp {prim = Prim.reff,
+                  (PrimApp {prim = Prim.Ref_ref,
                             targs = Vector.new1 t,
                             args = Vector.new1 x},
                    Type.reff t))
@@ -947,7 +947,7 @@ structure DirectExp =
                   let
                      val t = Type.deRef t
                   in
-                     (PrimApp {prim = Prim.deref,
+                     (PrimApp {prim = Prim.Ref_deref,
                                targs = Vector.new1 t,
                                args = Vector.new1 x},
                       t)
@@ -958,7 +958,7 @@ structure DirectExp =
                   let
                      val t = Type.deVector t
                   in
-                     (PrimApp {prim = Prim.vectorLength,
+                     (PrimApp {prim = Prim.Vector_length,
                                targs = Vector.new1 t,
                                args = Vector.new1 x},
                       Type.word (WordSize.seqIndex ()))
@@ -969,7 +969,7 @@ structure DirectExp =
                    let
                       val t = Type.deVector t1
                    in
-                      (PrimApp {prim = Prim.vectorSub,
+                      (PrimApp {prim = Prim.Vector_sub,
                                 targs = Vector.new1 t,
                                 args = Vector.new2 (x1, x2)},
                        t)
@@ -977,7 +977,7 @@ structure DirectExp =
 
       fun equal (e1, e2) =
          convert2 (e1, e2, fn ((x1, t), (x2, _)) =>
-                   (PrimApp {prim = Prim.equal,
+                   (PrimApp {prim = Prim.MLton_equal,
                              targs = Vector.new1 t,
                              args = Vector.new2 (x1, x2)},
                     Type.bool))
@@ -1004,7 +1004,7 @@ structure DirectExp =
 
       val bug: string -> t =
          fn s =>
-         primApp {prim = Prim.bug,
+         primApp {prim = Prim.MLton_bug,
                   targs = Vector.new0 (),
                   args = Vector.new1 (string s),
                   ty = Type.unit}

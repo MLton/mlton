@@ -1,4 +1,4 @@
-(* Copyright (C) 2017,2019 Matthew Fluet.
+(* Copyright (C) 2017,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -417,10 +417,9 @@ fun primApply {prim: Type.t Prim.t, args: t vector, resultTy: Type.t}: t =
          if n = 5
             then (arg 0, arg 1, arg 2, arg 3, arg 4)
          else Error.bug "AbstractValue.primApply.fiveArgs"
-      datatype z = datatype Prim.Name.t
    in
-      case Prim.name prim of
-         Array_array =>
+      case prim of
+         Prim.Array_array =>
             let
                 val r = result ()
                 val _ =
@@ -431,7 +430,7 @@ fun primApply {prim: Type.t Prim.t, args: t vector, resultTy: Type.t}: t =
             in
                r
             end
-       | Array_copyArray =>
+       | Prim.Array_copyArray =>
             let val (da, _, sa, _, _) = fiveArgs ()
             in (case (dest da, dest sa) of
                    (Array dx, Array sx) => unify (dx, sx)
@@ -439,7 +438,7 @@ fun primApply {prim: Type.t Prim.t, args: t vector, resultTy: Type.t}: t =
                  | _ => typeError ()
                 ; result ())
             end
-       | Array_copyVector =>
+       | Prim.Array_copyVector =>
             let val (da, _, sa, _, _) = fiveArgs ()
             in (case (dest da, dest sa) of
                    (Array dx, Vector sx) => unify (dx, sx)
@@ -447,7 +446,7 @@ fun primApply {prim: Type.t Prim.t, args: t vector, resultTy: Type.t}: t =
                  | _ => typeError ()
                 ; result ())
             end
-       | Array_toArray =>
+       | Prim.Array_toArray =>
             let val r = result ()
             in (case (dest (oneArg ()), dest r) of
                    (Type _, Type _) => ()
@@ -459,7 +458,7 @@ fun primApply {prim: Type.t Prim.t, args: t vector, resultTy: Type.t}: t =
                  | _ => typeError ())
                ; r
             end
-       | Array_toVector =>
+       | Prim.Array_toVector =>
             let val r = result ()
             in (case (dest (oneArg ()), dest r) of
                    (Type _, Type _) => ()
@@ -471,12 +470,12 @@ fun primApply {prim: Type.t Prim.t, args: t vector, resultTy: Type.t}: t =
                  | _ => typeError ())
                ; r
             end
-       | Array_sub =>
+       | Prim.Array_sub =>
             (case dest (#1 (twoArgs ())) of
                 Array x => x
               | Type _ => result ()
               | _ => typeError ())
-       | Array_update =>
+       | Prim.Array_update =>
             let val (a, _, x) = threeArgs ()
             in (case dest a of
                    Array x' => coerce {from = x, to = x'} (* unify (x, x') *)
@@ -484,13 +483,13 @@ fun primApply {prim: Type.t Prim.t, args: t vector, resultTy: Type.t}: t =
                  | _ => typeError ())
                ; result ()
             end
-       | MLton_deserialize => serialValue resultTy
-       | MLton_serialize =>
+       | Prim.MLton_deserialize => serialValue resultTy
+       | Prim.MLton_serialize =>
             let val arg = oneArg ()
             in coerce {from = arg, to = serialValue (ty arg)}
                ; result ()
             end
-       | Ref_assign =>
+       | Prim.Ref_assign =>
             let val (r, x) = twoArgs ()
             in (case dest r of
                    Ref x' => coerce {from = x, to = x'} (* unify (x, x') *)
@@ -498,11 +497,11 @@ fun primApply {prim: Type.t Prim.t, args: t vector, resultTy: Type.t}: t =
                  | _ => typeError ())
                ; result ()
             end
-       | Ref_deref => (case dest (oneArg ()) of
-                          Ref v => v
-                        | Type _ => result ()
-                        | _ => typeError ())
-       | Ref_ref =>
+       | Prim.Ref_deref => (case dest (oneArg ()) of
+                               Ref v => v
+                             | Type _ => result ()
+                             | _ => typeError ())
+       | Prim.Ref_ref =>
             let
                val r = result ()
                val _ = 
@@ -513,12 +512,12 @@ fun primApply {prim: Type.t Prim.t, args: t vector, resultTy: Type.t}: t =
             in
                r
             end
-       | Vector_sub =>
+       | Prim.Vector_sub =>
             (case dest (#1 (twoArgs ())) of
                 Vector x => x
               | Type _ => result ()
               | _ => typeError ())
-       | Vector_vector =>
+       | Prim.Vector_vector =>
             let
                 val r = result ()
                 val _ =
@@ -529,12 +528,12 @@ fun primApply {prim: Type.t Prim.t, args: t vector, resultTy: Type.t}: t =
             in
                r
             end
-       | Weak_get =>
+       | Prim.Weak_get =>
             (case dest (oneArg ()) of
                 Weak v => v
               | Type _ => result ()
               | _ => typeError ())
-       | Weak_new =>
+       | Prim.Weak_new =>
             let
                val r = result ()
                val _ =

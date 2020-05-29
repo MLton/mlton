@@ -1,4 +1,4 @@
-(* Copyright (C) 2017,2019 Matthew Fluet.
+(* Copyright (C) 2017,2019-2020 Matthew Fluet.
  *
  * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
@@ -55,7 +55,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                     ty = Type.array ty,
                     exp = PrimApp
                     {args = Vector.new0 (),
-                     prim = Prim.arrayArray,
+                     prim = Prim.Array_array,
                      targs = Vector.new1 ty}}
                 val () = List.push (newGlobals, statement)
              in
@@ -75,8 +75,8 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
               (stmts, fn Statement.T {var, ty, exp} =>
                case exp of
                   PrimApp ({prim, args, targs}) =>
-                     (case (var, Prim.name prim) of
-                         (SOME var, Prim.Name.Array_alloc {raw = false}) =>
+                     (case (var, prim) of
+                         (SOME var, Prim.Array_alloc {raw = false}) =>
                             if List.contains (arrVars, var, Var.equals)
                                then SOME (var, ty,
                                           Vector.first targs,
@@ -112,7 +112,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                              ty = Type.bool,
                              exp = PrimApp
                                    {args = Vector.new2 (zeroVar, lenVar),
-                                    prim = Prim.wordEqual seqIndexSize,
+                                    prim = Prim.Word_equal seqIndexSize,
                                     targs = Vector.new0 ()}})
                         val transfer =
                            Transfer.Case
@@ -154,7 +154,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                              ty = arrTy,
                              exp = PrimApp
                                    {args = Vector.new1 lenVar,
-                                    prim = Prim.arrayAlloc {raw = false},
+                                    prim = Prim.Array_alloc {raw = false},
                                     targs = Vector.new1 eltTy}})
                         val transfer =
                            Transfer.Goto
@@ -192,8 +192,8 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                  (statements, acc, fn (Statement.T {exp, ...}, acc) =>
                   case exp of
                      PrimApp ({prim, args, ...}) =>
-                        (case Prim.name prim of
-                            Prim.Name.Array_toVector =>
+                        (case prim of
+                            Prim.Array_toVector =>
                                (Vector.first args)::acc
                           | _ => acc)
                    | _ => acc))

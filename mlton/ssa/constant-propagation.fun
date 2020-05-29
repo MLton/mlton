@@ -524,7 +524,7 @@ structure Value =
                                       case !raw of
                                          Raw.Raw raw =>
                                             Exp.PrimApp {args = args,
-                                                         prim = Prim.arrayAlloc {raw = raw},
+                                                         prim = Prim.Array_alloc {raw = raw},
                                                          targs = targs}
                                        | _ => Error.bug "ConstantPropagation.Value.global: Array, raw",
                                       Type.deArray ty)
@@ -548,7 +548,7 @@ structure Value =
                                unary (birth, fn {init} => init,
                                       fn {args, targs} =>
                                       Exp.PrimApp {args = args,
-                                                   prim = Prim.reff,
+                                                   prim = Prim.Ref_ref,
                                                    targs = targs},
                                       Type.deRef ty)
                                else No
@@ -567,7 +567,7 @@ structure Value =
                                          fun mkVec args =
                                             yes (Exp.PrimApp
                                                  {args = args,
-                                                  prim = Prim.vector,
+                                                  prim = Prim.Vector_vector,
                                                   targs = Vector.new1 eltTy})
                                          fun mkConst (ws, elts) =
                                             yes (Exp.Const
@@ -994,7 +994,6 @@ fun transform (program: Program.t): Program.t =
                   (coerce {from = v, to = dearray a}
                    ; unit ())
                fun arg i = Vector.sub (args, i)
-               datatype z = datatype Prim.Name.t
                fun array (raw, length, birth) =
                   let
                      val a = fromType resultType
@@ -1019,9 +1018,9 @@ fun transform (program: Program.t): Program.t =
                      v
                   end
             in
-               case Prim.name prim of
-                  Array_alloc {raw} => array (raw, arg 0, bear ())
-                | Array_array =>
+               case prim of
+                  Prim.Array_alloc {raw} => array (raw, arg 0, bear ())
+                | Prim.Array_array =>
                      let
                         val l =
                            (const o S.Const.word o WordX.fromInt)
@@ -1034,19 +1033,19 @@ fun transform (program: Program.t): Program.t =
                      in
                         a
                      end
-                | Array_copyArray =>
+                | Prim.Array_copyArray =>
                      update (arg 0, dearray (arg 2))
-                | Array_copyVector =>
+                | Prim.Array_copyVector =>
                      update (arg 0, devector (arg 2))
-                | Array_length => arrayLength (arg 0)
-                | Array_sub => dearray (arg 0)
-                | Array_toArray => arrayFromArray (arg 0)
-                | Array_toVector => vectorFromArray (arg 0)
-                | Array_update => update (arg 0, arg 2)
-                | Ref_assign =>
+                | Prim.Array_length => arrayLength (arg 0)
+                | Prim.Array_sub => dearray (arg 0)
+                | Prim.Array_toArray => arrayFromArray (arg 0)
+                | Prim.Array_toVector => vectorFromArray (arg 0)
+                | Prim.Array_update => update (arg 0, arg 2)
+                | Prim.Ref_assign =>
                      (coerce {from = arg 1, to = deref (arg 0)}; unit ())
-                | Ref_deref => deref (arg 0)
-                | Ref_ref =>
+                | Prim.Ref_deref => deref (arg 0)
+                | Prim.Ref_ref =>
                      let
                         val v = arg 0
                         val r = fromType resultType
@@ -1056,11 +1055,11 @@ fun transform (program: Program.t): Program.t =
                      in
                         r
                      end
-                | Vector_length => vectorLength (arg 0)
-                | Vector_sub => devector (arg 0)
-                | Vector_vector => vector ()
-                | Weak_get => deweak (arg 0)
-                | Weak_new =>
+                | Prim.Vector_length => vectorLength (arg 0)
+                | Prim.Vector_sub => devector (arg 0)
+                | Prim.Vector_vector => vector ()
+                | Prim.Weak_get => deweak (arg 0)
+                | Prim.Weak_new =>
                      let
                         val w = fromType resultType
                         val _ = coerce {from = arg 0, to = deweak w}

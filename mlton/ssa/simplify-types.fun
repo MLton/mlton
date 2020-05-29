@@ -243,8 +243,8 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                case exp of
                   ConApp {con, ...} => setConRepUseful con
                 | PrimApp {prim, targs, ...} =>
-                     (case Prim.name prim of
-                         Prim.Name.MLton_bogus =>
+                     (case prim of
+                         Prim.MLton_bogus =>
                             (case Type.dest (Vector.sub (targs, 0)) of
                                 Type.Datatype tycon =>
                                    Cardinality.makeMany (tyconCardinality tycon)
@@ -581,13 +581,12 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                      if Cardinality.isZero (typeCardinality (Vector.first targs))
                         then Exp.Const (Const.word (WordX.zero (WordSize.seqIndex ())))
                         else normal ()
-                  datatype z = datatype Prim.Name.t
                in
-                  case Prim.name prim of
-                     Array_length => length ()
-                   | MLton_eq => equal ()
-                   | MLton_equal => equal ()
-                   | Vector_length => length ()
+                  case prim of
+                     Prim.Array_length => length ()
+                   | Prim.MLton_eq => equal ()
+                   | Prim.MLton_equal => equal ()
+                   | Prim.Vector_length => length ()
                    | _ => normal ()
                end
           | Select {tuple, offset} =>

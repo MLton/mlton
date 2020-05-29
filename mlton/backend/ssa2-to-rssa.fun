@@ -29,13 +29,6 @@ in
    structure GCField = GCField
 end
 
-structure Prim =
-   struct
-      open Prim
-
-      type t = Type.t Prim.t
-   end
-
 structure CFunction =
    struct
       open CFunction
@@ -347,7 +340,7 @@ structure CFunction =
                                    SOME CType.intInf),
                       return = Type.intInf (),
                       symbolScope = Private,
-                      target = Direct (Prim.Name.toString name)}
+                      target = Direct (Prim.toString name)}
       val intInfCompare = fn name =>
          (* CHECK; cint would be better? *)
          CFunction.T {args = Vector.new3 (Type.gcState (),
@@ -369,7 +362,7 @@ structure CFunction =
                                    SOME CType.compareRes),
                       return = Type.compareRes,
                       symbolScope = Private,
-                      target = Direct (Prim.Name.toString name)}
+                      target = Direct (Prim.toString name)}
       val intInfShift = fn name =>
          CFunction.T {args = Vector.new4 (Type.gcState (),
                                           Type.intInf (),
@@ -392,7 +385,7 @@ structure CFunction =
                                    SOME CType.intInf),
                       return = Type.intInf (),
                       symbolScope = Private,
-                      target = Direct (Prim.Name.toString name)}
+                      target = Direct (Prim.toString name)}
       val intInfToString = fn name =>
          (* CHECK; cint would be better? *)
          CFunction.T {args = Vector.new4 (Type.gcState (),
@@ -416,7 +409,7 @@ structure CFunction =
                                    SOME CType.string),
                       return = Type.string (),
                       symbolScope = Private,
-                      target = Direct (Prim.Name.toString name)}
+                      target = Direct (Prim.toString name)}
       val intInfUnary = fn name =>
          CFunction.T {args = Vector.new3 (Type.gcState (),
                                           Type.intInf (),
@@ -437,21 +430,27 @@ structure CFunction =
                                    SOME CType.intInf),
                       return = Type.intInf (),
                       symbolScope = Private,
-                      target = Direct (Prim.Name.toString name)}
+                      target = Direct (Prim.toString name)}
    end
 
-structure Name =
+structure Prim =
    struct
-      open Prim.Name
+      local
+         structure CFunction' = CFunction
+      in
+         open Prim
+         structure CFunction = CFunction'
+      end
 
+      datatype u = datatype t
       type t = Type.t t
 
-      fun cFunctionRaise (n: t): CFunction.t =
+      fun cFunctionRaise (p: t): CFunction.t =
          let
             datatype z = datatype CFunction.Convention.t
             datatype z = datatype CFunction.SymbolScope.t
             datatype z = datatype CFunction.Target.t
-            val name = toString n
+            val name = toString p
             val real = Type.real
             val word = Type.word
             val vanilla = CFunction.vanilla
@@ -539,7 +538,7 @@ structure Name =
                            return = t}
                end
          in
-            case n of
+            case p of
                Real_Math_acos s => realUnary s
              | Real_Math_asin s => realUnary s
              | Real_Math_atan s => realUnary s
@@ -616,7 +615,7 @@ structure Name =
              | _ => Error.bug "SsaToRssa.Name.cFunctionRaise"
          end
 
-      fun cFunction n = SOME (cFunctionRaise n) handle _ => NONE
+      fun cFunction p = SOME (cFunctionRaise p) handle _ => NONE
    end
 
 datatype z = datatype Operand.t
@@ -651,7 +650,7 @@ fun updateCard (addr: Operand.t): Statement.t list =
                          Operand.word
                          (WordX.fromIntInf (cardSizeLog2, WordSize.shiftArg)))),
                 dst = SOME (index, indexTy),
-                prim = Prim.wordRshift (sz, {signed = false})},
+                prim = Prim.Word_rshift (sz, {signed = false})},
        Move {dst = (SequenceOffset
                     {base = Runtime GCField.CardMapAbsolute,
                      index = Var {ty = indexTy, var = index},
@@ -860,8 +859,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
       val handlesSignals =
          S.Program.hasPrim
          (program, fn p =>
-          case Prim.name p of
-             Prim.Name.MLton_installSignalHandler => true
+          case p of
+             Prim.MLton_installSignalHandler => true
            | _ => false)
       fun translateFormals v =
          Vector.keepAllMap (v, fn (x, t) =>
@@ -905,32 +904,28 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
           | S.Transfer.Raise xs => ([], Transfer.Raise (vos xs))
           | S.Transfer.Return xs => ([], Transfer.Return (vos xs))
           | S.Transfer.Runtime {args, prim, return} =>
-               let
-                  datatype z = datatype Prim.Name.t
-               in
-                  case Prim.name prim of
-                     Thread_copyCurrent =>
-                        let
-                           val func = CFunction.copyCurrentThread ()
-                           val l =
-                              newBlock {args = Vector.new0 (),
-                                        kind = Kind.CReturn {func = func},
-                                        statements = Vector.new0 (),
-                                        transfer = (Goto {args = Vector.new0 (),
-                                                          dst = return})}
-                        in
-                           ([],
-                            Transfer.CCall
-                            {args = Vector.concat [Vector.new1 GCState,
-                                                   vos args],
-                             func = func,
-                             return = SOME l})
-                        end
-                   | _ => Error.bug (concat
-                                     ["SsaToRssa.translateTransfer: ",
-                                      "strange Runtime prim: ",
-                                      Prim.toString prim])
-               end
+               (case prim of
+                   Prim.Thread_copyCurrent =>
+                      let
+                         val func = CFunction.copyCurrentThread ()
+                         val l =
+                            newBlock {args = Vector.new0 (),
+                                      kind = Kind.CReturn {func = func},
+                                      statements = Vector.new0 (),
+                                      transfer = (Goto {args = Vector.new0 (),
+                                                        dst = return})}
+                      in
+                         ([],
+                          Transfer.CCall
+                          {args = Vector.concat [Vector.new1 GCState,
+                                                 vos args],
+                           func = func,
+                           return = SOME l})
+                      end
+                 | _ => Error.bug (concat
+                                   ["SsaToRssa.translateTransfer: ",
+                                    "strange Runtime prim: ",
+                                    Prim.toString prim]))
       fun translateStatementsTransfer (statements, ss, transfer) =
          let
             fun loop (i, ss, t): Statement.t vector * Transfer.t =
@@ -1062,7 +1057,6 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                  add (PrimApp {dst = dst (),
                                                prim = prim,
                                                args = args})
-                              datatype z = datatype Prim.Name.t
                               fun bumpAtomicState n =
                                  let
                                     val atomicState = Runtime GCField.AtomicState
@@ -1075,7 +1069,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                (Operand.word
                                                 (WordX.fromInt (n, WordSize.word32))))),
                                       dst = SOME (res, resTy),
-                                      prim = Prim.wordAdd WordSize.word32},
+                                      prim = Prim.Word_add WordSize.word32},
                                      Statement.Move
                                      {dst = atomicState,
                                       src = Var {ty = resTy, var = res}}]
@@ -1138,24 +1132,19 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                       src = a 2})
                         end
                      fun codegenOrC (p: Prim.t, args) =
-                        let
-                           val n = Prim.name p
-                        in
-                           if codegenImplementsPrim p
-                              then primApp (p, args)
-                           else (case Name.cFunction n of
-                                    NONE =>
-                                       Error.bug (concat ["SsaToRssa.codegenOrC: ",
-                                                          "unimplemented prim:",
-                                                          Name.toString n])
-                                  | SOME func => ccall {args = args, func = func})
-                        end
+                        if codegenImplementsPrim p
+                           then primApp (p, args)
+                        else (case Prim.cFunction p of
+                                 NONE =>
+                                    Error.bug (concat ["SsaToRssa.codegenOrC: ",
+                                                       "unimplemented prim:",
+                                                       Prim.toString p])
+                               | SOME func => ccall {args = args, func = func})
                      fun simpleCodegenOrC (p: Prim.t) =
                         codegenOrC (p, varOps args)
-                     datatype z = datatype Prim.Name.t
                            in
-                              case Prim.name prim of
-                                 Array_alloc {raw} =>
+                              case prim of
+                                 Prim.Array_alloc {raw} =>
                                     let
                                        val allocOpt = fn () =>
                                           let
@@ -1187,10 +1176,10 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                     in
                                        sequenceAlloc (a 0, if raw then allocRawOpt () else allocOpt ())
                                     end
-                               | Array_copyArray => simpleCCallWithGCState (CFunction.gcSequenceCopy (Operand.ty (a 0), Operand.ty (a 2)))
-                               | Array_copyVector => simpleCCallWithGCState (CFunction.gcSequenceCopy (Operand.ty (a 0), Operand.ty (a 2)))
-                               | Array_length => arrayOrVectorLength ()
-                               | Array_toArray =>
+                               | Prim.Array_copyArray => simpleCCallWithGCState (CFunction.gcSequenceCopy (Operand.ty (a 0), Operand.ty (a 2)))
+                               | Prim.Array_copyVector => simpleCCallWithGCState (CFunction.gcSequenceCopy (Operand.ty (a 0), Operand.ty (a 2)))
+                               | Prim.Array_length => arrayOrVectorLength ()
+                               | Prim.Array_toArray =>
                                     let
                                        val rawarr = a 0
                                        val arrTy = valOf (toRtype ty)
@@ -1210,7 +1199,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                               pinned = false,
                                               src = Operand.cast (rawarr, arrTy)})
                                     end
-                               | Array_toVector =>
+                               | Prim.Array_toVector =>
                                     let
                                        val sequence = a 0
                                        val vecTy = valOf (toRtype ty)
@@ -1230,7 +1219,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                               pinned = false,
                                               src = Operand.cast (sequence, vecTy)})
                                     end
-                               | Array_uninit =>
+                               | Prim.Array_uninit =>
                                     let
                                        val sequence = a 0
                                        val sequenceTy = varType (arg 0)
@@ -1257,7 +1246,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                     in
                                        adds (List.concat sss)
                                     end
-                               | Array_uninitIsNop =>
+                               | Prim.Array_uninitIsNop =>
                                     let
                                        val sequenceTy = varType (arg 0)
                                        val eltTys =
@@ -1273,16 +1262,16 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                     in
                                        move (Operand.bool isNop)
                                     end
-                               | CFunction f => simpleCCall f
-                               | CPointer_getCPointer => cpointerGet ()
-                               | CPointer_getObjptr => cpointerGet ()
-                               | CPointer_getReal _ => cpointerGet ()
-                               | CPointer_getWord _ => cpointerGet ()
-                               | CPointer_setCPointer => cpointerSet ()
-                               | CPointer_setObjptr => cpointerSet ()
-                               | CPointer_setReal _ => cpointerSet ()
-                               | CPointer_setWord _ => cpointerSet ()
-                               | GC_collect =>
+                               | Prim.CFunction f => simpleCCall f
+                               | Prim.CPointer_getCPointer => cpointerGet ()
+                               | Prim.CPointer_getObjptr => cpointerGet ()
+                               | Prim.CPointer_getReal _ => cpointerGet ()
+                               | Prim.CPointer_getWord _ => cpointerGet ()
+                               | Prim.CPointer_setCPointer => cpointerSet ()
+                               | Prim.CPointer_setObjptr => cpointerSet ()
+                               | Prim.CPointer_setReal _ => cpointerSet ()
+                               | Prim.CPointer_setWord _ => cpointerSet ()
+                               | Prim.GC_collect =>
                                     ccall
                                     {args = (Vector.new3
                                              (GCState,
@@ -1290,76 +1279,61 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                               Operand.bool true)),
                                      func = (CFunction.gc
                                              {maySwitchThreads = handlesSignals})}
-                               | GC_state => move GCState
-                               | IntInf_add =>
-                                    simpleCCallWithGCState
-                                    (CFunction.intInfBinary IntInf_add)
-                               | IntInf_andb =>
-                                    simpleCCallWithGCState
-                                    (CFunction.intInfBinary IntInf_andb)
-                               | IntInf_arshift =>
-                                    simpleCCallWithGCState
-                                    (CFunction.intInfShift IntInf_arshift)
-                               | IntInf_compare =>
-                                    simpleCCallWithGCState
-                                    (CFunction.intInfCompare IntInf_compare)
-                               | IntInf_gcd =>
-                                    simpleCCallWithGCState
-                                    (CFunction.intInfBinary IntInf_gcd)
-                               | IntInf_lshift =>
-                                    simpleCCallWithGCState
-                                    (CFunction.intInfShift IntInf_lshift)
-                               | IntInf_mul =>
-                                    simpleCCallWithGCState
-                                    (CFunction.intInfBinary IntInf_mul)
-                               | IntInf_neg =>
-                                    simpleCCallWithGCState
-                                    (CFunction.intInfUnary IntInf_neg)
-                               | IntInf_notb =>
-                                    simpleCCallWithGCState
-                                    (CFunction.intInfUnary IntInf_notb)
-                               | IntInf_orb =>
-                                    simpleCCallWithGCState
-                                    (CFunction.intInfBinary IntInf_orb)
-                               | IntInf_quot =>
-                                    simpleCCallWithGCState
-                                    (CFunction.intInfBinary IntInf_quot)
-                               | IntInf_rem =>
-                                    simpleCCallWithGCState
-                                    (CFunction.intInfBinary IntInf_rem)
-                               | IntInf_sub =>
-                                    simpleCCallWithGCState
-                                    (CFunction.intInfBinary IntInf_sub)
-                               | IntInf_toString =>
-                                    simpleCCallWithGCState
-                                    (CFunction.intInfToString IntInf_toString)
-                               | IntInf_toVector => cast ()
-                               | IntInf_toWord => cast ()
-                               | IntInf_xorb =>
-                                    simpleCCallWithGCState
-                                    (CFunction.intInfBinary IntInf_xorb)
-                               | MLton_bug =>
+                               | Prim.GC_state => move GCState
+                               | Prim.IntInf_add =>
+                                    simpleCCallWithGCState (CFunction.intInfBinary prim)
+                               | Prim.IntInf_andb =>
+                                    simpleCCallWithGCState (CFunction.intInfBinary prim)
+                               | Prim.IntInf_arshift =>
+                                    simpleCCallWithGCState (CFunction.intInfShift prim)
+                               | Prim.IntInf_compare =>
+                                    simpleCCallWithGCState (CFunction.intInfCompare prim)
+                               | Prim.IntInf_gcd =>
+                                    simpleCCallWithGCState (CFunction.intInfBinary prim)
+                               | Prim.IntInf_lshift =>
+                                    simpleCCallWithGCState (CFunction.intInfShift prim)
+                               | Prim.IntInf_mul =>
+                                    simpleCCallWithGCState (CFunction.intInfBinary prim)
+                               | Prim.IntInf_neg =>
+                                    simpleCCallWithGCState (CFunction.intInfUnary prim)
+                               | Prim.IntInf_notb =>
+                                    simpleCCallWithGCState (CFunction.intInfUnary prim)
+                               | Prim.IntInf_orb =>
+                                    simpleCCallWithGCState (CFunction.intInfBinary prim)
+                               | Prim.IntInf_quot =>
+                                    simpleCCallWithGCState (CFunction.intInfBinary prim)
+                               | Prim.IntInf_rem =>
+                                    simpleCCallWithGCState (CFunction.intInfBinary prim)
+                               | Prim.IntInf_sub =>
+                                    simpleCCallWithGCState (CFunction.intInfBinary prim)
+                               | Prim.IntInf_toString =>
+                                    simpleCCallWithGCState (CFunction.intInfToString prim)
+                               | Prim.IntInf_toVector => cast ()
+                               | Prim.IntInf_toWord => cast ()
+                               | Prim.IntInf_xorb =>
+                                    simpleCCallWithGCState (CFunction.intInfBinary prim)
+                               | Prim.MLton_bug =>
                                     loop
                                     (i - 1, [],
                                      Transfer.CCall {args = vos args,
                                                      func = CFunction.bug (),
                                                      return = NONE})
-                               | MLton_bogus =>
+                               | Prim.MLton_bogus =>
                                     (case toRtype ty of
                                         NONE => none ()
                                       | SOME t => move (bogus t))
-                               | MLton_eq =>
+                               | Prim.MLton_eq =>
                                     (case toRtype (varType (arg 0)) of
                                         NONE => move (Operand.bool true)
                                       | SOME t =>
                                            let
                                               val ws = WordSize.fromBits (Type.width t)
-                                              val wordEqual = Prim.wordEqual ws
+                                              val wordEqual = Prim.Word_equal ws
                                               val args = varOps args
                                               val (prim, args) =
                                                  case Type.toCType t of
                                                     CType.CPointer =>
-                                                       (Prim.cpointerEqual, args)
+                                                       (Prim.CPointer_equal, args)
                                                   | CType.Objptr =>
                                                        (wordEqual,
                                                         Vector.map
@@ -1373,11 +1347,11 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                            in
                                               codegenOrC (prim, args)
                                            end)
-                               | MLton_halt =>
+                               | Prim.MLton_halt =>
                                     simpleCCallWithGCState
                                     (CFunction.halt ())
-                               | MLton_installSignalHandler => none ()
-                               | MLton_share =>
+                               | Prim.MLton_installSignalHandler => none ()
+                               | Prim.MLton_share =>
                                     (case toRtype (varType (arg 0)) of
                                         NONE => none ()
                                       | SOME t =>
@@ -1386,7 +1360,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                            else
                                               simpleCCallWithGCState
                                               (CFunction.share (Operand.ty (a 0))))
-                               | MLton_size =>
+                               | Prim.MLton_size =>
                                     (case toRtype (varType (arg 0)) of
                                         NONE => move (Operand.word (WordX.zero (WordSize.csize ())))
                                       | SOME t =>
@@ -1395,7 +1369,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                            else
                                               simpleCCallWithGCState
                                               (CFunction.size (Operand.ty (a 0))))
-                               | MLton_touch =>
+                               | Prim.MLton_touch =>
                                     let
                                        val a  = arg 0
                                     in
@@ -1403,7 +1377,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                           then primApp (prim, Vector.new1 (varOp a))
                                           else none ()
                                     end
-                               | Thread_atomicBegin =>
+                               | Prim.Thread_atomicBegin =>
                                     (* gcState.atomicState++;
                                      * if (gcState.signalsInfo.signalIsPending)
                                      *   gcState.limit = gcState.limitPlusSlop - LIMIT_SLOP;
@@ -1426,7 +1400,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                        (Runtime.limitSlop,
                                                         size)))),
                                              dst = SOME (tmp, ty),
-                                             prim = Prim.cpointerSub},
+                                             prim = Prim.CPointer_sub},
                                             Statement.Move
                                             {dst = Runtime Limit,
                                              src = Var {ty = ty, var = tmp}})
@@ -1450,7 +1424,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                             Transfer.Goto {args = Vector.new0 (),
                                                            dst = continue})
                                      end)
-                               | Thread_atomicEnd =>
+                               | Prim.Thread_atomicEnd =>
                                     (* gcState.atomicState--;
                                      * if (gcState.signalsInfo.signalIsPending
                                      *     and 0 == gcState.atomicState)
@@ -1508,19 +1482,19 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                             Transfer.Goto {args = Vector.new0 (),
                                                            dst = continue})
                                      end)
-                               | Thread_atomicState =>
+                               | Prim.Thread_atomicState =>
                                     move (Runtime GCField.AtomicState)
-                               | Thread_copy =>
+                               | Prim.Thread_copy =>
                                     simpleCCallWithGCState
                                     (CFunction.copyThread ())
-                               | Thread_switchTo =>
+                               | Prim.Thread_switchTo =>
                                     ccall {args = (Vector.new3
                                                    (GCState,
                                                     a 0,
                                                     Operand.zero (WordSize.csize ()))),
                                            func = CFunction.threadSwitchTo ()}
-                               | Vector_length => arrayOrVectorLength ()
-                               | Weak_canGet =>
+                               | Prim.Vector_length => arrayOrVectorLength ()
+                               | Prim.Weak_canGet =>
                                     ifIsWeakPointer
                                     (varType (arg 0),
                                      fn _ =>
@@ -1528,7 +1502,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                      (CFunction.weakCanGet
                                       {arg = Operand.ty (a 0)}),
                                      fn () => move (Operand.bool false))
-                               | Weak_get =>
+                               | Prim.Weak_get =>
                                     ifIsWeakPointer
                                     (varType (arg 0),
                                      fn t =>
@@ -1539,7 +1513,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                      fn () => (case toRtype ty of
                                                   NONE => none ()
                                                 | SOME t => move (bogus t)))
-                               | Weak_new =>
+                               | Prim.Weak_new =>
                                     ifIsWeakPointer
                                     (ty,
                                      fn t =>
@@ -1561,12 +1535,12 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                func = func}
                                      end,
                                      none)
-                               | Word_equal s =>
+                               | Prim.Word_equal s =>
                                     simpleCodegenOrC
-                                    (Prim.wordEqual
+                                    (Prim.Word_equal
                                      (WordSize.roundUpToPrim s))
-                               | Word_toIntInf => cast ()
-                               | Word_extdToWord (s1, s2, {signed}) =>
+                               | Prim.Word_toIntInf => cast ()
+                               | Prim.Word_extdToWord (s1, s2, {signed}) =>
                                     if WordSize.equals (s1, s2)
                                        then move (a 0)
                                     else
@@ -1582,13 +1556,13 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                              then cast ()
                                           else
                                              simpleCodegenOrC
-                                             (Prim.wordExtdToWord
+                                             (Prim.Word_extdToWord
                                               (s1, s2, {signed = signed}))
                                        end
-                               | WordVector_toIntInf => cast ()
-                               | WordArray_subWord {eleSize, ...} =>
+                               | Prim.WordVector_toIntInf => cast ()
+                               | Prim.WordArray_subWord {eleSize, ...} =>
                                     subWord eleSize
-                               | WordArray_updateWord {eleSize, ...} =>
+                               | Prim.WordArray_updateWord {eleSize, ...} =>
                                     let
                                        val ty = Type.word eleSize
                                     in
@@ -1600,9 +1574,9 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                           ty = ty}),
                                                   src = a 2})
                                     end
-                               | WordVector_subWord {eleSize, ...} =>
+                               | Prim.WordVector_subWord {eleSize, ...} =>
                                     subWord eleSize
-                               | World_save =>
+                               | Prim.World_save =>
                                     simpleCCallWithGCState
                                     (CFunction.worldSave ())
                                | _ => simpleCodegenOrC prim

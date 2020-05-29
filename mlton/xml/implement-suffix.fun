@@ -1,4 +1,4 @@
-(* Copyright (C) 2019 Matthew Fluet.
+(* Copyright (C) 2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -61,24 +61,23 @@ fun transform (Program.T {datatypes, body, ...}): Program.t =
              | Lambda l => primExp (Lambda (loopLambda l))
              | PrimApp {args, prim, ...} =>
                   let
-                     datatype z = datatype Prim.Name.t
                      fun deref (var, ty) =
                         primExp
-                        (PrimApp {prim = Prim.deref,
+                        (PrimApp {prim = Prim.Ref_deref,
                                   targs = Vector.new1 ty,
                                   args = Vector.new1 (VarExp.mono var)})
                      fun assign (var, ty) =
                         primExp
-                        (PrimApp {prim = Prim.assign,
+                        (PrimApp {prim = Prim.Ref_assign,
                                   targs = Vector.new1 ty,
                                   args = Vector.new2 (VarExp.mono var,
                                                       Vector.first args)})
                   in
-                     case Prim.name prim of
-                        TopLevel_getSuffix =>
+                     case prim of
+                        Prim.TopLevel_getSuffix =>
                            deref (topLevelSuffixVar,
                                   topLevelSuffixType)
-                      | TopLevel_setSuffix =>
+                      | Prim.TopLevel_setSuffix =>
                            assign (topLevelSuffixVar,
                                    topLevelSuffixType)
                       | _ => keep ()
