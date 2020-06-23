@@ -40,6 +40,8 @@ PRIVATE Word32 wordTemp1L;
 #define DEBUG_X86CODEGEN FALSE
 #endif
 
+PRIVATE struct GC_state gcState;
+
 PRIVATE GC_state MLton_gcState() {
   return &gcState;
 }
