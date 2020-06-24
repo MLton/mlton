@@ -44,6 +44,6 @@ fix input errors: a lexical error will cause exception LexError to be
 raised, while a syntax error will cause ParseError to be raised.
 
 NOTE: The ML Basis file calc.mlb mentions the ml-yacc library
-(ml-yacc-lib.cm). MLton's search path should be configured so that this
+(mlyacc-lib.mlb). MLton's search path should be configured so that this
 library will be found.  This should normally be the case if MLton is
 properly installed.

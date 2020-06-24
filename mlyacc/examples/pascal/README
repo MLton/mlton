@@ -4,8 +4,8 @@ not necessary because ML-Yacc supports LALR(1).
 To construct the parser, make this your current directory and run the
 following commands
 
-  mllex pascal.lex
   mlyacc pascal.grm
+  mllex pascal.lex
   mlton pascal.mlb
 
 They will apply ML-Yacc to the file "pascal.grm" to create
@@ -13,7 +13,7 @@ the files "pascal.grm.sig" and "pascal.grm.sml", then
 ML_Lex will be applied to pascal.lex to produce pascal.lex.sml.
 
 Then these generated files will be compiled together with necessary
-components from the ML-Yacc library supplied by the ml-yacc-lib.cm
+components from the ML-Yacc library supplied by the mlyacc-lib.mlb
 file.
 
 The end result is a structure Parser with two functions.  The
