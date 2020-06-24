@@ -6,10 +6,10 @@
 
 PDFLATEX := pdflatex
 
-lexgen.pdf: lexgen.tex
-	$(PDFLATEX) lexgen.tex
-	$(PDFLATEX) lexgen.tex
-	$(PDFLATEX) lexgen.tex
+ml-lex.pdf: ml-lex.tex
+	$(PDFLATEX) ml-lex.tex
+	$(PDFLATEX) ml-lex.tex
+	$(PDFLATEX) ml-lex.tex
 
 .PHONY: clean
 clean:
