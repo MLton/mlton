@@ -60,6 +60,9 @@ see the COPYRIGHT NOTICE for details and restrictions.
                 and characters.
         02/08/95 (jhr) Modified to use new List module interface.
         05/18/95 (jhr) changed Vector.vector to Vector.fromList
+        04/07/20 (jhr) Switch to using RedBlackMapFn from SML/NJ Library
+        04/07/20 (jhr) Replaced uses of polymorphic equality with pattern
+                matching.
 
  * Revision 1.9  1998/01/06 19:23:53  appel
  *   added %posarg feature to permit position-within-file to be passed
@@ -148,6 +151,7 @@ as our token, when we should have "a" as our token.
 
 *)
 
+(*
 functor RedBlack(B : sig type key
                          val > : key*key->bool
                      end):
@@ -221,6 +225,7 @@ struct
   end
 
 end
+*)
 
 signature LEXGEN =
   sig
@@ -728,12 +733,15 @@ fun GetExp () : exp =
         in rep(min,max)
         end
 
-        and exp0 = fn () => case GetTok() of
-                  CHARS(c) => exp1(CLASS(c,0))
-                | LP => let val e = exp0() in
-                 if !NextTok = RP then
-                  (AdvanceTok(); exp1(e))
-                 else (prSynErr "missing ')'") end
+        and exp0 = fn () => case GetTok()
+               of CHARS(c) => exp1(CLASS(c,0))
+                | LP => let
+                    val e = exp0()
+                    in
+                      case !NextTok
+                       of RP => (AdvanceTok(); exp1(e))
+                        | _ => (prSynErr "missing ')'")
+                    end
                 | ID(name) => exp1(lookup' name)
                 | _ => raise SyntaxError
 
@@ -826,8 +834,9 @@ end;
 
 exception ParseError;
 
-fun parse() : (string * (int list * exp) list * ((string,pos*string) dictionary)) =
-        let val Accept = ref (create String.<=) : (string,pos*string) dictionary ref
+fun parse() : (string * (int list * exp) list * ((string,pos*string) dictionary)) = let
+        fun isSEMI SEMI = true | isSEMI _ = false
+        val Accept = ref (create String.<=) : (string,pos*string) dictionary ref
         val rec ParseRtns = fn l => case getch(!LexBuf) of
                   #"%" => let val c = getch(!LexBuf) in
                            if c = #"%" then (implode (rev l))
@@ -843,14 +852,17 @@ fun parse() : (string * (int list * exp) list * ((string,pos*string) dictionary)
                                      ++StateNum; AdvanceTok(); f())
                                         | _ => ())
                    in AdvanceTok(); f ();
-                      if !NextTok=SEMI then ParseDefs() else
+                      if isSEMI (!NextTok) then ParseDefs() else
                         (prSynErr "expected ';'")
                    end
-                | ID x => (LexState:=1; AdvanceTok(); if GetTok() = ASSIGN
-                          then (SymTab := enter(!SymTab)(x,GetExp());
-                               if !NextTok = SEMI then ParseDefs()
-                               else (prSynErr "expected ';'"))
-                        else raise SyntaxError)
+                | ID x => (
+                    LexState:=1; AdvanceTok();
+                    case GetTok()
+                     of ASSIGN => (
+                          SymTab := enter(!SymTab)(x,GetExp());
+                          if isSEMI (!NextTok) then ParseDefs()
+                          else (prSynErr "expected ';'"))
+                      | _ => raise SyntaxError)
                 | REJECT => (HaveReject := true; ParseDefs())
                 | COUNT => (CountNewLines := true; ParseDefs())
                 | FULLCHARSET => (CharSetSize := 256; ParseDefs())
@@ -904,15 +916,15 @@ fun parse() : (string * (int list * exp) list * ((string,pos*string) dictionary)
                  let val s = GetStates()
                      val e = renum(CAT(GetExp(),END(0)))
                  in
-                 if !NextTok = ARROW then
-                   (LexState:=2; AdvanceTok();
-                    case GetTok() of ACTION(act) =>
-                      if !NextTok=SEMI then
-                        (Accept:=enter(!Accept) (Int.toString (!LeafNum),act);
-                         ParseRules((s,e)::rules))
-                      else (prSynErr "expected ';'")
-                    | _ => raise SyntaxError)
-                  else (prSynErr "expected '=>'")
+                   case !NextTok
+                    of ARROW => (LexState:=2; AdvanceTok();
+                         case GetTok() of ACTION(act) =>
+                           if isSEMI (!NextTok) then
+                             (Accept:=enter(!Accept) (Int.toString (!LeafNum),act);
+                              ParseRules((s,e)::rules))
+                           else (prSynErr "expected ';'")
+                         | _ => raise SyntaxError)
+                     | _ => (prSynErr "expected '=>'")
                 end)
 in let val usercode = ParseRtns nil
    in (ParseDefs(); (usercode,ParseRules(nil),!Accept))
@@ -927,6 +939,7 @@ fun makebegin () : unit =
    in say "\n(* start state definitions *)\n\n"; make(listofdict(!StateTab))
    end
 
+(*
 structure L =
         struct
           nonfix >
@@ -941,6 +954,34 @@ structure L =
         end
 
 structure RB = RedBlack(L)
+*)
+
+(* a finite map implementation that replaces the original version, but
+ * keeps the same interface.
+ *)
+structure RB : sig
+    type tree
+    type key
+    val empty : tree
+    val insert : key * tree -> tree
+    val lookup : key * tree -> key
+    exception notfound of key
+  end =  struct
+    structure Map = RedBlackMapFn (
+        struct
+          type ord_key = int list
+          val compare = List.collate Int.compare
+        end)
+    type key = (int list * string)
+    type tree = string Map.map
+    val empty = Map.empty
+    val insert = Map.insert'
+    exception notfound of key
+    fun lookup (arg as (key, _), t) = (case Map.find(t, key)
+           of SOME item => (key, item)
+            | NONE => raise notfound arg
+          (* end case *))
+  end
 
 fun maketable (fins:(int * (int list)) list,
              tcs :(int * (int list)) list,
