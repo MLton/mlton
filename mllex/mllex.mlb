@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2020 Matthew Fluet.
  * Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -10,6 +10,7 @@ local
    local
       local
          $(SML_LIB)/basis/basis.mlb
+         $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
          lexgen.sml
       in
          structure LexGen

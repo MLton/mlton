@@ -51,7 +51,7 @@ the file_parse function:
   - Parse.file_parse "list.fol";
 
 
-NOTE: The ML Basis file sources.cm mentions the ml-yacc library
-(ml-yacc-lib.cm). MLton's search path should be configured so that this
+NOTE: The ML Basis file fol.mlb mentions the ml-yacc library
+(mlyacc-lib.mlb). MLton's search path should be configured so that this
 library will be found.  This should normally be the case if MLton is
 properly installed.

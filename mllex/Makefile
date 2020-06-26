@@ -27,13 +27,11 @@ clean:
 
 PDFLATEX := pdflatex
 
-lexgen.pdf: lexgen.tex
-	$(PDFLATEX) lexgen.tex
-	$(PDFLATEX) lexgen.tex
-	$(PDFLATEX) lexgen.tex
+doc/ml-lex.pdf:
+	$(MAKE) -C doc ml-lex.pdf
 
-mllex.pdf: lexgen.pdf
-	$(CP) lexgen.pdf mllex.pdf
+mllex.pdf: doc/ml-lex.pdf
+	$(CP) doc/ml-lex.pdf mllex.pdf
 
 DOCS :=
 ifneq ($(shell which $(PDFLATEX) 2> /dev/null),)

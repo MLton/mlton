@@ -92,10 +92,10 @@ index b03260b..a262146 100644
 +(* end (* local *) *)
 diff --git a/src/ckit-lib.mlb b/src/ckit-lib.mlb
 new file mode 100644
-index 0000000..04c7479
+index 0000000..7266fc5
 --- /dev/null
 +++ b/src/ckit-lib.mlb
-@@ -0,0 +1,890 @@
+@@ -0,0 +1,1525 @@
 +
 +ann
 +  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
@@ -106,19 +106,19 @@ index 0000000..04c7479
 +in
 +
 +local
-+  basis l4 =
++  basis l11 =
 +    bas
-+      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/unsafe.mlb
++      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/sml-nj.mlb $(SML_LIB)/basis/unsafe.mlb
 +    end
-+  basis l24 =
++  basis l6 =
 +    bas
 +      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
 +    end
-+  basis l71 =
++  basis l74 =
 +    bas
 +      (* $/pp-lib.cm ====> *) $(SML_LIB)/smlnj-lib/PP/pp-lib.mlb
 +    end
-+  basis l96 =
++  basis l227 =
 +    bas
 +      (* $/ml-yacc-lib.cm ====> *) $(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb
 +    end
@@ -126,888 +126,1501 @@ index 0000000..04c7479
 +local
 +   $(SML_LIB)/basis/pervasive.mlb
 +   local
-+      open l4
++      open l6
 +   in
-+      structure gs_0 = TextIO
++      structure gs_0 = Format
++   end
++   local
++      open l11
++   in
++      structure gs_1 = TextIO
 +   end
 +   local
 +      variants/type-check-control-sig.sml
 +   in
-+      signature gs_1 = TYPECHECKCONTROL
++      signature gs_2 = TYPECHECKCONTROL
 +   end
 +   local
 +      variants/parse-control-sig.sml
 +   in
-+      signature gs_2 = PARSECONTROL
++      signature gs_3 = PARSECONTROL
 +   end
 +   local
-+      signature PARSECONTROL = gs_2
-+      signature TYPECHECKCONTROL = gs_1
++      signature PARSECONTROL = gs_3
++      signature TYPECHECKCONTROL = gs_2
 +      variants/config-sig.sml
 +   in
-+      signature gs_3 = CONFIG
++      signature gs_4 = CONFIG
 +   end
 +   local
-+      signature CONFIG = gs_3
-+      signature PARSECONTROL = gs_2
-+      signature TYPECHECKCONTROL = gs_1
-+      structure TextIO = gs_0
++      signature CONFIG = gs_4
++      signature PARSECONTROL = gs_3
++      signature TYPECHECKCONTROL = gs_2
++      structure TextIO = gs_1
 +      variants/ansic/config.sml
 +   in
-+      structure gs_4 = Config
++      structure gs_5 = Config
 +   end
 +   local
-+      open l24
++      open l11
 +   in
-+      functor gs_5 = HashTableFn
-+   end
-+   local
-+      ast/uidtabimp-sig.sml
-+   in
-+      signature gs_6 = UIDTABIMP
-+   end
-+   local
-+      open l4
-+   in
-+      structure gs_7 = Word
-+   end
-+   local
-+      structure Word = gs_7
-+      ast/uid-sig.sml
-+   in
-+      signature gs_8 = UID
-+   end
-+   local
-+      functor HashTableFn = gs_5
-+      signature UID = gs_8
-+      signature UIDTABIMP = gs_6
-+      ast/uidtabimp-fn.sml
-+   in
-+      functor gs_9 = UidtabImpFn
-+   end
-+   local
-+      open l4
-+   in
-+      structure gs_10 = Int
-+   end
-+   local
-+      structure Int = gs_10
-+      signature UID = gs_8
-+      structure Word = gs_7
-+      ast/uid-fn.sml
-+   in
-+      functor gs_11 = UidFn
-+   end
-+   local
-+      signature UID = gs_8
-+      functor UidFn = gs_11
-+      ast/aid.sml
-+   in
-+      structure gs_12 = Aid
-+   end
-+   local
-+      structure Aid = gs_12
-+      functor UidtabImpFn = gs_9
-+      ast/aidtab.sml
-+   in
-+      structure gs_13 = Aidtab
-+   end
-+   local
-+      open l24
-+   in
-+      structure gs_14 = Format
-+   end
-+   local
-+      open l4
-+   in
-+      structure gs_15 = String
++      structure gs_6 = Char
++      structure gs_7 = CharArray
++      structure gs_8 = CharVector
++      structure gs_9 = FixedInt
++      structure gs_10 = General
++      structure gs_11 = Int
++      structure gs_12 = Int32
++      structure gs_13 = Int64
++      structure gs_14 = IntInf
++      structure gs_15 = LargeInt
++      structure gs_16 = LargeReal
++      structure gs_17 = LargeWord
++      structure gs_18 = OS
++      structure gs_19 = Position
++      structure gs_20 = Real
++      structure gs_21 = Real64
++      structure gs_22 = RealArray
++      structure gs_23 = RealArraySlice
++      structure gs_24 = RealVector
++      structure gs_25 = RealVectorSlice
++      structure gs_26 = SMLofNJ
++      structure gs_27 = Socket
++      structure gs_28 = String
++      structure gs_29 = Substring
++      structure gs_30 = SysWord
++      structure gs_31 = Time
++      structure gs_32 = Word
++      structure gs_33 = Word32
++      structure gs_34 = Word64
++      structure gs_35 = Word8
 +   end
 +   local
 +      parser/util/sourcemap-sig.sml
 +   in
-+      signature gs_16 = SOURCE_MAP
++      signature gs_36 = SOURCE_MAP
 +   end
 +   local
-+      structure Config = gs_4
-+      structure Format = gs_14
-+      structure Int = gs_10
-+      signature SOURCE_MAP = gs_16
-+      structure String = gs_15
++      structure Char = gs_6
++      structure CharArray = gs_7
++      structure CharVector = gs_8
++      structure Config = gs_5
++      structure FixedInt = gs_9
++      structure Format = gs_0
++      structure General = gs_10
++      structure Int = gs_11
++      structure Int32 = gs_12
++      structure Int64 = gs_13
++      structure IntInf = gs_14
++      structure LargeInt = gs_15
++      structure LargeReal = gs_16
++      structure LargeWord = gs_17
++      structure OS = gs_18
++      structure Position = gs_19
++      structure Real = gs_20
++      structure Real64 = gs_21
++      structure RealArray = gs_22
++      structure RealArraySlice = gs_23
++      structure RealVector = gs_24
++      structure RealVectorSlice = gs_25
++      structure SMLofNJ = gs_26
++      signature SOURCE_MAP = gs_36
++      structure Socket = gs_27
++      structure String = gs_28
++      structure Substring = gs_29
++      structure SysWord = gs_30
++      structure Time = gs_31
++      structure Word = gs_32
++      structure Word32 = gs_33
++      structure Word64 = gs_34
++      structure Word8 = gs_35
 +      parser/util/sourcemap.sml
 +   in
-+      structure gs_17 = SourceMap
++      structure gs_37 = SourceMap
 +   end
 +   local
-+      open l71
++      open l11
 +   in
-+      functor gs_18 = PPStreamFn
++      structure gs_38 = Option
 +   end
 +   local
-+      open l71
++      open l11
 +   in
-+      structure gs_19 = StringToken
++      structure gs_39 = List
 +   end
 +   local
-+      open l4
++      open l74
 +   in
-+      structure gs_20 = StringCvt
++      functor gs_40 = PPStreamFn
 +   end
 +   local
-+      open l4
++      open l74
 +   in
-+      structure gs_21 = List
++      structure gs_41 = StringToken
 +   end
 +   local
-+      structure List = gs_21
-+      functor PPStreamFn = gs_18
-+      structure String = gs_15
-+      structure StringCvt = gs_20
-+      structure StringToken = gs_19
++      open l11
++   in
++      structure gs_42 = StringCvt
++   end
++   local
++      structure Char = gs_6
++      structure CharArray = gs_7
++      structure CharVector = gs_8
++      structure FixedInt = gs_9
++      structure General = gs_10
++      structure Int = gs_11
++      structure Int32 = gs_12
++      structure Int64 = gs_13
++      structure IntInf = gs_14
++      structure LargeInt = gs_15
++      structure LargeReal = gs_16
++      structure LargeWord = gs_17
++      structure List = gs_39
++      structure OS = gs_18
++      functor PPStreamFn = gs_40
++      structure Position = gs_19
++      structure Real = gs_20
++      structure Real64 = gs_21
++      structure RealArray = gs_22
++      structure RealArraySlice = gs_23
++      structure RealVector = gs_24
++      structure RealVectorSlice = gs_25
++      structure SMLofNJ = gs_26
++      structure Socket = gs_27
++      structure String = gs_28
++      structure StringCvt = gs_42
++      structure StringToken = gs_41
++      structure Substring = gs_29
++      structure SysWord = gs_30
++      structure Time = gs_31
++      structure Word = gs_32
++      structure Word32 = gs_33
++      structure Word64 = gs_34
++      structure Word8 = gs_35
 +      parser/util/old-pp.sml
 +   in
-+      signature gs_22 = OLD_PRETTYPRINT
-+      structure gs_23 = OldPrettyPrint
++      signature gs_43 = OLD_PRETTYPRINT
++      structure gs_44 = OldPrettyPrint
 +   end
 +   local
-+      structure Format = gs_14
-+      signature OLD_PRETTYPRINT = gs_22
-+      structure OldPrettyPrint = gs_23
-+      structure SourceMap = gs_17
-+      structure TextIO = gs_0
-+      parser/util/error-sig.sml
++      structure Char = gs_6
++      structure CharArray = gs_7
++      structure CharVector = gs_8
++      structure FixedInt = gs_9
++      structure General = gs_10
++      structure Int = gs_11
++      structure Int32 = gs_12
++      structure Int64 = gs_13
++      structure IntInf = gs_14
++      structure LargeInt = gs_15
++      structure LargeReal = gs_16
++      structure LargeWord = gs_17
++      structure OS = gs_18
++      structure Position = gs_19
++      structure Real = gs_20
++      structure Real64 = gs_21
++      structure RealArray = gs_22
++      structure RealArraySlice = gs_23
++      structure RealVector = gs_24
++      structure RealVectorSlice = gs_25
++      structure SMLofNJ = gs_26
++      structure Socket = gs_27
++      structure String = gs_28
++      structure Substring = gs_29
++      structure SysWord = gs_30
++      structure Time = gs_31
++      structure Word = gs_32
++      structure Word32 = gs_33
++      structure Word64 = gs_34
++      structure Word8 = gs_35
++      ast/uid-sig.sml
 +   in
-+      signature gs_24 = ERROR
++      signature gs_45 = UID
 +   end
 +   local
-+      signature ERROR = gs_24
-+      structure Format = gs_14
-+      signature OLD_PRETTYPRINT = gs_22
-+      structure OldPrettyPrint = gs_23
-+      structure SourceMap = gs_17
-+      structure TextIO = gs_0
-+      parser/util/error.sml
++      structure Char = gs_6
++      structure CharArray = gs_7
++      structure CharVector = gs_8
++      structure FixedInt = gs_9
++      structure General = gs_10
++      structure Int = gs_11
++      structure Int32 = gs_12
++      structure Int64 = gs_13
++      structure IntInf = gs_14
++      structure LargeInt = gs_15
++      structure LargeReal = gs_16
++      structure LargeWord = gs_17
++      structure OS = gs_18
++      structure Position = gs_19
++      structure Real = gs_20
++      structure Real64 = gs_21
++      structure RealArray = gs_22
++      structure RealArraySlice = gs_23
++      structure RealVector = gs_24
++      structure RealVectorSlice = gs_25
++      structure SMLofNJ = gs_26
++      structure Socket = gs_27
++      structure String = gs_28
++      structure Substring = gs_29
++      structure SysWord = gs_30
++      structure Time = gs_31
++      signature UID = gs_45
++      structure Word = gs_32
++      structure Word32 = gs_33
++      structure Word64 = gs_34
++      structure Word8 = gs_35
++      ast/uid-fn.sml
 +   in
-+      structure gs_25 = Error
++      functor gs_46 = UidFn
 +   end
 +   local
-+      open l96
++      signature UID = gs_45
++      functor UidFn = gs_46
++      ast/aid.sml
 +   in
-+      functor gs_26 = Join
-+      functor gs_27 = JoinWithArg
++      structure gs_47 = Aid
 +   end
 +   local
-+      open l96
-+   in
-+      structure gs_28 = LrParser
-+   end
-+   local
-+      open l4
-+   in
-+      structure gs_29 = LargeInt
-+   end
-+   local
-+      parser/extensions/c/parse-tree-ext.sml
-+   in
-+      structure gs_30 = ParseTreeExt
-+   end
-+   local
-+      structure LargeInt = gs_29
-+      structure ParseTreeExt = gs_30
-+      structure SourceMap = gs_17
-+      parser/parse-tree-sig.sml
-+   in
-+      signature gs_31 = PARSETREE
-+   end
-+   local
-+      structure LargeInt = gs_29
-+      signature PARSETREE = gs_31
-+      structure ParseTreeExt = gs_30
-+      structure SourceMap = gs_17
-+      parser/parse-tree.sml
-+   in
-+      structure gs_32 = ParseTree
-+   end
-+   local
-+      structure Error = gs_25
-+      structure ParseTree = gs_32
-+      parser/parser-sig.sml
-+   in
-+      signature gs_33 = PARSER
-+   end
-+   local
-+      open l4
-+   in
-+      structure gs_34 = Unsafe
-+   end
-+   local
-+      open l4
-+   in
-+      structure gs_35 = IntInf
-+   end
-+   local
-+      open l4
-+   in
-+      structure gs_36 = CharVector
-+   end
-+   local
-+      open l4
-+   in
-+      structure gs_37 = Vector
-+   end
-+   local
-+      open l4
-+   in
-+      structure gs_38 = Real
-+   end
-+   local
-+      open l4
-+   in
-+      structure gs_39 = Char
-+   end
-+   local
-+      open l24
-+   in
-+      structure gs_40 = AtomTable
-+   end
-+   local
-+      open l24
-+   in
-+      structure gs_41 = Atom
-+   end
-+   local
-+      structure Atom = gs_41
-+      structure AtomTable = gs_40
-+      structure Config = gs_4
-+      parser/grammar/tdefs.sml
-+   in
-+      signature gs_42 = TYPEDEFS
-+      structure gs_43 = TypeDefs
-+   end
-+   local
-+      open l96
-+   in
-+      signature gs_44 = ARG_LEXER
-+      signature gs_45 = ARG_PARSER
-+      signature gs_46 = LEXER
-+      signature gs_47 = LR_PARSER
-+      signature gs_48 = LR_TABLE
-+      signature gs_49 = PARSER
-+      signature gs_50 = PARSER_DATA
-+      signature gs_51 = STREAM
-+      signature gs_52 = TOKEN
-+   end
-+   local
-+      signature ARG_LEXER = gs_44
-+      signature ARG_PARSER = gs_45
-+      signature LEXER = gs_46
-+      signature LR_PARSER = gs_47
-+      signature LR_TABLE = gs_48
-+      structure LargeInt = gs_29
-+      signature PARSER = gs_49
-+      signature PARSER_DATA = gs_50
-+      signature STREAM = gs_51
-+      signature TOKEN = gs_52
-+      parser/grammar/c.grm.sig
-+   in
-+      signature gs_53 = C_LRVALS
-+      signature gs_54 = C_TOKENS
-+   end
-+   local
-+      structure Atom = gs_41
-+      structure AtomTable = gs_40
-+      signature C_LRVALS = gs_53
-+      signature C_TOKENS = gs_54
-+      structure Config = gs_4
-+      signature TYPEDEFS = gs_42
-+      structure TypeDefs = gs_43
-+      parser/grammar/tokentable.sml
-+   in
-+      signature gs_55 = TOKENTABLE
-+      functor gs_56 = TokenTable
-+   end
-+   local
-+      signature C_LRVALS = gs_53
-+      signature C_TOKENS = gs_54
-+      structure Char = gs_39
-+      structure CharVector = gs_36
-+      structure Int = gs_10
-+      structure IntInf = gs_35
-+      structure LargeInt = gs_29
-+      structure List = gs_21
-+      structure Real = gs_38
-+      structure SourceMap = gs_17
-+      structure String = gs_15
-+      structure StringCvt = gs_20
-+      signature TOKENTABLE = gs_55
-+      functor TokenTable = gs_56
-+      structure Unsafe = gs_34
-+      structure Vector = gs_37
-+      parser/grammar/c.lex.sml
-+   in
-+      functor gs_57 = CLexFun
-+   end
-+   local
-+      open l4
-+   in
-+      structure gs_58 = Array
-+   end
-+   local
-+      open l4
-+   in
-+      structure gs_59 = General
-+   end
-+   local
-+      signature ARG_LEXER = gs_44
-+      signature ARG_PARSER = gs_45
-+      structure Array = gs_58
-+      signature C_LRVALS = gs_53
-+      signature C_TOKENS = gs_54
-+      structure Char = gs_39
-+      structure Error = gs_25
-+      structure General = gs_59
-+      signature LEXER = gs_46
-+      signature LR_PARSER = gs_47
-+      signature LR_TABLE = gs_48
-+      structure LargeInt = gs_29
-+      structure List = gs_21
-+      signature PARSER = gs_49
-+      signature PARSER_DATA = gs_50
-+      structure ParseTree = gs_32
-+      signature STREAM = gs_51
-+      structure SourceMap = gs_17
-+      structure String = gs_15
-+      signature TOKEN = gs_52
-+      signature TYPEDEFS = gs_42
-+      structure TypeDefs = gs_43
-+      parser/grammar/c.grm.sml
-+   in
-+      functor gs_60 = LrValsFun
-+   end
-+   local
-+      functor CLexFun = gs_57
-+      structure Error = gs_25
-+      functor Join = gs_26
-+      functor JoinWithArg = gs_27
-+      structure LrParser = gs_28
-+      functor LrValsFun = gs_60
-+      signature PARSER = gs_33
-+      structure SourceMap = gs_17
-+      signature TOKENTABLE = gs_55
-+      signature TYPEDEFS = gs_42
-+      structure TextIO = gs_0
-+      functor TokenTable = gs_56
-+      structure TypeDefs = gs_43
-+      parser/parser.sml
-+   in
-+      structure gs_61 = Parser
-+   end
-+   local
-+      open l24
-+   in
-+      structure gs_62 = HashString
-+   end
-+   local
-+      signature UID = gs_8
-+      functor UidFn = gs_11
++      signature UID = gs_45
++      functor UidFn = gs_46
 +      ast/tid.sml
 +   in
-+      structure gs_63 = Tid
++      structure gs_48 = Tid
 +   end
 +   local
-+      structure Tid = gs_63
++      open l6
++   in
++      structure gs_49 = HashString
++   end
++   local
++      structure Tid = gs_48
 +      ast/symbol-sig.sml
 +   in
-+      signature gs_64 = SYMBOL
++      signature gs_50 = SYMBOL
 +   end
 +   local
-+      structure HashString = gs_62
-+      structure Int = gs_10
-+      signature SYMBOL = gs_64
-+      structure String = gs_15
-+      structure Tid = gs_63
-+      structure Word = gs_7
++      structure Char = gs_6
++      structure CharArray = gs_7
++      structure CharVector = gs_8
++      structure FixedInt = gs_9
++      structure General = gs_10
++      structure HashString = gs_49
++      structure Int = gs_11
++      structure Int32 = gs_12
++      structure Int64 = gs_13
++      structure IntInf = gs_14
++      structure LargeInt = gs_15
++      structure LargeReal = gs_16
++      structure LargeWord = gs_17
++      structure OS = gs_18
++      structure Position = gs_19
++      structure Real = gs_20
++      structure Real64 = gs_21
++      structure RealArray = gs_22
++      structure RealArraySlice = gs_23
++      structure RealVector = gs_24
++      structure RealVectorSlice = gs_25
++      structure SMLofNJ = gs_26
++      signature SYMBOL = gs_50
++      structure Socket = gs_27
++      structure String = gs_28
++      structure Substring = gs_29
++      structure SysWord = gs_30
++      structure Tid = gs_48
++      structure Time = gs_31
++      structure Word = gs_32
++      structure Word32 = gs_33
++      structure Word64 = gs_34
++      structure Word8 = gs_35
 +      ast/symbol.sml
 +   in
-+      structure gs_65 = Symbol
-+   end
-+   local
-+      signature UID = gs_8
-+      functor UidFn = gs_11
-+      ast/pid.sml
-+   in
-+      structure gs_66 = Pid
++      structure gs_51 = Symbol
 +   end
 +   local
 +      ast/extensions/c/ast-ext.sml
 +   in
-+      structure gs_67 = AstExt
++      structure gs_52 = AstExt
 +   end
 +   local
-+      structure Aid = gs_12
-+      structure AstExt = gs_67
-+      structure LargeInt = gs_29
-+      structure Pid = gs_66
-+      structure SourceMap = gs_17
-+      structure Symbol = gs_65
-+      structure Tid = gs_63
++      signature UID = gs_45
++      functor UidFn = gs_46
++      ast/pid.sml
++   in
++      structure gs_53 = Pid
++   end
++   local
++      structure Aid = gs_47
++      structure AstExt = gs_52
++      structure Char = gs_6
++      structure CharArray = gs_7
++      structure CharVector = gs_8
++      structure FixedInt = gs_9
++      structure General = gs_10
++      structure Int = gs_11
++      structure Int32 = gs_12
++      structure Int64 = gs_13
++      structure IntInf = gs_14
++      structure LargeInt = gs_15
++      structure LargeReal = gs_16
++      structure LargeWord = gs_17
++      structure OS = gs_18
++      structure Pid = gs_53
++      structure Position = gs_19
++      structure Real = gs_20
++      structure Real64 = gs_21
++      structure RealArray = gs_22
++      structure RealArraySlice = gs_23
++      structure RealVector = gs_24
++      structure RealVectorSlice = gs_25
++      structure SMLofNJ = gs_26
++      structure Socket = gs_27
++      structure SourceMap = gs_37
++      structure String = gs_28
++      structure Substring = gs_29
++      structure Symbol = gs_51
++      structure SysWord = gs_30
++      structure Tid = gs_48
++      structure Time = gs_31
++      structure Word = gs_32
++      structure Word32 = gs_33
++      structure Word64 = gs_34
++      structure Word8 = gs_35
 +      ast/ast-sig.sml
 +   in
-+      signature gs_68 = AST
++      signature gs_54 = AST
 +   end
 +   local
-+      signature AST = gs_68
-+      structure Aid = gs_12
-+      structure AstExt = gs_67
-+      structure LargeInt = gs_29
-+      structure Pid = gs_66
-+      structure SourceMap = gs_17
-+      structure Symbol = gs_65
-+      structure Tid = gs_63
++      signature AST = gs_54
++      structure Aid = gs_47
++      structure AstExt = gs_52
++      structure Char = gs_6
++      structure CharArray = gs_7
++      structure CharVector = gs_8
++      structure FixedInt = gs_9
++      structure General = gs_10
++      structure Int = gs_11
++      structure Int32 = gs_12
++      structure Int64 = gs_13
++      structure IntInf = gs_14
++      structure LargeInt = gs_15
++      structure LargeReal = gs_16
++      structure LargeWord = gs_17
++      structure OS = gs_18
++      structure Pid = gs_53
++      structure Position = gs_19
++      structure Real = gs_20
++      structure Real64 = gs_21
++      structure RealArray = gs_22
++      structure RealArraySlice = gs_23
++      structure RealVector = gs_24
++      structure RealVectorSlice = gs_25
++      structure SMLofNJ = gs_26
++      structure Socket = gs_27
++      structure SourceMap = gs_37
++      structure String = gs_28
++      structure Substring = gs_29
++      structure Symbol = gs_51
++      structure SysWord = gs_30
++      structure Tid = gs_48
++      structure Time = gs_31
++      structure Word = gs_32
++      structure Word32 = gs_33
++      structure Word64 = gs_34
++      structure Word8 = gs_35
 +      ast/ast.sml
 +   in
-+      structure gs_69 = Ast
++      structure gs_55 = Ast
 +   end
 +   local
-+      structure Ast = gs_69
-+      structure LargeInt = gs_29
-+      structure Pid = gs_66
-+      structure SourceMap = gs_17
-+      structure Symbol = gs_65
-+      structure Tid = gs_63
++      structure Ast = gs_55
++      structure Char = gs_6
++      structure CharArray = gs_7
++      structure CharVector = gs_8
++      structure FixedInt = gs_9
++      structure General = gs_10
++      structure Int = gs_11
++      structure Int32 = gs_12
++      structure Int64 = gs_13
++      structure IntInf = gs_14
++      structure LargeInt = gs_15
++      structure LargeReal = gs_16
++      structure LargeWord = gs_17
++      structure OS = gs_18
++      structure Pid = gs_53
++      structure Position = gs_19
++      structure Real = gs_20
++      structure Real64 = gs_21
++      structure RealArray = gs_22
++      structure RealArraySlice = gs_23
++      structure RealVector = gs_24
++      structure RealVectorSlice = gs_25
++      structure SMLofNJ = gs_26
++      structure Socket = gs_27
++      structure SourceMap = gs_37
++      structure String = gs_28
++      structure Substring = gs_29
++      structure Symbol = gs_51
++      structure SysWord = gs_30
++      structure Tid = gs_48
++      structure Time = gs_31
++      structure Word = gs_32
++      structure Word32 = gs_33
++      structure Word64 = gs_34
++      structure Word8 = gs_35
 +      ast/bindings.sml
 +   in
-+      structure gs_70 = Bindings
++      structure gs_56 = Bindings
 +   end
 +   local
-+      open l24
++      open l6
 +   in
-+      functor gs_71 = BinaryMapFn
++      functor gs_57 = HashTableFn
 +   end
 +   local
-+      open l24
++      ast/uidtabimp-sig.sml
 +   in
-+      signature gs_72 = ORD_MAP
++      signature gs_58 = UIDTABIMP
 +   end
 +   local
-+      structure Tid = gs_63
-+      functor UidtabImpFn = gs_9
++      functor HashTableFn = gs_57
++      signature UID = gs_45
++      signature UIDTABIMP = gs_58
++      ast/uidtabimp-fn.sml
++   in
++      functor gs_59 = UidtabImpFn
++   end
++   local
++      structure Aid = gs_47
++      functor UidtabImpFn = gs_59
++      ast/aidtab.sml
++   in
++      structure gs_60 = Aidtab
++   end
++   local
++      structure Tid = gs_48
++      functor UidtabImpFn = gs_59
 +      ast/tidtab.sml
 +   in
-+      structure gs_73 = Tidtab
++      structure gs_61 = Tidtab
 +   end
 +   local
-+      structure Aidtab = gs_13
-+      structure Ast = gs_69
-+      structure Bindings = gs_70
-+      structure Tidtab = gs_73
++      structure Aidtab = gs_60
++      structure Ast = gs_55
++      structure Bindings = gs_56
++      structure Tidtab = gs_61
 +      ast/tables.sml
 +   in
-+      structure gs_74 = Tables
++      structure gs_62 = Tables
 +   end
 +   local
-+      structure Aid = gs_12
-+      structure Ast = gs_69
-+      structure Bindings = gs_70
-+      structure Error = gs_25
-+      structure LargeInt = gs_29
-+      signature ORD_MAP = gs_72
-+      structure SourceMap = gs_17
-+      structure Symbol = gs_65
-+      structure Tables = gs_74
-+      structure Tid = gs_63
-+      ast/state-sig.sml
++      structure Ast = gs_55
++      structure Bindings = gs_56
++      signature OLD_PRETTYPRINT = gs_43
++      structure OldPrettyPrint = gs_44
++      structure Tables = gs_62
++      structure Tid = gs_48
++      ast/pp/pp-ast-sig.sml
 +   in
-+      signature gs_75 = STATE
++      signature gs_63 = PP_AST
 +   end
 +   local
-+      structure Aid = gs_12
-+      structure Aidtab = gs_13
-+      structure Ast = gs_69
-+      functor BinaryMapFn = gs_71
-+      structure Bindings = gs_70
-+      structure Error = gs_25
-+      structure LargeInt = gs_29
-+      structure List = gs_21
-+      structure Pid = gs_66
-+      signature STATE = gs_75
-+      structure SourceMap = gs_17
-+      structure Symbol = gs_65
-+      structure Tables = gs_74
-+      structure Tid = gs_63
-+      structure Tidtab = gs_73
-+      ast/state.sml
++      structure Ast = gs_55
++      structure Char = gs_6
++      structure CharArray = gs_7
++      structure CharVector = gs_8
++      structure FixedInt = gs_9
++      structure General = gs_10
++      structure Int = gs_11
++      structure Int32 = gs_12
++      structure Int64 = gs_13
++      structure IntInf = gs_14
++      structure LargeInt = gs_15
++      structure LargeReal = gs_16
++      structure LargeWord = gs_17
++      signature OLD_PRETTYPRINT = gs_43
++      structure OS = gs_18
++      structure OldPrettyPrint = gs_44
++      structure Pid = gs_53
++      structure Position = gs_19
++      structure Real = gs_20
++      structure Real64 = gs_21
++      structure RealArray = gs_22
++      structure RealArraySlice = gs_23
++      structure RealVector = gs_24
++      structure RealVectorSlice = gs_25
++      structure SMLofNJ = gs_26
++      structure Socket = gs_27
++      structure String = gs_28
++      structure Substring = gs_29
++      structure Symbol = gs_51
++      structure SysWord = gs_30
++      structure Tables = gs_62
++      structure TextIO = gs_1
++      structure Tid = gs_48
++      structure Tidtab = gs_61
++      structure Time = gs_31
++      structure Word = gs_32
++      structure Word32 = gs_33
++      structure Word64 = gs_34
++      structure Word8 = gs_35
++      ast/pp/pp-lib.sml
 +   in
-+      structure gs_76 = State
++      structure gs_64 = PPLib
++   end
++   local
++      structure Ast = gs_55
++      structure AstExt = gs_52
++      signature OLD_PRETTYPRINT = gs_43
++      structure OldPrettyPrint = gs_44
++      structure Tables = gs_62
++      ast/pp/pp-ast-ext-sig.sml
++   in
++      signature gs_65 = PPASTEXT
++   end
++   local
++      signature PPASTEXT = gs_65
++      ast/extensions/c/pp-ast-ext-fn.sml
++   in
++      functor gs_66 = PPAstExtFn
++   end
++   local
++      structure Ast = gs_55
++      signature OLD_PRETTYPRINT = gs_43
++      structure OldPrettyPrint = gs_44
++      structure Tables = gs_62
++      ast/pp/pp-ast-adornment-sig.sml
++   in
++      signature gs_67 = PPASTADORNMENT
++   end
++   local
++      structure Ast = gs_55
++      structure Bindings = gs_56
++      structure Char = gs_6
++      structure CharArray = gs_7
++      structure CharVector = gs_8
++      structure FixedInt = gs_9
++      structure General = gs_10
++      structure Int = gs_11
++      structure Int32 = gs_12
++      structure Int64 = gs_13
++      structure IntInf = gs_14
++      structure LargeInt = gs_15
++      structure LargeReal = gs_16
++      structure LargeWord = gs_17
++      structure List = gs_39
++      signature OLD_PRETTYPRINT = gs_43
++      structure OS = gs_18
++      structure OldPrettyPrint = gs_44
++      structure Option = gs_38
++      signature PPASTADORNMENT = gs_67
++      functor PPAstExtFn = gs_66
++      structure PPLib = gs_64
++      signature PP_AST = gs_63
++      structure Pid = gs_53
++      structure Position = gs_19
++      structure Real = gs_20
++      structure Real64 = gs_21
++      structure RealArray = gs_22
++      structure RealArraySlice = gs_23
++      structure RealVector = gs_24
++      structure RealVectorSlice = gs_25
++      structure SMLofNJ = gs_26
++      structure Socket = gs_27
++      structure SourceMap = gs_37
++      structure String = gs_28
++      structure Substring = gs_29
++      structure SysWord = gs_30
++      structure Tid = gs_48
++      structure Tidtab = gs_61
++      structure Time = gs_31
++      structure Word = gs_32
++      structure Word32 = gs_33
++      structure Word64 = gs_34
++      structure Word8 = gs_35
++      ast/pp/pp-ast-fn.sml
++   in
++      functor gs_68 = PPAstFn
++   end
++   local
++      structure Ast = gs_55
++      signature PPASTADORNMENT = gs_67
++      functor PPAstFn = gs_68
++      ast/pp/pp-ast.sml
++   in
++      structure gs_69 = PPAst
++   end
++   local
++      open l6
++   in
++      functor gs_70 = BinaryMapFn
 +   end
 +   local
 +      ast/sizes-sig.sml
 +   in
-+      signature gs_77 = SIZES
++      signature gs_71 = SIZES
 +   end
 +   local
-+      signature SIZES = gs_77
++      signature SIZES = gs_71
 +      ast/sizes.sml
 +   in
-+      structure gs_78 = Sizes
++      structure gs_72 = Sizes
 +   end
 +   local
-+      structure Ast = gs_69
-+      structure Bindings = gs_70
-+      structure Sizes = gs_78
-+      structure State = gs_76
-+      structure Tables = gs_74
-+      structure TextIO = gs_0
-+      structure Tidtab = gs_73
-+      ast/parse-to-ast-sig.sml
-+   in
-+      signature gs_79 = PARSE_TO_AST
-+   end
-+   local
-+      open l4
-+   in
-+      structure gs_80 = ListPair
-+   end
-+   local
-+      open l4
-+   in
-+      structure gs_81 = Option
-+   end
-+   local
-+      structure Ast = gs_69
-+      structure Bindings = gs_70
-+      structure Error = gs_25
-+      structure ParseTree = gs_32
-+      structure Sizes = gs_78
-+      structure State = gs_76
-+      structure Tables = gs_74
-+      structure Tidtab = gs_73
-+      ast/build-ast-sig.sml
-+   in
-+      signature gs_82 = BUILD_AST
-+   end
-+   local
-+      structure Ast = gs_69
-+      structure ParseTree = gs_32
-+      structure ParseTreeExt = gs_30
-+      structure State = gs_76
-+      ast/cnv-ext-sig.sml
-+   in
-+      signature gs_83 = CNVEXT
-+   end
-+   local
-+      structure Ast = gs_69
-+      signature CNVEXT = gs_83
-+      structure ParseTree = gs_32
-+      structure ParseTreeExt = gs_30
-+      structure State = gs_76
-+      ast/extensions/c/cnv-ext.sml
-+   in
-+      structure gs_84 = CnvExt
-+   end
-+   local
-+      structure Ast = gs_69
-+      structure Bindings = gs_70
-+      structure Pid = gs_66
-+      structure Symbol = gs_65
-+      ast/simplify-assign-ops.sml
-+   in
-+      structure gs_85 = SimplifyAssignOps
-+   end
-+   local
-+      structure Ast = gs_69
-+      structure Bindings = gs_70
-+      signature OLD_PRETTYPRINT = gs_22
-+      structure OldPrettyPrint = gs_23
-+      structure Tables = gs_74
-+      structure Tid = gs_63
-+      ast/pp/pp-ast-sig.sml
-+   in
-+      signature gs_86 = PP_AST
-+   end
-+   local
-+      open l4
-+   in
-+      structure gs_87 = Int32
-+   end
-+   local
-+      structure Ast = gs_69
-+      structure Int = gs_10
-+      structure Int32 = gs_87
-+      structure LargeInt = gs_29
-+      signature OLD_PRETTYPRINT = gs_22
-+      structure OldPrettyPrint = gs_23
-+      structure Pid = gs_66
-+      structure Real = gs_38
-+      structure String = gs_15
-+      structure Symbol = gs_65
-+      structure Tables = gs_74
-+      structure TextIO = gs_0
-+      structure Tid = gs_63
-+      structure Tidtab = gs_73
-+      ast/pp/pp-lib.sml
-+   in
-+      structure gs_88 = PPLib
-+   end
-+   local
-+      structure Ast = gs_69
-+      structure AstExt = gs_67
-+      signature OLD_PRETTYPRINT = gs_22
-+      structure OldPrettyPrint = gs_23
-+      structure Tables = gs_74
-+      ast/pp/pp-ast-ext-sig.sml
-+   in
-+      signature gs_89 = PPASTEXT
-+   end
-+   local
-+      signature PPASTEXT = gs_89
-+      ast/extensions/c/pp-ast-ext-fn.sml
-+   in
-+      functor gs_90 = PPAstExtFn
-+   end
-+   local
-+      structure Ast = gs_69
-+      signature OLD_PRETTYPRINT = gs_22
-+      structure OldPrettyPrint = gs_23
-+      structure Tables = gs_74
-+      ast/pp/pp-ast-adornment-sig.sml
-+   in
-+      signature gs_91 = PPASTADORNMENT
-+   end
-+   local
-+      structure Ast = gs_69
-+      structure Bindings = gs_70
-+      structure Int = gs_10
-+      structure LargeInt = gs_29
-+      structure List = gs_21
-+      signature OLD_PRETTYPRINT = gs_22
-+      structure OldPrettyPrint = gs_23
-+      structure Option = gs_81
-+      signature PPASTADORNMENT = gs_91
-+      functor PPAstExtFn = gs_90
-+      structure PPLib = gs_88
-+      signature PP_AST = gs_86
-+      structure Pid = gs_66
-+      structure SourceMap = gs_17
-+      structure Tid = gs_63
-+      structure Tidtab = gs_73
-+      ast/pp/pp-ast-fn.sml
-+   in
-+      functor gs_92 = PPAstFn
-+   end
-+   local
-+      structure Ast = gs_69
-+      signature PPASTADORNMENT = gs_91
-+      functor PPAstFn = gs_92
-+      ast/pp/pp-ast.sml
-+   in
-+      structure gs_93 = PPAst
-+   end
-+   local
-+      structure Ast = gs_69
-+      ast/ctype-eq.sml
-+   in
-+      structure gs_94 = CTypeEq
-+   end
-+   local
-+      structure Ast = gs_69
-+      structure Sizes = gs_78
-+      structure Tables = gs_74
++      structure Ast = gs_55
++      structure Sizes = gs_72
++      structure Tables = gs_62
 +      ast/sizeof-sig.sml
 +   in
-+      signature gs_95 = SIZEOF
++      signature gs_73 = SIZEOF
 +   end
 +   local
-+      structure Ast = gs_69
-+      structure LargeInt = gs_29
-+      structure Tables = gs_74
++      structure Ast = gs_55
++      structure Char = gs_6
++      structure CharArray = gs_7
++      structure CharVector = gs_8
++      structure FixedInt = gs_9
++      structure General = gs_10
++      structure Int = gs_11
++      structure Int32 = gs_12
++      structure Int64 = gs_13
++      structure IntInf = gs_14
++      structure LargeInt = gs_15
++      structure LargeReal = gs_16
++      structure LargeWord = gs_17
++      structure OS = gs_18
++      structure Position = gs_19
++      structure Real = gs_20
++      structure Real64 = gs_21
++      structure RealArray = gs_22
++      structure RealArraySlice = gs_23
++      structure RealVector = gs_24
++      structure RealVectorSlice = gs_25
++      structure SMLofNJ = gs_26
++      structure Socket = gs_27
++      structure String = gs_28
++      structure Substring = gs_29
++      structure SysWord = gs_30
++      structure Tables = gs_62
++      structure Time = gs_31
++      structure Word = gs_32
++      structure Word32 = gs_33
++      structure Word64 = gs_34
++      structure Word8 = gs_35
 +      ast/type-util-sig.sml
 +   in
-+      signature gs_96 = TYPE_UTIL
++      signature gs_74 = TYPE_UTIL
 +   end
 +   local
-+      structure Ast = gs_69
-+      structure Bindings = gs_70
-+      structure Config = gs_4
-+      structure Int = gs_10
-+      structure List = gs_21
-+      structure PPAst = gs_93
-+      structure PPLib = gs_88
-+      structure Pid = gs_66
-+      structure Symbol = gs_65
-+      signature TYPE_UTIL = gs_96
-+      structure Tables = gs_74
-+      structure Tid = gs_63
-+      structure Tidtab = gs_73
++      structure Ast = gs_55
++      structure Bindings = gs_56
++      structure Char = gs_6
++      structure CharArray = gs_7
++      structure CharVector = gs_8
++      structure Config = gs_5
++      structure FixedInt = gs_9
++      structure General = gs_10
++      structure Int = gs_11
++      structure Int32 = gs_12
++      structure Int64 = gs_13
++      structure IntInf = gs_14
++      structure LargeInt = gs_15
++      structure LargeReal = gs_16
++      structure LargeWord = gs_17
++      structure List = gs_39
++      structure OS = gs_18
++      structure PPAst = gs_69
++      structure PPLib = gs_64
++      structure Pid = gs_53
++      structure Position = gs_19
++      structure Real = gs_20
++      structure Real64 = gs_21
++      structure RealArray = gs_22
++      structure RealArraySlice = gs_23
++      structure RealVector = gs_24
++      structure RealVectorSlice = gs_25
++      structure SMLofNJ = gs_26
++      structure Socket = gs_27
++      structure String = gs_28
++      structure Substring = gs_29
++      structure Symbol = gs_51
++      structure SysWord = gs_30
++      signature TYPE_UTIL = gs_74
++      structure Tables = gs_62
++      structure Tid = gs_48
++      structure Tidtab = gs_61
++      structure Time = gs_31
++      structure Word = gs_32
++      structure Word32 = gs_33
++      structure Word64 = gs_34
++      structure Word8 = gs_35
 +      ast/type-util.sml
 +   in
-+      structure gs_97 = TypeUtil
++      structure gs_75 = TypeUtil
 +   end
 +   local
-+      structure Ast = gs_69
-+      functor BinaryMapFn = gs_71
-+      structure Bindings = gs_70
-+      structure Config = gs_4
-+      structure Int = gs_10
-+      structure LargeInt = gs_29
-+      structure List = gs_21
-+      structure Pid = gs_66
-+      signature SIZEOF = gs_95
-+      structure Sizes = gs_78
-+      structure Tables = gs_74
-+      structure TextIO = gs_0
-+      structure Tid = gs_63
-+      structure Tidtab = gs_73
-+      structure TypeUtil = gs_97
++      structure Ast = gs_55
++      functor BinaryMapFn = gs_70
++      structure Bindings = gs_56
++      structure Char = gs_6
++      structure CharArray = gs_7
++      structure CharVector = gs_8
++      structure Config = gs_5
++      structure FixedInt = gs_9
++      structure General = gs_10
++      structure Int = gs_11
++      structure Int32 = gs_12
++      structure Int64 = gs_13
++      structure IntInf = gs_14
++      structure LargeInt = gs_15
++      structure LargeReal = gs_16
++      structure LargeWord = gs_17
++      structure List = gs_39
++      structure OS = gs_18
++      structure Pid = gs_53
++      structure Position = gs_19
++      structure Real = gs_20
++      structure Real64 = gs_21
++      structure RealArray = gs_22
++      structure RealArraySlice = gs_23
++      structure RealVector = gs_24
++      structure RealVectorSlice = gs_25
++      signature SIZEOF = gs_73
++      structure SMLofNJ = gs_26
++      structure Sizes = gs_72
++      structure Socket = gs_27
++      structure String = gs_28
++      structure Substring = gs_29
++      structure SysWord = gs_30
++      structure Tables = gs_62
++      structure TextIO = gs_1
++      structure Tid = gs_48
++      structure Tidtab = gs_61
++      structure Time = gs_31
++      structure TypeUtil = gs_75
++      structure Word = gs_32
++      structure Word32 = gs_33
++      structure Word64 = gs_34
++      structure Word8 = gs_35
 +      ast/sizeof.sml
 +   in
-+      structure gs_98 = Sizeof
++      structure gs_76 = Sizeof
 +   end
 +   local
-+      structure ParseTree = gs_32
-+      structure Real = gs_38
-+      structure Tid = gs_63
-+      ast/anonymous-structs.sml
++      structure Format = gs_0
++      signature OLD_PRETTYPRINT = gs_43
++      structure OldPrettyPrint = gs_44
++      structure SourceMap = gs_37
++      structure TextIO = gs_1
++      parser/util/error-sig.sml
 +   in
-+      structure gs_99 = AnonymousStructs
-+      structure gs_100 = TyEq
++      signature gs_77 = ERROR
 +   end
 +   local
-+      structure Aid = gs_12
-+      structure Ast = gs_69
-+      structure Bindings = gs_70
-+      structure Tid = gs_63
++      signature ERROR = gs_77
++      structure Format = gs_0
++      signature OLD_PRETTYPRINT = gs_43
++      structure OldPrettyPrint = gs_44
++      structure SourceMap = gs_37
++      structure TextIO = gs_1
++      parser/util/error.sml
++   in
++      structure gs_78 = Error
++   end
++   local
++      parser/extensions/c/parse-tree-ext.sml
++   in
++      structure gs_79 = ParseTreeExt
++   end
++   local
++      structure Char = gs_6
++      structure CharArray = gs_7
++      structure CharVector = gs_8
++      structure FixedInt = gs_9
++      structure General = gs_10
++      structure Int = gs_11
++      structure Int32 = gs_12
++      structure Int64 = gs_13
++      structure IntInf = gs_14
++      structure LargeInt = gs_15
++      structure LargeReal = gs_16
++      structure LargeWord = gs_17
++      structure OS = gs_18
++      structure ParseTreeExt = gs_79
++      structure Position = gs_19
++      structure Real = gs_20
++      structure Real64 = gs_21
++      structure RealArray = gs_22
++      structure RealArraySlice = gs_23
++      structure RealVector = gs_24
++      structure RealVectorSlice = gs_25
++      structure SMLofNJ = gs_26
++      structure Socket = gs_27
++      structure SourceMap = gs_37
++      structure String = gs_28
++      structure Substring = gs_29
++      structure SysWord = gs_30
++      structure Time = gs_31
++      structure Word = gs_32
++      structure Word32 = gs_33
++      structure Word64 = gs_34
++      structure Word8 = gs_35
++      parser/parse-tree-sig.sml
++   in
++      signature gs_80 = PARSETREE
++   end
++   local
++      structure Char = gs_6
++      structure CharArray = gs_7
++      structure CharVector = gs_8
++      structure FixedInt = gs_9
++      structure General = gs_10
++      structure Int = gs_11
++      structure Int32 = gs_12
++      structure Int64 = gs_13
++      structure IntInf = gs_14
++      structure LargeInt = gs_15
++      structure LargeReal = gs_16
++      structure LargeWord = gs_17
++      structure OS = gs_18
++      signature PARSETREE = gs_80
++      structure ParseTreeExt = gs_79
++      structure Position = gs_19
++      structure Real = gs_20
++      structure Real64 = gs_21
++      structure RealArray = gs_22
++      structure RealArraySlice = gs_23
++      structure RealVector = gs_24
++      structure RealVectorSlice = gs_25
++      structure SMLofNJ = gs_26
++      structure Socket = gs_27
++      structure SourceMap = gs_37
++      structure String = gs_28
++      structure Substring = gs_29
++      structure SysWord = gs_30
++      structure Time = gs_31
++      structure Word = gs_32
++      structure Word32 = gs_33
++      structure Word64 = gs_34
++      structure Word8 = gs_35
++      parser/parse-tree.sml
++   in
++      structure gs_81 = ParseTree
++   end
++   local
++      structure Error = gs_78
++      structure ParseTree = gs_81
++      parser/parser-sig.sml
++   in
++      signature gs_82 = PARSER
++   end
++   local
++      open l227
++   in
++      functor gs_83 = Join
++      functor gs_84 = JoinWithArg
++   end
++   local
++      open l227
++   in
++      structure gs_85 = LrParser
++   end
++   local
++      open l11
++   in
++      structure gs_86 = IO
++   end
++   local
++      open l11
++   in
++      structure gs_87 = TextPrimIO
++   end
++   local
++      open l11
++   in
++      structure gs_88 = Vector
++   end
++   local
++      open l6
++   in
++      structure gs_89 = Atom
++   end
++   local
++      open l6
++   in
++      structure gs_90 = AtomTable
++   end
++   local
++      structure Atom = gs_89
++      structure AtomTable = gs_90
++      structure Config = gs_5
++      parser/grammar/tdefs.sml
++   in
++      signature gs_91 = TYPEDEFS
++      structure gs_92 = TypeDefs
++   end
++   local
++      open l227
++   in
++      signature gs_93 = ARG_LEXER
++      signature gs_94 = ARG_PARSER
++      signature gs_95 = LEXER
++      signature gs_96 = LR_PARSER
++      signature gs_97 = LR_TABLE
++      signature gs_98 = PARSER
++      signature gs_99 = PARSER_DATA
++      signature gs_100 = STREAM
++      signature gs_101 = TOKEN
++   end
++   local
++      signature ARG_LEXER = gs_93
++      signature ARG_PARSER = gs_94
++      structure Char = gs_6
++      structure CharArray = gs_7
++      structure CharVector = gs_8
++      structure FixedInt = gs_9
++      structure General = gs_10
++      structure Int = gs_11
++      structure Int32 = gs_12
++      structure Int64 = gs_13
++      structure IntInf = gs_14
++      signature LEXER = gs_95
++      signature LR_PARSER = gs_96
++      signature LR_TABLE = gs_97
++      structure LargeInt = gs_15
++      structure LargeReal = gs_16
++      structure LargeWord = gs_17
++      structure OS = gs_18
++      signature PARSER = gs_98
++      signature PARSER_DATA = gs_99
++      structure Position = gs_19
++      structure Real = gs_20
++      structure Real64 = gs_21
++      structure RealArray = gs_22
++      structure RealArraySlice = gs_23
++      structure RealVector = gs_24
++      structure RealVectorSlice = gs_25
++      structure SMLofNJ = gs_26
++      signature STREAM = gs_100
++      structure Socket = gs_27
++      structure String = gs_28
++      structure Substring = gs_29
++      structure SysWord = gs_30
++      signature TOKEN = gs_101
++      structure Time = gs_31
++      structure Word = gs_32
++      structure Word32 = gs_33
++      structure Word64 = gs_34
++      structure Word8 = gs_35
++      parser/grammar/c.grm.sig
++   in
++      signature gs_102 = C_LRVALS
++      signature gs_103 = C_TOKENS
++   end
++   local
++      structure Atom = gs_89
++      structure AtomTable = gs_90
++      signature C_LRVALS = gs_102
++      signature C_TOKENS = gs_103
++      structure Config = gs_5
++      signature TYPEDEFS = gs_91
++      structure TypeDefs = gs_92
++      parser/grammar/tokentable.sml
++   in
++      signature gs_104 = TOKENTABLE
++      functor gs_105 = TokenTable
++   end
++   local
++      signature C_LRVALS = gs_102
++      signature C_TOKENS = gs_103
++      structure Char = gs_6
++      structure CharArray = gs_7
++      structure CharVector = gs_8
++      structure FixedInt = gs_9
++      structure General = gs_10
++      structure IO = gs_86
++      structure Int = gs_11
++      structure Int32 = gs_12
++      structure Int64 = gs_13
++      structure IntInf = gs_14
++      structure LargeInt = gs_15
++      structure LargeReal = gs_16
++      structure LargeWord = gs_17
++      structure List = gs_39
++      structure OS = gs_18
++      structure Position = gs_19
++      structure Real = gs_20
++      structure Real64 = gs_21
++      structure RealArray = gs_22
++      structure RealArraySlice = gs_23
++      structure RealVector = gs_24
++      structure RealVectorSlice = gs_25
++      structure SMLofNJ = gs_26
++      structure Socket = gs_27
++      structure SourceMap = gs_37
++      structure String = gs_28
++      structure StringCvt = gs_42
++      structure Substring = gs_29
++      structure SysWord = gs_30
++      signature TOKENTABLE = gs_104
++      structure TextIO = gs_1
++      structure TextPrimIO = gs_87
++      structure Time = gs_31
++      functor TokenTable = gs_105
++      structure Vector = gs_88
++      structure Word = gs_32
++      structure Word32 = gs_33
++      structure Word64 = gs_34
++      structure Word8 = gs_35
++      parser/grammar/c.lex.sml
++   in
++      functor gs_106 = CLexFun
++   end
++   local
++      open l11
++   in
++      structure gs_107 = Array
++   end
++   local
++      signature ARG_LEXER = gs_93
++      signature ARG_PARSER = gs_94
++      structure Array = gs_107
++      signature C_LRVALS = gs_102
++      signature C_TOKENS = gs_103
++      structure Char = gs_6
++      structure CharArray = gs_7
++      structure CharVector = gs_8
++      structure Error = gs_78
++      structure FixedInt = gs_9
++      structure General = gs_10
++      structure Int = gs_11
++      structure Int32 = gs_12
++      structure Int64 = gs_13
++      structure IntInf = gs_14
++      signature LEXER = gs_95
++      signature LR_PARSER = gs_96
++      signature LR_TABLE = gs_97
++      structure LargeInt = gs_15
++      structure LargeReal = gs_16
++      structure LargeWord = gs_17
++      structure List = gs_39
++      structure OS = gs_18
++      signature PARSER = gs_98
++      signature PARSER_DATA = gs_99
++      structure ParseTree = gs_81
++      structure Position = gs_19
++      structure Real = gs_20
++      structure Real64 = gs_21
++      structure RealArray = gs_22
++      structure RealArraySlice = gs_23
++      structure RealVector = gs_24
++      structure RealVectorSlice = gs_25
++      structure SMLofNJ = gs_26
++      signature STREAM = gs_100
++      structure Socket = gs_27
++      structure SourceMap = gs_37
++      structure String = gs_28
++      structure Substring = gs_29
++      structure SysWord = gs_30
++      signature TOKEN = gs_101
++      signature TYPEDEFS = gs_91
++      structure Time = gs_31
++      structure TypeDefs = gs_92
++      structure Word = gs_32
++      structure Word32 = gs_33
++      structure Word64 = gs_34
++      structure Word8 = gs_35
++      parser/grammar/c.grm.sml
++   in
++      functor gs_108 = LrValsFun
++   end
++   local
++      functor CLexFun = gs_106
++      structure Error = gs_78
++      functor Join = gs_83
++      functor JoinWithArg = gs_84
++      structure LrParser = gs_85
++      functor LrValsFun = gs_108
++      signature PARSER = gs_82
++      structure SourceMap = gs_37
++      signature TOKENTABLE = gs_104
++      signature TYPEDEFS = gs_91
++      structure TextIO = gs_1
++      functor TokenTable = gs_105
++      structure TypeDefs = gs_92
++      parser/parser.sml
++   in
++      structure gs_109 = Parser
++   end
++   local
++      open l6
++   in
++      signature gs_110 = ORD_MAP
++   end
++   local
++      structure Aid = gs_47
++      structure Ast = gs_55
++      structure Bindings = gs_56
++      structure Char = gs_6
++      structure CharArray = gs_7
++      structure CharVector = gs_8
++      structure Error = gs_78
++      structure FixedInt = gs_9
++      structure General = gs_10
++      structure Int = gs_11
++      structure Int32 = gs_12
++      structure Int64 = gs_13
++      structure IntInf = gs_14
++      structure LargeInt = gs_15
++      structure LargeReal = gs_16
++      structure LargeWord = gs_17
++      signature ORD_MAP = gs_110
++      structure OS = gs_18
++      structure Position = gs_19
++      structure Real = gs_20
++      structure Real64 = gs_21
++      structure RealArray = gs_22
++      structure RealArraySlice = gs_23
++      structure RealVector = gs_24
++      structure RealVectorSlice = gs_25
++      structure SMLofNJ = gs_26
++      structure Socket = gs_27
++      structure SourceMap = gs_37
++      structure String = gs_28
++      structure Substring = gs_29
++      structure Symbol = gs_51
++      structure SysWord = gs_30
++      structure Tables = gs_62
++      structure Tid = gs_48
++      structure Time = gs_31
++      structure Word = gs_32
++      structure Word32 = gs_33
++      structure Word64 = gs_34
++      structure Word8 = gs_35
++      ast/state-sig.sml
++   in
++      signature gs_111 = STATE
++   end
++   local
++      structure Aid = gs_47
++      structure Aidtab = gs_60
++      structure Ast = gs_55
++      functor BinaryMapFn = gs_70
++      structure Bindings = gs_56
++      structure Char = gs_6
++      structure CharArray = gs_7
++      structure CharVector = gs_8
++      structure Error = gs_78
++      structure FixedInt = gs_9
++      structure General = gs_10
++      structure Int = gs_11
++      structure Int32 = gs_12
++      structure Int64 = gs_13
++      structure IntInf = gs_14
++      structure LargeInt = gs_15
++      structure LargeReal = gs_16
++      structure LargeWord = gs_17
++      structure List = gs_39
++      structure OS = gs_18
++      structure Pid = gs_53
++      structure Position = gs_19
++      structure Real = gs_20
++      structure Real64 = gs_21
++      structure RealArray = gs_22
++      structure RealArraySlice = gs_23
++      structure RealVector = gs_24
++      structure RealVectorSlice = gs_25
++      structure SMLofNJ = gs_26
++      signature STATE = gs_111
++      structure Socket = gs_27
++      structure SourceMap = gs_37
++      structure String = gs_28
++      structure Substring = gs_29
++      structure Symbol = gs_51
++      structure SysWord = gs_30
++      structure Tables = gs_62
++      structure Tid = gs_48
++      structure Tidtab = gs_61
++      structure Time = gs_31
++      structure Word = gs_32
++      structure Word32 = gs_33
++      structure Word64 = gs_34
++      structure Word8 = gs_35
++      ast/state.sml
++   in
++      structure gs_112 = State
++   end
++   local
++      structure Ast = gs_55
++      structure Bindings = gs_56
++      structure Sizes = gs_72
++      structure State = gs_112
++      structure Tables = gs_62
++      structure TextIO = gs_1
++      structure Tidtab = gs_61
++      ast/parse-to-ast-sig.sml
++   in
++      signature gs_113 = PARSE_TO_AST
++   end
++   local
++      open l11
++   in
++      structure gs_114 = ListPair
++   end
++   local
++      structure Ast = gs_55
++      structure Bindings = gs_56
++      structure Error = gs_78
++      structure ParseTree = gs_81
++      structure Sizes = gs_72
++      structure State = gs_112
++      structure Tables = gs_62
++      structure Tidtab = gs_61
++      ast/build-ast-sig.sml
++   in
++      signature gs_115 = BUILD_AST
++   end
++   local
++      structure Aid = gs_47
++      structure Ast = gs_55
++      structure Bindings = gs_56
++      structure Tid = gs_48
 +      ast/initializer-normalizer-sig.sml
 +   in
-+      signature gs_101 = INITIALIZER_NORMALIZER
++      signature gs_116 = INITIALIZER_NORMALIZER
 +   end
 +   local
-+      structure Aid = gs_12
-+      structure Ast = gs_69
-+      structure Bindings = gs_70
-+      signature INITIALIZER_NORMALIZER = gs_101
-+      structure LargeInt = gs_29
-+      structure SourceMap = gs_17
-+      structure String = gs_15
-+      structure Tid = gs_63
++      structure Aid = gs_47
++      structure Ast = gs_55
++      structure Bindings = gs_56
++      structure Char = gs_6
++      structure CharArray = gs_7
++      structure CharVector = gs_8
++      structure FixedInt = gs_9
++      structure General = gs_10
++      signature INITIALIZER_NORMALIZER = gs_116
++      structure Int = gs_11
++      structure Int32 = gs_12
++      structure Int64 = gs_13
++      structure IntInf = gs_14
++      structure LargeInt = gs_15
++      structure LargeReal = gs_16
++      structure LargeWord = gs_17
++      structure OS = gs_18
++      structure Position = gs_19
++      structure Real = gs_20
++      structure Real64 = gs_21
++      structure RealArray = gs_22
++      structure RealArraySlice = gs_23
++      structure RealVector = gs_24
++      structure RealVectorSlice = gs_25
++      structure SMLofNJ = gs_26
++      structure Socket = gs_27
++      structure SourceMap = gs_37
++      structure String = gs_28
++      structure Substring = gs_29
++      structure SysWord = gs_30
++      structure Tid = gs_48
++      structure Time = gs_31
++      structure Word = gs_32
++      structure Word32 = gs_33
++      structure Word64 = gs_34
++      structure Word8 = gs_35
 +      ast/initializer-normalizer.sml
 +   in
-+      structure gs_102 = InitializerNormalizer
++      structure gs_117 = InitializerNormalizer
 +   end
 +   local
-+      structure Aid = gs_12
-+      structure Aidtab = gs_13
-+      structure AnonymousStructs = gs_99
-+      structure Ast = gs_69
-+      signature BUILD_AST = gs_82
-+      functor BinaryMapFn = gs_71
-+      structure Bindings = gs_70
-+      structure CTypeEq = gs_94
-+      structure CnvExt = gs_84
-+      structure Config = gs_4
-+      structure Error = gs_25
-+      structure InitializerNormalizer = gs_102
-+      structure Int = gs_10
-+      structure LargeInt = gs_29
-+      structure List = gs_21
-+      structure ListPair = gs_80
-+      structure Option = gs_81
-+      structure PPAst = gs_93
-+      structure PPLib = gs_88
-+      structure ParseTree = gs_32
-+      structure ParseTreeExt = gs_30
-+      structure Pid = gs_66
-+      structure SimplifyAssignOps = gs_85
-+      structure Sizeof = gs_98
-+      structure Sizes = gs_78
-+      structure SourceMap = gs_17
-+      structure State = gs_76
-+      structure String = gs_15
-+      structure Symbol = gs_65
-+      structure Tables = gs_74
-+      structure TextIO = gs_0
-+      structure Tid = gs_63
-+      structure Tidtab = gs_73
-+      structure TyEq = gs_100
-+      structure TypeUtil = gs_97
-+      structure Word = gs_7
++      structure Ast = gs_55
++      structure Bindings = gs_56
++      structure Pid = gs_53
++      structure Symbol = gs_51
++      ast/simplify-assign-ops.sml
++   in
++      structure gs_118 = SimplifyAssignOps
++   end
++   local
++      structure Ast = gs_55
++      structure ParseTree = gs_81
++      structure ParseTreeExt = gs_79
++      structure State = gs_112
++      ast/cnv-ext-sig.sml
++   in
++      signature gs_119 = CNVEXT
++   end
++   local
++      structure Ast = gs_55
++      signature CNVEXT = gs_119
++      structure ParseTree = gs_81
++      structure ParseTreeExt = gs_79
++      structure State = gs_112
++      ast/extensions/c/cnv-ext.sml
++   in
++      structure gs_120 = CnvExt
++   end
++   local
++      structure Char = gs_6
++      structure CharArray = gs_7
++      structure CharVector = gs_8
++      structure FixedInt = gs_9
++      structure General = gs_10
++      structure Int = gs_11
++      structure Int32 = gs_12
++      structure Int64 = gs_13
++      structure IntInf = gs_14
++      structure LargeInt = gs_15
++      structure LargeReal = gs_16
++      structure LargeWord = gs_17
++      structure OS = gs_18
++      structure ParseTree = gs_81
++      structure Position = gs_19
++      structure Real = gs_20
++      structure Real64 = gs_21
++      structure RealArray = gs_22
++      structure RealArraySlice = gs_23
++      structure RealVector = gs_24
++      structure RealVectorSlice = gs_25
++      structure SMLofNJ = gs_26
++      structure Socket = gs_27
++      structure String = gs_28
++      structure Substring = gs_29
++      structure SysWord = gs_30
++      structure Tid = gs_48
++      structure Time = gs_31
++      structure Word = gs_32
++      structure Word32 = gs_33
++      structure Word64 = gs_34
++      structure Word8 = gs_35
++      ast/anonymous-structs.sml
++   in
++      structure gs_121 = AnonymousStructs
++      structure gs_122 = TyEq
++   end
++   local
++      structure Ast = gs_55
++      ast/ctype-eq.sml
++   in
++      structure gs_123 = CTypeEq
++   end
++   local
++      structure Aid = gs_47
++      structure Aidtab = gs_60
++      structure AnonymousStructs = gs_121
++      structure Ast = gs_55
++      signature BUILD_AST = gs_115
++      functor BinaryMapFn = gs_70
++      structure Bindings = gs_56
++      structure CTypeEq = gs_123
++      structure Char = gs_6
++      structure CharArray = gs_7
++      structure CharVector = gs_8
++      structure CnvExt = gs_120
++      structure Config = gs_5
++      structure Error = gs_78
++      structure FixedInt = gs_9
++      structure General = gs_10
++      structure InitializerNormalizer = gs_117
++      structure Int = gs_11
++      structure Int32 = gs_12
++      structure Int64 = gs_13
++      structure IntInf = gs_14
++      structure LargeInt = gs_15
++      structure LargeReal = gs_16
++      structure LargeWord = gs_17
++      structure List = gs_39
++      structure ListPair = gs_114
++      structure OS = gs_18
++      structure Option = gs_38
++      structure PPAst = gs_69
++      structure PPLib = gs_64
++      structure ParseTree = gs_81
++      structure ParseTreeExt = gs_79
++      structure Pid = gs_53
++      structure Position = gs_19
++      structure Real = gs_20
++      structure Real64 = gs_21
++      structure RealArray = gs_22
++      structure RealArraySlice = gs_23
++      structure RealVector = gs_24
++      structure RealVectorSlice = gs_25
++      structure SMLofNJ = gs_26
++      structure SimplifyAssignOps = gs_118
++      structure Sizeof = gs_76
++      structure Sizes = gs_72
++      structure Socket = gs_27
++      structure SourceMap = gs_37
++      structure State = gs_112
++      structure String = gs_28
++      structure Substring = gs_29
++      structure Symbol = gs_51
++      structure SysWord = gs_30
++      structure Tables = gs_62
++      structure TextIO = gs_1
++      structure Tid = gs_48
++      structure Tidtab = gs_61
++      structure Time = gs_31
++      structure TyEq = gs_122
++      structure TypeUtil = gs_75
++      structure Word = gs_32
++      structure Word32 = gs_33
++      structure Word64 = gs_34
++      structure Word8 = gs_35
 +      ast/build-ast.sml
 +   in
-+      structure gs_103 = BuildAst
++      structure gs_124 = BuildAst
 +   end
 +   local
-+      structure Ast = gs_69
-+      structure Bindings = gs_70
-+      structure BuildAst = gs_103
-+      structure Error = gs_25
-+      signature PARSE_TO_AST = gs_79
-+      structure PPAst = gs_93
-+      structure PPLib = gs_88
-+      structure Parser = gs_61
-+      structure Sizes = gs_78
-+      structure State = gs_76
-+      structure Tables = gs_74
-+      structure TextIO = gs_0
-+      structure Tidtab = gs_73
++      structure Ast = gs_55
++      structure Bindings = gs_56
++      structure BuildAst = gs_124
++      structure Error = gs_78
++      signature PARSE_TO_AST = gs_113
++      structure PPAst = gs_69
++      structure PPLib = gs_64
++      structure Parser = gs_109
++      structure Sizes = gs_72
++      structure State = gs_112
++      structure Tables = gs_62
++      structure TextIO = gs_1
++      structure Tidtab = gs_61
 +      ast/parse-to-ast.sml
 +   in
-+      structure gs_104 = ParseToAst
++      structure gs_125 = ParseToAst
 +   end
 +in
-+   signature AST = gs_68
-+   structure Aidtab = gs_13
-+   structure Ast = gs_69
-+   structure Bindings = gs_70
-+   signature CONFIG = gs_3
-+   structure Config = gs_4
-+   signature PARSECONTROL = gs_2
-+   signature PARSER = gs_33
-+   signature PARSETREE = gs_31
-+   signature PARSE_TO_AST = gs_79
-+   structure PPAst = gs_93
-+   signature PP_AST = gs_86
-+   structure ParseToAst = gs_104
-+   structure ParseTree = gs_32
-+   structure Parser = gs_61
-+   structure Pid = gs_66
-+   signature SOURCE_MAP = gs_16
-+   structure Sizeof = gs_98
-+   structure Sizes = gs_78
-+   structure SourceMap = gs_17
-+   structure State = gs_76
-+   structure Symbol = gs_65
-+   signature TYPECHECKCONTROL = gs_1
-+   structure Tables = gs_74
-+   structure Tid = gs_63
-+   structure Tidtab = gs_73
-+   structure TypeUtil = gs_97
-+   signature UID = gs_8
-+   signature UIDTABIMP = gs_6
++   signature AST = gs_54
++   structure Aidtab = gs_60
++   structure Ast = gs_55
++   structure Bindings = gs_56
++   signature CONFIG = gs_4
++   structure Config = gs_5
++   signature PARSECONTROL = gs_3
++   signature PARSER = gs_82
++   signature PARSETREE = gs_80
++   signature PARSE_TO_AST = gs_113
++   structure PPAst = gs_69
++   signature PP_AST = gs_63
++   structure ParseToAst = gs_125
++   structure ParseTree = gs_81
++   structure Parser = gs_109
++   structure Pid = gs_53
++   signature SOURCE_MAP = gs_36
++   structure Sizeof = gs_76
++   structure Sizes = gs_72
++   structure SourceMap = gs_37
++   structure State = gs_112
++   structure Symbol = gs_51
++   signature TYPECHECKCONTROL = gs_2
++   structure Tables = gs_62
++   structure Tid = gs_48
++   structure Tidtab = gs_61
++   structure TypeUtil = gs_75
++   signature UID = gs_45
++   signature UIDTABIMP = gs_58
 +end
 +end
 +
 +end
-diff --git a/src/parser/grammar/c.grm.sml b/src/parser/grammar/c.grm.sml
-index 175f5c4..1404fd2 100644
---- a/src/parser/grammar/c.grm.sml
-+++ b/src/parser/grammar/c.grm.sml
-@@ -1658,7 +1658,7 @@ local
-        fun f i =
-             if i=numstates then g i
-             else (Array.update(memo,i,SHIFT (STATE i)); f (i+1))
--          in f 0 handle Subscript => ()
-+          in f 0 handle General.Subscript => ()
-           end
- in
- val entry_to_action = fn 0 => ACCEPT | 1 => ERROR | j => Array.sub(memo,(j-2))
-@@ -1668,7 +1668,7 @@ val actionRows=string_to_table(string_to_pairlist_default(T,entry_to_action),act
- val actionRowNumbers = string_to_list actionRowNumbers
- val actionT = let val actionRowLookUp=
- let val a=Array.fromList(actionRows) in fn i=>Array.sub(a,i) end
--in Array.fromList(map actionRowLookUp actionRowNumbers)
-+in Array.fromList(List.map actionRowLookUp actionRowNumbers)
- end
- in LrTable.mkLrTable {actions=actionT,gotos=gotoT,numRules=numrules,
- numStates=numstates,initialState=STATE 0}
 diff --git a/src/parser/parse-tree-sig.sml b/src/parser/parse-tree-sig.sml
 index 4ac8151..a50f78c 100644
 --- a/src/parser/parse-tree-sig.sml
