@@ -6,8 +6,8 @@ collection of libraries that are distributed with SML/NJ.  Due to
 differences between SML/NJ and MLton, these libraries will not work
 out-of-the box with MLton.
 
-As of 20180119, MLton includes a port of the SML/NJ Library
-synchronized with SML/NJ version 110.82.
+As of 20200626, MLton includes a port of the SML/NJ Library
+synchronized with SML/NJ version 110.97.
 
 == Usage ==
 
@@ -28,6 +28,7 @@ synchronized with SML/NJ version 110.82.
 |`$(SML_LIB)/smlnj-lib/RegExp/regexp-lib.mlb`|Regular expression library.
 |`$(SML_LIB)/smlnj-lib/SExp/sexp-lib.mlb`|S-expression library.
 |`$(SML_LIB)/smlnj-lib/Unix/unix-lib.mlb`|Utilities for Unix-based operating systems.
+|`$(SML_LIB)/smlnj-lib/UUID/uuid-lib.mlb`|Utilities for Unix-based operating systems.
 |`$(SML_LIB)/smlnj-lib/XML/xml-lib.mlb`|XML library.
 |=====
 
@@ -63,6 +64,9 @@ The following changes were made to the SML/NJ Library, in addition to
 deriving the `.mlb` files from the `.cm` files:
 
 * `HTML4/pp-init.sml` (added): Implements `structure PrettyPrint` using the SML/NJ PP Library.  This implementation is taken from the SML/NJ compiler source, since the SML/NJ HTML4 Library used the `structure PrettyPrint` provided by the SML/NJ compiler itself.
+* `PP/mono-buffer` (added): Implements `signature MONO_BUFFER` and `structure CharBuffer: MONO_BUFFER`.
+* `SExp/sexp.sml` (modified): Fixed non-exhaustive match warning (and latent bug) in `compare` function.
+* `Util/dynamic-array.sml` (modified): Rewrote use of `Array.fromVector`.
 * `Util/base64.sml` (modified): Rewrote use of `Unsafe.CharVector.create` and `Unsafe.CharVector.update`; MLton assumes that vectors are immutable.
 * `Util/engine.mlton.sml` (added, not exported): Implements `structure Engine`, providing time-limited, resumable computations using <:MLtonThread:>, <:MLtonSignal:>, and <:MLtonItimer:>.
 * `Util/graph-scc-fn.sml` (modified): Rewrote use of `where` structure specification.
@@ -70,6 +74,7 @@ deriving the `.mlb` files from the `.cm` files:
 * `Util/redblack-set-fn.sml` (modified): Rewrote use of `where` structure specification.
 * `Util/time-limit.mlb` (added): Exports `structure TimeLimit`, which is _not_ exported by `smlnj-lib.mlb`.  Since MLton is very conservative in the presence of threads and signals, program performance may be adversely affected by unnecessarily including `structure TimeLimit`.
 * `Util/time-limit.mlton.sml` (added): Implements `structure TimeLimit` using `structure Engine`.  The SML/NJ implementation of `structure TimeLimit` uses SML/NJ's first-class continuations, signals, and interval timer.
+* `Util/utf8.sml` (modified): Rewrote use of `String.implodeRev`.
 
 == Patch ==
 
