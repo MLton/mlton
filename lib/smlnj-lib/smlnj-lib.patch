@@ -3096,10 +3096,10 @@ index 0000000..0694ef1
 +end
 diff --git a/README.mlton b/README.mlton
 new file mode 100644
-index 0000000..a2025b8
+index 0000000..4bd5fed
 --- /dev/null
 +++ b/README.mlton
-@@ -0,0 +1,15 @@
+@@ -0,0 +1,16 @@
 +The following changes were made to the SML/NJ Library, in addition to
 +deriving the `.mlb` files from the `.cm` files:
 +
@@ -3110,6 +3110,7 @@ index 0000000..a2025b8
 +* `Util/base64.sml` (modified): Rewrote use of `Unsafe.CharVector.create` and `Unsafe.CharVector.update`; MLton assumes that vectors are immutable.
 +* `Util/engine.mlton.sml` (added, not exported): Implements `structure Engine`, providing time-limited, resumable computations using <:MLtonThread:>, <:MLtonSignal:>, and <:MLtonItimer:>.
 +* `Util/graph-scc-fn.sml` (modified): Rewrote use of `where` structure specification.
++* `Util/hash-table-rep.sml` (modified): The computation of the `maxSize` computes succesive powers of two less than or equal to `Array.maxLen`, which overflows under MLton.  Add a `handle Overflow => i` to properly find the correct maximum size.
 +* `Util/redblack-map-fn.sml` (modified): Rewrote use of `where` structure specification.
 +* `Util/redblack-set-fn.sml` (modified): Rewrote use of `where` structure specification.
 +* `Util/time-limit.mlb` (added): Exports `structure TimeLimit`, which is _not_ exported by `smlnj-lib.mlb`.  Since MLton is very conservative in the presence of threads and signals, program performance may be adversely affected by unnecessarily including `structure TimeLimit`.
@@ -4509,6 +4510,19 @@ index da4c441..0e5e4eb 100644
    struct
      structure Nd = Nd
  
+diff --git a/Util/hash-table-rep.sml b/Util/hash-table-rep.sml
+index 781a7fa..6b5560d 100644
+--- a/Util/hash-table-rep.sml
++++ b/Util/hash-table-rep.sml
+@@ -75,7 +75,7 @@ structure HashTableRep : sig
+ 		  val i' = i+i
+ 		  in
+ 		    if i' < Array.maxLen then f i' else i
+-		  end
++		  end handle Overflow => i
+ 	  in
+ 	    f 0x10000
+ 	  end
 diff --git a/Util/redblack-map-fn.sml b/Util/redblack-map-fn.sml
 index 94ab963..cdedaaa 100644
 --- a/Util/redblack-map-fn.sml
