@@ -186,7 +186,7 @@ endef
 endif
 
 define TOOLS_TEMPLATE
-	$(MAKE) -C "$(SRC)/$(1)"
+	+$(MAKE) -C "$(SRC)/$(1)"
 	$(call TOOLS_TEMPLATE_CHECK_FIXPOINT,$(1))
 	$(CP) "$(SRC)/$(1)/$(1)$(EXE)" "$(BIN)/"
 endef
@@ -220,7 +220,7 @@ debugged:
 	$(CHMOD) u+x "$(BIN)/$(MLTON).debug"
 
 define PROFILED_TEMPLATE
-	$(MAKE) -C "$(SRC)/mlton" MLTON_NAME="$(MLTON_NAME) (profile-$(1))" MLTON_OUTPUT=$(MLTON_OUTPUT).$(1) \
+	+$(MAKE) -C "$(SRC)/mlton" MLTON_NAME="$(MLTON_NAME) (profile-$(1))" MLTON_OUTPUT=$(MLTON_OUTPUT).$(1) \
 		MLTON_COMPILE_ARGS="$(MLTON_COMPILE_ARGS) -profile $(1)"
 	$(CP) "$(SRC)/mlton/$(MLTON_OUTPUT).$(1)$(EXE)" "$(LIB)/"
 	$(SED) -e "s/$(MLTON_OUTPUT)/$(MLTON_OUTPUT).$(1)/" \
