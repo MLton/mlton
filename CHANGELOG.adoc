@@ -58,6 +58,9 @@ Here are the changes from version 20180206 to version YYYYMMDD.
 
 === Details
 
+* 2018-07-07
+  ** Upgrade `gdtoa.tgz`.
+
 * 2020-06-28
   ** Update SML/NJ libraries to SML/NJ 110.97.
 
