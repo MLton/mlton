@@ -6,7 +6,79 @@ Here are the changes from version 20180206 to version YYYYMMDD.
 
 === Summary
 
+* Compiler.
+  ** Added expert `-pi-style {default|npi|pic|pie}` and
+  `-native-pic {false|true}` options, which can be used to override a
+  target-determined default.
+  ** Fix a number of instances of excessive live data during
+  compilation.
+  ** Disable `Zone` SSA optimization pass by default; the `Zone` pass
+  is known to not be safe-for-space.
+  ** Statically allocate and initialize some global objects.
+  ** Many updates and improvements to C and LLVM codegens.
+  ** Add new `BounceVars` RSSA optimization pass to split the live
+  ranges of RSSA variables.
+  ** Improve `RssaShrink` optimization.
+  ** Add support for alternate globalization strategies in
+  `ConstantPropagation`.
+  ** Strengthen `Useless` optimization with respect to a number of
+  primitives.
+  ** Add new `DuplicateGlobals` and `SplitTypes` SSA optimization
+  passes.
+  ** Introduce new `Overflow`-checking primitives and remove old
+  `Overflow`-checking primitives and special-case code required (e.g.,
+  `Arith` transfers in IRs) to support them.
+  ** Add parsers for XML, SXML, SSA, and SSA2 IRs.
+* Runtime.
+  ** Detect and report incompatible use of ASLR/PIE on `load-world`.
+  ** Added support for RISC-V architecture.
+* Language.
+* Libraries.
+  ** Basis Library.
+    *** Change `OS.IO.poll` to not be restarted when interrupted by a
+    signal.  (This is consistent with `Socket.select`.)
+    *** Add `MLton.sizeAll: unit -> IntInf.int` that returns the size
+    of reachable live data.
+    *** Change ``MLton.size``'s type from `'a -> int` to `'a ->
+    IntInf.int`, because with 64-bit systems, the size of a single
+    object can exceed that representable by a signed 32-bit integer.
+  ** Other libraries.
+    *** Updated: ckit library, MLLPT library, MLRISC library, SML/NJ library
+* Tools.
+* Other.
+  ** Updates to simplify porting MLton.
+  ** Support parallel build (i.e., `make -j`).  This mainly supports
+  platforms/packagers that use a parallel `make` by default; it does
+  not obtain significant build speedups.
+  ** Various updates to ``Makefile``s.  See `Makefile.config` for
+  common and user-customizable configuration.
+  ** Characterize MLton-LICENSE as an instance of the Historical
+  Permission Notice and Disclaimer (HPND) license, rather than
+  BSD-style.
+
 === Details
+
+* 2020-06-28
+  ** Update SML/NJ libraries to SML/NJ 110.97.
+
+* 2020-05-28
+  ** Fix bug in running `blockFn`-s for `CML.sync`.
+
+* 2020-05-23
+  ** Updates to simplify porting MLton.  Add `remote-bootstrap` and
+  `remote-add-cross-target` goals to `Makefile`.  The
+  `remote-bootstrap` goal automates the process of bootstraping MLton
+  on a remote machine that doesn't have a suitable pre-compiled
+  `mlton` binary.  The `remote-add-cross-target` goal automatesthe
+  process of adding a cross-compiler target.  These goals replace
+  `bin/add-cross` and `bin/save-bootstrap-source`.
+
+* 2020-05-12
+  ** Fix infinte loop with jump chaining in `RssaShrink`.
+
+* 2020-03-11
+  ** Fix `String.scan` to return `NONE` if first character is
+  non-printable.
 
 * 2020-02-14
   ** Fixed bug in `SimplifyTypes` SSA optimization pass.
@@ -47,7 +119,7 @@ Here are the changes from version 20180206 to version YYYYMMDD.
   is known to not be safe-for-space.
   ** Add `MLton.sizeAll: unit -> IntInf.int` that returns the size of
   reachable live data.
-  ** Chang ``MLton.size``'s type from `'a -> int` to `'a ->
+  ** Change ``MLton.size``'s type from `'a -> int` to `'a ->
   IntInf.int`, because with 64-bit systems, the size of a single
   object can exceed that representable by a signed 32-bit integer.
 
