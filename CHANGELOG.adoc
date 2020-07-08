@@ -58,7 +58,10 @@ Here are the changes from version 20180206 to version YYYYMMDD.
 
 === Details
 
-* 2018-07-07
+* 2020-07-08
+  ** Fix `Real{32,64}_gdtoa` race condition.
+
+* 2020-07-07
   ** Upgrade `gdtoa.tgz`.
 
 * 2020-06-28

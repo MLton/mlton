@@ -1,4 +1,4 @@
-(* Copyright (C) 2011-2014,2017,2019 Matthew Fluet.
+(* Copyright (C) 2011-2014,2017,2019-2020 Matthew Fluet.
  * Copyright (C) 2003-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -419,7 +419,7 @@ functor Real (structure W: WORD_EXTRA
       (* toDecimal, fmt, toString: binary -> decimal conversions. *)
       datatype mode = Fix | Gen | Sci
       local
-         val one = One.make (fn () => ref (0: C_Int.int))
+         val decpt = ref (0: C_Int.int)
       in
          fun gdtoa (x: real, mode: mode, ndig: int,
                     rounding_mode: IEEEReal.rounding_mode) =
@@ -436,10 +436,14 @@ functor Real (structure W: WORD_EXTRA
                    | TO_NEGINF => 3
                    | TO_POSINF => 2
                    | TO_ZERO => 0
+               val _ = Primitive.MLton.Thread.atomicBegin ()
             in
-               One.use (one, fn decpt =>
-                        (Prim.gdtoa (x, mode, ndig, rounding, decpt),
-                         C_Int.toInt (!decpt)))
+               DynamicWind.wind
+               (fn () =>
+                (CUtil.C_String.toString
+                 (Prim.gdtoa (x, mode, ndig, rounding, decpt)),
+                 C_Int.toInt (!decpt)),
+                Primitive.MLton.Thread.atomicEnd)
             end
       end
 
@@ -459,15 +463,15 @@ functor Real (structure W: WORD_EXTRA
                      sign = signBit x}
           | c =>
                let
-                  val (cs, exp) = gdtoa (x, Gen, 0, TO_NEAREST)
+                  val (s, exp) = gdtoa (x, Gen, 0, TO_NEAREST)
                   fun loop (i, ac) =
                      if Int.< (i, 0)
                         then ac
                      else loop (Int.- (i, 1),
-                                (Int.- (Char.ord (CUtil.C_String.sub (cs, i)),
+                                (Int.- (Char.ord (String.sub (s, i)),
                                         Char.ord #"0"))
                                 :: ac)
-                  val digits = loop (Int.- (CUtil.C_String.length cs, 1), [])
+                  val digits = loop (Int.- (String.size s, 1), [])
                in
                   {class = c,
                    digits = digits,
@@ -478,16 +482,16 @@ functor Real (structure W: WORD_EXTRA
       datatype realfmt = datatype StringCvt.realfmt
 
       local
-         fun fix (sign: string, cs: CUtil.C_String.t, decpt: int, ndig: int): string =
+         fun fix (sign: string, s: String.string, decpt: int, ndig: int): string =
             let
-               val length = CUtil.C_String.length cs
+               val length = String.size s
             in
                if Int.< (decpt, 0)
                   then
                      concat [sign,
                              "0.",
                              String.new (Int.~ decpt, #"0"),
-                             CUtil.C_String.toString cs,
+                             s,
                              String.new (Int.+ (Int.- (ndig, length),
                                                 decpt),
                                          #"0")]
@@ -499,7 +503,7 @@ functor Real (structure W: WORD_EXTRA
                         else
                            String.tabulate (decpt, fn i =>
                                             if Int.< (i, length)
-                                               then CUtil.C_String.sub (cs, i)
+                                               then String.sub (s, i)
                                             else #"0")
                   in
                      if 0 = ndig
@@ -513,7 +517,7 @@ functor Real (structure W: WORD_EXTRA
                                   val j = Int.+ (i, decpt)
                                in
                                   if Int.< (j, length)
-                                     then CUtil.C_String.sub (cs, j)
+                                     then String.sub (s, j)
                                   else #"0"
                                end)
                         in
@@ -524,10 +528,10 @@ functor Real (structure W: WORD_EXTRA
          fun sci (x: real, ndig: int): string =
             let
                val sign = if x < zero then "~" else ""
-               val (cs, decpt) =
+               val (s, decpt) =
                   gdtoa (x, Sci, Int.+ (1, ndig), IEEEReal.getRoundingMode ())
-               val length = CUtil.C_String.length cs
-               val whole = String.tabulate (1, fn _ => CUtil.C_String.sub (cs, 0))
+               val length = String.size s
+               val whole = String.tabulate (1, fn _ => String.sub (s, 0))
                val frac =
                   if 0 = ndig
                      then ""
@@ -538,7 +542,7 @@ functor Real (structure W: WORD_EXTRA
                                    val j = Int.+ (i, 1)
                                 in
                                    if Int.< (j, length)
-                                      then CUtil.C_String.sub (cs, j)
+                                      then String.sub (s, j)
                                    else #"0"
                                 end)]
                val exp = Int.- (decpt, 1)
@@ -613,10 +617,10 @@ functor Real (structure W: WORD_EXTRA
                            fn x =>
                            let
                               val sign = if x < zero then "~" else ""
-                              val (cs, decpt) =
+                              val (s, decpt) =
                                  gdtoa (x, Fix, n, IEEEReal.getRoundingMode ())
                            in
-                              fix (sign, cs, decpt, n)
+                              fix (sign, s, decpt, n)
                            end
                         end
                    | GEN opt =>
