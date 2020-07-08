@@ -1,4 +1,4 @@
-(* Copyright (C) 2017 Matthew Fluet.
+(* Copyright (C) 2017,2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -12,7 +12,6 @@ structure Array: ARRAY_EXTRA =
       structure A = Sequence (Primitive.Array)
       open A
 
-      val op +? = Int.+?
       val op < = Int.<
       val op <= = Int.<=
 
