@@ -39,9 +39,10 @@ Here are the changes from version 20180206 to version YYYYMMDD.
     signal.  (This is consistent with `Socket.select`.)
     *** Add `MLton.sizeAll: unit -> IntInf.int` that returns the size
     of reachable live data.
-    *** Change ``MLton.size``'s type from `'a -> int` to `'a ->
-    IntInf.int`, because with 64-bit systems, the size of a single
-    object can exceed that representable by a signed 32-bit integer.
+    *** Change type of `MLton.size` from `'a -> int` to
+    `'a -> IntInf.int`, because with 64-bit systems, the size of a
+    single object can exceed that representable by a signed 32-bit
+    integer.
   ** Other libraries.
     *** Updated: ckit library, MLLPT library, MLRISC library, SML/NJ library
 * Tools.
@@ -125,9 +126,10 @@ Here are the changes from version 20180206 to version YYYYMMDD.
   is known to not be safe-for-space.
   ** Add `MLton.sizeAll: unit -> IntInf.int` that returns the size of
   reachable live data.
-  ** Change ``MLton.size``'s type from `'a -> int` to `'a ->
-  IntInf.int`, because with 64-bit systems, the size of a single
-  object can exceed that representable by a signed 32-bit integer.
+  ** Change type of `MLton.size` from `'a -> int` to
+  `'a -> IntInf.int`, because with 64-bit systems, the size of a
+  single object can exceed that representable by a signed 32-bit
+  integer.
 
 * 2019-09-19
   ** Statically allocate and initialize some global objects.  See
