@@ -4,7 +4,7 @@ Bugs20180207
 Here are the known bugs in <:Release20180207:MLton 20180207>, listed
 in reverse chronological order of date reported.
 
-* <!Anchor(bug03)>
+* <!Anchor(bug04)>
 Bug in `CML.sync` with multiple enabled events.
 +
 Thanks to James Cooper for the bug report.
