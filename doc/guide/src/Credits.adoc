@@ -45,8 +45,13 @@ list.
  `Array_copyVector` primitives.
 
  * Jason Carr added a parser combinator library and a parser for the <:SXML:>
- IR, extended compilation to start with a `.sxml` file, and experimented with
- alternate control-flow analyses for <:ClosureConvert: closure conversion>.
+ IR, extended compilation to start with a `.sxml` file, experimented with
+ alternate control-flow analyses for <:ClosureConvert: closure conversion>,
+ added new <:DuplicateGlobals:> and <:SplitTypes:> <:SSA:> optimization passes,
+ improved <:RSSAShrink:>, added a new <:BounceVars:> <:RSSA:> optimization pass,
+ added `-llvm-aamd {none|tbaa}` to control including alias-analysis metadata
+ when compiling with LLVM, implemented static allocation and initialization of
+ global objects.
 
  * Christopher Cramer contributed support for additional
  `Posix.ProcEnv.sysconf` variables, performance improvements for
@@ -76,6 +81,8 @@ list.
  * Joe Hurd provided useful discussion and feedback on source-level
  profiling.
 
+ * Manan Joshi added a parser for the <:SSA2:> IR.
+
  * <:VesaKarvonen:> contributed `esml-mode.el` and `esml-mlb-mode.el` (see <:Emacs:>),
  contributed patches for improving match warnings,
  contributed `esml-du-mlton.el` and extended def-use output to include types of variable definitions (see <:EmacsDefUseMode:>), and
@@ -90,6 +97,10 @@ list.
  * Geoffrey Mainland helped with FreeBSD packaging.
 
  * Eric McCorkle ported MLton to Intel Mac.
+
+ * Daman Morris introduced new `Overflow`-checking primitives and removed old
+ `Overflow`-checking primitives and special-case code required (e.g., `Arith`
+ transfers in IRs) to support them.
 
  * <:TomMurphy:> wrote the original version of `MLton.Syslog` as part
  of his `mlftpd` project, and has sent many useful bug reports and
@@ -109,6 +120,8 @@ list.
 
  * Krishna Ravikumar added initial support for vector expressions and the
  `Vector_vector` primitive.
+
+ * James Reilly added a parser for the <:SSA:> IR.
 
  * John Reppy assisted in porting MLton to Intel Mac.
 
