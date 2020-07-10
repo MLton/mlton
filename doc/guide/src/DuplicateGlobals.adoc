@@ -1,0 +1,18 @@
+DuplicateGlobals
+================
+
+<:DuplicateGlobals:> is an optimization pass for the <:SSA:>
+<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+
+== Description ==
+
+<:DuplicateGlobals:> introduces a distinct instance of a `ConApp` global for
+each distict use within the program.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/ssa/duplicate-globals.fun)>
+
+== Details and Notes ==
+
+{empty}
