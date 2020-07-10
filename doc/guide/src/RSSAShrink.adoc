@@ -10,6 +10,7 @@ This pass implements a whole family of compile-time reductions, like:
 
 * constant folding, copy propagation
 * inline the `Goto` to a block with a unique predecessor
+* eliminate blocks that simply pass arguments to another block (e.g., jump chaining)
 
 == Implementation ==
 

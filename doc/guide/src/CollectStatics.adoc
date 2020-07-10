@@ -1,0 +1,18 @@
+CollectStatics
+==============
+
+<:CollectStatics:> is a collection of optimization passes for the <:RSSA:>
+<:IntermediateLanguage:>, invoked from <:RSSASimplify:>.
+
+== Description ==
+
+<:CollectStatics:> lifts string and real constants and suitable globals to
+static objects.
+
+== Implementation ==
+
+* <!ViewGitFile(mlton,master,mlton/backend/collect-statics.fun)>
+
+== Details and Notes ==
+
+{empty}
