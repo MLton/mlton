@@ -187,7 +187,7 @@ Here are the changes from version 20180206 to version YYYYMMDD.
   supported by NSF CISE Research Infrastructure (CRI) award.
 
 * 2019-03-12
-  ** Fix latent `MLton.GC.collect` bug; a explicit `MLton.GC.collect`
+  ** Fix latent `MLton.GC.collect` bug; an explicit `MLton.GC.collect`
   call was passed `0` bytes requested rather than the bytes required
   by the return block(s).
 
