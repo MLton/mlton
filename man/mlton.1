@@ -127,6 +127,15 @@ only the output file is saved.
 .in -.5i
 
 .TP
+\fB\-link\-opt \fIoption\fP\fR
+Pass \fIoption\fP to \fBgcc\fP when linking.  You can use this to
+specify library search paths, e.g. \fB\-link\-opt \-Lpath\fP, and
+libraries to link with, e.g. \fB\-link\-opt \-lfoo\fP, or even both at
+the same time, e.g. \fB\-link\-opt '\-Lpath \-lfoo'\fP.  If you wish to
+pass an option to the linker, you must use \fBgcc\fP's \fB\-Wl,\fP
+syntax, e.g., \fB\-link\-opt '\-Wl,\-\-export\-dynamic'\fP.
+
+.TP
 \fB\-llvm\-as\-opt \fIoption\fP\fR
 Pass \fIoption\fP to \fBllvm-as\fP when assembling (\fB.ll\fP to \fB.bc\fP) LLVM code.
 
@@ -137,15 +146,6 @@ Pass \fIoption\fP to \fBllc\fP when compiling (\fB.bc\fP to \fB.o\fP) LLVM code.
 .TP
 \fB\-llvm\-opt\-opt \fIoption\fP\fR
 Pass \fIoption\fP to \fBopt\fP when optimizing (\fB.bc\fP to \fB.bc\fP) LLVM code.
-
-.TP
-\fB\-link\-opt \fIoption\fP\fR
-Pass \fIoption\fP to \fBgcc\fP when linking.  You can use this to
-specify library search paths, e.g. \fB\-link\-opt \-Lpath\fP, and
-libraries to link with, e.g. \fB\-link\-opt \-lfoo\fP, or even both at
-the same time, e.g. \fB\-link\-opt '\-Lpath \-lfoo'\fP.  If you wish to
-pass an option to the linker, you must use \fBgcc\fP's \fB\-Wl,\fP
-syntax, e.g., \fB\-link\-opt '\-Wl,\-\-export\-dynamic'\fP.
 
 .TP
 \fB\-mlb\-path\-map \fIfile\fP\fR
