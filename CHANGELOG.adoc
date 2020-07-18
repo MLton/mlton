@@ -59,6 +59,9 @@ Here are the changes from version 20180206 to version YYYYMMDD.
 
 === Details
 
+* 2020-07-18
+  ** Update SML/NJ libraries to SML/NJ 110.98.
+
 * 2020-07-08
   ** Fix `Real{32,64}_gdtoa` race condition.
 
