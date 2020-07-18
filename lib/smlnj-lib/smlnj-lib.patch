@@ -1942,10 +1942,10 @@ index 0000000..cffb30e
 +
 +end
 diff --git a/JSON/json-lib.mlb b/JSON/json-lib.mlb
-index ff960d3..3fc3236 100644
+index ff960d3..d497783 100644
 --- a/JSON/json-lib.mlb
 +++ b/JSON/json-lib.mlb
-@@ -1,47 +1,360 @@
+@@ -1,47 +1,369 @@
 -(* json-lib.mlb
 - *
 - * COPYRIGHT (c) 2008 The Fellowship of SML/NJ (http://www.smlnj.org)
@@ -2001,11 +2001,11 @@ index ff960d3..3fc3236 100644
 +    bas
 +      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/sml-nj.mlb
 +    end
-+  basis l71 =
++  basis l75 =
 +    bas
 +      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
 +    end
-+  basis l40 =
++  basis l44 =
 +    bas
 +      (* $/ml-lpt-lib.cm ====> *) $(SML_LIB)/mllpt-lib/mllpt-lib.mlb
 +    end
@@ -2052,19 +2052,14 @@ index ff960d3..3fc3236 100644
 +      structure gs_30 = TextIO
 +   end
 +   local
-+      open l40
-+   in
-+      structure gs_31 = AntlrStreamPos
-+   end
-+   local
 +      open l33
 +   in
-+      structure gs_32 = List
++      structure gs_31 = List
 +   end
 +   local
-+      open l40
++      open l44
 +   in
-+      structure gs_33 = UTF8
++      structure gs_32 = UTF8
 +   end
 +   local
 +      structure Char = gs_0
@@ -2079,7 +2074,7 @@ index ff960d3..3fc3236 100644
 +      structure LargeInt = gs_9
 +      structure LargeReal = gs_10
 +      structure LargeWord = gs_11
-+      structure List = gs_32
++      structure List = gs_31
 +      structure OS = gs_12
 +      structure Position = gs_13
 +      structure Real = gs_14
@@ -2094,19 +2089,24 @@ index ff960d3..3fc3236 100644
 +      structure Substring = gs_23
 +      structure SysWord = gs_24
 +      structure Time = gs_25
-+      structure UTF8 = gs_33
++      structure UTF8 = gs_32
 +      structure Word = gs_26
 +      structure Word32 = gs_27
 +      structure Word64 = gs_28
 +      structure Word8 = gs_29
 +      json-tokens.sml
 +   in
-+      structure gs_34 = JSONTokens
++      structure gs_33 = JSONTokens
 +   end
 +   local
 +      open l33
 +   in
-+      structure gs_35 = Vector
++      structure gs_34 = Vector
++   end
++   local
++      open l44
++   in
++      structure gs_35 = AntlrStreamPos
 +   end
 +   local
 +      open l33
@@ -2114,12 +2114,12 @@ index ff960d3..3fc3236 100644
 +      structure gs_36 = StringCvt
 +   end
 +   local
-+      open l40
++      open l44
 +   in
 +      structure gs_37 = ULexBuffer
 +   end
 +   local
-+      structure AntlrStreamPos = gs_31
++      structure AntlrStreamPos = gs_35
 +      structure Char = gs_0
 +      structure CharArray = gs_1
 +      structure CharVector = gs_2
@@ -2129,11 +2129,11 @@ index ff960d3..3fc3236 100644
 +      structure Int32 = gs_6
 +      structure Int64 = gs_7
 +      structure IntInf = gs_8
-+      structure JSONTokens = gs_34
++      structure JSONTokens = gs_33
 +      structure LargeInt = gs_9
 +      structure LargeReal = gs_10
 +      structure LargeWord = gs_11
-+      structure List = gs_32
++      structure List = gs_31
 +      structure OS = gs_12
 +      structure Position = gs_13
 +      structure Real = gs_14
@@ -2151,8 +2151,8 @@ index ff960d3..3fc3236 100644
 +      structure TextIO = gs_30
 +      structure Time = gs_25
 +      structure ULexBuffer = gs_37
-+      structure UTF8 = gs_33
-+      structure Vector = gs_35
++      structure UTF8 = gs_32
++      structure Vector = gs_34
 +      structure Word = gs_26
 +      structure Word32 = gs_27
 +      structure Word64 = gs_28
@@ -2162,7 +2162,15 @@ index ff960d3..3fc3236 100644
 +      structure gs_38 = JSONLexer
 +   end
 +   local
-+      structure AntlrStreamPos = gs_31
++      structure AntlrStreamPos = gs_35
++      structure JSONLexer = gs_38
++      structure JSONTokens = gs_33
++      structure TextIO = gs_30
++      json-source.sml
++   in
++      structure gs_39 = JSONSource
++   end
++   local
 +      structure Char = gs_0
 +      structure CharArray = gs_1
 +      structure CharVector = gs_2
@@ -2173,7 +2181,8 @@ index ff960d3..3fc3236 100644
 +      structure Int64 = gs_7
 +      structure IntInf = gs_8
 +      structure JSONLexer = gs_38
-+      structure JSONTokens = gs_34
++      structure JSONSource = gs_39
++      structure JSONTokens = gs_33
 +      structure LargeInt = gs_9
 +      structure LargeReal = gs_10
 +      structure LargeWord = gs_11
@@ -2198,19 +2207,19 @@ index ff960d3..3fc3236 100644
 +      structure Word8 = gs_29
 +      json-stream-parser.sml
 +   in
-+      structure gs_39 = JSONStreamParser
++      structure gs_40 = JSONStreamParser
 +   end
 +   local
-+      open l71
++      open l75
 +   in
-+      structure gs_40 = Format
++      structure gs_41 = Format
 +   end
 +   local
 +      structure Char = gs_0
 +      structure CharArray = gs_1
 +      structure CharVector = gs_2
 +      structure FixedInt = gs_3
-+      structure Format = gs_40
++      structure Format = gs_41
 +      structure General = gs_4
 +      structure Int = gs_5
 +      structure Int32 = gs_6
@@ -2219,7 +2228,7 @@ index ff960d3..3fc3236 100644
 +      structure LargeInt = gs_9
 +      structure LargeReal = gs_10
 +      structure LargeWord = gs_11
-+      structure List = gs_32
++      structure List = gs_31
 +      structure OS = gs_12
 +      structure Position = gs_13
 +      structure Real = gs_14
@@ -2235,14 +2244,14 @@ index ff960d3..3fc3236 100644
 +      structure SysWord = gs_24
 +      structure TextIO = gs_30
 +      structure Time = gs_25
-+      structure UTF8 = gs_33
++      structure UTF8 = gs_32
 +      structure Word = gs_26
 +      structure Word32 = gs_27
 +      structure Word64 = gs_28
 +      structure Word8 = gs_29
 +      json-stream-printer.sml
 +   in
-+      structure gs_41 = JSONStreamPrinter
++      structure gs_42 = JSONStreamPrinter
 +   end
 +   local
 +      structure Char = gs_0
@@ -2277,7 +2286,7 @@ index ff960d3..3fc3236 100644
 +      structure Word8 = gs_29
 +      json.sml
 +   in
-+      structure gs_42 = JSON
++      structure gs_43 = JSON
 +   end
 +   local
 +      structure Char = gs_0
@@ -2289,11 +2298,11 @@ index ff960d3..3fc3236 100644
 +      structure Int32 = gs_6
 +      structure Int64 = gs_7
 +      structure IntInf = gs_8
-+      structure JSON = gs_42
++      structure JSON = gs_43
 +      structure LargeInt = gs_9
 +      structure LargeReal = gs_10
 +      structure LargeWord = gs_11
-+      structure List = gs_32
++      structure List = gs_31
 +      structure OS = gs_12
 +      structure Position = gs_13
 +      structure Real = gs_14
@@ -2308,88 +2317,46 @@ index ff960d3..3fc3236 100644
 +      structure Substring = gs_23
 +      structure SysWord = gs_24
 +      structure Time = gs_25
-+      structure Vector = gs_35
++      structure Vector = gs_34
 +      structure Word = gs_26
 +      structure Word32 = gs_27
 +      structure Word64 = gs_28
 +      structure Word8 = gs_29
 +      json-util.sml
 +   in
-+      structure gs_43 = JSONUtil
++      structure gs_44 = JSONUtil
 +   end
 +   local
-+      structure AntlrStreamPos = gs_31
-+      structure JSON = gs_42
++      structure JSON = gs_43
 +      structure JSONLexer = gs_38
-+      structure JSONTokens = gs_34
-+      structure List = gs_32
++      structure JSONSource = gs_39
++      structure JSONTokens = gs_33
++      structure List = gs_31
 +      structure TextIO = gs_30
 +      json-parser.sml
 +   in
-+      structure gs_44 = JSONParser
++      structure gs_45 = JSONParser
 +   end
 +   local
-+      structure JSON = gs_42
-+      structure JSONStreamPrinter = gs_41
-+      structure List = gs_32
++      structure JSON = gs_43
++      structure JSONStreamPrinter = gs_42
++      structure List = gs_31
 +      structure TextIO = gs_30
 +      json-printer.sml
 +   in
-+      structure gs_45 = JSONPrinter
++      structure gs_46 = JSONPrinter
 +   end
 +in
-+   structure JSON = gs_42
-+   structure JSONParser = gs_44
-+   structure JSONPrinter = gs_45
-+   structure JSONStreamParser = gs_39
-+   structure JSONStreamPrinter = gs_41
-+   structure JSONUtil = gs_43
++   structure JSON = gs_43
++   structure JSONParser = gs_45
++   structure JSONPrinter = gs_46
++   structure JSONStreamParser = gs_40
++   structure JSONStreamPrinter = gs_42
++   structure JSONUtil = gs_44
 +end
 +end
  
  end
-diff --git a/JSON/json.lex.sml b/JSON/json.lex.sml
-index 87e5f17..d488353 100644
---- a/JSON/json.lex.sml
-+++ b/JSON/json.lex.sml
-@@ -2,6 +2,8 @@ structure JSONLexer  = struct
- 
-     datatype yystart_state = 
- S | INITIAL
-+    local
-+
-     structure UserDeclarations = 
-       struct
- 
-@@ -23,10 +25,8 @@ S | INITIAL
- 	end
-   fun finishString () = (T.STRING(String.concat(List.rev(!sbuf))) before sbuf := [])
- 
--
-       end
- 
--    local
-     datatype yymatch 
-       = yyNO_MATCH
-       | yyMATCH of ULexBuffer.stream * action * yymatch
-@@ -70,7 +70,7 @@ Vector.fromList []
-         (* start position of token -- can be updated via skip() *)
- 	  val yystartPos = ref (yygetPos())
- 	(* get one char of input *)
--	  fun yygetc strm = (case UTF8.getu ULexBuffer.getc strm
-+	  fun yygetc strm = (case ULexBuffer.getu strm
-                 of (SOME (0w10, s')) => 
- 		     (AntlrStreamPos.markNewLine yysm (ULexBuffer.getpos strm);
- 		      SOME (0w10, s'))
-@@ -104,7 +104,7 @@ Vector.fromList []
- 		(fn (~1, _, oldMatches) => yystuck oldMatches
- 		  | (curState, strm, oldMatches) => let
- 		      val (transitions, finals') = Vector.sub (yytable, curState)
--		      val finals = map (fn i => Vector.sub (actTable, i)) finals'
-+		      val finals = List.map (fn i => Vector.sub (actTable, i)) finals'
- 		      fun tryfinal() = 
- 		            yystuck (yyactsToMatches (strm, finals, oldMatches))
- 		      fun find (c, []) = NONE
 diff --git a/PP/mono-buffer/mono-buffer.fun b/PP/mono-buffer/mono-buffer.fun
 new file mode 100644
 index 0000000..208e159
@@ -2686,10 +2653,10 @@ index 0000000..5468e29
 +    );
 diff --git a/PP/pp-lib.mlb b/PP/pp-lib.mlb
 new file mode 100644
-index 0000000..0694ef1
+index 0000000..fe1c958
 --- /dev/null
 +++ b/PP/pp-lib.mlb
-@@ -0,0 +1,404 @@
+@@ -0,0 +1,357 @@
 +
 +ann
 +  "nonexhaustiveBind warn" "nonexhaustiveMatch ignore"
@@ -2706,10 +2673,6 @@ index 0000000..0694ef1
 +  basis l55 =
 +    bas
 +      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
-+    end
-+  basis l95 =
-+    bas
-+      (* $/html-lib.cm ====> *) $(SML_LIB)/smlnj-lib/HTML/html-lib.mlb
 +    end
 +in
 +local
@@ -2891,15 +2854,20 @@ index 0000000..0694ef1
 +   local
 +      open l37
 +   in
-+      structure gs_43 = TextPrimIO
++      structure gs_43 = List
++   end
++   local
++      open l37
++   in
++      structure gs_44 = TextPrimIO
 +   end
 +   local
 +      open l55
 +   in
-+      structure gs_44 = ANSITerm
++      structure gs_45 = ANSITerm
 +   end
 +   local
-+      structure ANSITerm = gs_44
++      structure ANSITerm = gs_45
 +      structure Char = gs_1
 +      structure CharArray = gs_2
 +      structure CharVector = gs_3
@@ -2912,6 +2880,7 @@ index 0000000..0694ef1
 +      structure LargeInt = gs_10
 +      structure LargeReal = gs_11
 +      structure LargeWord = gs_12
++      structure List = gs_43
 +      structure OS = gs_13
 +      signature PP_DEVICE = gs_39
 +      structure Position = gs_14
@@ -2928,7 +2897,7 @@ index 0000000..0694ef1
 +      structure Substring = gs_24
 +      structure SysWord = gs_25
 +      structure TextIO = gs_33
-+      structure TextPrimIO = gs_43
++      structure TextPrimIO = gs_44
 +      structure Time = gs_26
 +      structure Word = gs_27
 +      structure Word32 = gs_28
@@ -2936,10 +2905,10 @@ index 0000000..0694ef1
 +      structure Word8 = gs_30
 +      devices/ansi-term-dev.sml
 +   in
-+      structure gs_45 = ANSITermDev
++      structure gs_46 = ANSITermDev
 +   end
 +   local
-+      structure ANSITermDev = gs_45
++      structure ANSITermDev = gs_46
 +      structure Char = gs_1
 +      structure CharArray = gs_2
 +      structure CharVector = gs_3
@@ -2976,75 +2945,27 @@ index 0000000..0694ef1
 +      structure Word8 = gs_30
 +      devices/ansi-term-pp.sml
 +   in
-+      structure gs_46 = ANSITermPP
-+   end
-+   local
-+      open l95
-+   in
-+      structure gs_47 = HTML
-+   end
-+   local
-+      open l37
-+   in
-+      structure gs_48 = List
-+   end
-+   local
-+      structure Char = gs_1
-+      structure CharArray = gs_2
-+      structure CharVector = gs_3
-+      structure FixedInt = gs_4
-+      structure General = gs_5
-+      structure HTML = gs_47
-+      structure Int = gs_6
-+      structure Int32 = gs_7
-+      structure Int64 = gs_8
-+      structure IntInf = gs_9
-+      structure LargeInt = gs_10
-+      structure LargeReal = gs_11
-+      structure LargeWord = gs_12
-+      structure List = gs_48
-+      structure OS = gs_13
-+      signature PP_DEVICE = gs_39
-+      structure Position = gs_14
-+      structure Real = gs_15
-+      structure Real64 = gs_16
-+      structure RealArray = gs_17
-+      structure RealArraySlice = gs_18
-+      structure RealVector = gs_19
-+      structure RealVectorSlice = gs_20
-+      structure SMLofNJ = gs_21
-+      structure Socket = gs_22
-+      structure String = gs_23
-+      structure Substring = gs_24
-+      structure SysWord = gs_25
-+      structure Time = gs_26
-+      structure Word = gs_27
-+      structure Word32 = gs_28
-+      structure Word64 = gs_29
-+      structure Word8 = gs_30
-+      devices/html-dev.sml
-+   in
-+      structure gs_49 = HTMLDev
++      structure gs_47 = ANSITermPP
 +   end
 +   local
 +      signature PP_STREAM = gs_32
 +      src/pp-desc-sig.sml
 +   in
-+      signature gs_50 = PP_DESC
++      signature gs_48 = PP_DESC
 +   end
 +   local
 +      signature PP_STREAM = gs_32
 +      structure TextIO = gs_33
 +      src/pp-debug-fn.sml
 +   in
-+      functor gs_51 = PPDebugFn
++      functor gs_49 = PPDebugFn
 +   end
 +   local
-+      signature PP_DESC = gs_50
++      signature PP_DESC = gs_48
 +      signature PP_STREAM = gs_32
 +      src/pp-desc-fn.sml
 +   in
-+      functor gs_52 = PPDescFn
++      functor gs_50 = PPDescFn
 +   end
 +   local
 +      structure CharBuffer = gs_34
@@ -3054,7 +2975,7 @@ index 0000000..0694ef1
 +      structure StringToken = gs_31
 +      devices/char-buffer-pp.sml
 +   in
-+      structure gs_53 = CharBufferPP
++      structure gs_51 = CharBufferPP
 +   end
 +   local
 +      signature PP_DEVICE = gs_39
@@ -3062,33 +2983,32 @@ index 0000000..0694ef1
 +      structure TextIO = gs_33
 +      devices/simple-textio-dev.sml
 +   in
-+      structure gs_54 = SimpleTextIODev
++      structure gs_52 = SimpleTextIODev
 +   end
 +   local
 +      functor PPStreamFn = gs_40
 +      signature PP_STREAM = gs_32
-+      structure SimpleTextIODev = gs_54
++      structure SimpleTextIODev = gs_52
 +      structure StringToken = gs_31
 +      structure TextIO = gs_33
 +      devices/textio-pp.sml
 +   in
-+      structure gs_55 = TextIOPP
++      structure gs_53 = TextIOPP
 +   end
 +in
-+   structure ANSITermDev = gs_45
-+   structure ANSITermPP = gs_46
-+   structure CharBufferPP = gs_53
-+   structure HTMLDev = gs_49
-+   functor PPDebugFn = gs_51
-+   functor PPDescFn = gs_52
++   structure ANSITermDev = gs_46
++   structure ANSITermPP = gs_47
++   structure CharBufferPP = gs_51
++   functor PPDebugFn = gs_49
++   functor PPDescFn = gs_50
 +   functor PPStreamFn = gs_40
-+   signature PP_DESC = gs_50
++   signature PP_DESC = gs_48
 +   signature PP_DEVICE = gs_39
 +   signature PP_STREAM = gs_32
 +   signature PP_TOKEN = gs_0
-+   structure SimpleTextIODev = gs_54
++   structure SimpleTextIODev = gs_52
 +   structure StringToken = gs_31
-+   structure TextIOPP = gs_55
++   structure TextIOPP = gs_53
 +   structure TextPP = gs_42
 +end
 +end
@@ -3096,15 +3016,16 @@ index 0000000..0694ef1
 +end
 diff --git a/README.mlton b/README.mlton
 new file mode 100644
-index 0000000..4bd5fed
+index 0000000..ac78fd8
 --- /dev/null
 +++ b/README.mlton
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,17 @@
 +The following changes were made to the SML/NJ Library, in addition to
 +deriving the `.mlb` files from the `.cm` files:
 +
 +* `HTML4/pp-init.sml` (added): Implements `structure PrettyPrint` using the SML/NJ PP Library.  This implementation is taken from the SML/NJ compiler source, since the SML/NJ HTML4 Library used the `structure PrettyPrint` provided by the SML/NJ compiler itself.
-+* `PP/mono-buffer` (added): Implements `signature MONO_BUFFER` and `structure CharBuffer: MONO_BUFFER`.
++* `PP/mono-buffer` (added): Implements `signature MONO_BUFFER` and `structure CharBuffer: MONO_BUFFER` (see https://github.com/SMLFamily/BasisLibrary/wiki/2018-001-Addition-of-monomorphic-buffers).
++* `RegExp/Glue/match-tree.sml` (modified): Rewrote use of `Either.either` (see https://github.com/SMLFamily/BasisLibrary/wiki/2015-002-Addition-of-Either-module).
 +* `SExp/sexp.sml` (modified): Fixed non-exhaustive match warning (and latent bug) in `compare` function.
 +* `Util/dynamic-array.sml` (modified): Rewrote use of `Array.fromVector`.
 +* `Util/base64.sml` (modified): Rewrote use of `Unsafe.CharVector.create` and `Unsafe.CharVector.update`; MLton assumes that vectors are immutable.
@@ -3115,7 +3036,7 @@ index 0000000..4bd5fed
 +* `Util/redblack-set-fn.sml` (modified): Rewrote use of `where` structure specification.
 +* `Util/time-limit.mlb` (added): Exports `structure TimeLimit`, which is _not_ exported by `smlnj-lib.mlb`.  Since MLton is very conservative in the presence of threads and signals, program performance may be adversely affected by unnecessarily including `structure TimeLimit`.
 +* `Util/time-limit.mlton.sml` (added): Implements `structure TimeLimit` using `structure Engine`.  The SML/NJ implementation of `structure TimeLimit` uses SML/NJ's first-class continuations, signals, and interval timer.
-+* `Util/utf8.sml` (modified): Rewrote use of `String.implodeRev`.
++* `Util/utf8.sml` (modified): Rewrote use of `String.implodeRev` (see https://github.com/SMLFamily/BasisLibrary/wiki/2015-003d-STRING).
 diff --git a/Reactive/reactive-lib.mlb b/Reactive/reactive-lib.mlb
 new file mode 100644
 index 0000000..b082ba7
@@ -3194,12 +3115,25 @@ index 0000000..b082ba7
 +end
 +
 +end
+diff --git a/RegExp/Glue/match-tree.sml b/RegExp/Glue/match-tree.sml
+index 080971c..b56aa9d 100644
+--- a/RegExp/Glue/match-tree.sml
++++ b/RegExp/Glue/match-tree.sml
+@@ -55,7 +55,7 @@ structure MatchTree :> MATCH_TREE =
+    * starting at 0.
+    *)
+     fun nth (t, n) = let
+-	  datatype sum = datatype Either.either
++	  datatype 'a sum = INL of int | INR of 'a
+ 	  fun walk (0, Match (x, _)) = INR x
+ 	    | walk (i, Match (_, children)) = let
+ 		fun walkList (i, []) = INL i
 diff --git a/RegExp/regexp-lib.mlb b/RegExp/regexp-lib.mlb
 new file mode 100644
-index 0000000..1c11852
+index 0000000..44d1765
 --- /dev/null
 +++ b/RegExp/regexp-lib.mlb
-@@ -0,0 +1,367 @@
+@@ -0,0 +1,366 @@
 +
 +ann
 +  "nonexhaustiveBind ignore" "nonexhaustiveMatch ignore"
@@ -3371,7 +3305,6 @@ index 0000000..1c11852
 +      signature REGEXP = gs_41
 +      signature REGEXP_ENGINE = gs_39
 +      signature REGEXP_PARSER = gs_42
-+      structure RegExpSyntax = gs_38
 +      structure StringCvt = gs_6
 +      Glue/regexp-fn.sml
 +   in
@@ -4523,38 +4456,12 @@ index 781a7fa..6b5560d 100644
  	  in
  	    f 0x10000
  	  end
-diff --git a/Util/redblack-map-fn.sml b/Util/redblack-map-fn.sml
-index 94ab963..cdedaaa 100644
---- a/Util/redblack-map-fn.sml
-+++ b/Util/redblack-map-fn.sml
-@@ -23,7 +23,7 @@
-  * will be black and its child will be a red leaf.
-  *)
- 
--functor RedBlackMapFn (K : ORD_KEY) :> ORD_MAP where Key = K =
-+functor RedBlackMapFn (K : ORD_KEY) :> ORD_MAP where type Key.ord_key = K.ord_key =
-   struct
- 
-     structure Key = K
-diff --git a/Util/redblack-set-fn.sml b/Util/redblack-set-fn.sml
-index 66ce0b4..acd422f 100644
---- a/Util/redblack-set-fn.sml
-+++ b/Util/redblack-set-fn.sml
-@@ -23,7 +23,7 @@
-  * will be black and its child will be a red leaf.
-  *)
- 
--functor RedBlackSetFn (K : ORD_KEY) :> ORD_SET where Key = K =
-+functor RedBlackSetFn (K : ORD_KEY) :> ORD_SET where type Key.ord_key = K.ord_key =
-   struct
- 
-     structure Key = K
 diff --git a/Util/smlnj-lib.mlb b/Util/smlnj-lib.mlb
 new file mode 100644
-index 0000000..3ef05b1
+index 0000000..905ff0e
 --- /dev/null
 +++ b/Util/smlnj-lib.mlb
-@@ -0,0 +1,2257 @@
+@@ -0,0 +1,2258 @@
 +
 +ann
 +  "nonexhaustiveBind ignore" "nonexhaustiveMatch warn"
@@ -6583,6 +6490,7 @@ index 0000000..3ef05b1
 +      structure LargeInt = gs_13
 +      structure LargeReal = gs_14
 +      structure LargeWord = gs_15
++      structure List = gs_34
 +      signature MONO_ARRAY = gs_56
 +      signature MONO_DYNAMIC_ARRAY = gs_61
 +      structure OS = gs_16
@@ -6879,10 +6787,10 @@ index 71259a3..00b526c 100644
  		      in
 diff --git a/XML/xml-lib.mlb b/XML/xml-lib.mlb
 new file mode 100644
-index 0000000..630809d
+index 0000000..b722d6d
 --- /dev/null
 +++ b/XML/xml-lib.mlb
-@@ -0,0 +1,254 @@
+@@ -0,0 +1,255 @@
 +
 +ann
 +  "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
@@ -7122,6 +7030,7 @@ index 0000000..630809d
 +      structure Word64 = gs_30
 +      structure Word8 = gs_31
 +      functor XMLTreeFn = gs_44
++      signature XML_TREE = gs_40
 +      generic-xml-tree.sml
 +   in
 +      structure gs_45 = GenericXMLTree
