@@ -1,4 +1,5 @@
-(* Copyright (C) 2005-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2020 Matthew Fluet.
+ * Copyright (C) 2005-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a HPND-style license.
@@ -65,8 +66,7 @@ fun makeOptions {usage} =
                       let
                          val regexp =
                             SOME (RE.compileString re)
-                            handle RegExpSyntax.CannotParse => NONE
-                                 | RegExpSyntax.CannotCompile => NONE
+                            handle RegExpSyntax.CannotCompile => NONE
                       in
                          case regexp of
                             SOME regexp =>
