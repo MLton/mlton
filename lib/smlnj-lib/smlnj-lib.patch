@@ -3016,15 +3016,16 @@ index 0000000..fe1c958
 +end
 diff --git a/README.mlton b/README.mlton
 new file mode 100644
-index 0000000..4bd5fed
+index 0000000..ac78fd8
 --- /dev/null
 +++ b/README.mlton
-@@ -0,0 +1,16 @@
+@@ -0,0 +1,17 @@
 +The following changes were made to the SML/NJ Library, in addition to
 +deriving the `.mlb` files from the `.cm` files:
 +
 +* `HTML4/pp-init.sml` (added): Implements `structure PrettyPrint` using the SML/NJ PP Library.  This implementation is taken from the SML/NJ compiler source, since the SML/NJ HTML4 Library used the `structure PrettyPrint` provided by the SML/NJ compiler itself.
-+* `PP/mono-buffer` (added): Implements `signature MONO_BUFFER` and `structure CharBuffer: MONO_BUFFER`.
++* `PP/mono-buffer` (added): Implements `signature MONO_BUFFER` and `structure CharBuffer: MONO_BUFFER` (see https://github.com/SMLFamily/BasisLibrary/wiki/2018-001-Addition-of-monomorphic-buffers).
++* `RegExp/Glue/match-tree.sml` (modified): Rewrote use of `Either.either` (see https://github.com/SMLFamily/BasisLibrary/wiki/2015-002-Addition-of-Either-module).
 +* `SExp/sexp.sml` (modified): Fixed non-exhaustive match warning (and latent bug) in `compare` function.
 +* `Util/dynamic-array.sml` (modified): Rewrote use of `Array.fromVector`.
 +* `Util/base64.sml` (modified): Rewrote use of `Unsafe.CharVector.create` and `Unsafe.CharVector.update`; MLton assumes that vectors are immutable.
@@ -3035,7 +3036,7 @@ index 0000000..4bd5fed
 +* `Util/redblack-set-fn.sml` (modified): Rewrote use of `where` structure specification.
 +* `Util/time-limit.mlb` (added): Exports `structure TimeLimit`, which is _not_ exported by `smlnj-lib.mlb`.  Since MLton is very conservative in the presence of threads and signals, program performance may be adversely affected by unnecessarily including `structure TimeLimit`.
 +* `Util/time-limit.mlton.sml` (added): Implements `structure TimeLimit` using `structure Engine`.  The SML/NJ implementation of `structure TimeLimit` uses SML/NJ's first-class continuations, signals, and interval timer.
-+* `Util/utf8.sml` (modified): Rewrote use of `String.implodeRev`.
++* `Util/utf8.sml` (modified): Rewrote use of `String.implodeRev` (see https://github.com/SMLFamily/BasisLibrary/wiki/2015-003d-STRING).
 diff --git a/Reactive/reactive-lib.mlb b/Reactive/reactive-lib.mlb
 new file mode 100644
 index 0000000..b082ba7
@@ -3114,12 +3115,25 @@ index 0000000..b082ba7
 +end
 +
 +end
+diff --git a/RegExp/Glue/match-tree.sml b/RegExp/Glue/match-tree.sml
+index 080971c..b56aa9d 100644
+--- a/RegExp/Glue/match-tree.sml
++++ b/RegExp/Glue/match-tree.sml
+@@ -55,7 +55,7 @@ structure MatchTree :> MATCH_TREE =
+    * starting at 0.
+    *)
+     fun nth (t, n) = let
+-	  datatype sum = datatype Either.either
++	  datatype 'a sum = INL of int | INR of 'a
+ 	  fun walk (0, Match (x, _)) = INR x
+ 	    | walk (i, Match (_, children)) = let
+ 		fun walkList (i, []) = INL i
 diff --git a/RegExp/regexp-lib.mlb b/RegExp/regexp-lib.mlb
 new file mode 100644
-index 0000000..6fe2b4f
+index 0000000..44d1765
 --- /dev/null
 +++ b/RegExp/regexp-lib.mlb
-@@ -0,0 +1,372 @@
+@@ -0,0 +1,366 @@
 +
 +ann
 +  "nonexhaustiveBind ignore" "nonexhaustiveMatch ignore"
@@ -3133,7 +3147,7 @@ index 0000000..6fe2b4f
 +    bas
 +      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/sml-nj.mlb
 +    end
-+  basis l16 =
++  basis l12 =
 +    bas
 +      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
 +    end
@@ -3143,351 +3157,345 @@ index 0000000..6fe2b4f
 +   local
 +      open l4
 +   in
-+      structure gs_0 = Either
++      structure gs_0 = List
 +   end
 +   local
-+      open l4
-+   in
-+      structure gs_1 = List
-+   end
-+   local
-+      structure Either = gs_0
-+      structure List = gs_1
++      structure List = gs_0
 +      Glue/match-tree.sml
 +   in
-+      signature gs_2 = MATCH_TREE
-+      structure gs_3 = MatchTree
++      signature gs_1 = MATCH_TREE
++      structure gs_2 = MatchTree
 +   end
 +   local
-+      open l16
++      open l12
 +   in
-+      signature gs_4 = ORD_SET
++      signature gs_3 = ORD_SET
 +   end
 +   local
-+      signature ORD_SET = gs_4
++      signature ORD_SET = gs_3
 +      FrontEnd/syntax-sig.sml
 +   in
-+      signature gs_5 = REGEXP_SYNTAX
++      signature gs_4 = REGEXP_SYNTAX
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_6 = Option
++      structure gs_5 = Option
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_7 = StringCvt
++      structure gs_6 = StringCvt
 +   end
 +   local
-+      open l16
++      open l12
 +   in
-+      functor gs_8 = ListSetFn
++      functor gs_7 = ListSetFn
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_9 = Char
-+      structure gs_10 = CharArray
-+      structure gs_11 = CharVector
-+      structure gs_12 = FixedInt
-+      structure gs_13 = General
-+      structure gs_14 = Int
-+      structure gs_15 = Int32
-+      structure gs_16 = Int64
-+      structure gs_17 = IntInf
-+      structure gs_18 = LargeInt
-+      structure gs_19 = LargeReal
-+      structure gs_20 = LargeWord
-+      structure gs_21 = OS
-+      structure gs_22 = Position
-+      structure gs_23 = Real
-+      structure gs_24 = Real64
-+      structure gs_25 = RealArray
-+      structure gs_26 = RealArraySlice
-+      structure gs_27 = RealVector
-+      structure gs_28 = RealVectorSlice
-+      structure gs_29 = SMLofNJ
-+      structure gs_30 = Socket
-+      structure gs_31 = String
-+      structure gs_32 = Substring
-+      structure gs_33 = SysWord
-+      structure gs_34 = Time
-+      structure gs_35 = Word
-+      structure gs_36 = Word32
-+      structure gs_37 = Word64
-+      structure gs_38 = Word8
++      structure gs_8 = Char
++      structure gs_9 = CharArray
++      structure gs_10 = CharVector
++      structure gs_11 = FixedInt
++      structure gs_12 = General
++      structure gs_13 = Int
++      structure gs_14 = Int32
++      structure gs_15 = Int64
++      structure gs_16 = IntInf
++      structure gs_17 = LargeInt
++      structure gs_18 = LargeReal
++      structure gs_19 = LargeWord
++      structure gs_20 = OS
++      structure gs_21 = Position
++      structure gs_22 = Real
++      structure gs_23 = Real64
++      structure gs_24 = RealArray
++      structure gs_25 = RealArraySlice
++      structure gs_26 = RealVector
++      structure gs_27 = RealVectorSlice
++      structure gs_28 = SMLofNJ
++      structure gs_29 = Socket
++      structure gs_30 = String
++      structure gs_31 = Substring
++      structure gs_32 = SysWord
++      structure gs_33 = Time
++      structure gs_34 = Word
++      structure gs_35 = Word32
++      structure gs_36 = Word64
++      structure gs_37 = Word8
 +   end
 +   local
-+      structure Char = gs_9
-+      structure CharArray = gs_10
-+      structure CharVector = gs_11
-+      structure FixedInt = gs_12
-+      structure General = gs_13
-+      structure Int = gs_14
-+      structure Int32 = gs_15
-+      structure Int64 = gs_16
-+      structure IntInf = gs_17
-+      structure LargeInt = gs_18
-+      structure LargeReal = gs_19
-+      structure LargeWord = gs_20
-+      structure List = gs_1
-+      functor ListSetFn = gs_8
-+      structure OS = gs_21
-+      structure Position = gs_22
-+      signature REGEXP_SYNTAX = gs_5
-+      structure Real = gs_23
-+      structure Real64 = gs_24
-+      structure RealArray = gs_25
-+      structure RealArraySlice = gs_26
-+      structure RealVector = gs_27
-+      structure RealVectorSlice = gs_28
-+      structure SMLofNJ = gs_29
-+      structure Socket = gs_30
-+      structure String = gs_31
-+      structure Substring = gs_32
-+      structure SysWord = gs_33
-+      structure Time = gs_34
-+      structure Word = gs_35
-+      structure Word32 = gs_36
-+      structure Word64 = gs_37
-+      structure Word8 = gs_38
++      structure Char = gs_8
++      structure CharArray = gs_9
++      structure CharVector = gs_10
++      structure FixedInt = gs_11
++      structure General = gs_12
++      structure Int = gs_13
++      structure Int32 = gs_14
++      structure Int64 = gs_15
++      structure IntInf = gs_16
++      structure LargeInt = gs_17
++      structure LargeReal = gs_18
++      structure LargeWord = gs_19
++      structure List = gs_0
++      functor ListSetFn = gs_7
++      structure OS = gs_20
++      structure Position = gs_21
++      signature REGEXP_SYNTAX = gs_4
++      structure Real = gs_22
++      structure Real64 = gs_23
++      structure RealArray = gs_24
++      structure RealArraySlice = gs_25
++      structure RealVector = gs_26
++      structure RealVectorSlice = gs_27
++      structure SMLofNJ = gs_28
++      structure Socket = gs_29
++      structure String = gs_30
++      structure Substring = gs_31
++      structure SysWord = gs_32
++      structure Time = gs_33
++      structure Word = gs_34
++      structure Word32 = gs_35
++      structure Word64 = gs_36
++      structure Word8 = gs_37
 +      FrontEnd/syntax.sml
 +   in
-+      structure gs_39 = RegExpSyntax
++      structure gs_38 = RegExpSyntax
 +   end
 +   local
-+      signature MATCH_TREE = gs_2
-+      structure MatchTree = gs_3
-+      structure RegExpSyntax = gs_39
-+      structure StringCvt = gs_7
++      signature MATCH_TREE = gs_1
++      structure MatchTree = gs_2
++      structure RegExpSyntax = gs_38
++      structure StringCvt = gs_6
 +      BackEnd/engine-sig.sml
 +   in
-+      signature gs_40 = REGEXP_ENGINE
++      signature gs_39 = REGEXP_ENGINE
 +   end
 +   local
-+      structure List = gs_1
-+      signature MATCH_TREE = gs_2
-+      structure MatchTree = gs_3
-+      structure Option = gs_6
-+      signature REGEXP_ENGINE = gs_40
-+      structure RegExpSyntax = gs_39
++      structure List = gs_0
++      signature MATCH_TREE = gs_1
++      structure MatchTree = gs_2
++      structure Option = gs_5
++      signature REGEXP_ENGINE = gs_39
++      structure RegExpSyntax = gs_38
 +      BackEnd/bt-engine.sml
 +   in
-+      structure gs_41 = BackTrackEngine
++      structure gs_40 = BackTrackEngine
 +   end
 +   local
-+      signature MATCH_TREE = gs_2
-+      structure MatchTree = gs_3
-+      structure StringCvt = gs_7
++      signature MATCH_TREE = gs_1
++      structure MatchTree = gs_2
++      structure StringCvt = gs_6
 +      Glue/regexp-sig.sml
 +   in
-+      signature gs_42 = REGEXP
++      signature gs_41 = REGEXP
 +   end
 +   local
-+      structure RegExpSyntax = gs_39
-+      structure StringCvt = gs_7
++      structure RegExpSyntax = gs_38
++      structure StringCvt = gs_6
 +      FrontEnd/parser-sig.sml
 +   in
-+      signature gs_43 = REGEXP_PARSER
++      signature gs_42 = REGEXP_PARSER
 +   end
 +   local
-+      signature MATCH_TREE = gs_2
-+      structure MatchTree = gs_3
-+      signature REGEXP = gs_42
-+      signature REGEXP_ENGINE = gs_40
-+      signature REGEXP_PARSER = gs_43
-+      structure StringCvt = gs_7
++      signature MATCH_TREE = gs_1
++      structure MatchTree = gs_2
++      signature REGEXP = gs_41
++      signature REGEXP_ENGINE = gs_39
++      signature REGEXP_PARSER = gs_42
++      structure StringCvt = gs_6
 +      Glue/regexp-fn.sml
 +   in
-+      functor gs_44 = RegExpFn
++      functor gs_43 = RegExpFn
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_45 = Vector
++      structure gs_44 = Vector
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_46 = Array
++      structure gs_45 = Array
 +   end
 +   local
-+      structure Array = gs_46
-+      structure Char = gs_9
-+      structure CharArray = gs_10
-+      structure CharVector = gs_11
-+      structure FixedInt = gs_12
-+      structure General = gs_13
-+      structure Int = gs_14
-+      structure Int32 = gs_15
-+      structure Int64 = gs_16
-+      structure IntInf = gs_17
-+      structure LargeInt = gs_18
-+      structure LargeReal = gs_19
-+      structure LargeWord = gs_20
-+      structure List = gs_1
-+      signature MATCH_TREE = gs_2
-+      structure MatchTree = gs_3
-+      structure OS = gs_21
-+      structure Position = gs_22
-+      signature REGEXP_ENGINE = gs_40
-+      structure Real = gs_23
-+      structure Real64 = gs_24
-+      structure RealArray = gs_25
-+      structure RealArraySlice = gs_26
-+      structure RealVector = gs_27
-+      structure RealVectorSlice = gs_28
-+      structure RegExpSyntax = gs_39
-+      structure SMLofNJ = gs_29
-+      structure Socket = gs_30
-+      structure String = gs_31
-+      structure StringCvt = gs_7
-+      structure Substring = gs_32
-+      structure SysWord = gs_33
-+      structure Time = gs_34
-+      structure Vector = gs_45
-+      structure Word = gs_35
-+      structure Word32 = gs_36
-+      structure Word64 = gs_37
-+      structure Word8 = gs_38
++      structure Array = gs_45
++      structure Char = gs_8
++      structure CharArray = gs_9
++      structure CharVector = gs_10
++      structure FixedInt = gs_11
++      structure General = gs_12
++      structure Int = gs_13
++      structure Int32 = gs_14
++      structure Int64 = gs_15
++      structure IntInf = gs_16
++      structure LargeInt = gs_17
++      structure LargeReal = gs_18
++      structure LargeWord = gs_19
++      structure List = gs_0
++      signature MATCH_TREE = gs_1
++      structure MatchTree = gs_2
++      structure OS = gs_20
++      structure Position = gs_21
++      signature REGEXP_ENGINE = gs_39
++      structure Real = gs_22
++      structure Real64 = gs_23
++      structure RealArray = gs_24
++      structure RealArraySlice = gs_25
++      structure RealVector = gs_26
++      structure RealVectorSlice = gs_27
++      structure RegExpSyntax = gs_38
++      structure SMLofNJ = gs_28
++      structure Socket = gs_29
++      structure String = gs_30
++      structure StringCvt = gs_6
++      structure Substring = gs_31
++      structure SysWord = gs_32
++      structure Time = gs_33
++      structure Vector = gs_44
++      structure Word = gs_34
++      structure Word32 = gs_35
++      structure Word64 = gs_36
++      structure Word8 = gs_37
 +      BackEnd/thompson-engine.sml
 +   in
-+      structure gs_47 = ThompsonEngine
++      structure gs_46 = ThompsonEngine
 +   end
 +   local
-+      open l16
++      open l12
 +   in
-+      functor gs_48 = ListMapFn
++      functor gs_47 = ListMapFn
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_49 = Array2
++      structure gs_48 = Array2
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_50 = TextIO
++      structure gs_49 = TextIO
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_51 = ListPair
++      structure gs_50 = ListPair
 +   end
 +   local
-+      structure Array = gs_46
-+      structure Array2 = gs_49
-+      structure Char = gs_9
-+      structure CharArray = gs_10
-+      structure CharVector = gs_11
-+      structure FixedInt = gs_12
-+      structure General = gs_13
-+      structure Int = gs_14
-+      structure Int32 = gs_15
-+      structure Int64 = gs_16
-+      structure IntInf = gs_17
-+      structure LargeInt = gs_18
-+      structure LargeReal = gs_19
-+      structure LargeWord = gs_20
-+      structure List = gs_1
-+      functor ListMapFn = gs_48
-+      structure ListPair = gs_51
-+      functor ListSetFn = gs_8
-+      signature ORD_SET = gs_4
-+      structure OS = gs_21
-+      structure Position = gs_22
-+      structure Real = gs_23
-+      structure Real64 = gs_24
-+      structure RealArray = gs_25
-+      structure RealArraySlice = gs_26
-+      structure RealVector = gs_27
-+      structure RealVectorSlice = gs_28
-+      structure RegExpSyntax = gs_39
-+      structure SMLofNJ = gs_29
-+      structure Socket = gs_30
-+      structure String = gs_31
-+      structure Substring = gs_32
-+      structure SysWord = gs_33
-+      structure TextIO = gs_50
-+      structure Time = gs_34
-+      structure Word = gs_35
-+      structure Word32 = gs_36
-+      structure Word64 = gs_37
-+      structure Word8 = gs_38
++      structure Array = gs_45
++      structure Array2 = gs_48
++      structure Char = gs_8
++      structure CharArray = gs_9
++      structure CharVector = gs_10
++      structure FixedInt = gs_11
++      structure General = gs_12
++      structure Int = gs_13
++      structure Int32 = gs_14
++      structure Int64 = gs_15
++      structure IntInf = gs_16
++      structure LargeInt = gs_17
++      structure LargeReal = gs_18
++      structure LargeWord = gs_19
++      structure List = gs_0
++      functor ListMapFn = gs_47
++      structure ListPair = gs_50
++      functor ListSetFn = gs_7
++      signature ORD_SET = gs_3
++      structure OS = gs_20
++      structure Position = gs_21
++      structure Real = gs_22
++      structure Real64 = gs_23
++      structure RealArray = gs_24
++      structure RealArraySlice = gs_25
++      structure RealVector = gs_26
++      structure RealVectorSlice = gs_27
++      structure RegExpSyntax = gs_38
++      structure SMLofNJ = gs_28
++      structure Socket = gs_29
++      structure String = gs_30
++      structure Substring = gs_31
++      structure SysWord = gs_32
++      structure TextIO = gs_49
++      structure Time = gs_33
++      structure Word = gs_34
++      structure Word32 = gs_35
++      structure Word64 = gs_36
++      structure Word8 = gs_37
 +      BackEnd/fsm.sml
 +   in
-+      signature gs_52 = DFA
-+      structure gs_53 = Dfa
-+      signature gs_54 = NFA
-+      structure gs_55 = Nfa
++      signature gs_51 = DFA
++      structure gs_52 = Dfa
++      signature gs_53 = NFA
++      structure gs_54 = Nfa
 +   end
 +   local
-+      signature DFA = gs_52
-+      structure Dfa = gs_53
-+      signature MATCH_TREE = gs_2
-+      structure MatchTree = gs_3
-+      signature NFA = gs_54
-+      structure Nfa = gs_55
-+      signature REGEXP_ENGINE = gs_40
-+      structure RegExpSyntax = gs_39
-+      structure Vector = gs_45
++      signature DFA = gs_51
++      structure Dfa = gs_52
++      signature MATCH_TREE = gs_1
++      structure MatchTree = gs_2
++      signature NFA = gs_53
++      structure Nfa = gs_54
++      signature REGEXP_ENGINE = gs_39
++      structure RegExpSyntax = gs_38
++      structure Vector = gs_44
 +      BackEnd/dfa-engine.sml
 +   in
-+      structure gs_56 = DfaEngine
++      structure gs_55 = DfaEngine
 +   end
 +   local
-+      structure Char = gs_9
-+      structure CharArray = gs_10
-+      structure CharVector = gs_11
-+      structure FixedInt = gs_12
-+      structure General = gs_13
-+      structure Int = gs_14
-+      structure Int32 = gs_15
-+      structure Int64 = gs_16
-+      structure IntInf = gs_17
-+      structure LargeInt = gs_18
-+      structure LargeReal = gs_19
-+      structure LargeWord = gs_20
-+      structure List = gs_1
-+      structure OS = gs_21
-+      structure Position = gs_22
-+      signature REGEXP_PARSER = gs_43
-+      structure Real = gs_23
-+      structure Real64 = gs_24
-+      structure RealArray = gs_25
-+      structure RealArraySlice = gs_26
-+      structure RealVector = gs_27
-+      structure RealVectorSlice = gs_28
-+      structure RegExpSyntax = gs_39
-+      structure SMLofNJ = gs_29
-+      structure Socket = gs_30
-+      structure String = gs_31
-+      structure StringCvt = gs_7
-+      structure Substring = gs_32
-+      structure SysWord = gs_33
-+      structure Time = gs_34
-+      structure Word = gs_35
-+      structure Word32 = gs_36
-+      structure Word64 = gs_37
-+      structure Word8 = gs_38
++      structure Char = gs_8
++      structure CharArray = gs_9
++      structure CharVector = gs_10
++      structure FixedInt = gs_11
++      structure General = gs_12
++      structure Int = gs_13
++      structure Int32 = gs_14
++      structure Int64 = gs_15
++      structure IntInf = gs_16
++      structure LargeInt = gs_17
++      structure LargeReal = gs_18
++      structure LargeWord = gs_19
++      structure List = gs_0
++      structure OS = gs_20
++      structure Position = gs_21
++      signature REGEXP_PARSER = gs_42
++      structure Real = gs_22
++      structure Real64 = gs_23
++      structure RealArray = gs_24
++      structure RealArraySlice = gs_25
++      structure RealVector = gs_26
++      structure RealVectorSlice = gs_27
++      structure RegExpSyntax = gs_38
++      structure SMLofNJ = gs_28
++      structure Socket = gs_29
++      structure String = gs_30
++      structure StringCvt = gs_6
++      structure Substring = gs_31
++      structure SysWord = gs_32
++      structure Time = gs_33
++      structure Word = gs_34
++      structure Word32 = gs_35
++      structure Word64 = gs_36
++      structure Word8 = gs_37
 +      FrontEnd/awk-syntax.sml
 +   in
-+      structure gs_57 = AwkSyntax
++      structure gs_56 = AwkSyntax
 +   end
 +in
-+   structure AwkSyntax = gs_57
-+   structure BackTrackEngine = gs_41
-+   structure DfaEngine = gs_56
-+   signature MATCH_TREE = gs_2
-+   structure MatchTree = gs_3
-+   signature REGEXP = gs_42
-+   signature REGEXP_ENGINE = gs_40
-+   signature REGEXP_PARSER = gs_43
-+   signature REGEXP_SYNTAX = gs_5
-+   functor RegExpFn = gs_44
-+   structure RegExpSyntax = gs_39
-+   structure ThompsonEngine = gs_47
++   structure AwkSyntax = gs_56
++   structure BackTrackEngine = gs_40
++   structure DfaEngine = gs_55
++   signature MATCH_TREE = gs_1
++   structure MatchTree = gs_2
++   signature REGEXP = gs_41
++   signature REGEXP_ENGINE = gs_39
++   signature REGEXP_PARSER = gs_42
++   signature REGEXP_SYNTAX = gs_4
++   functor RegExpFn = gs_43
++   structure RegExpSyntax = gs_38
++   structure ThompsonEngine = gs_46
 +end
 +end
 +
