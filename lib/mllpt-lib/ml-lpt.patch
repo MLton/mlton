@@ -1,3 +1,47 @@
+diff --git a/doc/history.tex b/doc/history.tex
+index 19be755..8ca8d79 100644
+--- a/doc/history.tex
++++ b/doc/history.tex
+@@ -6,12 +6,6 @@
+ Here is a history of changes to the SML/NJ Language Processing Tools.
+ More details can be found in the SML/NJ \texttt{NOTES} and \texttt{README} files.
+ \begin{description}
+-  \item[SML/NJ 110.98]
+-    \mbox{}\\[0.5em]
+-    Changed the semantics of the \texttt{--debug} command-line option for \mlantlr{}.
+-    Previously this option replaced the actions with a print expression, but that
+-    limited its usefulness because of type errors in the generated code.  The new
+-    behavior is to preserve the existing actions and just add the printing code.
+   \item[SML/NJ 110.96]
+     \mbox{}\\[0.5em]
+     Added the `FilePos` sub-structure to the `AntlrStreamPos` structure.  This
+diff --git a/doc/manual.tex b/doc/manual.tex
+index ec635db..26c0815 100644
+--- a/doc/manual.tex
++++ b/doc/manual.tex
+@@ -28,7 +28,7 @@
+   \texttt{adrassi@gmail.com}\\[0.5em]
+   John Reppy\\
+   \texttt{jhr@cs.chicago.edu}}
+-\date{Revised: May 2020}
++\date{Revised: September 2016}
+ 
+ \newcommand{\Carat}{\^{ }}
+ \newcommand{\RE}{r}
+diff --git a/doc/usage-ml-antlr.tex b/doc/usage-ml-antlr.tex
+index 7dab077..0b742ed 100644
+--- a/doc/usage-ml-antlr.tex
++++ b/doc/usage-ml-antlr.tex
+@@ -47,7 +47,8 @@ where \texttt{file} is the name of the input \ulex{} specification, and where \t
+   \texttt{--unit-actions} & ignore the action code in the grammar, and instead return \texttt{()}
+     for every production. \\
+   \\
+-  \texttt{--debug} & add code to the actions to print the left-hand-side of the production.
++  \texttt{--debug} & ignore the action code in the grammar, and instead print the
++    left-hand-side of the production.
+ \end{tabular}%
+ 
+ \vskip 10pt \noindent
 diff --git a/lib/mllpt-lib.mlb b/lib/mllpt-lib.mlb
 new file mode 100644
 index 0000000..0d6bf2a
@@ -5,3 +49,236 @@ index 0000000..0d6bf2a
 +++ b/lib/mllpt-lib.mlb
 @@ -0,0 +1 @@
 +ml-lpt-lib.mlb
+diff --git a/ml-antlr/BackEnds/SML/sml-output.sml b/ml-antlr/BackEnds/SML/sml-output.sml
+index 5501c0b..cd67eb2 100644
+--- a/ml-antlr/BackEnds/SML/sml-output.sml
++++ b/ml-antlr/BackEnds/SML/sml-output.sml
+@@ -68,7 +68,9 @@ structure SMLOutput =
+ 		     else
+ 		       withSuffix @ withSpan @ [fullSpan ^ spanTySuffix] @ refs
+           in
+-            String.concat [name, " (", String.concatWith ", " args, ")"]
++            String.concat [name, " (",
++			   String.concatWith ", " args,
++			   ")"]
+           end
+ 
+   (* make an expression that will pull the next token off the stream *)
+@@ -106,17 +108,15 @@ structure SMLOutput =
+ 	  fun mkTok (t, strmExp, letFn) =
+ 	        letFn (ML_App (tokMatch t, [strmExp]))
+ 	  fun mkNT (nt, strmExp, args, letFn, item) = let
+-	        val name = (case (args, !Options.unitActions)
+-		       of (SOME args, false) => concat [
+-			      "(", NTFnName nt, " (",
+-			      actionHeader (
+-			       "UserCode.ARGS_" ^ Action.name args,
+-			       Item.bindingsLeftOf (item, prod),
+-			       bindingSuffix, true, refcells, rcSuffix),
+-			      "))"
+-			    ]
+-			| _ => NTFnName nt
+-		      (* end case *))
++	        val name = case (args, !Options.actStyle)
++		  of (SOME args, Options.ActNormal) =>
++		       "(" ^ NTFnName nt ^ " ("
++		       ^ actionHeader
++			   ("UserCode.ARGS_" ^ Action.name args,
++			    Item.bindingsLeftOf (item, prod),
++			    bindingSuffix, true, refcells, rcSuffix)
++		       ^ "))"
++		   | _ => NTFnName nt
+ 	        val innerExp = ML_App (name, [strmExp])
+ 	        in
+ 	          if NT.isSubrule nt
+@@ -153,30 +153,29 @@ structure SMLOutput =
+ 		    | S.OPT nt     => mkEBNF (nt, strmExp, "EBNF.optional", mkLet)
+ 	        end
+ 	  val itemBindings = Prod.itemBindings prod
+-	  fun debugCode () = concat[
+-		  "print \"", Nonterm.qualName (Prod.lhs prod), "\\n\""
+-		]
+-	  val action = if !Options.unitActions
+-		then "()"
+-		else (case Prod.action prod
+-		   of SOME _ => actionHeader (
+-			concat ["UserCode.", Prod.fullName prod, "_ACT"],
+-			Prod.bindingsAtAction prod, bindingSuffix, false,
+-			refcells, rcSuffix)
+-		    | NONE => let
+-			val bindings = ListPair.mapPartial
+-			      (fn (binding, hasValue) =>
+-				  if hasValue
+-				    then SOME (binding ^ bindingSuffix)
+-				    else NONE)
+-			      (itemBindings, Prod.itemYields prod)
+-			in
+-			  case bindings
+-			   of [] => "()"
+-			    | _ => concat["(", String.concatWith ", " bindings, ")"]
+-			  (* end case *)
+-			end
+-		  (* end case *))
++	  val action =
++	      case !Options.actStyle
++	       of Options.ActDebug =>
++		  "( print \"" ^ (Nonterm.qualName (Prod.lhs prod)) ^ "\\n\" )"
++		| Options.ActUnit => "()"
++		| Options.ActNormal => (case Prod.action prod
++		    of SOME _ => actionHeader ("UserCode." ^ Prod.fullName prod ^ "_ACT",
++					       Prod.bindingsAtAction prod, bindingSuffix, false,
++					       refcells, rcSuffix)
++		     | NONE => let
++			 val bindings =
++			       List.mapPartial
++				 (fn (binding, hasValue) =>
++				     if hasValue
++				     then SOME (binding ^ bindingSuffix)
++				     else NONE)
++				 (ListPair.zip (itemBindings, Prod.itemYields prod))
++			 in
++			   if List.length bindings > 0
++			   then "(" ^ (String.concatWith ", " bindings) ^ ")"
++			   else "()"
++		         end
++  	           (* end case *))
+ 	  fun innerExp strm = let
+ 	        val strmVar = ML_Var (strm)
+ 	        val span = if List.length itemBindings = 0 then
+@@ -186,17 +185,9 @@ structure SMLOutput =
+ 			     ML_Tuple [ML_App ("#1", [ML_Var (hd itemBindings ^ spanSuffix)]),
+ 				       ML_App ("#2", [ML_Var (hd (rev itemBindings) ^ spanSuffix)])]
+ 	        val act = ML_Tuple [ML_Raw [ML.Tok action], ML_Var fullSpan, strmVar]
+-		val act = if !Options.debug
+-		      then ML_Seq[
+-			  ML_Raw[ML.Tok(concat[
+-			      "print \"", Nonterm.qualName (Prod.lhs prod), "\\n\""
+-			    ])],
+-			  act
+-			]
+-		      else act
+ 		val spanExp = ML_Let (fullSpan, span, act)
+-	        in case (Prod.pred prod, !Options.unitActions)
+-		    of (SOME pred, false) =>
++	        in case (Prod.pred prod, !Options.actStyle)
++		    of (SOME pred, Options.ActNormal) =>
+ 		         ML_If (ML_Raw [ML.Tok ("("
+ 				  ^ actionHeader
+ 				      ("UserCode." ^ Prod.fullName prod ^ "_PRED",
+@@ -233,20 +224,19 @@ structure SMLOutput =
+           end
+ 
+     and mkNonterm' (grm, pm) nt = let
+-          val formals = (case (!Options.unitActions, Nonterm.formals nt)
+-		 of (false, _::_) => concat[
+-			" (",
+-			String.concatWithMap ", "
+-			  (fn f => Atom.toString f ^ bindingSuffix)
+-			    (Nonterm.formals nt),
+-			")"
+-		      ]
+-		  | _ => ""
+-		(* end case *))
+-	  val exp = (case Nonterm.prods nt
+-		 of [prod] => mkProd (grm, pm) prod
+-		  | _ => mknProds(grm, pm, nt)
+-		(* end case *))
++          val formals = case !Options.actStyle
++	      of Options.ActNormal =>
++	        if length (Nonterm.formals nt) > 0
++		then " (" ^ (String.concatWith ", "
++			       (map
++				  (fn f => Atom.toString f ^ bindingSuffix)
++				  (Nonterm.formals nt)))
++		     ^ ")"
++		else ""
++	       | _ => ""
++	  val exp = if List.length (Nonterm.prods nt) = 1
++		    then mkProd (grm, pm) (hd (Nonterm.prods nt))
++		    else mknProds(grm, pm, nt)
+           in
+             (NTFnName nt ^ formals, ["strm"], exp)
+           end
+diff --git a/ml-antlr/options.sml b/ml-antlr/options.sml
+index 6b447ae..ee7289c 100644
+--- a/ml-antlr/options.sml
++++ b/ml-antlr/options.sml
+@@ -5,21 +5,22 @@
+  * Processing of command line arguments
+  *)
+ 
+-structure Options =
++structure Options = 
+   struct
+ 
+-    val unitActions 		= ref false
+-    val debug			= ref false
+-    val dotOutput		= ref false
+-    val texOutput		= ref false
+-    val fname			= ref ""
++    datatype action_style = ActNormal | ActUnit | ActDebug
++
++    val actStyle : action_style ref	= ref ActNormal
++    val dotOutput : bool ref		= ref false
++    val texOutput : bool ref		= ref false
++    val fname : string ref		= ref ""
+ 
+   (* process the command line arguments; return true if there is an error *)
+     fun processArgs args = let
+ 	  fun procArg "--dot" = (dotOutput := true; false)
+ 	    | procArg "--latex" = (texOutput := true; false)
+-	    | procArg "--unit-actions" = (unitActions := true; false)
+-	    | procArg "--debug" = (debug := true; false)
++	    | procArg "--unit-actions" = (actStyle := ActUnit; false)
++	    | procArg "--debug" = (actStyle := ActDebug; false)
+ 	    | procArg _ = true
+ 	  in
+ 	    case List.filter procArg args
+diff --git a/ml-ulex/FrontEnds/common/lex-spec.sml b/ml-ulex/FrontEnds/common/lex-spec.sml
+index b9b4e99..99f9c93 100644
+--- a/ml-ulex/FrontEnds/common/lex-spec.sml
++++ b/ml-ulex/FrontEnds/common/lex-spec.sml
+@@ -1,6 +1,6 @@
+ (* lex-spec.sml
+  *
+- * COPYRIGHT (c) 2005
++ * COPYRIGHT (c) 2005 
+  * John Reppy (http://www.cs.uchicago.edu/~jhr)
+  * Aaron Turon (adrassi@gmail.com)
+  * All rights reserved.
+@@ -8,7 +8,7 @@
+  * Input specification to ml-ulex
+  *)
+ 
+-structure LexSpec =
++structure LexSpec = 
+   struct
+ 
+     datatype clamp = CLAMP127 | CLAMP255 | NO_CLAMP
+@@ -52,7 +52,6 @@ structure LexSpec =
+ 
+     fun updHeader (conf, new) = let
+           val Conf {structName, header, startStates, arg, clamp} = conf
+-(* FIXME: we should be reporting an error instead of raising an exception here! *)
+ 	  val _ = if String.size structName > 0
+ 		  then raise Fail "Cannot have both %structure and %header"
+ 		  else ()
+@@ -67,7 +66,6 @@ structure LexSpec =
+ 
+     fun updStructName (conf, new) = let
+           val Conf {structName, header, startStates, arg, clamp} = conf
+-(* FIXME: we should be reporting an error instead of raising an exception here! *)
+ 	  val _ = if String.size header > 0
+ 		  then raise Fail "Cannot have both %structure and %header"
+ 		  else ()
+@@ -147,8 +145,8 @@ structure LexSpec =
+ 	       }
+ 	  fun clearRule (rspec, action) = (rspec, "()")
+           in Spec {
+-	         decls = "fun eof() = ()\ntype lex_result = unit",
+-		 conf = conf',
++	         decls = "fun eof() = ()\ntype lex_result = unit", 
++		 conf = conf', 
+ 		 rules = List.map clearRule rules,
+ 		 eofRules = List.map clearRule eofRules
+                }

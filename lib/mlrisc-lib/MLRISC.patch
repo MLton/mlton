@@ -1250,7 +1250,7 @@ index c6c1eb8..7c0069d 100644
    struct
  
 diff --git a/amd64/mltree/amd64-gen.sml b/amd64/mltree/amd64-gen.sml
-index 7543483..982dae3 100644
+index 2255bcc..1d56946 100644
 --- a/amd64/mltree/amd64-gen.sml
 +++ b/amd64/mltree/amd64-gen.sml
 @@ -9,10 +9,53 @@
@@ -18147,7 +18147,7 @@ index 60a8610..43977b8 100644
 -
 -end (* local *)
 diff --git a/x86/mltree/x86.sml b/x86/mltree/x86.sml
-index b6975c1..3388337 100644
+index 16c7103..050be4a 100644
 --- a/x86/mltree/x86.sml
 +++ b/x86/mltree/x86.sml
 @@ -32,19 +32,77 @@
