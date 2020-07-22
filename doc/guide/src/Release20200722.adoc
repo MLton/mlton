@@ -1,0 +1,80 @@
+Release20200722
+===============
+
+Here you can download the latest public release of MLton, version 20200722.
+
+== Changes since the last public release ==
+
+* Compiler.
+  ** Added expert `-pi-style {default|npi|pic|pie}` and
+  `-native-pic {false|true}` options, which can be used to override a
+  target-determined default.
+  ** Fix a number of instances of excessive live data during
+  compilation.
+  ** Disable `Zone` SSA optimization pass by default; the `Zone` pass
+  is known to not be safe-for-space.
+  ** Statically allocate and initialize some global objects.
+  ** Many updates and improvements to C and LLVM codegens.
+  ** Add new `BounceVars` RSSA optimization pass to split the live
+  ranges of RSSA variables.
+  ** Improve `RssaShrink` optimization.
+  ** Add support for alternate globalization strategies in
+  `ConstantPropagation`.
+  ** Strengthen `Useless` optimization with respect to a number of
+  primitives.
+  ** Add new `DuplicateGlobals` and `SplitTypes` SSA optimization
+  passes.
+  ** Introduce new `Overflow`-checking primitives and remove old
+  `Overflow`-checking primitives and special-case code required (e.g.,
+  `Arith` transfers in IRs) to support them.
+  ** Add parsers for XML, SXML, SSA, and SSA2 IRs.
+* Runtime.
+  ** Detect and report incompatible use of ASLR/PIE on `load-world`.
+  ** Added support for RISC-V architecture.
+* Language.
+* Libraries.
+  ** Basis Library.
+    *** Change `OS.IO.poll` to not be restarted when interrupted by a
+    signal.  (This is consistent with `Socket.select`.)
+    *** Add `MLton.sizeAll: unit -> IntInf.int` that returns the size
+    of reachable live data.
+    *** Change type of `MLton.size` from `'a -> int` to
+    `'a -> IntInf.int`, because with 64-bit systems, the size of a
+    single object can exceed that representable by a signed 32-bit
+    integer.
+  ** Other libraries.
+    *** Updated: ckit library, MLLPT library, MLRISC library, SML/NJ library
+* Tools.
+* Other.
+  ** Updates to simplify porting MLton.
+  ** Support parallel build (i.e., `make -j`).  This mainly supports
+  platforms/packagers that use a parallel `make` by default; it does
+  not obtain significant build speedups.
+  ** Various updates to ``Makefile``s.  See `Makefile.config` for
+  common and user-customizable configuration.
+  ** Characterize MLton-LICENSE as an instance of the Historical
+  Permission Notice and Disclaimer (HPND) license, rather than
+  BSD-style.
+
+For a complete list of changes and bug fixes since
+<:Release20180207:>, see the
+<!ViewGitFile(mlton,on-20200722-release,CHANGELOG.adoc)> and
+<:Bugs20180297:>.
+
+== 20200722 binary packages ==
+
+* AMD64 (aka "x86-64" or "x64")
+** https://sourceforge.net/projects/mlton/files/mlton/20200722/mlton-20200722-1.amd64-darwin.gmp-homebrew.tgz[Darwin (.tgz)] 17.7 (Mac OS X High Sierra), dynamically linked against <:GMP:> in `/usr/local/lib` (suitable for https://brew.sh/[Homebrew] install of <:GMP:>)
+** https://sourceforge.net/projects/mlton/files/mlton/20200722/mlton-20200722-1.amd64-darwin.gmp-static.tgz[Darwin (.tgz)] 17.7 (Mac OS X High Sierra), statically linked against <:GMP:> (but requires <:GMP:> for generated executables)
+** https://sourceforge.net/projects/mlton/files/mlton/20200722/mlton-20200722-1.amd64-linux.tgz[Linux], glibc 2.27 (Ubuntu 18.04)
+
+== 20200722 source packages ==
+
+ * https://sourceforge.net/projects/mlton/files/mlton/20200722/mlton-20200722.src.tgz[mlton-20200722.src.tgz]
+
+== Also see ==
+
+* <:Bugs20200722:>
+* http://www.mlton.org/guide/20200722/[MLton Guide (20200722)].
++
+A snapshot of the MLton website at the time of release.
