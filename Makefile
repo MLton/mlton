@@ -460,7 +460,7 @@ source-release:
 	$(MAKE) MLTON_VERSION=$(MLTON_VERSION) version
 	( cd "$(SRC)/mllex/doc" ; latexmk -pdf mllex ; latexmk -c mllex )
 	$(MAKE) -C "$(SRC)/mllex" mllex.pdf
-	( cd "$(SRC)/mlyacc/doc"; latexmk -pdf mlyaccc ; latexmk -c mlyacc )
+	( cd "$(SRC)/mlyacc/doc"; latexmk -pdf mlyacc ; latexmk -c mlyacc )
 	$(MAKE) -C "$(SRC)/mlyacc" mlyacc.pdf
 	$(MAKE) -C doc/guide
 	$(TAR) cvzf ../mlton-$(MLTON_VERSION).src.tgz \
