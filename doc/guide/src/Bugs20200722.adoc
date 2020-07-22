@@ -1,0 +1,5 @@
+Bugs20200722
+============
+
+Here are the known bugs in <:Release20200722:MLton 20200722>, listed
+in reverse chronological order of date reported.

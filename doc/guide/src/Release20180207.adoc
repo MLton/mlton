@@ -1,7 +1,7 @@
 Release20180207
 ===============
 
-Here you can download the latest public release of MLton, version 20180207.
+This is an archived public release of MLton, version 20180207.
 
 == Changes since the last public release ==
 

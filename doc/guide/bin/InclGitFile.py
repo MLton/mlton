@@ -1,7 +1,7 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 import sys
-import urllib
+import urllib.request
 import re
 
 i = 1
@@ -12,7 +12,7 @@ i += 1
 src = sys.argv[i]
 i += 1
 url = 'https://raw.github.com/MLton/' + repo + '/' + branch + '/' + src
-response = urllib.urlopen(url)
+response = urllib.request.urlopen(url)
 buff = response.readlines()
 
 if len(sys.argv) > i:
@@ -30,5 +30,5 @@ if len(sys.argv) > i:
         i += 1
     buff = newbuff
 
-sys.stdout.writelines(buff)
+sys.stdout.buffer.writelines(buff)
 sys.stdout.flush()

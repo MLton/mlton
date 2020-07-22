@@ -90,8 +90,6 @@ dirs:
 
 .PHONY: docs
 docs:
-	$(MAKE) -C "$(SRC)/mllex" docs
-	$(MAKE) -C "$(SRC)/mlyacc" docs
 	$(MAKE) -C "$(SRC)/doc/guide"
 
 define LIBRARIES_NO_CHECK_TEMPLATE
@@ -433,15 +431,6 @@ install-docs:
 	if [ -d "$(SRC)/doc/guide/localhost" ]; then			\
 		$(CP) "$(SRC)/doc/guide/localhost" "$(TDOC)/guide";	\
 	fi
-	if [ -r "$(SRC)/doc/guide/mlton-guide.pdf" ]; then		\
-		$(CP) "$(SRC)/doc/guide/mlton-guide.pdf" "$(TDOC)/";	\
-	fi
-	if [ -r "mllex/mllex.pdf" ]; then				\
-		$(CP) "mllex/mllex.pdf" "$(TDOC)/";			\
-	fi
-	if [ -r "mlyacc/mlyacc.pdf" ]; then				\
-		$(CP) "mlyacc/mlyacc.pdf" "$(TDOC)/";			\
-	fi
 	(								\
 		cd "$(SRC)/util" &&					\
 		$(FIND) cm2mlb -type f '!' -name .gitignore		\
@@ -458,10 +447,6 @@ install-docs:
 source-release:
 	$(MAKE) clean
 	$(MAKE) MLTON_VERSION=$(MLTON_VERSION) version
-	( cd "$(SRC)/mllex" ; latexmk -pdf lexgen ; latexmk -c lexgen )
-	$(MAKE) -C "$(SRC)/mllex" mllex.pdf
-	( cd "$(SRC)/mlyacc/doc"; latexmk -pdf mlyaccc ; latexmk -c mlyacc )
-	$(MAKE) -C "$(SRC)/mlyacc" mlyacc.pdf
 	$(MAKE) -C doc/guide
 	$(TAR) cvzf ../mlton-$(MLTON_VERSION).src.tgz \
 		--exclude .git --exclude package \

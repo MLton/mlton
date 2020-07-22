@@ -486,6 +486,11 @@ ____
  David MacQueen, Gordon Plotkin, Ravi Sethi.
  <:#POPL:> 1984.
 
+ * <!Anchor(MacQueenEtAl20)>
+ https://doi.org/10.1145/3386336[The History of Standard ML].
+ David MacQueen, Robert Harper, and John Reppy.
+ <:#HOPL:> 2020.
+
  * <!Anchor(Matthews91)>
  http://www.lfcs.inf.ed.ac.uk/reports/91/ECS-LFCS-91-174[A Distributed Concurrent Implementation of Standard ML].
  David Matthews.
@@ -944,6 +949,7 @@ ____
 * <!Anchor(ESOP)> ESOP = European Symposium on Programming
 * <!Anchor(FLOPS)> FLOPS = Symposium on Functional and Logic Programming
 * <!Anchor(FPCA)> FPCA = Conference on Functional Programming Languages and Computer Architecture
+* <!Anchor(HOPL)> HOPL = History of Programming Languages
 * <!Anchor(HOSC)> HOSC = Higher-Order and Symbolic Computation
 * <!Anchor(IC)> IC = Information and Computation
 * <!Anchor(ICCL)> ICCL = IEEE International Conference on Computer Languages

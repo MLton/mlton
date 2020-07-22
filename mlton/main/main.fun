@@ -62,6 +62,8 @@ val cc: string list ref = ref ["cc"]
 val arScript: string ref = ref "<unset>"
 val asOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val ccOpts: {opt: string, pred: OptPred.t} list ref = ref []
+val mathLinkOpt: string ref = ref "-lm"
+val gmpLinkOpt: string ref = ref "-lgmp"
 val linkOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val llvm_as: string ref = ref "llvm-as"
 val llvm_asOpts: {opt: string, pred: OptPred.t} list ref = ref []
@@ -471,6 +473,9 @@ fun makeOptions {usage} =
         boolRef globalizeSmallIntInf),
        (Expert, "globalize-small-type", " {0|1|2|3|4|9}", "globalize small type",
         intRef globalizeSmallType),
+       (Expert, "gmp-link-opt", " <opt>", "link option for GMP library",
+        (SpaceString o tokenizeOpt)
+        (fn s => gmpLinkOpt := s)),
        (Normal, "ieee-fp", " {false|true}", "use strict IEEE floating-point",
         boolRef Native.IEEEFP),
        (Expert, "indentation", " <n>", "indentation level in ILs",
@@ -621,6 +626,9 @@ fun makeOptions {usage} =
             else usage (concat ["invalid -loop-unswitch-limit: ", Int.toString i]))),
        (Expert, "mark-cards", " {true|false}", "mutator marks cards",
         boolRef markCards),
+       (Expert, "math-link-opt", " <opt>", "link option for math library",
+        (SpaceString o tokenizeOpt)
+        (fn s => mathLinkOpt := s)),
        (Expert, "max-function-size", " <n>", "max function size (blocks)",
         intRef maxFunctionSize),
        (Normal, "mlb-path-map", " <file>", "additional MLB path map",
@@ -1139,7 +1147,9 @@ fun commandLine (args: string list): unit =
       val ccOpts = addTargetOpts ccOpts
       val linkOpts = addTargetOpts linkOpts
       val linkOpts =
-         List.map (["mlton", "gdtoa"], fn lib => "-l" ^ mkLibName lib) @ linkOpts
+         List.map (["mlton", "gdtoa"], fn lib => "-l" ^ mkLibName lib)
+         @ [!mathLinkOpt, !gmpLinkOpt]
+         @ linkOpts
       val linkOpts = ("-L" ^ targetLibDir) :: linkOpts
 
       val linkArchives =

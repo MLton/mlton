@@ -107,7 +107,6 @@ wget http://sourceforge.net/projects/mlton/files/mlton/YYYYMMDD/mlton-YYYYMMDD.s
 tar xzvf mlton-YYYYMMDD.src.tgz
 cd mlton-YYYYMMDD
 make binary-release
-cd ..
 ----
 
 * Upload `mlton-YYYYMMDD-1.ARCH-OS.tgz`:
