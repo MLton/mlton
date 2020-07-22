@@ -83,7 +83,6 @@ doit "$lib" \
         -cc-opt '-foptimize-sibling-calls'                       \
         -cc-opt '-w'                                             \
         -cc-opt-quote "-I$lib/include"                           \
-        -link-opt '-lm -lgmp'                                    \
         $gmpCCOpts $gmpLinkOpts                                  \
         -llvm-llc-opt '-O2'                                      \
         -llvm-opt-opt '-mem2reg -O2'                             \
