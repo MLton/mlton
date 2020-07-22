@@ -458,7 +458,7 @@ install-docs:
 source-release:
 	$(MAKE) clean
 	$(MAKE) MLTON_VERSION=$(MLTON_VERSION) version
-	( cd "$(SRC)/mllex" ; latexmk -pdf lexgen ; latexmk -c lexgen )
+	( cd "$(SRC)/mllex/doc" ; latexmk -pdf mllex ; latexmk -c mllex )
 	$(MAKE) -C "$(SRC)/mllex" mllex.pdf
 	( cd "$(SRC)/mlyacc/doc"; latexmk -pdf mlyaccc ; latexmk -c mlyacc )
 	$(MAKE) -C "$(SRC)/mlyacc" mlyacc.pdf
