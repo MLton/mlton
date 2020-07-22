@@ -8,7 +8,7 @@ export LC_ALL = C
 NULL :=
 
 ASCIIDOC := asciidoc
-ifneq ($(shell which $(ASCIIDOC) 2> /dev/null),)
+ifeq (true, $(call HAVE_CMD,$(ASCIIDOC)))
 ASCIIDOC_CONF_DIR := $(shell $(ASCIIDOC) -v /dev/null 2>&1 | head -n 1 | sed 's|.*reading: \(.*\)/asciidoc.conf|\1|')
 else
 ASCIIDOC_CONF_DIR :=
@@ -45,11 +45,11 @@ LOCALHOST_TORM := $(filter-out $(LOCALHOST),$(shell if [ -d localhost ]; then fi
 
 
 ALL :=
-ifneq ($(shell which $(ASCIIDOC) 2> /dev/null),)
-ifneq ($(shell which pygmentize 2> /dev/null),)
+ifeq (true, $(call HAVE_CMD,$(ASCIIDOC)))
+ifeq (true, $(call HAVE_CMD,pygmentize))
 ALL += $(LOCALHOST) localhost-rm
 endif
-ifneq ($(shell which $(DBLATEX) 2> /dev/null),)
+ifeq (true, $(call HAVE_CMD,$(DBLATEX)))
 ALL += mlton-guide.pdf
 endif
 endif
@@ -58,10 +58,10 @@ endif
 all: $(ALL)
 
 
-ifneq ($(shell which gm 2> /dev/null),)
+ifeq (true, $(call HAVE_CMD,gm))
 CONVERT := gm convert
 else
-ifneq ($(shell which convert 2> /dev/null),)
+ifeq (true, $(call HAVE_CMD,convert))
 CONVERT := convert
 else
 CONVERT := no-convert
