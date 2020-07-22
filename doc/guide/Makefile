@@ -49,9 +49,6 @@ ifeq (true, $(call HAVE_CMD,$(ASCIIDOC)))
 ifeq (true, $(call HAVE_CMD,pygmentize))
 ALL += $(LOCALHOST) localhost-rm
 endif
-ifeq (true, $(call HAVE_CMD,$(DBLATEX)))
-ALL += mlton-guide.pdf
-endif
 endif
 
 
