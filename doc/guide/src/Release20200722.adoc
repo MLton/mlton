@@ -50,7 +50,7 @@ Here you can download the latest public release of MLton, version 20200722.
   ** Support parallel build (i.e., `make -j`).  This mainly supports
   platforms/packagers that use a parallel `make` by default; it does
   not obtain significant build speedups.
-  ** Various updates to ``Makefile``s.  See `Makefile.config` for
+  ** Various updates to `Makefile`-s.  See `Makefile.config` for
   common and user-customizable configuration.
   ** Characterize MLton-LICENSE as an instance of the Historical
   Permission Notice and Disclaimer (HPND) license, rather than
@@ -59,7 +59,7 @@ Here you can download the latest public release of MLton, version 20200722.
 For a complete list of changes and bug fixes since
 <:Release20180207:>, see the
 <!ViewGitFile(mlton,on-20200722-release,CHANGELOG.adoc)> and
-<:Bugs20180297:>.
+<:Bugs20180207:>.
 
 == 20200722 binary packages ==
 
