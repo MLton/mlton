@@ -1,4 +1,4 @@
-/* Copyright (C) 2018 Matthew Fluet.
+/* Copyright (C) 2018,2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -6,6 +6,7 @@
  * See the file MLton-LICENSE for details.
  */
 
+#define MLTON_UTIL
 #include "util.h"
 
 #include "util/die.c"
