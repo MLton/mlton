@@ -9,6 +9,10 @@ void *GC_mmapAnon (void *start, size_t length) {
         return Windows_mmapAnon (start, length);
 }
 
+void *GC_mmapAnonFlags (void *start, size_t length, __attribute__ ((unused)) int flags) {
+        return GC_mmapAnon(start, length);
+}
+
 void GC_release (void *base, size_t length) {
         Windows_release (base, length);
 }
