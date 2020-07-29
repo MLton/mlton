@@ -64,8 +64,10 @@ For a complete list of changes and bug fixes since
 == 20200722 binary packages ==
 
 * AMD64 (aka "x86-64" or "x64")
-** https://sourceforge.net/projects/mlton/files/mlton/20200722/mlton-20200722-1.amd64-darwin.gmp-homebrew.tgz[Darwin (.tgz)] 17.7 (Mac OS X High Sierra), dynamically linked against <:GMP:> in `/usr/local/lib` (suitable for https://brew.sh/[Homebrew] install of <:GMP:>)
-** https://sourceforge.net/projects/mlton/files/mlton/20200722/mlton-20200722-1.amd64-darwin.gmp-static.tgz[Darwin (.tgz)] 17.7 (Mac OS X High Sierra), statically linked against <:GMP:> (but requires <:GMP:> for generated executables)
+** https://sourceforge.net/projects/mlton/files/mlton/20200722/mlton-20200722-1.amd64-darwin.gmp-homebrew.tgz[Darwin (.tgz)] 19.6 (Mac OS X Catalina), dynamically linked against <:GMP:> in `/usr/local/lib` (suitable for https://brew.sh/[Homebrew] install of <:GMP:>)
+** https://sourceforge.net/projects/mlton/files/mlton/20200722/mlton-20200722-1.amd64-darwin.gmp-static.tgz[Darwin (.tgz)] 19.6 (Mac OS X Catalina), statically linked against <:GMP:> (but requires <:GMP:> for generated executables)
+** https://sourceforge.net/projects/mlton/files/mlton/20200722/mlton-20200722-1.amd64-darwin-17.7.gmp-homebrew.tgz[Darwin (.tgz)] 17.7 (Mac OS X High Sierra), dynamically linked against <:GMP:> in `/usr/local/lib` (suitable for https://brew.sh/[Homebrew] install of <:GMP:>)
+** https://sourceforge.net/projects/mlton/files/mlton/20200722/mlton-20200722-1.amd64-darwin-17.7.gmp-static.tgz[Darwin (.tgz)] 17.7 (Mac OS X High Sierra), statically linked against <:GMP:> (but requires <:GMP:> for generated executables)
 ** https://sourceforge.net/projects/mlton/files/mlton/20200722/mlton-20200722-1.amd64-linux.tgz[Linux], glibc 2.27 (Ubuntu 18.04)
 
 == 20200722 source packages ==
