@@ -72,26 +72,25 @@ fun shrinkFunction {main: Function.t, statics: {dst: Var.t * Type.t, obj: Object
                Vector.foreach
                (blocks, fn Block.T {args, kind, label, statements, transfer} =>
                 case transfer of
-                   Transfer.Goto {args = dstArgs, dst, ...} =>
+                   Transfer.Goto {args = gotoArgs, dst, ...} =>
                       let
                          val {replace, ...} = labelInfo label
-                         val {inline, occurrences, ...} = labelInfo dst
+                         val {inline = dstInline,
+                              occurrences = dstOccurrences, ...} = labelInfo dst
                       in
-                         if 1 = !occurrences
-                            then inline := true
-                            else
-                               case (Vector.isEmpty statements, kind) of
-                                  (true, Kind.Jump) =>
-                                     if Vector.length args = Vector.length dstArgs
-                                        andalso Vector.forall2 (args, dstArgs,
-                                                                fn ((v, _), oper) =>
-                                                                case oper of
-                                                                   Operand.Var {var = v', ...} =>
-                                                                      Var.equals (v, v')
-                                                                 | _ => false)
-                                        then replace := SOME dst
-                                        else ()
-                                | _ => ()
+                         if Vector.isEmpty statements
+                            andalso Kind.isJump kind
+                            andalso Vector.length args = Vector.length gotoArgs
+                            andalso Vector.forall2 (args, gotoArgs,
+                                                    fn ((x, _), oper) =>
+                                                    case oper of
+                                                       Operand.Var {var = x', ...} =>
+                                                          Var.equals (x, x')
+                                                     | _ => false)
+                            then replace := SOME dst
+                         else if 1 = !dstOccurrences
+                            then dstInline := true
+                         else ()
                       end
                  | _ => ())
             val () =
