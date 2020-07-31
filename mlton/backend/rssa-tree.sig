@@ -143,6 +143,7 @@ signature RSSA_TREE =
 
             datatype frameStyle = None | OffsetsAndSize | SizeOnly
             val frameStyle: t -> frameStyle
+            val isJump: t -> bool
             val layout: t -> Layout.t
          end
 

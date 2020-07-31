@@ -486,6 +486,11 @@ structure Kind =
        | Handler
        | Jump
 
+      fun isJump k =
+         case k of
+            Jump => true
+          | _ => false
+
       fun layout k =
          let
             open Layout

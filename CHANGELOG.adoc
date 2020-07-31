@@ -1,5 +1,17 @@
 = CHANGELOG
 
+== Version YYYYMMDD
+
+Here are the changes from version 20200722 to version YYYYMMDD.
+
+=== Summary
+
+=== Details
+
+* 2020-07-30
+  ** Fix bug in jump-chaining optimization of `RssaShrink` that would
+  result in an unbound variable and an internal compiler error.
+
 == Version 20200722
 
 Here are the changes from version 20180206 to version 20200722.
