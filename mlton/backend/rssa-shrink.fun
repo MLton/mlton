@@ -22,10 +22,18 @@ end
 fun shrinkFunction {main: Function.t, statics: {dst: Var.t * Type.t, obj: Object.t} vector}:
    {main: unit -> Function.t, shrink: Function.t -> Function.t} =
    let
-      val {get = replaceVar: Var.t -> Operand.t,
-           set = setReplaceVar, ...} =
-         Property.getSetOnce
-         (Var.plist, Property.initRaise ("RssaShrink.replaceVar", Var.layout))
+      val {get = varInfo: Var.t -> {occurrences: int ref,
+                                    replace: Operand.t option ref}, ...} =
+         Property.get
+         (Var.plist, Property.initFun (fn _ => {occurrences = ref 0,
+                                                replace = ref NONE}))
+      fun visitVar x = Int.inc (#occurrences (varInfo x))
+      fun replaceVar x =
+         case !(#replace (varInfo x)) of
+            NONE => Error.bug (concat ["RssaShrink.replaceVar ", Var.toString x])
+          | SOME oper => oper
+      fun setReplaceVar (x, oper) =
+         #replace (varInfo x) := SOME oper
       fun dontReplaceVar (x: Var.t, t: Type.t): unit =
          setReplaceVar (x, Operand.Var {var = x, ty = t})
       val setReplaceVar = fn (x: Var.t, t: Type.t, z: Operand.t) =>
@@ -66,8 +74,13 @@ fun shrinkFunction {main: Function.t, statics: {dst: Var.t * Type.t, obj: Object
             val () = visitLabel start
             val () =
                Vector.foreach
-               (blocks, fn Block.T {transfer, ...} =>
-                Transfer.foreachLabel (transfer, visitLabel))
+               (blocks, fn Block.T {statements, transfer, ...} =>
+                (Vector.foreach
+                 (statements, fn stmt =>
+                  Statement.foreachUse (stmt, visitVar))
+                 ; Transfer.foreachLabelUse (transfer,
+                                             {label = visitLabel,
+                                              use = visitVar})))
             val () =
                Vector.foreach
                (blocks, fn Block.T {args, kind, label, statements, transfer} =>
@@ -80,13 +93,14 @@ fun shrinkFunction {main: Function.t, statics: {dst: Var.t * Type.t, obj: Object
                       in
                          if Vector.isEmpty statements
                             andalso Kind.isJump kind
-                            andalso Vector.length args = Vector.length gotoArgs
-                            andalso Vector.forall2 (args, gotoArgs,
-                                                    fn ((x, _), oper) =>
-                                                    case oper of
-                                                       Operand.Var {var = x', ...} =>
-                                                          Var.equals (x, x')
-                                                     | _ => false)
+                            andalso Vector.equals
+                                    (args, gotoArgs, fn ((x, _), oper) =>
+                                     !(#occurrences (varInfo x)) = 1
+                                     andalso
+                                     (case oper of
+                                         Operand.Var {var = x', ...} =>
+                                            Var.equals (x, x')
+                                       | _ => false))
                             then replace := SOME dst
                          else if 1 = !dstOccurrences
                             then dstInline := true
