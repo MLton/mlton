@@ -4,11 +4,11 @@
 
 #include "platform/diskBack.unix.c"
 #include "platform/float-math.c"
-#include "platform/mmap.c"
 #include "platform/mmap-protect.c"
 #include "platform/nonwin.c"
 #include "platform/sysconf.c"
 #include "platform/setenv.putenv.c"
+#include "platform/use-mmap.c"
 
 #ifdef __sparc__
 int fegetround (void) {
@@ -60,22 +60,4 @@ static void catcher (__attribute__ ((unused)) int signo,
 void GC_setSigProfHandler (struct sigaction *sa) {
         sa->sa_flags = SA_ONSTACK | SA_RESTART | SA_SIGINFO;
         sa->sa_sigaction = (void (*)(int, siginfo_t*, void*))catcher;
-}
-
-/* On Solaris 5.7, MAP_ANON causes EINVAL and mmap requires a file descriptor.
- */
-void *GC_mmapAnon (void *start, size_t length) {
-        static int fd = -1;
-
-        if (-1 == fd)
-                fd = open ("/dev/zero", O_RDONLY);
-        return mmap (start, length, PROT_READ | PROT_WRITE, MAP_PRIVATE, fd, 0);
-}
-
-void *GC_mmapAnonFlags (void *start, size_t length, __attribute__ ((unused)) int flags) {
-        return GC_mmapAnon(start, length);
-}
-
-void GC_release (void *base, size_t length) {
-        munmap_safe (base, length);
 }
