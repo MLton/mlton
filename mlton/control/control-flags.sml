@@ -1357,7 +1357,7 @@ structure PositionIndependentStyle =
 
       fun fromString s =
          case s of
-            "static" => SOME NPI
+            "npi" => SOME NPI
           | "pic" => SOME PIC
           | "pie" => SOME PIE
           | _ => NONE
