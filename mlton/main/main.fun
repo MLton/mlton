@@ -155,7 +155,7 @@ fun setTargetType (target: string, usage): unit =
             ; Target.os := os
          end
 
-fun hasCodegen (cg) =
+fun hasCodegen (cg, {default}) =
    let
       datatype z = datatype Control.Target.arch
       datatype z = datatype Control.Target.os
@@ -169,10 +169,10 @@ fun hasCodegen (cg) =
        | X86 => (case cg of
                     AMD64Codegen => false
                   | X86Codegen =>
+                      not default
+                      orelse
                       (* Darwin PIC doesn't work *)
-                      !Control.Target.os <> Darwin orelse
-                      !Control.format = Executable orelse
-                      !Control.format = Archive
+                      !Control.Target.os <> Darwin
                   | _ => true)
        | _ => (case cg of
                   AMD64Codegen => false
@@ -183,8 +183,8 @@ fun hasNativeCodegen () =
    let
       datatype z = datatype Control.codegen
    in
-      hasCodegen AMD64Codegen
-      orelse hasCodegen X86Codegen
+      hasCodegen (AMD64Codegen, {default = true})
+      orelse hasCodegen (X86Codegen, {default = true})
    end
 
 
@@ -314,7 +314,7 @@ fun makeOptions {usage} =
                   fn cg =>
                   case cg of
                      Native => if hasNativeCodegen () then SOME "native" else NONE
-                   | Explicit cg => if hasCodegen cg
+                   | Explicit cg => if hasCodegen (cg, {default = true})
                                        then SOME (Control.Codegen.toString cg)
                                     else NONE),
                  "|"),
@@ -1055,15 +1055,15 @@ fun commandLine (args: string list): unit =
       val () =
          codegen := (case !explicitCodegen of
                         NONE =>
-                           if hasCodegen AMD64Codegen
+                           if hasCodegen (AMD64Codegen, {default = true})
                               then AMD64Codegen
-                           else if hasCodegen X86Codegen
+                           else if hasCodegen (X86Codegen, {default = true})
                               then X86Codegen
                            else CCodegen
                       | SOME Native =>
-                           if hasCodegen AMD64Codegen
+                           if hasCodegen (AMD64Codegen, {default = false})
                               then AMD64Codegen
-                           else if hasCodegen X86Codegen
+                           else if hasCodegen (X86Codegen, {default = false})
                               then X86Codegen
                            else usage (concat ["can't use native codegen on ",
                                                MLton.Platform.Arch.toString targetArch,
@@ -1165,7 +1165,7 @@ fun commandLine (args: string list): unit =
       val llvm_optOpts = addTargetOpts llvm_optOpts
 
       val _ =
-         if not (hasCodegen (!codegen))
+         if not (hasCodegen (!codegen, {default = false}))
             then usage (concat ["can't use ",
                                 Control.Codegen.toString (!codegen),
                                 " codegen on ",
