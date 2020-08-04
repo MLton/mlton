@@ -63,9 +63,7 @@ OpenBSD*)
 ;;
 SunOS)
         HOST_OS='solaris'
-	for arch in sparc amd64 i386 `uname -m`; do
-	        optisa $arch > /dev/null && break
-	done
+        arch=`isainfo -k`
 ;;
 *)
         die "Unknown OS $uname."

@@ -75,7 +75,9 @@ extern char **environ;
 /*                  MLton.Syslog                     */
 /* ------------------------------------------------- */
 
+#ifndef LOG_AUTHPRIV
 #define LOG_AUTHPRIV LOG_AUTH
+#endif
 #define LOG_PERROR 0
 
 
