@@ -1516,15 +1516,16 @@ struct
                                  
                                  (* how to access imported functions: *)
                                  (* Windows rewrites the symbol __imp__name *)
-                                 val coff = fn () => Label.fromString ("_imp__" ^ name)
+                                 val coff_cygwin = fn () => Label.fromString ("_imp__" ^ name)
+                                 val coff_mingw = fn () => Label.fromString ("__imp_" ^ name)
                                  val macho = fn () => label () (* @PLT is implicit *)
                                  val elf = fn () => Label.fromString (name ^ "@PLT")
                                  
                                  val importLabel = fn () =>
                                     case !Control.Target.os of
-                                       Cygwin => coff ()
+                                       Cygwin => coff_cygwin ()
                                      | Darwin => macho ()
-                                     | MinGW => coff ()
+                                     | MinGW => coff_mingw ()
                                      |  _ => elf ()
                                  
                                  val direct = fn () =>
