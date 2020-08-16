@@ -52,8 +52,8 @@ ReleaseChecklist
 git clone http://github.com/MLton/mlton mlton.git
 cd mlton.git
 git checkout master
-git tag -a -m "Tagging YYYYMMDD release" on-YYYYMMDD-release master
-git push origin on-YYYYMMDD-release
+git tag -a -m "Tagging ${YYYYMMDD} release" on-${YYYYMMDD}-release master
+git push origin on-${YYYYMMDD}-release
 ----
 
 == Packaging ==
@@ -75,25 +75,25 @@ sftp> quit
 ----
 git clone http://github.com/MLton/mlton mlton
 cd mlton
-git checkout on-YYYYMMDD-release
-make MLTON_VERSION=YYYYMMDD source-release
+git checkout on-${YYYYMMDD}-release
+make MLTON_VERSION=${YYYYMMDD} source-release
 cd ..
 ----
 +
 or
 +
 ----
-wget https://github.com/MLton/mlton/archive/on-YYYYMMDD-release.tar.gz
-tar xzvf on-YYYYMMDD-release.tar.gz
-cd mlton-on-YYYYMMDD-release
-make MLTON_VERSION=YYYYMMDD source-release
+wget https://github.com/MLton/mlton/archive/on-${YYYYMMDD}-release.tar.gz
+tar xzvf on-${YYYYMMDD}-release.tar.gz
+cd mlton-on-${YYYYMMDD}-release
+make MLTON_VERSION=${YYYYMMDD} source-release
 cd ..
 ----
 
 * Upload `mlton-YYYYMMDD.src.tgz`:
 +
 -----
-scp mlton-YYYYMMDD.src.tgz user@frs.sourceforge.net:/home/frs/project/mlton/mlton/YYYYMMDD/
+scp mlton-${YYYYMMDD}.src.tgz user@frs.sourceforge.net:/home/frs/project/mlton/mlton/${YYYYMMDD}/
 -----
 
 * Update *ReleaseYYYYMMDD* with `mlton-YYYYMMDD.src.tgz` link.
@@ -103,16 +103,16 @@ scp mlton-YYYYMMDD.src.tgz user@frs.sourceforge.net:/home/frs/project/mlton/mlto
 * Build and create `mlton-YYYYMMDD-1.ARCH-OS.tgz`:
 +
 ----
-wget http://sourceforge.net/projects/mlton/files/mlton/YYYYMMDD/mlton-YYYYMMDD.src.tgz
-tar xzvf mlton-YYYYMMDD.src.tgz
-cd mlton-YYYYMMDD
+wget http://sourceforge.net/projects/mlton/files/mlton/${YYYYMMDD}/mlton-${YYYYMMDD}.src.tgz
+tar xzvf mlton-${YYYYMMDD}.src.tgz
+cd mlton-${YYYYMMDD}
 make binary-release
 ----
 
 * Upload `mlton-YYYYMMDD-1.ARCH-OS.tgz`:
 +
 -----
-scp mlton-YYYYMMDD-1.ARCH-OS.tgz user@frs.sourceforge.net:/home/frs/project/mlton/mlton/YYYYMMDD/
+scp mlton-${YYYYMMDD}-1.ARCH-OS.tgz user@frs.sourceforge.net:/home/frs/project/mlton/mlton/${YYYYMMDD}/
 -----
 
 * Update *ReleaseYYYYMMDD* with `mlton-YYYYMMDD-1.ARCH-OS.tgz` link.
@@ -123,14 +123,14 @@ scp mlton-YYYYMMDD-1.ARCH-OS.tgz user@frs.sourceforge.net:/home/frs/project/mlto
 * Shell commands:
 +
 ----
-wget http://sourceforge.net/projects/mlton/files/mlton/YYYYMMDD/mlton-YYYYMMDD.src.tgz
-tar xzvf mlton-YYYYMMDD.src.tgz
-cd mlton-YYYYMMDD
+wget http://sourceforge.net/projects/mlton/files/mlton/${YYYYMMDD}/mlton-${YYYYMMDD}.src.tgz
+tar xzvf mlton-${YYYYMMDD}.src.tgz
+cd mlton-${YYYYMMDD}
 cd doc/guide
-cp -prf localhost YYYYMMDD
-tar czvf guide-YYYYMMDD.tgz YYYYMMDD
-rsync -avzP --delete -e ssh YYYYMMDD user@web.sourceforge.net:/home/project-web/mlton/htdocs/guide/
-rsync -avzP --delete -e ssh guide-YYYYMMDD.tgz user@web.sourceforge.net:/home/project-web/mlton/htdocs/guide/
+cp -prf localhost ${YYYYMMDD}
+tar czvf guide-${YYYYMMDD}.tgz ${YYYYMMDD}
+rsync -avzP --delete -e ssh ${YYYYMMDD} user@web.sourceforge.net:/home/project-web/mlton/htdocs/guide/
+rsync -avzP --delete -e ssh guide-${YYYYMMDD}.tgz user@web.sourceforge.net:/home/project-web/mlton/htdocs/guide/
 ----
 
 == Announce release ==
