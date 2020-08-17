@@ -1,7 +1,20 @@
-Release20200722
+Release20200817
 ===============
 
-Here you can download the latest public release of MLton, version 20200722.
+Here you can download the latest public release of MLton, version 20200817.
+
+== Changes since <:Release20200722:MLton 20200722> ==
+
+* Compiler.
+  ** Fixed bug in `RssaShrink` optimization that would result in an unbound
+  variable and an internal compiler error.
+* Other.
+  ** Fixes for Solaris and MinGW platforms.
+
+For a complete list of changes and bug fixes since
+<:Release20180207:>, see the
+<!ViewGitFile(mlton,on-20200817-release,CHANGELOG.adoc)> and
+<:Bugs20180207:>.
 
 == Changes since <:Release20180207:MLton 20180207> ==
 
@@ -58,25 +71,25 @@ Here you can download the latest public release of MLton, version 20200722.
 
 For a complete list of changes and bug fixes since
 <:Release20180207:>, see the
-<!ViewGitFile(mlton,on-20200722-release,CHANGELOG.adoc)> and
+<!ViewGitFile(mlton,on-20200817-release,CHANGELOG.adoc)> and
 <:Bugs20180207:>.
 
-== 20200722 binary packages ==
+== 20200817 binary packages ==
 
 * AMD64 (aka "x86-64" or "x64")
-** https://sourceforge.net/projects/mlton/files/mlton/20200722/mlton-20200722-1.amd64-darwin.gmp-homebrew.tgz[Darwin (.tgz)] 19.6 (Mac OS X Catalina), dynamically linked against <:GMP:> in `/usr/local/lib` (suitable for https://brew.sh/[Homebrew] install of <:GMP:>)
-** https://sourceforge.net/projects/mlton/files/mlton/20200722/mlton-20200722-1.amd64-darwin.gmp-static.tgz[Darwin (.tgz)] 19.6 (Mac OS X Catalina), statically linked against <:GMP:> (but requires <:GMP:> for generated executables)
-** https://sourceforge.net/projects/mlton/files/mlton/20200722/mlton-20200722-1.amd64-darwin-17.7.gmp-homebrew.tgz[Darwin (.tgz)] 17.7 (Mac OS X High Sierra), dynamically linked against <:GMP:> in `/usr/local/lib` (suitable for https://brew.sh/[Homebrew] install of <:GMP:>)
-** https://sourceforge.net/projects/mlton/files/mlton/20200722/mlton-20200722-1.amd64-darwin-17.7.gmp-static.tgz[Darwin (.tgz)] 17.7 (Mac OS X High Sierra), statically linked against <:GMP:> (but requires <:GMP:> for generated executables)
-** https://sourceforge.net/projects/mlton/files/mlton/20200722/mlton-20200722-1.amd64-linux.tgz[Linux], glibc 2.27 (Ubuntu 18.04)
+** https://sourceforge.net/projects/mlton/files/mlton/20200817/mlton-20200817-1.amd64-darwin-19.6.gmp-homebrew.tgz[Darwin (.tgz)] 19.6 (Mac OS X Catalina), dynamically linked against <:GMP:> in `/usr/local/lib` (suitable for https://brew.sh/[Homebrew] install of <:GMP:>)
+** https://sourceforge.net/projects/mlton/files/mlton/20200817/mlton-20200817-1.amd64-darwin-19.6.gmp-static.tgz[Darwin (.tgz)] 19.6 (Mac OS X Catalina), statically linked against <:GMP:> (but requires <:GMP:> for generated executables)
+** https://sourceforge.net/projects/mlton/files/mlton/20200817/mlton-20200817-1.amd64-darwin-17.7.gmp-homebrew.tgz[Darwin (.tgz)] 17.7 (Mac OS X High Sierra), dynamically linked against <:GMP:> in `/usr/local/lib` (suitable for https://brew.sh/[Homebrew] install of <:GMP:>)
+** https://sourceforge.net/projects/mlton/files/mlton/20200817/mlton-20200817-1.amd64-darwin-17.7.gmp-static.tgz[Darwin (.tgz)] 17.7 (Mac OS X High Sierra), statically linked against <:GMP:> (but requires <:GMP:> for generated executables)
+** https://sourceforge.net/projects/mlton/files/mlton/20200817/mlton-20200817-1.amd64-linux.tgz[Linux], glibc 2.27 (Ubuntu 18.04)
 
-== 20200722 source packages ==
+== 20200817 source packages ==
 
- * https://sourceforge.net/projects/mlton/files/mlton/20200722/mlton-20200722.src.tgz[mlton-20200722.src.tgz]
+ * https://sourceforge.net/projects/mlton/files/mlton/20200817/mlton-20200817.src.tgz[mlton-20200817.src.tgz]
 
 == Also see ==
 
-* <:Bugs20200722:>
-* http://www.mlton.org/guide/20200722/[MLton Guide (20200722)].
+* <:Bugs20200817:>
+* http://www.mlton.org/guide/20200817/[MLton Guide (20200817)].
 +
 A snapshot of the MLton website at the time of release.

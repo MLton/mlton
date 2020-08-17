@@ -17,6 +17,8 @@ a lexer generator, a parser generator, and a profiler.
 
 == What's new? ==
 
+* 20200817: Please try out our latest release, <:Release20200817:MLton 20200817>.
+
 * 20200722: Please try out our latest release, <:Release20200722:MLton 20200722>.
 
 * 20180207: Please try out our latest release, <:Release20180207:MLton 20180207>.

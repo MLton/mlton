@@ -1,10 +1,16 @@
 = CHANGELOG
 
-== Version YYYYMMDD
+== Version 20200817
 
-Here are the changes from version 20200722 to version YYYYMMDD.
+Here are the changes from version 20200722 to version 20200817
 
 === Summary
+
+* Compiler
+  ** Fixed bug in `RssaShrink` optimization that would result in an unbound
+  variable and an internal compiler error.
+* Other.
+  ** Fixes for Solaris and MinGW platforms.
 
 === Details
 
