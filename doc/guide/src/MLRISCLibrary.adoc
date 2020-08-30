@@ -61,7 +61,7 @@ deriving the `.mlb` files from the `.cm` files:
 * eliminate sequential `withtype` expansions: Most could be rewritten as a sequence of type definitions and datatype definitions.
 * eliminate higher-order functors: Every higher-order functor definition and application could be uncurried in the obvious way.
 * eliminate `where <str> = <str>`: Quite painful to expand out all the flexible types in the respective structures.  Furthermore, many of the implied type equalities aren't needed, but it's too hard to pick out the right ones.
-* `library/array-noneq.sml` (added, not exported): Implements `signature ARRAY_NONEQ`, similar to `signature ARRAY` from the <:BasisLibrary:Basis Library>, but replacing the latter's `eqtype 'a array = 'a array` and `type 'a vector = 'a Vector.vector` with `type 'a array` and `type 'a vector`.  Thus, array-like containers may match `ARRAY_NONEQ`, whereas only the pervasive `'a array` container may math `ARRAY`.  (SML/NJ's implementation of `signature ARRAY` omits the type realizations.)
+* `library/array-noneq.sml` (added, not exported): Implements `signature ARRAY_NONEQ`, similar to `signature ARRAY` from the <:BasisLibrary:Basis Library>, but replacing the latter's `eqtype 'a array = 'a array` and `type 'a vector = 'a Vector.vector` with `type 'a array` and `type 'a vector`.  Thus, array-like containers may match `ARRAY_NONEQ`, whereas only the pervasive `'a array` container may match `ARRAY`.  (SML/NJ's implementation of `signature ARRAY` omits the type realizations.)
 * `library/dynamic-array.sml` and `library/hash-array.sml` (modifed): Replace `include ARRAY` with `include ARRAY_NONEQ`; see above.
 
 == Patch ==
