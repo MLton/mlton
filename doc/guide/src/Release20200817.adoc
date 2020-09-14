@@ -82,9 +82,24 @@ For a complete list of changes and bug fixes since
 ** https://sourceforge.net/projects/mlton/files/mlton/20200817/mlton-20200817-1.amd64-darwin-17.7.gmp-homebrew.tgz[Darwin (.tgz)] 17.7 (Mac OS X High Sierra), dynamically linked against <:GMP:> in `/usr/local/lib` (suitable for https://brew.sh/[Homebrew] install of <:GMP:>)
 ** https://sourceforge.net/projects/mlton/files/mlton/20200817/mlton-20200817-1.amd64-darwin-17.7.gmp-static.tgz[Darwin (.tgz)] 17.7 (Mac OS X High Sierra), statically linked against <:GMP:> (but requires <:GMP:> for generated executables)
 ** https://sourceforge.net/projects/mlton/files/mlton/20200817/mlton-20200817-1.amd64-linux.tgz[Linux (.tgz)], glibc 2.27 (Ubuntu 18.04)
-** https://sourceforge.net/projects/mlton/files/mlton/20200817/mlton-20200817-amd64-mingw.gmp-static.tgz[MinGW (.tgz)], gcc 10.1.0, statically linked against <:GMP:>; see http://projects.laas.fr/tina/software.php for details and installation instructions
+** https://sourceforge.net/projects/mlton/files/mlton/20200817/mlton-20200817-amd64-mingw.tgz[MinGW (.tgz)], gcc 10.1.0, statically linked against <:GMP:>; contributed by Bernard Berthomieu; see http://projects.laas.fr/tina/software.php for details and installation instructions
+** https://sourceforge.net/projects/mlton/files/mlton/20200817/mlton-20200817-amd64-mingw-gmp-dynamic.tgz[MinGW (.tgz)], gcc 10.1.0, dynamically linked against <:GMP:>; contributed by Bernard Berthomieu; see http://projects.laas.fr/tina/software.php for details and installation instructions
+** https://sourceforge.net/projects/mlton/files/mlton/20200817/mlton-20200817-amd64-solaris-gmp-dynamic.tgz[Solaris (.tgz)] 11.4, dynamically linked against <:GMP:>; contributed by Bernard Berthomieu
 * x86
-** https://sourceforge.net/projects/mlton/files/mlton/20200817/mlton-20200817-x86-mingw.gmp-static.tgz[MinGW (.tgz)], gcc 10.1.0, statically linked against <:GMP:>; see http://projects.laas.fr/tina/software.php for details and installation instructions
+** https://sourceforge.net/projects/mlton/files/mlton/20200817/mlton-20200817-x86-mingw.tgz[MinGW (.tgz)], gcc 10.1.0, statically linked against <:GMP:>; contributed by Bernard Berthomieu; see http://projects.laas.fr/tina/software.php for details and installation instructions
+** https://sourceforge.net/projects/mlton/files/mlton/20200817/mlton-20200817-x86-mingw-gmp-dynamic.tgz[MinGW (.tgz)], gcc 10.1.0, dynamically linked against <:GMP:>; contributed by Bernard Berthomieu; see http://projects.laas.fr/tina/software.php for details and installation instructions
+** https://sourceforge.net/projects/mlton/files/mlton/20200817/mlton-20200817-x86-solaris-gmp-dynamic.tgz[Solaris (.tgz)] 11.4, dynamically linked against <:GMP:>; contributed by Bernard Berthomieu
+
+=== Binary packages available at other sites
+
+* http://projects.laas.fr/tina/software.php[TINA toolbox]: Includes binary
+  releases for: amd64-darwin Mac OS X Sierra (both statically and dynamically
+  linked against <:GMP:>), amd64-linux Ubuntu 14 (both statically and
+  dynamically linked against <:GMP:>), amd64-mingw and x86-mingw MSys2 (both
+  statically and dynamically linked against <:GMP:>), amd64-solaris and
+  x86-solaris Solaris 11.4 (both statically and dynamically linked against
+  <:GMP:>), and x86-linux Ubuntu 16 (both statically and dynamically linked
+  against <:GMP:>).
 
 == 20200817 source packages ==
 
