@@ -1,5 +1,16 @@
 = CHANGELOG
 
+== Version YYYYMMDD
+
+Here are the changes from version 20200817 to version YYYYMMDD.
+
+=== Summary
+
+=== Details
+
+* 2020-09-20
+  ** Fix bug in handling of weak objects during mark-compact GC.
+
 == Version 20200817
 
 Here are the changes from version 20200722 to version 20200817

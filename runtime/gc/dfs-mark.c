@@ -1,4 +1,4 @@
-/* Copyright (C) 2012,2016,2019 Matthew Fluet.
+/* Copyright (C) 2012,2016,2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -174,7 +174,8 @@ markNextInNormal:
       if (DEBUG_WEAK)
         fprintf (stderr, "marking weak "FMTPTR" ",
                  (uintptr_t)w);
-      if (isObjptrInHeap (s, w->objptr)) {
+      if (isObjptr (w->objptr) and
+          isObjptrInHeap (s, w->objptr)) {
         if (DEBUG_WEAK)
           fprintf (stderr, "linking\n");
         w->link = s->weaks;
