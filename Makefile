@@ -372,36 +372,38 @@ endif
 .PHONY: install
 install: install-no-strip install-strip
 
-MAN_PAGES :=  \
+MAN_PAGES := mlton.1
+MAN_PAGES := $(MAN_PAGES) \
 	mllex.1 \
 	mlnlffigen.1 \
 	mlprof.1 \
-	mlton.1 \
 	mlyacc.1
 
 .PHONY: install-no-strip
 install-no-strip:
-	$(MKDIR) "$(TBIN)" "$(TLIB)" "$(TMAN)"
+	$(MKDIR) "$(TBIN)" "$(TLIB)"
 	$(CP) "$(BIN)/." "$(TBIN)/"
 	$(SED) \
 		-e "s;^LIB_REL_BIN=.*;LIB_REL_BIN=\"$(TLIB_REL_TBIN)\";" \
 		< "$(BIN)/$(MLTON)" > "$(TBIN)/$(MLTON)"
 	$(CHMOD) a+x "$(TBIN)/$(MLTON)"
 	$(CP) "$(LIB)/." "$(TLIB)/"
+	$(MKDIR) "$(TMAN)"
 	cd "$(SRC)/man" && $(CP) $(MAN_PAGES) "$(TMAN)/"
 ifeq (true, $(GZIP_MAN))
 	cd "$(TMAN)" && $(GZIP) --force --best $(MAN_PAGES);
 endif
 
+STRIP_PROGS := "$(TLIB)/$(MLTON_OUTPUT)$(EXE)"
+STRIP_PROGS := $(STRIP_PROGS) \
+	"$(TBIN)/mllex$(EXE)" \
+	"$(TBIN)/mlnlffigen$(EXE)" \
+	"$(TBIN)/mlprof$(EXE)" \
+	"$(TBIN)/mlyacc$(EXE)"
+
 .PHONY: install-strip
 install-strip: install-no-strip
-	for f in "$(TLIB)/$(MLTON_OUTPUT)$(EXE)" 		\
-		"$(TBIN)/mllex$(EXE)"				\
-		"$(TBIN)/mlyacc$(EXE)"				\
-		"$(TBIN)/mlprof$(EXE)" 				\
-		"$(TBIN)/mlnlffigen$(EXE)"; do			\
-		$(STRIP) "$$f";					\
-	done
+	for f in $(STRIP_PROGS); do $(STRIP) "$$f"; done
 
 REGRESSION_EXAMPLES := \
 	callcc.sml command-line.sml hello-world.sml same-fringe.sml	\
