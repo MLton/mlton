@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 Matthew Fluet.
+/* Copyright (C) 2019-2020 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -34,6 +34,8 @@ typedef GC_state GCState_t;
 #include "gc/sequence.h"
 #include "gc/sources.h"
 #include "gc/frame.h"
+#include "gc/static-heaps.h"
+#include "gc/foreach.h"
 #include "gc/stack.h"
 #include "gc/thread.h"
 #include "gc/weak.h"
@@ -42,9 +44,7 @@ typedef GC_state GCState_t;
 #include "gc/object-size.h"
 #include "gc/generational.h"
 #include "gc/heap.h"
-#include "gc/static-heaps.h"
 #include "gc/current.h"
-#include "gc/foreach.h"
 #include "gc/translate.h"
 #include "gc/sysvals.h"
 #include "gc/controls.h"
