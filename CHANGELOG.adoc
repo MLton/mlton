@@ -1,10 +1,13 @@
 = CHANGELOG
 
-== Version YYYYMMDD
+== Version 20201002
 
-Here are the changes from version 20200817 to version YYYYMMDD.
+Here are the changes from version 20200817 to version 20201002.
 
 === Summary
+
+* Compiler
+  ** Fixed bug in handling of weak objects during mark-compact GC.
 
 === Details
 
