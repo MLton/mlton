@@ -247,7 +247,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                          Prim.MLton_bogus =>
                             (case Type.dest (Vector.sub (targs, 0)) of
                                 Type.Datatype tycon =>
-                                   Cardinality.makeMany (tyconCardinality tycon)
+                                   Cardinality.makeOne (tyconCardinality tycon)
                               | _ => ())
                        | _ => ())
                 | _ => ()
@@ -298,7 +298,6 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                | Word _ => Cardinality.many
            end))
       (* Remove useless constructors from datatypes.
-       * Remove datatypes which have no cons.
        * Lower-bound cardinality of cons by product of arguments.
        * Lower-bound cardinality of tycons by sum of cons.
        *)
@@ -308,7 +307,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
       val typeIsVoid = fn t => Type.equals (t, typeVoid)
       val origDatatypes = datatypes
       val datatypes =
-         Vector.keepAllMap
+         Vector.map
          (datatypes, fn Datatype.T {tycon, cons} =>
           let
              val cons = Vector.keepAll (cons, conIsUseful o #con)
@@ -325,11 +324,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                   (Vector.map (args, typeCardinality)),
                   conCardinality con))
           in
-             if Vector.isEmpty cons
-                then (setTyconNumCons (tycon, 0)
-                      ; setTyconReplacement (tycon, SOME typeVoid)
-                      ; NONE)
-             else SOME (Datatype.T {tycon = tycon, cons = cons})
+             Datatype.T {tycon = tycon, cons = cons}
           end)
       (* diagnostic *)
       val _ =
@@ -392,7 +387,9 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
           in
              case Vector.length cons of
                 0 => (setTyconNumCons (tycon, 0)
-                      ; setTyconReplacement (tycon, SOME typeVoid)
+                      ; if Cardinality.isZero (tyconCardinality tycon)
+                           then setTyconReplacement (tycon, SOME typeVoid)
+                           else setTyconReplacement (tycon, SOME Type.unit)
                       ; (datatypes, unary))
               | 1 =>
                    let

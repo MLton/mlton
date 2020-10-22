@@ -1,5 +1,11 @@
 = CHANGELOG
 
+== Version YYYYMMDD
+
+* 2020-10-22
+  ** Fix bug in `SimplifyTypes` SSA optimization pass.  Thanks
+  to Martin Elsman for the bug report.
+
 == Version 20201002
 
 Here are the changes from version 20200817 to version 20201002.
@@ -12,7 +18,8 @@ Here are the changes from version 20200817 to version 20201002.
 === Details
 
 * 2020-09-20
-  ** Fix bug in handling of weak objects during mark-compact GC.
+  ** Fix bug in handling of weak objects during mark-compact GC.  Thanks to
+  Bernard Berthomieu for the bug report.
 
 == Version 20200817
 
@@ -123,10 +130,10 @@ Here are the changes from version 20180206 to version 20200722.
   non-printable.
 
 * 2020-02-14
-  ** Fixed bug in `SimplifyTypes` SSA optimization pass.
+  ** Fix bug in `SimplifyTypes` SSA optimization pass.
 
 * 2020-01-22
-  ** Added expert `-pi-style {default|npi|pic|pie}` and
+  ** Add expert `-pi-style {default|npi|pic|pie}` and
   `-native-pic {false|true}` options, which can be used to override a
   target-determined default.  See
   https://github.com/MLton/mlton/pull/365 for details.
