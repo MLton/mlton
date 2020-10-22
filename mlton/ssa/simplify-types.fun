@@ -346,7 +346,11 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                              Cardinality.layout (tyconCardinality tycon)]);
                Vector.foreach
                (cons, fn {con, ...} =>
-                (display (seq [str "cardinality of ",
+                (display (seq [str "rep of ",
+                               Con.layout con,
+                               str " = ",
+                               ConRep.layout (conRep con)]);
+                 display (seq [str "cardinality of ",
                                Con.layout con,
                                str " = ",
                                Cardinality.layout (conCardinality con)])))))
@@ -355,10 +359,10 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
          (setTyconNumCons (tycon, 1)
           ; setTyconReplacement (tycon, SOME (Type.tuple args))
           ; setConRep (con, ConRep.Transparent))
-      (* "unary" is datatypes with one constructor whose rhs contains an
-       * array (or vector) type.
-       * For datatypes with one variant not containing an array type, eliminate
-       * the datatype.
+      (* "unary" are datatypes with one constructor
+       * whose rhs contains an array (or vector) type.
+       * For datatypes with one variant not containing an array type,
+       * eliminate the datatype.
        *)
       fun containsArrayOrVector (ty: Type.t): bool =
          let
@@ -436,6 +440,30 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                   :: accum
           else (transparent (tycon, con, args)
                 ; accum))
+      (* diagnostic *)
+      val _ =
+         Control.diagnostics
+         (fn display =>
+          let
+             open Layout
+          in
+             Vector.foreach
+             (origDatatypes, fn Datatype.T {tycon, cons} =>
+              (display (seq [str "num cons of ",
+                             Tycon.layout tycon,
+                             str " = ",
+                             Int.layout (tyconNumCons tycon)]);
+               display (seq [str "replacement of ",
+                             Tycon.layout tycon,
+                             str " = ",
+                             Option.layout Type.layout (tyconReplacement tycon)]);
+               Vector.foreach
+               (cons, fn {con, ...} =>
+                display (seq [str "rep of ",
+                              Con.layout con,
+                              str " = ",
+                              ConRep.layout (conRep con)]))))
+          end)
 
       fun makeSimplifyTypeFns simplifyType =
          let
