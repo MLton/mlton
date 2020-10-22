@@ -439,7 +439,15 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
 
       fun makeSimplifyTypeFns simplifyType =
          let
+            val simplifyType =
+               Trace.trace
+               ("SimplifyTypes.simplifyType", Type.layout, Type.layout)
+               simplifyType
             fun simplifyTypes ts = Vector.map (ts, simplifyType)
+            val simplifyTypes =
+               Trace.trace ("SimplifyTypes.simplifyTypes",
+                            Vector.layout Type.layout, Vector.layout Type.layout)
+               simplifyTypes
             fun simplifyUsefulTypesOpt ts =
                Exn.withEscape
                (fn escape =>
@@ -454,9 +462,20 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                              then NONE
                           else SOME t
                        end)))
+            val simplifyUsefulTypesOpt =
+               Trace.trace ("SimplifyTypes.simplifyUsefulTypesOpt",
+                            Vector.layout Type.layout,
+                            Option.layout (Vector.layout Type.layout))
+               simplifyUsefulTypesOpt
             val simplifyUsefulTypes = valOf o simplifyUsefulTypesOpt
+            val simplifyUsefulTypes =
+               Trace.trace ("SimplifyTypes.simplifyUsefulTypes",
+                            Vector.layout Type.layout,
+                            Vector.layout Type.layout)
+               simplifyUsefulTypes
          in
-            {simplifyTypes = simplifyTypes,
+            {simplifyType = simplifyType,
+             simplifyTypes = simplifyTypes,
              simplifyUsefulTypes = simplifyUsefulTypes,
              simplifyUsefulTypesOpt = simplifyUsefulTypesOpt}
          end
@@ -466,7 +485,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
           Property.initRec
           (fn (t, simplifyType) =>
            let
-              val {simplifyUsefulTypesOpt, ...} =
+              val {simplifyType, simplifyUsefulTypesOpt, ...} =
                  makeSimplifyTypeFns simplifyType
               fun doitPtr (mk, t) =
                  let
@@ -499,10 +518,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                | Weak t => doitPtr (weak, t)
                | _ => t
            end))
-      val simplifyType =
-         Trace.trace ("SimplifyTypes.simplifyType", Type.layout, Type.layout)
-         simplifyType
-      val {simplifyTypes, simplifyUsefulTypesOpt, simplifyUsefulTypes, ...} =
+      val {simplifyType, simplifyTypes, simplifyUsefulTypesOpt, simplifyUsefulTypes, ...} =
          makeSimplifyTypeFns simplifyType
       val typeIsUseful = not o Type.isUnit o simplifyType
       (* Simplify constructor argument types. *)
