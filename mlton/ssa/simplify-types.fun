@@ -247,7 +247,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                          Prim.MLton_bogus =>
                             (case Type.dest (Vector.sub (targs, 0)) of
                                 Type.Datatype tycon =>
-                                   Cardinality.makeMany (tyconCardinality tycon)
+                                   Cardinality.makeOne (tyconCardinality tycon)
                               | _ => ())
                        | _ => ())
                 | _ => ()
@@ -298,7 +298,6 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                | Word _ => Cardinality.many
            end))
       (* Remove useless constructors from datatypes.
-       * Remove datatypes which have no cons.
        * Lower-bound cardinality of cons by product of arguments.
        * Lower-bound cardinality of tycons by sum of cons.
        *)
@@ -308,7 +307,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
       val typeIsVoid = fn t => Type.equals (t, typeVoid)
       val origDatatypes = datatypes
       val datatypes =
-         Vector.keepAllMap
+         Vector.map
          (datatypes, fn Datatype.T {tycon, cons} =>
           let
              val cons = Vector.keepAll (cons, conIsUseful o #con)
@@ -325,11 +324,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                   (Vector.map (args, typeCardinality)),
                   conCardinality con))
           in
-             if Vector.isEmpty cons
-                then (setTyconNumCons (tycon, 0)
-                      ; setTyconReplacement (tycon, SOME typeVoid)
-                      ; NONE)
-             else SOME (Datatype.T {tycon = tycon, cons = cons})
+             Datatype.T {tycon = tycon, cons = cons}
           end)
       (* diagnostic *)
       val _ =
@@ -346,7 +341,11 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                              Cardinality.layout (tyconCardinality tycon)]);
                Vector.foreach
                (cons, fn {con, ...} =>
-                (display (seq [str "cardinality of ",
+                (display (seq [str "rep of ",
+                               Con.layout con,
+                               str " = ",
+                               ConRep.layout (conRep con)]);
+                 display (seq [str "cardinality of ",
                                Con.layout con,
                                str " = ",
                                Cardinality.layout (conCardinality con)])))))
@@ -355,10 +354,10 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
          (setTyconNumCons (tycon, 1)
           ; setTyconReplacement (tycon, SOME (Type.tuple args))
           ; setConRep (con, ConRep.Transparent))
-      (* "unary" is datatypes with one constructor whose rhs contains an
-       * array (or vector) type.
-       * For datatypes with one variant not containing an array type, eliminate
-       * the datatype.
+      (* "unary" are datatypes with one constructor
+       * whose rhs contains an array (or vector) type.
+       * For datatypes with one variant not containing an array type,
+       * eliminate the datatype.
        *)
       fun containsArrayOrVector (ty: Type.t): bool =
          let
@@ -388,7 +387,9 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
           in
              case Vector.length cons of
                 0 => (setTyconNumCons (tycon, 0)
-                      ; setTyconReplacement (tycon, SOME typeVoid)
+                      ; if Cardinality.isZero (tyconCardinality tycon)
+                           then setTyconReplacement (tycon, SOME typeVoid)
+                           else setTyconReplacement (tycon, SOME Type.unit)
                       ; (datatypes, unary))
               | 1 =>
                    let
@@ -436,10 +437,42 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                   :: accum
           else (transparent (tycon, con, args)
                 ; accum))
+      (* diagnostic *)
+      val _ =
+         Control.diagnostics
+         (fn display =>
+          let
+             open Layout
+          in
+             Vector.foreach
+             (origDatatypes, fn Datatype.T {tycon, cons} =>
+              (display (seq [str "num cons of ",
+                             Tycon.layout tycon,
+                             str " = ",
+                             Int.layout (tyconNumCons tycon)]);
+               display (seq [str "replacement of ",
+                             Tycon.layout tycon,
+                             str " = ",
+                             Option.layout Type.layout (tyconReplacement tycon)]);
+               Vector.foreach
+               (cons, fn {con, ...} =>
+                display (seq [str "rep of ",
+                              Con.layout con,
+                              str " = ",
+                              ConRep.layout (conRep con)]))))
+          end)
 
       fun makeSimplifyTypeFns simplifyType =
          let
+            val simplifyType =
+               Trace.trace
+               ("SimplifyTypes.simplifyType", Type.layout, Type.layout)
+               simplifyType
             fun simplifyTypes ts = Vector.map (ts, simplifyType)
+            val simplifyTypes =
+               Trace.trace ("SimplifyTypes.simplifyTypes",
+                            Vector.layout Type.layout, Vector.layout Type.layout)
+               simplifyTypes
             fun simplifyUsefulTypesOpt ts =
                Exn.withEscape
                (fn escape =>
@@ -454,9 +487,20 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                              then NONE
                           else SOME t
                        end)))
+            val simplifyUsefulTypesOpt =
+               Trace.trace ("SimplifyTypes.simplifyUsefulTypesOpt",
+                            Vector.layout Type.layout,
+                            Option.layout (Vector.layout Type.layout))
+               simplifyUsefulTypesOpt
             val simplifyUsefulTypes = valOf o simplifyUsefulTypesOpt
+            val simplifyUsefulTypes =
+               Trace.trace ("SimplifyTypes.simplifyUsefulTypes",
+                            Vector.layout Type.layout,
+                            Vector.layout Type.layout)
+               simplifyUsefulTypes
          in
-            {simplifyTypes = simplifyTypes,
+            {simplifyType = simplifyType,
+             simplifyTypes = simplifyTypes,
              simplifyUsefulTypes = simplifyUsefulTypes,
              simplifyUsefulTypesOpt = simplifyUsefulTypesOpt}
          end
@@ -466,7 +510,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
           Property.initRec
           (fn (t, simplifyType) =>
            let
-              val {simplifyUsefulTypesOpt, ...} =
+              val {simplifyType, simplifyUsefulTypesOpt, ...} =
                  makeSimplifyTypeFns simplifyType
               fun doitPtr (mk, t) =
                  let
@@ -499,10 +543,7 @@ fun transform (Program.T {datatypes, globals, functions, main}) =
                | Weak t => doitPtr (weak, t)
                | _ => t
            end))
-      val simplifyType =
-         Trace.trace ("SimplifyTypes.simplifyType", Type.layout, Type.layout)
-         simplifyType
-      val {simplifyTypes, simplifyUsefulTypesOpt, simplifyUsefulTypes, ...} =
+      val {simplifyType, simplifyTypes, simplifyUsefulTypesOpt, simplifyUsefulTypes, ...} =
          makeSimplifyTypeFns simplifyType
       val typeIsUseful = not o Type.isUnit o simplifyType
       (* Simplify constructor argument types. *)
