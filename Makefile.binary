@@ -79,12 +79,12 @@ update:
 		-e "s;^default::pic=.*;default::pic=$(subst __pic__,0,$(shell echo "__pic__" | $(CC) -P -E -));" \
 		< "$(SLIB)/targets/self/constants.bak" > "$(SLIB)/targets/self/constants"
 	$(RM) "$(SLIB)/targets/self/constants.bak"
-	if [ $$(echo "__pie__" | $(CC) -P -E -) -gt 0 ]; then \
-		pi="-pie";
-	elif if [ $$(echo "__pic__" | $(CC) -P -E -) -gt 0 ]; then \
-		pi="-pic";
+	if [ $$(echo "__pie__" | $(CC) -P -E -) != "__pie__" ]; then \
+		pi="-pie"; \
+	elif if [ $$(echo "__pic__" | $(CC) -P -E -) != "__pic__" ]; then \
+		pi="-pic"; \
 	else \
-		pi="-npi";
+		pi="-npi"; \
 	fi ; \
 	for lib in mlton gdtoa; do \
 		for md in "" -dbg; do \
