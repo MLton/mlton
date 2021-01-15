@@ -818,11 +818,11 @@ ____
  <:#IC:> 1990.
 
  * <!Anchor(Tofte96)>
- http://www.itu.dk/courses/FDP/E2004/Tofte-1996-Essentials_of_SML_Modules.pdf[Essentials of Standard ML Modules].
+ https://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.165.95&rank=1[Essentials of Standard ML Modules].
  Mads Tofte.
 
  * <!Anchor(Tofte09)>
- http://www.itu.dk/people/tofte/publ/tips.pdf[Tips for Computer Scientists on Standard ML (Revised)].
+ <!Attachment(References,Tofte09.pdf,Tips for Computer Scientists on Standard ML (Revised))>.
  Mads Tofte.
 
  * <!Anchor(TolmachAppel95)>
