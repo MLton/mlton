@@ -88,11 +88,17 @@ i?86_64)
 amd64)
         HOST_ARCH=amd64
 ;;
-arm*)
-        HOST_ARCH=arm
-;;
 aarch64)
         HOST_ARCH=arm64
+;;
+arm64)
+        HOST_ARCH=arm64
+;;
+aarch*)
+        HOST_ARCH=arm
+;;
+arm*)
+        HOST_ARCH=arm
 ;;
 parisc*)
         HOST_ARCH=hppa
