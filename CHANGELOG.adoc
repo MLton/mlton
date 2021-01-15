@@ -2,6 +2,10 @@
 
 == Version YYYYMMDD
 
+* 2021-01-15
+  ** Preliminary support for `arm64-darwin` ("Apple Silicon").  Thanks to Chris
+  Cannam for the patches.
+
 * 2020-10-22
   ** Fix bug in `SimplifyTypes` SSA optimization pass.  Thanks
   to Martin Elsman for the bug report.

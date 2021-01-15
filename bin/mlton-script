@@ -89,18 +89,22 @@ doit "$lib" \
         -mlb-path-var 'SML_LIB $(LIB_MLTON_DIR)/sml'             \
         -target-as-opt amd64 '-m64'                              \
         -target-as-opt x86 '-m32'                                \
+        -target-cc-opt aix '-maix64'                             \
         -target-cc-opt alpha                                     \
                 '-mieee -mbwx -mtune=ev6 -mfp-rounding-mode=d'   \
         -target-cc-opt amd64 '-m64'                              \
-        -target-cc-opt aix '-maix64'                             \
+        -target-cc-opt amd64-darwin '-arch x86_64'               \
+        -target-cc-opt arm64-darwin '-arch arm64'                \
         -target-cc-opt ia64-hpux "-mlp64"                        \
         -target-cc-opt ia64 "-mtune=itanium2"                    \
         -target-cc-opt sparc '-m32 -mcpu=v8 -Wa,-xarch=v8plusa'  \
         -target-cc-opt x86 '-m32'                                \
-        -target-link-opt amd64 '-m64'                            \
+        -target-link-opt aix '-maix64'                           \
         -target-link-opt alpha                                   \
                 '-mieee -mbwx -mtune=ev6 -mfp-rounding-mode=d'   \
-        -target-link-opt aix '-maix64'                           \
+        -target-link-opt amd64 '-m64'                            \
+        -target-link-opt amd64-darwin '-arch x86_64'             \
+        -target-link-opt arm64-darwin '-arch arm64'              \
         -target-link-opt ia64-hpux "-mlp64"                      \
         -target-link-opt linux '-Wl,-znoexecstack'               \
         -target-link-opt mingw                                   \
