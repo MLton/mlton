@@ -1,7 +1,7 @@
 StandardMLTutorials
 ===================
 
-* http://www.dcs.napier.ac.uk/course-notes/sml/manual.html[A Gentle Introduction to ML].
+* https://web.archive.org/web/20100209123129/http://www.dcs.napier.ac.uk/course-notes/sml/manual.html[A Gentle Introduction to ML].
 Andrew Cummings.
 
 * http://www.dcs.ed.ac.uk/home/stg/NOTES/[Programming in Standard ML '97: An Online Tutorial].
