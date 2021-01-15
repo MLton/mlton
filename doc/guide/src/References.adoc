@@ -337,7 +337,7 @@ ____
  Addison-Wesley, 1999.
 
  * <!Anchor(Harper11)>
- http://www.cs.cmu.edu/~rwh/smlbook/book.pdf[Programming in Standard ML].
+ http://www.cs.cmu.edu/~rwh/isml/book.pdf[Programming in Standard ML].
  Robert Harper.
 
  * <!Anchor(HarperEtAl93)>
