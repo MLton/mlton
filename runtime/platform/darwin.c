@@ -38,6 +38,12 @@ static void catcher (__attribute__ ((unused)) int signo,
 #else
         GC_handleSigProf ((code_pointer) ucp->uc_mcontext->ss.rip);
 #endif
+#elif (defined(__aarch64__))
+#if __DARWIN_UNIX03
+        GC_handleSigProf ((code_pointer) ucp->uc_mcontext->__ss.__pc);
+#else
+        GC_handleSigProf ((code_pointer) ucp->uc_mcontext->ss.pc);
+#endif
 #else
 #error Unsupported darwin CPU architecture
 #endif
