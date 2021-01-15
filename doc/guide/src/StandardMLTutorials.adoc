@@ -1,14 +1,24 @@
 StandardMLTutorials
 ===================
 
-* http://www.dcs.napier.ac.uk/course-notes/sml/manual.html[A Gentle Introduction to ML].
+* https://web.archive.org/web/20100209123129/http://www.dcs.napier.ac.uk/course-notes/sml/manual.html[A Gentle Introduction to ML].
 Andrew Cummings.
 
 * http://www.dcs.ed.ac.uk/home/stg/NOTES/[Programming in Standard ML '97: An Online Tutorial].
 Stephen Gilmore.
 
+* https://courses.cs.washington.edu/courses/cse341/19sp/#lectures[Programming Languages course notes].
+Dan Grossman
++
+____
+Units 1, 2, 3, and 4 include written notes, videos, and slides on SML programming.
+____
+
 * <!Cite(Harper11, Programming in Standard ML)>.
 Robert Harper.
+
+* https://www.pllab.riec.tohoku.ac.jp/smlsharp/smlIntroSlides.pdf[Introduction to Standard ML].
+Atsushi Ohori
 
 * <!Cite(Tofte96, Essentials of Standard ML Modules)>.
 Mads Tofte.
