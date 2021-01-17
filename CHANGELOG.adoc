@@ -2,6 +2,9 @@
 
 == Version YYYYMMDD
 
+* 2021-01-17
+  ** Update SML/NJ libraries to SML/NJ 110.99.
+
 * 2021-01-15
   ** Fix bug in `Makefile.binary` detecting default position-independent style.
   Thanks to Greg Werbin for the but report.

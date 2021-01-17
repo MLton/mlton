@@ -2653,16 +2653,17 @@ index 0000000..5468e29
 +    );
 diff --git a/PP/pp-lib.mlb b/PP/pp-lib.mlb
 new file mode 100644
-index 0000000..fe1c958
+index 0000000..9a681c6
 --- /dev/null
 +++ b/PP/pp-lib.mlb
-@@ -0,0 +1,357 @@
+@@ -0,0 +1,409 @@
 +
 +ann
 +  "nonexhaustiveBind warn" "nonexhaustiveMatch ignore"
 +  "redundantBind warn" "redundantMatch warn"
 +  "sequenceNonUnit ignore"
 +  "warnUnused false" "forceUsed"
++  "allowOrPats true" "allowVectorExpsAndPats true"
 +in
 +
 +local
@@ -2841,33 +2842,6 @@ index 0000000..fe1c958
 +      structure gs_41 = StringCvt
 +   end
 +   local
-+      structure CharBuffer = gs_34
-+      functor PPStreamFn = gs_40
-+      signature PP_STREAM = gs_32
-+      structure StringCvt = gs_41
-+      structure StringToken = gs_31
-+      structure TextIO = gs_33
-+      devices/text-pp.sml
-+   in
-+      structure gs_42 = TextPP
-+   end
-+   local
-+      open l37
-+   in
-+      structure gs_43 = List
-+   end
-+   local
-+      open l37
-+   in
-+      structure gs_44 = TextPrimIO
-+   end
-+   local
-+      open l55
-+   in
-+      structure gs_45 = ANSITerm
-+   end
-+   local
-+      structure ANSITerm = gs_45
 +      structure Char = gs_1
 +      structure CharArray = gs_2
 +      structure CharVector = gs_3
@@ -2880,7 +2854,73 @@ index 0000000..fe1c958
 +      structure LargeInt = gs_10
 +      structure LargeReal = gs_11
 +      structure LargeWord = gs_12
-+      structure List = gs_43
++      structure OS = gs_13
++      signature PP_DEVICE = gs_39
++      structure Position = gs_14
++      structure Real = gs_15
++      structure Real64 = gs_16
++      structure RealArray = gs_17
++      structure RealArraySlice = gs_18
++      structure RealVector = gs_19
++      structure RealVectorSlice = gs_20
++      structure SMLofNJ = gs_21
++      structure Socket = gs_22
++      structure String = gs_23
++      structure Substring = gs_24
++      structure SysWord = gs_25
++      structure Time = gs_26
++      structure Word = gs_27
++      structure Word32 = gs_28
++      structure Word64 = gs_29
++      structure Word8 = gs_30
++      devices/default-device-fn.sml
++   in
++      signature gs_42 = DEVICE_OPS
++      functor gs_43 = DefaultDeviceFn
++   end
++   local
++      structure CharBuffer = gs_34
++      signature DEVICE_OPS = gs_42
++      functor DefaultDeviceFn = gs_43
++      functor PPStreamFn = gs_40
++      signature PP_STREAM = gs_32
++      structure StringCvt = gs_41
++      structure StringToken = gs_31
++      structure TextIO = gs_33
++      devices/text-pp.sml
++   in
++      structure gs_44 = TextPP
++   end
++   local
++      open l37
++   in
++      structure gs_45 = List
++   end
++   local
++      open l37
++   in
++      structure gs_46 = TextPrimIO
++   end
++   local
++      open l55
++   in
++      structure gs_47 = ANSITerm
++   end
++   local
++      structure ANSITerm = gs_47
++      structure Char = gs_1
++      structure CharArray = gs_2
++      structure CharVector = gs_3
++      structure FixedInt = gs_4
++      structure General = gs_5
++      structure Int = gs_6
++      structure Int32 = gs_7
++      structure Int64 = gs_8
++      structure IntInf = gs_9
++      structure LargeInt = gs_10
++      structure LargeReal = gs_11
++      structure LargeWord = gs_12
++      structure List = gs_45
 +      structure OS = gs_13
 +      signature PP_DEVICE = gs_39
 +      structure Position = gs_14
@@ -2897,7 +2937,7 @@ index 0000000..fe1c958
 +      structure Substring = gs_24
 +      structure SysWord = gs_25
 +      structure TextIO = gs_33
-+      structure TextPrimIO = gs_44
++      structure TextPrimIO = gs_46
 +      structure Time = gs_26
 +      structure Word = gs_27
 +      structure Word32 = gs_28
@@ -2905,10 +2945,10 @@ index 0000000..fe1c958
 +      structure Word8 = gs_30
 +      devices/ansi-term-dev.sml
 +   in
-+      structure gs_46 = ANSITermDev
++      structure gs_48 = ANSITermDev
 +   end
 +   local
-+      structure ANSITermDev = gs_46
++      structure ANSITermDev = gs_48
 +      structure Char = gs_1
 +      structure CharArray = gs_2
 +      structure CharVector = gs_3
@@ -2945,71 +2985,83 @@ index 0000000..fe1c958
 +      structure Word8 = gs_30
 +      devices/ansi-term-pp.sml
 +   in
-+      structure gs_47 = ANSITermPP
++      structure gs_49 = ANSITermPP
 +   end
 +   local
 +      signature PP_STREAM = gs_32
 +      src/pp-desc-sig.sml
 +   in
-+      signature gs_48 = PP_DESC
++      signature gs_50 = PP_DESC
 +   end
 +   local
 +      signature PP_STREAM = gs_32
 +      structure TextIO = gs_33
 +      src/pp-debug-fn.sml
 +   in
-+      functor gs_49 = PPDebugFn
++      functor gs_51 = PPDebugFn
 +   end
 +   local
-+      signature PP_DESC = gs_48
++      signature PP_DESC = gs_50
 +      signature PP_STREAM = gs_32
 +      src/pp-desc-fn.sml
 +   in
-+      functor gs_50 = PPDescFn
++      functor gs_52 = PPDescFn
 +   end
 +   local
 +      structure CharBuffer = gs_34
++      signature DEVICE_OPS = gs_42
++      functor DefaultDeviceFn = gs_43
++      signature PP_DEVICE = gs_39
++      structure StringCvt = gs_41
++      devices/char-buffer-dev.sml
++   in
++      structure gs_53 = CharBufferDev
++   end
++   local
++      structure CharBuffer = gs_34
++      structure CharBufferDev = gs_53
 +      functor PPStreamFn = gs_40
 +      signature PP_STREAM = gs_32
-+      structure StringCvt = gs_41
 +      structure StringToken = gs_31
 +      devices/char-buffer-pp.sml
 +   in
-+      structure gs_51 = CharBufferPP
++      structure gs_54 = CharBufferPP
 +   end
 +   local
++      signature DEVICE_OPS = gs_42
++      functor DefaultDeviceFn = gs_43
 +      signature PP_DEVICE = gs_39
 +      structure StringCvt = gs_41
 +      structure TextIO = gs_33
 +      devices/simple-textio-dev.sml
 +   in
-+      structure gs_52 = SimpleTextIODev
++      structure gs_55 = SimpleTextIODev
 +   end
 +   local
 +      functor PPStreamFn = gs_40
 +      signature PP_STREAM = gs_32
-+      structure SimpleTextIODev = gs_52
++      structure SimpleTextIODev = gs_55
 +      structure StringToken = gs_31
 +      structure TextIO = gs_33
 +      devices/textio-pp.sml
 +   in
-+      structure gs_53 = TextIOPP
++      structure gs_56 = TextIOPP
 +   end
 +in
-+   structure ANSITermDev = gs_46
-+   structure ANSITermPP = gs_47
-+   structure CharBufferPP = gs_51
-+   functor PPDebugFn = gs_49
-+   functor PPDescFn = gs_50
++   structure ANSITermDev = gs_48
++   structure ANSITermPP = gs_49
++   structure CharBufferPP = gs_54
++   functor PPDebugFn = gs_51
++   functor PPDescFn = gs_52
 +   functor PPStreamFn = gs_40
-+   signature PP_DESC = gs_48
++   signature PP_DESC = gs_50
 +   signature PP_DEVICE = gs_39
 +   signature PP_STREAM = gs_32
 +   signature PP_TOKEN = gs_0
-+   structure SimpleTextIODev = gs_52
++   structure SimpleTextIODev = gs_55
 +   structure StringToken = gs_31
-+   structure TextIOPP = gs_53
-+   structure TextPP = gs_42
++   structure TextIOPP = gs_56
++   structure TextPP = gs_44
 +end
 +end
 +
