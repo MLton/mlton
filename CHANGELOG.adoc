@@ -1,6 +1,21 @@
 = CHANGELOG
 
-== Version YYYYMMDD
+== Version 20210117
+
+Here are the changes from version 20201002 to 20210117.
+
+=== Summary
+
+* Compiler.
+  ** Fix bug in `SimplifyTypes` SSA optimization pass.
+* Libraries.
+  ** Other libraries.
+    *** Updated: ckit library, MLLPT library, MLRISC library, SML/NJ library
+* Other.
+  ** Preliminary support for `arm64-darwin`.
+  ** Fix bug in `Makefile.binary` detecting default position-independent style.
+
+=== Details
 
 * 2021-01-17
   ** Update SML/NJ libraries to SML/NJ 110.99.
@@ -21,7 +36,7 @@ Here are the changes from version 20200817 to version 20201002.
 
 === Summary
 
-* Compiler
+* Compiler.
   ** Fixed bug in handling of weak objects during mark-compact GC.
 
 === Details
@@ -36,7 +51,7 @@ Here are the changes from version 20200722 to version 20200817
 
 === Summary
 
-* Compiler
+* Compiler.
   ** Fixed bug in `RssaShrink` optimization that would result in an unbound
   variable and an internal compiler error.
 * Other.

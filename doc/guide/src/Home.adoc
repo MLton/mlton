@@ -17,24 +17,7 @@ a lexer generator, a parser generator, and a profiler.
 
 == What's new? ==
 
-* 20201002: Please try out our latest release, <:Release20201002:MLton 20201002>.
-
-* 20200817: Please try out our latest release, <:Release20200817:MLton 20200817>.
-
-* 20200722: Please try out our latest release, <:Release20200722:MLton 20200722>.
-
-* 20180207: Please try out our latest release, <:Release20180207:MLton 20180207>.
-
-* 20140730: http://www.cs.rit.edu/%7emtf[Matthew Fluet] and
-  http://www.cse.buffalo.edu/%7elziarek[Lukasz Ziarek] have been
-  awarded an http://www.nsf.gov/funding/pgm_summ.jsp?pims_id=12810[NSF
-  CISE Research Infrastructure (CRI)] grant titled "Positioning MLton
-  for Next-Generation Programming Languages Research;" read the award
-  abstracts
-  (http://www.nsf.gov/awardsearch/showAward?AWD_ID=1405770[Award{nbsp}#1405770]
-  and
-  http://www.nsf.gov/awardsearch/showAward?AWD_ID=1405614[Award{nbsp}#1405614])
-  for more details.
+* 20210117: Please try out our latest release, <:Release20210117:MLton 20210117>.
 
 == Next steps ==
 
