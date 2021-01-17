@@ -24,7 +24,7 @@ end = struct
     datatype device =
         DEV of { filename: string,
                  buffer : string list ref,
-                 wid : int }
+                 wid : int option ref }
 
     (* no style support *)
     type style = unit
@@ -34,7 +34,7 @@ end = struct
     fun defaultStyle _ = ()
 
     (* Allocate an empty buffer and remember the file name. *)
-    fun openOut (f, w) = DEV { filename = f, buffer = ref [], wid = w }
+    fun openOut (f, w) = DEV { filename = f, buffer = ref [], wid = ref (SOME w) }
 
     (* Calculate the final output and compare it with the current
      * contents of the file.  If they do not coincide, write the file. *)
@@ -55,20 +55,30 @@ end = struct
         end handle _ => write ()
     end
 
-    (* maximum printing depth (in terms of boxes) *)
-    fun depth _ = NONE
+    (* placeholders for the unsupported property functions *)
+    fun maxDepth _ = NONE
+    fun depth _ = NONE (* DEPRECATED *)
+    fun setMaxDepth _ = ()
+    fun ellipses _ = ("", 0)
+    fun setEllipses _ = ()
+    fun setEllipsesWithSz _ = ()
+    fun maxIndent _ = NONE
+    fun setMaxIndent _ = ()
+    fun textWidth _ = NONE
+    fun setTextWidth _ = ()
 
     (* the width of the device *)
-    fun lineWidth (DEV{wid, ...}) = SOME wid
-    (* the suggested maximum width of text on a line *)
-    fun textWidth _ = NONE
+    fun lineWidth (DEV{wid, ...}) = !wid
+    fun setLineWidth (DEV{wid, ...}, w) = wid := w
 
     (* output a string/character in the current style to the device *)
     fun string (DEV { buffer, ... }, s) = buffer := s :: !buffer
-
-    fun char (d, c) = string (d, String.str c)
+    (* output some number of spaces to the device *)
     fun space (d, n) = string (d, StringCvt.padLeft #" " n "")
+    val indent = space
+    (* output a new-line to the device *)
     fun newline d = string (d, "\n")
-
+    fun char (d, c) = string (d, String.str c)
+    (* nothing to flush *)
     fun flush d = ()
 end
