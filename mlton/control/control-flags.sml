@@ -1396,7 +1396,7 @@ structure PositionIndependentStyle =
             NONE => []
           | SOME NPI => ["-fno-pic", "-fno-pie", "-no-pie"]
           | SOME PIC => ["-fno-pie", "-no-pie"]
-          | SOME PIE => ["-fPIE -pie"]
+          | SOME PIE => ["-fPIE", "-pie"]
    end
 
 val positionIndependentStyle = control {name = "position independent style",
