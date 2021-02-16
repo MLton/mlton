@@ -317,7 +317,7 @@ polyml-mlton:
 	$(MAKE) dirs
 	$(MAKE) runtime
 	$(MAKE) -C "$(SRC)/mlton" polyml-mlton
-	$(CP) "$(SRC)/mlton/mlton-polyml$(EXE)" "$(LIB)/"
+	$(CP) "$(SRC)/mlton/$(MLTON_OUTPUT)-polyml$(EXE)" "$(LIB)/"
 	$(MAKE) script
 	$(MAKE) basis-no-check
 	$(MAKE) libraries-no-check
