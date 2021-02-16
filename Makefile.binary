@@ -81,7 +81,7 @@ update:
 	$(RM) "$(SLIB)/targets/self/constants.bak"
 	if [ $$(echo "__pie__" | $(CC) -P -E -) != "__pie__" ]; then \
 		pi="-pie"; \
-	elif if [ $$(echo "__pic__" | $(CC) -P -E -) != "__pic__" ]; then \
+	elif [ $$(echo "__pic__" | $(CC) -P -E -) != "__pic__" ]; then \
 		pi="-pic"; \
 	else \
 		pi="-npi"; \
