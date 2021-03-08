@@ -43,10 +43,10 @@ libdir := $(exec_prefix)/lib
 mandir := $(datarootdir)/man
 man1dir := $(mandir)/man1
 
-TBIN := $(bindir)
-TLIB := $(libdir)/mlton
-TMAN := $(man1dir)
-TDOC := $(docdir)
+TBIN := $(DESTDIR)$(bindir)
+TLIB := $(DESTDIR)$(libdir)/mlton
+TMAN := $(DESTDIR)$(man1dir)
+TDOC := $(DESTDIR)$(docdir)
 TEXM := $(TDOC)/examples
 
 TLIB_REL_TBIN := $(shell $(call TGT_REL_SRC,$(TLIB),$(TBIN)))
