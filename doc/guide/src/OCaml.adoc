@@ -77,6 +77,3 @@ OCaml, moving code between modules can cause a performance penalty.
 * Community
 
 ** OCaml has a larger community than MLton.
-
-** MLton has a very responsive
-   http://www.mlton.org/mailman/listinfo/mlton[developer list].
