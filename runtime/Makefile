@@ -1,4 +1,4 @@
-## Copyright (C) 2010-2013,2018,2019-2020 Matthew Fluet.
+## Copyright (C) 2010-2013,2018,2019-2021 Matthew Fluet.
  # Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -366,7 +366,7 @@ BOOTSTRAP_OBJS := $(patsubst %.c,%.o,$(BOOTSTRAP_CFILES))
 bootstrap/$(MLTON_OUTPUT)$(EXE): $(BOOTSTRAP_OBJS) libmlton.a libgdtoa.a
 	$(CC) $(call MK_FLAGS,-,LD) -L. -o $@ $(BOOTSTRAP_OBJS) -lmlton -lgdtoa -lgmp -lm
 
-bootstrap/%.o: bootstrap/%.c
+$(BOOTSTRAP_OBJS): bootstrap/%.o: bootstrap/%.c
 	$(CC) $(call MK_FLAGS,-,C) -O1 -fno-strict-aliasing -foptimize-sibling-calls -w -I$(ROOT)/include -w -c -o $@ $<
 endif
 
