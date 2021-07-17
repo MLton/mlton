@@ -1,4 +1,4 @@
-(* Copyright (C) 2017,2019-2020 Matthew Fluet.
+(* Copyright (C) 2017,2019-2021 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1122,7 +1122,7 @@ fun transform (program: Program.t): Program.t =
                      display
                      (seq [Con.layout con, str ": ",
                            Vector.layout Value.layout (conValues con)])))))
-             ; display (str "\n\nConstants:")
+             ; display (str "\n\nVariables:")
              ; (Program.foreachVar
                 (program, fn (x, _) => display (seq [Var.layout x,
                                                      str " ",
@@ -1371,6 +1371,34 @@ fun transform (program: Program.t): Program.t =
           Var.layout,
           Option.layout (Var.layout o #1))
          maybeGlobal
+      val isConst = Option.isSome o maybeGlobal
+
+      val _ =
+         Control.diagnostics
+         (fn display =>
+          let
+             open Layout
+             val numVars = ref 0
+             val numConstVars = ref 0
+             val _ =
+                Program.foreachVar
+                (program, fn (x, _) =>
+                 (Int.inc numVars
+                  ; if isConst x
+                       then Int.inc numConstVars
+                       else ()))
+          in
+             display (seq [str "\n\nConstant Variables: ",
+                           Int.layout (!numConstVars),
+                           str " / ",
+                           Int.layout (!numVars)])
+             ; (Program.foreachVar
+                (program, fn (x, _) =>
+                 if isConst x
+                    then display (Var.layout x)
+                    else ()))
+          end)
+
       fun replaceVar x =
          case maybeGlobal x of
             NONE => x
