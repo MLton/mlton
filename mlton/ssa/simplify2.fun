@@ -1,4 +1,4 @@
-(* Copyright (C) 2017,2019 Matthew Fluet.
+(* Copyright (C) 2017,2019,2021 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -100,10 +100,6 @@ fun simplify p =
                                        doit = S.orderFunctions,
                                        execute = true})
       val ssa2Passes = AppendList.toList ssa2Passes
-      (* Always want to type check the initial and final SSA2 programs,
-       * even if type checking is turned off, just to catch bugs.
-       *)
-      val () = Control.trace (Control.Pass, "ssa2TypeCheck") typeCheck p
       val p =
          Control.simplifyPasses
          {arg = p,
@@ -111,7 +107,6 @@ fun simplify p =
           stats = Program.layoutStats,
           toFile = Program.toFile,
           typeCheck = typeCheck}
-      val () = Control.trace (Control.Pass, "ssa2TypeCheck") typeCheck p
    in
       p
    end

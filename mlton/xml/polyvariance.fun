@@ -1,4 +1,4 @@
-(* Copyright (C) 2019 Matthew Fluet.
+(* Copyright (C) 2019,2021 Matthew Fluet.
  * Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -454,6 +454,7 @@ val transform =
                                                     end))
                                            ; shrink (transform (p, hofo, small, product))),
                            execute = true,
+                           forceTypeCheck = NONE,
                            keepIL = false,
                            name = concat ["duplicate", Int.toString (n + 1)],
                            stats = Program.layoutStats,

@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2017,2019 Matthew Fluet.
+(* Copyright (C) 2009,2017,2019,2021 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -379,7 +379,7 @@ fun translatePass {arg: 'a,
                    srcToFile: {display: 'a display, style: style, suffix: string} option,
                    tgtStats: ('b -> Layout.t) option,
                    tgtToFile: {display: 'b display, style: style, suffix: string} option,
-                   tgtTypeCheck: ('b -> unit) option}: 'b =
+                   tgtTypeCheck: (('b -> unit) * bool option) option}: 'b =
    let
       val thunk = fn () => doit arg
       val thunk = wrapDiagnosing {name = name, thunk = thunk}
@@ -404,11 +404,26 @@ fun translatePass {arg: 'a,
               suffix = "post",
               toFile = tgtToFile})
          val () =
-            if !ControlFlags.typeCheck
-               then Option.app (tgtTypeCheck, fn tgtTypeCheck =>
-                                trace (Pass, concat ["typeCheck ", name, ".post"])
-                                tgtTypeCheck res)
-               else ()
+            let
+               val name = concat [name, ":typeCheck"]
+            in
+               Option.app
+               (tgtTypeCheck, fn (tgtTypeCheck, forceTypeCheck) =>
+                let
+                   val (execute, skipVerb) =
+                      case forceTypeCheck of
+                         NONE => (false, Detail)
+                       | SOME execute => (execute, Pass)
+                in
+                   if List.foldr
+                      (!executePasses, execute, fn ((re, new), old) =>
+                       if Regexp.Compiled.matchesAll (re, name)
+                          then new
+                          else old)
+                      then trace (Pass, name) tgtTypeCheck res
+                      else messageStr (skipVerb, name ^ " skipped")
+                end)
+            end
          local
             val verb = Detail
          in
@@ -447,6 +462,7 @@ fun translatePass {arg: 'a,
 fun simplifyPass {arg: 'a,
                   doit: 'a -> 'a,
                   execute: bool,
+                  forceTypeCheck: bool option,
                   keepIL: bool,
                   name: string,
                   stats: 'a -> Layout.t,
@@ -461,7 +477,7 @@ fun simplifyPass {arg: 'a,
                           srcToFile = SOME toFile,
                           tgtStats = SOME stats,
                           tgtToFile = SOME toFile,
-                          tgtTypeCheck = SOME typeCheck}
+                          tgtTypeCheck = SOME (typeCheck, forceTypeCheck)}
       else let
               val _ = messageStr (Pass, name ^ " skipped")
               val () =
@@ -484,6 +500,7 @@ fun simplifyPasses {arg, passes, stats, toFile, typeCheck} =
     simplifyPass {arg = arg,
                   doit = doit,
                   execute = execute,
+                  forceTypeCheck = NONE,
                   keepIL = false,
                   name = name,
                   stats = stats,

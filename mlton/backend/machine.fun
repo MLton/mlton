@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014,2016-2017,2019-2020 Matthew Fluet.
+(* Copyright (C) 2009,2014,2016-2017,2019-2021 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1768,8 +1768,6 @@ fun simplify p =
       val machinePasses =
          {name = "machineShuffle", doit = Program.shuffle, execute = false} ::
          nil
-      (* Machine type check is too slow to run by default. *)
-      (* val () = Control.trace (Control.Pass, "machineTypeCheck") Program.typeCheck p *)
       val p =
          Control.simplifyPasses
          {arg = p,
@@ -1777,7 +1775,6 @@ fun simplify p =
           stats = Program.layoutStats,
           toFile = Program.toFile,
           typeCheck = Program.typeCheck}
-      (* val () = Control.trace (Control.Pass, "machineTypeCheck") Program.typeCheck p *)
    in
       p
    end

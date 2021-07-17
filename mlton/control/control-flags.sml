@@ -1638,10 +1638,6 @@ fun mlbPathMap () =
              path = !defaultWord}],
            !mlbPathVars])
 
-val typeCheck = control {name = "type check",
-                         default = false,
-                         toString = Bool.toString}
-
 structure Verbosity =
    struct
       datatype t =

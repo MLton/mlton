@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019 Matthew Fluet.
+(* Copyright (C) 2009,2019,2021 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -65,6 +65,7 @@ signature CONTROL =
       val simplifyPass: {arg: 'a,
                          doit: 'a -> 'a,
                          execute: bool,
+                         forceTypeCheck: bool option,
                          keepIL: bool,
                          name: string,
                          stats: 'a -> Layout.t,
@@ -82,5 +83,5 @@ signature CONTROL =
                           srcToFile: {display: 'a display, style: style, suffix: string} option,
                           tgtStats: ('b -> Layout.t) option,
                           tgtToFile: {display: 'b display, style: style, suffix: string} option,
-                          tgtTypeCheck: ('b -> unit) option} -> 'b
+                          tgtTypeCheck: (('b -> unit) * bool option) option} -> 'b
    end

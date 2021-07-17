@@ -1,4 +1,4 @@
-(* Copyright (C) 2019-2020 Matthew Fluet.
+(* Copyright (C) 2019-2021 Matthew Fluet.
  *
  * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
@@ -41,8 +41,6 @@ val rssaPasses =
 fun simplify p =
    let
       val rssaPasses = rssaPasses
-      (* RSSA type check is too slow to run by default. *)
-      (* val () = Control.trace (Control.Pass, "rssaTypeCheck") typeCheck p *)
       val p =
          Control.simplifyPasses
          {arg = p,
@@ -50,7 +48,6 @@ fun simplify p =
           stats = Program.layoutStats,
           toFile = Program.toFile,
           typeCheck = typeCheck}
-      (* val () = Control.trace (Control.Pass, "rssaTypeCheck") typeCheck p *)
    in
       p
    end
