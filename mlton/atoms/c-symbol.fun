@@ -1,4 +1,4 @@
-(* Copyright (C) 2019 Matthew Fluet.
+(* Copyright (C) 2019,2021 Matthew Fluet.
  *
  * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
@@ -22,8 +22,8 @@ fun equals (T {cty = cty1, name = name1, symbolScope = symbolScope1},
 fun hash (T {name, ...}) = String.hash name
 
 fun layout (T {cty, name, symbolScope}) =
-  Layout.record [("name", Layout.str name),
-                 ("cty", Option.layout CType.layout cty),
+  Layout.record [("cty", Option.layout CType.layout cty),
+                 ("name", Layout.str name),
                  ("symbolScope", CSymbolScope.layout symbolScope)]
 
 val toString = Layout.toString o layout
