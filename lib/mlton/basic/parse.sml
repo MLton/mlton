@@ -1,4 +1,4 @@
-(* Copyright (C) 2017,2019 Jason Carr, Matthew Fluet.
+(* Copyright (C) 2017,2019,2021 Jason Carr, Matthew Fluet.
  *
  * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
@@ -445,7 +445,7 @@ fun char c =
                     expected ([name], location)}
    end
 
-fun each ps = List.fold
+fun each ps = List.foldr
    (ps, pure [],
     fn (p, x) => (op ::) <$$> (p, x))
 
