@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2017 Matthew Fluet.
+(* Copyright (C) 2009,2017,2021 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -120,6 +120,8 @@ fun index (l, f) =
       loop (l, 0)
    end
 
+val empty = []
+
 fun isEmpty l =
    case l of
       [] => true
@@ -193,6 +195,8 @@ in
 end
 
 val cons = op ::
+
+fun single x = cons (x, empty)
 
 val snoc = fn (l, x) => l @ [x]
 
