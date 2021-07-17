@@ -418,36 +418,44 @@ structure Value =
                  | _ => NONE)
           | _ => NONE
 
+      fun equals (T s, T s') = Set.equals (s, s')
+
       local
          open Layout
-      in
-         fun layout v =
-            case value v of
-               Array {birth, elt, length, raw, ...} =>
-                  seq [str "array ", tuple [Birth.layout birth,
-                                            layout length,
-                                            layout elt,
-                                            Raw.layout raw]]
-             | Const c => Const.layout c
-             | Datatype d => layoutData d
-             | Ref {arg, birth, ...} =>
-                  seq [str "ref ", tuple [layout arg, Birth.layout birth]]
-             | Tuple vs => Vector.layout layout vs
-             | Vector {elt, length, ...} =>
-                  seq [str "vector ", tuple [layout elt,
-                                             layout length]]
-             | Weak v => seq [str "weak ", layout v]
-         and layoutData (Data {value, ...}) =
+         fun layout (seen, v) =
+            if List.contains (seen, v, equals)
+               then str "$$$"
+               else let
+                       val seen' = v::seen
+                       val layout = fn v' => layout (seen', v')
+                    in
+                       case value v of
+                          Array {birth, elt, length, raw, ...} =>
+                             seq [str "array ", tuple [Birth.layout birth,
+                                                       layout length,
+                                                       layout elt,
+                                                       Raw.layout raw]]
+                        | Const c => Const.layout c
+                        | Datatype d => layoutData layout d
+                        | Ref {arg, birth, ...} =>
+                             seq [str "ref ", tuple [layout arg, Birth.layout birth]]
+                        | Tuple vs => Vector.layout layout vs
+                        | Vector {elt, length, ...} =>
+                             seq [str "vector ", tuple [layout elt,
+                                                        layout length]]
+                        | Weak v => seq [str "weak ", layout v]
+                    end
+         and layoutData layoutV (Data {value, ...}) =
             case !value of
                Undefined => str "undefined datatype"
-             | ConApp {con, uniq, ...} =>
+             | ConApp {con, args, ...} =>
                   record [("con", Con.layout con),
-                          ("uniq", Unique.layout uniq)]
-                  (* Can't layout the args because there may be a circularity *)
+                          ("args", Vector.layout layoutV args)]
              | Unknown => str "unknown datatype"
+      in
+         val layout = fn v => layout ([], v)
+         val layoutData = layoutData layout
       end
-
-      fun equals (T s, T s') = Set.equals (s, s')
 
       val equals =
          Trace.trace2 
