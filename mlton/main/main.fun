@@ -340,6 +340,9 @@ fun makeOptions {usage} =
                            Control.setCommandLineConst {name = name,
                                                         value = value}
                       | _ => usage (concat ["invalid -const flag: ", s]))),
+       (Expert, "const-prop-absval-layout-depth", " <n>",
+        "cut-off depth for printing of abstract values in`ConstantPropagation`",
+        intRef constPropAbsValLayoutDepth),
        (Expert, "contify-into-main", " {false|true}",
         "contify functions into main",
         boolRef contifyIntoMain),

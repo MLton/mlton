@@ -425,6 +425,8 @@ structure Value =
          fun layout (seen, v) =
             if List.contains (seen, v, equals)
                then str "$$$"
+            else if List.length seen > !Control.constPropAbsValLayoutDepth
+               then str "..."
                else let
                        val seen' = v::seen
                        val layout = fn v' => layout (seen', v')

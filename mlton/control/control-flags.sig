@@ -94,6 +94,8 @@ signature CONTROL_FLAGS =
       val commandLineConsts: StrMap.t
       val setCommandLineConst: {name: string, value: string} -> unit
 
+      val constPropAbsValLayoutDepth: int ref
+
       val contifyIntoMain: bool ref
 
       (* Generate an executable with debugging info. *)

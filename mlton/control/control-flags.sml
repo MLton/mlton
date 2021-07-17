@@ -261,6 +261,10 @@ val codegenFuseOpAndChk = control {name = "fuse `op` and `opCheckP` primitives i
                                    default = false,
                                    toString = Bool.toString}
 
+val constPropAbsValLayoutDepth = control {name = "cut-off depth for printing of abstract values in`ConstantPropagation`",
+                                          default = 2,
+                                          toString = Int.toString}
+
 val contifyIntoMain = control {name = "contifyIntoMain",
                                default = false,
                                toString = Bool.toString}
