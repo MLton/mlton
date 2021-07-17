@@ -1,4 +1,4 @@
-(* Copyright (C) 2017,2019 Matthew Fluet.
+(* Copyright (C) 2017,2019,2021 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -136,7 +136,10 @@ local
    val symId =
       (fn (c,cs,suf) => (c::(cs@suf))) <$$$>
       (sym, many sym,
-       (op ::) <$$> (char #"_", many (nextSat Char.isDigit))
+       List.concat <$>
+       each [many (nextSat Char.isAlpha),
+             List.single <$> char #"_",
+             many (nextSat Char.isDigit)]
        <|> pure [])
    val tyvarId =
       (op ::) <$$> (nextSat (fn c => c = #"'"), many alphanum)
