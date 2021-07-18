@@ -158,9 +158,16 @@ structure Value =
                val global = fn z => make #global z
             end
 
-            fun layout (one: 'a t): Layout.t =
-               Layout.record
-               [("global", Option.layout Var.layout (! (global one)))]
+            fun layout layoutA =
+               let
+                  val optionVarLayout = Option.layout Var.layout
+                  open Layout
+               in
+                  fn T {extra, global} =>
+                  seq [str "One ",
+                       record [("extra", layoutA extra),
+                               ("global", optionVarLayout (!global))]]
+               end
 
             fun new (a: 'a): 'a t = T {extra = a,
                                        global = ref NONE}
@@ -176,12 +183,17 @@ structure Value =
              | Undefined
              | Unknown
 
-            val toString =
-               fn One _ => "One"
-                | Undefined => "Undefined"
-                | Unknown => "Unknown"
-
-            fun layout b = Layout.str (toString b)
+            fun layout layoutA =
+               let
+                  val oneLayout = One.layout layoutA
+                  open Layout
+               in
+                  fn p =>
+                  case p of
+                     One x => oneLayout x
+                   | Undefined => str "undefined birth"
+                   | Unknown => str "unknown birth"
+               end
          end
 
       structure Birth =
@@ -189,7 +201,13 @@ structure Value =
             datatype 'a t = T of {coercedTo: 'a t list ref,
                                   place: 'a Place.t ref}
 
-            fun layout (T {place, ...}) = Place.layout (!place)
+            fun layout layoutA =
+               let
+                  val placeLayout = Place.layout layoutA
+               in
+                  fn T {place, ...} =>
+                  placeLayout (!place)
+               end
 
             fun equals (T {place = r, ...}, T {place = r', ...}) = r = r'
 
@@ -200,73 +218,41 @@ structure Value =
             fun unknown (): 'a t = new Place.Unknown
             fun here (a: 'a): 'a t = new (Place.One (One.new a))
 
-            val traceMakeUnknown = 
-               Trace.info 
-               "ConstantPropagation.Value.Birth.makeUnknown"
+            fun makeUnknown (T {place, coercedTo, ...}) =
+               case !place of
+                  Place.Unknown => ()
+                | _ => (place := Place.Unknown
+                        ; List.foreach (!coercedTo, makeUnknown)
+                        ; coercedTo := [])
 
-            fun makeUnknown arg =
-               Trace.traceInfo'
-               (traceMakeUnknown, layout, Unit.layout)
-               (fn T {place, coercedTo, ...} =>
-                case !place of
-                   Place.Unknown => ()
-                 | _ => (place := Place.Unknown
-                         ; List.foreach (!coercedTo, makeUnknown)
-                         ; coercedTo := [])) arg
+            fun send (b, one) =
+               let
+                  fun loop (b as T {place, coercedTo, ...}) =
+                     case !place of
+                        Place.Undefined => (place := Place.One one
+                                            ; List.foreach (!coercedTo, loop))
+                      | Place.One one' => if One.equals (one, one')
+                                             then ()
+                                             else makeUnknown b
+                      | Place.Unknown => ()
+               in
+                  loop b
+               end
 
-            val traceSend = 
-               Trace.info 
-               "ConstantPropagation.Value.Birth.send"
-
-            fun send arg =
-               Trace.traceInfo'
-               (traceSend, Layout.tuple2 (layout, One.layout), Unit.layout)
-               (fn (b, one) =>
-                let
-                   fun loop (b as T {place, coercedTo, ...}) =
-                      case !place of
-                         Place.Undefined => (place := Place.One one
-                                             ; List.foreach (!coercedTo, loop))
-                       | Place.One one' => if One.equals (one, one')
-                                              then ()
-                                           else makeUnknown b
-                       | Place.Unknown => ()
-                in
-                   loop b
-                end) arg
-
-            val traceCoerce = 
-               Trace.info 
-               "ConstantPropagation.Value.Birth.coerce"
-            fun coerce arg =
-               Trace.traceInfo'
-               (traceCoerce,
-                fn {from, to} => Layout.record [("from", layout from),
-                                                ("to", layout to)],
-                Unit.layout)
-               (fn {from = from as T {place, coercedTo, ...}, to} =>
-                if equals (from, to)
-                   then ()
-                else
-                   let
-                      fun push () = List.push (coercedTo, to)
-                   in
-                      case !place of
-                         Place.Unknown => makeUnknown to
-                       | Place.One one => (push (); send (to, one))
-                       | Place.Undefined => push ()
-                   end) arg
-
-            val traceUnify = 
-               Trace.info 
-               "ConstantPropagation.Value.Birth.unify"
-
-            fun unify arg =
-               Trace.traceInfo'
-               (traceUnify, Layout.tuple2 (layout, layout), Unit.layout)
-               (fn (c, c') =>
-                (coerce {from = c, to = c'}
-                 ; coerce {from = c', to = c})) arg
+            fun coerce ({from = from as T {place, coercedTo, ...}, to}) =
+               if equals (from, to)
+                  then ()
+                  else let
+                          fun push () = List.push (coercedTo, to)
+                       in
+                          case !place of
+                             Place.Unknown => makeUnknown to
+                           | Place.One one => (push (); send (to, one))
+                           | Place.Undefined => push ()
+                       end
+            fun unify (b1, b2) =
+               (coerce {from = b1, to = b2}
+                ; coerce {from = b2, to = b1})
          end
 
       structure Raw =
@@ -433,20 +419,24 @@ structure Value =
                     in
                        case value v of
                           Array {birth, elt, length, raw, ...} =>
-                             seq [str "array ", tuple [Birth.layout birth,
-                                                       layout length,
-                                                       layout elt,
-                                                       Raw.layout raw]]
+                             seq [str "array ",
+                                  tuple [Birth.layout layoutArrayBirth birth,
+                                         layout length,
+                                         layout elt,
+                                         Raw.layout raw]]
                         | Const c => Const.layout c
                         | Datatype d => layoutData layout d
                         | Ref {arg, birth, ...} =>
-                             seq [str "ref ", tuple [layout arg, Birth.layout birth]]
+                             seq [str "ref ",
+                                  tuple [layout arg,
+                                         Birth.layout (layoutRefBirth layout) birth]]
                         | Tuple vs => Vector.layout layout vs
                         | Vector {elt, length, ...} =>
                              seq [str "vector ", tuple [layout elt,
                                                         layout length]]
                         | Weak v => seq [str "weak ", layout v]
                     end
+         and layoutArrayBirth () = Unit.layout ()
          and layoutData layoutV (Data {value, ...}) =
             case !value of
                Undefined => str "undefined datatype"
@@ -454,6 +444,8 @@ structure Value =
                   record [("con", Con.layout con),
                           ("args", Vector.layout layoutV args)]
              | Unknown => str "unknown datatype"
+         and layoutRefBirth layoutV {init} =
+            Layout.record [("init", layoutV init)]
       in
          val layout = fn v => layout ([], v)
          val layoutData = layoutData layout
@@ -464,6 +456,10 @@ structure Value =
          ("ConstantPropagation.Value.equals", 
           layout, layout, Bool.layout) 
          equals
+
+      structure RefBirth = Birth
+      structure ArrayBirth = Birth
+
 
       fun globals arg: (Var.t * Type.t) vector option =
          Trace.trace
@@ -673,7 +669,7 @@ structure Value =
             val {value, ty, ...} = Set.! s
          in case value of
             Array {elt, length, ...} =>
-               new (Array {birth = Birth.unknown (), elt = elt, length = length, raw = Raw.raw false}, ty)
+               new (Array {birth = ArrayBirth.unknown (), elt = elt, length = length, raw = Raw.raw false}, ty)
           | _ => Error.bug "ConstantPropagation.Value.arrayFromArray"
          end
 
@@ -747,14 +743,14 @@ structure Value =
          val fromType =
             make (Const.undefined,
                   Data.undefined,
-                  Birth.undefined,
-                  Birth.undefined,
+                  ArrayBirth.undefined,
+                  RefBirth.undefined,
                   Raw.undefined)
          val unknown =
             make (Const.unknown,
                   Data.unknown,
-                  Birth.unknown,
-                  Birth.unknown,
+                  ArrayBirth.unknown,
+                  RefBirth.unknown,
                   Raw.unknown)
       end
 
@@ -889,11 +885,11 @@ fun transform (program: Program.t): Program.t =
                    | (Datatype from, Datatype to) =>
                         coerceData {from = from, to = to}
                    | (Ref {birth, arg}, Ref {birth = b', arg = a'}) =>
-                        (Birth.coerce {from = birth, to = b'}
+                        (RefBirth.coerce {from = birth, to = b'}
                          ; unify (arg, a'))
                    | (Array {birth = b, length = n, elt = x, raw = r},
                       Array {birth = b', length = n', elt = x', raw = r'}) =>
-                        (Birth.coerce {from = b, to = b'}
+                        (ArrayBirth.coerce {from = b, to = b'}
                          ; coerce {from = n, to = n'}
                          ; unify (x, x')
                          ; Raw.coerce {from = r, to = r'})
@@ -931,11 +927,11 @@ fun transform (program: Program.t): Program.t =
                        (Const c, Const c') => Const.unify (c, c')
                      | (Datatype d, Datatype d') => unifyData (d, d')
                      | (Ref {birth, arg}, Ref {birth = b', arg = a'}) =>
-                          (Birth.unify (birth, b')
+                          (RefBirth.unify (birth, b')
                            ; unify (arg, a'))
                      | (Array {birth = b, length = n, elt = x, raw = r},
                         Array {birth = b', length = n', elt = x', raw = r'}) =>
-                          (Birth.unify (b, b')
+                          (ArrayBirth.unify (b, b')
                            ; unify (n, n')
                            ; unify (x, x')
                            ; Raw.unify (r, r'))
@@ -1008,7 +1004,7 @@ fun transform (program: Program.t): Program.t =
                   let
                      val a = fromType resultType
                      val _ = coerce {from = length, to = arrayLength a}
-                     val _ = Birth.coerce {from = birth, to = arrayBirth a}
+                     val _ = ArrayBirth.coerce {from = birth, to = arrayBirth a}
                      val _ = Raw.coerce {from = Raw.raw raw, to = arrayRaw a}
                   in
                      a
@@ -1060,8 +1056,8 @@ fun transform (program: Program.t): Program.t =
                         val v = arg 0
                         val r = fromType resultType
                         val _ = coerce {from = v, to = deref r}
-                        val _ = Birth.coerce {from = bear {init = v},
-                                              to = refBirth r}
+                        val _ = RefBirth.coerce {from = bear {init = v},
+                                                 to = refBirth r}
                      in
                         r
                      end
