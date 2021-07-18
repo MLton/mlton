@@ -985,7 +985,7 @@ fun transform (program: Program.t): Program.t =
              | Const _ => ()
              | Datatype _ => ()
              | Ref {arg, ...} => makeUnknown arg
-             | Vector {elt, ...} => makeUnknown elt
+             | Vector _ => ()
              | Tuple vs => Vector.foreach (vs, sideEffect)
              | Weak v => makeUnknown v
          fun primApp {prim,
