@@ -255,107 +255,48 @@ structure Value =
                 ; coerce {from = b2, to = b1})
          end
 
-      structure Raw =
+      structure ArrayInit =
          struct
-            datatype t = T of {coercedTo: t list ref,
-                               raw: raw ref}
-            and raw =
-               Raw of bool
-             | Undefined (* no possible value *)
-             | Unknown (* many possible values *)
+            datatype 'a t =
+               Alloc of {raw: bool}
+             | Array of {args: 'a vector}
 
-            fun layout (T {raw, ...}) = layoutRaw (!raw)
-            and layoutRaw r =
+            fun layout layoutA ai =
                let
                   open Layout
                in
-                  case r of
-                     Raw b => Bool.layout b
-                   | Undefined => str "undefined raw"
-                   | Unknown => str "unknown raw"
+                  case ai of
+                     Alloc {raw} =>
+                        seq [str "Alloc ",
+                             record [("raw", Bool.layout raw)]]
+                   | Array {args} =>
+                        seq [str "Array ",
+                             record [("args",
+                                      Vector.layout layoutA args)]]
                end
+         end
+      structure ArrayBirth =
+         struct
+            open Birth
+            type 'a t = 'a ArrayInit.t Birth.t
+            val layout = fn layoutA => Birth.layout (ArrayInit.layout layoutA)
+         end
+      structure RefInit =
+         struct
+            type 'a t = {arg: 'a}
 
-            fun new r = T {coercedTo = ref [],
-                           raw = ref r}
-
-            fun equals (T {raw = r1, ...}, T {raw = r2, ...}) = r1 = r2
-
-            val equals =
-               Trace.trace2
-               ("ConstantPropagation.Value.Raw.equals",
-                layout, layout, Bool.layout)
-               equals
-
-            val raw = new o Raw
-
-            fun undefined () = new Undefined
-            fun unknown () = new Unknown
-
-            fun makeUnknown (T {coercedTo, raw}): unit =
-               case !raw of
-                  Unknown => ()
-                | _ => (raw := Unknown
-                        ; List.foreach (!coercedTo, makeUnknown)
-                        ; coercedTo := [])
-
-            val makeUnknown =
-               Trace.trace
-               ("ConstantPropagation.Value.Raw.makeUnknown",
-                layout, Unit.layout)
-               makeUnknown
-
-            fun send (r: t, r': raw): unit =
+            fun layout layoutA {arg} =
                let
-                  fun loop (r as T {coercedTo, raw}) =
-                     case (r', !raw) of
-                        (_, Unknown) => ()
-                      | (_, Undefined) => (raw := r'
-                                           ; List.foreach (!coercedTo, loop))
-                      | (Raw b', Raw b'') =>
-                           if b' = b''
-                              then ()
-                              else makeUnknown r
-                      | _ => makeUnknown r
+                  open Layout
                in
-                  loop r
+                  record [("arg", layoutA arg)]
                end
-
-            val send =
-               Trace.trace2
-               ("ConstantPropagation.Value.Raw.send",
-                layout, layoutRaw, Unit.layout)
-               send
-
-            fun coerce {from = from as T {coercedTo, raw}, to: t}: unit =
-               if equals (from, to)
-                  then ()
-               else
-                  let
-                     fun push () = List.push (coercedTo, to)
-                  in
-                     case !raw of
-                        r as Raw _ => (push (); send (to, r))
-                      | Undefined => push ()
-                      | Unknown => makeUnknown to
-                  end
-
-            val coerce =
-               Trace.trace
-               ("ConstantPropagation.Value.Raw.coerce",
-                fn {from, to} => Layout.record [("from", layout from),
-                                                ("to", layout to)],
-                Unit.layout)
-               coerce
-
-            fun unify (r, r') =
-               (coerce {from = r, to = r'}
-                ; coerce {from = r', to = r})
-
-            val unify =
-               Trace.trace2
-               ("ConstantPropagation.Value.Raw.unify",
-                layout, layout, Unit.layout)
-               unify
+         end
+      structure RefBirth =
+         struct
+            open Birth
+            type 'a t = 'a RefInit.t Birth.t
+            val layout = fn layoutA => Birth.layout (RefInit.layout layoutA)
          end
 
       structure Set = DisjointSet
@@ -366,14 +307,13 @@ structure Value =
                ty: Type.t,
                value: value} Set.t
       and value =
-         Array of {birth: unit Birth.t,
+         Array of {birth: t ArrayBirth.t,
                    elt: t,
-                   length: t,
-                   raw: Raw.t}
+                   length: t}
        | Const of Const.t
        | Datatype of data
        | Ref of {arg: t,
-                 birth: {init: t} Birth.t}
+                 birth: t RefBirth.t}
        | Tuple of t vector
        | Vector of {elt: t,
                     length: t}
@@ -418,25 +358,23 @@ structure Value =
                        val layout = fn v' => layout (seen', v')
                     in
                        case value v of
-                          Array {birth, elt, length, raw, ...} =>
+                          Array {birth, elt, length, ...} =>
                              seq [str "array ",
-                                  tuple [Birth.layout layoutArrayBirth birth,
+                                  tuple [ArrayBirth.layout layout birth,
                                          layout length,
-                                         layout elt,
-                                         Raw.layout raw]]
+                                         layout elt]]
                         | Const c => Const.layout c
                         | Datatype d => layoutData layout d
                         | Ref {arg, birth, ...} =>
                              seq [str "ref ",
                                   tuple [layout arg,
-                                         Birth.layout (layoutRefBirth layout) birth]]
+                                         RefBirth.layout layout birth]]
                         | Tuple vs => Vector.layout layout vs
                         | Vector {elt, length, ...} =>
                              seq [str "vector ", tuple [layout elt,
                                                         layout length]]
                         | Weak v => seq [str "weak ", layout v]
                     end
-         and layoutArrayBirth () = Unit.layout ()
          and layoutData layoutV (Data {value, ...}) =
             case !value of
                Undefined => str "undefined datatype"
@@ -444,8 +382,6 @@ structure Value =
                   record [("con", Con.layout con),
                           ("args", Vector.layout layoutV args)]
              | Unknown => str "unknown datatype"
-         and layoutRefBirth layoutV {init} =
-            Layout.record [("init", layoutV init)]
       in
          val layout = fn v => layout ([], v)
          val layoutData = layoutData layout
@@ -456,9 +392,6 @@ structure Value =
          ("ConstantPropagation.Value.equals", 
           layout, layout, Bool.layout) 
          equals
-
-      structure RefBirth = Birth
-      structure ArrayBirth = Birth
 
 
       fun globals arg: (Var.t * Type.t) vector option =
@@ -493,47 +426,66 @@ structure Value =
                       (* avoid globalizing circular abstract values *)
                       val _ = r := No
                       fun yes e = Yes (newGlobal (ty, e))
-                      fun unary (Birth.T {place, ...},
-                                 makeInit: 'a -> t,
-                                 primApp: {targs: Type.t vector,
-                                           args: Var.t vector} -> Exp.t,
-                                 targ: Type.t) =
-                         case (!place, isSmallType targ) of
-                            (Place.One (One.T {global = glob, extra, ...}), true) =>
-                               let
-                                  val init = makeInit extra
-                               in
-                                  case global init of
-                                     SOME (x, _) =>
-                                        Yes
-                                        (case !glob of
-                                            NONE => 
-                                               let
-                                                  val exp =
-                                                     primApp
-                                                     {targs = Vector.new1 targ,
-                                                      args = Vector.new1 x}
-                                                  val g = newGlobal (ty, exp)
-                                               in
-                                                  glob := SOME g; g
-                                               end
-                                          | SOME g => g)
-                                   | _ => No
-                               end
+                      fun once (Birth.T {place, ...}, make) =
+                         case !place of
+                            Place.One (One.T {extra, global = r, ...}) =>
+                               (case make extra of
+                                   SOME exp =>
+                                      Yes (case !r of
+                                              NONE => let
+                                                         val g = newGlobal (ty, exp)
+                                                      in
+                                                         r := SOME g; g
+                                                      end
+                                            | SOME g => g)
+                                 | NONE => No)
                           | _ => No
+                      fun arrayOnce (birth, length) =
+                         let
+                            val eltTy = Type.deArray ty
+                         in
+                            once
+                            (birth, fn ab =>
+                             if isSmallType ty
+                                then (case ab of
+                                         ArrayInit.Alloc {raw} =>
+                                            (case global length of
+                                                NONE => NONE
+                                              | SOME (length, _) =>
+                                                   SOME (Exp.PrimApp
+                                                         {args = Vector.new1 length,
+                                                          prim = Prim.Array_alloc {raw = raw},
+                                                          targs = Vector.new1 eltTy}))
+                                       | ArrayInit.Array {args} =>
+                                            (case globals args of
+                                                NONE => NONE
+                                              | SOME args =>
+                                                   SOME (Exp.PrimApp
+                                                         {args = Vector.map (args, #1),
+                                                          prim = Prim.Array_array,
+                                                          targs = Vector.new1 eltTy})))
+                                else NONE)
+                         end
+                      fun refOnce birth =
+                         let
+                            val argTy = Type.deRef ty
+                         in
+                            once (birth, fn {arg} =>
+                                  if isSmallType ty
+                                     then (case global arg of
+                                              SOME (arg, _) =>
+                                                 SOME (Exp.PrimApp
+                                                       {args = Vector.new1 arg,
+                                                        prim = Prim.Ref_ref,
+                                                        targs = Vector.new1 argTy})
+                                            | _ => NONE)
+                                     else NONE)
+                         end
                       val g =
                          case value of
-                            Array {birth, length, raw = Raw.T {raw, ...}, ...} =>
+                            Array {birth, length, ...} =>
                                if !Control.globalizeArrays then
-                               unary (birth, fn _ => length,
-                                      fn {args, targs} =>
-                                      case !raw of
-                                         Raw.Raw raw =>
-                                            Exp.PrimApp {args = args,
-                                                         prim = Prim.Array_alloc {raw = raw},
-                                                         targs = targs}
-                                       | _ => Error.bug "ConstantPropagation.Value.global: Array, raw",
-                                      Type.deArray ty)
+                               arrayOnce (birth, length)
                                else No
                           | Const (Const.T {const, ...}) =>
                                (case !const of
@@ -551,12 +503,7 @@ structure Value =
                                  | _ => No)
                           | Ref {birth, ...} =>
                                if !Control.globalizeRefs then
-                               unary (birth, fn {init} => init,
-                                      fn {args, targs} =>
-                                      Exp.PrimApp {args = args,
-                                                   prim = Prim.Ref_ref,
-                                                   targs = targs},
-                                      Type.deRef ty)
+                               refOnce birth
                                else No
                           | Tuple vs =>
                                (case globals vs of
@@ -661,7 +608,6 @@ structure Value =
       in val dearray = make ("ConstantPropagation.Value.dearray", #elt)
          val arrayLength = make ("ConstantPropagation.Value.arrayLength", #length)
          val arrayBirth = make ("ConstantPropagation.Value.arrayBirth", #birth)
-         val arrayRaw = make ("ConstantPropagation.Value.arrayRaw", #raw)
       end
 
       fun arrayFromArray (T s: t): t =
@@ -669,7 +615,7 @@ structure Value =
             val {value, ty, ...} = Set.! s
          in case value of
             Array {elt, length, ...} =>
-               new (Array {birth = ArrayBirth.unknown (), elt = elt, length = length, raw = Raw.raw false}, ty)
+               new (Array {birth = ArrayBirth.unknown (), elt = elt, length = length}, ty)
           | _ => Error.bug "ConstantPropagation.Value.arrayFromArray"
          end
 
@@ -717,7 +663,7 @@ structure Value =
          (* The extra birth is because of let-style polymorphism.
           * arrayBirth is really the same as refBirth.
           *)
-         fun make (const, data, refBirth, arrayBirth, raw) =
+         fun make (const, data, refBirth, arrayBirth) =
             let
                fun loop (t: Type.t): t =
                   new
@@ -725,8 +671,7 @@ structure Value =
                       Type.Array t => 
                          Array {birth = arrayBirth (),
                                 elt = loop t,
-                                length = loop (Type.word (WordSize.seqIndex ())),
-                                raw = raw ()}
+                                length = loop (Type.word (WordSize.seqIndex ()))}
                     | Type.Datatype _ => Datatype (data ())
                     | Type.Ref t => Ref {arg = loop t,
                                          birth = refBirth ()}
@@ -744,14 +689,12 @@ structure Value =
             make (Const.undefined,
                   Data.undefined,
                   ArrayBirth.undefined,
-                  RefBirth.undefined,
-                  Raw.undefined)
+                  RefBirth.undefined)
          val unknown =
             make (Const.unknown,
                   Data.unknown,
                   ArrayBirth.unknown,
-                  RefBirth.unknown,
-                  Raw.unknown)
+                  RefBirth.unknown)
       end
 
       fun select {tuple, offset, resultType = _} =
@@ -887,12 +830,11 @@ fun transform (program: Program.t): Program.t =
                    | (Ref {birth, arg}, Ref {birth = b', arg = a'}) =>
                         (RefBirth.coerce {from = birth, to = b'}
                          ; unify (arg, a'))
-                   | (Array {birth = b, length = n, elt = x, raw = r},
-                      Array {birth = b', length = n', elt = x', raw = r'}) =>
+                   | (Array {birth = b, length = n, elt = x},
+                      Array {birth = b', length = n', elt = x'}) =>
                         (ArrayBirth.coerce {from = b, to = b'}
                          ; coerce {from = n, to = n'}
-                         ; unify (x, x')
-                         ; Raw.coerce {from = r, to = r'})
+                         ; unify (x, x'))
                    | (Vector {length = n, elt = x},
                       Vector {length = n', elt = x'}) =>
                         (coerce {from = n, to = n'}
@@ -929,12 +871,11 @@ fun transform (program: Program.t): Program.t =
                      | (Ref {birth, arg}, Ref {birth = b', arg = a'}) =>
                           (RefBirth.unify (birth, b')
                            ; unify (arg, a'))
-                     | (Array {birth = b, length = n, elt = x, raw = r},
-                        Array {birth = b', length = n', elt = x', raw = r'}) =>
+                     | (Array {birth = b, length = n, elt = x},
+                        Array {birth = b', length = n', elt = x'}) =>
                           (ArrayBirth.unify (b, b')
                            ; unify (n, n')
-                           ; unify (x, x')
-                           ; Raw.unify (r, r'))
+                           ; unify (x, x'))
                      | (Vector {length = n, elt = x},
                         Vector {length = n', elt = x'}) =>
                           (unify (n, n')
@@ -1000,44 +941,47 @@ fun transform (program: Program.t): Program.t =
                   (coerce {from = v, to = dearray a}
                    ; unit ())
                fun arg i = Vector.sub (args, i)
-               fun array (raw, length, birth) =
+               fun array (birth, length) =
                   let
                      val a = fromType resultType
-                     val _ = coerce {from = length, to = arrayLength a}
                      val _ = ArrayBirth.coerce {from = birth, to = arrayBirth a}
-                     val _ = Raw.coerce {from = Raw.raw raw, to = arrayRaw a}
+                     val _ = coerce {from = length, to = arrayLength a}
                   in
-                     a
+                     (a, dearray a)
                   end
-               fun vector () =
+               fun vector length =
                   let
                      val v = fromType resultType
+                     val _ = coerce {from = length, to = vectorLength v}
+                  in
+                     (v, devector v)
+                  end
+               fun sequence mk =
+                  let
                      val l =
                         (const o S.Const.word o WordX.fromInt)
                         (Vector.length args, WordSize.seqIndex ())
-                     val _ = coerce {from = l, to = vectorLength v}
+                     val (seq, elt) = mk l
                      val _ =
                         Vector.foreach
                         (args, fn arg =>
-                         coerce {from = arg, to = devector v})
+                         coerce {from = arg, to = elt})
                   in
-                     v
+                     seq
                   end
             in
                case prim of
-                  Prim.Array_alloc {raw} => array (raw, arg 0, bear ())
+                  Prim.Array_alloc {raw} =>
+                     let
+                        val birth = bear (ArrayInit.Alloc {raw = raw})
+                     in
+                        #1 (array (birth, arg 0))
+                     end
                 | Prim.Array_array =>
                      let
-                        val l =
-                           (const o S.Const.word o WordX.fromInt)
-                           (Vector.length args, WordSize.seqIndex ())
-                        val a = array (false, l, bear ())
-                        val _ =
-                           Vector.foreach
-                           (args, fn arg =>
-                            coerce {from = arg, to = dearray a})
+                        val birth = bear (ArrayInit.Array {args = args})
                      in
-                        a
+                        sequence (fn l => array (birth, l))
                      end
                 | Prim.Array_copyArray =>
                      update (arg 0, dearray (arg 2))
@@ -1056,14 +1000,14 @@ fun transform (program: Program.t): Program.t =
                         val v = arg 0
                         val r = fromType resultType
                         val _ = coerce {from = v, to = deref r}
-                        val _ = RefBirth.coerce {from = bear {init = v},
+                        val _ = RefBirth.coerce {from = bear {arg = v},
                                                  to = refBirth r}
                      in
                         r
                      end
                 | Prim.Vector_length => vectorLength (arg 0)
                 | Prim.Vector_sub => devector (arg 0)
-                | Prim.Vector_vector => vector ()
+                | Prim.Vector_vector => sequence vector
                 | Prim.Weak_get => deweak (arg 0)
                 | Prim.Weak_new =>
                      let
