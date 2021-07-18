@@ -848,7 +848,7 @@ fun transform (program: Program.t): Program.t =
                 val v = ConApp ca
                 fun loop arg: unit =
                    traceSendConAppLoop
-                   (fn Data {value, coercedTo, filters, ...} =>
+                   (fn d' as Data {value, coercedTo, filters, ...} =>
                     case !value of
                        Unknown => ()
                      | Undefined =>
@@ -864,7 +864,7 @@ fun transform (program: Program.t): Program.t =
                              orelse (Con.equals (con, con')
                                      andalso Vector.isEmpty args)
                              then ()
-                          else makeDataUnknown d) arg
+                          else makeDataUnknown d') arg
              in loop d
              end) arg
          and coerces {froms: Value.t vector, tos: Value.t vector} =
