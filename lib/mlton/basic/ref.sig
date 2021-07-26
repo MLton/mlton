@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2021 Matthew Fluet.
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a HPND-style license.
@@ -23,5 +24,6 @@ signature REF =
                                         print: unit -> unit}
       val layout: ('a -> Layout.t) -> 'a t -> Layout.t
       val memoize: 'a option t * (unit -> 'a) -> 'a
+      val new: 'a -> 'a t
       val swap: 'a t * 'a t -> unit
    end

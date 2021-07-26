@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2021 Matthew Fluet.
+ * Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a HPND-style license.
@@ -9,6 +10,8 @@ structure Ref: REF =
 struct
 
 type 'a t = 'a ref
+
+val new = ref
 
 val (op !) = (op !)
 
