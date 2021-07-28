@@ -33,7 +33,6 @@ structure Node = Graph.Node
 structure Size = TwoPointLattice (val bottom = "small"
                                   val top = "large")
 
-structure Sconst = Const
 open Exp Transfer
 
 structure Value =
@@ -44,89 +43,17 @@ structure Value =
        | Yes of Var.t
 
       structure Const =
+         FlatLatticeMono(structure Point = S.Const
+                         val bottom = "undefined constant"
+                         val top = "unknown constant")
+      structure Const =
          struct
-            datatype t = T of {const: const ref,
-                               coercedTo: t list ref}
-            and const =
-               Const of Const.t
-             | Undefined (* no possible value *)
-             | Unknown (* many possible values *)
-
-            fun layout (T {const, ...}) = layoutConst (!const)
-            and layoutConst c =
-               let
-                  open Layout
-               in
-                  case c of
-                     Const c => Const.layout c
-                   | Undefined => str "undefined constant"
-                   | Unknown => str "unknown constant"
-               end
-
-            fun new c = T {const = ref c,
-                           coercedTo = ref []}
-
-            fun equals (T {const = r, ...}, T {const = r', ...}) = r = r'
-
-            val equals =
-               Trace.trace2 
-               ("ConstantPropagation.Value.Const.equals", 
-                layout, layout, Bool.layout) 
-               equals
-
-            val const = new o Const
-
-            fun undefined () = new Undefined
-
-            fun unknown () = new Unknown
-
-            fun makeUnknown (T {const, coercedTo}): unit =
-               case !const of
-                  Unknown => ()
-                | _ => (const := Unknown
-                        ; List.foreach (!coercedTo, makeUnknown)
-                        ; coercedTo := [])
-
-            val makeUnknown =
-               Trace.trace 
-               ("ConstantPropagation.Value.Const.makeUnknown", 
-                layout, Unit.layout) 
-               makeUnknown
-
-            fun send (c: t, c': const): unit =
-               let
-                  fun loop (c as T {const, coercedTo}) =
-                     case (c', !const) of
-                        (_, Unknown) => ()
-                      | (_, Undefined) => (const := c'
-                                           ; List.foreach (!coercedTo, loop))
-                      | (Const c', Const c'') =>
-                           if Const.equals (c', c'')
-                              then ()
-                           else makeUnknown c
-                      | _ => makeUnknown c
-               in
-                  loop c
-               end
-
-            val send =
-               Trace.trace2 
-               ("ConstantPropagation.Value.Const.send", 
-                layout, layoutConst, Unit.layout) 
-               send
-
-            fun coerce {from = from as T {const, coercedTo}, to: t}: unit =
-               if equals (from, to)
-                  then ()
-               else
-                  let
-                     fun push () = List.push (coercedTo, to)
-                  in
-                     case !const of
-                        c as Const _ => (push (); send (to, c))
-                      | Undefined => push ()
-                      | Unknown => makeUnknown to
-                  end
+            open Const
+            val undefined = Const.newBottom
+            val const = Const.newPoint
+            val getConst = Const.getPoint
+            val unknown = Const.newTop
+            val makeUnknown = Const.makeTop
 
             val coerce =
                Trace.trace
@@ -136,14 +63,10 @@ structure Value =
                 Unit.layout)
                coerce
 
-            fun unify (c, c') =
-               (coerce {from = c, to = c'}
-                ; coerce {from = c', to = c})
-
             val unify =
-               Trace.trace2 
-               ("ConstantPropagation.Value.Const.unify", 
-                layout, layout, Unit.layout) 
+               Trace.trace2
+               ("ConstantPropagation.Value.Const.unify",
+                layout, layout, Unit.layout)
                unify
          end
 
@@ -269,13 +192,15 @@ structure Value =
          val value = make #value
          val ty = make #ty
       end
-      fun deConst v =
+
+      fun deConst' v =
          case value v of
-            Const (Const.T {const, ...}) =>
-               (case !const of
-                   Const.Const c => SOME c
-                 | _ => NONE)
+            Const const => SOME const
           | _ => NONE
+      fun deConst v =
+         case deConst' v of
+            NONE => NONE
+          | SOME const => Const.getConst const
 
       fun equals (T s, T s') = Set.equals (s, s')
 
@@ -467,10 +392,10 @@ structure Value =
                                if !Control.globalizeArrays then
                                arrayOnce (birth, length)
                                else No
-                          | Const (Const.T {const, ...}) =>
-                               (case !const of
-                                   Const.Const c => yes (Exp.Const c)
-                                 | _ => No)
+                          | Const const =>
+                               (case Const.getConst const of
+                                   SOME c => yes (Exp.Const c)
+                                 | NONE => No)
                           | Datatype (Data {value, ...}) =>
                                (case !value of
                                    ConApp {args, con, ...} =>
@@ -547,7 +472,7 @@ structure Value =
          let
             val v =
                case c of
-                  Sconst.WordVector v => v
+                  S.Const.WordVector v => v
                 | _ => Error.bug err 
             val length = WordXVector.length v
             val eltTy = Type.word (WordXVector.elementSize v)
@@ -559,11 +484,11 @@ structure Value =
                     in
                        if WordXVector.forall (v, fn w' =>
                                               WordX.equals (w, w'))
-                          then const (Sconst.word w)
+                          then const (S.Const.word w)
                        else const' (Const.unknown (), eltTy)
                     end
             val length =
-               const (Sconst.Word (WordX.fromInt (length, WordSize.seqIndex ())))
+               const (S.Const.Word (WordX.fromInt (length, WordSize.seqIndex ())))
          in
             {elt = elt, length = length}
          end
@@ -572,8 +497,10 @@ structure Value =
          fun make (err, sel) v =
             case value v of
                Vector fs => sel fs
-             | Const (Const.T {const = ref (Const.Const c), ...}) =>
-                  sel (constToEltLength (c, err))
+             | Const c =>
+                  (case Const.getConst c of
+                      SOME c => sel (constToEltLength (c, err))
+                    | _ => Error.bug err)
              | _ => Error.bug err
       in
          val devector = make ("ConstantPropagation.Value.devector", #elt)
@@ -821,15 +748,17 @@ fun transform (program: Program.t): Program.t =
                          ; coerce {from = x, to = x'})
                    | (Tuple vs, Tuple vs') => coerces {froms = vs, tos = vs'}
                    | (Weak v, Weak v') => unify (v, v')
-                   | (Const (Const.T {const = ref (Const.Const c), ...}),
-                      Vector {elt, length}) =>
-                        let
-                           val {elt = elt', length = length'} =
-                              Value.constToEltLength (c, "coerce")
-                        in
-                           coerce {from = elt', to = elt}
-                           ; coerce {from = length', to = length}
-                        end
+                   | (Const c, Vector {elt, length}) =>
+                        (case Const.getConst c of
+                            SOME c =>
+                               let
+                                  val {elt = elt', length = length'} =
+                                     Value.constToEltLength (c, "coerce")
+                               in
+                                  coerce {from = elt', to = elt}
+                                  ; coerce {from = length', to = length}
+                               end
+                          | _ => error ())
                    | (_, _) => error ()
                 end) arg
          and unify (T s: t, T s': t): unit =
