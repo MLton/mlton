@@ -175,84 +175,17 @@ structure Value =
             val equals: 'a t * 'a t -> bool = 
                fn (n, n') => global n = global n'
          end
-
-      structure Place =
-         struct
-            datatype 'a t =
-               One of 'a One.t
-             | Undefined
-             | Unknown
-
-            fun layout layoutA =
-               let
-                  val oneLayout = One.layout layoutA
-                  open Layout
-               in
-                  fn p =>
-                  case p of
-                     One x => oneLayout x
-                   | Undefined => str "undefined birth"
-                   | Unknown => str "unknown birth"
-               end
-         end
-
+      structure Birth = FlatLatticeParam(structure Point = One
+                                         val bottom = "undefined birth"
+                                         val top = "unknown birth")
       structure Birth =
          struct
-            datatype 'a t = T of {coercedTo: 'a t list ref,
-                                  place: 'a Place.t ref}
+            open Birth
 
-            fun layout layoutA =
-               let
-                  val placeLayout = Place.layout layoutA
-               in
-                  fn T {place, ...} =>
-                  placeLayout (!place)
-               end
-
-            fun equals (T {place = r, ...}, T {place = r', ...}) = r = r'
-
-            fun new p = T {place = ref p,
-                           coercedTo = ref []}
-
-            fun undefined (): 'a t = new Place.Undefined
-            fun unknown (): 'a t = new Place.Unknown
-            fun here (a: 'a): 'a t = new (Place.One (One.new a))
-
-            fun makeUnknown (T {place, coercedTo, ...}) =
-               case !place of
-                  Place.Unknown => ()
-                | _ => (place := Place.Unknown
-                        ; List.foreach (!coercedTo, makeUnknown)
-                        ; coercedTo := [])
-
-            fun send (b, one) =
-               let
-                  fun loop (b as T {place, coercedTo, ...}) =
-                     case !place of
-                        Place.Undefined => (place := Place.One one
-                                            ; List.foreach (!coercedTo, loop))
-                      | Place.One one' => if One.equals (one, one')
-                                             then ()
-                                             else makeUnknown b
-                      | Place.Unknown => ()
-               in
-                  loop b
-               end
-
-            fun coerce ({from = from as T {place, coercedTo, ...}, to}) =
-               if equals (from, to)
-                  then ()
-                  else let
-                          fun push () = List.push (coercedTo, to)
-                       in
-                          case !place of
-                             Place.Unknown => makeUnknown to
-                           | Place.One one => (push (); send (to, one))
-                           | Place.Undefined => push ()
-                       end
-            fun unify (b1, b2) =
-               (coerce {from = b1, to = b2}
-                ; coerce {from = b2, to = b1})
+            val undefined = Birth.newBottom
+            fun here (a: 'a): 'a t = Birth.newPoint (One.new a)
+            val getOne = Birth.getPoint
+            val unknown = Birth.newTop
          end
 
       structure ArrayInit =
@@ -393,6 +326,53 @@ structure Value =
           layout, layout, Bool.layout) 
          equals
 
+      local
+         structure Value =
+            struct
+               type t = t
+               val layout = layout
+            end
+         structure AbsValue = Value
+      in
+         structure ArrayBirth =
+            struct
+               open ArrayBirth
+               type t = AbsValue.t ArrayBirth.t
+               val layout = ArrayBirth.layout AbsValue.layout
+               val coerce: {from: t, to: t} -> unit =
+                  Trace.trace
+                  ("ConstantPropagation.Value.ArrayBirth.coerce",
+                   fn {from, to} =>
+                   Layout.record [("from", layout from),
+                                  ("to", layout to)],
+                   Unit.layout)
+                  coerce
+               val unify: t * t -> unit =
+                  Trace.trace2
+                  ("ConstantPropagation.Value.ArrayBirth.unify",
+                   layout, layout, Unit.layout)
+                  unify
+            end
+         structure RefBirth =
+            struct
+               open RefBirth
+               type t = AbsValue.t RefBirth.t
+               val layout = RefBirth.layout AbsValue.layout
+               val coerce: {from: t, to: t} -> unit =
+                  Trace.trace
+                  ("ConstantPropagation.Value.RefBirth.coerce",
+                   fn {from, to} =>
+                   Layout.record [("from", layout from),
+                                  ("to", layout to)],
+                   Unit.layout)
+                  coerce
+               val unify: t * t -> unit =
+                  Trace.trace2
+                  ("ConstantPropagation.Value.RefBirth.unify",
+                   layout, layout, Unit.layout)
+                  unify
+            end
+      end
 
       fun globals arg: (Var.t * Type.t) vector option =
          Trace.trace
@@ -426,9 +406,9 @@ structure Value =
                       (* avoid globalizing circular abstract values *)
                       val _ = r := No
                       fun yes e = Yes (newGlobal (ty, e))
-                      fun once (Birth.T {place, ...}, make) =
-                         case !place of
-                            Place.One (One.T {extra, global = r, ...}) =>
+                      fun once (birth, make) =
+                         case Birth.getOne birth of
+                            SOME (One.T {extra, global = r, ...}) =>
                                (case make extra of
                                    SOME exp =>
                                       Yes (case !r of
