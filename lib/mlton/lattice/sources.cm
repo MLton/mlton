@@ -1,4 +1,4 @@
-(* Copyright (C) 2019 Matthew Fluet.
+(* Copyright (C) 2019,2021 Matthew Fluet.
  *
  * MLton is released under a BSD-style license.
  * See the file MLton-LICENSE for details.
@@ -7,12 +7,17 @@
 Library
 
 signature FLAT_LATTICE
+signature FLAT_LATTICE_REC
 signature N_POINT_LATTICE
 signature POWERSET_LATTICE
 signature THREE_POINT_LATTICE
 signature TWO_POINT_LATTICE
 
 functor FlatLattice
+functor FlatLatticeMono
+functor FlatLatticeParam
+functor FlatLatticePoly
+functor FlatLatticeRec
 functor NPointLattice
 functor PowerSetLattice_ListSet
 functor PowerSetLattice_UniqueSet
