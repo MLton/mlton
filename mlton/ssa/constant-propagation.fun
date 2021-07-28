@@ -226,15 +226,6 @@ structure Value =
          val ty = make #ty
       end
 
-      fun deConst' v =
-         case value v of
-            Const const => SOME const
-          | _ => NONE
-      fun deConst v =
-         case deConst' v of
-            NONE => NONE
-          | SOME const => Const.getConst const
-
       fun equals (T s, T s') = Set.equals (s, s')
 
       local
@@ -342,6 +333,266 @@ structure Value =
                   Birth.unify
             end
       end
+
+
+      fun new (value: value, ty: Type.t): t =
+         T (Set.singleton {global = ref NotComputed,
+                           ty = ty,
+                           value = value})
+
+      fun const' (c, ty) = new (Const c, ty)
+      fun const c = const' (Const.const c, Type.ofConst c)
+      fun tuple vs = new (Tuple vs, Type.tuple (Vector.map (vs, ty)))
+      fun unit () = tuple (Vector.new0 ())
+
+      fun constToVector (c, eltSz, err) =
+         let
+            val eltConst = Const.undefined ()
+            val lengthConst = Const.undefined ()
+            val () =
+               Const.addHandler'
+               (c, fn v =>
+                case v of
+                   Const.Value.Bottom => ()
+                 | Const.Value.Point (S.Const.WordVector v) =>
+                      (WordXVector.foreach
+                       (v, fn w =>
+                        Const.lowerBound (eltConst, Const.Value.Point (S.Const.word w)))
+                       ; Const.lowerBound (lengthConst, Const.Value.Point (S.Const.word (WordX.fromInt (WordXVector.length v, WordSize.seqIndex ())))))
+                 | Const.Value.Point _ => err ()
+                 | Const.Value.Top =>
+                      (Const.makeUnknown eltConst
+                       ; Const.makeUnknown lengthConst))
+            val elt = const' (eltConst, Type.word eltSz)
+            val length = const' (lengthConst, Type.word (WordSize.seqIndex ()))
+         in
+            {elt = elt, length = length}
+         end
+
+      fun deConst' v =
+         case value v of
+            Const const => SOME const
+          | _ => NONE
+      fun deConst v =
+         case deConst' v of
+            NONE => NONE
+          | SOME const => Const.getConst const
+
+      fun select {tuple, offset, resultType = _} =
+         case value tuple of
+            Tuple vs => Vector.sub (vs, offset)
+          | _ => Error.bug "ConstantPropagation.Value.select: non-tuple"
+
+      local
+         fun make (err, sel) v =
+            case value v of
+               Ref fs => sel fs
+             | _ => Error.bug err
+      in
+         val refArg = make ("ConstantPropagation.Value.refArg", #arg)
+         val refBirth = make ("ConstantPropagation.Value.refBirth", #birth)
+      end
+
+      fun weakArg v =
+         case value v of
+            Weak v => v
+          | _ => Error.bug "ConstantPropagation.Value.weakArg"
+
+      local
+         fun make (err, sel) v =
+            case value v of
+               Array fs => sel fs
+             | _ => Error.bug err
+      in
+         val arrayBirth = make ("ConstantPropagation.Value.arrayBirth", #birth)
+         val arrayElt = make ("ConstantPropagation.Value.arrayElt", #elt)
+         val arrayLength = make ("ConstantPropagation.Value.arrayLength", #length)
+      end
+
+      local
+         fun make (err, sel) v =
+            case value v of
+               Vector fs => sel fs
+             | Const c =>
+                  sel (constToVector
+                       (c, Type.deWord (Type.deVector (ty v)),
+                        fn () => Error.bug err))
+             | _ => Error.bug err
+      in
+         val vectorElt = make ("ConstantPropagation.Value.vectorElt", #elt)
+         val vectorLength = make ("ConstantPropagation.Value.vectorLength", #length)
+      end
+
+
+      local
+         (* The extra birth is because of let-style polymorphism.
+          * arrayBirth is really the same as refBirth.
+          *)
+         fun make (const, data, refBirth, arrayBirth) =
+            let
+               fun loop (t: Type.t): t =
+                  new
+                  (case Type.dest t of
+                      Type.Array t =>
+                         Array {birth = arrayBirth (),
+                                elt = loop t,
+                                length = loop (Type.word (WordSize.seqIndex ()))}
+                    | Type.Datatype _ => Datatype (data ())
+                    | Type.Ref t => Ref {arg = loop t,
+                                         birth = refBirth ()}
+                    | Type.Tuple ts => Tuple (Vector.map (ts, loop))
+                    | Type.Vector t =>
+                         Vector {elt = loop t,
+                                 length = loop (Type.word (WordSize.seqIndex ()))}
+                    | Type.Weak t => Weak (loop t)
+                    | _ => Const (const ()),
+                   t)
+            in loop
+            end
+      in
+         val fromType =
+            Trace.trace
+            ("ConstantPropagation.Value.fromType",
+             Type.layout, layout)
+            (make (Const.undefined,
+                   Data.undefined,
+                   ArrayBirth.undefined,
+                   RefBirth.undefined))
+         val unknown =
+            Trace.trace
+            ("ConstantPropagation.Value.unknown",
+             Type.layout, layout)
+            (make (Const.unknown,
+                   Data.unknown,
+                   ArrayBirth.unknown,
+                   RefBirth.unknown))
+      end
+
+
+      local
+      val traceCoerce =
+         Trace.trace ("ConstantPropagation.Value.coerce",
+                      fn {from, to} => Layout.record [("from", layout from),
+                                                      ("to", layout to)],
+                      Unit.layout)
+      val traceCoerces =
+         Trace.trace ("ConstantPropagation.Value.coerces",
+                      fn {froms, tos} => Layout.record [("from", Vector.layout layout froms),
+                                                        ("to", Vector.layout layout tos)],
+                      Unit.layout)
+      val traceUnify =
+         Trace.trace2 ("ConstantPropagation.Value.unify",
+                       layout, layout,
+                       Unit.layout)
+
+      fun coerce arg =
+         traceCoerce
+         (fn {from, to} =>
+          if equals (from, to)
+             then ()
+             else
+                let
+                   fun error () =
+                      Error.bug
+                      (concat ["ConstantPropagation.Value.coerce: strange: from: ",
+                               Layout.toString (layout from),
+                               " to: ", Layout.toString (layout to)])
+                in
+                   case (value from, value to) of
+                      (Const from, Const to) =>
+                         Const.coerce {from = from, to = to}
+                    | (Datatype from, Datatype to) =>
+                         Data.coerce {from = from, to = to}
+                    | (Ref {birth = birthFrom, arg = argFrom},
+                       Ref {birth = birthTo, arg = argTo}) =>
+                         (RefBirth.coerce {from = birthFrom, to = birthTo}
+                          ; unify (argFrom, argTo))
+                    | (Array {birth = birthFrom, length = lengthFrom, elt = eltFrom},
+                       Array {birth = birthTo, length = lengthTo, elt = eltTo}) =>
+                         (ArrayBirth.coerce {from = birthFrom, to = birthTo}
+                          ; coerce {from = lengthFrom, to = lengthTo}
+                          ; unify (eltFrom, eltTo))
+                    | (Vector {length = lengthFrom, elt = eltFrom},
+                       Vector {length = lengthTo, elt = eltTo}) =>
+                         (coerce {from = lengthFrom, to = lengthTo}
+                          ; coerce {from = eltFrom, to = eltTo})
+                    | (Tuple froms, Tuple tos) =>
+                         coerces {froms = froms, tos = tos}
+                    | (Weak from, Weak to) => unify (from, to)
+                    | (Const c, Vector {elt = eltTo, length = lengthTo}) =>
+                         let
+                            val {elt = eltFrom, length = lengthFrom} =
+                               constToVector
+                               (c, Type.deWord (ty eltTo),
+                                error)
+                         in
+                            coerce {from = eltFrom, to = eltTo}
+                            ; coerce {from = lengthFrom, to = lengthTo}
+                         end
+                    | (_, _) => error ()
+                end) arg
+      and coerces arg =
+         traceCoerces
+         (fn {froms: t vector, tos: t vector} =>
+          Vector.foreach2 (froms, tos, fn (from, to) =>
+                           coerce {from = from, to = to}))
+         arg
+      and unify arg: unit =
+         traceUnify
+         (fn (v1, v2) =>
+          if equals (v1, v2)
+             then ()
+             else
+                let
+                   val (T s1, T s2) = (v1, v2)
+                   val {global, ty, value = value1, ...} = Set.! s1
+                   val {value = value2, ...} = Set.! s2
+                   fun error () =
+                      Error.bug
+                      (concat ["ConstantPropagation.Value.unify: strange: value1: ",
+                               Layout.toString (layout v1),
+                               " value2: ", Layout.toString (layout v2)])
+                   val _ = Set.union (s1, s2)
+                   val _ = Set.:= (s1, {global = global,
+                                        ty = ty,
+                                        value = value1})
+                in
+                   case (value1, value2) of
+                      (Const c1, Const c2) => Const.unify (c1, c2)
+                    | (Datatype d1, Datatype d2) => Data.unify (d1, d2)
+                    | (Ref {birth = birth1, arg = arg1},
+                       Ref {birth = birth2, arg = arg2}) =>
+                         (RefBirth.unify (birth1, birth2)
+                          ; unify (arg1, arg2))
+                    | (Array {birth = birth1, length = length1, elt = elt1},
+                       Array {birth = birth2, length = length2, elt = elt2}) =>
+                         (ArrayBirth.unify (birth1, birth2)
+                          ; unify (length1, length2)
+                          ; unify (elt1, elt2))
+                    | (Vector {length = length1, elt = elt1},
+                       Vector {length = length2, elt = elt2}) =>
+                         (unify (length1, length2)
+                          ; unify (elt1, elt2))
+                    | (Tuple vs1, Tuple vs2) => Vector.foreach2 (vs1, vs2, unify)
+                    | (Weak v1, Weak v2) => unify (v1, v2)
+                    | _ => error ()
+                end)
+         arg
+      in
+         val coerce = coerce
+         val coerces = coerces
+      end
+
+      fun makeUnknown (v: t): unit =
+         case value v of
+            Array {length, elt, ...} => (makeUnknown length; makeUnknown elt)
+          | Const c => Const.makeUnknown c
+          | Datatype d => Data.makeUnknown d
+          | Ref {arg, ...} => makeUnknown arg
+          | Tuple vs => Vector.foreach (vs, makeUnknown)
+          | Vector {length, elt} => (makeUnknown length; makeUnknown elt)
+          | Weak v => makeUnknown v
+
 
       fun globals arg: (Var.t * Type.t) vector option =
          Trace.trace
@@ -498,146 +749,22 @@ structure Value =
                    end
           end) arg
 
-      fun new (v: value, ty: Type.t): t =
-         T (Set.singleton {value = v,
-                           ty = ty,
-                           global = ref NotComputed})
-
-      fun tuple vs =
-         new (Tuple vs, Type.tuple (Vector.map (vs, ty)))
-
-      fun const' (c, ty) = new (Const c, ty)
-
-      fun const c = let val c' = Const.const c
-                    in new (Const c', Type.ofConst c)
-                    end
-
-      fun constToVector (c, eltSz, err) =
-         let
-            val eltConst = Const.undefined ()
-            val lengthConst = Const.undefined ()
-            val () =
-               Const.addHandler'
-               (c, fn v =>
-                case v of
-                   Const.Value.Bottom => ()
-                 | Const.Value.Point (S.Const.WordVector v) =>
-                      (WordXVector.foreach
-                       (v, fn w =>
-                        Const.lowerBound (eltConst, Const.Value.Point (S.Const.word w)))
-                       ; Const.lowerBound (lengthConst, Const.Value.Point (S.Const.word (WordX.fromInt (WordXVector.length v, WordSize.seqIndex ())))))
-                 | Const.Value.Point _ => err ()
-                 | Const.Value.Top =>
-                      (Const.makeUnknown eltConst
-                       ; Const.makeUnknown lengthConst))
-            val elt = const' (eltConst, Type.word eltSz)
-            val length = const' (lengthConst, Type.word (WordSize.seqIndex ()))
-         in
-            {elt = elt, length = length}
-         end
-
-      local
-         fun make (err, sel) v =
-            case value v of
-               Vector fs => sel fs
-             | Const c =>
-                  sel (constToVector
-                       (c, Type.deWord (Type.deVector (ty v)),
-                        fn () => Error.bug err))
-             | _ => Error.bug err
-      in
-         val vectorElt = make ("ConstantPropagation.Value.vectorElt", #elt)
-         val vectorLength = make ("ConstantPropagation.Value.vectorLength", #length)
-      end
-
-      local
-         fun make (err, sel) v =
-            case value v of
-               Array fs => sel fs
-             | _ => Error.bug err
-      in
-         val arrayElt = make ("ConstantPropagation.Value.arrayElt", #elt)
-         val arrayLength = make ("ConstantPropagation.Value.arrayLength", #length)
-         val arrayBirth = make ("ConstantPropagation.Value.arrayBirth", #birth)
-      end
-
-      fun arrayFromArray (T s: t): t =
-         let
-            val {value, ty, ...} = Set.! s
-         in case value of
-            Array {elt, length, ...} =>
-               new (Array {birth = ArrayBirth.unknown (), elt = elt, length = length}, ty)
-          | _ => Error.bug "ConstantPropagation.Value.arrayFromArray"
-         end
-
-      fun vectorFromArray (T s: t): t =
-         let
-            val {value, ty, ...} = Set.! s
-         in case value of
-            Array {elt, length, ...} =>
-               new (Vector {elt = elt, length = length}, Type.vector (Type.deArray ty))
-          | _ => Error.bug "ConstantPropagation.Value.vectorFromArray"
-         end
-
-      local
-         fun make (err, sel) v =
-            case value v of
-               Ref fs => sel fs
-             | _ => Error.bug err
-      in
-         val deref = make ("ConstantPropagation.Value.deref", #arg)
-         val refBirth = make ("ConstantPropagation.Value.refBirth", #birth)
-      end
-
-      fun deweak v =
+      fun arrayFromArray (v: t): t =
          case value v of
-            Weak v => v
-          | _ => Error.bug "ConstantPropagation.Value.deweak"
+            Array {elt, length, ...} =>
+               new (Array {birth = Birth.unknown (),
+                           elt = elt,
+                           length = length},
+                    ty v)
+          | _ => Error.bug "ConstantPropagation.Value.arrayFromArray"
 
-      local
-         (* The extra birth is because of let-style polymorphism.
-          * arrayBirth is really the same as refBirth.
-          *)
-         fun make (const, data, refBirth, arrayBirth) =
-            let
-               fun loop (t: Type.t): t =
-                  new
-                  (case Type.dest t of
-                      Type.Array t => 
-                         Array {birth = arrayBirth (),
-                                elt = loop t,
-                                length = loop (Type.word (WordSize.seqIndex ()))}
-                    | Type.Datatype _ => Datatype (data ())
-                    | Type.Ref t => Ref {arg = loop t,
-                                         birth = refBirth ()}
-                    | Type.Tuple ts => Tuple (Vector.map (ts, loop))
-                    | Type.Vector t =>
-                         Vector {elt = loop t,
-                                 length = loop (Type.word (WordSize.seqIndex ()))}
-                    | Type.Weak t => Weak (loop t)
-                    | _ => Const (const ()), 
-                   t)
-            in loop
-            end
-      in
-         val fromType =
-            make (Const.undefined,
-                  Data.undefined,
-                  ArrayBirth.undefined,
-                  RefBirth.undefined)
-         val unknown =
-            make (Const.unknown,
-                  Data.unknown,
-                  ArrayBirth.unknown,
-                  RefBirth.unknown)
-      end
-
-      fun select {tuple, offset, resultType = _} =
-         case value tuple of
-            Tuple vs => Vector.sub (vs, offset)
-          | _ => Error.bug "ConstantPropagation.Value.select: non-tuple" 
-
-      fun unit () = tuple (Vector.new0 ())
+      fun vectorFromArray (v: t): t =
+         case value v of
+            Array {elt, length, ...} =>
+               new (Vector {elt = elt,
+                            length = length},
+                    Type.vector (Type.deArray (ty v)))
+          | _ => Error.bug "ConstantPropagation.Value.vectorFromArray"
    end
 
 (* ------------------------------------------------- *)
@@ -673,90 +800,6 @@ fun transform (program: Program.t): Program.t =
       local
          open Value
       in
-         val traceCoerce =
-            Trace.trace ("ConstantPropagation.Value.coerce",
-                         fn {from, to} => Layout.record [("from", layout from),
-                                                         ("to", layout to)],
-                         Unit.layout)
-         fun coerces {froms: Value.t vector, tos: Value.t vector} =
-            Vector.foreach2 (froms, tos, fn (from, to) =>
-                             coerce {from = from, to = to})
-         and coerce arg =
-            traceCoerce
-            (fn {from, to} =>
-             if equals (from, to)
-                then ()
-             else
-                let 
-                   fun error () = 
-                      Error.bug
-                      (concat ["ConstantPropagation.Value.coerce: strange: from: ",
-                               Layout.toString (Value.layout from),
-                               " to: ", Layout.toString (Value.layout to)])
-                in
-                  case (value from, value to) of
-                     (Const from, Const to) =>
-                        Const.coerce {from = from, to = to}
-                   | (Datatype from, Datatype to) =>
-                        Data.coerce {from = from, to = to}
-                   | (Ref {birth, arg}, Ref {birth = b', arg = a'}) =>
-                        (RefBirth.coerce {from = birth, to = b'}
-                         ; unify (arg, a'))
-                   | (Array {birth = b, length = n, elt = x},
-                      Array {birth = b', length = n', elt = x'}) =>
-                        (ArrayBirth.coerce {from = b, to = b'}
-                         ; coerce {from = n, to = n'}
-                         ; unify (x, x'))
-                   | (Vector {length = n, elt = x},
-                      Vector {length = n', elt = x'}) =>
-                        (coerce {from = n, to = n'}
-                         ; coerce {from = x, to = x'})
-                   | (Tuple vs, Tuple vs') => coerces {froms = vs, tos = vs'}
-                   | (Weak v, Weak v') => unify (v, v')
-                   | (Const c, Vector {elt = elt', length = length'}) =>
-                        let
-                           val {elt, length} =
-                              constToVector
-                              (c, Type.deWord (Value.ty elt'),
-                               error)
-                        in
-                           coerce {from = elt, to = elt'}
-                           ; coerce {from = length, to = length'}
-                        end
-                   | (_, _) => error ()
-                end) arg
-         and unify (T s: t, T s': t): unit =
-            if Set.equals (s, s')
-               then ()
-            else
-               let 
-                  val {value, ...} = Set.! s
-                  val {value = value', ...} = Set.! s'
-                  fun error () =
-                     Error.bug
-                     (concat ["ConstantPropagation.Value.unify: strange: value: ",
-                              Layout.toString (Value.layout (T s)),
-                              " value': ", Layout.toString (Value.layout (T s'))])
-               in Set.union (s, s')
-                  ; case (value, value') of
-                       (Const c, Const c') => Const.unify (c, c')
-                     | (Datatype d, Datatype d') => Data.unify (d, d')
-                     | (Ref {birth, arg}, Ref {birth = b', arg = a'}) =>
-                          (RefBirth.unify (birth, b')
-                           ; unify (arg, a'))
-                     | (Array {birth = b, length = n, elt = x},
-                        Array {birth = b', length = n', elt = x'}) =>
-                          (ArrayBirth.unify (b, b')
-                           ; unify (n, n')
-                           ; unify (x, x'))
-                     | (Vector {length = n, elt = x},
-                        Vector {length = n', elt = x'}) =>
-                          (unify (n, n')
-                           ; unify (x, x'))
-                     | (Tuple vs, Tuple vs') => Vector.foreach2 (vs, vs', unify)
-                     | (Weak v, Weak v') => unify (v, v')
-                     | _ => error ()
-               end
          fun conApp {con: Con.t, args: t vector}: t =
             let
                val {values = tos, result, ...} = conInfo con
@@ -764,17 +807,37 @@ fun transform (program: Program.t): Program.t =
                coerces {froms = args, tos = tos}
                ; new (Datatype (Data.conApp {args = args, con = con}), result)
             end
-         fun makeUnknown (v: t): unit =
-            case value v of
-               Array {length, elt, ...} => (makeUnknown length
-                                            ; makeUnknown elt)
-             | Const c => Const.makeUnknown c
-             | Datatype d => Data.makeUnknown d
-             | Ref {arg, ...} => makeUnknown arg
-             | Tuple vs => Vector.foreach (vs, makeUnknown)
-             | Vector {length, elt} => (makeUnknown length
-                                        ; makeUnknown elt)
-             | Weak v => makeUnknown v
+         val conApp =
+            Trace.trace
+            ("ConstantPropagation.Value.conApp",
+             fn {con, args} =>
+             Layout.record [("con", Con.layout con),
+                            ("args", Vector.layout layout args)],
+             layout)
+            conApp
+         fun filter (variant, con, args) =
+            case value variant of
+               Datatype d =>
+                  Data.addHandler'
+                  (d, fn v =>
+                   case v of
+                      Data.Value.Bottom => ()
+                    | Data.Value.Point (ConApp.T {con = con', args = args', ...}) =>
+                         if Con.equals (con, con')
+                            then coerces {froms = args', tos = args}
+                            else ()
+                    | Data.Value.Top =>
+                         coerces {froms = conValues con, tos = args})
+             | _ => Error.bug "ConstantPropagation.Value.filter: non-datatype"
+         val filter =
+            Trace.trace
+            ("ConstantPropagation.Value.filter",
+             fn (variant, con, args) =>
+             Layout.record [("variant", layout variant),
+                            ("con", Con.layout con),
+                            ("args", Vector.layout layout args)],
+             Unit.layout)
+            filter
          fun sideEffect (v: t): unit =
             case value v of
                Array {elt, ...} => makeUnknown elt
@@ -786,7 +849,7 @@ fun transform (program: Program.t): Program.t =
              | Weak v => makeUnknown v
          fun primApp {prim,
                       targs = _,
-                      args: Value.t vector,
+                      args: t vector,
                       resultVar,
                       resultType}: t =
             let
@@ -852,13 +915,13 @@ fun transform (program: Program.t): Program.t =
                 | Prim.Array_toVector => vectorFromArray (arg 0)
                 | Prim.Array_update => update (arg 0, arg 2)
                 | Prim.Ref_assign =>
-                     (coerce {from = arg 1, to = deref (arg 0)}; unit ())
-                | Prim.Ref_deref => deref (arg 0)
+                     (coerce {from = arg 1, to = refArg (arg 0)}; unit ())
+                | Prim.Ref_deref => refArg (arg 0)
                 | Prim.Ref_ref =>
                      let
                         val v = arg 0
                         val r = fromType resultType
-                        val _ = coerce {from = v, to = deref r}
+                        val _ = coerce {from = v, to = refArg r}
                         val _ = RefBirth.coerce {from = bear {arg = v},
                                                  to = refBirth r}
                      in
@@ -867,11 +930,11 @@ fun transform (program: Program.t): Program.t =
                 | Prim.Vector_length => vectorLength (arg 0)
                 | Prim.Vector_sub => vectorElt (arg 0)
                 | Prim.Vector_vector => sequence vector
-                | Prim.Weak_get => deweak (arg 0)
+                | Prim.Weak_get => weakArg (arg 0)
                 | Prim.Weak_new =>
                      let
                         val w = fromType resultType
-                        val _ = coerce {from = arg 0, to = deweak w}
+                        val _ = coerce {from = arg 0, to = weakArg w}
                      in
                         w
                      end
@@ -880,26 +943,12 @@ fun transform (program: Program.t): Program.t =
                         else ()
                         ; unknown resultType)
             end
-         fun filter (variant, con, args) =
-            case value variant of
-               Datatype d =>
-                  Data.addHandler'
-                  (d, fn v =>
-                   case v of
-                      Data.Value.Bottom => ()
-                    | Data.Value.Point (ConApp.T {con = con', args = args', ...}) =>
-                         if Con.equals (con, con')
-                            then coerces {froms = args', tos = args}
-                            else ()
-                    | Data.Value.Top =>
-                         coerces {froms = conValues con, tos = args})
-             | _ => Error.bug "ConstantPropagation.Value.filter: non-datatype"
       end
       fun filterIgnore _ = ()
       val {value, ...} =
          Control.trace (Control.Detail, "fixed point")
          analyze {
-                  coerce = coerce,
+                  coerce = Value.coerce,
                   conApp = conApp,
                   const = Value.const,
                   filter = filter,
