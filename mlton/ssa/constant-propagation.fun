@@ -503,7 +503,7 @@ structure Value =
                     | _ => Error.bug err)
              | _ => Error.bug err
       in
-         val devector = make ("ConstantPropagation.Value.devector", #elt)
+         val vectorElt = make ("ConstantPropagation.Value.vectorElt", #elt)
          val vectorLength = make ("ConstantPropagation.Value.vectorLength", #length)
       end
 
@@ -512,7 +512,8 @@ structure Value =
             case value v of
                Array fs => sel fs
              | _ => Error.bug err
-      in val dearray = make ("ConstantPropagation.Value.dearray", #elt)
+      in
+         val arrayElt = make ("ConstantPropagation.Value.arrayElt", #elt)
          val arrayLength = make ("ConstantPropagation.Value.arrayLength", #length)
          val arrayBirth = make ("ConstantPropagation.Value.arrayBirth", #birth)
       end
@@ -847,7 +848,7 @@ fun transform (program: Program.t): Program.t =
                                        else Birth.unknown ()
                    | _ => Error.bug "ConstantPropagation.Value.primApp.bear"
                fun update (a, v) =
-                  (coerce {from = v, to = dearray a}
+                  (coerce {from = v, to = arrayElt a}
                    ; unit ())
                fun arg i = Vector.sub (args, i)
                fun array (birth, length) =
@@ -856,14 +857,14 @@ fun transform (program: Program.t): Program.t =
                      val _ = ArrayBirth.coerce {from = birth, to = arrayBirth a}
                      val _ = coerce {from = length, to = arrayLength a}
                   in
-                     (a, dearray a)
+                     (a, arrayElt a)
                   end
                fun vector length =
                   let
                      val v = fromType resultType
                      val _ = coerce {from = length, to = vectorLength v}
                   in
-                     (v, devector v)
+                     (v, vectorElt v)
                   end
                fun sequence mk =
                   let
@@ -893,11 +894,11 @@ fun transform (program: Program.t): Program.t =
                         sequence (fn l => array (birth, l))
                      end
                 | Prim.Array_copyArray =>
-                     update (arg 0, dearray (arg 2))
+                     update (arg 0, arrayElt (arg 2))
                 | Prim.Array_copyVector =>
-                     update (arg 0, devector (arg 2))
+                     update (arg 0, vectorElt (arg 2))
                 | Prim.Array_length => arrayLength (arg 0)
-                | Prim.Array_sub => dearray (arg 0)
+                | Prim.Array_sub => arrayElt (arg 0)
                 | Prim.Array_toArray => arrayFromArray (arg 0)
                 | Prim.Array_toVector => vectorFromArray (arg 0)
                 | Prim.Array_update => update (arg 0, arg 2)
@@ -915,7 +916,7 @@ fun transform (program: Program.t): Program.t =
                         r
                      end
                 | Prim.Vector_length => vectorLength (arg 0)
-                | Prim.Vector_sub => devector (arg 0)
+                | Prim.Vector_sub => vectorElt (arg 0)
                 | Prim.Vector_vector => sequence vector
                 | Prim.Weak_get => deweak (arg 0)
                 | Prim.Weak_new =>
