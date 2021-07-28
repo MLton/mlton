@@ -28,6 +28,8 @@ open S
 structure Multi = Multi (S)
 structure Global = Global (S)
 
+structure UniqueId = UniqueId ()
+
 structure Graph = DirectedGraph
 structure Node = Graph.Node
 structure Size = TwoPointLattice (val bottom = "small"
@@ -68,6 +70,49 @@ structure Value =
                ("ConstantPropagation.Value.Const.unify",
                 layout, layout, Unit.layout)
                unify
+         end
+
+      structure ConApp =
+         struct
+            datatype 'a t = T of {args: 'a vector,
+                                  con: Con.t,
+                                  unique: UniqueId.t}
+
+            fun new {args, con} = T {args = args,
+                                     con = con,
+                                     unique = UniqueId.new ()}
+
+            fun equals (T {args = args1,
+                           con = con1,
+                           unique = unique1},
+                        T {con = con2,
+                           unique = unique2, ...}) =
+               UniqueId.equals (unique1, unique2)
+               orelse (Con.equals (con1, con2)
+                       andalso Vector.isEmpty args1)
+
+            fun layout layoutA (T {args, con, ...}) =
+               let
+                  open Layout
+               in
+                  record [("con", Con.layout con),
+                          ("args", Vector.layout layoutA args)]
+               end
+         end
+      structure Data =
+         FlatLatticeParam(structure Point = ConApp
+                          val bottom = "undefined datatype"
+                          val top = "unknown datatype")
+      structure Data =
+         struct
+            open Data
+
+            val undefined = Data.newBottom
+            fun conApp {args, con} =
+               Data.newPoint (ConApp.new {args = args, con = con})
+            val getConApp = Data.getPoint
+            val unknown = Data.newTop
+            val makeUnknown = Data.makeTop
          end
 
       structure One =
@@ -156,7 +201,6 @@ structure Value =
          end
 
       structure Set = DisjointSet
-      structure Unique = UniqueId ()
 
       datatype t =
          T of {global: global ref,
@@ -167,24 +211,13 @@ structure Value =
                    elt: t,
                    length: t}
        | Const of Const.t
-       | Datatype of data
+       | Datatype of t Data.t
        | Ref of {arg: t,
                  birth: t RefBirth.t}
        | Tuple of t vector
        | Vector of {elt: t,
                     length: t}
        | Weak of t
-      and data =
-         Data of {coercedTo: data list ref,
-                  filters: {args: t vector,
-                            con: Con.t} list ref,
-                  value: dataVal ref}
-      and dataVal =
-         ConApp of {args: t vector,
-                    con: Con.t,
-                    uniq: Unique.t}
-       | Undefined
-       | Unknown
 
       local
          fun make sel (T s) = sel (Set.! s)
@@ -222,7 +255,7 @@ structure Value =
                                          layout length,
                                          layout elt]]
                         | Const c => Const.layout c
-                        | Datatype d => layoutData layout d
+                        | Datatype d => Data.layout layout d
                         | Ref {arg, birth, ...} =>
                              seq [str "ref ",
                                   tuple [layout arg,
@@ -233,16 +266,8 @@ structure Value =
                                                         layout length]]
                         | Weak v => seq [str "weak ", layout v]
                     end
-         and layoutData layoutV (Data {value, ...}) =
-            case !value of
-               Undefined => str "undefined datatype"
-             | ConApp {con, args, ...} =>
-                  record [("con", Con.layout con),
-                          ("args", Vector.layout layoutV args)]
-             | Unknown => str "unknown datatype"
       in
          val layout = fn v => layout ([], v)
-         val layoutData = layoutData layout
       end
 
       val equals =
@@ -259,6 +284,25 @@ structure Value =
             end
          structure AbsValue = Value
       in
+         structure Data =
+            struct
+               open Data
+               type t = AbsValue.t Data.t
+               val layout = Data.layout AbsValue.layout
+               val coerce: {from: t, to: t} -> unit =
+                  Trace.trace
+                  ("ConstantPropagation.Value.Data.coerce",
+                   fn {from, to} =>
+                   Layout.record [("from", layout from),
+                                  ("to", layout to)],
+                   Unit.layout)
+                  Data.coerce
+               val unify: t * t -> unit =
+                  Trace.trace2
+                  ("ConstantPropagation.Value.Data.unify",
+                   layout, layout, Unit.layout)
+                  Data.unify
+            end
          structure ArrayBirth =
             struct
                open ArrayBirth
@@ -271,12 +315,12 @@ structure Value =
                    Layout.record [("from", layout from),
                                   ("to", layout to)],
                    Unit.layout)
-                  coerce
+                  Birth.coerce
                val unify: t * t -> unit =
                   Trace.trace2
                   ("ConstantPropagation.Value.ArrayBirth.unify",
                    layout, layout, Unit.layout)
-                  unify
+                  Birth.unify
             end
          structure RefBirth =
             struct
@@ -290,12 +334,12 @@ structure Value =
                    Layout.record [("from", layout from),
                                   ("to", layout to)],
                    Unit.layout)
-                  coerce
+                  Birth.coerce
                val unify: t * t -> unit =
                   Trace.trace2
                   ("ConstantPropagation.Value.RefBirth.unify",
                    layout, layout, Unit.layout)
-                  unify
+                  Birth.unify
             end
       end
 
@@ -396,9 +440,9 @@ structure Value =
                                (case Const.getConst const of
                                    SOME c => yes (Exp.Const c)
                                  | NONE => No)
-                          | Datatype (Data {value, ...}) =>
-                               (case !value of
-                                   ConApp {args, con, ...} =>
+                          | Datatype d =>
+                               (case Data.getConApp d of
+                                   SOME (ConApp.T {args, con, ...}) =>
                                       (case globals args of
                                           NONE => No
                                         | SOME args =>
@@ -550,22 +594,6 @@ structure Value =
             Weak v => v
           | _ => Error.bug "ConstantPropagation.Value.deweak"
 
-      structure Data =
-         struct
-            datatype t = datatype data
-
-            val layout = layoutData
-
-            local
-               fun make v () = Data {value = ref v,
-                                     coercedTo = ref [],
-                                     filters = ref []}
-            in
-               val undefined = make Undefined
-               val unknown = make Unknown
-            end
-         end
-
       local
          (* The extra birth is because of let-style polymorphism.
           * arrayBirth is really the same as refBirth.
@@ -612,25 +640,6 @@ structure Value =
       fun unit () = tuple (Vector.new0 ())
    end
 
-val traceSendConApp =
-   Trace.trace2
-   ("ConstantPropagation.sendConApp", Value.Data.layout,
-    fn {con, args, uniq} =>
-    Layout.record [("con", Con.layout con),
-                   ("args", Vector.layout Value.layout args),
-                   ("uniq", Value.Unique.layout uniq)],
-    Unit.layout)
-
-val traceSendConAppLoop =
-   Trace.trace 
-   ("ConstantPropagation.sendConAppLoop", 
-    Value.Data.layout, Unit.layout)
-
-val traceMakeDataUnknown =
-   Trace.trace 
-   ("ConstantPropagation.makeDataUnknown", 
-    Value.Data.layout, Unit.layout)
-
 (* ------------------------------------------------- *)
 (*                     simplify                      *)
 (* ------------------------------------------------- *)
@@ -669,51 +678,7 @@ fun transform (program: Program.t): Program.t =
                          fn {from, to} => Layout.record [("from", layout from),
                                                          ("to", layout to)],
                          Unit.layout)
-         fun makeDataUnknown arg: unit =
-            traceMakeDataUnknown
-            (fn Data {value, coercedTo, filters, ...} =>
-             let
-                fun doit () =
-                   (value := Unknown
-                    ; List.foreach (!coercedTo, makeDataUnknown)
-                    ; coercedTo := []
-                    ; (List.foreach
-                       (!filters, fn {con, args} =>
-                        coerces {froms = conValues con,
-                                 tos = args})))
-             in
-                case !value of
-                   ConApp _ => doit ()
-                 | Undefined => doit ()
-                 | Unknown => ()
-             end) arg
-         and sendConApp arg: unit =
-            traceSendConApp
-            (fn (d: data, ca as {con, args, uniq}) =>
-             let
-                val v = ConApp ca
-                fun loop arg: unit =
-                   traceSendConAppLoop
-                   (fn d' as Data {value, coercedTo, filters, ...} =>
-                    case !value of
-                       Unknown => ()
-                     | Undefined =>
-                          (value := v
-                           ; List.foreach (!coercedTo, loop)
-                           ; (List.foreach
-                              (!filters, fn {con = con', args = args'} =>
-                               if Con.equals (con, con')
-                                  then coerces {froms = args, tos = args'}
-                               else ())))
-                     | ConApp {con = con', uniq = uniq', ...} =>
-                          if Unique.equals (uniq, uniq')
-                             orelse (Con.equals (con, con')
-                                     andalso Vector.isEmpty args)
-                             then ()
-                          else makeDataUnknown d') arg
-             in loop d
-             end) arg
-         and coerces {froms: Value.t vector, tos: Value.t vector} =
+         fun coerces {froms: Value.t vector, tos: Value.t vector} =
             Vector.foreach2 (froms, tos, fn (from, to) =>
                              coerce {from = from, to = to})
          and coerce arg =
@@ -733,7 +698,7 @@ fun transform (program: Program.t): Program.t =
                      (Const from, Const to) =>
                         Const.coerce {from = from, to = to}
                    | (Datatype from, Datatype to) =>
-                        coerceData {from = from, to = to}
+                        Data.coerce {from = from, to = to}
                    | (Ref {birth, arg}, Ref {birth = b', arg = a'}) =>
                         (RefBirth.coerce {from = birth, to = b'}
                          ; unify (arg, a'))
@@ -775,7 +740,7 @@ fun transform (program: Program.t): Program.t =
                in Set.union (s, s')
                   ; case (value, value') of
                        (Const c, Const c') => Const.unify (c, c')
-                     | (Datatype d, Datatype d') => unifyData (d, d')
+                     | (Datatype d, Datatype d') => Data.unify (d, d')
                      | (Ref {birth, arg}, Ref {birth = b', arg = a'}) =>
                           (RefBirth.unify (birth, b')
                            ; unify (arg, a'))
@@ -792,33 +757,19 @@ fun transform (program: Program.t): Program.t =
                      | (Weak v, Weak v') => unify (v, v')
                      | _ => error ()
                end
-         and unifyData (d, d') =
-            (coerceData {from = d, to = d'}
-             ; coerceData {from = d', to = d})
-         and coerceData {from = Data {value, coercedTo, ...}, to} =
-            case !value of
-               ConApp ca => (List.push (coercedTo, to)
-                             ; sendConApp (to, ca))
-             | Undefined => List.push (coercedTo, to)
-             | Unknown => makeDataUnknown to
          fun conApp {con: Con.t, args: t vector}: t =
             let
                val {values = tos, result, ...} = conInfo con
             in
                coerces {froms = args, tos = tos}
-               ; new (Datatype
-                      (Data {value = ref (ConApp {con = con, args = args,
-                                                  uniq = Unique.new ()}),
-                             coercedTo = ref [],
-                             filters = ref []}),
-                      result)
+               ; new (Datatype (Data.conApp {args = args, con = con}), result)
             end
          fun makeUnknown (v: t): unit =
             case value v of
                Array {length, elt, ...} => (makeUnknown length
                                             ; makeUnknown elt)
              | Const c => Const.makeUnknown c
-             | Datatype d => makeDataUnknown d
+             | Datatype d => Data.makeUnknown d
              | Ref {arg, ...} => makeUnknown arg
              | Tuple vs => Vector.foreach (vs, makeUnknown)
              | Vector {length, elt} => (makeUnknown length
@@ -931,22 +882,17 @@ fun transform (program: Program.t): Program.t =
             end
          fun filter (variant, con, args) =
             case value variant of
-               Datatype (Data {value, filters, ...}) =>
-                  let
-                     fun save () = List.push (filters, {con = con, args = args})
-                  in case !value of
-                     Undefined => save ()
-                   | Unknown => coerces {froms = conValues con, tos = args}
-                   | ConApp {con = con', args = args', ...} =>
-                        ((* The save () has to happen before the coerces because
-                          * they may loop back and change the variant, which
-                          * would need to then change this value.
-                          *)
-                         save ()
-                         ; if Con.equals (con, con')
-                              then coerces {froms = args', tos = args}
-                           else ())
-                  end
+               Datatype d =>
+                  Data.addHandler'
+                  (d, fn v =>
+                   case v of
+                      Data.Value.Bottom => ()
+                    | Data.Value.Point (ConApp.T {con = con', args = args', ...}) =>
+                         if Con.equals (con, con')
+                            then coerces {froms = args', tos = args}
+                            else ()
+                    | Data.Value.Top =>
+                         coerces {froms = conValues con, tos = args})
              | _ => Error.bug "ConstantPropagation.Value.filter: non-datatype"
       end
       fun filterIgnore _ = ()
