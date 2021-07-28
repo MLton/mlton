@@ -468,27 +468,26 @@ structure Value =
                     in new (Const c', Type.ofConst c)
                     end
 
-      fun constToEltLength (c, err) =
+      fun constToVector (c, eltSz, err) =
          let
-            val v =
-               case c of
-                  S.Const.WordVector v => v
-                | _ => Error.bug err 
-            val length = WordXVector.length v
-            val eltTy = Type.word (WordXVector.elementSize v)
-            val elt =
-               if 0 = length
-                  then const' (Const.unknown (), eltTy)
-               else let
-                       val w = WordXVector.sub (v, 0)
-                    in
-                       if WordXVector.forall (v, fn w' =>
-                                              WordX.equals (w, w'))
-                          then const (S.Const.word w)
-                       else const' (Const.unknown (), eltTy)
-                    end
-            val length =
-               const (S.Const.Word (WordX.fromInt (length, WordSize.seqIndex ())))
+            val eltConst = Const.undefined ()
+            val lengthConst = Const.undefined ()
+            val () =
+               Const.addHandler'
+               (c, fn v =>
+                case v of
+                   Const.Value.Bottom => ()
+                 | Const.Value.Point (S.Const.WordVector v) =>
+                      (WordXVector.foreach
+                       (v, fn w =>
+                        Const.lowerBound (eltConst, Const.Value.Point (S.Const.word w)))
+                       ; Const.lowerBound (lengthConst, Const.Value.Point (S.Const.word (WordX.fromInt (WordXVector.length v, WordSize.seqIndex ())))))
+                 | Const.Value.Point _ => err ()
+                 | Const.Value.Top =>
+                      (Const.makeUnknown eltConst
+                       ; Const.makeUnknown lengthConst))
+            val elt = const' (eltConst, Type.word eltSz)
+            val length = const' (lengthConst, Type.word (WordSize.seqIndex ()))
          in
             {elt = elt, length = length}
          end
@@ -498,9 +497,9 @@ structure Value =
             case value v of
                Vector fs => sel fs
              | Const c =>
-                  (case Const.getConst c of
-                      SOME c => sel (constToEltLength (c, err))
-                    | _ => Error.bug err)
+                  sel (constToVector
+                       (c, Type.deWord (Type.deVector (ty v)),
+                        fn () => Error.bug err))
              | _ => Error.bug err
       in
          val vectorElt = make ("ConstantPropagation.Value.vectorElt", #elt)
@@ -749,17 +748,16 @@ fun transform (program: Program.t): Program.t =
                          ; coerce {from = x, to = x'})
                    | (Tuple vs, Tuple vs') => coerces {froms = vs, tos = vs'}
                    | (Weak v, Weak v') => unify (v, v')
-                   | (Const c, Vector {elt, length}) =>
-                        (case Const.getConst c of
-                            SOME c =>
-                               let
-                                  val {elt = elt', length = length'} =
-                                     Value.constToEltLength (c, "coerce")
-                               in
-                                  coerce {from = elt', to = elt}
-                                  ; coerce {from = length', to = length}
-                               end
-                          | _ => error ())
+                   | (Const c, Vector {elt = elt', length = length'}) =>
+                        let
+                           val {elt, length} =
+                              constToVector
+                              (c, Type.deWord (Value.ty elt'),
+                               error)
+                        in
+                           coerce {from = elt, to = elt'}
+                           ; coerce {from = length, to = length'}
+                        end
                    | (_, _) => error ()
                 end) arg
          and unify (T s: t, T s': t): unit =
