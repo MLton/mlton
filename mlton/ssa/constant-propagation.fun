@@ -340,6 +340,10 @@ structure Value =
                            ty = ty,
                            value = value})
 
+      fun bool b =
+         new (Datatype (Data.conApp {args = Vector.new0 (),
+                                     con = Con.fromBool b}),
+              Type.bool)
       fun const' (c, ty) = new (Const c, ty)
       fun const c = const' (Const.const c, Type.ofConst c)
       fun tuple vs = new (Tuple vs, Type.tuple (Vector.map (vs, ty)))
@@ -891,6 +895,71 @@ fun transform (program: Program.t): Program.t =
                   in
                      seq
                   end
+               fun constFold () =
+                  Exn.withEscape
+                  (fn escape =>
+                   let
+                      val (getArgs, addHandlers) =
+                         (Vector.unzip o Vector.map)
+                         (args, fn arg =>
+                          case value arg of
+                             Const c =>
+                                (fn () =>
+                                 case Const.value c of
+                                    Const.Value.Bottom => NONE
+                                  | Const.Value.Point c =>
+                                       SOME (Prim.ApplyArg.Const c)
+                                  | Const.Value.Top =>
+                                       SOME (Prim.ApplyArg.Var arg),
+                                 fn h => Const.addHandler (c, h))
+                          | Datatype d =>
+                               (fn () =>
+                                case Data.value d of
+                                   Data.Value.Bottom => NONE
+                                 | Data.Value.Point (ConApp.T {con, args, ...}) =>
+                                      SOME (Prim.ApplyArg.Con
+                                            {con = con,
+                                             hasArg = not (Vector.isEmpty args)})
+                                 | Data.Value.Top =>
+                                      SOME (Prim.ApplyArg.Var arg),
+                                fn h => Data.addHandler (d, h))
+                          | _ => escape (unknown resultType))
+                      val res = fromType resultType
+                      fun apply () =
+                         Exn.withEscape
+                         (fn escape =>
+                          let
+                             val args =
+                                Vector.toListMap
+                                (getArgs, fn getArg =>
+                                 case getArg () of
+                                    NONE => escape ()
+                                  | SOME arg => arg)
+                             val apply =
+                                Trace.trace3
+                                ("ConstantPropagation.Value.primApp.apply",
+                                 Prim.layout,
+                                 List.layout (Prim.ApplyArg.layout layout),
+                                 Layout.ignore,
+                                 Prim.ApplyResult.layout layout)
+                                Prim.apply
+                          in
+                             case apply (prim, args, fn _ => false) of
+                                Prim.ApplyResult.Const c =>
+                                   coerce {from = const c, to = res}
+                              | Prim.ApplyResult.Bool b =>
+                                   coerce {from = bool b, to = res}
+                              | Prim.ApplyResult.Var v =>
+                                   coerce {from = v, to = res}
+                              | _ => makeUnknown res
+                          end)
+                      val () =
+                         Vector.foreach
+                         (addHandlers, fn addHandler =>
+                          addHandler apply)
+                   in
+                      res
+                   end)
             in
                case prim of
                   Prim.Array_alloc {raw} =>
@@ -938,11 +1007,24 @@ fun transform (program: Program.t): Program.t =
                      in
                         w
                      end
-                | _ => (if Prim.maySideEffect prim
-                           then Vector.foreach (args, sideEffect)
-                        else ()
-                        ; unknown resultType)
+                | _ => if Prim.isFunctional prim
+                          then constFold ()
+                          else (if Prim.maySideEffect prim
+                                   then Vector.foreach (args, sideEffect)
+                                   else ()
+                                ; unknown resultType)
             end
+         val primApp =
+            Trace.trace
+            ("ConstantPropagation.Value.primApp",
+             fn {prim, targs, args, resultVar, resultType} =>
+             Layout.record [("prim", Prim.layout prim),
+                            ("targs", Vector.layout Type.layout targs),
+                            ("args", Vector.layout layout args),
+                            ("resultVar", Option.layout Var.layout resultVar),
+                            ("resultType", Type.layout resultType)],
+             layout)
+            primApp
       end
       fun filterIgnore _ = ()
       val {value, ...} =
