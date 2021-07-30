@@ -200,6 +200,220 @@ structure Value =
             val layout = fn layoutA => Birth.layout (RefInit.layout layoutA)
          end
 
+      structure Sequence =
+         struct
+            structure Elts =
+               FlatLatticeRec(structure Point =
+                                 struct
+                                    type 'a t = 'a vector
+                                    fun equals equalsA (xs, ys) =
+                                       Vector.equals (xs, ys, equalsA)
+                                    fun layout layoutA xs =
+                                       Vector.layout layoutA xs
+                                    fun clone {clone = cloneA, equals = _} xs =
+                                       Vector.map (xs, cloneA)
+                                    fun coerce {clone = _, coerce = coerceA, equals = _} {from, to} =
+                                       if Vector.length from = Vector.length to
+                                          then (Vector.foreach2 (from, to, fn (from, to) =>
+                                                                 coerceA {from = from, to = to})
+                                                ; true)
+                                          else false
+                                    fun unify {equals = _, unify = unifyA} (xs1, xs2) =
+                                       if Vector.length xs1 = Vector.length xs2
+                                          then (Vector.foreach2 (xs1, xs2, unifyA)
+                                                ; true)
+                                          else false
+                                 end
+                              val bottom = "undefined elts"
+                              val top = "unknown elts")
+            structure Elts =
+               struct
+                  open Elts
+
+                  val undefined = Elts.newBottom
+                  val elts = Elts.newPoint
+                  val getElts = Elts.getPoint
+                  val unknown = Elts.newTop
+                  val makeUnknown = Elts.makeTop
+               end
+            datatype 'a t = T of {eltLb: 'a,
+                                  elts: 'a Elts.t,
+                                  eltUb: 'a,
+                                  length: 'a}
+
+            local
+               fun make sel (T fs) = sel fs
+            in
+               fun eltLb s = make #eltLb s
+               fun elts s = make #elts s
+               fun eltUb s = make #eltUb s
+               fun length s = make #length s
+            end
+
+            fun layout layoutA (T {eltLb, elts, eltUb, length}) =
+               Layout.record [("eltLb", layoutA eltLb),
+                              ("elts", Elts.layout layoutA elts),
+                              ("eltUb", layoutA eltUb),
+                              ("length", layoutA length)]
+
+            fun unknown {unknown = unknownA: Type.t -> 'a} =
+               fn eltTy =>
+               let
+                  val length = unknownA (Type.word (WordSize.seqIndex ()))
+                  val eltLb = unknownA eltTy
+                  val elts = Elts.unknown ()
+                  val eltUb = unknownA eltTy
+               in
+                  T {eltLb = eltLb,
+                     elts = elts,
+                     eltUb = eltUb,
+                     length = length}
+               end
+
+            fun undefined {clone = cloneA: 'a -> 'a,
+                           coerce = coerceA: {from: 'a, to: 'a} -> unit,
+                           deConst: 'a -> Const.t option,
+                           equals = equalsA: 'a * 'a -> bool,
+                           unify = unifyA: 'a * 'a -> unit,
+                           undefined = undefinedA: Type.t -> 'a} =
+               let
+                  val eltsUnify =
+                     Elts.unify
+                     {clone = cloneA,
+                      coerce = coerceA,
+                      equals = equalsA,
+                      unify = unifyA}
+               in
+                  fn eltTy =>
+                  let
+                     val length = undefinedA (Type.word (WordSize.seqIndex ()))
+                     val lengthConst =
+                        case deConst length of
+                           NONE => Error.bug "ConstantPropagation.Value.Sequence.new: deConst length"
+                         | SOME lengthConst => lengthConst
+
+                     val eltLb = undefinedA eltTy
+                     val elts = Elts.undefined ()
+                     val eltUb = undefinedA eltTy
+
+                     val () = coerceA {from = eltLb, to = eltUb}
+                     fun doit v =
+                        case v of
+                           Const.Value.Bottom => ()
+                         | Const.Value.Point c =>
+                              Exn.withEscape
+                              (fn escape =>
+                               let
+                                  val length =
+                                     case S.Const.deWordOpt c of
+                                        NONE => Error.bug "ConstantPropagation.Value.Sequence.new: S.Const.deWordOpt c"
+                                      | SOME w =>
+                                           let
+                                              val length = WordX.toIntInf w
+                                           in
+                                              if length <= 0x1000
+                                                 then IntInf.toInt length
+                                                 else (Elts.makeUnknown elts
+                                                       ; escape ())
+                                           end
+                                  val elts' =
+                                     Vector.tabulate
+                                     (length, fn _ =>
+                                      let
+                                         val elt = undefinedA eltTy
+                                         val _ = coerceA {from = eltLb, to = elt}
+                                         val _ = coerceA {from = elt, to = eltUb}
+                                      in
+                                         elt
+                                      end)
+                                  val () = eltsUnify (elts, Elts.elts elts')
+                               in
+                                  ()
+                               end)
+                         | Const.Value.Top => Elts.makeUnknown elts
+                     val doit =
+                        Trace.trace
+                        ("ConstantPropagation.Value.Sequence.new.doit",
+                         Const.Value.layout, Unit.layout)
+                        doit
+                     val () = Const.addHandler' (lengthConst, doit)
+                  in
+                     T {eltLb = eltLb,
+                        elts = elts,
+                        eltUb = eltUb,
+                        length = length}
+                  end
+               end
+
+            fun makeUnknown (makeUnknownA: 'a -> unit) (T {eltLb, length, ...}) =
+               (makeUnknownA length; makeUnknownA eltLb)
+
+            fun coerceElts {clone = cloneA, coerce = coerceA, equals = equalsA} =
+               fn {from = T {eltLb = eltLbFrom, elts = eltsFrom, eltUb = eltUbFrom, ...},
+                   to = T {eltLb = eltLbTo, elts = eltsTo, eltUb = eltUbTo, ...}} =>
+               let
+                  val eltsCoerce = Elts.coerce {clone = cloneA,
+                                                coerce = coerceA,
+                                                equals = equalsA}
+               in
+                  coerceA {from = eltLbFrom, to = eltLbTo}
+                  ; eltsCoerce {from = eltsFrom, to = eltsTo}
+                  ; coerceA {from = eltUbFrom, to = eltUbTo}
+               end
+
+            fun coerce {clone = cloneA, coerce = coerceA, equals = equalsA} =
+               fn {from = from as T {length = lengthFrom, ...},
+                   to = to as T {length = lengthTo, ...}} =>
+               let
+                  val coerceElts = coerceElts {clone = cloneA,
+                                               coerce = coerceA,
+                                               equals = equalsA}
+               in
+                  (coerceA {from = lengthFrom, to = lengthTo}
+                   ; coerceElts {from = from, to = to})
+               end
+
+            fun unifyElts {clone = cloneA, coerce = coerceA, equals = equalsA, unify = unifyA} =
+               fn (T {eltLb = eltLb1, elts = elts1, eltUb = eltUb1, ...},
+                   T {eltLb = eltLb2, elts = elts2, eltUb = eltUb2, ...}) =>
+               let
+                  val eltsUnify = Elts.unify {clone = cloneA,
+                                              coerce = coerceA,
+                                              equals = equalsA,
+                                              unify = unifyA}
+               in
+                  unifyA (eltLb1, eltLb2)
+                  ; eltsUnify (elts1, elts2)
+                  ; unifyA (eltUb1, eltUb2)
+               end
+
+            fun coerceLengthUnifyElts {clone = cloneA, coerce = coerceA, equals = equalsA, unify = unifyA} =
+               fn {from = from as T {length = lengthFrom, ...},
+                   to = to as T {length = lengthTo, ...}} =>
+               let
+                  val unifyElts = unifyElts {clone = cloneA,
+                                             coerce = coerceA,
+                                             equals = equalsA,
+                                             unify = unifyA}
+               in
+                  (coerceA {from = lengthFrom, to = lengthTo}
+                   ; unifyElts (from, to))
+               end
+
+            fun unify {clone = cloneA, coerce = coerceA, equals = equalsA, unify = unifyA} =
+               fn (seq1 as T {length = length1, ...},
+                   seq2 as T {length = length2, ...}) =>
+               let
+                  val unifyElts = unifyElts {clone = cloneA,
+                                             coerce = coerceA,
+                                             equals = equalsA,
+                                             unify = unifyA}
+               in
+                  (unifyA (length1, length2)
+                   ; unifyElts (seq1, seq2))
+               end
+         end
+
       structure Set = DisjointSet
 
       datatype t =
@@ -208,15 +422,13 @@ structure Value =
                value: value} Set.t
       and value =
          Array of {birth: t ArrayBirth.t,
-                   elt: t,
-                   length: t}
+                   sequence: t Sequence.t}
        | Const of Const.t
        | Datatype of t Data.t
        | Ref of {arg: t,
                  birth: t RefBirth.t}
        | Tuple of t vector
-       | Vector of {elt: t,
-                    length: t}
+       | Vector of {sequence: t Sequence.t}
        | Weak of t
 
       local
@@ -240,11 +452,10 @@ structure Value =
                        val layout = fn v' => layout (seen', v')
                     in
                        case value v of
-                          Array {birth, elt, length, ...} =>
+                          Array {birth, sequence, ...} =>
                              seq [str "array ",
                                   tuple [ArrayBirth.layout layout birth,
-                                         layout length,
-                                         layout elt]]
+                                         Sequence.layout layout sequence]]
                         | Const c => Const.layout c
                         | Datatype d => Data.layout layout d
                         | Ref {arg, birth, ...} =>
@@ -252,9 +463,9 @@ structure Value =
                                   tuple [layout arg,
                                          RefBirth.layout layout birth]]
                         | Tuple vs => Vector.layout layout vs
-                        | Vector {elt, length, ...} =>
-                             seq [str "vector ", tuple [layout elt,
-                                                        layout length]]
+                        | Vector {sequence, ...} =>
+                             seq [str "vector ",
+                                  tuple [Sequence.layout layout sequence]]
                         | Weak v => seq [str "weak ", layout v]
                     end
       in
@@ -332,6 +543,17 @@ structure Value =
                    layout, layout, Unit.layout)
                   Birth.unify
             end
+         structure Sequence =
+            struct
+               open Sequence
+               type t = Value.t Sequence.t
+               structure Elts =
+                  struct
+                     open Sequence.Elts
+                     val layout = Sequence.Elts.layout AbsValue.layout
+                  end
+               val layout = Sequence.layout Value.layout
+            end
       end
 
 
@@ -340,140 +562,66 @@ structure Value =
                            ty = ty,
                            value = value})
 
-      fun bool b =
-         new (Datatype (Data.conApp {args = Vector.new0 (),
-                                     con = Con.fromBool b}),
-              Type.bool)
-      fun const' (c, ty) = new (Const c, ty)
-      fun const c = const' (Const.const c, Type.ofConst c)
-      fun tuple vs = new (Tuple vs, Type.tuple (Vector.map (vs, ty)))
-      fun unit () = tuple (Vector.new0 ())
-
-      fun constToVector (c, eltSz, err) =
-         let
-            val eltConst = Const.undefined ()
-            val lengthConst = Const.undefined ()
-            val () =
-               Const.addHandler'
-               (c, fn v =>
-                case v of
-                   Const.Value.Bottom => ()
-                 | Const.Value.Point (S.Const.WordVector v) =>
-                      (WordXVector.foreach
-                       (v, fn w =>
-                        Const.lowerBound (eltConst, Const.Value.Point (S.Const.word w)))
-                       ; Const.lowerBound (lengthConst, Const.Value.Point (S.Const.word (WordX.fromInt (WordXVector.length v, WordSize.seqIndex ())))))
-                 | Const.Value.Point _ => err ()
-                 | Const.Value.Top =>
-                      (Const.makeUnknown eltConst
-                       ; Const.makeUnknown lengthConst))
-            val elt = const' (eltConst, Type.word eltSz)
-            val length = const' (lengthConst, Type.word (WordSize.seqIndex ()))
-         in
-            {elt = elt, length = length}
-         end
-
-      fun deConst' v =
+      fun const c = new (Const (Const.const c), Type.ofConst c)
+      fun deConst v =
          case value v of
             Const const => SOME const
           | _ => NONE
-      fun deConst v =
-         case deConst' v of
+      fun deConst' v =
+         case deConst v of
             NONE => NONE
           | SOME const => Const.getConst const
-
-      fun select {tuple, offset, resultType = _} =
-         case value tuple of
-            Tuple vs => Vector.sub (vs, offset)
-          | _ => Error.bug "ConstantPropagation.Value.select: non-tuple"
-
-      local
-         fun make (err, sel) v =
-            case value v of
-               Ref fs => sel fs
-             | _ => Error.bug err
-      in
-         val refArg = make ("ConstantPropagation.Value.refArg", #arg)
-         val refBirth = make ("ConstantPropagation.Value.refBirth", #birth)
-      end
-
-      fun weakArg v =
-         case value v of
-            Weak v => v
-          | _ => Error.bug "ConstantPropagation.Value.weakArg"
-
-      local
-         fun make (err, sel) v =
-            case value v of
-               Array fs => sel fs
-             | _ => Error.bug err
-      in
-         val arrayBirth = make ("ConstantPropagation.Value.arrayBirth", #birth)
-         val arrayElt = make ("ConstantPropagation.Value.arrayElt", #elt)
-         val arrayLength = make ("ConstantPropagation.Value.arrayLength", #length)
-      end
-
-      local
-         fun make (err, sel) v =
-            case value v of
-               Vector fs => sel fs
-             | Const c =>
-                  sel (constToVector
-                       (c, Type.deWord (Type.deVector (ty v)),
-                        fn () => Error.bug err))
-             | _ => Error.bug err
-      in
-         val vectorElt = make ("ConstantPropagation.Value.vectorElt", #elt)
-         val vectorLength = make ("ConstantPropagation.Value.vectorLength", #length)
-      end
 
 
       local
          (* The extra birth is because of let-style polymorphism.
           * arrayBirth is really the same as refBirth.
           *)
-         fun make (const, data, refBirth, arrayBirth) =
+         fun make {arrayBirth, const, data, refBirth, sequence} =
             let
                fun loop (t: Type.t): t =
                   new
                   (case Type.dest t of
-                      Type.Array t =>
-                         Array {birth = arrayBirth (),
-                                elt = loop t,
-                                length = loop (Type.word (WordSize.seqIndex ()))}
+                      Type.Array t => Array {birth = arrayBirth (), sequence = sequence loop t}
                     | Type.Datatype _ => Datatype (data ())
-                    | Type.Ref t => Ref {arg = loop t,
-                                         birth = refBirth ()}
+                    | Type.Ref t => Ref {arg = loop t, birth = refBirth ()}
                     | Type.Tuple ts => Tuple (Vector.map (ts, loop))
-                    | Type.Vector t =>
-                         Vector {elt = loop t,
-                                 length = loop (Type.word (WordSize.seqIndex ()))}
+                    | Type.Vector t => Vector {sequence = sequence loop t}
                     | Type.Weak t => Weak (loop t)
                     | _ => Const (const ()),
                    t)
             in loop
             end
       in
-         val fromType =
-            Trace.trace
-            ("ConstantPropagation.Value.fromType",
-             Type.layout, layout)
-            (make (Const.undefined,
-                   Data.undefined,
-                   ArrayBirth.undefined,
-                   RefBirth.undefined))
+         val mkFromType =
+            fn {clone, coerce, unify} =>
+            make {arrayBirth = ArrayBirth.undefined,
+                  const = Const.undefined,
+                  data = Data.undefined,
+                  refBirth = RefBirth.undefined,
+                  sequence = fn undefined => Sequence.undefined {clone = clone,
+                                                                 coerce = coerce,
+                                                                 deConst = deConst,
+                                                                 equals = equals,
+                                                                 undefined = undefined,
+                                                                 unify = unify}}
          val unknown =
-            Trace.trace
-            ("ConstantPropagation.Value.unknown",
-             Type.layout, layout)
-            (make (Const.unknown,
-                   Data.unknown,
-                   ArrayBirth.unknown,
-                   RefBirth.unknown))
+            make {arrayBirth = ArrayBirth.unknown,
+                  const = Const.unknown,
+                  data = Data.unknown,
+                  refBirth = RefBirth.unknown,
+                  sequence = fn unknown => Sequence.unknown {unknown = unknown}}
       end
 
-
       local
+      val traceFromType =
+         Trace.trace ("ConstantPropagation.Value.fromType",
+                      Type.layout,
+                      layout)
+      val traceClone =
+         Trace.trace
+         ("ConstantPropagation.Value.clone",
+          layout, layout)
       val traceCoerce =
          Trace.trace ("ConstantPropagation.Value.coerce",
                       fn {from, to} => Layout.record [("from", layout from),
@@ -484,12 +632,45 @@ structure Value =
                       fn {froms, tos} => Layout.record [("from", Vector.layout layout froms),
                                                         ("to", Vector.layout layout tos)],
                       Unit.layout)
+      val traceSequenceCoerce =
+         Trace.trace
+         ("ConstantPropagation.Value.Sequence.coerce",
+          fn {from, to} =>
+          Layout.record [("from", Sequence.layout from),
+                         ("to", Sequence.layout to)],
+          Unit.layout)
+      val traceSequenceCoerceLengthUnifyElts =
+         Trace.trace
+         ("ConstantPropagation.Value.Sequence.coerceLengthUnifyElts",
+          fn {from, to} =>
+          Layout.record [("from", Sequence.layout from),
+                         ("to", Sequence.layout to)],
+          Unit.layout)
       val traceUnify =
          Trace.trace2 ("ConstantPropagation.Value.unify",
                        layout, layout,
                        Unit.layout)
+      val traceSequenceUnify =
+         Trace.trace
+         ("ConstantPropagation.Value.sequenceUnify",
+          fn (seq1, seq2) =>
+          let
+             open Layout
+          in
+             tuple [Sequence.layout seq1,
+                    Sequence.layout seq2]
+          end,
+          Unit.layout)
 
-      fun coerce arg =
+      fun fromType ty =
+         traceFromType
+         (mkFromType {clone = clone, coerce = coerce, unify = unify})
+         ty
+      and clone v =
+         traceClone
+         (fromType o ty)
+         v
+      and coerce arg =
          traceCoerce
          (fn {from, to} =>
           if equals (from, to)
@@ -503,7 +684,11 @@ structure Value =
                                " to: ", Layout.toString (layout to)])
                 in
                    case (value from, value to) of
-                      (Const from, Const to) =>
+                      (Array {birth = birthFrom, sequence = sequenceFrom},
+                       Array {birth = birthTo, sequence = sequenceTo}) =>
+                         (ArrayBirth.coerce {from = birthFrom, to = birthTo}
+                          ; sequenceCoerceLengthUnifyElts {from = sequenceFrom, to = sequenceTo})
+                    | (Const from, Const to) =>
                          Const.coerce {from = from, to = to}
                     | (Datatype from, Datatype to) =>
                          Data.coerce {from = from, to = to}
@@ -511,28 +696,12 @@ structure Value =
                        Ref {birth = birthTo, arg = argTo}) =>
                          (RefBirth.coerce {from = birthFrom, to = birthTo}
                           ; unify (argFrom, argTo))
-                    | (Array {birth = birthFrom, length = lengthFrom, elt = eltFrom},
-                       Array {birth = birthTo, length = lengthTo, elt = eltTo}) =>
-                         (ArrayBirth.coerce {from = birthFrom, to = birthTo}
-                          ; coerce {from = lengthFrom, to = lengthTo}
-                          ; unify (eltFrom, eltTo))
-                    | (Vector {length = lengthFrom, elt = eltFrom},
-                       Vector {length = lengthTo, elt = eltTo}) =>
-                         (coerce {from = lengthFrom, to = lengthTo}
-                          ; coerce {from = eltFrom, to = eltTo})
                     | (Tuple froms, Tuple tos) =>
                          coerces {froms = froms, tos = tos}
+                    | (Vector {sequence = sequenceFrom},
+                       Vector {sequence = sequenceTo}) =>
+                         sequenceCoerce {from = sequenceFrom, to = sequenceTo}
                     | (Weak from, Weak to) => unify (from, to)
-                    | (Const c, Vector {elt = eltTo, length = lengthTo}) =>
-                         let
-                            val {elt = eltFrom, length = lengthFrom} =
-                               constToVector
-                               (c, Type.deWord (ty eltTo),
-                                error)
-                         in
-                            coerce {from = eltFrom, to = eltTo}
-                            ; coerce {from = lengthFrom, to = lengthTo}
-                         end
                     | (_, _) => error ()
                 end) arg
       and coerces arg =
@@ -540,6 +709,25 @@ structure Value =
          (fn {froms: t vector, tos: t vector} =>
           Vector.foreach2 (froms, tos, fn (from, to) =>
                            coerce {from = from, to = to}))
+         arg
+      and sequenceCoerce arg =
+         traceSequenceCoerce
+         (fn {from, to} =>
+          Sequence.coerce
+          {clone = clone,
+           coerce = coerce,
+           equals = equals}
+          {from = from, to = to})
+         arg
+      and sequenceCoerceLengthUnifyElts arg =
+         traceSequenceCoerceLengthUnifyElts
+         (fn {from, to} =>
+          Sequence.coerceLengthUnifyElts
+          {clone = clone,
+           coerce = coerce,
+           equals = equals,
+           unify = unify}
+          {from = from, to = to})
          arg
       and unify arg: unit =
          traceUnify
@@ -562,40 +750,184 @@ structure Value =
                                         value = value1})
                 in
                    case (value1, value2) of
-                      (Const c1, Const c2) => Const.unify (c1, c2)
+                      (Array {birth = birth1, sequence = sequence1},
+                       Array {birth = birth2, sequence = sequence2}) =>
+                         (ArrayBirth.unify (birth1, birth2)
+                          ; sequenceUnify (sequence1, sequence2))
+                    | (Const c1, Const c2) => Const.unify (c1, c2)
                     | (Datatype d1, Datatype d2) => Data.unify (d1, d2)
                     | (Ref {birth = birth1, arg = arg1},
                        Ref {birth = birth2, arg = arg2}) =>
                          (RefBirth.unify (birth1, birth2)
                           ; unify (arg1, arg2))
-                    | (Array {birth = birth1, length = length1, elt = elt1},
-                       Array {birth = birth2, length = length2, elt = elt2}) =>
-                         (ArrayBirth.unify (birth1, birth2)
-                          ; unify (length1, length2)
-                          ; unify (elt1, elt2))
-                    | (Vector {length = length1, elt = elt1},
-                       Vector {length = length2, elt = elt2}) =>
-                         (unify (length1, length2)
-                          ; unify (elt1, elt2))
                     | (Tuple vs1, Tuple vs2) => Vector.foreach2 (vs1, vs2, unify)
+                    | (Vector {sequence = sequence1},
+                       Vector {sequence = sequence2}) =>
+                         sequenceUnify (sequence1, sequence2)
                     | (Weak v1, Weak v2) => unify (v1, v2)
                     | _ => error ()
                 end)
          arg
+      and sequenceUnify args =
+         traceSequenceUnify
+         (fn (seq1, seq2) =>
+          Sequence.unify
+          {clone = clone,
+           coerce = coerce,
+           equals = equals,
+           unify = unify}
+          (seq1, seq2))
+         args
       in
+         val clone = clone
          val coerce = coerce
          val coerces = coerces
+         val fromType = fromType
+         val unify = unify
       end
 
       fun makeUnknown (v: t): unit =
          case value v of
-            Array {length, elt, ...} => (makeUnknown length; makeUnknown elt)
+            Array {sequence, ...} => Sequence.makeUnknown makeUnknown sequence
           | Const c => Const.makeUnknown c
           | Datatype d => Data.makeUnknown d
           | Ref {arg, ...} => makeUnknown arg
           | Tuple vs => Vector.foreach (vs, makeUnknown)
-          | Vector {length, elt} => (makeUnknown length; makeUnknown elt)
+          | Vector {sequence} => Sequence.makeUnknown makeUnknown sequence
           | Weak v => makeUnknown v
+
+      fun sideEffect (v: t): unit =
+         case value v of
+            Array {sequence, ...} => makeUnknown (Sequence.eltLb sequence)
+          | Const _ => ()
+          | Datatype _ => ()
+          | Ref {arg, ...} => makeUnknown arg
+          | Vector _ => ()
+          | Tuple vs => Vector.foreach (vs, sideEffect)
+          | Weak v => makeUnknown v
+
+      local
+         structure Value =
+            struct
+               val clone = clone
+               val coerce = coerce
+               val const = const
+               val deConst = deConst
+               val equals = equals
+               val fromType = fromType
+               val undefined = fromType
+               val unify = unify
+            end
+      in
+         structure Sequence =
+            struct
+               open Sequence
+               val undefined: Type.t -> t =
+                  Sequence.undefined {clone = Value.clone,
+                                      coerce = Value.coerce,
+                                      deConst = Value.deConst,
+                                      equals = Value.equals,
+                                      undefined = Value.undefined,
+                                      unify = Value.unify}
+               fun make (args, eltTy) =
+                  let
+                     val length =
+                        Value.const (S.Const.word (WordX.fromInt (Vector.length args, WordSize.seqIndex ())))
+                     val lengthConst =
+                        case deConst length of
+                           NONE => Error.bug "ConstantPropagation.Value.Sequence.elts: deConst length"
+                         | SOME lengthConst => lengthConst
+
+                     val eltLb = Value.undefined eltTy
+                     val eltUb = Value.undefined eltTy
+                     val () = Value.coerce {from = eltLb, to = eltUb}
+                     val elts =
+                        (Elts.elts o Vector.map)
+                        (args, fn arg =>
+                         let
+                            val elt = Value.clone arg
+                            val () = Value.coerce {from = arg, to = elt}
+                            val () = Value.coerce {from = eltLb, to = elt}
+                            val () = Value.coerce {from = elt, to = eltUb}
+                         in
+                            elt
+                         end)
+                     val () =
+                        Const.addHandler'
+                        (lengthConst, fn v =>
+                         case v of
+                            Const.Value.Top => Elts.makeUnknown elts
+                          | _ => ())
+                  in
+                     T {eltLb = eltLb,
+                        elts = elts,
+                        eltUb = eltUb,
+                        length = length}
+                  end
+            end
+      end
+
+      local
+         fun make (err, sel) v =
+            case value v of
+               Array fs => sel fs
+             | _ => Error.bug err
+      in
+         val arrayLength = make ("ConstantPropagation.Value.arrayLength", Sequence.length o #sequence)
+         val arraySequence = make ("ConstantPropagation.Value.arraySequence", #sequence)
+      end
+
+      fun bool b =
+         new (Datatype (Data.conApp {args = Vector.new0 (),
+                                     con = Con.fromBool b}),
+              Type.bool)
+
+      val const = fn c =>
+         case c of
+            S.Const.WordVector v =>
+               let
+                  val eltTy = Type.word (WordXVector.elementSize v)
+                  val vecTy = Type.vector eltTy
+                  val args = WordXVector.toVectorMap (v, const o S.Const.word)
+                  val seq = Sequence.make (args, eltTy)
+               in
+                  new (Vector {sequence = seq}, vecTy)
+               end
+          | _ => const c
+
+      local
+         fun make (err, sel) v =
+            case value v of
+               Ref fs => sel fs
+             | _ => Error.bug err
+      in
+         val refArg = make ("ConstantPropagation.Value.refArg", #arg)
+         val refBirth = make ("ConstantPropagation.Value.refBirth", #birth)
+      end
+
+      fun select {tuple, offset, resultType = _} =
+         case value tuple of
+            Tuple vs => Vector.sub (vs, offset)
+          | _ => Error.bug "ConstantPropagation.Value.select: non-tuple"
+
+      fun tuple vs = new (Tuple vs, Type.tuple (Vector.map (vs, ty)))
+
+      fun unit () = tuple (Vector.new0 ())
+
+      local
+         fun make (err, sel) v =
+            case value v of
+               Vector fs => sel fs
+             | _ => Error.bug err
+      in
+         val vectorLength = make ("ConstantPropagation.Value.vectorLength", Sequence.length o #sequence)
+         val vectorSequence = make ("ConstantPropagation.Value.vectorSequence", #sequence)
+      end
+
+      fun weakArg v =
+         case value v of
+            Weak v => v
+          | _ => Error.bug "ConstantPropagation.Value.weakArg"
 
 
       fun globals arg: (Var.t * Type.t) vector option =
@@ -687,9 +1019,9 @@ structure Value =
                          end
                       val g =
                          case value of
-                            Array {birth, length, ...} =>
+                            Array {birth, sequence} =>
                                if !Control.globalizeArrays then
-                               arrayOnce (birth, length)
+                               arrayOnce (birth, Sequence.length sequence)
                                else No
                           | Const const =>
                                (case Const.getConst const of
@@ -714,37 +1046,40 @@ structure Value =
                                    NONE => No
                                  | SOME xts =>
                                       yes (Exp.Tuple (Vector.map (xts, #1))))
-                          | Vector {elt, length} =>
-                               (case Option.map (deConst length, S.Const.deWord) of
+                          | Vector {sequence} =>
+                               (case Sequence.Elts.getElts (Sequence.elts sequence) of
                                    NONE => No
-                                 | SOME length =>
+                                 | SOME elts =>
                                       let
-                                         val length = WordX.toInt length
                                          val eltTy = Type.deVector ty
-                                         fun mkVec args =
-                                            yes (Exp.PrimApp
-                                                 {args = args,
-                                                  prim = Prim.Vector_vector,
-                                                  targs = Vector.new1 eltTy})
-                                         fun mkConst (ws, elts) =
-                                            yes (Exp.Const
-                                                 (S.Const.wordVector
-                                                  (WordXVector.fromList
-                                                   ({elementSize = ws}, elts))))
+                                         fun vector () =
+                                            case globals elts of
+                                               NONE => No
+                                             | SOME args =>
+                                                  yes (Exp.PrimApp
+                                                       {args = Vector.map (args, #1),
+                                                        prim = Prim.Vector_vector,
+                                                        targs = Vector.new1 eltTy})
+                                         fun wordxvector elementSize =
+                                            Exn.withEscape
+                                            (fn escape =>
+                                             let
+                                                val ws =
+                                                   Vector.map
+                                                   (elts, fn elt =>
+                                                    case deConst' elt of
+                                                       SOME (S.Const.Word w) => w
+                                                     | _ => escape No)
+                                             in
+                                                yes (Exp.Const
+                                                     (S.Const.wordVector
+                                                      (WordXVector.fromVector
+                                                       ({elementSize = elementSize}, ws))))
+                                             end)
                                       in
-                                         case (Option.map (deConst elt, S.Const.deWordOpt),
-                                               global elt) of
-                                            (SOME (SOME w), _) =>
-                                               mkConst (Type.deWord eltTy,
-                                                        List.new (length, w))
-                                          | (_, SOME (x, _)) =>
-                                               mkVec (Vector.new (length, x))
-                                          | _ =>
-                                               if length = 0
-                                                  then case Type.deWordOpt eltTy of
-                                                          SOME ws => mkConst (ws, [])
-                                                        | NONE => mkVec (Vector.new0 ())
-                                                  else No
+                                         case Type.deWordOpt eltTy of
+                                            NONE => vector ()
+                                          | SOME ws => wordxvector ws
                                       end)
                           | Weak _ => No
                       val _ = r := g
@@ -753,22 +1088,19 @@ structure Value =
                    end
           end) arg
 
-      fun arrayFromArray (v: t): t =
+      fun arrayToArray (v: t): t =
          case value v of
-            Array {elt, length, ...} =>
-               new (Array {birth = Birth.unknown (),
-                           elt = elt,
-                           length = length},
+            Array {sequence, ...} =>
+               new (Array {birth = Birth.unknown (), sequence = sequence},
                     ty v)
-          | _ => Error.bug "ConstantPropagation.Value.arrayFromArray"
+          | _ => Error.bug "ConstantPropagation.Value.arrayToArray"
 
-      fun vectorFromArray (v: t): t =
+      fun arrayToVector (v: t): t =
          case value v of
-            Array {elt, length, ...} =>
-               new (Vector {elt = elt,
-                            length = length},
+            Array {sequence, ...} =>
+               new (Vector {sequence = sequence},
                     Type.vector (Type.deArray (ty v)))
-          | _ => Error.bug "ConstantPropagation.Value.vectorFromArray"
+          | _ => Error.bug "ConstantPropagation.Value.arrayToVector"
    end
 
 (* ------------------------------------------------- *)
@@ -842,15 +1174,6 @@ fun transform (program: Program.t): Program.t =
                             ("args", Vector.layout layout args)],
              Unit.layout)
             filter
-         fun sideEffect (v: t): unit =
-            case value v of
-               Array {elt, ...} => makeUnknown elt
-             | Const _ => ()
-             | Datatype _ => ()
-             | Ref {arg, ...} => makeUnknown arg
-             | Vector _ => ()
-             | Tuple vs => Vector.foreach (vs, sideEffect)
-             | Weak v => makeUnknown v
          fun primApp {prim,
                       targs = _,
                       args: t vector,
@@ -863,37 +1186,88 @@ fun transform (program: Program.t): Program.t =
                                           then Birth.here z
                                        else Birth.unknown ()
                    | _ => Error.bug "ConstantPropagation.Value.primApp.bear"
-               fun update (a, v) =
-                  (coerce {from = v, to = arrayElt a}
-                   ; unit ())
                fun arg i = Vector.sub (args, i)
-               fun array (birth, length) =
+               fun sequenceSub deSeq =
                   let
-                     val a = fromType resultType
-                     val _ = ArrayBirth.coerce {from = birth, to = arrayBirth a}
-                     val _ = coerce {from = length, to = arrayLength a}
+                     val res = fromType resultType
+                     val seq = deSeq (arg 0)
+                     val elts = Sequence.elts seq
+                     val eltUb = Sequence.eltUb seq
+                     val idx =
+                        case deConst (arg 1) of
+                           SOME idx => idx
+                         | _ => Error.bug "ConstantPropagation.Value.primApp: sequenceSub, idx"
+                     fun doit () =
+                        case (Const.value idx, Sequence.Elts.value elts) of
+                           (Const.Value.Bottom, _) => ()
+                         | (_, Sequence.Elts.Value.Bottom) => ()
+                         | (Const.Value.Point idx, Sequence.Elts.Value.Point elts) =>
+                              let
+                                 val idx = WordX.toIntInf (S.Const.deWord idx)
+                              in
+                                 if idx < IntInf.fromInt (Vector.length elts)
+                                    then coerce {from = Vector.sub (elts, IntInf.toInt idx),
+                                                 to = res}
+                                    else ()
+                              end
+                         | _ => coerce {from = eltUb, to = res}
+                     val doit =
+                        Trace.trace
+                        ("ConstantPropagation.Value.primApp.sequenceSub.doit",
+                         fn () => Layout.tuple [Const.layout idx,
+                                                Sequence.Elts.layout elts,
+                                                layout eltUb],
+                         Unit.layout)
+                        doit
+                     val _ = Const.addHandler (idx, doit)
+                     val _ = Sequence.Elts.addHandler (elts, doit)
                   in
-                     (a, arrayElt a)
+                     res
                   end
-               fun vector length =
+               fun sequenceUpd deSeq =
                   let
-                     val v = fromType resultType
-                     val _ = coerce {from = length, to = vectorLength v}
+                     val seq = deSeq (arg 0)
+                     val elts = Sequence.elts seq
+                     val eltLb = Sequence.eltLb seq
+                     val idx =
+                        case deConst (arg 1) of
+                           SOME idx => idx
+                         | _ => Error.bug "ConstantPropagation.Value.primApp: sequenceUpd, idx"
+                     val new = arg 2
+                     fun doit () =
+                        case (Const.value idx, Sequence.Elts.value elts) of
+                           (Const.Value.Bottom, _) => ()
+                         | (_, Sequence.Elts.Value.Bottom) => ()
+                         | (Const.Value.Point idx, Sequence.Elts.Value.Point elts) =>
+                              let
+                                 val idx = WordX.toIntInf (S.Const.deWord idx)
+                              in
+                                 if idx < IntInf.fromInt (Vector.length elts)
+                                    then coerce {from = new,
+                                                 to = Vector.sub (elts, IntInf.toInt idx)}
+                                    else ()
+                              end
+                         | _ => coerce {from = new, to = eltLb}
+                     val doit =
+                        Trace.trace
+                        ("ConstantPropagation.Value.primApp.sequenceUpd.doit",
+                         fn () => Layout.tuple [Const.layout idx,
+                                                Sequence.Elts.layout elts,
+                                                layout eltLb],
+                         Unit.layout)
+                        doit
+                     val _ = Const.addHandler (idx, doit)
+                     val _ = Sequence.Elts.addHandler (elts, doit)
                   in
-                     (v, vectorElt v)
+                     unit ()
                   end
-               fun sequence mk =
+               fun arrayCopy deSeq =
                   let
-                     val l =
-                        (const o S.Const.word o WordX.fromInt)
-                        (Vector.length args, WordSize.seqIndex ())
-                     val (seq, elt) = mk l
-                     val _ =
-                        Vector.foreach
-                        (args, fn arg =>
-                         coerce {from = arg, to = elt})
+                     val eltUb = Sequence.eltUb (deSeq (arg 2))
+                     val eltLb = Sequence.eltLb (arraySequence (arg 0))
+                     val _ = coerce {from = eltUb, to = eltLb}
                   in
-                     seq
+                     unit ()
                   end
                fun constFold () =
                   Exn.withEscape
@@ -965,26 +1339,26 @@ fun transform (program: Program.t): Program.t =
                   Prim.Array_alloc {raw} =>
                      let
                         val birth = bear (ArrayInit.Alloc {raw = raw})
+                        val sequence = Sequence.undefined (Type.deArray resultType)
+                        val _ = coerce {from = arg 0, to = Sequence.length sequence}
                      in
-                        #1 (array (birth, arg 0))
+                        new (Array {birth = birth, sequence = sequence}, resultType)
                      end
                 | Prim.Array_array =>
                      let
                         val birth = bear (ArrayInit.Array {args = args})
+                        val sequence = Sequence.make (args, Type.deArray resultType)
                      in
-                        sequence (fn l => array (birth, l))
+                        new (Array {birth = birth, sequence = sequence}, resultType)
                      end
-                | Prim.Array_copyArray =>
-                     update (arg 0, arrayElt (arg 2))
-                | Prim.Array_copyVector =>
-                     update (arg 0, vectorElt (arg 2))
+                | Prim.Array_copyArray => arrayCopy arraySequence
+                | Prim.Array_copyVector => arrayCopy vectorSequence
                 | Prim.Array_length => arrayLength (arg 0)
-                | Prim.Array_sub => arrayElt (arg 0)
-                | Prim.Array_toArray => arrayFromArray (arg 0)
-                | Prim.Array_toVector => vectorFromArray (arg 0)
-                | Prim.Array_update => update (arg 0, arg 2)
-                | Prim.Ref_assign =>
-                     (coerce {from = arg 1, to = refArg (arg 0)}; unit ())
+                | Prim.Array_sub => sequenceSub arraySequence
+                | Prim.Array_toArray => arrayToArray (arg 0)
+                | Prim.Array_toVector => arrayToVector (arg 0)
+                | Prim.Array_update => sequenceUpd arraySequence
+                | Prim.Ref_assign => (coerce {from = arg 1, to = refArg (arg 0)}; unit ())
                 | Prim.Ref_deref => refArg (arg 0)
                 | Prim.Ref_ref =>
                      let
@@ -997,8 +1371,13 @@ fun transform (program: Program.t): Program.t =
                         r
                      end
                 | Prim.Vector_length => vectorLength (arg 0)
-                | Prim.Vector_sub => vectorElt (arg 0)
-                | Prim.Vector_vector => sequence vector
+                | Prim.Vector_sub => sequenceSub vectorSequence
+                | Prim.Vector_vector =>
+                     let
+                        val sequence = Sequence.make (args, Type.deArray resultType)
+                     in
+                        new (Vector {sequence = sequence}, resultType)
+                     end
                 | Prim.Weak_get => weakArg (arg 0)
                 | Prim.Weak_new =>
                      let
