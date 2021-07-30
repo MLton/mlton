@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2017-2020 Matthew Fluet.
+(* Copyright (C) 2009,2017-2021 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -945,6 +945,12 @@ fun transform (program: Program.t): Program.t =
                                       targs = Vector.new1 Type.unit,
                                       args = Vector.new1 unitVar}
                         else doit ()
+                  fun makeSeq deSeq =
+                     if Type.isUnit (deSeq resultType)
+                        then PrimApp {prim = prim,
+                                      targs = Vector.new1 Type.unit,
+                                      args = Vector.map (args, fn _ => unitVar)}
+                        else doit ()
                in
                   case prim of
                      Prim.Array_uninitIsNop =>
@@ -952,6 +958,7 @@ fun transform (program: Program.t): Program.t =
                            then doit ()
                            else ConApp {args = Vector.new0 (),
                                         con = Con.truee}
+                   | Prim.Array_array => makeSeq Type.deArray
                    | Prim.MLton_equal =>
                         let
                            val (t0, _) = Value.getNew (value (arg 0))
@@ -971,6 +978,7 @@ fun transform (program: Program.t): Program.t =
                                            con = Con.falsee}
                         end
                    | Prim.Ref_ref => makePtr Type.deRef
+                   | Prim.Vector_vector => makeSeq Type.deVector
                    | Prim.Weak_new => makePtr Type.deWeak
                    | _ => doit ()
                end
