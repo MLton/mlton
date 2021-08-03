@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2013,2019 Matthew Fluet.
+(* Copyright (C) 2009,2013,2019,2021 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -162,6 +162,10 @@ functor Control
 functor Env
 functor EuclideanRing
 functor FlatLattice
+functor FlatLatticeMono
+functor FlatLatticeParam
+functor FlatLatticePoly
+functor FlatLatticeRec
 functor HashedUniqueSet
 functor IntUniqueId
 functor MakeMonoEnv

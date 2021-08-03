@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2017 Matthew Fluet.
+(* Copyright (C) 2009,2017,2021 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -39,6 +39,7 @@ signature LIST =
        * and after it in the same order as in the list.
        *)
 (*      val each: 'a t -> ('a t * 'a * 'a t) t *)
+      val empty: 'a t
       val equals: 'a t * 'b t * ('a * 'b -> bool) -> bool
       val equalsAsSet: 'a t * 'a t * ('a * 'a -> bool) -> bool
       (* Group according to equivalence relation. *)
@@ -150,6 +151,7 @@ signature LIST =
              replace: 'a t * ('a -> 'a option) -> 'a t,
              map: 'a t * ('a -> 'a) -> 'a t,
              layout: 'a t -> Layout.t}
+      val single: 'a -> 'a t
       val snoc: 'a t * 'a -> 'a t
 (*      val splitAtMost: 'a t * int -> ('a t * 'a t) option *)
       val splitAt: 'a t * int -> 'a t * 'a t

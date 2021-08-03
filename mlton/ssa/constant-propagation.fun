@@ -1,4 +1,4 @@
-(* Copyright (C) 2017,2019-2020 Matthew Fluet.
+(* Copyright (C) 2017,2019-2021 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -28,12 +28,13 @@ open S
 structure Multi = Multi (S)
 structure Global = Global (S)
 
+structure UniqueId = UniqueId ()
+
 structure Graph = DirectedGraph
 structure Node = Graph.Node
 structure Size = TwoPointLattice (val bottom = "small"
                                   val top = "large")
 
-structure Sconst = Const
 open Exp Transfer
 
 structure Value =
@@ -44,89 +45,17 @@ structure Value =
        | Yes of Var.t
 
       structure Const =
+         FlatLatticeMono(structure Point = S.Const
+                         val bottom = "undefined constant"
+                         val top = "unknown constant")
+      structure Const =
          struct
-            datatype t = T of {const: const ref,
-                               coercedTo: t list ref}
-            and const =
-               Const of Const.t
-             | Undefined (* no possible value *)
-             | Unknown (* many possible values *)
-
-            fun layout (T {const, ...}) = layoutConst (!const)
-            and layoutConst c =
-               let
-                  open Layout
-               in
-                  case c of
-                     Const c => Const.layout c
-                   | Undefined => str "undefined constant"
-                   | Unknown => str "unknown constant"
-               end
-
-            fun new c = T {const = ref c,
-                           coercedTo = ref []}
-
-            fun equals (T {const = r, ...}, T {const = r', ...}) = r = r'
-
-            val equals =
-               Trace.trace2 
-               ("ConstantPropagation.Value.Const.equals", 
-                layout, layout, Bool.layout) 
-               equals
-
-            val const = new o Const
-
-            fun undefined () = new Undefined
-
-            fun unknown () = new Unknown
-
-            fun makeUnknown (T {const, coercedTo}): unit =
-               case !const of
-                  Unknown => ()
-                | _ => (const := Unknown
-                        ; List.foreach (!coercedTo, makeUnknown)
-                        ; coercedTo := [])
-
-            val makeUnknown =
-               Trace.trace 
-               ("ConstantPropagation.Value.Const.makeUnknown", 
-                layout, Unit.layout) 
-               makeUnknown
-
-            fun send (c: t, c': const): unit =
-               let
-                  fun loop (c as T {const, coercedTo}) =
-                     case (c', !const) of
-                        (_, Unknown) => ()
-                      | (_, Undefined) => (const := c'
-                                           ; List.foreach (!coercedTo, loop))
-                      | (Const c', Const c'') =>
-                           if Const.equals (c', c'')
-                              then ()
-                           else makeUnknown c
-                      | _ => makeUnknown c
-               in
-                  loop c
-               end
-
-            val send =
-               Trace.trace2 
-               ("ConstantPropagation.Value.Const.send", 
-                layout, layoutConst, Unit.layout) 
-               send
-
-            fun coerce {from = from as T {const, coercedTo}, to: t}: unit =
-               if equals (from, to)
-                  then ()
-               else
-                  let
-                     fun push () = List.push (coercedTo, to)
-                  in
-                     case !const of
-                        c as Const _ => (push (); send (to, c))
-                      | Undefined => push ()
-                      | Unknown => makeUnknown to
-                  end
+            open Const
+            val undefined = Const.newBottom
+            val const = Const.newPoint
+            val getConst = Const.getPoint
+            val unknown = Const.newTop
+            val makeUnknown = Const.makeTop
 
             val coerce =
                Trace.trace
@@ -136,15 +65,54 @@ structure Value =
                 Unit.layout)
                coerce
 
-            fun unify (c, c') =
-               (coerce {from = c, to = c'}
-                ; coerce {from = c', to = c})
-
             val unify =
-               Trace.trace2 
-               ("ConstantPropagation.Value.Const.unify", 
-                layout, layout, Unit.layout) 
+               Trace.trace2
+               ("ConstantPropagation.Value.Const.unify",
+                layout, layout, Unit.layout)
                unify
+         end
+
+      structure ConApp =
+         struct
+            datatype 'a t = T of {args: 'a vector,
+                                  con: Con.t,
+                                  unique: UniqueId.t}
+
+            fun new {args, con} = T {args = args,
+                                     con = con,
+                                     unique = UniqueId.new ()}
+
+            fun equals (T {args = args1,
+                           con = con1,
+                           unique = unique1},
+                        T {con = con2,
+                           unique = unique2, ...}) =
+               UniqueId.equals (unique1, unique2)
+               orelse (Con.equals (con1, con2)
+                       andalso Vector.isEmpty args1)
+
+            fun layout layoutA (T {args, con, ...}) =
+               let
+                  open Layout
+               in
+                  record [("con", Con.layout con),
+                          ("args", Vector.layout layoutA args)]
+               end
+         end
+      structure Data =
+         FlatLatticeParam(structure Point = ConApp
+                          val bottom = "undefined datatype"
+                          val top = "unknown datatype")
+      structure Data =
+         struct
+            open Data
+
+            val undefined = Data.newBottom
+            fun conApp {args, con} =
+               Data.newPoint (ConApp.new {args = args, con = con})
+            val getConApp = Data.getPoint
+            val unknown = Data.newTop
+            val makeUnknown = Data.makeTop
          end
 
       structure One =
@@ -158,9 +126,16 @@ structure Value =
                val global = fn z => make #global z
             end
 
-            fun layout (one: 'a t): Layout.t =
-               Layout.record
-               [("global", Option.layout Var.layout (! (global one)))]
+            fun layout layoutA =
+               let
+                  val optionVarLayout = Option.layout Var.layout
+                  open Layout
+               in
+                  fn T {extra, global} =>
+                  seq [str "One ",
+                       record [("extra", layoutA extra),
+                               ("global", optionVarLayout (!global))]]
+               end
 
             fun new (a: 'a): 'a t = T {extra = a,
                                        global = ref NONE}
@@ -168,241 +143,293 @@ structure Value =
             val equals: 'a t * 'a t -> bool = 
                fn (n, n') => global n = global n'
          end
-
-      structure Place =
-         struct
-            datatype 'a t =
-               One of 'a One.t
-             | Undefined
-             | Unknown
-
-            val toString =
-               fn One _ => "One"
-                | Undefined => "Undefined"
-                | Unknown => "Unknown"
-
-            fun layout b = Layout.str (toString b)
-         end
-
+      structure Birth = FlatLatticeParam(structure Point = One
+                                         val bottom = "undefined birth"
+                                         val top = "unknown birth")
       structure Birth =
          struct
-            datatype 'a t = T of {coercedTo: 'a t list ref,
-                                  place: 'a Place.t ref}
+            open Birth
 
-            fun layout (T {place, ...}) = Place.layout (!place)
-
-            fun equals (T {place = r, ...}, T {place = r', ...}) = r = r'
-
-            fun new p = T {place = ref p,
-                           coercedTo = ref []}
-
-            fun undefined (): 'a t = new Place.Undefined
-            fun unknown (): 'a t = new Place.Unknown
-            fun here (a: 'a): 'a t = new (Place.One (One.new a))
-
-            val traceMakeUnknown = 
-               Trace.info 
-               "ConstantPropagation.Value.Birth.makeUnknown"
-
-            fun makeUnknown arg =
-               Trace.traceInfo'
-               (traceMakeUnknown, layout, Unit.layout)
-               (fn T {place, coercedTo, ...} =>
-                case !place of
-                   Place.Unknown => ()
-                 | _ => (place := Place.Unknown
-                         ; List.foreach (!coercedTo, makeUnknown)
-                         ; coercedTo := [])) arg
-
-            val traceSend = 
-               Trace.info 
-               "ConstantPropagation.Value.Birth.send"
-
-            fun send arg =
-               Trace.traceInfo'
-               (traceSend, Layout.tuple2 (layout, One.layout), Unit.layout)
-               (fn (b, one) =>
-                let
-                   fun loop (b as T {place, coercedTo, ...}) =
-                      case !place of
-                         Place.Undefined => (place := Place.One one
-                                             ; List.foreach (!coercedTo, loop))
-                       | Place.One one' => if One.equals (one, one')
-                                              then ()
-                                           else makeUnknown b
-                       | Place.Unknown => ()
-                in
-                   loop b
-                end) arg
-
-            val traceCoerce = 
-               Trace.info 
-               "ConstantPropagation.Value.Birth.coerce"
-            fun coerce arg =
-               Trace.traceInfo'
-               (traceCoerce,
-                fn {from, to} => Layout.record [("from", layout from),
-                                                ("to", layout to)],
-                Unit.layout)
-               (fn {from = from as T {place, coercedTo, ...}, to} =>
-                if equals (from, to)
-                   then ()
-                else
-                   let
-                      fun push () = List.push (coercedTo, to)
-                   in
-                      case !place of
-                         Place.Unknown => makeUnknown to
-                       | Place.One one => (push (); send (to, one))
-                       | Place.Undefined => push ()
-                   end) arg
-
-            val traceUnify = 
-               Trace.info 
-               "ConstantPropagation.Value.Birth.unify"
-
-            fun unify arg =
-               Trace.traceInfo'
-               (traceUnify, Layout.tuple2 (layout, layout), Unit.layout)
-               (fn (c, c') =>
-                (coerce {from = c, to = c'}
-                 ; coerce {from = c', to = c})) arg
+            val undefined = Birth.newBottom
+            fun here (a: 'a): 'a t = Birth.newPoint (One.new a)
+            val getOne = Birth.getPoint
+            val unknown = Birth.newTop
          end
 
-      structure Raw =
+      structure ArrayInit =
          struct
-            datatype t = T of {coercedTo: t list ref,
-                               raw: raw ref}
-            and raw =
-               Raw of bool
-             | Undefined (* no possible value *)
-             | Unknown (* many possible values *)
+            datatype 'a t =
+               Alloc of {raw: bool}
+             | Array of {args: 'a vector}
 
-            fun layout (T {raw, ...}) = layoutRaw (!raw)
-            and layoutRaw r =
+            fun layout layoutA ai =
                let
                   open Layout
                in
-                  case r of
-                     Raw b => Bool.layout b
-                   | Undefined => str "undefined raw"
-                   | Unknown => str "unknown raw"
+                  case ai of
+                     Alloc {raw} =>
+                        seq [str "Alloc ",
+                             record [("raw", Bool.layout raw)]]
+                   | Array {args} =>
+                        seq [str "Array ",
+                             record [("args",
+                                      Vector.layout layoutA args)]]
                end
+         end
+      structure ArrayBirth =
+         struct
+            open Birth
+            type 'a t = 'a ArrayInit.t Birth.t
+            val layout = fn layoutA => Birth.layout (ArrayInit.layout layoutA)
+         end
+      structure RefInit =
+         struct
+            type 'a t = {arg: 'a}
 
-            fun new r = T {coercedTo = ref [],
-                           raw = ref r}
-
-            fun equals (T {raw = r1, ...}, T {raw = r2, ...}) = r1 = r2
-
-            val equals =
-               Trace.trace2
-               ("ConstantPropagation.Value.Raw.equals",
-                layout, layout, Bool.layout)
-               equals
-
-            val raw = new o Raw
-
-            fun undefined () = new Undefined
-            fun unknown () = new Unknown
-
-            fun makeUnknown (T {coercedTo, raw}): unit =
-               case !raw of
-                  Unknown => ()
-                | _ => (raw := Unknown
-                        ; List.foreach (!coercedTo, makeUnknown)
-                        ; coercedTo := [])
-
-            val makeUnknown =
-               Trace.trace
-               ("ConstantPropagation.Value.Raw.makeUnknown",
-                layout, Unit.layout)
-               makeUnknown
-
-            fun send (r: t, r': raw): unit =
+            fun layout layoutA {arg} =
                let
-                  fun loop (r as T {coercedTo, raw}) =
-                     case (r', !raw) of
-                        (_, Unknown) => ()
-                      | (_, Undefined) => (raw := r'
-                                           ; List.foreach (!coercedTo, loop))
-                      | (Raw b', Raw b'') =>
-                           if b' = b''
-                              then ()
-                              else makeUnknown r
-                      | _ => makeUnknown r
+                  open Layout
                in
-                  loop r
+                  record [("arg", layoutA arg)]
+               end
+         end
+      structure RefBirth =
+         struct
+            open Birth
+            type 'a t = 'a RefInit.t Birth.t
+            val layout = fn layoutA => Birth.layout (RefInit.layout layoutA)
+         end
+
+      structure Sequence =
+         struct
+            structure Elts =
+               FlatLatticeRec(structure Point =
+                                 struct
+                                    type 'a t = 'a vector
+                                    fun equals equalsA (xs, ys) =
+                                       Vector.equals (xs, ys, equalsA)
+                                    fun layout layoutA xs =
+                                       Vector.layout layoutA xs
+                                    fun clone {clone = cloneA, equals = _} xs =
+                                       Vector.map (xs, cloneA)
+                                    fun coerce {clone = _, coerce = coerceA, equals = _} {from, to} =
+                                       if Vector.length from = Vector.length to
+                                          then (Vector.foreach2 (from, to, fn (from, to) =>
+                                                                 coerceA {from = from, to = to})
+                                                ; true)
+                                          else false
+                                    fun unify {equals = _, unify = unifyA} (xs1, xs2) =
+                                       if Vector.length xs1 = Vector.length xs2
+                                          then (Vector.foreach2 (xs1, xs2, unifyA)
+                                                ; true)
+                                          else false
+                                 end
+                              val bottom = "undefined elts"
+                              val top = "unknown elts")
+            structure Elts =
+               struct
+                  open Elts
+
+                  val undefined = Elts.newBottom
+                  val elts = Elts.newPoint
+                  val getElts = Elts.getPoint
+                  val unknown = Elts.newTop
+                  val makeUnknown = Elts.makeTop
+               end
+            datatype 'a t = T of {eltLb: 'a,
+                                  elts: 'a Elts.t,
+                                  eltUb: 'a,
+                                  length: 'a}
+
+            local
+               fun make sel (T fs) = sel fs
+            in
+               fun eltLb s = make #eltLb s
+               fun elts s = make #elts s
+               fun eltUb s = make #eltUb s
+               fun length s = make #length s
+            end
+
+            fun layout layoutA (T {eltLb, elts, eltUb, length}) =
+               Layout.record [("eltLb", layoutA eltLb),
+                              ("elts", Elts.layout layoutA elts),
+                              ("eltUb", layoutA eltUb),
+                              ("length", layoutA length)]
+
+            fun unknown {unknown = unknownA: Type.t -> 'a} =
+               fn eltTy =>
+               let
+                  val length = unknownA (Type.word (WordSize.seqIndex ()))
+                  val eltLb = unknownA eltTy
+                  val elts = Elts.unknown ()
+                  val eltUb = unknownA eltTy
+               in
+                  T {eltLb = eltLb,
+                     elts = elts,
+                     eltUb = eltUb,
+                     length = length}
                end
 
-            val send =
-               Trace.trace2
-               ("ConstantPropagation.Value.Raw.send",
-                layout, layoutRaw, Unit.layout)
-               send
-
-            fun coerce {from = from as T {coercedTo, raw}, to: t}: unit =
-               if equals (from, to)
-                  then ()
-               else
+            fun undefined {clone = cloneA: 'a -> 'a,
+                           coerce = coerceA: {from: 'a, to: 'a} -> unit,
+                           deConst: 'a -> Const.t option,
+                           equals = equalsA: 'a * 'a -> bool,
+                           unify = unifyA: 'a * 'a -> unit,
+                           undefined = undefinedA: Type.t -> 'a} =
+               let
+                  val eltsUnify =
+                     Elts.unify
+                     {clone = cloneA,
+                      coerce = coerceA,
+                      equals = equalsA,
+                      unify = unifyA}
+               in
+                  fn eltTy =>
                   let
-                     fun push () = List.push (coercedTo, to)
+                     val length = undefinedA (Type.word (WordSize.seqIndex ()))
+                     val lengthConst =
+                        case deConst length of
+                           NONE => Error.bug "ConstantPropagation.Value.Sequence.new: deConst length"
+                         | SOME lengthConst => lengthConst
+
+                     val eltLb = undefinedA eltTy
+                     val elts = Elts.undefined ()
+                     val eltUb = undefinedA eltTy
+
+                     val () = coerceA {from = eltLb, to = eltUb}
+                     fun doit v =
+                        case v of
+                           Const.Value.Bottom => ()
+                         | Const.Value.Point c =>
+                              Exn.withEscape
+                              (fn escape =>
+                               let
+                                  val length =
+                                     case S.Const.deWordOpt c of
+                                        NONE => Error.bug "ConstantPropagation.Value.Sequence.new: S.Const.deWordOpt c"
+                                      | SOME w =>
+                                           let
+                                              val length = WordX.toIntInf w
+                                           in
+                                              if length <= 0x1000
+                                                 then IntInf.toInt length
+                                                 else (Elts.makeUnknown elts
+                                                       ; escape ())
+                                           end
+                                  val elts' =
+                                     Vector.tabulate
+                                     (length, fn _ =>
+                                      let
+                                         val elt = undefinedA eltTy
+                                         val _ = coerceA {from = eltLb, to = elt}
+                                         val _ = coerceA {from = elt, to = eltUb}
+                                      in
+                                         elt
+                                      end)
+                                  val () = eltsUnify (elts, Elts.elts elts')
+                               in
+                                  ()
+                               end)
+                         | Const.Value.Top => Elts.makeUnknown elts
+                     val doit =
+                        Trace.trace
+                        ("ConstantPropagation.Value.Sequence.new.doit",
+                         Const.Value.layout, Unit.layout)
+                        doit
+                     val () = Const.addHandler' (lengthConst, doit)
                   in
-                     case !raw of
-                        r as Raw _ => (push (); send (to, r))
-                      | Undefined => push ()
-                      | Unknown => makeUnknown to
+                     T {eltLb = eltLb,
+                        elts = elts,
+                        eltUb = eltUb,
+                        length = length}
                   end
+               end
 
-            val coerce =
-               Trace.trace
-               ("ConstantPropagation.Value.Raw.coerce",
-                fn {from, to} => Layout.record [("from", layout from),
-                                                ("to", layout to)],
-                Unit.layout)
-               coerce
+            fun makeUnknown (makeUnknownA: 'a -> unit) (T {eltLb, length, ...}) =
+               (makeUnknownA length; makeUnknownA eltLb)
 
-            fun unify (r, r') =
-               (coerce {from = r, to = r'}
-                ; coerce {from = r', to = r})
+            fun coerceElts {clone = cloneA, coerce = coerceA, equals = equalsA} =
+               fn {from = T {eltLb = eltLbFrom, elts = eltsFrom, eltUb = eltUbFrom, ...},
+                   to = T {eltLb = eltLbTo, elts = eltsTo, eltUb = eltUbTo, ...}} =>
+               let
+                  val eltsCoerce = Elts.coerce {clone = cloneA,
+                                                coerce = coerceA,
+                                                equals = equalsA}
+               in
+                  coerceA {from = eltLbFrom, to = eltLbTo}
+                  ; eltsCoerce {from = eltsFrom, to = eltsTo}
+                  ; coerceA {from = eltUbFrom, to = eltUbTo}
+               end
 
-            val unify =
-               Trace.trace2
-               ("ConstantPropagation.Value.Raw.unify",
-                layout, layout, Unit.layout)
-               unify
+            fun coerce {clone = cloneA, coerce = coerceA, equals = equalsA} =
+               fn {from = from as T {length = lengthFrom, ...},
+                   to = to as T {length = lengthTo, ...}} =>
+               let
+                  val coerceElts = coerceElts {clone = cloneA,
+                                               coerce = coerceA,
+                                               equals = equalsA}
+               in
+                  (coerceA {from = lengthFrom, to = lengthTo}
+                   ; coerceElts {from = from, to = to})
+               end
+
+            fun unifyElts {clone = cloneA, coerce = coerceA, equals = equalsA, unify = unifyA} =
+               fn (T {eltLb = eltLb1, elts = elts1, eltUb = eltUb1, ...},
+                   T {eltLb = eltLb2, elts = elts2, eltUb = eltUb2, ...}) =>
+               let
+                  val eltsUnify = Elts.unify {clone = cloneA,
+                                              coerce = coerceA,
+                                              equals = equalsA,
+                                              unify = unifyA}
+               in
+                  unifyA (eltLb1, eltLb2)
+                  ; eltsUnify (elts1, elts2)
+                  ; unifyA (eltUb1, eltUb2)
+               end
+
+            fun coerceLengthUnifyElts {clone = cloneA, coerce = coerceA, equals = equalsA, unify = unifyA} =
+               fn {from = from as T {length = lengthFrom, ...},
+                   to = to as T {length = lengthTo, ...}} =>
+               let
+                  val unifyElts = unifyElts {clone = cloneA,
+                                             coerce = coerceA,
+                                             equals = equalsA,
+                                             unify = unifyA}
+               in
+                  (coerceA {from = lengthFrom, to = lengthTo}
+                   ; unifyElts (from, to))
+               end
+
+            fun unify {clone = cloneA, coerce = coerceA, equals = equalsA, unify = unifyA} =
+               fn (seq1 as T {length = length1, ...},
+                   seq2 as T {length = length2, ...}) =>
+               let
+                  val unifyElts = unifyElts {clone = cloneA,
+                                             coerce = coerceA,
+                                             equals = equalsA,
+                                             unify = unifyA}
+               in
+                  (unifyA (length1, length2)
+                   ; unifyElts (seq1, seq2))
+               end
          end
 
       structure Set = DisjointSet
-      structure Unique = UniqueId ()
 
       datatype t =
          T of {global: global ref,
                ty: Type.t,
                value: value} Set.t
       and value =
-         Array of {birth: unit Birth.t,
-                   elt: t,
-                   length: t,
-                   raw: Raw.t}
+         Array of {birth: t ArrayBirth.t,
+                   sequence: t Sequence.t}
        | Const of Const.t
-       | Datatype of data
+       | Datatype of t Data.t
        | Ref of {arg: t,
-                 birth: {init: t} Birth.t}
+                 birth: t RefBirth.t}
        | Tuple of t vector
-       | Vector of {elt: t,
-                    length: t}
+       | Vector of {sequence: t Sequence.t}
        | Weak of t
-      and data =
-         Data of {coercedTo: data list ref,
-                  filters: {args: t vector,
-                            con: Con.t} list ref,
-                  value: dataVal ref}
-      and dataVal =
-         ConApp of {args: t vector,
-                    con: Con.t,
-                    uniq: Unique.t}
-       | Undefined
-       | Unknown
 
       local
          fun make sel (T s) = sel (Set.! s)
@@ -410,50 +437,498 @@ structure Value =
          val value = make #value
          val ty = make #ty
       end
-      fun deConst v =
-         case value v of
-            Const (Const.T {const, ...}) =>
-               (case !const of
-                   Const.Const c => SOME c
-                 | _ => NONE)
-          | _ => NONE
+
+      fun equals (T s, T s') = Set.equals (s, s')
 
       local
          open Layout
+         fun layout (seen, v) =
+            if List.contains (seen, v, equals)
+               then str "$$$"
+            else if List.length seen > !Control.constPropAbsValLayoutDepth
+               then str "..."
+               else let
+                       val seen' = v::seen
+                       val layout = fn v' => layout (seen', v')
+                    in
+                       case value v of
+                          Array {birth, sequence, ...} =>
+                             seq [str "array ",
+                                  tuple [ArrayBirth.layout layout birth,
+                                         Sequence.layout layout sequence]]
+                        | Const c => Const.layout c
+                        | Datatype d => Data.layout layout d
+                        | Ref {arg, birth, ...} =>
+                             seq [str "ref ",
+                                  tuple [layout arg,
+                                         RefBirth.layout layout birth]]
+                        | Tuple vs => Vector.layout layout vs
+                        | Vector {sequence, ...} =>
+                             seq [str "vector ",
+                                  tuple [Sequence.layout layout sequence]]
+                        | Weak v => seq [str "weak ", layout v]
+                    end
       in
-         fun layout v =
-            case value v of
-               Array {birth, elt, length, raw, ...} =>
-                  seq [str "array ", tuple [Birth.layout birth,
-                                            layout length,
-                                            layout elt,
-                                            Raw.layout raw]]
-             | Const c => Const.layout c
-             | Datatype d => layoutData d
-             | Ref {arg, birth, ...} =>
-                  seq [str "ref ", tuple [layout arg, Birth.layout birth]]
-             | Tuple vs => Vector.layout layout vs
-             | Vector {elt, length, ...} =>
-                  seq [str "vector ", tuple [layout elt,
-                                             layout length]]
-             | Weak v => seq [str "weak ", layout v]
-         and layoutData (Data {value, ...}) =
-            case !value of
-               Undefined => str "undefined datatype"
-             | ConApp {con, uniq, ...} =>
-                  record [("con", Con.layout con),
-                          ("uniq", Unique.layout uniq)]
-                  (* Can't layout the args because there may be a circularity *)
-             | Unknown => str "unknown datatype"
+         val layout = fn v => layout ([], v)
       end
-
-      fun equals (T s, T s') = Set.equals (s, s')
 
       val equals =
          Trace.trace2 
          ("ConstantPropagation.Value.equals", 
           layout, layout, Bool.layout) 
          equals
+
+      local
+         structure Value =
+            struct
+               type t = t
+               val layout = layout
+            end
+         structure AbsValue = Value
+      in
+         structure Data =
+            struct
+               open Data
+               type t = AbsValue.t Data.t
+               val layout = Data.layout AbsValue.layout
+               val coerce: {from: t, to: t} -> unit =
+                  Trace.trace
+                  ("ConstantPropagation.Value.Data.coerce",
+                   fn {from, to} =>
+                   Layout.record [("from", layout from),
+                                  ("to", layout to)],
+                   Unit.layout)
+                  Data.coerce
+               val unify: t * t -> unit =
+                  Trace.trace2
+                  ("ConstantPropagation.Value.Data.unify",
+                   layout, layout, Unit.layout)
+                  Data.unify
+            end
+         structure ArrayBirth =
+            struct
+               open ArrayBirth
+               type t = AbsValue.t ArrayBirth.t
+               val layout = ArrayBirth.layout AbsValue.layout
+               val coerce: {from: t, to: t} -> unit =
+                  Trace.trace
+                  ("ConstantPropagation.Value.ArrayBirth.coerce",
+                   fn {from, to} =>
+                   Layout.record [("from", layout from),
+                                  ("to", layout to)],
+                   Unit.layout)
+                  Birth.coerce
+               val unify: t * t -> unit =
+                  Trace.trace2
+                  ("ConstantPropagation.Value.ArrayBirth.unify",
+                   layout, layout, Unit.layout)
+                  Birth.unify
+            end
+         structure RefBirth =
+            struct
+               open RefBirth
+               type t = AbsValue.t RefBirth.t
+               val layout = RefBirth.layout AbsValue.layout
+               val coerce: {from: t, to: t} -> unit =
+                  Trace.trace
+                  ("ConstantPropagation.Value.RefBirth.coerce",
+                   fn {from, to} =>
+                   Layout.record [("from", layout from),
+                                  ("to", layout to)],
+                   Unit.layout)
+                  Birth.coerce
+               val unify: t * t -> unit =
+                  Trace.trace2
+                  ("ConstantPropagation.Value.RefBirth.unify",
+                   layout, layout, Unit.layout)
+                  Birth.unify
+            end
+         structure Sequence =
+            struct
+               open Sequence
+               type t = Value.t Sequence.t
+               structure Elts =
+                  struct
+                     open Sequence.Elts
+                     val layout = Sequence.Elts.layout AbsValue.layout
+                  end
+               val layout = Sequence.layout Value.layout
+            end
+      end
+
+
+      fun new (value: value, ty: Type.t): t =
+         T (Set.singleton {global = ref NotComputed,
+                           ty = ty,
+                           value = value})
+
+      fun const c = new (Const (Const.const c), Type.ofConst c)
+      fun deConst v =
+         case value v of
+            Const const => SOME const
+          | _ => NONE
+      fun deConst' v =
+         case deConst v of
+            NONE => NONE
+          | SOME const => Const.getConst const
+
+
+      local
+         (* The extra birth is because of let-style polymorphism.
+          * arrayBirth is really the same as refBirth.
+          *)
+         fun make {arrayBirth, const, data, refBirth, sequence} =
+            let
+               fun loop (t: Type.t): t =
+                  new
+                  (case Type.dest t of
+                      Type.Array t => Array {birth = arrayBirth (), sequence = sequence loop t}
+                    | Type.Datatype _ => Datatype (data ())
+                    | Type.Ref t => Ref {arg = loop t, birth = refBirth ()}
+                    | Type.Tuple ts => Tuple (Vector.map (ts, loop))
+                    | Type.Vector t => Vector {sequence = sequence loop t}
+                    | Type.Weak t => Weak (loop t)
+                    | _ => Const (const ()),
+                   t)
+            in loop
+            end
+      in
+         val mkFromType =
+            fn {clone, coerce, unify} =>
+            make {arrayBirth = ArrayBirth.undefined,
+                  const = Const.undefined,
+                  data = Data.undefined,
+                  refBirth = RefBirth.undefined,
+                  sequence = fn undefined => Sequence.undefined {clone = clone,
+                                                                 coerce = coerce,
+                                                                 deConst = deConst,
+                                                                 equals = equals,
+                                                                 undefined = undefined,
+                                                                 unify = unify}}
+         val unknown =
+            make {arrayBirth = ArrayBirth.unknown,
+                  const = Const.unknown,
+                  data = Data.unknown,
+                  refBirth = RefBirth.unknown,
+                  sequence = fn unknown => Sequence.unknown {unknown = unknown}}
+      end
+
+      local
+      val traceFromType =
+         Trace.trace ("ConstantPropagation.Value.fromType",
+                      Type.layout,
+                      layout)
+      val traceClone =
+         Trace.trace
+         ("ConstantPropagation.Value.clone",
+          layout, layout)
+      val traceCoerce =
+         Trace.trace ("ConstantPropagation.Value.coerce",
+                      fn {from, to} => Layout.record [("from", layout from),
+                                                      ("to", layout to)],
+                      Unit.layout)
+      val traceCoerces =
+         Trace.trace ("ConstantPropagation.Value.coerces",
+                      fn {froms, tos} => Layout.record [("from", Vector.layout layout froms),
+                                                        ("to", Vector.layout layout tos)],
+                      Unit.layout)
+      val traceSequenceCoerce =
+         Trace.trace
+         ("ConstantPropagation.Value.Sequence.coerce",
+          fn {from, to} =>
+          Layout.record [("from", Sequence.layout from),
+                         ("to", Sequence.layout to)],
+          Unit.layout)
+      val traceSequenceCoerceLengthUnifyElts =
+         Trace.trace
+         ("ConstantPropagation.Value.Sequence.coerceLengthUnifyElts",
+          fn {from, to} =>
+          Layout.record [("from", Sequence.layout from),
+                         ("to", Sequence.layout to)],
+          Unit.layout)
+      val traceUnify =
+         Trace.trace2 ("ConstantPropagation.Value.unify",
+                       layout, layout,
+                       Unit.layout)
+      val traceSequenceUnify =
+         Trace.trace
+         ("ConstantPropagation.Value.sequenceUnify",
+          fn (seq1, seq2) =>
+          let
+             open Layout
+          in
+             tuple [Sequence.layout seq1,
+                    Sequence.layout seq2]
+          end,
+          Unit.layout)
+
+      fun fromType ty =
+         traceFromType
+         (mkFromType {clone = clone, coerce = coerce, unify = unify})
+         ty
+      and clone v =
+         traceClone
+         (fromType o ty)
+         v
+      and coerce arg =
+         traceCoerce
+         (fn {from, to} =>
+          if equals (from, to)
+             then ()
+             else
+                let
+                   fun error () =
+                      Error.bug
+                      (concat ["ConstantPropagation.Value.coerce: strange: from: ",
+                               Layout.toString (layout from),
+                               " to: ", Layout.toString (layout to)])
+                in
+                   case (value from, value to) of
+                      (Array {birth = birthFrom, sequence = sequenceFrom},
+                       Array {birth = birthTo, sequence = sequenceTo}) =>
+                         (ArrayBirth.coerce {from = birthFrom, to = birthTo}
+                          ; sequenceCoerceLengthUnifyElts {from = sequenceFrom, to = sequenceTo})
+                    | (Const from, Const to) =>
+                         Const.coerce {from = from, to = to}
+                    | (Datatype from, Datatype to) =>
+                         Data.coerce {from = from, to = to}
+                    | (Ref {birth = birthFrom, arg = argFrom},
+                       Ref {birth = birthTo, arg = argTo}) =>
+                         (RefBirth.coerce {from = birthFrom, to = birthTo}
+                          ; unify (argFrom, argTo))
+                    | (Tuple froms, Tuple tos) =>
+                         coerces {froms = froms, tos = tos}
+                    | (Vector {sequence = sequenceFrom},
+                       Vector {sequence = sequenceTo}) =>
+                         sequenceCoerce {from = sequenceFrom, to = sequenceTo}
+                    | (Weak from, Weak to) => unify (from, to)
+                    | (_, _) => error ()
+                end) arg
+      and coerces arg =
+         traceCoerces
+         (fn {froms: t vector, tos: t vector} =>
+          Vector.foreach2 (froms, tos, fn (from, to) =>
+                           coerce {from = from, to = to}))
+         arg
+      and sequenceCoerce arg =
+         traceSequenceCoerce
+         (fn {from, to} =>
+          Sequence.coerce
+          {clone = clone,
+           coerce = coerce,
+           equals = equals}
+          {from = from, to = to})
+         arg
+      and sequenceCoerceLengthUnifyElts arg =
+         traceSequenceCoerceLengthUnifyElts
+         (fn {from, to} =>
+          Sequence.coerceLengthUnifyElts
+          {clone = clone,
+           coerce = coerce,
+           equals = equals,
+           unify = unify}
+          {from = from, to = to})
+         arg
+      and unify arg: unit =
+         traceUnify
+         (fn (v1, v2) =>
+          if equals (v1, v2)
+             then ()
+             else
+                let
+                   val (T s1, T s2) = (v1, v2)
+                   val {global, ty, value = value1, ...} = Set.! s1
+                   val {value = value2, ...} = Set.! s2
+                   fun error () =
+                      Error.bug
+                      (concat ["ConstantPropagation.Value.unify: strange: value1: ",
+                               Layout.toString (layout v1),
+                               " value2: ", Layout.toString (layout v2)])
+                   val _ = Set.union (s1, s2)
+                   val _ = Set.:= (s1, {global = global,
+                                        ty = ty,
+                                        value = value1})
+                in
+                   case (value1, value2) of
+                      (Array {birth = birth1, sequence = sequence1},
+                       Array {birth = birth2, sequence = sequence2}) =>
+                         (ArrayBirth.unify (birth1, birth2)
+                          ; sequenceUnify (sequence1, sequence2))
+                    | (Const c1, Const c2) => Const.unify (c1, c2)
+                    | (Datatype d1, Datatype d2) => Data.unify (d1, d2)
+                    | (Ref {birth = birth1, arg = arg1},
+                       Ref {birth = birth2, arg = arg2}) =>
+                         (RefBirth.unify (birth1, birth2)
+                          ; unify (arg1, arg2))
+                    | (Tuple vs1, Tuple vs2) => Vector.foreach2 (vs1, vs2, unify)
+                    | (Vector {sequence = sequence1},
+                       Vector {sequence = sequence2}) =>
+                         sequenceUnify (sequence1, sequence2)
+                    | (Weak v1, Weak v2) => unify (v1, v2)
+                    | _ => error ()
+                end)
+         arg
+      and sequenceUnify args =
+         traceSequenceUnify
+         (fn (seq1, seq2) =>
+          Sequence.unify
+          {clone = clone,
+           coerce = coerce,
+           equals = equals,
+           unify = unify}
+          (seq1, seq2))
+         args
+      in
+         val clone = clone
+         val coerce = coerce
+         val coerces = coerces
+         val fromType = fromType
+         val unify = unify
+      end
+
+      fun makeUnknown (v: t): unit =
+         case value v of
+            Array {sequence, ...} => Sequence.makeUnknown makeUnknown sequence
+          | Const c => Const.makeUnknown c
+          | Datatype d => Data.makeUnknown d
+          | Ref {arg, ...} => makeUnknown arg
+          | Tuple vs => Vector.foreach (vs, makeUnknown)
+          | Vector {sequence} => Sequence.makeUnknown makeUnknown sequence
+          | Weak v => makeUnknown v
+
+      fun sideEffect (v: t): unit =
+         case value v of
+            Array {sequence, ...} => makeUnknown (Sequence.eltLb sequence)
+          | Const _ => ()
+          | Datatype _ => ()
+          | Ref {arg, ...} => makeUnknown arg
+          | Vector _ => ()
+          | Tuple vs => Vector.foreach (vs, sideEffect)
+          | Weak v => makeUnknown v
+
+      local
+         structure Value =
+            struct
+               val clone = clone
+               val coerce = coerce
+               val const = const
+               val deConst = deConst
+               val equals = equals
+               val fromType = fromType
+               val undefined = fromType
+               val unify = unify
+            end
+      in
+         structure Sequence =
+            struct
+               open Sequence
+               val undefined: Type.t -> t =
+                  Sequence.undefined {clone = Value.clone,
+                                      coerce = Value.coerce,
+                                      deConst = Value.deConst,
+                                      equals = Value.equals,
+                                      undefined = Value.undefined,
+                                      unify = Value.unify}
+               fun make (args, eltTy) =
+                  let
+                     val length =
+                        Value.const (S.Const.word (WordX.fromInt (Vector.length args, WordSize.seqIndex ())))
+                     val lengthConst =
+                        case deConst length of
+                           NONE => Error.bug "ConstantPropagation.Value.Sequence.elts: deConst length"
+                         | SOME lengthConst => lengthConst
+
+                     val eltLb = Value.undefined eltTy
+                     val eltUb = Value.undefined eltTy
+                     val () = Value.coerce {from = eltLb, to = eltUb}
+                     val elts =
+                        (Elts.elts o Vector.map)
+                        (args, fn arg =>
+                         let
+                            val elt = Value.clone arg
+                            val () = Value.coerce {from = arg, to = elt}
+                            val () = Value.coerce {from = eltLb, to = elt}
+                            val () = Value.coerce {from = elt, to = eltUb}
+                         in
+                            elt
+                         end)
+                     val () =
+                        Const.addHandler'
+                        (lengthConst, fn v =>
+                         case v of
+                            Const.Value.Top => Elts.makeUnknown elts
+                          | _ => ())
+                  in
+                     T {eltLb = eltLb,
+                        elts = elts,
+                        eltUb = eltUb,
+                        length = length}
+                  end
+            end
+      end
+
+      local
+         fun make (err, sel) v =
+            case value v of
+               Array fs => sel fs
+             | _ => Error.bug err
+      in
+         val arrayLength = make ("ConstantPropagation.Value.arrayLength", Sequence.length o #sequence)
+         val arraySequence = make ("ConstantPropagation.Value.arraySequence", #sequence)
+      end
+
+      fun bool b =
+         new (Datatype (Data.conApp {args = Vector.new0 (),
+                                     con = Con.fromBool b}),
+              Type.bool)
+
+      val const = fn c =>
+         case c of
+            S.Const.WordVector v =>
+               let
+                  val eltTy = Type.word (WordXVector.elementSize v)
+                  val vecTy = Type.vector eltTy
+                  val args = WordXVector.toVectorMap (v, const o S.Const.word)
+                  val seq = Sequence.make (args, eltTy)
+               in
+                  new (Vector {sequence = seq}, vecTy)
+               end
+          | _ => const c
+
+      local
+         fun make (err, sel) v =
+            case value v of
+               Ref fs => sel fs
+             | _ => Error.bug err
+      in
+         val refArg = make ("ConstantPropagation.Value.refArg", #arg)
+         val refBirth = make ("ConstantPropagation.Value.refBirth", #birth)
+      end
+
+      fun select {tuple, offset, resultType = _} =
+         case value tuple of
+            Tuple vs => Vector.sub (vs, offset)
+          | _ => Error.bug "ConstantPropagation.Value.select: non-tuple"
+
+      fun tuple vs = new (Tuple vs, Type.tuple (Vector.map (vs, ty)))
+
+      fun unit () = tuple (Vector.new0 ())
+
+      local
+         fun make (err, sel) v =
+            case value v of
+               Vector fs => sel fs
+             | _ => Error.bug err
+      in
+         val vectorLength = make ("ConstantPropagation.Value.vectorLength", Sequence.length o #sequence)
+         val vectorSequence = make ("ConstantPropagation.Value.vectorSequence", #sequence)
+      end
+
+      fun weakArg v =
+         case value v of
+            Weak v => v
+          | _ => Error.bug "ConstantPropagation.Value.weakArg"
+
 
       fun globals arg: (Var.t * Type.t) vector option =
          Trace.trace
@@ -487,55 +962,74 @@ structure Value =
                       (* avoid globalizing circular abstract values *)
                       val _ = r := No
                       fun yes e = Yes (newGlobal (ty, e))
-                      fun unary (Birth.T {place, ...},
-                                 makeInit: 'a -> t,
-                                 primApp: {targs: Type.t vector,
-                                           args: Var.t vector} -> Exp.t,
-                                 targ: Type.t) =
-                         case (!place, isSmallType targ) of
-                            (Place.One (One.T {global = glob, extra, ...}), true) =>
-                               let
-                                  val init = makeInit extra
-                               in
-                                  case global init of
-                                     SOME (x, _) =>
-                                        Yes
-                                        (case !glob of
-                                            NONE => 
-                                               let
-                                                  val exp =
-                                                     primApp
-                                                     {targs = Vector.new1 targ,
-                                                      args = Vector.new1 x}
-                                                  val g = newGlobal (ty, exp)
-                                               in
-                                                  glob := SOME g; g
-                                               end
-                                          | SOME g => g)
-                                   | _ => No
-                               end
+                      fun once (birth, make) =
+                         case Birth.getOne birth of
+                            SOME (One.T {extra, global = r, ...}) =>
+                               (case make extra of
+                                   SOME exp =>
+                                      Yes (case !r of
+                                              NONE => let
+                                                         val g = newGlobal (ty, exp)
+                                                      in
+                                                         r := SOME g; g
+                                                      end
+                                            | SOME g => g)
+                                 | NONE => No)
                           | _ => No
+                      fun arrayOnce (birth, length) =
+                         let
+                            val eltTy = Type.deArray ty
+                         in
+                            once
+                            (birth, fn ab =>
+                             if isSmallType ty
+                                then (case ab of
+                                         ArrayInit.Alloc {raw} =>
+                                            (case global length of
+                                                NONE => NONE
+                                              | SOME (length, _) =>
+                                                   SOME (Exp.PrimApp
+                                                         {args = Vector.new1 length,
+                                                          prim = Prim.Array_alloc {raw = raw},
+                                                          targs = Vector.new1 eltTy}))
+                                       | ArrayInit.Array {args} =>
+                                            (case globals args of
+                                                NONE => NONE
+                                              | SOME args =>
+                                                   SOME (Exp.PrimApp
+                                                         {args = Vector.map (args, #1),
+                                                          prim = Prim.Array_array,
+                                                          targs = Vector.new1 eltTy})))
+                                else NONE)
+                         end
+                      fun refOnce birth =
+                         let
+                            val argTy = Type.deRef ty
+                         in
+                            once (birth, fn {arg} =>
+                                  if isSmallType ty
+                                     then (case global arg of
+                                              SOME (arg, _) =>
+                                                 SOME (Exp.PrimApp
+                                                       {args = Vector.new1 arg,
+                                                        prim = Prim.Ref_ref,
+                                                        targs = Vector.new1 argTy})
+                                            | _ => NONE)
+                                     else NONE)
+                         end
                       val g =
                          case value of
-                            Array {birth, length, raw = Raw.T {raw, ...}, ...} =>
+                            Array {birth, sequence} =>
                                if !Control.globalizeArrays then
-                               unary (birth, fn _ => length,
-                                      fn {args, targs} =>
-                                      case !raw of
-                                         Raw.Raw raw =>
-                                            Exp.PrimApp {args = args,
-                                                         prim = Prim.Array_alloc {raw = raw},
-                                                         targs = targs}
-                                       | _ => Error.bug "ConstantPropagation.Value.global: Array, raw",
-                                      Type.deArray ty)
+                               arrayOnce (birth, Sequence.length sequence)
                                else No
-                          | Const (Const.T {const, ...}) =>
-                               (case !const of
-                                   Const.Const c => yes (Exp.Const c)
-                                 | _ => No)
-                          | Datatype (Data {value, ...}) =>
-                               (case !value of
-                                   ConApp {args, con, ...} =>
+                          | Const const =>
+                               (case Const.getConst const of
+                                   SOME c => yes (Exp.Const c)
+                                 | NONE => No)
+                          | Datatype d =>
+                               (case Data.getConApp d of
+                                   SOME (ConApp.T {args, con, ...}) =>
                                       (case globals args of
                                           NONE => No
                                         | SOME args =>
@@ -545,49 +1039,47 @@ structure Value =
                                  | _ => No)
                           | Ref {birth, ...} =>
                                if !Control.globalizeRefs then
-                               unary (birth, fn {init} => init,
-                                      fn {args, targs} =>
-                                      Exp.PrimApp {args = args,
-                                                   prim = Prim.Ref_ref,
-                                                   targs = targs},
-                                      Type.deRef ty)
+                               refOnce birth
                                else No
                           | Tuple vs =>
                                (case globals vs of
                                    NONE => No
                                  | SOME xts =>
                                       yes (Exp.Tuple (Vector.map (xts, #1))))
-                          | Vector {elt, length} =>
-                               (case Option.map (deConst length, S.Const.deWord) of
+                          | Vector {sequence} =>
+                               (case Sequence.Elts.getElts (Sequence.elts sequence) of
                                    NONE => No
-                                 | SOME length =>
+                                 | SOME elts =>
                                       let
-                                         val length = WordX.toInt length
                                          val eltTy = Type.deVector ty
-                                         fun mkVec args =
-                                            yes (Exp.PrimApp
-                                                 {args = args,
-                                                  prim = Prim.Vector_vector,
-                                                  targs = Vector.new1 eltTy})
-                                         fun mkConst (ws, elts) =
-                                            yes (Exp.Const
-                                                 (S.Const.wordVector
-                                                  (WordXVector.fromList
-                                                   ({elementSize = ws}, elts))))
+                                         fun vector () =
+                                            case globals elts of
+                                               NONE => No
+                                             | SOME args =>
+                                                  yes (Exp.PrimApp
+                                                       {args = Vector.map (args, #1),
+                                                        prim = Prim.Vector_vector,
+                                                        targs = Vector.new1 eltTy})
+                                         fun wordxvector elementSize =
+                                            Exn.withEscape
+                                            (fn escape =>
+                                             let
+                                                val ws =
+                                                   Vector.map
+                                                   (elts, fn elt =>
+                                                    case deConst' elt of
+                                                       SOME (S.Const.Word w) => w
+                                                     | _ => escape No)
+                                             in
+                                                yes (Exp.Const
+                                                     (S.Const.wordVector
+                                                      (WordXVector.fromVector
+                                                       ({elementSize = elementSize}, ws))))
+                                             end)
                                       in
-                                         case (Option.map (deConst elt, S.Const.deWordOpt),
-                                               global elt) of
-                                            (SOME (SOME w), _) =>
-                                               mkConst (Type.deWord eltTy,
-                                                        List.new (length, w))
-                                          | (_, SOME (x, _)) =>
-                                               mkVec (Vector.new (length, x))
-                                          | _ =>
-                                               if length = 0
-                                                  then case Type.deWordOpt eltTy of
-                                                          SOME ws => mkConst (ws, [])
-                                                        | NONE => mkVec (Vector.new0 ())
-                                                  else No
+                                         case Type.deWordOpt eltTy of
+                                            NONE => vector ()
+                                          | SOME ws => wordxvector ws
                                       end)
                           | Weak _ => No
                       val _ = r := g
@@ -596,184 +1088,20 @@ structure Value =
                    end
           end) arg
 
-      fun new (v: value, ty: Type.t): t =
-         T (Set.singleton {value = v,
-                           ty = ty,
-                           global = ref NotComputed})
-
-      fun tuple vs =
-         new (Tuple vs, Type.tuple (Vector.map (vs, ty)))
-
-      fun const' (c, ty) = new (Const c, ty)
-
-      fun const c = let val c' = Const.const c
-                    in new (Const c', Type.ofConst c)
-                    end
-
-      fun constToEltLength (c, err) =
-         let
-            val v =
-               case c of
-                  Sconst.WordVector v => v
-                | _ => Error.bug err 
-            val length = WordXVector.length v
-            val eltTy = Type.word (WordXVector.elementSize v)
-            val elt =
-               if 0 = length
-                  then const' (Const.unknown (), eltTy)
-               else let
-                       val w = WordXVector.sub (v, 0)
-                    in
-                       if WordXVector.forall (v, fn w' =>
-                                              WordX.equals (w, w'))
-                          then const (Sconst.word w)
-                       else const' (Const.unknown (), eltTy)
-                    end
-            val length =
-               const (Sconst.Word (WordX.fromInt (length, WordSize.seqIndex ())))
-         in
-            {elt = elt, length = length}
-         end
-
-      local
-         fun make (err, sel) v =
-            case value v of
-               Vector fs => sel fs
-             | Const (Const.T {const = ref (Const.Const c), ...}) =>
-                  sel (constToEltLength (c, err))
-             | _ => Error.bug err
-      in
-         val devector = make ("ConstantPropagation.Value.devector", #elt)
-         val vectorLength = make ("ConstantPropagation.Value.vectorLength", #length)
-      end
-
-      local
-         fun make (err, sel) v =
-            case value v of
-               Array fs => sel fs
-             | _ => Error.bug err
-      in val dearray = make ("ConstantPropagation.Value.dearray", #elt)
-         val arrayLength = make ("ConstantPropagation.Value.arrayLength", #length)
-         val arrayBirth = make ("ConstantPropagation.Value.arrayBirth", #birth)
-         val arrayRaw = make ("ConstantPropagation.Value.arrayRaw", #raw)
-      end
-
-      fun arrayFromArray (T s: t): t =
-         let
-            val {value, ty, ...} = Set.! s
-         in case value of
-            Array {elt, length, ...} =>
-               new (Array {birth = Birth.unknown (), elt = elt, length = length, raw = Raw.raw false}, ty)
-          | _ => Error.bug "ConstantPropagation.Value.arrayFromArray"
-         end
-
-      fun vectorFromArray (T s: t): t =
-         let
-            val {value, ty, ...} = Set.! s
-         in case value of
-            Array {elt, length, ...} =>
-               new (Vector {elt = elt, length = length}, Type.vector (Type.deArray ty))
-          | _ => Error.bug "ConstantPropagation.Value.vectorFromArray"
-         end
-
-      local
-         fun make (err, sel) v =
-            case value v of
-               Ref fs => sel fs
-             | _ => Error.bug err
-      in
-         val deref = make ("ConstantPropagation.Value.deref", #arg)
-         val refBirth = make ("ConstantPropagation.Value.refBirth", #birth)
-      end
-
-      fun deweak v =
+      fun arrayToArray (v: t): t =
          case value v of
-            Weak v => v
-          | _ => Error.bug "ConstantPropagation.Value.deweak"
+            Array {sequence, ...} =>
+               new (Array {birth = Birth.unknown (), sequence = sequence},
+                    ty v)
+          | _ => Error.bug "ConstantPropagation.Value.arrayToArray"
 
-      structure Data =
-         struct
-            datatype t = datatype data
-
-            val layout = layoutData
-
-            local
-               fun make v () = Data {value = ref v,
-                                     coercedTo = ref [],
-                                     filters = ref []}
-            in
-               val undefined = make Undefined
-               val unknown = make Unknown
-            end
-         end
-
-      local
-         (* The extra birth is because of let-style polymorphism.
-          * arrayBirth is really the same as refBirth.
-          *)
-         fun make (const, data, refBirth, arrayBirth, raw) =
-            let
-               fun loop (t: Type.t): t =
-                  new
-                  (case Type.dest t of
-                      Type.Array t => 
-                         Array {birth = arrayBirth (),
-                                elt = loop t,
-                                length = loop (Type.word (WordSize.seqIndex ())),
-                                raw = raw ()}
-                    | Type.Datatype _ => Datatype (data ())
-                    | Type.Ref t => Ref {arg = loop t,
-                                         birth = refBirth ()}
-                    | Type.Tuple ts => Tuple (Vector.map (ts, loop))
-                    | Type.Vector t =>
-                         Vector {elt = loop t,
-                                 length = loop (Type.word (WordSize.seqIndex ()))}
-                    | Type.Weak t => Weak (loop t)
-                    | _ => Const (const ()), 
-                   t)
-            in loop
-            end
-      in
-         val fromType =
-            make (Const.undefined,
-                  Data.undefined,
-                  Birth.undefined,
-                  Birth.undefined,
-                  Raw.undefined)
-         val unknown =
-            make (Const.unknown,
-                  Data.unknown,
-                  Birth.unknown,
-                  Birth.unknown,
-                  Raw.unknown)
-      end
-
-      fun select {tuple, offset, resultType = _} =
-         case value tuple of
-            Tuple vs => Vector.sub (vs, offset)
-          | _ => Error.bug "ConstantPropagation.Value.select: non-tuple" 
-
-      fun unit () = tuple (Vector.new0 ())
+      fun arrayToVector (v: t): t =
+         case value v of
+            Array {sequence, ...} =>
+               new (Vector {sequence = sequence},
+                    Type.vector (Type.deArray (ty v)))
+          | _ => Error.bug "ConstantPropagation.Value.arrayToVector"
    end
-
-val traceSendConApp =
-   Trace.trace2
-   ("ConstantPropagation.sendConApp", Value.Data.layout,
-    fn {con, args, uniq} =>
-    Layout.record [("con", Con.layout con),
-                   ("args", Vector.layout Value.layout args),
-                   ("uniq", Value.Unique.layout uniq)],
-    Unit.layout)
-
-val traceSendConAppLoop =
-   Trace.trace 
-   ("ConstantPropagation.sendConAppLoop", 
-    Value.Data.layout, Unit.layout)
-
-val traceMakeDataUnknown =
-   Trace.trace 
-   ("ConstantPropagation.makeDataUnknown", 
-    Value.Data.layout, Unit.layout)
 
 (* ------------------------------------------------- *)
 (*                     simplify                      *)
@@ -808,179 +1136,47 @@ fun transform (program: Program.t): Program.t =
       local
          open Value
       in
-         val traceCoerce =
-            Trace.trace ("ConstantPropagation.Value.coerce",
-                         fn {from, to} => Layout.record [("from", layout from),
-                                                         ("to", layout to)],
-                         Unit.layout)
-         fun makeDataUnknown arg: unit =
-            traceMakeDataUnknown
-            (fn Data {value, coercedTo, filters, ...} =>
-             let
-                fun doit () =
-                   (value := Unknown
-                    ; List.foreach (!coercedTo, makeDataUnknown)
-                    ; coercedTo := []
-                    ; (List.foreach
-                       (!filters, fn {con, args} =>
-                        coerces {froms = conValues con,
-                                 tos = args})))
-             in
-                case !value of
-                   ConApp _ => doit ()
-                 | Undefined => doit ()
-                 | Unknown => ()
-             end) arg
-         and sendConApp arg: unit =
-            traceSendConApp
-            (fn (d: data, ca as {con, args, uniq}) =>
-             let
-                val v = ConApp ca
-                fun loop arg: unit =
-                   traceSendConAppLoop
-                   (fn Data {value, coercedTo, filters, ...} =>
-                    case !value of
-                       Unknown => ()
-                     | Undefined =>
-                          (value := v
-                           ; List.foreach (!coercedTo, loop)
-                           ; (List.foreach
-                              (!filters, fn {con = con', args = args'} =>
-                               if Con.equals (con, con')
-                                  then coerces {froms = args, tos = args'}
-                               else ())))
-                     | ConApp {con = con', uniq = uniq', ...} =>
-                          if Unique.equals (uniq, uniq')
-                             orelse (Con.equals (con, con')
-                                     andalso Vector.isEmpty args)
-                             then ()
-                          else makeDataUnknown d) arg
-             in loop d
-             end) arg
-         and coerces {froms: Value.t vector, tos: Value.t vector} =
-            Vector.foreach2 (froms, tos, fn (from, to) =>
-                             coerce {from = from, to = to})
-         and coerce arg =
-            traceCoerce
-            (fn {from, to} =>
-             if equals (from, to)
-                then ()
-             else
-                let 
-                   fun error () = 
-                      Error.bug
-                      (concat ["ConstantPropagation.Value.coerce: strange: from: ",
-                               Layout.toString (Value.layout from),
-                               " to: ", Layout.toString (Value.layout to)])
-                in
-                  case (value from, value to) of
-                     (Const from, Const to) =>
-                        Const.coerce {from = from, to = to}
-                   | (Datatype from, Datatype to) =>
-                        coerceData {from = from, to = to}
-                   | (Ref {birth, arg}, Ref {birth = b', arg = a'}) =>
-                        (Birth.coerce {from = birth, to = b'}
-                         ; unify (arg, a'))
-                   | (Array {birth = b, length = n, elt = x, raw = r},
-                      Array {birth = b', length = n', elt = x', raw = r'}) =>
-                        (Birth.coerce {from = b, to = b'}
-                         ; coerce {from = n, to = n'}
-                         ; unify (x, x')
-                         ; Raw.coerce {from = r, to = r'})
-                   | (Vector {length = n, elt = x},
-                      Vector {length = n', elt = x'}) =>
-                        (coerce {from = n, to = n'}
-                         ; coerce {from = x, to = x'})
-                   | (Tuple vs, Tuple vs') => coerces {froms = vs, tos = vs'}
-                   | (Weak v, Weak v') => unify (v, v')
-                   | (Const (Const.T {const = ref (Const.Const c), ...}),
-                      Vector {elt, length}) =>
-                        let
-                           val {elt = elt', length = length'} =
-                              Value.constToEltLength (c, "coerce")
-                        in
-                           coerce {from = elt', to = elt}
-                           ; coerce {from = length', to = length}
-                        end
-                   | (_, _) => error ()
-                end) arg
-         and unify (T s: t, T s': t): unit =
-            if Set.equals (s, s')
-               then ()
-            else
-               let 
-                  val {value, ...} = Set.! s
-                  val {value = value', ...} = Set.! s'
-                  fun error () =
-                     Error.bug
-                     (concat ["ConstantPropagation.Value.unify: strange: value: ",
-                              Layout.toString (Value.layout (T s)),
-                              " value': ", Layout.toString (Value.layout (T s'))])
-               in Set.union (s, s')
-                  ; case (value, value') of
-                       (Const c, Const c') => Const.unify (c, c')
-                     | (Datatype d, Datatype d') => unifyData (d, d')
-                     | (Ref {birth, arg}, Ref {birth = b', arg = a'}) =>
-                          (Birth.unify (birth, b')
-                           ; unify (arg, a'))
-                     | (Array {birth = b, length = n, elt = x, raw = r},
-                        Array {birth = b', length = n', elt = x', raw = r'}) =>
-                          (Birth.unify (b, b')
-                           ; unify (n, n')
-                           ; unify (x, x')
-                           ; Raw.unify (r, r'))
-                     | (Vector {length = n, elt = x},
-                        Vector {length = n', elt = x'}) =>
-                          (unify (n, n')
-                           ; unify (x, x'))
-                     | (Tuple vs, Tuple vs') => Vector.foreach2 (vs, vs', unify)
-                     | (Weak v, Weak v') => unify (v, v')
-                     | _ => error ()
-               end
-         and unifyData (d, d') =
-            (coerceData {from = d, to = d'}
-             ; coerceData {from = d', to = d})
-         and coerceData {from = Data {value, coercedTo, ...}, to} =
-            case !value of
-               ConApp ca => (List.push (coercedTo, to)
-                             ; sendConApp (to, ca))
-             | Undefined => List.push (coercedTo, to)
-             | Unknown => makeDataUnknown to
          fun conApp {con: Con.t, args: t vector}: t =
             let
                val {values = tos, result, ...} = conInfo con
             in
                coerces {froms = args, tos = tos}
-               ; new (Datatype
-                      (Data {value = ref (ConApp {con = con, args = args,
-                                                  uniq = Unique.new ()}),
-                             coercedTo = ref [],
-                             filters = ref []}),
-                      result)
+               ; new (Datatype (Data.conApp {args = args, con = con}), result)
             end
-         fun makeUnknown (v: t): unit =
-            case value v of
-               Array {length, elt, ...} => (makeUnknown length
-                                            ; makeUnknown elt)
-             | Const c => Const.makeUnknown c
-             | Datatype d => makeDataUnknown d
-             | Ref {arg, ...} => makeUnknown arg
-             | Tuple vs => Vector.foreach (vs, makeUnknown)
-             | Vector {length, elt} => (makeUnknown length
-                                        ; makeUnknown elt)
-             | Weak v => makeUnknown v
-         fun sideEffect (v: t): unit =
-            case value v of
-               Array {elt, ...} => makeUnknown elt
-             | Const _ => ()
-             | Datatype _ => ()
-             | Ref {arg, ...} => makeUnknown arg
-             | Vector {elt, ...} => makeUnknown elt
-             | Tuple vs => Vector.foreach (vs, sideEffect)
-             | Weak v => makeUnknown v
+         val conApp =
+            Trace.trace
+            ("ConstantPropagation.Value.conApp",
+             fn {con, args} =>
+             Layout.record [("con", Con.layout con),
+                            ("args", Vector.layout layout args)],
+             layout)
+            conApp
+         fun filter (variant, con, args) =
+            case value variant of
+               Datatype d =>
+                  Data.addHandler'
+                  (d, fn v =>
+                   case v of
+                      Data.Value.Bottom => ()
+                    | Data.Value.Point (ConApp.T {con = con', args = args', ...}) =>
+                         if Con.equals (con, con')
+                            then coerces {froms = args', tos = args}
+                            else ()
+                    | Data.Value.Top =>
+                         coerces {froms = conValues con, tos = args})
+             | _ => Error.bug "ConstantPropagation.Value.filter: non-datatype"
+         val filter =
+            Trace.trace
+            ("ConstantPropagation.Value.filter",
+             fn (variant, con, args) =>
+             Layout.record [("variant", layout variant),
+                            ("con", Con.layout con),
+                            ("args", Vector.layout layout args)],
+             Unit.layout)
+            filter
          fun primApp {prim,
                       targs = _,
-                      args: Value.t vector,
+                      args: t vector,
                       resultVar,
                       resultType}: t =
             let
@@ -990,112 +1186,230 @@ fun transform (program: Program.t): Program.t =
                                           then Birth.here z
                                        else Birth.unknown ()
                    | _ => Error.bug "ConstantPropagation.Value.primApp.bear"
-               fun update (a, v) =
-                  (coerce {from = v, to = dearray a}
-                   ; unit ())
                fun arg i = Vector.sub (args, i)
-               fun array (raw, length, birth) =
+               fun sequenceSub deSeq =
                   let
-                     val a = fromType resultType
-                     val _ = coerce {from = length, to = arrayLength a}
-                     val _ = Birth.coerce {from = birth, to = arrayBirth a}
-                     val _ = Raw.coerce {from = Raw.raw raw, to = arrayRaw a}
+                     val res = fromType resultType
+                     val seq = deSeq (arg 0)
+                     val elts = Sequence.elts seq
+                     val eltUb = Sequence.eltUb seq
+                     val idx =
+                        case deConst (arg 1) of
+                           SOME idx => idx
+                         | _ => Error.bug "ConstantPropagation.Value.primApp: sequenceSub, idx"
+                     fun doit () =
+                        case (Const.value idx, Sequence.Elts.value elts) of
+                           (Const.Value.Bottom, _) => ()
+                         | (_, Sequence.Elts.Value.Bottom) => ()
+                         | (Const.Value.Point idx, Sequence.Elts.Value.Point elts) =>
+                              let
+                                 val idx = WordX.toIntInf (S.Const.deWord idx)
+                              in
+                                 if idx < IntInf.fromInt (Vector.length elts)
+                                    then coerce {from = Vector.sub (elts, IntInf.toInt idx),
+                                                 to = res}
+                                    else ()
+                              end
+                         | _ => coerce {from = eltUb, to = res}
+                     val doit =
+                        Trace.trace
+                        ("ConstantPropagation.Value.primApp.sequenceSub.doit",
+                         fn () => Layout.tuple [Const.layout idx,
+                                                Sequence.Elts.layout elts,
+                                                layout eltUb],
+                         Unit.layout)
+                        doit
+                     val _ = Const.addHandler (idx, doit)
+                     val _ = Sequence.Elts.addHandler (elts, doit)
                   in
-                     a
+                     res
                   end
-               fun vector () =
+               fun sequenceUpd deSeq =
                   let
-                     val v = fromType resultType
-                     val l =
-                        (const o S.Const.word o WordX.fromInt)
-                        (Vector.length args, WordSize.seqIndex ())
-                     val _ = coerce {from = l, to = vectorLength v}
-                     val _ =
-                        Vector.foreach
-                        (args, fn arg =>
-                         coerce {from = arg, to = devector v})
+                     val seq = deSeq (arg 0)
+                     val elts = Sequence.elts seq
+                     val eltLb = Sequence.eltLb seq
+                     val idx =
+                        case deConst (arg 1) of
+                           SOME idx => idx
+                         | _ => Error.bug "ConstantPropagation.Value.primApp: sequenceUpd, idx"
+                     val new = arg 2
+                     fun doit () =
+                        case (Const.value idx, Sequence.Elts.value elts) of
+                           (Const.Value.Bottom, _) => ()
+                         | (_, Sequence.Elts.Value.Bottom) => ()
+                         | (Const.Value.Point idx, Sequence.Elts.Value.Point elts) =>
+                              let
+                                 val idx = WordX.toIntInf (S.Const.deWord idx)
+                              in
+                                 if idx < IntInf.fromInt (Vector.length elts)
+                                    then coerce {from = new,
+                                                 to = Vector.sub (elts, IntInf.toInt idx)}
+                                    else ()
+                              end
+                         | _ => coerce {from = new, to = eltLb}
+                     val doit =
+                        Trace.trace
+                        ("ConstantPropagation.Value.primApp.sequenceUpd.doit",
+                         fn () => Layout.tuple [Const.layout idx,
+                                                Sequence.Elts.layout elts,
+                                                layout eltLb],
+                         Unit.layout)
+                        doit
+                     val _ = Const.addHandler (idx, doit)
+                     val _ = Sequence.Elts.addHandler (elts, doit)
                   in
-                     v
+                     unit ()
                   end
+               fun arrayCopy deSeq =
+                  let
+                     val eltUb = Sequence.eltUb (deSeq (arg 2))
+                     val eltLb = Sequence.eltLb (arraySequence (arg 0))
+                     val _ = coerce {from = eltUb, to = eltLb}
+                  in
+                     unit ()
+                  end
+               fun constFold () =
+                  Exn.withEscape
+                  (fn escape =>
+                   let
+                      val (getArgs, addHandlers) =
+                         (Vector.unzip o Vector.map)
+                         (args, fn arg =>
+                          case value arg of
+                             Const c =>
+                                (fn () =>
+                                 case Const.value c of
+                                    Const.Value.Bottom => NONE
+                                  | Const.Value.Point c =>
+                                       SOME (Prim.ApplyArg.Const c)
+                                  | Const.Value.Top =>
+                                       SOME (Prim.ApplyArg.Var arg),
+                                 fn h => Const.addHandler (c, h))
+                          | Datatype d =>
+                               (fn () =>
+                                case Data.value d of
+                                   Data.Value.Bottom => NONE
+                                 | Data.Value.Point (ConApp.T {con, args, ...}) =>
+                                      SOME (Prim.ApplyArg.Con
+                                            {con = con,
+                                             hasArg = not (Vector.isEmpty args)})
+                                 | Data.Value.Top =>
+                                      SOME (Prim.ApplyArg.Var arg),
+                                fn h => Data.addHandler (d, h))
+                          | _ => escape (unknown resultType))
+                      val res = fromType resultType
+                      fun apply () =
+                         Exn.withEscape
+                         (fn escape =>
+                          let
+                             val args =
+                                Vector.toListMap
+                                (getArgs, fn getArg =>
+                                 case getArg () of
+                                    NONE => escape ()
+                                  | SOME arg => arg)
+                             val apply =
+                                Trace.trace3
+                                ("ConstantPropagation.Value.primApp.apply",
+                                 Prim.layout,
+                                 List.layout (Prim.ApplyArg.layout layout),
+                                 Layout.ignore,
+                                 Prim.ApplyResult.layout layout)
+                                Prim.apply
+                          in
+                             case apply (prim, args, fn _ => false) of
+                                Prim.ApplyResult.Const c =>
+                                   coerce {from = const c, to = res}
+                              | Prim.ApplyResult.Bool b =>
+                                   coerce {from = bool b, to = res}
+                              | Prim.ApplyResult.Var v =>
+                                   coerce {from = v, to = res}
+                              | _ => makeUnknown res
+                          end)
+                      val () =
+                         Vector.foreach
+                         (addHandlers, fn addHandler =>
+                          addHandler apply)
+                   in
+                      res
+                   end)
             in
                case prim of
-                  Prim.Array_alloc {raw} => array (raw, arg 0, bear ())
+                  Prim.Array_alloc {raw} =>
+                     let
+                        val birth = bear (ArrayInit.Alloc {raw = raw})
+                        val sequence = Sequence.undefined (Type.deArray resultType)
+                        val _ = coerce {from = arg 0, to = Sequence.length sequence}
+                     in
+                        new (Array {birth = birth, sequence = sequence}, resultType)
+                     end
                 | Prim.Array_array =>
                      let
-                        val l =
-                           (const o S.Const.word o WordX.fromInt)
-                           (Vector.length args, WordSize.seqIndex ())
-                        val a = array (false, l, bear ())
-                        val _ =
-                           Vector.foreach
-                           (args, fn arg =>
-                            coerce {from = arg, to = dearray a})
+                        val birth = bear (ArrayInit.Array {args = args})
+                        val sequence = Sequence.make (args, Type.deArray resultType)
                      in
-                        a
+                        new (Array {birth = birth, sequence = sequence}, resultType)
                      end
-                | Prim.Array_copyArray =>
-                     update (arg 0, dearray (arg 2))
-                | Prim.Array_copyVector =>
-                     update (arg 0, devector (arg 2))
+                | Prim.Array_copyArray => arrayCopy arraySequence
+                | Prim.Array_copyVector => arrayCopy vectorSequence
                 | Prim.Array_length => arrayLength (arg 0)
-                | Prim.Array_sub => dearray (arg 0)
-                | Prim.Array_toArray => arrayFromArray (arg 0)
-                | Prim.Array_toVector => vectorFromArray (arg 0)
-                | Prim.Array_update => update (arg 0, arg 2)
-                | Prim.Ref_assign =>
-                     (coerce {from = arg 1, to = deref (arg 0)}; unit ())
-                | Prim.Ref_deref => deref (arg 0)
+                | Prim.Array_sub => sequenceSub arraySequence
+                | Prim.Array_toArray => arrayToArray (arg 0)
+                | Prim.Array_toVector => arrayToVector (arg 0)
+                | Prim.Array_update => sequenceUpd arraySequence
+                | Prim.Ref_assign => (coerce {from = arg 1, to = refArg (arg 0)}; unit ())
+                | Prim.Ref_deref => refArg (arg 0)
                 | Prim.Ref_ref =>
                      let
                         val v = arg 0
                         val r = fromType resultType
-                        val _ = coerce {from = v, to = deref r}
-                        val _ = Birth.coerce {from = bear {init = v},
-                                              to = refBirth r}
+                        val _ = coerce {from = v, to = refArg r}
+                        val _ = RefBirth.coerce {from = bear {arg = v},
+                                                 to = refBirth r}
                      in
                         r
                      end
                 | Prim.Vector_length => vectorLength (arg 0)
-                | Prim.Vector_sub => devector (arg 0)
-                | Prim.Vector_vector => vector ()
-                | Prim.Weak_get => deweak (arg 0)
+                | Prim.Vector_sub => sequenceSub vectorSequence
+                | Prim.Vector_vector =>
+                     let
+                        val sequence = Sequence.make (args, Type.deArray resultType)
+                     in
+                        new (Vector {sequence = sequence}, resultType)
+                     end
+                | Prim.Weak_get => weakArg (arg 0)
                 | Prim.Weak_new =>
                      let
                         val w = fromType resultType
-                        val _ = coerce {from = arg 0, to = deweak w}
+                        val _ = coerce {from = arg 0, to = weakArg w}
                      in
                         w
                      end
-                | _ => (if Prim.maySideEffect prim
-                           then Vector.foreach (args, sideEffect)
-                        else ()
-                        ; unknown resultType)
+                | _ => if Prim.isFunctional prim
+                          then constFold ()
+                          else (if Prim.maySideEffect prim
+                                   then Vector.foreach (args, sideEffect)
+                                   else ()
+                                ; unknown resultType)
             end
-         fun filter (variant, con, args) =
-            case value variant of
-               Datatype (Data {value, filters, ...}) =>
-                  let
-                     fun save () = List.push (filters, {con = con, args = args})
-                  in case !value of
-                     Undefined => save ()
-                   | Unknown => coerces {froms = conValues con, tos = args}
-                   | ConApp {con = con', args = args', ...} =>
-                        ((* The save () has to happen before the coerces because
-                          * they may loop back and change the variant, which
-                          * would need to then change this value.
-                          *)
-                         save ()
-                         ; if Con.equals (con, con')
-                              then coerces {froms = args', tos = args}
-                           else ())
-                  end
-             | _ => Error.bug "ConstantPropagation.Value.filter: non-datatype"
+         val primApp =
+            Trace.trace
+            ("ConstantPropagation.Value.primApp",
+             fn {prim, targs, args, resultVar, resultType} =>
+             Layout.record [("prim", Prim.layout prim),
+                            ("targs", Vector.layout Type.layout targs),
+                            ("args", Vector.layout layout args),
+                            ("resultVar", Option.layout Var.layout resultVar),
+                            ("resultType", Type.layout resultType)],
+             layout)
+            primApp
       end
       fun filterIgnore _ = ()
       val {value, ...} =
          Control.trace (Control.Detail, "fixed point")
          analyze {
-                  coerce = coerce,
+                  coerce = Value.coerce,
                   conApp = conApp,
                   const = Value.const,
                   filter = filter,
@@ -1122,7 +1436,7 @@ fun transform (program: Program.t): Program.t =
                      display
                      (seq [Con.layout con, str ": ",
                            Vector.layout Value.layout (conValues con)])))))
-             ; display (str "\n\nConstants:")
+             ; display (str "\n\nVariables:")
              ; (Program.foreachVar
                 (program, fn (x, _) => display (seq [Var.layout x,
                                                      str " ",
@@ -1371,6 +1685,34 @@ fun transform (program: Program.t): Program.t =
           Var.layout,
           Option.layout (Var.layout o #1))
          maybeGlobal
+      val isConst = Option.isSome o maybeGlobal
+
+      val _ =
+         Control.diagnostics
+         (fn display =>
+          let
+             open Layout
+             val numVars = ref 0
+             val numConstVars = ref 0
+             val _ =
+                Program.foreachVar
+                (program, fn (x, _) =>
+                 (Int.inc numVars
+                  ; if isConst x
+                       then Int.inc numConstVars
+                       else ()))
+          in
+             display (seq [str "\n\nConstant Variables: ",
+                           Int.layout (!numConstVars),
+                           str " / ",
+                           Int.layout (!numVars)])
+             ; (Program.foreachVar
+                (program, fn (x, _) =>
+                 if isConst x
+                    then display (Var.layout x)
+                    else ()))
+          end)
+
       fun replaceVar x =
          case maybeGlobal x of
             NONE => x

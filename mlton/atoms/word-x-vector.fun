@@ -1,4 +1,4 @@
-(* Copyright (C) 2014,2017,2019-2020 Matthew Fluet.
+(* Copyright (C) 2014,2017,2019-2021 Matthew Fluet.
  * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -103,6 +103,8 @@ fun le (v, v') =
 fun foldFrom (v, start, b, f) = Vector.foldFrom (elements v, start, b, f)
 
 fun forall (v, f) = Vector.forall (elements v, f)
+
+fun foreach (v, f) = Vector.foreach (elements v, f)
 
 fun fromVector ({elementSize}, v) =
    T {elementSize = elementSize,

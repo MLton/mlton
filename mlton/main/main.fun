@@ -1,4 +1,4 @@
-(* Copyright (C) 2010-2011,2013-2020 Matthew Fluet.
+(* Copyright (C) 2010-2011,2013-2021 Matthew Fluet.
  * Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -340,6 +340,9 @@ fun makeOptions {usage} =
                            Control.setCommandLineConst {name = name,
                                                         value = value}
                       | _ => usage (concat ["invalid -const flag: ", s]))),
+       (Expert, "const-prop-absval-layout-depth", " <n>",
+        "cut-off depth for printing of abstract values in`ConstantPropagation`",
+        intRef constPropAbsValLayoutDepth),
        (Expert, "contify-into-main", " {false|true}",
         "contify functions into main",
         boolRef contifyIntoMain),
@@ -931,7 +934,14 @@ fun makeOptions {usage} =
         (fn (target, opt) => List.push (llvm_optOpts, {opt = opt, pred = OptPred.Target target}))),
        (Expert, #1 trace, " name1,...", "trace compiler internals", #2 trace),
        (Expert, "type-check", " {false|true}", "type check ILs",
-        boolRef typeCheck),
+        Bool
+        (fn b =>
+         let
+            val re = Regexp.seq [Regexp.anys, Regexp.string ":typeCheck"]
+            val re = Regexp.compileDFA re
+         in
+            List.push (executePasses, (re, b))
+         end)),
        (Normal, "verbose", " {0|1|2|3}", "how verbose to be",
         SpaceString
         (fn s =>
