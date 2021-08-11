@@ -7,7 +7,6 @@ addons:
     packages: mlton
   homebrew:
     packages: mlton
-    update: true
 
 jobs:
   include:
@@ -28,11 +27,11 @@ jobs:
     arch: amd64
     env:  CC=clang  MLTON_COMPILE_ARGS="-codegen llvm"   REGRESSION=false
   - os: osx
-    osx_image: xcode11
+    osx_image: xcode12
     arch: amd64
     env:  CC=clang  MLTON_COMPILE_ARGS="-codegen amd64"  REGRESSION=false
   - os: osx
-    osx_image: xcode11
+    osx_image: xcode12
     arch: amd64
     env:  CC=clang  MLTON_COMPILE_ARGS="-codegen c"      REGRESSION=false
 
