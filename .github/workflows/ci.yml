@@ -1,0 +1,67 @@
+name: CI
+
+# Controls when the workflow will run
+on:
+  push:
+  pull_request:
+    branches: [ $default-branch ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            env-cc: "gcc"
+            env-mlton-compile-args: "-codegen amd64"
+            env-regression: "true"
+          - os: ubuntu-latest
+            env-cc: "gcc"
+            env-mlton-compile-args: "-codegen c"
+            env-regression: "false"
+          - os: ubuntu-latest
+            env-cc: "clang"
+            env-mlton-compile-args: "-codegen c"
+            env-regression: "false"
+          - os: ubuntu-latest
+            env-cc: "clang"
+            env-mlton-compile-args: "-codegen llvm"
+            env-regression: "false"
+          - os: macos-latest
+            env-cc: "clang"
+            env-mlton-compile-args: "-codegen amd64"
+            env-regression: "false"
+          - os: macos-latest
+            env-cc: "clang"
+            env-mlton-compile-args: "-codegen c"
+            env-regression: "false"
+
+    # The type of runner that the job will run on
+    runs-on: ${{ matrix.os }}
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      - name: Install dependencies (ubuntu)
+        if: ${{ startsWith(matrix.os, 'ubuntu') }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install mlton llvm
+      - name: Install dependencies (macos)
+        if: ${{ startsWith(matrix.os, 'macos') }}
+        run: |
+          brew update
+          brew install mlton
+
+      # Runs a single command using the runners shell
+      - name: Run CI script
+        run: ./bin/travis-ci
+        env:
+          CC: ${{ matrix.env-cc }}
+          MLTON_COMPILE_ARGS: ${{ matrix.env-mlton-compile-args }}
+          REGRESSION: ${{ matrix.env-regression }}
