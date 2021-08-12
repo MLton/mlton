@@ -1,7 +1,6 @@
 = http://mlton.org[MLton]
 
 ifdef::env-github[]
-image:https://travis-ci.com/MLton/mlton.svg?branch=master[Build Status, link = https://travis-ci.com/MLton/mlton]
 endif::[]
 
 ****
