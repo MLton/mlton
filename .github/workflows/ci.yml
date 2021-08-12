@@ -15,29 +15,23 @@ jobs:
       matrix:
         include:
           - os: ubuntu-latest
-            env-cc: "gcc"
-            env-mlton-compile-args: "-codegen amd64"
-            env-regression: "true"
+            cc: "gcc"
+            codegen: "amd64"
           - os: ubuntu-latest
-            env-cc: "gcc"
-            env-mlton-compile-args: "-codegen c"
-            env-regression: "false"
+            cc: "gcc"
+            codegen: "c"
           - os: ubuntu-latest
-            env-cc: "clang"
-            env-mlton-compile-args: "-codegen c"
-            env-regression: "false"
+            cc: "clang"
+            codegen: "c"
           - os: ubuntu-latest
-            env-cc: "clang"
-            env-mlton-compile-args: "-codegen llvm"
-            env-regression: "false"
+            cc: "clang"
+            codegen: "llvm"
           - os: macos-latest
-            env-cc: "clang"
-            env-mlton-compile-args: "-codegen amd64"
-            env-regression: "false"
+            cc: "clang"
+            codegen: "amd64"
           - os: macos-latest
-            env-cc: "clang"
-            env-mlton-compile-args: "-codegen c"
-            env-regression: "false"
+            cc: "clang"
+            codegen: "c"
 
     # The type of runner that the job will run on
     runs-on: ${{ matrix.os }}
@@ -51,17 +45,27 @@ jobs:
         if: ${{ startsWith(matrix.os, 'ubuntu') }}
         run: |
           sudo apt-get update
-          sudo apt-get install mlton llvm
+          sudo apt-get install mlton
+          if [[ "${{ matrix.codegen }}" == "llvm" ]]; then sudo apt-get install llvm; fi
       - name: Install dependencies (macos)
         if: ${{ startsWith(matrix.os, 'macos') }}
         run: |
           brew update
           brew install mlton
+          if [[ "${{ matrix.codegen }}" == "llvm" ]]; then brew install llvm; fi
 
-      # Runs a single command using the runners shell
-      - name: Run CI script
-        run: ./bin/travis-ci
-        env:
-          CC: ${{ matrix.env-cc }}
-          MLTON_COMPILE_ARGS: ${{ matrix.env-mlton-compile-args }}
-          REGRESSION: ${{ matrix.env-regression }}
+      - name: Show versions
+        run: |
+          mlton
+          echo
+          make -version
+          echo
+          ${{ matrix.cc }} --version
+          echo
+          if [[ "${{ matrix.codegen }}" == "llvm" ]]; then llvm-as -version; opt -version; llc -version; fi
+
+      - name: Build
+        run: make CC="${{ matrix.cc }}" OLD_MLTON_RUNTIME_ARGS="ram-slop 0.90" MLTON_RUNTIME_ARGS="ram-slop 0.90" MLTON_COMPILE_ARGS="-codegen ${{ matrix.codegen }}" WITH_DBG_RUNTIME=false all
+
+      - name: Test
+        run: ./bin/regression -codegen ${{ matrix.codegen }}
