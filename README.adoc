@@ -1,6 +1,7 @@
 = http://mlton.org[MLton]
 
 ifdef::env-github[]
+image:https://github.com/MLton/mlton/actions/workflows/ci.yml/badge.svg[CI, link = https://github.com/MLton/mlton/actions/workflows/ci.yml]
 endif::[]
 
 ****
