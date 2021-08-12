@@ -10,28 +10,19 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  build-test:
     strategy:
       matrix:
-        include:
-          - os: ubuntu-latest
+        os: [ubuntu-latest, macos-latest]
+        codegen: ["amd64", "c", "llvm"]
+        cc: ["gcc", "clang"]
+        exclude:
+          - os: macos-latest
             cc: "gcc"
-            codegen: "amd64"
-          - os: ubuntu-latest
-            cc: "gcc"
-            codegen: "c"
-          - os: ubuntu-latest
-            cc: "clang"
-            codegen: "c"
-          - os: ubuntu-latest
-            cc: "clang"
+          - os: macos-latest
             codegen: "llvm"
-          - os: macos-latest
-            cc: "clang"
-            codegen: "amd64"
-          - os: macos-latest
-            cc: "clang"
-            codegen: "c"
+          - codegen: "llvm"
+            cc: "gcc"
 
     # The type of runner that the job will run on
     runs-on: ${{ matrix.os }}
@@ -52,9 +43,9 @@ jobs:
         run: |
           brew update
           brew install mlton
-          if [[ "${{ matrix.codegen }}" == "llvm" ]]; then brew install llvm; fi
+          if [[ "${{ matrix.codegen }}" == "llvm" ]]; then brew install llvm; echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH; fi
 
-      - name: Show versions
+      - name: Check versions
         run: |
           mlton
           echo
