@@ -1,0 +1,62 @@
+name: CI
+
+# Controls when the workflow will run
+on:
+  push:
+  pull_request:
+    branches: [ $default-branch ]
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build-test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        codegen: ["amd64", "c", "llvm"]
+        cc: ["gcc", "clang"]
+        exclude:
+          - os: macos-latest
+            cc: "gcc"
+          - os: macos-latest
+            codegen: "llvm"
+          - codegen: "llvm"
+            cc: "gcc"
+
+    # The type of runner that the job will run on
+    runs-on: ${{ matrix.os }}
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      - name: Install dependencies (ubuntu)
+        if: ${{ startsWith(matrix.os, 'ubuntu') }}
+        run: |
+          sudo apt-get update
+          sudo apt-get install mlton
+          if [[ "${{ matrix.codegen }}" == "llvm" ]]; then sudo apt-get install llvm; fi
+      - name: Install dependencies (macos)
+        if: ${{ startsWith(matrix.os, 'macos') }}
+        run: |
+          brew update
+          brew install mlton
+          if [[ "${{ matrix.codegen }}" == "llvm" ]]; then brew install llvm; echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH; fi
+
+      - name: Check versions
+        run: |
+          mlton
+          echo
+          make -version
+          echo
+          ${{ matrix.cc }} --version
+          echo
+          if [[ "${{ matrix.codegen }}" == "llvm" ]]; then llvm-as -version; opt -version; llc -version; fi
+
+      - name: Build
+        run: make CC="${{ matrix.cc }}" OLD_MLTON_RUNTIME_ARGS="ram-slop 0.90" MLTON_RUNTIME_ARGS="ram-slop 0.90" MLTON_COMPILE_ARGS="-codegen ${{ matrix.codegen }}" WITH_DBG_RUNTIME=false all
+
+      - name: Test
+        run: ./bin/regression -codegen ${{ matrix.codegen }}
