@@ -480,8 +480,13 @@ struct
       structure Value =
          struct
             open Value
+            type t = Void.t t
             val layout = layout (Void.layout "Value.layout")
          end
       val layout = layout (Void.layout "layout")
+      val new: Value.t -> t = new
+      val newBottom: unit -> t = newBottom
+      val newPoint: Point.t -> t = newPoint
+      val newTop: unit -> t = newTop
    end
 end
