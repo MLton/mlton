@@ -161,6 +161,15 @@ structure Value =
              | Top => str top
       end
 
+      fun isBottom v =
+         case v of Bottom => true | _ => false
+      fun isPoint v =
+         case v of Point _ => true | _ => false
+      fun isPointEq equalsA (v, p') =
+         case v of Point p => Point.equals equalsA (p, p') | _ => false
+      fun isTop v =
+         case v of Top => true | _ => false
+
       fun coerce {clone = cloneA, coerce = coerceA, equals = equalsA}
                  {from, to}: 'a t option =
          let
@@ -231,22 +240,10 @@ fun getPoint e =
    case value e of
       Value.Point p => SOME p
     | _ => NONE
-fun isBottom e =
-   case value e of
-      Value.Bottom => true
-    | _ => false
-fun isPoint e =
-   case value e of
-      Value.Point _ => true
-    | _ => false
-fun isPointEq equalsA (e, p') =
-   case value e of
-      Value.Point p => Point.equals equalsA (p, p')
-    | _ => false
-fun isTop e =
-   case value e of
-      Value.Top  => true
-    | _ => false
+fun isBottom e = Value.isBottom (value e)
+fun isPoint e = Value.isPoint (value e)
+fun isPointEq equalsA (e, p') = Value.isPointEq equalsA (value e, p')
+fun isTop e = Value.isTop (value e)
 
 fun layout layoutA e =
    Value.layout layoutA (value e)

@@ -73,6 +73,11 @@ signature FLAT_LATTICE_REC =
              | Point of 'a Point.t
              | Top
 
+            val isBottom: 'a t -> bool
+            val isPoint: 'a t -> bool
+            val isPointEq: ('a * 'a -> bool) -> 'a t * 'a Point.t -> bool
+            val isTop: 'a t -> bool
+
             val layout: ('a -> Layout.t) -> 'a t -> Layout.t
          end
 
