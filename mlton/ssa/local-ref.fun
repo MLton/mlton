@@ -1,4 +1,4 @@
-(* Copyright (C) 2020 Matthew Fluet.
+(* Copyright (C) 2020-2021 Matthew Fluet.
  * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -24,7 +24,9 @@ structure Prim =
           | _ => false
    end
 
-structure FuncLattice = FlatLattice (structure Point = Func)
+structure FuncLattice = FlatLatticeMono (structure Point = Func
+                                         val bottom = "Bottom"
+                                         val top = "Top")
 
 structure GlobalInfo =
   struct
@@ -45,7 +47,7 @@ structure GlobalInfo =
     end
 
     fun new isGlobalRef = T {isGlobalRef = isGlobalRef, 
-                             funcUses = FuncLattice.new ()}
+                             funcUses = FuncLattice.newBottom ()}
   end
 
 structure Local =
@@ -171,7 +173,7 @@ fun transform (program: Program.t): Program.t =
             val gi = globalInfo x
          in 
             if GlobalInfo.isGlobalRef gi
-               then ignore (FuncLattice.lowerBound (GlobalInfo.funcUses gi, f))
+               then FuncLattice.lowerBoundPoint (GlobalInfo.funcUses gi, f)
             else ()
          end
       val dummy = Func.newNoname ()
