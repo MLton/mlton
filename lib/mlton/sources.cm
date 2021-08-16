@@ -161,7 +161,6 @@ functor Cache
 functor Control
 functor Env
 functor EuclideanRing
-functor FlatLattice
 functor FlatLatticeMono
 functor FlatLatticeParam
 functor FlatLatticePoly
