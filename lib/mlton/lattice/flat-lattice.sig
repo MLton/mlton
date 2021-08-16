@@ -99,6 +99,9 @@ signature FLAT_LATTICE_REC =
       val lowerBound: {clone: 'a -> 'a,
                        coerce: {from: 'a, to: 'a} -> unit,
                        equals: 'a * 'a -> bool} -> 'a t * 'a Value.t -> unit
+      val lowerBoundPoint: {clone: 'a -> 'a,
+                            coerce: {from: 'a, to: 'a} -> unit,
+                            equals: 'a * 'a -> bool} -> 'a t * 'a Point.t -> unit
       val makeTop: 'a t -> unit
       val new: 'a Value.t -> 'a t
       val newBottom: unit -> 'a t

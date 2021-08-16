@@ -278,7 +278,7 @@ fun makeTop (T {handlers, lessThan, value}): unit =
             ; handlers := Handlers.empty)
 
 fun 'a lowerBoundPoint {clone = cloneA, coerce = coerceA, equals = equalsA} =
-   (fn {from: 'a Point.t, to = to as T {lessThan, handlers, value}: 'a t} =>
+   (fn (e' as T {lessThan, handlers, value}: 'a t, from) =>
     let
        val pointClone = Point.clone {clone = cloneA, equals = equalsA}
        val pointCoerce = Point.coerce {clone = cloneA, coerce = coerceA, equals = equalsA}
@@ -291,14 +291,14 @@ fun 'a lowerBoundPoint {clone = cloneA, coerce = coerceA, equals = equalsA} =
              in
                 if pointCoerce {from = from, to = p}
                    then (value := Value.Point p
-                         ; List.foreach (!lessThan, fn e => lowerBoundPoint {from = p, to = e})
+                         ; List.foreach (!lessThan, fn e => lowerBoundPoint (e, p))
                          ; Handlers.run (!handlers))
-                   else makeTop to
+                   else makeTop e'
              end
         | Value.Point p =>
              if pointCoerce {from = from, to = p}
                 then ()
-                else makeTop to
+                else makeTop e'
         | Value.Top => ()
     end)
 
@@ -310,7 +310,7 @@ fun 'a setPoint {clone = cloneA, coerce = coerceA, equals = equalsA} =
        case !value of
           Value.Bottom =>
              (value := Value.Point p
-              ; List.foreach (!lessThan, fn e => lowerBoundPoint {from = p, to = e})
+              ; List.foreach (!lessThan, fn e => lowerBoundPoint (e, p))
               ; Handlers.run (!handlers))
         | _ => Error.bug "FlatLatticeRec.setPoint"
     end)
@@ -325,7 +325,7 @@ fun 'a coerce {clone = cloneA, coerce = coerceA, equals = equalsA} =
             in
                case !value of
                   Value.Bottom => pushLessThan ()
-                | Value.Point from => (pushLessThan (); lowerBoundPoint {from = from, to = to})
+                | Value.Point from => (pushLessThan (); lowerBoundPoint (to, from))
                 | Value.Top => makeTop to
             end)
 
@@ -336,7 +336,7 @@ fun lowerBound {clone = cloneA, coerce = coerceA, equals = equalsA} =
     in
        case v of
           Value.Bottom => ()
-        | Value.Point p => lowerBoundPoint {from = p, to = e'}
+        | Value.Point p => lowerBoundPoint (e', p)
         | Value.Top => makeTop e'
     end)
 
@@ -408,6 +408,10 @@ struct
          lowerBound {clone = err ("lowerBound", "clone"),
                      coerce = err ("lowerBound", "coerce"),
                      equals = equalsA}
+      val lowerBoundPoint = fn {equals = equalsA} =>
+         lowerBoundPoint {clone = err ("lowerBound", "clone"),
+                          coerce = err ("lowerBound", "coerce"),
+                          equals = equalsA}
       val unify = fn {equals = equalsA} =>
          unify {clone = err ("unify", "clone"),
                 coerce = err ("unify", "coerce"),
@@ -440,6 +444,8 @@ struct
       val isPointEq = fn args => isPointEq (err ("isPointEq", "equals")) args
       val lowerBound = fn args =>
          lowerBound {equals = err ("lowerBound", "equals")} args
+      val lowerBoundPoint = fn args =>
+         lowerBoundPoint {equals = err ("lowerBound", "equals")} args
       val unify = fn args =>
          unify {equals = err ("unify", "equals")} args
       val op<= = fn (from, to) => coerce {from = from, to = to}
