@@ -422,9 +422,9 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, static
       fun tyconTy (opt: ObjptrTycon.t): ObjectType.t =
          Vector.sub (objectTypes, ObjptrTycon.index opt)
       val () = checkScopes p
-      val (checkProfileLabel, finishCheckProfileLabel, checkFrameSourceSeqIndex) =
+      val (finishCheckProfileLabel, checkFrameSourceSeqIndex) =
          case profileInfo of
-            NONE => (fn _ => false, fn () => (), fn _ => ())
+            NONE => (fn () => (), fn _ => ())
           | SOME {sourceMaps, getFrameSourceSeqIndex} =>
             let
                val _ =
@@ -432,11 +432,10 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, static
                   ("sourceMaps",
                    fn () => SourceMaps.check sourceMaps,
                    fn () => SourceMaps.layout sourceMaps)
-               val (checkProfileLabel, finishCheckProfileLabel) =
+               val (_, finishCheckProfileLabel) =
                   SourceMaps.checkProfileLabel sourceMaps
             in
-               (checkProfileLabel,
-                fn () => Err.check
+               (fn () => Err.check
                          ("finishCheckProfileLabel",
                           finishCheckProfileLabel,
                           fn () => SourceMaps.layout sourceMaps),
@@ -543,7 +542,6 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, static
                        prim = prim,
                        result = Option.map (dst, #2)}))
              | Profile _ => true
-             | ProfileLabel pl => checkProfileLabel pl
              | SetExnStackLocal => (handlersImplemented := true; true)
              | SetExnStackSlot => (handlersImplemented := true; true)
              | SetHandler l =>

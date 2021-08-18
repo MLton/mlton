@@ -709,7 +709,6 @@ fun toMachine (rssa: Rssa.Program.t) =
                           {args = translateOperands args,
                            dst = Option.map (dst, varOperand o #1),
                            prim = prim}))
-             | ProfileLabel s => Vector.new1 (M.Statement.ProfileLabel s)
              | SetExnStackLocal =>
                   (* ExnStack = stackTop + (handlerOffset + LABEL_SIZE) - StackBottom; *)
                   let

@@ -1,4 +1,4 @@
-(* Copyright (C) 2019 Matthew Fluet.
+(* Copyright (C) 2019,2021 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -44,12 +44,7 @@ fun blockSize (Block.T {statements, transfer, ...}): int =
             Switch (Switch.T {cases, ...}) => 1 + Vector.length cases
           | _ => 1
       val statementsSize =
-         if !Control.profile = Control.ProfileNone
-            then Vector.length statements
-         else Vector.fold (statements, 0, fn (s, ac) =>
-                           case s of
-                              Statement.ProfileLabel _ => ac
-                            | _ => 1 + ac)
+         Vector.length statements
    in
       statementsSize + transferSize
    end

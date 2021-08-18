@@ -1111,7 +1111,6 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                               srcIsMem = false,
                                               ty = Operand.ty dst})
                         end
-                   | ProfileLabel _ => Error.bug "CCodegen.outputStatement: ProfileLabel"
                end
             local
                fun mk (dst, src) () =

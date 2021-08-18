@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019-2020 Matthew Fluet.
+(* Copyright (C) 2009,2019-2021 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -582,11 +582,7 @@ struct
                                     dsts = dsts,
                                     transInfo = transInfo}),
                     comment_end]
-                 end
-              | ProfileLabel l =>
-                   AppendList.single
-                   (x86.Block.mkProfileBlock'
-                    {profileLabel = l}))
+                 end)
     end
 
   structure Transfer =

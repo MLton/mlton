@@ -414,7 +414,6 @@ structure Statement =
        | PrimApp of {args: Operand.t vector,
                      dst: Operand.t option,
                      prim: Type.t Prim.t}
-       | ProfileLabel of ProfileLabel.t
 
       val layout =
          let
@@ -437,8 +436,6 @@ structure Statement =
                            [seq [Operand.layout z, str " ="],
                             indent (rest, 2)]
                   end
-             | ProfileLabel l =>
-                  seq [str "ProfileLabel ", ProfileLabel.layout l]
          end
 
       fun move (arg as {dst, src}) =
@@ -532,7 +529,6 @@ structure Statement =
             Move {dst, src} => f (dst, f (src, ac))
           | PrimApp {args, dst, ...} =>
                Vector.fold (args, Option.fold (dst, ac, f), f)
-          | _ => ac
 
       fun foldDefs (s, a, f) =
          case s of
@@ -540,7 +536,6 @@ structure Statement =
           | PrimApp {dst, ...} => (case dst of
                                       NONE => a
                                     | SOME z => f (z, a))
-          | _ => a
    end
 
 structure Live =
@@ -1049,22 +1044,21 @@ structure Program =
                      T {chunks, frameInfos, frameOffsets, globals = {objptrs, reals, ...},
                         maxFrameSize, objectTypes, sourceMaps, staticHeaps, ...}) =
          let
-            val (checkProfileLabel, finishCheckProfileLabel) =
+            val finishCheckProfileLabel =
                Err.check'
                ("sourceMaps",
                 fn () =>
                 (case (!Control.profile, sourceMaps) of
-                    (Control.ProfileNone, NONE) => SOME (fn _ => false, fn () => ())
+                    (Control.ProfileNone, NONE) => SOME (fn () => ())
                   | (_, NONE) => NONE
                   | (Control.ProfileNone, SOME _) => NONE
                   | (_, SOME sourceMaps) =>
                        let
-                          val (checkProfileLabel, finishCheckProfileLabel) =
+                          val (_, finishCheckProfileLabel) =
                              SourceMaps.checkProfileLabel sourceMaps
                        in
                           if SourceMaps.check sourceMaps
-                             then SOME (checkProfileLabel,
-                                        fn () => Err.check
+                             then SOME (fn () => Err.check
                                                  ("sourceMaps (finishCheckProfileLabel)",
                                                   finishCheckProfileLabel,
                                                   fn () => SourceMaps.layout sourceMaps))
@@ -1431,10 +1425,6 @@ structure Program =
                               then alloc
                               else NONE
                         end
-                   | ProfileLabel pl =>
-                        if checkProfileLabel pl
-                           then SOME alloc
-                        else NONE
                end
             fun liveIsOk (live: Live.t vector,
                           a: Alloc.t): bool =

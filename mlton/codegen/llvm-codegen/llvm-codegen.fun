@@ -1241,7 +1241,6 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                         in
                            ()
                         end
-                     | Statement.ProfileLabel _ => Error.bug "LLVMCodegen.outputStatement: ProfileLabel"
                end
             local
                fun mk (dst, src) () =
