@@ -983,7 +983,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
          (labelIndex l, WordSize.cpointer ())
 
       val amTimeProfiling =
-         !Control.profile = Control.ProfileTimeField
+         !Control.profile = Control.ProfileTime
 
       fun creturnName (ct: CType.t): string =
          concat ["%CReturn", CType.name ct]

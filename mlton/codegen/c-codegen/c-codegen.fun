@@ -752,7 +752,7 @@ fun outputDeclarations
                 | Control.ProfileCallStack => "PROFILE_NONE"
                 | Control.ProfileCount => "PROFILE_COUNT"
                 | Control.ProfileDrop => "PROFILE_NONE"
-                | Control.ProfileTimeField => "PROFILE_TIME_FIELD"
+                | Control.ProfileTime => "PROFILE_TIME"
          in
             print (C.callNoSemi (case !Control.format of
                                     Control.Archive => "MLtonLibrary"
@@ -939,7 +939,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
          end
 
       val amTimeProfiling =
-         !Control.profile = Control.ProfileTimeField
+         !Control.profile = Control.ProfileTime
 
       fun declareChunk (chunkLabel, print: string -> unit) =
          (print "PRIVATE extern ChunkFn_t "

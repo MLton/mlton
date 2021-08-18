@@ -746,8 +746,7 @@ fun makeOptions {usage} =
                             | "call" => ProfileCallStack
                             | "count" => ProfileCount
                             | "drop" => ProfileDrop
-                            | "time" => ProfileTimeField
-                            | "time-field" => ProfileTimeField
+                            | "time" => ProfileTime
                             | _ => usage (concat
                                           ["invalid -profile arg: ", s]))))),
        (Expert, "profile-block", " {false|true}",
@@ -1087,7 +1086,7 @@ fun commandLine (args: string list): unit =
                   then (case !profile of
                            ProfileAlloc => ()
                          | ProfileCount => ()
-                         | ProfileTimeField => ()
+                         | ProfileTime => ()
                          | _ => usage "can't use '-profile-stack true' without '-profile {alloc,count,time}'")
                   else ()
 
@@ -1210,7 +1209,7 @@ fun commandLine (args: string list): unit =
           | OpenBSD => ()
           | Solaris => ()
           | _ =>
-               if !profile = ProfileTimeField
+               if !profile = ProfileTime
                   then usage (concat ["can't use -profile time on ",
                                       MLton.Platform.OS.toString targetOS])
                else ()

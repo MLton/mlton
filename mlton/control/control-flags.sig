@@ -424,7 +424,7 @@ signature CONTROL_FLAGS =
        | ProfileCallStack
        | ProfileCount
        | ProfileDrop
-       | ProfileTimeField
+       | ProfileTime
       val profile: profile ref
 
       val profileBlock: bool ref

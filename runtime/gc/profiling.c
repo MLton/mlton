@@ -276,7 +276,7 @@ void profileWrite (GC_state s, GC_profileData p, const char *fileName) {
   case PROFILE_NONE:
     die ("impossible PROFILE_NONE");
     // break;
-  case PROFILE_TIME_FIELD:
+  case PROFILE_TIME:
     kind = "time\n";
     break;
   default:
@@ -416,7 +416,7 @@ void initProfiling (GC_state s) {
     case PROFILE_NONE:
       die ("impossible PROFILE_NONE");
       // break;
-    case PROFILE_TIME_FIELD:
+    case PROFILE_TIME:
       initProfilingTime (s);
       break;
     default:
@@ -434,7 +434,7 @@ void GC_profileDone (GC_state s) {
   if (DEBUG_PROFILE)
     fprintf (stderr, "GC_profileDone ()\n");
   assert (s->profiling.isOn);
-  if (PROFILE_TIME_FIELD == s->profiling.kind)
+  if (PROFILE_TIME == s->profiling.kind)
     setProfTimer (0);
   s->profiling.isOn = FALSE;
   p = s->profiling.data;

@@ -476,7 +476,7 @@ fun transform program =
                                                 :: sourceSeq))
                                val sourceSeqPre = sourceSeq
                                val (lastStmtIsProfile, ss) =
-                                  if profile = ProfileTimeField
+                                  if profile = ProfileTime
                                      andalso sourceSeqPre <> sourceSeqPost
                                      andalso not lastStmtIsProfile
                                      andalso not (List.isEmpty sourceSeqPost)
@@ -487,7 +487,7 @@ fun transform program =
                             end
                        | _ => (leaves, false, sourceSeq, s :: ss))
                   val statements =
-                     if profile = ProfileTimeField
+                     if profile = ProfileTime
                         andalso (case kind of
                                     Kind.Cont _ => true
                                   | Kind.CReturn {func} =>

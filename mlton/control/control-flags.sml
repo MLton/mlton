@@ -1427,7 +1427,7 @@ structure Profile =
        | ProfileCallStack
        | ProfileCount
        | ProfileDrop
-       | ProfileTimeField
+       | ProfileTime
 
       val toString =
          fn ProfileNone => "None"
@@ -1435,7 +1435,7 @@ structure Profile =
           | ProfileCallStack => "CallStack"
           | ProfileCount => "Count"
           | ProfileDrop => "Drop"
-          | ProfileTimeField => "TimeField"
+          | ProfileTime => "Time"
    end
 
 datatype profile = datatype Profile.t
