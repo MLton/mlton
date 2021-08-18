@@ -1,4 +1,4 @@
-(* Copyright (C) 2019-2020 Matthew Fluet.
+(* Copyright (C) 2019-2021 Matthew Fluet.
  * Copyright (C) 2013-2014 Matthew Fluet, Brian Leibig.
  *
  * MLton is released under a HPND-style license.
@@ -984,7 +984,6 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
 
       val amTimeProfiling =
          !Control.profile = Control.ProfileTimeField
-         orelse !Control.profile = Control.ProfileTimeLabel
 
       fun creturnName (ct: CType.t): string =
          concat ["%CReturn", CType.name ct]

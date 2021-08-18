@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014-2017,2019-2020 Matthew Fluet.
+(* Copyright (C) 2009,2014-2017,2019-2021 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -754,7 +754,6 @@ fun outputDeclarations
                 | Control.ProfileDrop => "PROFILE_NONE"
                 | Control.ProfileLabel => "PROFILE_NONE"
                 | Control.ProfileTimeField => "PROFILE_TIME_FIELD"
-                | Control.ProfileTimeLabel => "PROFILE_TIME_LABEL"
          in
             print (C.callNoSemi (case !Control.format of
                                     Control.Archive => "MLtonLibrary"
@@ -951,7 +950,6 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
 
       val amTimeProfiling =
          !Control.profile = Control.ProfileTimeField
-         orelse !Control.profile = Control.ProfileTimeLabel
 
       fun declareChunk (chunkLabel, print: string -> unit) =
          (print "PRIVATE extern ChunkFn_t "

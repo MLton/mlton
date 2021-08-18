@@ -1072,24 +1072,6 @@ structure Program =
                        end),
                 fn () => Option.layout SourceMaps.layout sourceMaps)
             val _ =
-               if !Control.profile = Control.ProfileTimeLabel
-                  then
-                     List.foreach
-                     (chunks, fn Chunk.T {blocks, ...} =>
-                      Vector.foreach
-                      (blocks, fn Block.T {kind, label, statements, ...} =>
-                       if (case kind of
-                              Kind.Func _ => true
-                            | _ => false)
-                          orelse (0 < Vector.length statements
-                                  andalso (case Vector.first statements of
-                                              Statement.ProfileLabel _ => true
-                                            | _ => false))
-                          then ()
-                       else print (concat ["missing profile info: ",
-                                           Label.toString label, "\n"])))
-               else ()
-            val _ =
                Vector.foreachi
                (frameOffsets, fn (i, fo) =>
                 let

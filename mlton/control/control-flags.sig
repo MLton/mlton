@@ -426,7 +426,6 @@ signature CONTROL_FLAGS =
        | ProfileDrop
        | ProfileLabel
        | ProfileTimeField
-       | ProfileTimeLabel
       val profile: profile ref
 
       val profileBlock: bool ref
