@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2021 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -29,7 +29,6 @@ signature AMD64_GENERATE_TRANSFERS =
     val generateTransfers:
        {chunk: amd64.Chunk.t,
         optimize: int,
-        newProfileLabel: amd64.ProfileLabel.t -> amd64.ProfileLabel.t,
         liveInfo: amd64Liveness.LiveInfo.t,
         jumpInfo: amd64JumpInfo.t,
         reserveRsp: bool} -> amd64.Assembly.t list list

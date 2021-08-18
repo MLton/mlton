@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2021 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -19,7 +20,6 @@ struct
     struct
       structure Peephole
         = Peephole(type entry_type = Entry.t
-                   type profileLabel_type = ProfileLabel.t option
                    type statement_type = Assembly.t
                    type transfer_type = Transfer.t
                    datatype block = datatype Block.t)
@@ -70,7 +70,6 @@ struct
 
         val rewriter : rewriter
           = fn {entry,
-                profileLabel,
                 start, 
                 statements =
                 [[Assembly.Instruction (Instruction.MOV
@@ -109,13 +108,11 @@ struct
                        in
                          SOME (Block.T
                                {entry = entry,
-                                profileLabel = profileLabel,
                                 statements = statements,
                                 transfer = transfer})
                        end
                   else NONE
              | {entry,
-                profileLabel,
                 start, 
                 statements =
                 [[Assembly.Instruction (Instruction.MOV
@@ -154,13 +151,11 @@ struct
                        in
                          SOME (Block.T
                                {entry = entry,
-                                profileLabel = profileLabel,
                                 statements = statements,
                                 transfer = transfer})
                        end
                   else NONE
              | {entry,
-                profileLabel,
                 start, 
                 statements =
                 [[Assembly.Instruction (Instruction.MOV
@@ -197,7 +192,6 @@ struct
                        in
                          SOME (Block.T
                                {entry = entry,
-                                profileLabel = profileLabel,
                                 statements = statements,
                                 transfer = transfer})
                        end
@@ -235,7 +229,6 @@ struct
 
         val rewriter : rewriter
           = fn {entry,
-                profileLabel,
                 start, 
                 statements =
                 [[Assembly.Instruction (Instruction.SSE_MOVS
@@ -274,7 +267,6 @@ struct
                        in
                          SOME (Block.T
                                {entry = entry,
-                                profileLabel = profileLabel,
                                 statements = statements,
                                 transfer = transfer})
                        end
@@ -353,7 +345,6 @@ struct
 
         val rewriter : rewriter
           = fn {entry,
-                profileLabel,
                 start, 
                 statements =
                 [[Assembly.Instruction (Instruction.MOV
@@ -395,14 +386,12 @@ struct
                              in
                                SOME (Block.T
                                      {entry = entry,
-                                      profileLabel = profileLabel,
                                       statements = statements,
                                       transfer = transfer})
                              end
                           | _ => NONE
                   else NONE
              | {entry,
-                profileLabel,
                 start, 
                 statements =
                 [[Assembly.Instruction (Instruction.MOV
@@ -444,14 +433,12 @@ struct
                              in
                                SOME (Block.T
                                      {entry = entry,
-                                      profileLabel = profileLabel,
                                       statements = statements,
                                       transfer = transfer})
                              end
                           | _ => NONE
                   else NONE
              | {entry,
-                profileLabel,
                 start, 
                 statements =
                 [[Assembly.Instruction (Instruction.MOV
@@ -491,7 +478,6 @@ struct
                              in
                                SOME (Block.T
                                      {entry = entry,
-                                      profileLabel = profileLabel,
                                       statements = statements,
                                       transfer = transfer})
                              end
@@ -539,7 +525,6 @@ struct
 
         val rewriter : rewriter
           = fn {entry,
-                profileLabel,
                 start, 
                 statements =
                 [[Assembly.Instruction (Instruction.BinAL 
@@ -605,7 +590,6 @@ struct
                        in 
                          SOME (Block.T
                                {entry = entry,
-                                profileLabel = profileLabel,
                                 statements = statements,
                                 transfer = transfer})
                        end
@@ -677,7 +661,6 @@ struct
 
         val rewriter : rewriter
           = fn {entry,
-                profileLabel,
                 start, 
                 statements =
                 [[Assembly.Instruction (Instruction.pMD 
@@ -709,7 +692,6 @@ struct
                        in
                          SOME (Block.T
                                {entry = entry,
-                                profileLabel = profileLabel,
                                 statements = statements,
                                 transfer = transfer})
                        end
@@ -727,7 +709,6 @@ struct
                        in 
                          SOME (Block.T
                                {entry = entry,
-                                profileLabel = profileLabel,
                                 statements = statements,
                                 transfer = transfer})
                        end
@@ -754,13 +735,11 @@ struct
                        in
                          SOME (Block.T
                                {entry = entry,
-                                profileLabel = profileLabel,
                                 statements = statements,
                                 transfer = transfer})
                        end
                     | _ => NONE)
              | {entry,
-                profileLabel,
                 start, 
                 statements =
                 [[Assembly.Instruction (Instruction.pMD 
@@ -776,7 +755,6 @@ struct
                     | SOME (0,false) 
                     => SOME (Block.T
                              {entry = entry,
-                              profileLabel = profileLabel,
                               statements = List.fold(start,
                                                      List.concat [comments, finish],
                                                      op ::),
@@ -797,7 +775,6 @@ struct
                        in
                          SOME (Block.T
                                {entry = entry,
-                                profileLabel = profileLabel,
                                 statements = statements,
                                 transfer = transfer})
                        end
@@ -824,7 +801,6 @@ struct
                        in
                          SOME (Block.T
                                {entry = entry,
-                                profileLabel = profileLabel,
                                 statements = statements,
                                 transfer = transfer})
                        end
@@ -854,13 +830,11 @@ struct
                               in
                                 SOME (Block.T
                                       {entry = entry,
-                                       profileLabel = profileLabel,
                                        statements = statements,
                                        transfer = transfer})
                               end
                          else NONE)
              | {entry,
-                profileLabel,
                 start, 
                 statements =
                 [[Assembly.Instruction (Instruction.pMD 
@@ -876,7 +850,6 @@ struct
                     | SOME (0,false) 
                     => SOME (Block.T
                              {entry = entry,
-                              profileLabel = profileLabel,
                               statements = List.fold(start,
                                                      List.concat [comments, finish],
                                                      op ::),
@@ -899,7 +872,6 @@ struct
                               in 
                                 SOME (Block.T
                                       {entry = entry,
-                                       profileLabel = profileLabel,
                                        statements = statements,
                                        transfer = transfer})
                               end
@@ -907,7 +879,6 @@ struct
                     | SOME (_,true)
                     => NONE)
              | {entry,
-                profileLabel,
                 start, 
                 statements =
                 [[Assembly.Instruction (Instruction.pMD
@@ -923,7 +894,6 @@ struct
                     | SOME (0,false) 
                     => SOME (Block.T
                              {entry = entry,
-                              profileLabel = profileLabel,
                               statements = List.fold(start,
                                                      List.concat [comments, finish],
                                                      op ::),
@@ -944,7 +914,6 @@ struct
                        in
                          SOME (Block.T
                                {entry = entry,
-                                profileLabel = profileLabel,
                                 statements = statements,
                                 transfer = transfer})
                        end
@@ -1012,13 +981,11 @@ struct
                               in 
                                 SOME (Block.T
                                       {entry = entry,
-                                       profileLabel = profileLabel,
                                        statements = statements,
                                        transfer = transfer})
                               end
                          else NONE)
              | {entry,
-                profileLabel,
                 start, 
                 statements =
                 [[Assembly.Instruction (Instruction.pMD
@@ -1034,7 +1001,6 @@ struct
                     | SOME (0,false) 
                     => SOME (Block.T
                              {entry = entry,
-                              profileLabel = profileLabel,
                               statements = List.fold(start,
                                                      List.concat [comments, finish],
                                                      op ::),
@@ -1057,14 +1023,12 @@ struct
                               in 
                                 SOME (Block.T
                                       {entry = entry,
-                                       profileLabel = profileLabel,
                                        statements = statements,
                                        transfer = transfer})
                               end
                          else NONE
                     | SOME (_,true) => NONE)
              | {entry,
-                profileLabel,
                 start, 
                 statements =
                 [[Assembly.Instruction (Instruction.IMUL2
@@ -1095,7 +1059,6 @@ struct
                        in
                          SOME (Block.T
                                {entry = entry,
-                                profileLabel = profileLabel,
                                 statements = statements,
                                 transfer = transfer})
                        end
@@ -1113,7 +1076,6 @@ struct
                        in 
                          SOME (Block.T
                                {entry = entry,
-                                profileLabel = profileLabel,
                                 statements = statements,
                                 transfer = transfer})
                        end
@@ -1140,13 +1102,11 @@ struct
                        in
                          SOME (Block.T
                                {entry = entry,
-                                profileLabel = profileLabel,
                                 statements = statements,
                                 transfer = transfer})
                        end
                     | _ => NONE)
              | {entry,
-                profileLabel,
                 start, 
                 statements =
                 [[Assembly.Instruction (Instruction.IMUL2
@@ -1161,7 +1121,6 @@ struct
                     | SOME (0,false) 
                     => SOME (Block.T
                              {entry = entry,
-                              profileLabel = profileLabel,
                               statements = List.fold(start,
                                                      List.concat [comments, finish],
                                                      op ::),
@@ -1182,7 +1141,6 @@ struct
                        in
                          SOME (Block.T
                                {entry = entry,
-                                profileLabel = profileLabel,
                                 statements = statements,
                                 transfer = transfer})
                        end
@@ -1209,7 +1167,6 @@ struct
                        in
                          SOME (Block.T
                                {entry = entry,
-                                profileLabel = profileLabel,
                                 statements = statements,
                                 transfer = transfer})
                        end
@@ -1239,7 +1196,6 @@ struct
                               in
                                 SOME (Block.T
                                       {entry = entry,
-                                       profileLabel = profileLabel,
                                        statements = statements,
                                        transfer = transfer})
                               end
@@ -1293,7 +1249,6 @@ struct
 
         val rewriter 
           = fn {entry,
-                profileLabel,
                 start, 
                 statements =
                 [[Assembly.Instruction _],
@@ -1322,7 +1277,6 @@ struct
                                         op ::)
                          in
                            SOME (Block.T {entry = entry,
-                                          profileLabel = profileLabel,
                                           statements = statements,
                                           transfer = transfer})
                          end
@@ -1368,7 +1322,6 @@ struct
 
         val rewriter 
           = fn {entry,
-                profileLabel,
                 start, 
                 statements =
                 [[Assembly.Instruction
@@ -1409,7 +1362,6 @@ struct
                                     falsee = falsee}
                 in 
                   SOME (Block.T {entry = entry,
-                                 profileLabel = profileLabel,
                                  statements = statements,
                                  transfer = transfer})
                 end
@@ -1465,7 +1417,6 @@ struct
 
         val rewriter 
           = fn {entry,
-                profileLabel,
                 start, 
                 statements =
                 [[Assembly.Instruction instruction],
@@ -1493,7 +1444,6 @@ struct
                                 op ::)
                          in
                            SOME (Block.T {entry = entry,
-                                          profileLabel = profileLabel,
                                           statements = statements,
                                           transfer = transfer})
                          end
@@ -1592,7 +1542,6 @@ struct
 
             val rewriter 
               = fn {entry,
-                    profileLabel,
                     start, 
                     statements = [],
                     finish = [],
@@ -1608,7 +1557,6 @@ struct
                       val transfer = Transfer.goto {target = truee}
                     in 
                       SOME (Block.T {entry = entry,
-                                     profileLabel = profileLabel,
                                      statements = statements,
                                      transfer = transfer})
                     end
@@ -1637,7 +1585,6 @@ struct
 
             val rewriter 
               = fn {entry,
-                    profileLabel,
                     start = [], 
                     statements = [statements'],
                     finish = [],
@@ -1674,7 +1621,6 @@ struct
                           else Error.bug "amd64Simplify.PeeholeBlock: elimSwitchTest:transfer"
                     in
                       SOME (Block.T {entry = entry,
-                                     profileLabel = profileLabel,
                                      statements = statements,
                                      transfer = transfer})
                     end
@@ -1709,7 +1655,6 @@ struct
 
             val rewriter 
               = fn {entry,
-                    profileLabel,
                     start = [], 
                     statements = [statements'],
                     finish = [],
@@ -1757,7 +1702,6 @@ struct
                                                  default = default})
                     in 
                       SOME (Block.T {entry = entry,     
-                                     profileLabel = profileLabel,
                                      statements = statements,
                                      transfer = transfer})
                     end
@@ -1772,7 +1716,6 @@ struct
   structure ElimGoto =
     struct
       fun elimSimpleGoto {chunk = Chunk.T {data, blocks, ...},
-                          delProfileLabel : amd64.ProfileLabel.t -> unit,
                           jumpInfo : amd64JumpInfo.t} 
         = let
             val {get: Label.t -> Label.t option,
@@ -1785,7 +1728,6 @@ struct
               = List.keepAllMap
                 (blocks,
                  fn Block.T {entry = Entry.Jump {label}, 
-                             profileLabel,
                              statements, 
                              transfer = Transfer.Goto {target}}
                   => if List.forall(statements,
@@ -1795,8 +1737,7 @@ struct
                         andalso
                         not (Label.equals(label, target))
 *)
-                       then (Option.app(profileLabel, delProfileLabel);
-                             set(label, SOME target); 
+                       then (set(label, SOME target);
                              SOME label)
                        else NONE
                   | _ => NONE)
@@ -1847,9 +1788,8 @@ struct
             val blocks
               = List.map
                 (blocks,
-                 fn Block.T {entry, profileLabel, statements, transfer}
+                 fn Block.T {entry, statements, transfer}
                   => Block.T {entry = entry,
-                              profileLabel = profileLabel,
                               statements = statements,
                               transfer = elimSimpleGoto' transfer})
 
@@ -1902,7 +1842,6 @@ struct
                      => case get label
                           of SOME (Block.T 
                                    {entry,
-                                    profileLabel,
                                     statements,
                                     transfer = Transfer.Goto {target}})
                            => (if Label.equals(label,target)
@@ -1911,20 +1850,16 @@ struct
                                          of NONE => b
                                           | SOME (Block.T
                                                   {entry = entry',
-                                                   profileLabel = profileLabel',
                                                    statements = statements',
                                                    transfer = transfer'})
                                           => (set(label,
                                                   SOME (Block.T
                                                         {entry = entry,
-                                                         profileLabel = profileLabel,
                                                          statements
                                                          = List.concat
                                                            [statements,
                                                             [Assembly.Label
                                                              (Entry.label entry')],
-                                                            ProfileLabel.toAssemblyOpt
-                                                            profileLabel',
                                                             statements'],
                                                          transfer 
                                                          = transfer'}));
@@ -1938,7 +1873,6 @@ struct
             val changed = ref false
             val elimComplexGoto'
               = fn block as Block.T {entry, 
-                                     profileLabel,
                                      statements, 
                                      transfer = Transfer.Goto {target}}
                  => if Label.equals(Entry.label entry,target)
@@ -1946,7 +1880,6 @@ struct
                       else (case get target
                               of NONE => block
                                | SOME (Block.T {entry = entry',
-                                                profileLabel = profileLabel',
                                                 statements = statements',
                                                 transfer = transfer'})
                                => let
@@ -1962,14 +1895,11 @@ struct
 
                                     val block
                                       = Block.T {entry = entry,
-                                                 profileLabel = profileLabel,
                                                  statements 
                                                  = List.concat
                                                    [statements,
                                                     [Assembly.label
                                                      (Entry.label entry')],
-                                                    ProfileLabel.toAssemblyOpt
-                                                    profileLabel',
                                                     statements'],
                                                  transfer = transfer'}
                                   in
@@ -2052,17 +1982,13 @@ struct
                 (labels,
                  fn label 
                   => let
-                       val {block = Block.T {entry, 
-                                             profileLabel, 
-                                             statements, 
-                                             transfer}, 
+                       val {block = Block.T {entry, statements, transfer},
                             reach} = get label
                      in
                        if !reach
                          then SOME 
                               (Block.T 
                                {entry = entry,
-                                profileLabel = profileLabel,
                                 statements
                                 = List.keepAll
                                   (statements,
@@ -2093,7 +2019,6 @@ struct
           elimBlocks
 
       fun elimGoto {chunk : Chunk.t,
-                    delProfileLabel: amd64.ProfileLabel.t -> unit,
                     jumpInfo : amd64JumpInfo.t}
         = let
             val elimIff 
@@ -2108,7 +2033,6 @@ struct
                   val {chunk,
                        changed = changed_elimSimpleGoto}
                     = elimSimpleGoto {chunk = chunk,
-                                      delProfileLabel = delProfileLabel,
                                       jumpInfo = jumpInfo}
 
                   val Chunk.T {data, blocks, ...} = chunk
@@ -2171,8 +2095,7 @@ struct
       structure Liveness = amd64Liveness.Liveness
       structure LivenessBlock = amd64Liveness.LivenessBlock
 
-      fun moveHoist {block = LivenessBlock.T 
-                             {entry, profileLabel, statements, transfer}}
+      fun moveHoist {block = LivenessBlock.T {entry, statements, transfer}}
          = let
             val {transfer,live} 
               = LivenessBlock.reLivenessTransfer {transfer = transfer}
@@ -2424,7 +2347,6 @@ struct
                                       fn {age,...}
                                        => age <> 0)
             val block = LivenessBlock.T {entry = entry,
-                                         profileLabel = profileLabel,
                                          statements = statements,
                                          transfer = transfer}
           in
@@ -2665,8 +2587,7 @@ struct
         | copyPropagate' _ = Error.bug "amd64Simplify.PeeholeBlock: copyPropagate'"
 
 
-      fun copyPropagate {block = LivenessBlock.T 
-                                 {entry, profileLabel, statements, transfer},
+      fun copyPropagate {block = LivenessBlock.T {entry, statements, transfer},
                          liveInfo}
         = let
             val {pblock = {statements,transfer},changed}
@@ -2752,7 +2673,6 @@ struct
                        changed = changed})
           in
             {block = LivenessBlock.T {entry = entry,
-                                      profileLabel = profileLabel,
                                       statements = statements,
                                       transfer = transfer},
              changed = changed}
@@ -2787,7 +2707,6 @@ struct
 
       structure Peephole 
         = Peephole(type entry_type = Entry.t * Liveness.t
-                   type profileLabel_type = ProfileLabel.t option
                    type statement_type = Assembly.t * Liveness.t
                    type transfer_type = Transfer.t * Liveness.t
                    datatype block = datatype LivenessBlock.t)
@@ -2839,7 +2758,6 @@ struct
 
         val rewriter : rewriter
           = fn {entry,
-                profileLabel,
                 start, 
                 statements =
                 [[(Assembly.Instruction _,
@@ -2885,7 +2803,6 @@ struct
                        in
                          SOME (LivenessBlock.T
                                {entry = entry,
-                                profileLabel = profileLabel,
                                 statements = statements,
                                 transfer = transfer})
                        end
@@ -2958,7 +2875,6 @@ struct
 
         val rewriter : rewriter
           = fn {entry,
-                profileLabel,
                 start, 
                 statements =
                 [[(Assembly.Instruction (Instruction.MOV 
@@ -3084,7 +3000,6 @@ struct
                        in
                          SOME (LivenessBlock.T
                                {entry = entry,
-                                profileLabel = profileLabel,
                                 statements = statements,
                                 transfer = transfer})            
                        end
@@ -3155,7 +3070,6 @@ struct
 
         val rewriter : rewriter
           = fn {entry,
-                profileLabel,
                 start,
                 statements =
                 [[(stmtMov as Assembly.Instruction (Instruction.MOV
@@ -3236,7 +3150,6 @@ struct
                        in
                          SOME (LivenessBlock.T
                                {entry = entry,
-                                profileLabel = profileLabel,
                                 statements = statements,
                                 transfer = transfer})
                        end
@@ -3299,7 +3212,6 @@ struct
 
         val rewriter : rewriter
           = fn {entry,
-                profileLabel,
                 start, 
                 statements =
                 [[(Assembly.Instruction (Instruction.SSE_MOVS
@@ -3374,7 +3286,6 @@ struct
                        in
                          SOME (LivenessBlock.T
                                {entry = entry,
-                                profileLabel = profileLabel,
                                 statements = statements,
                                 transfer = transfer})            
                        end
@@ -3408,7 +3319,6 @@ struct
 
         val rewriter : rewriter
           = fn {entry,
-                profileLabel,
                 start, 
                 statements =
                 [[(Assembly.Instruction (Instruction.MOV 
@@ -3431,7 +3341,6 @@ struct
                         in 
                            SOME (LivenessBlock.T
                                  {entry = entry,
-                                  profileLabel = profileLabel,
                                   statements = statements,
                                   transfer = transfer})
                         end
@@ -3441,7 +3350,6 @@ struct
                         in
                            SOME (LivenessBlock.T
                                  {entry = entry,
-                                  profileLabel = profileLabel,
                                   statements = statements,
                                   transfer = transfer})
                         end
@@ -3474,7 +3382,6 @@ struct
 
         val rewriter : rewriter
           = fn {entry,
-                profileLabel,
                 start, 
                 statements =
                 [[(Assembly.Instruction (Instruction.SSE_MOVS
@@ -3497,7 +3404,6 @@ struct
                         in 
                            SOME (LivenessBlock.T
                                  {entry = entry,
-                                  profileLabel = profileLabel,
                                   statements = statements,
                                   transfer = transfer})
                         end
@@ -3507,7 +3413,6 @@ struct
                         in
                            SOME (LivenessBlock.T
                                  {entry = entry,
-                                  profileLabel = profileLabel,
                                   statements = statements,
                                   transfer = transfer})
                         end
@@ -3568,7 +3473,6 @@ struct
 
         val rewriter : rewriter
           = fn {entry,
-                profileLabel,
                 start, 
                 statements =
                 [[(Assembly.Instruction (Instruction.MOV 
@@ -3644,13 +3548,11 @@ struct
                        in
                          SOME (LivenessBlock.T
                                {entry = entry,  
-                                profileLabel = profileLabel,
                                 statements = statements,
                                 transfer = transfer})            
                        end
                   else NONE
              | {entry,
-                profileLabel,
                 start, 
                 statements =
                 [[(Assembly.Instruction (Instruction.MOV 
@@ -3726,13 +3628,11 @@ struct
                        in
                          SOME (LivenessBlock.T
                                {entry = entry,
-                                profileLabel = profileLabel,
                                 statements = statements,
                                 transfer = transfer})            
                        end
                   else NONE
              | {entry,
-                profileLabel,
                 start, 
                 statements =
                 [[(Assembly.Instruction (Instruction.MOV 
@@ -3806,7 +3706,6 @@ struct
                        in
                          SOME (LivenessBlock.T
                                {entry = entry,
-                                profileLabel = profileLabel,
                                 statements = statements,
                                 transfer = transfer})            
                        end
@@ -3851,7 +3750,6 @@ struct
 
         val rewriter : rewriter
           = fn {entry,
-                profileLabel,
                 start, 
                 statements =
                 [[(Assembly.Instruction (Instruction.SSE_MOVS
@@ -3927,7 +3825,6 @@ struct
                        in
                          SOME (LivenessBlock.T
                                {entry = entry,  
-                                profileLabel = profileLabel,
                                 statements = statements,
                                 transfer = transfer})            
                        end
@@ -3980,7 +3877,6 @@ struct
 
         val rewriter : rewriter
           = fn {entry,
-                profileLabel,
                 start, 
                 statements =
                 [[(statement as 
@@ -4052,7 +3948,6 @@ struct
                        in
                          SOME (LivenessBlock.T
                                {entry = entry,
-                                profileLabel = profileLabel,
                                 statements = statements,
                                 transfer = transfer})
                        end
@@ -4194,7 +4089,6 @@ struct
 
   fun simplify {chunk : Chunk.t,
                 optimize : int,
-                delProfileLabel : amd64.ProfileLabel.t -> unit,
                 liveInfo : amd64Liveness.LiveInfo.t,
                 jumpInfo : amd64JumpInfo.t} :
                Chunk.t
@@ -4345,7 +4239,6 @@ struct
                val {chunk = chunk',
                     changed = changed'}
                  = ElimGoto.elimGoto {chunk = chunk,
-                                      delProfileLabel = delProfileLabel,
                                       jumpInfo = jumpInfo}
 
                val _

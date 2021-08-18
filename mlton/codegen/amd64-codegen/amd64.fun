@@ -1,4 +1,4 @@
-(* Copyright (C) 2012,2019-2020 Matthew Fluet.
+(* Copyright (C) 2012,2019-2021 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -3739,53 +3739,23 @@ struct
       val ccall = CCall
     end
 
-  structure ProfileLabel =
-    struct
-      open ProfileLabel
-
-      fun toAssembly pl =
-        let
-          val label = Label.fromString (toString pl)
-        in
-          [Assembly.pseudoop_global label,
-           Assembly.pseudoop_hidden label,
-           Assembly.label label]
-        end
-      fun toAssemblyOpt pl =
-        case pl of
-          NONE => []
-        | SOME pl => toAssembly pl
-    end
-
   structure Block =
     struct
       datatype t' = T' of {entry: Entry.t option,
-                           profileLabel: ProfileLabel.t option,
                            statements: Assembly.t list,
                            transfer: Transfer.t option}
       fun mkBlock' {entry, statements, transfer} =
         T' {entry = entry,
-            profileLabel = NONE,
             statements = statements,
             transfer = transfer}
-      fun mkProfileBlock' {profileLabel} =
-        T' {entry = NONE,
-            profileLabel = SOME profileLabel,
-            statements = [],
-            transfer = NONE}
 
       datatype t = T of {entry: Entry.t,
-                         profileLabel: ProfileLabel.t option,
                          statements: Assembly.t list,
                          transfer: Transfer.t}
 
-      fun printBlock (T {entry, profileLabel, statements, transfer, ...})
+      fun printBlock (T {entry, statements, transfer, ...})
         = (print (Entry.toString entry);
            print ":\n";
-           Option.app
-           (profileLabel, fn profileLabel =>
-            (print (ProfileLabel.toString profileLabel);
-             print ":\n"));
            List.foreach
            (statements, fn asm => 
             (print (Assembly.toString asm);
@@ -3793,15 +3763,11 @@ struct
            print (Transfer.toString transfer);
            print "\n")
 
-      fun printBlock' (T' {entry, profileLabel, statements, transfer, ...})
+      fun printBlock' (T' {entry, statements, transfer, ...})
         = (print (if isSome entry
                     then Entry.toString (valOf entry)
                     else "---");
            print ":\n";
-           Option.app
-           (profileLabel, fn profileLabel =>
-            (print (ProfileLabel.toString profileLabel);
-             print ":\n"));
            List.foreach
            (statements, fn asm => 
             (print (Assembly.toString asm);
@@ -3811,16 +3777,11 @@ struct
                     else "NONE");
            print "\n")
 
-      fun layout (T {entry, profileLabel, statements, transfer, ...})
+      fun layout (T {entry, statements, transfer, ...})
         = let
             open Layout
           in
-            align [seq [Entry.layout entry,
-                        str ": ",
-                        record [("profileLabel",
-                                 Option.layout ProfileLabel.layout
-                                               profileLabel)],
-                        str "\n"],
+            align [seq [Entry.layout entry, str "\n"],
                    indent (align
                            [align (List.map (statements,
                                              fn s => seq [Assembly.layout s,
@@ -3835,7 +3796,7 @@ struct
          fn l =>
          List.fold
          (rev l, [],
-          fn (b' as T' {entry, profileLabel, statements, transfer}, ac) =>
+          fn (b' as T' {entry, statements, transfer}, ac) =>
           case transfer of
              SOME _ => b' :: ac
            | NONE =>
@@ -3844,7 +3805,6 @@ struct
                  | b2' :: ac =>
                       let
                          val T' {entry = entry2,
-                                 profileLabel = profileLabel2,
                                  statements = statements2,
                                  transfer = transfer2} = b2'
                       in
@@ -3852,33 +3812,18 @@ struct
                             SOME _ =>
                                Error.bug "amd64.Block.compress': mismatched transfer"
                           | NONE =>
-                               let
-                                  val (pl, ss) =
-                                     case (profileLabel, statements) of
-                                        (NONE, []) =>
-                                           (profileLabel2, statements2)
-                                      | _ => 
-                                           (profileLabel,
-                                            statements
-                                            @ (ProfileLabel.toAssemblyOpt
-                                               profileLabel2)
-                                            @ statements2)
-                               in
-                                  T' {entry = entry,
-                                      profileLabel = pl,
-                                      statements = ss,
-                                      transfer = transfer2} :: ac
-                               end
+                               T' {entry = entry,
+                                   statements = statements @ statements2,
+                                   transfer = transfer2} :: ac
                       end)
 
       val compress: t' list -> t list =
          fn l =>
          List.map
-         (compress' l, fn T' {entry, profileLabel, statements, transfer} =>
+         (compress' l, fn T' {entry, statements, transfer} =>
           case (entry, transfer) of
              (SOME e, SOME t) =>
                 T {entry = e,
-                   profileLabel = profileLabel,
                    statements = statements,
                    transfer = t}
            | _ => Error.bug "amd64.Block.compress")
