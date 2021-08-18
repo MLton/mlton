@@ -746,7 +746,6 @@ fun makeOptions {usage} =
                             | "call" => ProfileCallStack
                             | "count" => ProfileCount
                             | "drop" => ProfileDrop
-                            | "label" => ProfileLabel
                             | "time" => ProfileTimeField
                             | "time-field" => ProfileTimeField
                             | _ => usage (concat

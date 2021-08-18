@@ -752,7 +752,6 @@ fun outputDeclarations
                 | Control.ProfileCallStack => "PROFILE_NONE"
                 | Control.ProfileCount => "PROFILE_COUNT"
                 | Control.ProfileDrop => "PROFILE_NONE"
-                | Control.ProfileLabel => "PROFILE_NONE"
                 | Control.ProfileTimeField => "PROFILE_TIME_FIELD"
          in
             print (C.callNoSemi (case !Control.format of

@@ -151,7 +151,7 @@ fun transform program =
       val profile = !Control.profile
       val profileStack: bool = !Control.profileStack
       val needProfileLabels: bool =
-        profile = ProfileLabel
+         false
       val needCodeCoverage: bool =
          needProfileLabels
       val infoNodes: InfoNode.t list ref = ref []
