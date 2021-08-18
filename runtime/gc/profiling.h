@@ -1,4 +1,4 @@
-/* Copyright (C) 2012,2019 Matthew Fluet.
+/* Copyright (C) 2012,2019,2021 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -14,7 +14,6 @@ typedef enum {
   PROFILE_COUNT,
   PROFILE_NONE,
   PROFILE_TIME_FIELD,
-  PROFILE_TIME_LABEL
 } GC_profileKind;
 
 /* If profileStack, then there is one struct GC_profileStack for each

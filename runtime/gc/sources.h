@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 Matthew Fluet.
+/* Copyright (C) 2019,2021 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -78,13 +78,6 @@ struct GC_sourceMaps {
 static inline GC_sourceSeqIndex getCachedStackTopFrameSourceSeqIndex (GC_state s);
 
 static inline const char * getSourceName (GC_state s, GC_sourceIndex i);
-
-#if HAS_TIME_PROFILING
-static inline int compareProfileLabelInfos (const void *v1, const void *v2);
-static void sortProfileLabelInfos (GC_state s);
-static void compressProfileLabelInfos (GC_state s);
-static void initProfileLabelInfos (GC_state s);
-#endif
 
 static void showSources (GC_state s);
 

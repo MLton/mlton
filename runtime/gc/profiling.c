@@ -1,4 +1,4 @@
-/* Copyright (C) 2011-2012,2019 Matthew Fluet.
+/* Copyright (C) 2011-2012,2019,2021 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -279,9 +279,6 @@ void profileWrite (GC_state s, GC_profileData p, const char *fileName) {
   case PROFILE_TIME_FIELD:
     kind = "time\n";
     break;
-  case PROFILE_TIME_LABEL:
-    kind = "time\n";
-    break;
   default:
     kind = "";
     assert (FALSE);
@@ -352,36 +349,7 @@ void GC_handleSigProf (code_pointer pc) {
     if (C_FRAME == s->frameInfos[frameIndex].kind)
       sourceSeqIndex = s->frameInfos[frameIndex].sourceSeqIndex;
     else {
-      if (PROFILE_TIME_LABEL == s->profiling.kind) {
-        uint32_t start, end, i;
-        
-        /* Binary search labels to find which method contains PC */
-        start = 0;
-        end = s->sourceMaps.profileLabelInfosLength;
-        while (end - start > 1) {
-          i = (start+end)/2;
-          if ((uintptr_t)s->sourceMaps.profileLabelInfos[i].profileLabel <= (uintptr_t)pc)
-            start = i;
-          else
-            end = i;
-        }
-        i = start;
-        
-        /* The last label is dead code. Any address past it is thus unknown.
-         * The first label is before all SML code. Before it is also unknown.
-         */
-        if (i-1 == s->sourceMaps.profileLabelInfosLength ||
-            (i == 0 && 
-             (uintptr_t)pc < (uintptr_t)s->sourceMaps.profileLabelInfos[i].profileLabel)) {
-          if (DEBUG_PROFILE)
-            fprintf (stderr, "pc out of bounds\n");
-          sourceSeqIndex = UNKNOWN_SOURCE_SEQ_INDEX;
-        } else {
-          sourceSeqIndex = s->sourceMaps.profileLabelInfos[start].sourceSeqIndex;
-        }
-      } else {
-        sourceSeqIndex = s->sourceMaps.curSourceSeqIndex;
-      }
+      sourceSeqIndex = s->sourceMaps.curSourceSeqIndex;
     }
   }
   incForProfiling (s, 1, sourceSeqIndex);
@@ -391,11 +359,7 @@ static void initProfilingTime (GC_state s) {
   struct sigaction sa;
 
   s->profiling.data = profileMalloc (s);
-  if (PROFILE_TIME_LABEL == s->profiling.kind) {
-    initProfileLabelInfos (s);
-  } else {
-    s->sourceMaps.curSourceSeqIndex = UNKNOWN_SOURCE_SEQ_INDEX;
-  }
+  s->sourceMaps.curSourceSeqIndex = UNKNOWN_SOURCE_SEQ_INDEX;
   /*
    * Install catcher, which handles SIGPROF and calls MLton_Profile_inc.
    *
@@ -453,7 +417,6 @@ void initProfiling (GC_state s) {
       die ("impossible PROFILE_NONE");
       // break;
     case PROFILE_TIME_FIELD:
-    case PROFILE_TIME_LABEL:
       initProfilingTime (s);
       break;
     default:
@@ -471,8 +434,7 @@ void GC_profileDone (GC_state s) {
   if (DEBUG_PROFILE)
     fprintf (stderr, "GC_profileDone ()\n");
   assert (s->profiling.isOn);
-  if (PROFILE_TIME_FIELD == s->profiling.kind
-      or PROFILE_TIME_LABEL == s->profiling.kind)
+  if (PROFILE_TIME_FIELD == s->profiling.kind)
     setProfTimer (0);
   s->profiling.isOn = FALSE;
   p = s->profiling.data;
