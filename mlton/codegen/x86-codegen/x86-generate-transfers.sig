@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2021 Matthew Fluet.
  * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -29,7 +29,6 @@ signature X86_GENERATE_TRANSFERS =
     val generateTransfers:
        {chunk: x86.Chunk.t,
         optimize: int,
-        newProfileLabel: x86.ProfileLabel.t -> x86.ProfileLabel.t,
         liveInfo: x86Liveness.LiveInfo.t,
         jumpInfo: x86JumpInfo.t,
         reserveEsp: bool,

@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2010,2014,2019-2020 Matthew Fluet.
+(* Copyright (C) 2009-2010,2014,2019-2021 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -82,52 +82,9 @@ struct
         val makeC = outputC
         val makeS = outputS
 
-        val (newProfileLabel, delProfileLabel, getSourceMaps) =
-           let
-              val Machine.Program.T {sourceMaps, ...} = program
-           in
-              case sourceMaps of
-                 NONE => (fn _ => Error.bug "x86Codegen.newProfileLabel",
-                          fn _ => Error.bug "x86Codegen.delProfileLabel",
-                          fn () => NONE)
-               | SOME sm =>
-                    let
-                       val {newProfileLabel, delProfileLabel, getSourceMaps} =
-                          Machine.SourceMaps.modify sm
-                    in
-                       (newProfileLabel, delProfileLabel, SOME o getSourceMaps)
-                    end
-           end
-
         (* C specific *)
         fun outputC ()
           = let
-              local
-                val Machine.Program.T 
-                    {chunks, 
-                     frameInfos,
-                     frameOffsets, 
-                     globals,
-                     handlesSignals, 
-                     main, 
-                     maxFrameSize, 
-                     objectTypes, 
-                     staticHeaps, ...} =
-                  program
-              in
-                val program =
-                  Machine.Program.T 
-                  {chunks = chunks, 
-                   frameInfos = frameInfos,
-                   frameOffsets = frameOffsets, 
-                   globals = globals,
-                   handlesSignals = handlesSignals, 
-                   main = main, 
-                   maxFrameSize = maxFrameSize, 
-                   objectTypes = objectTypes, 
-                   sourceMaps = getSourceMaps (),
-                   staticHeaps = staticHeaps}
-              end
               val {print, done, ...} = makeC ()
               val additionalMainArgs =
                  let
@@ -407,7 +364,6 @@ struct
                    optimize = if isMain
                                 then 0
                                 else !Control.Native.optimize,
-                   delProfileLabel = delProfileLabel,
                    liveInfo = liveInfo,
                    jumpInfo = jumpInfo}
 
@@ -415,7 +371,6 @@ struct
                 = (x86GenerateTransfers.generateTransfers
                    {chunk = chunk,
                     optimize = !Control.Native.optimize,
-                    newProfileLabel = newProfileLabel,
                     liveInfo = liveInfo,
                     jumpInfo = jumpInfo,
                     reserveEsp = reserveEsp,

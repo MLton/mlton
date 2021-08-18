@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019 Matthew Fluet.
+(* Copyright (C) 2009,2019,2021 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -14,7 +14,6 @@ signature X86_MLTON_BASIC_STRUCTS =
     sharing x86.CFunction = Machine.CFunction
     sharing x86.CType = Machine.CType
     sharing x86.Label = Machine.Label
-    sharing x86.ProfileLabel = Machine.ProfileLabel
     sharing x86.RepType = Machine.Type
     sharing x86.Runtime = Machine.Runtime
     sharing x86.WordSize = Machine.WordSize

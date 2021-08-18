@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2021 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -58,7 +59,6 @@ signature X86_LIVENESS =
     structure LivenessBlock:
       sig
         datatype t = T of {entry: (x86.Entry.t * Liveness.t),
-                           profileLabel: x86.ProfileLabel.t option,
                            statements: (x86.Assembly.t * Liveness.t) list,
                            transfer: (x86.Transfer.t * Liveness.t)}
 

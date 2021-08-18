@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019-2020 Matthew Fluet.
+(* Copyright (C) 2009,2019-2021 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -156,7 +156,6 @@ struct
 
   fun generateTransfers {chunk as Chunk.T {data, blocks, ...},
                          optimize: int,
-                         newProfileLabel: x86.ProfileLabel.t -> x86.ProfileLabel.t,
                          liveInfo : x86Liveness.LiveInfo.t,
                          jumpInfo : x86JumpInfo.t,
                          reserveEsp: bool,
@@ -382,22 +381,6 @@ struct
                    setLayoutInfo(label, SOME block)
                  end)
 
-        val {get = getProfileLabel : Label.t -> ProfileLabel.t option,
-             set = setProfileLabel,
-             destroy = destProfileLabel}
-          = Property.destGetSetOnce
-            (Label.plist, 
-             Property.initRaise ("profileLabel", Label.layout))
-        val _ 
-          = List.foreach
-            (blocks,
-             fn Block.T {entry, profileLabel, ...}
-              => let
-                   val label = Entry.label entry
-                 in 
-                   setProfileLabel(label, profileLabel)
-                 end)
-
         local   
           val stack = ref []
           val queue = ref (Queue.empty ())
@@ -418,11 +401,8 @@ struct
           = let
               val label' = Label.new label
               val live = getLive(liveInfo, label)
-              val profileLabel = getProfileLabel label
-              val profileLabel' = Option.map (profileLabel, newProfileLabel)
               val block
                 = Block.T {entry = Entry.jump {label = label'},
-                           profileLabel = profileLabel',
                            statements 
                            = (Assembly.directive_restoreregalloc
                               {live = MemLocSet.add
@@ -435,7 +415,6 @@ struct
                            transfer = Transfer.goto {target = label}}
             in
               setLive(liveInfo, label', live);
-              setProfileLabel(label', profileLabel');
               incNear(jumpInfo, label');
               Assert.assert("x86GenerateTransfers.pushCompensationBlock",
                             fn () => getNear(jumpInfo, label') = Count 1);
@@ -494,7 +473,7 @@ struct
                         Assembly.t AppendList.t
           = (case getLayoutInfo label
                of NONE => AppendList.empty
-                | SOME (Block.T {entry, profileLabel, statements, transfer})
+                | SOME (Block.T {entry, statements, transfer})
                 => let
                      val _ = setLayoutInfo(label, NONE)
 (*
@@ -548,8 +527,6 @@ struct
                            [align,
                             AppendList.single 
                             (Assembly.label label),
-                            AppendList.fromList 
-                            (ProfileLabel.toAssemblyOpt profileLabel),
                             assumes]
                         end
                      val pre
@@ -617,8 +594,6 @@ struct
                                             Assembly.pseudoop_long 
                                             [Immediate.int frameInfosIndex],
                                             Assembly.label label],
-                                           AppendList.fromList
-                                           (ProfileLabel.toAssemblyOpt profileLabel),
                                            if CFunction.maySwitchThreadsTo func
                                              then (* entry from far assumptions *)
                                                   farEntry finish
@@ -657,8 +632,6 @@ struct
                                  Assembly.pseudoop_global label,
                                  Assembly.pseudoop_hidden label,
                                  Assembly.label label],
-                                AppendList.fromList
-                                (ProfileLabel.toAssemblyOpt profileLabel),
                                 (* entry from far assumptions *)
                                 (farEntry AppendList.empty)]
                             | Cont {label, 
@@ -673,8 +646,6 @@ struct
                                  Assembly.pseudoop_long
                                  [Immediate.int frameInfosIndex],
                                  Assembly.label label],
-                                AppendList.fromList
-                                (ProfileLabel.toAssemblyOpt profileLabel),
                                 (* entry from far assumptions *)
                                 (farEntry
                                  (let
@@ -703,8 +674,6 @@ struct
                                  Assembly.pseudoop_long
                                  [Immediate.int frameInfosIndex],
                                  Assembly.label label],
-                                AppendList.fromList
-                                (ProfileLabel.toAssemblyOpt profileLabel),
                                 (* entry from far assumptions *)
                                 (farEntry
                                  (let
@@ -2064,7 +2033,6 @@ struct
         val assembly = doit ()
         val symbol_stubs = makeDarwinSymbolStubs ()
         val _ = destLayoutInfo ()
-        val _ = destProfileLabel ()
 
         val assembly = [Assembly.pseudoop_text ()]::assembly
         val assembly =
