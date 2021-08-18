@@ -116,8 +116,6 @@ return.sig
 return.fun
 source-info.sig
 source-info.fun
-profile-label.sig
-profile-label.fun
 profile-exp.sig
 profile-exp.fun
 source-maps.sig

@@ -33,7 +33,6 @@ signature ATOMS' =
       structure Prim: PRIM
       structure Prod: PROD
       structure ProfileExp: PROFILE_EXP
-      structure ProfileLabel: PROFILE_LABEL
       structure RealSize: REAL_SIZE
       structure RealX: REAL_X
       structure Record: RECORD
@@ -105,7 +104,6 @@ signature ATOMS =
       sharing Prim = Atoms.Prim
       sharing Prod = Atoms.Prod
       sharing ProfileExp = Atoms.ProfileExp
-      sharing ProfileLabel = Atoms.ProfileLabel
       sharing RealSize = Atoms.RealSize
       sharing RealX = Atoms.RealX
       sharing Record = Atoms.Record

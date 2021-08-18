@@ -87,7 +87,6 @@ structure Atoms =
 
       structure SourceInfo = SourceInfo ()
       structure ProfileExp = ProfileExp (structure SourceInfo = SourceInfo)
-      structure ProfileLabel = ProfileLabel ()
       structure SourceMaps = SourceMaps ()
    end
 
