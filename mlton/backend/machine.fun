@@ -913,9 +913,8 @@ structure Program =
                          sourceMaps: SourceMaps.t option,
                          staticHeaps: StaticHeap.Kind.t -> StaticHeap.Object.t vector}
 
-      fun clear (T {chunks, sourceMaps, ...}) =
-         (List.foreach (chunks, Chunk.clear)
-          ; Option.app (sourceMaps, SourceMaps.clear))
+      fun clear (T {chunks, ...}) =
+         List.foreach (chunks, Chunk.clear)
 
       fun layouts (T {chunks, frameInfos, frameOffsets, handlesSignals,
                       main = {label, ...},
@@ -1044,26 +1043,15 @@ structure Program =
                      T {chunks, frameInfos, frameOffsets, globals = {objptrs, reals, ...},
                         maxFrameSize, objectTypes, sourceMaps, staticHeaps, ...}) =
          let
-            val finishCheckProfileLabel =
-               Err.check'
+            val _ =
+               Err.check
                ("sourceMaps",
                 fn () =>
                 (case (!Control.profile, sourceMaps) of
-                    (Control.ProfileNone, NONE) => SOME (fn () => ())
-                  | (_, NONE) => NONE
-                  | (Control.ProfileNone, SOME _) => NONE
-                  | (_, SOME sourceMaps) =>
-                       let
-                          val (_, finishCheckProfileLabel) =
-                             SourceMaps.checkProfileLabel sourceMaps
-                       in
-                          if SourceMaps.check sourceMaps
-                             then SOME (fn () => Err.check
-                                                 ("sourceMaps (finishCheckProfileLabel)",
-                                                  finishCheckProfileLabel,
-                                                  fn () => SourceMaps.layout sourceMaps))
-                             else NONE
-                       end),
+                    (Control.ProfileNone, NONE) => true
+                  | (_, NONE) => false
+                  | (Control.ProfileNone, SOME _) => false
+                  | (_, SOME sourceMaps) => SourceMaps.check sourceMaps),
                 fn () => Option.layout SourceMaps.layout sourceMaps)
             val _ =
                Vector.foreachi
@@ -1720,7 +1708,6 @@ structure Program =
                    (blocks, fn b =>
                     check' (b, "block", blockOk, Block.layout))
                 end)
-            val _ = finishCheckProfileLabel ()
             val _ = clear program
          in
             ()

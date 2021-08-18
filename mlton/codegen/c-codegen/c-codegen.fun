@@ -774,19 +774,10 @@ fun outputDeclarations
          else ()
       fun declareSourceMaps () =
          let
-            fun declareProfileLabel (l, print) =
-               print (C.call ("DeclareProfileLabel", [ProfileLabel.toString l]))
-            fun doit (SourceMaps.T {profileLabelInfos, sourceNames, sourceSeqs, sources}) =
-               (Vector.foreach (profileLabelInfos, fn {profileLabel, ...} =>
-                                declareProfileLabel (profileLabel, print))
-                ; declareArray ("struct GC_profileLabelInfo", "profileLabelInfos",
-                                {firstElemLen = false, oneline = false},
-                                profileLabelInfos, fn (_, {profileLabel, sourceSeqIndex}) =>
-                                concat ["{(pointer)&", ProfileLabel.toString profileLabel, ", ",
-                                        C.int sourceSeqIndex, "}"])
-                ; declareArray ("const char * const", "sourceNames",
-                                {firstElemLen = false, oneline = false},
-                                sourceNames, fn (_, s) => C.string s)
+            fun doit (SourceMaps.T {sourceNames, sourceSeqs, sources}) =
+               (declareArray ("const char * const", "sourceNames",
+                              {firstElemLen = false, oneline = false},
+                              sourceNames, fn (_, s) => C.string s)
                 ; Vector.foreachi (sourceSeqs, fn (i, ss) =>
                                    declareArray ("const GC_sourceIndex", concat ["sourceSeq", C.int i],
                                                  {firstElemLen = true, oneline = true},

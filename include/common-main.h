@@ -1,4 +1,4 @@
-/* Copyright (C) 2014,2019-2020 Matthew Fluet.
+/* Copyright (C) 2014,2019-2021 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -15,12 +15,6 @@
 #define MLTON_GC_INTERNAL_TYPES
 #define MLTON_GC_INTERNAL_BASIS
 #include "platform.h"
-
-/* The label must be declared as weak because gcc's optimizer may prove that
- * the code that declares the label is dead and hence eliminate the declaration.
- */
-#define DeclareProfileLabel(l)                  \
-        extern char l __attribute__ ((weak))
 
 #define LoadArray(a, f) do { if (fread (a, sizeof(*a), cardof(a), f) != cardof(a)) return -1; } while (0)
 #define SaveArray(a, f) do { if (fwrite(a, sizeof(*a), cardof(a), f) != cardof(a)) return -1; } while (0)
@@ -41,8 +35,6 @@
         s->objectTypesLength = cardof(objectTypes);                     \
         s->returnAddressToFrameIndex = returnAddressToFrameIndex;       \
         s->saveGlobals = saveGlobals;                                   \
-        s->sourceMaps.profileLabelInfos = profileLabelInfos;            \
-        s->sourceMaps.profileLabelInfosLength = cardof(profileLabelInfos); \
         s->sourceMaps.sourceNames = sourceNames;                        \
         s->sourceMaps.sourceNamesLength = cardof(sourceNames);          \
         s->sourceMaps.sourceSeqs = sourceSeqs;                          \

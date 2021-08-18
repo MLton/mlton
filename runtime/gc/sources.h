@@ -32,25 +32,8 @@ typedef const struct GC_source {
   const GC_sourceSeqIndex successorSourceSeqIndex;
 } *GC_source;
 
-typedef struct GC_profileLabelInfo {
-  code_pointer profileLabel;
-  GC_sourceSeqIndex sourceSeqIndex;
-} *GC_profileLabelInfo;
-
-typedef uint32_t GC_profileLabelInfoIndex;
-#define PRISLI PRIu32
-#define FMTSLI "%"PRISLI
-
 struct GC_sourceMaps {
   volatile GC_sourceSeqIndex curSourceSeqIndex;
-  /* profileLabelInfos is an array of cardinality profileLabelInfosLength;
-   * the collection of profile labels embedded in output program
-   * paired with an index into sourceSeqs of the sequence of source
-   * names corresponding to the code pointer; only used with
-   * ProfileTimeLabel.
-   */
-  GC_profileLabelInfo profileLabelInfos;
-  uint32_t profileLabelInfosLength;
   /* sourceNames is an array of cardinality sourceNamesLength;
    * the collection of source names from the program.
    */

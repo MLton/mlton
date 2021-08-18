@@ -422,9 +422,9 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, static
       fun tyconTy (opt: ObjptrTycon.t): ObjectType.t =
          Vector.sub (objectTypes, ObjptrTycon.index opt)
       val () = checkScopes p
-      val (finishCheckProfileLabel, checkFrameSourceSeqIndex) =
+      val checkFrameSourceSeqIndex =
          case profileInfo of
-            NONE => (fn () => (), fn _ => ())
+            NONE => (fn _ => ())
           | SOME {sourceMaps, getFrameSourceSeqIndex} =>
             let
                val _ =
@@ -432,31 +432,25 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, static
                   ("sourceMaps",
                    fn () => SourceMaps.check sourceMaps,
                    fn () => SourceMaps.layout sourceMaps)
-               val (_, finishCheckProfileLabel) =
-                  SourceMaps.checkProfileLabel sourceMaps
             in
-               (fn () => Err.check
-                         ("finishCheckProfileLabel",
-                          finishCheckProfileLabel,
-                          fn () => SourceMaps.layout sourceMaps),
-                fn (l, k) => let
-                                fun chk b =
-                                   Err.check
-                                   ("getFrameSourceSeqIndex",
-                                    fn () => (case (b, getFrameSourceSeqIndex l) of
-                                                 (true, SOME ssi) =>
-                                                    SourceMaps.checkSourceSeqIndex
-                                                    (sourceMaps, ssi)
-                                               | (false, NONE) => true
-                                               | _ => false),
-                                    fn () => Label.layout l)
-                             in
-                                case k of
-                                   Kind.Cont _ => chk true
-                                 | Kind.CReturn _ => chk true
-                                 | Kind.Handler => chk true
-                                 | Kind.Jump => chk false
-                             end)
+               fn (l, k) => let
+                               fun chk b =
+                                  Err.check
+                                  ("getFrameSourceSeqIndex",
+                                   fn () => (case (b, getFrameSourceSeqIndex l) of
+                                                (true, SOME ssi) =>
+                                                   SourceMaps.checkSourceSeqIndex
+                                                   (sourceMaps, ssi)
+                                              | (false, NONE) => true
+                                              | _ => false),
+                                   fn () => Label.layout l)
+                            in
+                               case k of
+                                  Kind.Cont _ => chk true
+                                | Kind.CReturn _ => chk true
+                                | Kind.Handler => chk true
+                                | Kind.Jump => chk false
+                            end
             end
       val {get = labelBlock: Label.t -> Block.t,
            set = setLabelBlock, ...} =
@@ -783,7 +777,6 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, static
           end,
           Function.layout)
       val _ = Program.clear p
-      val _ = finishCheckProfileLabel ()
       val _ = if !handlersImplemented
                  then checkHandlers p
                  else ()

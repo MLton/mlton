@@ -908,8 +908,7 @@ fun transform program =
        *)
       val sourceSeqs = Vector.fromListRev (!sourceSeqs)
       val sourceMaps =
-         SourceMaps.T {profileLabelInfos = Vector.new0 (),
-                       sourceNames = sourceNames,
+         SourceMaps.T {sourceNames = sourceNames,
                        sourceSeqs = sourceSeqs,
                        sources = sources}
    in
