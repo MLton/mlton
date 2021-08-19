@@ -170,8 +170,18 @@ for f in *.sml; do
                 extraFlags[${#extraFlags[@]}]="mark-compact-ratio 1.001 copy-ratio 1.001 live-ratio 1.001"
         ;;
         world*)
-                extraFlags[${#extraFlags[@]}]="-link-opt"
-                extraFlags[${#extraFlags[@]}]="-no-pie"
+                case $TARGET_OS in
+                darwin)
+                        extraFlags[${#extraFlags[@]}]="-link-opt"
+                        extraFlags[${#extraFlags[@]}]="-fno-pie"
+                        extraFlags[${#extraFlags[@]}]="-link-opt"
+                        extraFlags[${#extraFlags[@]}]="-fno-PIE"
+                ;;
+                *)
+                        extraFlags[${#extraFlags[@]}]="-link-opt"
+                        extraFlags[${#extraFlags[@]}]="-no-pie"
+                ;;
+                esac
         ;;
         esac
 
