@@ -332,20 +332,16 @@ void initProfilingTime (__attribute__ ((unused)) GC_state s) {
 
 #else
 
-static GC_state handleSigProfState;
-
-void GC_handleSigProf (code_pointer pc) {
-  GC_frameIndex frameIndex;
-  GC_state s;
+void GC_handleSigProf (__attribute__ ((unused)) int signum) {
+  GC_state s = MLton_gcState ();
   GC_sourceSeqIndex sourceSeqIndex;
 
-  s = handleSigProfState;
   if (DEBUG_PROFILE)
-    fprintf (stderr, "GC_handleSigProf ("FMTPTR")\n", (uintptr_t)pc);
+    fprintf (stderr, "GC_handleSigProf ()\n");
   if (s->amInGC)
     sourceSeqIndex = GC_SOURCE_SEQ_INDEX;
   else {
-    frameIndex = getCachedStackTopFrameIndex (s);
+    GC_frameIndex frameIndex = getCachedStackTopFrameIndex (s);
     if (C_FRAME == s->frameInfos[frameIndex].kind)
       sourceSeqIndex = s->frameInfos[frameIndex].sourceSeqIndex;
     else {
@@ -373,9 +369,15 @@ static void initProfilingTime (GC_state s) {
    * in order to have profiling cover as much as possible, you want it
    * to occur right after the sigaltstack() call.
    */
-  handleSigProfState = s;
   sigemptyset (&sa.sa_mask);
-  GC_setSigProfHandler (&sa);
+  sa.sa_flags = 0;
+#if HAS_SIGALTSTACK
+  sa.sa_flags |= SA_ONSTACK;
+#endif
+#ifdef SA_RESTART
+  sa.sa_flags |= SA_RESTART;
+#endif
+  sa.sa_handler = GC_handleSigProf;
   unless (sigaction (SIGPROF, &sa, NULL) == 0)
     diee ("initProfilingTime: sigaction failed");
   /* Start the SIGPROF timer. */

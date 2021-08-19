@@ -1199,20 +1199,23 @@ fun commandLine (args: string list): unit =
              orelse (Control.Elaborate.enabled Control.Elaborate.warnUnused)
              orelse (Control.Elaborate.default Control.Elaborate.warnUnused))
       val _ =
-         case targetOS of
-            Darwin => ()
-          | FreeBSD => ()
-          | HPUX => ()
-          | Linux => ()
-          | MinGW => ()
-          | NetBSD => ()
-          | OpenBSD => ()
-          | Solaris => ()
-          | _ =>
-               if !profile = ProfileTime
-                  then usage (concat ["can't use -profile time on ",
-                                      MLton.Platform.OS.toString targetOS])
-               else ()
+         if !profile = ProfileTime
+            then if (case targetOS of
+                        AIX => false
+                      | Cygwin => false
+                      | Darwin => true
+                      | FreeBSD => true
+                      | HPUX => true
+                      | Hurd => false
+                      | Linux => true
+                      | MinGW => true
+                      | NetBSD => true
+                      | OpenBSD => true
+                      | Solaris => true)
+                    then ()
+                    else usage (concat ["can't use -profile time on ",
+                                        MLton.Platform.OS.toString targetOS])
+            else ()
       val () =
          case !show of
             NONE => ()

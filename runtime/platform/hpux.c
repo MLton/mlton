@@ -80,19 +80,6 @@ void GC_displayMem (void) {
         }
 }
 
-
-static void catcher (__attribute__ ((unused)) int signo,
-                     __attribute__ ((unused)) siginfo_t* info,
-                     void* context) {
-        ucontext_t* ucp = (ucontext_t*)context;
-        GC_handleSigProf ((code_pointer) (ucp->uc_link));
-}
-
-void GC_setSigProfHandler (struct sigaction *sa) {
-        sa->sa_flags = SA_ONSTACK | SA_RESTART | SA_SIGINFO;
-        sa->sa_sigaction = (void (*)(int, siginfo_t*, void*))catcher;
-}
-
 size_t GC_pageSize (void) {
         struct pst_static buf;
 

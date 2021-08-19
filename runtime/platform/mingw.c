@@ -334,33 +334,6 @@ int setitimer (int which,
 
 }
 
-static void catcher(__attribute__ ((unused)) int signo) {
-        CONTEXT context;
-        context.ContextFlags = CONTEXT_CONTROL;
-
-        GetThreadContext(MainThread, &context);
-#if defined(__i386__)
-        GC_handleSigProf((code_pointer) context.Eip);
-#elif defined(__x86_64__)
-        GC_handleSigProf((code_pointer) context.Rip);
-#elif defined(_PPC_)
-        GC_handleSigProf((code_pointer) context.Iar);
-#elif defined(_ALPHA_)
-        GC_handleSigProf((code_pointer) context.Fir);
-#elif defined(MIPS)
-        GC_handleSigProf((code_pointer) context.Fir);
-#elif defined(ARM)
-        GC_handleSigProf((code_pointer) context.Pc);
-#else
-#error Profiling handler is missing for this architecture
-#endif
-}
-
-void GC_setSigProfHandler (struct sigaction *sa) {
-        sa->sa_flags = 0;
-        sa->sa_handler = (_sig_func_ptr)&catcher;
-}
-
 /* ------------------------------------------------- */
 /*                   MLton.Rlimit                    */
 /* ------------------------------------------------- */

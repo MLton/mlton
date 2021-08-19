@@ -1,4 +1,4 @@
-/* Copyright (C) 2010,2012,2016,2019 Matthew Fluet.
+/* Copyright (C) 2010,2012,2016,2019,2021 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -143,12 +143,6 @@ PRIVATE void GC_setCygwinUseMmap (bool b);
 PRIVATE void GC_diskBack_close (void *data);
 PRIVATE void GC_diskBack_read (void *data, pointer buf, size_t size);
 PRIVATE void *GC_diskBack_write (pointer buf, size_t size);
-
-/* ------------------------------------------------- */
-/*                SigProf Handler                    */
-/* ------------------------------------------------- */
-
-PRIVATE void GC_setSigProfHandler (struct sigaction *sa);
 
 /* ---------------------------------------------------------------- */
 /*                         MLton libraries                          */

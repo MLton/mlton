@@ -29,7 +29,6 @@
 #include <sys/wait.h>
 #include <syslog.h>
 #include <termios.h>
-#include <ucontext.h>
 #include <utime.h>
 
 #define HAS_FEROUND TRUE
