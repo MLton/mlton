@@ -83,7 +83,6 @@ val keepGenerated = ref false
 val keepO = ref false
 val output: string option ref = ref NONE
 val profileSet: bool ref = ref false
-val profileTimeSet: bool ref = ref false
 val runtimeArgs: string list ref = ref ["@MLton"]
 val show: Show.t option ref = ref NONE
 val stop = ref Place.OUT
@@ -747,11 +746,7 @@ fun makeOptions {usage} =
                             | "call" => ProfileCallStack
                             | "count" => ProfileCount
                             | "drop" => ProfileDrop
-                            | "label" => ProfileLabel
-                            | "time" => (profileTimeSet := true
-                                         ; ProfileTimeLabel)
-                            | "time-field" => ProfileTimeField
-                            | "time-label" => ProfileTimeLabel
+                            | "time" => ProfileTime
                             | _ => usage (concat
                                           ["invalid -profile arg: ", s]))))),
        (Expert, "profile-block", " {false|true}",
@@ -1080,12 +1075,6 @@ fun commandLine (args: string list): unit =
                                                " target"])
                       | SOME (Explicit cg) => cg)
       val () = MLton.Rusage.measureGC (!verbosity <> Silent)
-      val () = if !profileTimeSet
-                  then (case !codegen of
-                           X86Codegen => profile := ProfileTimeLabel
-                         | AMD64Codegen => profile := ProfileTimeLabel
-                         | _ => profile := ProfileTimeField)
-                  else ()
       val () = if !exnHistory
                   then (case !profile of
                            ProfileNone => profile := ProfileCallStack
@@ -1097,8 +1086,7 @@ fun commandLine (args: string list): unit =
                   then (case !profile of
                            ProfileAlloc => ()
                          | ProfileCount => ()
-                         | ProfileTimeField => ()
-                         | ProfileTimeLabel => ()
+                         | ProfileTime => ()
                          | _ => usage "can't use '-profile-stack true' without '-profile {alloc,count,time}'")
                   else ()
 
@@ -1211,21 +1199,23 @@ fun commandLine (args: string list): unit =
              orelse (Control.Elaborate.enabled Control.Elaborate.warnUnused)
              orelse (Control.Elaborate.default Control.Elaborate.warnUnused))
       val _ =
-         case targetOS of
-            Darwin => ()
-          | FreeBSD => ()
-          | HPUX => ()
-          | Linux => ()
-          | MinGW => ()
-          | NetBSD => ()
-          | OpenBSD => ()
-          | Solaris => ()
-          | _ =>
-               if !profile = ProfileTimeField
-                  orelse !profile = ProfileTimeLabel
-                  then usage (concat ["can't use -profile time on ",
-                                      MLton.Platform.OS.toString targetOS])
-               else ()
+         if !profile = ProfileTime
+            then if (case targetOS of
+                        AIX => false
+                      | Cygwin => false
+                      | Darwin => true
+                      | FreeBSD => true
+                      | HPUX => true
+                      | Hurd => false
+                      | Linux => true
+                      | MinGW => true
+                      | NetBSD => true
+                      | OpenBSD => true
+                      | Solaris => true)
+                    then ()
+                    else usage (concat ["can't use -profile time on ",
+                                        MLton.Platform.OS.toString targetOS])
+            else ()
       val () =
          case !show of
             NONE => ()

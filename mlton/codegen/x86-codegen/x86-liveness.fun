@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2021 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -458,7 +458,6 @@ struct
   structure LivenessBlock =
     struct
       datatype t = T of {entry: (Entry.t * Liveness.t),
-                         profileLabel: ProfileLabel.t option,
                          statements: (Assembly.t * Liveness.t) list,
                          transfer: Transfer.t * Liveness.t}
 
@@ -579,8 +578,7 @@ struct
              live = live}
           end
 
-      fun toLivenessBlock {block = Block.T {entry, profileLabel,
-                                            statements, transfer},
+      fun toLivenessBlock {block = Block.T {entry, statements, transfer},
                            liveInfo : LiveInfo.t}
         = let
             val {transfer, live}
@@ -597,7 +595,6 @@ struct
 
             val liveness_block
               = T {entry = entry,
-                   profileLabel = profileLabel,
                    statements = statements,
                    transfer = transfer}
           in 
@@ -698,15 +695,13 @@ struct
           "verifyLivenessBlock"
           verifyLivenessBlock
 
-      fun toBlock {block = T {entry, profileLabel,
-                              statements, transfer}}
+      fun toBlock {block = T {entry, statements, transfer}}
         = let
             val (entry,_) = entry
             val statements = List.map(statements, fn (asm,_) => asm)
             val (transfer,_) = transfer
           in 
             Block.T {entry = entry,
-                     profileLabel = profileLabel,
                      statements = statements,
                      transfer = transfer}
           end

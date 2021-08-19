@@ -56,8 +56,7 @@ Tak.tak1  tak.sml: 3      24.2%
 
 Time profiling is designed to have a very small performance impact.
 However, in some cases there will be a run-time performance cost,
-which may perturb the results.  There is more likely to be an impact
-with `-codegen c` than `-codegen native`.
+which may perturb the results.
 
 You can also compile with `-profile time -profile-branch true` to find
 out how much time is spent in each branch of a function; see

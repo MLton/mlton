@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2016-2017,2019-2020 Matthew Fluet.
+(* Copyright (C) 2009,2016-2017,2019-2021 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -24,8 +24,25 @@ structure Operand =
           | _ => false
    end
 
+local
+   exception Violation
+in
+   fun wrapOper (oper: 'a -> unit) = fn (arg: 'a) =>
+      (oper arg; true) handle Violation => false
+   fun forcePoint (addHandler', isTop, lowerBoundPoint) = fn (e, p) =>
+      let
+         val () =
+            addHandler'
+            (e, fn v =>
+             if isTop v then raise Violation else ())
+      in
+         lowerBoundPoint (e, p)
+      end
+end
+
 structure ExnStack =
    struct
+      local
       structure ZPoint =
          struct
             datatype t = Caller | Me
@@ -38,15 +55,61 @@ structure ExnStack =
 
             val layout = Layout.str o toString
          end
-
-      structure L = FlatLattice (structure Point = ZPoint)
+      structure L = FlatLatticeMono (structure Point = ZPoint
+                                     val bottom = "Bottom"
+                                     val top = "Top")
       open L
+      in
       structure Point = ZPoint
+      type t = t
+      val layout = layout
 
-      val me = point Point.Me
+      val newBottom = newBottom
+
+      val op <= = fn args => wrapOper (op <=) args
+      val lowerBoundPoint = fn args => wrapOper lowerBoundPoint args
+
+      val forcePoint = fn (e, p) =>
+         forcePoint (addHandler', Value.isTop, lowerBoundPoint) (e, p)
+
+      val newPoint = fn p =>
+         let
+            val e = newBottom ()
+            val _ = forcePoint (e, p)
+         in
+            e
+         end
+      val me = newPoint Point.Me
+      end
    end
 
-structure HandlerLat = FlatLattice (structure Point = Label)
+structure HandlerLat =
+   struct
+      local
+      structure L = FlatLatticeMono (structure Point = Label
+                                     val bottom = "Bottom"
+                                     val top = "Top")
+      open L
+      in
+      type t = t
+      val layout = layout
+
+      val newBottom = newBottom
+
+      val op <= = fn args => wrapOper (op <=) args
+
+      val forcePoint = fn (e, p) =>
+         forcePoint (addHandler', Value.isTop, wrapOper lowerBoundPoint) (e, p)
+
+      val newPoint = fn p =>
+         let
+            val e = newBottom ()
+            val _ = forcePoint (e, p)
+         in
+            e
+         end
+      end
+   end
 
 structure HandlerInfo =
    struct
@@ -58,9 +121,9 @@ structure HandlerInfo =
 
       fun new (b: Block.t): t =
          T {block = b,
-            global = ExnStack.new (),
-            handler = HandlerLat.new (),
-            slot = ExnStack.new (),
+            global = ExnStack.newBottom (),
+            handler = HandlerLat.newBottom (),
+            slot = ExnStack.newBottom (),
             visited = ref false}
 
       fun layout (T {global, handler, slot, ...}) =
@@ -127,7 +190,7 @@ fun checkHandlers (Program.T {functions, ...}) =
                                                 handler = handler,
                                                 slot = global}
                           | SetHandler l => {global = global,
-                                             handler = HandlerLat.point l,
+                                             handler = HandlerLat.newPoint l,
                                              slot = slot}
                           | _ => {global = global,
                                   handler = handler,
@@ -214,7 +277,7 @@ fun checkHandlers (Program.T {functions, ...}) =
                       | Switch s => Switch.foreachLabel (s, goto)
                   end
             val info as HandlerInfo.T {global, ...} = labelInfo start
-            val _ = ExnStack.forcePoint (global, ExnStack.Point.Caller)
+            val _ = ExnStack.lowerBoundPoint (global, ExnStack.Point.Caller)
             val _ = visitInfo info
             val _ =
                Control.diagnostics
@@ -359,9 +422,9 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, static
       fun tyconTy (opt: ObjptrTycon.t): ObjectType.t =
          Vector.sub (objectTypes, ObjptrTycon.index opt)
       val () = checkScopes p
-      val (checkProfileLabel, finishCheckProfileLabel, checkFrameSourceSeqIndex) =
+      val checkFrameSourceSeqIndex =
          case profileInfo of
-            NONE => (fn _ => false, fn () => (), fn _ => ())
+            NONE => (fn _ => ())
           | SOME {sourceMaps, getFrameSourceSeqIndex} =>
             let
                val _ =
@@ -369,32 +432,25 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, static
                   ("sourceMaps",
                    fn () => SourceMaps.check sourceMaps,
                    fn () => SourceMaps.layout sourceMaps)
-               val (checkProfileLabel, finishCheckProfileLabel) =
-                  SourceMaps.checkProfileLabel sourceMaps
             in
-               (checkProfileLabel,
-                fn () => Err.check
-                         ("finishCheckProfileLabel",
-                          finishCheckProfileLabel,
-                          fn () => SourceMaps.layout sourceMaps),
-                fn (l, k) => let
-                                fun chk b =
-                                   Err.check
-                                   ("getFrameSourceSeqIndex",
-                                    fn () => (case (b, getFrameSourceSeqIndex l) of
-                                                 (true, SOME ssi) =>
-                                                    SourceMaps.checkSourceSeqIndex
-                                                    (sourceMaps, ssi)
-                                               | (false, NONE) => true
-                                               | _ => false),
-                                    fn () => Label.layout l)
-                             in
-                                case k of
-                                   Kind.Cont _ => chk true
-                                 | Kind.CReturn _ => chk true
-                                 | Kind.Handler => chk true
-                                 | Kind.Jump => chk false
-                             end)
+               fn (l, k) => let
+                               fun chk b =
+                                  Err.check
+                                  ("getFrameSourceSeqIndex",
+                                   fn () => (case (b, getFrameSourceSeqIndex l) of
+                                                (true, SOME ssi) =>
+                                                   SourceMaps.checkSourceSeqIndex
+                                                   (sourceMaps, ssi)
+                                              | (false, NONE) => true
+                                              | _ => false),
+                                   fn () => Label.layout l)
+                            in
+                               case k of
+                                  Kind.Cont _ => chk true
+                                | Kind.CReturn _ => chk true
+                                | Kind.Handler => chk true
+                                | Kind.Jump => chk false
+                            end
             end
       val {get = labelBlock: Label.t -> Block.t,
            set = setLabelBlock, ...} =
@@ -480,7 +536,6 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, static
                        prim = prim,
                        result = Option.map (dst, #2)}))
              | Profile _ => true
-             | ProfileLabel pl => checkProfileLabel pl
              | SetExnStackLocal => (handlersImplemented := true; true)
              | SetExnStackSlot => (handlersImplemented := true; true)
              | SetHandler l =>
@@ -722,7 +777,6 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, static
           end,
           Function.layout)
       val _ = Program.clear p
-      val _ = finishCheckProfileLabel ()
       val _ = if !handlersImplemented
                  then checkHandlers p
                  else ()

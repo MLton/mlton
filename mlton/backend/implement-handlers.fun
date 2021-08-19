@@ -1,4 +1,4 @@
-(* Copyright (C) 2019-2020 Matthew Fluet.
+(* Copyright (C) 2019-2021 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -33,7 +33,9 @@ structure Function =
          end
    end
 
-structure HandlerLat = FlatLattice (structure Point = Label)
+structure HandlerLat = FlatLatticeMono (structure Point = Label
+                                        val bottom = "Bottom"
+                                        val top = "Top")
 
 structure ExnStack =
    struct
@@ -50,12 +52,14 @@ structure ExnStack =
 
                val layout = Layout.str o toString
             end
-         structure L = FlatLattice (structure Point = ZPoint)
+         structure L = FlatLatticeMono (structure Point = ZPoint
+                                        val bottom = "Bottom"
+                                        val top = "Top")
       in
          open L
          structure Point = ZPoint
-         val locall = point Point.Local
-         val slot = point Point.Slot
+         val locall = newPoint Point.Local
+         val slot = newPoint Point.Slot
       end
    end
 
@@ -72,8 +76,8 @@ fun flow (f: Function.t): Function.t =
            rem, ...} =
          Property.get (Label.plist,
                        Property.initFun (fn _ =>
-                                         {global = ExnStack.new (),
-                                          handler = HandlerLat.new ()}))
+                                         {global = ExnStack.newBottom (),
+                                          handler = HandlerLat.newBottom ()}))
       val _ =
          Vector.foreach
          (blocks, fn Block.T {label, transfer, ...} =>
@@ -83,7 +87,7 @@ fun flow (f: Function.t): Function.t =
                 if Label.equals (label, start)
                    then let
                            val _ = ExnStack.<= (ExnStack.slot, global)
-                           val _ = HandlerLat.forceTop handler
+                           val _ = HandlerLat.makeTop handler
                         in
                            ()
                         end
@@ -120,7 +124,7 @@ fun flow (f: Function.t): Function.t =
                                       fun doit {global = g'', handler = h''} =
                                          let
                                             val _ = ExnStack.<= (ExnStack.locall, g'')
-                                            val _ = HandlerLat.<= (HandlerLat.point l, h'')
+                                            val _ = HandlerLat.<= (HandlerLat.newPoint l, h'')
                                          in
                                             ()
                                          end

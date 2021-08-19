@@ -1,4 +1,4 @@
-(* Copyright (C) 2019-2020 Matthew Fluet.
+(* Copyright (C) 2019-2021 Matthew Fluet.
  * Copyright (C) 2002-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -150,10 +150,6 @@ fun transform program =
       datatype z = datatype Control.profile
       val profile = !Control.profile
       val profileStack: bool = !Control.profileStack
-      val needProfileLabels: bool =
-         profile = ProfileTimeLabel orelse profile = ProfileLabel
-      val needCodeCoverage: bool =
-         needProfileLabels orelse (profile = ProfileTimeField)
       val infoNodes: InfoNode.t list ref = ref []
       val sourceNames: string list ref = ref []
       local
@@ -311,16 +307,6 @@ fun transform program =
            set = setLabelInfo, ...} =
          Property.getSetOnce
          (Label.plist, Property.initRaise ("info", Label.layout))
-      val profileLabelInfos = ref []
-      fun profileLabelFromIndex (sourceSeqIndex: int): Statement.t =
-         let
-            val pl = ProfileLabel.new ()
-            val _ = List.push (profileLabelInfos,
-                               {profileLabel = pl,
-                                sourceSeqIndex = sourceSeqIndex})
-         in
-            Statement.ProfileLabel pl
-         end
       fun setCurSourceSeqIndexFromIndex (sourceSeqIndex: int): Statement.t =
          let
             val curSourceSeqIndex =
@@ -330,14 +316,6 @@ fun transform program =
             {dst = curSourceSeqIndex,
              src = Operand.word (WordX.fromInt (sourceSeqIndex, WordSize.word32))}
          end
-      fun codeCoverageStatementFromSourceSeqIndex (sourceSeqIndex: int): Statement.t =
-         if needProfileLabels
-            then profileLabelFromIndex sourceSeqIndex
-         else if profile = ProfileTimeField
-            then setCurSourceSeqIndexFromIndex sourceSeqIndex
-         else Error.bug "Profile.codeCoverageStatement"
-      fun codeCoverageStatement (sourceSeq: sourceSeq): Statement.t =
-         codeCoverageStatementFromSourceSeqIndex (sourceSeqIndex sourceSeq)
       local
          val {get: Func.t -> FuncInfo.t, ...} =
             Property.get (Func.plist, Property.initFun (fn _ => FuncInfo.new ()))
@@ -472,23 +450,15 @@ fun transform program =
                           statements: Statement.t list,
                           transfer: Transfer.t}: unit =
                let
-                  val (_, ncc, sourceSeq, statements) =
+                  val (_, lastStmtIsProfile, sourceSeq, statements) =
                      List.fold
                      (statements,
-                      (leaves, true, sourceSeq, []),
-                      fn (s, (leaves, ncc, sourceSeq, ss)) =>
+                      (leaves, false, sourceSeq, []),
+                      fn (s, (leaves, lastStmtIsProfile, sourceSeq, ss)) =>
                       case s of
                          Profile ps =>
                             let
-                               val (ncc, ss) =
-                                  if needCodeCoverage
-                                     then
-                                        if ncc
-                                           andalso not (List.isEmpty sourceSeq)
-                                           then (false,
-                                                 codeCoverageStatement sourceSeq :: ss)
-                                        else (true, ss)
-                                  else (false, ss)
+                               val sourceSeqPost = sourceSeq
                                val (leaves, sourceSeq) = 
                                   case ps of
                                      Enter _ =>
@@ -504,15 +474,29 @@ fun transform program =
                                                (leaves,
                                                 {sourceIndex = InfoNode.sourceIndex infoNode}
                                                 :: sourceSeq))
+                               val sourceSeqPre = sourceSeq
+                               val (lastStmtIsProfile, ss) =
+                                  if profile = ProfileTime
+                                     andalso sourceSeqPre <> sourceSeqPost
+                                     andalso not lastStmtIsProfile
+                                     andalso not (List.isEmpty sourceSeqPost)
+                                     then (true, setCurSourceSeqIndexFromIndex (sourceSeqIndex sourceSeqPost) :: ss)
+                                     else (lastStmtIsProfile, ss)
                             in
-                               (leaves, ncc, sourceSeq, ss)
+                               (leaves, lastStmtIsProfile, sourceSeq, ss)
                             end
-                       | _ => (leaves, true, sourceSeq, s :: ss))
+                       | _ => (leaves, false, sourceSeq, s :: ss))
                   val statements =
-                     if needCodeCoverage
-                        andalso ncc
-                        then codeCoverageStatement sourceSeq :: statements
-                     else statements
+                     if profile = ProfileTime
+                        andalso (case kind of
+                                    Kind.Cont _ => true
+                                  | Kind.CReturn {func} =>
+                                       CFunction.maySwitchThreadsTo func
+                                  | Kind.Handler => true
+                                  | _ => false)
+                        andalso not lastStmtIsProfile
+                        then setCurSourceSeqIndexFromIndex (sourceSeqIndex sourceSeq) :: statements
+                        else statements
                   val {args, kind, label} =
                      if profileStack andalso (case kind of
                                                  Kind.Cont _ => true
@@ -525,11 +509,6 @@ fun transform program =
                               val _ =
                                  addFrameSourceSeqIndex
                                  (newLabel, sourceSeqIndex sourceSeq)
-                              val statements =
-                                 if needCodeCoverage
-                                    then (Vector.new1
-                                          (codeCoverageStatement sourceSeq))
-                                 else Vector.new0 ()
                               val _ =
                                  List.push
                                  (blocks,
@@ -537,7 +516,7 @@ fun transform program =
                                   {args = args,
                                    kind = kind,
                                    label = label,
-                                   statements = statements,
+                                   statements = Vector.new0 (),
                                    transfer = 
                                    Transfer.CCall
                                    {args = Vector.new1 Operand.GCState,
@@ -584,17 +563,13 @@ fun transform program =
                   val newLabel = Label.newNoname ()
                   val sourceSeqIndex = sourceSeqIndex (Push.toSourceSeq pushes)
                   val _ = addFrameSourceSeqIndex (newLabel, sourceSeqIndex)
-                  val statements =
-                     if needCodeCoverage
-                        then Vector.new1 (codeCoverageStatementFromSourceSeqIndex sourceSeqIndex)
-                     else Vector.new0 ()
                   val _ =
                      List.push
                      (blocks,
                       Block.T {args = Vector.new0 (),
                                kind = Kind.CReturn {func = func},
                                label = newLabel,
-                               statements = statements,
+                               statements = Vector.new0 (),
                                transfer = transfer})
                in
                   Transfer.CCall {args = Vector.new1 Operand.GCState,
@@ -630,19 +605,26 @@ fun transform program =
                            case first of
                               NONE => statements
                             | SOME (firstLabel, firstEnter) =>
-                                 if Label.equals (label, firstLabel)
-                                    then
-                                       Vector.removeFirst
-                                       (statements, fn s =>
-                                        case s of
-                                           Profile (Enter _) => true
-                                         | _ => false)
-                                 else if Label.equals (label, start)
-                                         then
-                                            Vector.concat
-                                            [Vector.new1 firstEnter,
-                                             statements]
-                                      else statements
+                                 let
+                                    val statements =
+                                       if Label.equals (label, firstLabel)
+                                          then
+                                             Vector.removeFirst
+                                             (statements, fn s =>
+                                              case s of
+                                                 Profile (Enter _) => true
+                                               | _ => false)
+                                          else statements
+                                    val statements =
+                                       if Label.equals (label, start)
+                                          then
+                                             Vector.concat
+                                             [Vector.new1 firstEnter,
+                                              statements]
+                                          else statements
+                                 in
+                                    statements
+                                 end
                         val _ =
                            let
                               fun add pushes = addFramePushes (label, pushes)
@@ -912,7 +894,6 @@ fun transform program =
          end
       val (main, functions) = (doFunction main, List.map (functions, doFunction))
       val _ = addFuncEdges ()
-      val profileLabelInfos = Vector.fromList (!profileLabelInfos)
       val sourceNames = Vector.fromListRev (!sourceNames)
       val sources =
          Vector.map
@@ -927,8 +908,7 @@ fun transform program =
        *)
       val sourceSeqs = Vector.fromListRev (!sourceSeqs)
       val sourceMaps =
-         SourceMaps.T {profileLabelInfos = profileLabelInfos,
-                       sourceNames = sourceNames,
+         SourceMaps.T {sourceNames = sourceNames,
                        sourceSeqs = sourceSeqs,
                        sources = sources}
    in

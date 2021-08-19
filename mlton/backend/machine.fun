@@ -414,7 +414,6 @@ structure Statement =
        | PrimApp of {args: Operand.t vector,
                      dst: Operand.t option,
                      prim: Type.t Prim.t}
-       | ProfileLabel of ProfileLabel.t
 
       val layout =
          let
@@ -437,8 +436,6 @@ structure Statement =
                            [seq [Operand.layout z, str " ="],
                             indent (rest, 2)]
                   end
-             | ProfileLabel l =>
-                  seq [str "ProfileLabel ", ProfileLabel.layout l]
          end
 
       fun move (arg as {dst, src}) =
@@ -532,7 +529,6 @@ structure Statement =
             Move {dst, src} => f (dst, f (src, ac))
           | PrimApp {args, dst, ...} =>
                Vector.fold (args, Option.fold (dst, ac, f), f)
-          | _ => ac
 
       fun foldDefs (s, a, f) =
          case s of
@@ -540,7 +536,6 @@ structure Statement =
           | PrimApp {dst, ...} => (case dst of
                                       NONE => a
                                     | SOME z => f (z, a))
-          | _ => a
    end
 
 structure Live =
@@ -918,9 +913,8 @@ structure Program =
                          sourceMaps: SourceMaps.t option,
                          staticHeaps: StaticHeap.Kind.t -> StaticHeap.Object.t vector}
 
-      fun clear (T {chunks, sourceMaps, ...}) =
-         (List.foreach (chunks, Chunk.clear)
-          ; Option.app (sourceMaps, SourceMaps.clear))
+      fun clear (T {chunks, ...}) =
+         List.foreach (chunks, Chunk.clear)
 
       fun layouts (T {chunks, frameInfos, frameOffsets, handlesSignals,
                       main = {label, ...},
@@ -1049,46 +1043,16 @@ structure Program =
                      T {chunks, frameInfos, frameOffsets, globals = {objptrs, reals, ...},
                         maxFrameSize, objectTypes, sourceMaps, staticHeaps, ...}) =
          let
-            val (checkProfileLabel, finishCheckProfileLabel) =
-               Err.check'
+            val _ =
+               Err.check
                ("sourceMaps",
                 fn () =>
                 (case (!Control.profile, sourceMaps) of
-                    (Control.ProfileNone, NONE) => SOME (fn _ => false, fn () => ())
-                  | (_, NONE) => NONE
-                  | (Control.ProfileNone, SOME _) => NONE
-                  | (_, SOME sourceMaps) =>
-                       let
-                          val (checkProfileLabel, finishCheckProfileLabel) =
-                             SourceMaps.checkProfileLabel sourceMaps
-                       in
-                          if SourceMaps.check sourceMaps
-                             then SOME (checkProfileLabel,
-                                        fn () => Err.check
-                                                 ("sourceMaps (finishCheckProfileLabel)",
-                                                  finishCheckProfileLabel,
-                                                  fn () => SourceMaps.layout sourceMaps))
-                             else NONE
-                       end),
+                    (Control.ProfileNone, NONE) => true
+                  | (_, NONE) => false
+                  | (Control.ProfileNone, SOME _) => false
+                  | (_, SOME sourceMaps) => SourceMaps.check sourceMaps),
                 fn () => Option.layout SourceMaps.layout sourceMaps)
-            val _ =
-               if !Control.profile = Control.ProfileTimeLabel
-                  then
-                     List.foreach
-                     (chunks, fn Chunk.T {blocks, ...} =>
-                      Vector.foreach
-                      (blocks, fn Block.T {kind, label, statements, ...} =>
-                       if (case kind of
-                              Kind.Func _ => true
-                            | _ => false)
-                          orelse (0 < Vector.length statements
-                                  andalso (case Vector.first statements of
-                                              Statement.ProfileLabel _ => true
-                                            | _ => false))
-                          then ()
-                       else print (concat ["missing profile info: ",
-                                           Label.toString label, "\n"])))
-               else ()
             val _ =
                Vector.foreachi
                (frameOffsets, fn (i, fo) =>
@@ -1449,10 +1413,6 @@ structure Program =
                               then alloc
                               else NONE
                         end
-                   | ProfileLabel pl =>
-                        if checkProfileLabel pl
-                           then SOME alloc
-                        else NONE
                end
             fun liveIsOk (live: Live.t vector,
                           a: Alloc.t): bool =
@@ -1748,7 +1708,6 @@ structure Program =
                    (blocks, fn b =>
                     check' (b, "block", blockOk, Block.layout))
                 end)
-            val _ = finishCheckProfileLabel ()
             val _ = clear program
          in
             ()

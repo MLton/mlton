@@ -7,130 +7,6 @@
  * See the file MLton-LICENSE for details.
  *)
 
-functor FlatLattice (S: FLAT_LATTICE_STRUCTS): FLAT_LATTICE =
-struct
-
-open S
-
-structure Elt =
-   struct
-      datatype t =
-         Bottom
-       | Point of Point.t
-       | Top
-
-      local
-         open Layout
-      in
-         val layout =
-            fn Bottom => str "Bottom"
-             | Point p => Point.layout p
-             | Top => str "Top"
-      end
-   end
-datatype z = datatype Elt.t
-
-datatype t = T of {lessThan: t list ref,
-                   upperBound: Point.t option ref,
-                   value: Elt.t ref}
-
-fun layout (T {value, ...}) = Elt.layout (!value)
-
-fun new () = T {lessThan = ref [],
-                upperBound = ref NONE,
-                value = ref Bottom}
-
-val isBottom =
-   fn (T {value = ref Bottom, ...}) => true
-    | _ => false
-val isPoint =
-   fn (T {value = ref (Point _), ...}) => true
-    | _ => false
-val isPointEq = 
-   fn (T {value = ref (Point p), ...}, p') => Point.equals (p, p')
-    | _ => false
-val getPoint =
-   fn (T {value = ref (Point p), ...}) => SOME p
-    | _ => NONE
-val isTop =
-   fn (T {value = ref Top, ...}) => true
-    | _ => false
-
-fun forceTop (T {upperBound, value, ...}): bool =
-   if isSome (!upperBound)
-      then false
-   else (value := Top; true)
-
-fun up (T {lessThan, upperBound, value, ...}, e: Elt.t): bool =
-   let
-      fun continue e = List.forall (!lessThan, fn z => up (z, e))
-      fun setTop () =
-         not (isSome (!upperBound))
-         andalso (value := Top
-                  ; continue Top)
-   in
-      case (!value, e) of
-         (_, Bottom) => true
-       | (Top, _) => true
-       | (_, Top) => setTop ()
-       | (Bottom, Point p) =>
-            (value := Point p
-             ; (case !upperBound of
-                   NONE => continue (Point p)
-                 | SOME p' =>
-                      Point.equals (p, p') andalso continue (Point p)))
-       | (Point p, Point p') => Point.equals (p, p') orelse setTop ()
-   end
-
-val op <= : t * t -> bool =
-   fn (T {lessThan, value, ...}, e) =>
-   (List.push (lessThan, e)
-    ; up (e, !value))
-
-val op <= =
-   Trace.trace2 ("FlatLattice.<=", layout, layout, Bool.layout)
-   (op <=)
-
-fun lowerBound (e, p): bool = up (e, Point p)
-
-val lowerBound =
-   Trace.trace2 ("FlatLattice.lowerBound", layout, Point.layout, Bool.layout)
-   lowerBound
-
-fun upperBound (T {upperBound = r, value, ...}, p): bool =
-   case !r of
-      NONE => (r := SOME p
-               ; (case !value of
-                     Bottom => true
-                   | Point p' => Point.equals (p, p')
-                   | Top => false))
-    | SOME p' => Point.equals (p, p')
-
-val upperBound =
-   Trace.trace2 ("FlatLattice.upperBound", layout, Point.layout, Bool.layout)
-   upperBound
-
-fun forcePoint (e, p) =
-   lowerBound (e, p) andalso upperBound (e, p)
-
-val forcePoint =
-   Trace.trace2 ("FlatLattice.forcePoint", layout, Point.layout, Bool.layout)
-   forcePoint
-
-fun point p =
-   let
-      val e = new ()
-      val _ = forcePoint (e, p)
-   in
-      e
-   end
-
-val point = Trace.trace ("FlatLattice.point", Point.layout, layout) point
-
-end
-
-
-
 functor FlatLatticeRec (S: FLAT_LATTICE_REC_STRUCTS): FLAT_LATTICE_REC =
 struct
 
@@ -160,6 +36,15 @@ structure Value =
              | Point p => Point.layout layoutA p
              | Top => str top
       end
+
+      fun isBottom v =
+         case v of Bottom => true | _ => false
+      fun isPoint v =
+         case v of Point _ => true | _ => false
+      fun isPointEq equalsA (v, p') =
+         case v of Point p => Point.equals equalsA (p, p') | _ => false
+      fun isTop v =
+         case v of Top => true | _ => false
 
       fun coerce {clone = cloneA, coerce = coerceA, equals = equalsA}
                  {from, to}: 'a t option =
@@ -231,22 +116,10 @@ fun getPoint e =
    case value e of
       Value.Point p => SOME p
     | _ => NONE
-fun isBottom e =
-   case value e of
-      Value.Bottom => true
-    | _ => false
-fun isPoint e =
-   case value e of
-      Value.Point _ => true
-    | _ => false
-fun isPointEq equalsA (e, p') =
-   case value e of
-      Value.Point p => Point.equals equalsA (p, p')
-    | _ => false
-fun isTop e =
-   case value e of
-      Value.Top  => true
-    | _ => false
+fun isBottom e = Value.isBottom (value e)
+fun isPoint e = Value.isPoint (value e)
+fun isPointEq equalsA (e, p') = Value.isPointEq equalsA (value e, p')
+fun isTop e = Value.isTop (value e)
 
 fun layout layoutA e =
    Value.layout layoutA (value e)
@@ -281,7 +154,7 @@ fun makeTop (T {handlers, lessThan, value}): unit =
             ; handlers := Handlers.empty)
 
 fun 'a lowerBoundPoint {clone = cloneA, coerce = coerceA, equals = equalsA} =
-   (fn {from: 'a Point.t, to = to as T {lessThan, handlers, value}: 'a t} =>
+   (fn (e' as T {lessThan, handlers, value}: 'a t, from) =>
     let
        val pointClone = Point.clone {clone = cloneA, equals = equalsA}
        val pointCoerce = Point.coerce {clone = cloneA, coerce = coerceA, equals = equalsA}
@@ -294,14 +167,14 @@ fun 'a lowerBoundPoint {clone = cloneA, coerce = coerceA, equals = equalsA} =
              in
                 if pointCoerce {from = from, to = p}
                    then (value := Value.Point p
-                         ; List.foreach (!lessThan, fn e => lowerBoundPoint {from = p, to = e})
+                         ; List.foreach (!lessThan, fn e => lowerBoundPoint (e, p))
                          ; Handlers.run (!handlers))
-                   else makeTop to
+                   else makeTop e'
              end
         | Value.Point p =>
              if pointCoerce {from = from, to = p}
                 then ()
-                else makeTop to
+                else makeTop e'
         | Value.Top => ()
     end)
 
@@ -313,7 +186,7 @@ fun 'a setPoint {clone = cloneA, coerce = coerceA, equals = equalsA} =
        case !value of
           Value.Bottom =>
              (value := Value.Point p
-              ; List.foreach (!lessThan, fn e => lowerBoundPoint {from = p, to = e})
+              ; List.foreach (!lessThan, fn e => lowerBoundPoint (e, p))
               ; Handlers.run (!handlers))
         | _ => Error.bug "FlatLatticeRec.setPoint"
     end)
@@ -328,7 +201,7 @@ fun 'a coerce {clone = cloneA, coerce = coerceA, equals = equalsA} =
             in
                case !value of
                   Value.Bottom => pushLessThan ()
-                | Value.Point from => (pushLessThan (); lowerBoundPoint {from = from, to = to})
+                | Value.Point from => (pushLessThan (); lowerBoundPoint (to, from))
                 | Value.Top => makeTop to
             end)
 
@@ -339,7 +212,7 @@ fun lowerBound {clone = cloneA, coerce = coerceA, equals = equalsA} =
     in
        case v of
           Value.Bottom => ()
-        | Value.Point p => lowerBoundPoint {from = p, to = e'}
+        | Value.Point p => lowerBoundPoint (e', p)
         | Value.Top => makeTop e'
     end)
 
@@ -411,6 +284,10 @@ struct
          lowerBound {clone = err ("lowerBound", "clone"),
                      coerce = err ("lowerBound", "coerce"),
                      equals = equalsA}
+      val lowerBoundPoint = fn {equals = equalsA} =>
+         lowerBoundPoint {clone = err ("lowerBound", "clone"),
+                          coerce = err ("lowerBound", "coerce"),
+                          equals = equalsA}
       val unify = fn {equals = equalsA} =>
          unify {clone = err ("unify", "clone"),
                 coerce = err ("unify", "coerce"),
@@ -443,6 +320,8 @@ struct
       val isPointEq = fn args => isPointEq (err ("isPointEq", "equals")) args
       val lowerBound = fn args =>
          lowerBound {equals = err ("lowerBound", "equals")} args
+      val lowerBoundPoint = fn args =>
+         lowerBoundPoint {equals = err ("lowerBound", "equals")} args
       val unify = fn args =>
          unify {equals = err ("unify", "equals")} args
       val op<= = fn (from, to) => coerce {from = from, to = to}
@@ -477,8 +356,13 @@ struct
       structure Value =
          struct
             open Value
+            type t = Void.t t
             val layout = layout (Void.layout "Value.layout")
          end
       val layout = layout (Void.layout "layout")
+      val new: Value.t -> t = new
+      val newBottom: unit -> t = newBottom
+      val newPoint: Point.t -> t = newPoint
+      val newTop: unit -> t = newTop
    end
 end

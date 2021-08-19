@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019 Matthew Fluet.
+(* Copyright (C) 2009,2019,2021 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -454,18 +454,12 @@ signature X86_PSEUDO =
                               size: int option} option} -> t
       end
 
-    structure ProfileLabel :
-      sig
-        type t
-      end
-
     structure Block :
       sig       
         type t'
         val mkBlock': {entry: Entry.t option,
                        statements: Assembly.t list,
                        transfer: Transfer.t option} -> t'
-        val mkProfileBlock': {profileLabel: ProfileLabel.t} -> t'
         val printBlock' : t' -> unit
 
         type t

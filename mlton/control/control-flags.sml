@@ -1427,9 +1427,7 @@ structure Profile =
        | ProfileCallStack
        | ProfileCount
        | ProfileDrop
-       | ProfileLabel
-       | ProfileTimeField
-       | ProfileTimeLabel
+       | ProfileTime
 
       val toString =
          fn ProfileNone => "None"
@@ -1437,9 +1435,7 @@ structure Profile =
           | ProfileCallStack => "CallStack"
           | ProfileCount => "Count"
           | ProfileDrop => "Drop"
-          | ProfileLabel => "Label"
-          | ProfileTimeField => "TimeField"
-          | ProfileTimeLabel => "TimeLabel"
+          | ProfileTime => "Time"
    end
 
 datatype profile = datatype Profile.t
@@ -1744,7 +1740,6 @@ val buildConsts =
                                            ProfileNone => false
                                          | ProfileCallStack => false
                                          | ProfileDrop => false
-                                         | ProfileLabel => false
                                          | _ => true))]
        val table = StrMap.new ()
        val () = List.foreach (buildConsts, fn (name, value) =>

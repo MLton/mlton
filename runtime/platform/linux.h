@@ -74,9 +74,6 @@ typedef unsigned long int nfds_t;
 #undef PRIxPTR
 #define PRIxPTR "x"
 
-/* Needed for fetching program counter */
-#include <platform/android_ucontext.h>
-
 /* Android is missing these methods: */
 #undef tcdrain
 #undef ctermid

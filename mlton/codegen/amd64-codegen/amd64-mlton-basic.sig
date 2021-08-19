@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019 Matthew Fluet.
+(* Copyright (C) 2009,2019,2021 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -14,7 +14,6 @@ signature AMD64_MLTON_BASIC_STRUCTS =
     sharing amd64.CFunction = Machine.CFunction
     sharing amd64.CType = Machine.CType
     sharing amd64.Label = Machine.Label
-    sharing amd64.ProfileLabel = Machine.ProfileLabel
     sharing amd64.RepType = Machine.Type
     sharing amd64.Runtime = Machine.Runtime
     sharing amd64.WordSize = Machine.WordSize

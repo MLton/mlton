@@ -1,4 +1,4 @@
-(* Copyright (C) 2017,2019-2020 Matthew Fluet.
+(* Copyright (C) 2017,2019-2021 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -23,7 +23,6 @@ signature PRIM
 signature PRIM_CONS
 signature PRIM_TYCONS
 signature PROD
-signature PROFILE_LABEL
 signature REAL_SIZE
 signature REAL_X
 signature RECORD
@@ -117,8 +116,6 @@ return.sig
 return.fun
 source-info.sig
 source-info.fun
-profile-label.sig
-profile-label.fun
 profile-exp.sig
 profile-exp.fun
 source-maps.sig

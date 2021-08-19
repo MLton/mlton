@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2013-2014,2017,2019-2020 Matthew Fluet.
+(* Copyright (C) 2009,2013-2014,2017,2019-2021 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -709,7 +709,6 @@ fun toMachine (rssa: Rssa.Program.t) =
                           {args = translateOperands args,
                            dst = Option.map (dst, varOperand o #1),
                            prim = prim}))
-             | ProfileLabel s => Vector.new1 (M.Statement.ProfileLabel s)
              | SetExnStackLocal =>
                   (* ExnStack = stackTop + (handlerOffset + LABEL_SIZE) - StackBottom; *)
                   let
@@ -1158,26 +1157,8 @@ fun toMachine (rssa: Rssa.Program.t) =
                            end
                       | R.Kind.Handler => doContHandler M.Kind.Handler
                       | R.Kind.Jump => (M.Kind.Jump, live, Vector.new0 ())
-                  val (first, statements) =
-                     if !Control.profile = Control.ProfileTimeLabel
-                        then
-                           case (if Vector.isEmpty statements
-                                    then NONE
-                                 else (case Vector.first statements of
-                                          s as M.Statement.ProfileLabel _ =>
-                                             SOME s
-                                        | _ => NONE)) of
-                              NONE =>
-                                 Error.bug
-                                 (concat ["Backend.genBlock: ",
-                                          "missing ProfileLabel in ",
-                                          Label.toString label])
-                            | SOME s =>
-                                 (Vector.new1 s,
-                                  Vector.dropPrefix (statements, 1))
-                     else (Vector.new0 (), statements)
                   val statements =
-                     Vector.concat [first, pre, statements, preTransfer]
+                     Vector.concat [pre, statements, preTransfer]
                in
                   Chunk.newBlock (labelChunk label,
                                   {kind = kind,

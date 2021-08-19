@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019 Matthew Fluet.
+(* Copyright (C) 2009,2019,2021 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -12,7 +12,6 @@ signature AMD64_STRUCTS =
     structure CFunction: C_FUNCTION
     structure CType: C_TYPE
     structure Label: ID
-    structure ProfileLabel: PROFILE_LABEL 
     structure RepType: REP_TYPE
     structure Runtime: RUNTIME
     structure WordSize: WORD_SIZE
@@ -1103,27 +1102,17 @@ signature AMD64 =
                              size: int option} option} -> t
       end
 
-    structure ProfileLabel :
-      sig
-        include PROFILE_LABEL
-        val toAssembly : t -> Assembly.t list
-        val toAssemblyOpt : t option -> Assembly.t list
-      end
-
     structure Block :
       sig
         datatype t' = T' of {entry: Entry.t option,
-                             profileLabel: ProfileLabel.t option,
                              statements: Assembly.t list,
                              transfer: Transfer.t option}
         val mkBlock': {entry: Entry.t option,
                        statements: Assembly.t list,
                        transfer: Transfer.t option} -> t'
-        val mkProfileBlock': {profileLabel: ProfileLabel.t} -> t'
         val printBlock' : t' -> unit
 
         datatype t = T of {entry: Entry.t,
-                           profileLabel: ProfileLabel.t option,
                            statements: Assembly.t list,
                            transfer: Transfer.t}
         val printBlock : t -> unit

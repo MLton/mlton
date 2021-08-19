@@ -43,10 +43,7 @@ the profiler uses the `Enter`/`Leave` statements to infer the "local"
 portion of the control stack at each program point.  The profiler then
 removes the ++Enter++s/++Leave++s and inserts different information
 depending on which kind of profiling is happening.  For time profiling
-(with the <:AMD64Codegen:> and <:X86Codegen:>), the profiler inserts labels that cover the
-code (i.e. each statement has a unique label in its basic block that
-prefixes it) and associates each label with the local control stack.
-For time profiling (with the <:CCodegen:> and <:LLVMCodegen:>), the profiler
+(with the <:AMD64Codegen:> and <:X86Codegen:>), the profiler
 inserts code that sets a global field that records the local control
 stack.  For allocation profiling, the profiler inserts calls to a C
 function that will maintain byte counts.  With stack profiling, the
@@ -63,8 +60,8 @@ functions.
 
 For time profiling, the profiler catches the `SIGPROF` signal 100
 times per second and increments the appropriate counter, determined by
-looking at the label prefixing the current program counter and mapping
-that to the current source function.
+looking at the global field that records the local control stack and
+mapping that to the current source function.
 
 == Caveats ==
 

@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2021 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -24,7 +24,6 @@ signature AMD64_SIMPLIFY =
 
     val simplify : {chunk : amd64.Chunk.t,
                     optimize : int,
-                    delProfileLabel : amd64.ProfileLabel.t -> unit,
                     liveInfo : amd64Liveness.LiveInfo.t,
                     jumpInfo : amd64JumpInfo.t} -> amd64.Chunk.t
 

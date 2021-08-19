@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014-2017,2019-2020 Matthew Fluet.
+(* Copyright (C) 2009,2014-2017,2019-2021 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -752,9 +752,7 @@ fun outputDeclarations
                 | Control.ProfileCallStack => "PROFILE_NONE"
                 | Control.ProfileCount => "PROFILE_COUNT"
                 | Control.ProfileDrop => "PROFILE_NONE"
-                | Control.ProfileLabel => "PROFILE_NONE"
-                | Control.ProfileTimeField => "PROFILE_TIME_FIELD"
-                | Control.ProfileTimeLabel => "PROFILE_TIME_LABEL"
+                | Control.ProfileTime => "PROFILE_TIME"
          in
             print (C.callNoSemi (case !Control.format of
                                     Control.Archive => "MLtonLibrary"
@@ -776,19 +774,10 @@ fun outputDeclarations
          else ()
       fun declareSourceMaps () =
          let
-            fun declareProfileLabel (l, print) =
-               print (C.call ("DeclareProfileLabel", [ProfileLabel.toString l]))
-            fun doit (SourceMaps.T {profileLabelInfos, sourceNames, sourceSeqs, sources}) =
-               (Vector.foreach (profileLabelInfos, fn {profileLabel, ...} =>
-                                declareProfileLabel (profileLabel, print))
-                ; declareArray ("struct GC_profileLabelInfo", "profileLabelInfos",
-                                {firstElemLen = false, oneline = false},
-                                profileLabelInfos, fn (_, {profileLabel, sourceSeqIndex}) =>
-                                concat ["{(pointer)&", ProfileLabel.toString profileLabel, ", ",
-                                        C.int sourceSeqIndex, "}"])
-                ; declareArray ("const char * const", "sourceNames",
-                                {firstElemLen = false, oneline = false},
-                                sourceNames, fn (_, s) => C.string s)
+            fun doit (SourceMaps.T {sourceNames, sourceSeqs, sources}) =
+               (declareArray ("const char * const", "sourceNames",
+                              {firstElemLen = false, oneline = false},
+                              sourceNames, fn (_, s) => C.string s)
                 ; Vector.foreachi (sourceSeqs, fn (i, ss) =>
                                    declareArray ("const GC_sourceIndex", concat ["sourceSeq", C.int i],
                                                  {firstElemLen = true, oneline = true},
@@ -950,8 +939,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
          end
 
       val amTimeProfiling =
-         !Control.profile = Control.ProfileTimeField
-         orelse !Control.profile = Control.ProfileTimeLabel
+         !Control.profile = Control.ProfileTime
 
       fun declareChunk (chunkLabel, print: string -> unit) =
          (print "PRIVATE extern ChunkFn_t "
@@ -1114,7 +1102,6 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                               srcIsMem = false,
                                               ty = Operand.ty dst})
                         end
-                   | ProfileLabel _ => Error.bug "CCodegen.outputStatement: ProfileLabel"
                end
             local
                fun mk (dst, src) () =

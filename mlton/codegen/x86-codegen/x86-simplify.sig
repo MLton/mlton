@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2021 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -24,7 +24,6 @@ signature X86_SIMPLIFY =
 
     val simplify : {chunk : x86.Chunk.t,
                     optimize : int,
-                    delProfileLabel : x86.ProfileLabel.t -> unit,
                     liveInfo : x86Liveness.LiveInfo.t,
                     jumpInfo : x86JumpInfo.t} -> x86.Chunk.t
 

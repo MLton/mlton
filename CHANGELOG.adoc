@@ -1,5 +1,26 @@
 = CHANGELOG
 
+== Version YYYYMMDD
+
+Here are the changes from version 20210117 to YYYYMMDD.
+
+=== Summary
+
+=== Details
+
+* 2021-08-19
+  ** Simplify time profiling by eliminating the `ProfileTimeLabel`
+  approach and supporting infrastructure.  The `ProfileTimeField`
+  approach remains and works with all codegens and most platforms.
+
+* 2021-08-03
+  ** Updates to `ConstantPropagation` to support constant folding and
+  propagation of `WordXVector` constants.
+
+* 2021-02-15
+  ** Fix `-pi-style pie` compile-time option.  Thanks to Jo Henke for
+  the patch.
+
 == Version 20210117
 
 Here are the changes from version 20201002 to 20210117.
@@ -22,7 +43,7 @@ Here are the changes from version 20201002 to 20210117.
 
 * 2021-01-15
   ** Fix bug in `Makefile.binary` detecting default position-independent style.
-  Thanks to Greg Werbin for the but report.
+  Thanks to Greg Werbin for the bug report.
   ** Preliminary support for `arm64-darwin` ("Apple Silicon").  Thanks to Chris
   Cannam for the patches.
 

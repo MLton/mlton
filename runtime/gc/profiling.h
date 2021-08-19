@@ -1,4 +1,4 @@
-/* Copyright (C) 2012,2019 Matthew Fluet.
+/* Copyright (C) 2012,2019,2021 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -13,8 +13,7 @@ typedef enum {
   PROFILE_ALLOC,
   PROFILE_COUNT,
   PROFILE_NONE,
-  PROFILE_TIME_FIELD,
-  PROFILE_TIME_LABEL
+  PROFILE_TIME,
 } GC_profileKind;
 
 /* If profileStack, then there is one struct GC_profileStack for each
@@ -108,6 +107,7 @@ PRIVATE GC_profileData profileMalloc (GC_state s);
 PRIVATE void profileWrite (GC_state s, GC_profileData p, const char* fileName);
 PRIVATE void profileFree (GC_state s, GC_profileData p);
 
+static void GC_handleSigProf ();
 static void setProfTimer (suseconds_t usec);
 static void initProfilingTime (GC_state s);
 static void atexitForProfiling (void);
@@ -132,5 +132,3 @@ PRIVATE void GC_profileFree (GC_state s, GC_profileData p);
 PRIVATE void GC_profileDone (GC_state s);
 
 #endif /* (defined (MLTON_GC_INTERNAL_BASIS)) */
-
-PRIVATE void GC_handleSigProf (code_pointer pc);

@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2017,2019-2020 Matthew Fluet.
+(* Copyright (C) 2009,2017,2019-2021 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -65,7 +65,6 @@ signature RSSA_TREE =
                            dst: (Var.t * Type.t) option,
                            prim: Type.t Prim.t}
              | Profile of ProfileExp.t
-             | ProfileLabel of ProfileLabel.t
              | SetExnStackLocal
              | SetExnStackSlot
              | SetHandler of Label.t (* label must be of Handler kind. *)
