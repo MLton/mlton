@@ -16,6 +16,9 @@ jobs:
         codegen: ["amd64", "c", "llvm"]
         cc: ["gcc", "clang"]
         exclude:
+          - os: ubuntu-latest
+            codegen: "amd64"
+            cc: "clang"
           - os: macos-latest
             cc: "gcc"
           - os: macos-latest
