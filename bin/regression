@@ -63,21 +63,20 @@ tmp=/tmp/z.regression.$$
 PATH="$bin:$PATH"
 
 # whitelist tests that are known to fail (will still run but exit cleanly)
-declare -A whitelisted
-if [ -a  $src/regression/whitelist ] ; then
-  while read f ; do
-    echo "whitelisting $f..."
-    whitelisted["$f"]=1
-  done <$src/regression/whitelist
+if [ -f "$src/regression/whitelist" ]; then
+    while read f; do
+        whitelist[${#whitelist[@]}]="$f"
+    done < "$src/regression/whitelist"
 fi
 
 isWhitelisted () {
   local f=$1
-  if [[ ${whitelisted["$f"]} ]] ; then
-    echo 1
-  else
-    echo 0
-  fi
+  for (( i = 0 ; i < ${#whitelist[@]} ; i++ )); do
+      if [ "$f" = "${whitelist[$i]}" ]; then
+          return 0
+      fi
+  done
+  return 1
 }
 
 compFail () {
@@ -101,8 +100,8 @@ if $fail; then
         for f in fail/*.sml; do
                 echo "testing $f"
                 ( "$mlton" "${flags[@]}" -stop tc "$f" >/dev/null 2>&1 &&
-                        echo "compilation of $f should have failed but did not" && ignore=$(isWhitelisted $f) && if [ "$ignore" -eq 0 ] ; then exitFail=true ; fi ) ||
-                        true
+                        (echo "compilation of $f should have failed but did not"; isWhitelisted $f || exitFail=true) ) ||
+                true
         done
 
         if [ "$exitFail" = true ] ; then
@@ -158,7 +157,7 @@ for f in *.sml; do
         serialize)
                 continue
         ;;
-	      esac
+        esac
         echo "testing $f"
         unset extraFlags
         case "$f" in
@@ -217,10 +216,7 @@ for f in *.sml; do
                         fi
                         if ! diff "$compare" "$tmp"; then
                                 echo "$f: difference with ${flags[*]} ${extraFlags[*]}"
-                                ignore=$(isWhitelisted $f)
-                                if [ "$ignore" -eq 0 ] ; then
-                                  exitFail=true
-                                fi
+                                isWhitelisted $f || exitFail=true
                         fi
                 fi
         fi
