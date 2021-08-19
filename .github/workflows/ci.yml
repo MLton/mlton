@@ -58,7 +58,15 @@ jobs:
           if [[ "${{ matrix.codegen }}" == "llvm" ]]; then llvm-as -version; opt -version; llc -version; fi
 
       - name: Build
-        run: make CC="${{ matrix.cc }}" OLD_MLTON_RUNTIME_ARGS="ram-slop 0.90" MLTON_RUNTIME_ARGS="ram-slop 0.90" MLTON_COMPILE_ARGS="-codegen ${{ matrix.codegen }}" WITH_ALL_RUNTIME=true WITH_DBG_RUNTIME=false all
+        run: |
+          make \
+            CC="${{ matrix.cc }}" \
+            OLD_MLTON_RUNTIME_ARGS="ram-slop 0.90" \
+            MLTON_RUNTIME_ARGS="ram-slop 0.90" \
+            MLTON_COMPILE_ARGS="-codegen ${{ matrix.codegen }}" \
+            WITH_ALL_RUNTIME=true \
+            WITH_DBG_RUNTIME=false \
+            all
 
       - name: Test
         run: ./bin/regression -codegen ${{ matrix.codegen }}
