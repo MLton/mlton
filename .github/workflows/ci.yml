@@ -4,7 +4,6 @@ name: CI
 on:
   push:
   pull_request:
-    branches: [ $default-branch ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
@@ -17,10 +16,11 @@ jobs:
         codegen: ["amd64", "c", "llvm"]
         cc: ["gcc", "clang"]
         exclude:
+          - os: ubuntu-latest
+            codegen: "amd64"
+            cc: "clang"
           - os: macos-latest
             cc: "gcc"
-          - os: macos-latest
-            codegen: "llvm"
           - codegen: "llvm"
             cc: "gcc"
 
@@ -43,7 +43,8 @@ jobs:
         run: |
           brew update
           brew install mlton
-          if [[ "${{ matrix.codegen }}" == "llvm" ]]; then brew install llvm; echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH; fi
+          echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH
+          echo "WITH_GMP_DIR=/usr/local" >> $GITHUB_ENV
 
       - name: Check versions
         run: |
@@ -56,7 +57,16 @@ jobs:
           if [[ "${{ matrix.codegen }}" == "llvm" ]]; then llvm-as -version; opt -version; llc -version; fi
 
       - name: Build
-        run: make CC="${{ matrix.cc }}" OLD_MLTON_RUNTIME_ARGS="ram-slop 0.90" MLTON_RUNTIME_ARGS="ram-slop 0.90" MLTON_COMPILE_ARGS="-codegen ${{ matrix.codegen }}" WITH_DBG_RUNTIME=false all
+        run: |
+          make \
+            CC="${{ matrix.cc }}" \
+            OLD_MLTON_RUNTIME_ARGS="ram-slop 0.90" \
+            MLTON_RUNTIME_ARGS="ram-slop 0.90" \
+            MLTON_COMPILE_ARGS="-codegen ${{ matrix.codegen }}" \
+            $( if [[ -n "$WITH_GMP_DIR" ]]; then echo "WITH_GMP_DIR=$WITH_GMP_DIR"; fi ) \
+            WITH_ALL_RUNTIME=true \
+            WITH_DBG_RUNTIME=false \
+            all
 
       - name: Test
         run: ./bin/regression -codegen ${{ matrix.codegen }}
