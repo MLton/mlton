@@ -77,6 +77,9 @@ jobs:
       MSYSTEM: MINGW64
       MSYS2_PATH_TYPE: inherit
     steps:
+      - name: Config git
+        run: |
+          git config --global core.autocrlf false
       - uses: actions/checkout@v2
       - name: Install dependencies (windows)
         run: |
