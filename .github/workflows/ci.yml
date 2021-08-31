@@ -70,3 +70,29 @@ jobs:
 
       - name: Test
         run: ./bin/regression -codegen ${{ matrix.codegen }}
+
+  build-test-windows:
+    runs-on: windows-latest
+    env:
+      MSYSTEM: MINGW64
+      MSYS2_PATH_TYPE: inherit
+    steps:
+      - name: Config git
+        run: |
+          git config --global core.autocrlf false
+      - uses: actions/checkout@v2
+      - name: Install dependencies (windows)
+        run: |
+          echo "PWD=$(c:\msys64\usr\bin\cygpath -u $(pwd))" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          echo "$(pwd)/old-mlton/mlton-20200817-amd64-mingw/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          mkdir old-mlton && cd old-mlton
+          curl.exe -L https://github.com/MLton/mlton/releases/download/on-20200817-release/mlton-20200817-amd64-mingw.tgz --output old-mlton.tgz
+          7z x old-mlton.tgz
+          7z x old-mlton.tar
+      - name: Check versions (windows)
+        run: |
+          c:\msys64\usr\bin\bash -l -c "mlton"
+      - name: Build (windows)
+        run: c:\msys64\usr\bin\bash -l -c "cd $env:PWD && make OLD_MLTON_RUNTIME_ARGS='ram-slop 0.90' MLTON_RUNTIME_ARGS='ram-slop 0.90' MLTON_COMPILE_ARGS='-codegen amd64' WITH_DBG_RUNTIME=false all"
+      - name: Test (windows)
+        run: c:\msys64\usr\bin\bash -l -c "cd $env:PWD && ./bin/regression -codegen amd64"
