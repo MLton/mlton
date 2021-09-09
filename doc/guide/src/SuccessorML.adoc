@@ -66,7 +66,8 @@ val i = 4__327__829
 val r = 6.022_140_9e23
 ----
 
-** <!Anchor(ExtendedTextConsts)> Extended Text Constants: +allowExtendedTextConsts {false|true}+
+** <!Anchor(ExtendedTextConsts)>
+Extended Text Constants: +allowExtendedTextConsts {false|true}+
 +
 Allow characters with integer codes &ge; 128 and &le; 247 that
 correspond to syntactically well-formed UTF-8 byte sequences in text
