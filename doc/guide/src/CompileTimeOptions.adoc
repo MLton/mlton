@@ -26,12 +26,12 @@ The default varies depending on architecture.
 
 * ++-as-opt __option__++
 +
-Pass _option_ to `gcc` when compiling assembler code.  If you wish to
-pass an option to the assembler, you must use `gcc`'s `-Wa,` syntax.
+Pass _option_ to `cc` when compiling assembler code.  If you wish to
+pass an option to the assembler, you must use ``cc``'s `-Wa,` syntax.
 
 * ++-cc-opt __option__++
 +
-Pass _option_ to `gcc` when compiling C code.
+Pass _option_ to `cc` when compiling C code.
 
 * ++-codegen {native|amd64|c|llvm|x86}++
 +
@@ -107,17 +107,17 @@ the output file is saved.
 +
 [cols="^25%,<75%"]
 |====
-| `g` | generated `.c` and `.s` files passed to `gcc` and generated `.ll` files passed to `llvm-as`
+| `g` | generated `.c` and `.s` files passed to `cc` and generated `.ll` files passed to `llvm-as`
 | `o` | object (`.o`) files
 |====
 
 * ++-link-opt __option__++
 +
-Pass _option_ to `gcc` when linking.  You can use this to specify
+Pass _option_ to `cc` when linking.  You can use this to specify
 library search paths, e.g. `-link-opt -Lpath`, and libraries to link
 with, e.g., `-link-opt -lfoo`, or even both at the same time,
 e.g. `-link-opt '-Lpath -lfoo'`.  If you wish to pass an option to the
-linker, you must use `gcc`'s `-Wl,` syntax, e.g.,
+linker, you must use `cc`'s `-Wl,` syntax, e.g.,
 `-link-opt '-Wl,--export-dynamic'`.
 
 * ++-llvm-as-opt __option__++
@@ -242,19 +242,19 @@ is running on.  To use any other target, you must first install a
 
 * ++-target-as-opt __target__ __option__++
 +
-Like `-as-opt`, this passes _option_ to `gcc` when compliling
+Like `-as-opt`, this passes _option_ to `cc` when compliling
 assembler code, except it only passes _option_ when the target
 architecture, operating system, or arch-os pair is _target_.
 
 * ++-target-cc-opt __target__ __option__++
 +
-Like `-cc-opt`, this passes _option_ to `gcc` when compiling C code,
+Like `-cc-opt`, this passes _option_ to `cc` when compiling C code,
 except it only passes _option_ when the target architecture, operating
 system, or arch-os pair is _target_.
 
 * ++-target-link-opt __target__ __option__++
 +
-Like `-link-opt`, this passes _option_ to `gcc` when linking, except
+Like `-link-opt`, this passes _option_ to `cc` when linking, except
 it only passes _option_ when the target architecture, operating
 system, or arch-os pair is _target_.
 
