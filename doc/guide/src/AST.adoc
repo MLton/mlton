@@ -50,7 +50,7 @@ interface is illustrated by the following code:
 
 [source,sml]
 ----
-sys::[./bin/InclGitFile.py mlton master mlton/ast/ast-core.sig 46:65]
+sys::[./bin/InclGitFile.py mlton master mlton/ast/ast-core.sig 47:68]
 ----
 
 Thus, AST nodes are cleanly separated from source locations.  By way
