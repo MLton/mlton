@@ -42,14 +42,13 @@ In the backend, just before translating to the <:Machine: Machine IL>,
 the profiler uses the `Enter`/`Leave` statements to infer the "local"
 portion of the control stack at each program point.  The profiler then
 removes the ++Enter++s/++Leave++s and inserts different information
-depending on which kind of profiling is happening.  For time profiling
-(with the <:AMD64Codegen:> and <:X86Codegen:>), the profiler
-inserts code that sets a global field that records the local control
-stack.  For allocation profiling, the profiler inserts calls to a C
-function that will maintain byte counts.  With stack profiling, the
-profiler also inserts a call to a C function at each nontail call in
-order to maintain information at runtime about what SML functions are
-on the stack.
+depending on which kind of profiling is happening.  For time
+profiling, the profiler inserts code that sets a global field that
+records the local control stack.  For allocation profiling, the
+profiler inserts calls to a C function that will maintain byte counts.
+With stack profiling, the profiler also inserts a call to a C function
+at each nontail call in order to maintain information at runtime about
+what SML functions are on the stack.
 
 At run time, the profiler associates counters (either clock ticks or
 byte counts) with source functions.  When the program finishes, the
