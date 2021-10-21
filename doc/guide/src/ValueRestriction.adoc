@@ -24,7 +24,7 @@ val f = let in fn x => x end
 val _ = (f "foo"; f 13)
 ----
 
-the expression `let in fn x => end end` is not syntactically a value
+the expression `let in fn x => x end` is not syntactically a value
 and so `f` can either have type `int -> int` or `string -> string`,
 but not `'a -> 'a`.  Hence, the program does not type check.
 
