@@ -26,5 +26,5 @@ Contributors may also add to the list of copyright holders in
 
 [source,text]
 ----
-sys::[./bin/InclGitFile.py mlton master doc/license/MLton-LICENSE]
+sys::[./bin/InclGitFile.py mlton master LICENSE]
 ----
