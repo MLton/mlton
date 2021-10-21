@@ -69,6 +69,7 @@ The definition of `printf` is even careful to not print anything until
 it is fully applied.  So, examples like the following will work as
 expected.
 
+[source,sml]
 ----
 val f: int -> bool -> unit = printf `"Int="I`"  Bool="B`"\n" $ 13
 val () = f true
@@ -78,6 +79,7 @@ val () = f false
 It is also easy to define new format specifiers.  For example, suppose
 we wanted format specifiers for characters and strings.
 
+[source,sml]
 ----
 val C = fn z => spec Char.toString z
 val S = fn z => spec (fn s => s) z
@@ -86,6 +88,7 @@ val S = fn z => spec (fn s => s) z
 One can define format specifiers for more complex types, e.g. pairs of
 integers.
 
+[source,sml]
 ----
 val I2 =
    fn z =>
@@ -96,6 +99,7 @@ val I2 =
 
 Here's an example use.
 
+[source,sml]
 ----
 val () = printf `"Test "I2`"  a string "S`"\n" $ (1, 2) "hello"
 ----
@@ -139,6 +143,7 @@ Viewing `printf` as a fold opens up a number of possibilities.  For
 example, one can name parts of format strings using the fold idiom for
 naming sequences of steps.
 
+[source,sml]
 ----
 val IB = fn u => Fold.fold u `"Int="I`" Bool="B
 val () = printf IB`"  "IB`"\n" $ 1 true 3 false
@@ -146,6 +151,7 @@ val () = printf IB`"  "IB`"\n" $ 1 true 3 false
 
 One can even parametrize over partial format strings.
 
+[source,sml]
 ----
 fun XB X = fn u => Fold.fold u `"X="X`" Bool="B
 val () = printf (XB I)`"  "(XB R)`"\n" $ 1 true 2.0 false
