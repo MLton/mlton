@@ -98,7 +98,7 @@ It is simple to define `f` and `a`.  We define `f` as a
 folder whose base element is `()` and whose finish function does
 nothing.  We define `a` as the step function that does nothing.
 The only trickiness is that we must <:EtaExpansion:eta expand> the
-definition of `f` and `a` to work around the ValueRestriction;
+definition of `f` and `a` to work around the <:ValueRestriction:>;
 we frequently use eta expansion for this purpose without mention.
 
 [source,sml]
