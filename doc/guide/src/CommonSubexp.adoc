@@ -43,18 +43,3 @@ rewritten to
 val a = Array_uninit n
 val b = n
 ----
-
-`Arith` transfers are handled specially.  The _result_ of an `Arith`
-transfer can be used in _common_ `Arith` transfers that it dominates:
-
-* {empty}
-+
-----
-val l = (n + m) + (n + m)
-
-val k = (l + n) + ((l + m) handle Overflow => ((l + m)
-                                               handle Overflow => l + n))
-----
-+
-is rewritten so that `(n + m)` is computed exactly once, as are
-`(l + n)` and `(l + m)`.
