@@ -1,17 +1,16 @@
-ImplementProfiling
-==================
+= ImplementProfiling
 
-<:ImplementProfiling:> is a pass for the <:RSSA:>
-<:IntermediateLanguage:>, invoked from <:RSSASimplify:>.
+<<ImplementProfiling#>> is a pass for the <<RSSA#>>
+<<IntermediateLanguage#>>, invoked from <<RSSASimplify#>>.
 
-== Description ==
+== Description
 
 This pass implements profiling.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/backend/implement-profiling.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/backend/implement-profiling.fun[`implement-profiling.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
-See <:HowProfilingWorks:>.
+See <<HowProfilingWorks#>>.

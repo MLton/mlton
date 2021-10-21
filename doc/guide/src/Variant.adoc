@@ -1,5 +1,4 @@
-Variant
-=======
+= Variant
 
 A _variant_ is an arm of a datatype declaration.  For example, the
 datatype

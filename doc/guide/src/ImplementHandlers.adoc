@@ -1,17 +1,16 @@
-ImplementHandlers
-=================
+= ImplementHandlers
 
-<:ImplementHandlers:> is a pass for the <:RSSA:>
-<:IntermediateLanguage:>, invoked from <:RSSASimplify:>.
+<<ImplementHandlers#>> is a pass for the <<RSSA#>>
+<<IntermediateLanguage#>>, invoked from <<RSSASimplify#>>.
 
-== Description ==
+== Description
 
 This pass implements the (threaded) exception handler stack.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/backend/implement-handlers.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/backend/implement-handlers.fun[`implement-handlers.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 {empty}

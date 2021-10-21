@@ -1,9 +1,8 @@
-RunningOnAIX
-============
+= RunningOnAIX
 
 MLton runs fine on AIX.
 
-== Also see ==
+== Also see
 
-* <:RunningOnPowerPC:>
-* <:RunningOnPowerPC64:>
+* <<RunningOnPowerPC#>>
+* <<RunningOnPowerPC64#>>

@@ -1,13 +1,12 @@
-IntermediateLanguage
-====================
+= IntermediateLanguage
 
 MLton uses a number of intermediate languages in translating from the input source program to low-level code.  Here is a list in the order which they are translated to.
 
- * <:AST:>.  Pretty close to the source.
- * <:CoreML:>.  Explicitly typed, no module constructs.
- * <:XML:>.  Polymorphic, <:HigherOrder:>.
- * <:SXML:>.  SimplyTyped, <:HigherOrder:>.
- * <:SSA:>.  SimplyTyped, <:FirstOrder:>.
- * <:SSA2:>.  SimplyTyped, <:FirstOrder:>.
- * <:RSSA:>.  Explicit data representations.
- * <:Machine:>.  Untyped abstract machine.
+ * <<AST#>>.  Pretty close to the source.
+ * <<CoreML#>>.  Explicitly typed, no module constructs.
+ * <<XML#>>.  Polymorphic, <<HigherOrder#>>.
+ * <<SXML#>>.  SimplyTyped, <<HigherOrder#>>.
+ * <<SSA#>>.  SimplyTyped, <<FirstOrder#>>.
+ * <<SSA2#>>.  SimplyTyped, <<FirstOrder#>>.
+ * <<RSSA#>>.  Explicit data representations.
+ * <<Machine#>>.  Untyped abstract machine.

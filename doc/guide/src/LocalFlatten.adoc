@@ -1,20 +1,19 @@
-LocalFlatten
-============
+= LocalFlatten
 
-<:LocalFlatten:> is an optimization pass for the <:SSA:>
-<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+<<LocalFlatten#>> is an optimization pass for the <<SSA#>>
+<<IntermediateLanguage#>>, invoked from <<SSASimplify#>>.
 
-== Description ==
+== Description
 
-This pass flattens arguments to <:SSA:> blocks.
+This pass flattens arguments to <<SSA#>> blocks.
 
 A block argument is flattened as long as it only flows to selects and
 there is some tuple constructed in this function that flows to it.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/local-flatten.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/local-flatten.fun[`local-flatten.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 {empty}

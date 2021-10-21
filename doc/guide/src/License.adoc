@@ -1,7 +1,6 @@
-License
-=======
+= License
 
-== Web Site ==
+== Web Site
 In order to allow the maximum freedom for the future use of the
 content in this web site, we require that contributions to the web
 site be dedicated to the public domain.  That means that you can only
@@ -12,7 +11,7 @@ public domain.
 By contributing to this web site, you agree to dedicate your
 contribution to the public domain.
 
-== Software ==
+== Software
 
 As of 20050812, MLton software is licensed under the HPND-style
 license below.  The Historical Permission Notice and Disclaimer (HPND)
@@ -26,5 +25,5 @@ Contributors may also add to the list of copyright holders in
 
 [source,text]
 ----
-sys::[./bin/InclGitFile.py mlton master LICENSE]
+include::https://raw.github.com/MLton/mlton/master/LICENSE[indent=0]
 ----

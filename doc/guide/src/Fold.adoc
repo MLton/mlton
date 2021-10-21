@@ -1,13 +1,12 @@
-Fold
-====
+= Fold
 
 This page describes a technique that enables convenient syntax for a
 number of language features that are not explicitly supported by
-<:StandardML:Standard ML>, including: variable number of arguments,
-<:OptionalArguments:optional arguments and labeled arguments>,
-<:ArrayLiteral:array and vector literals>,
-<:FunctionalRecordUpdate:functional record update>,
-and (seemingly) dependently typed functions like <:Printf:printf> and scanf.
+<<StandardML#,Standard ML>>, including: variable number of arguments,
+<<OptionalArguments#,optional arguments and labeled arguments>>,
+<<ArrayLiteral#,array and vector literals>>,
+<<FunctionalRecordUpdate#,functional record update>>,
+and (seemingly) dependently typed functions like <<Printf#,printf>> and scanf.
 
 The key idea to _fold_ is to define functions `fold`, `step0`,
 and `$` such that the following equation holds.
@@ -71,7 +70,7 @@ fold (a, f) (step0 h1) (step0 h2) ... (step0 hn) $
 ----
 
 
-== Example: variable number of arguments ==
+== Example: variable number of arguments
 
 The simplest example of fold is accepting a variable number of
 (curried) arguments.  We'll define a function `f` and argument
@@ -97,8 +96,8 @@ implementation.
 It is simple to define `f` and `a`.  We define `f` as a
 folder whose base element is `()` and whose finish function does
 nothing.  We define `a` as the step function that does nothing.
-The only trickiness is that we must <:EtaExpansion:eta expand> the
-definition of `f` and `a` to work around the <:ValueRestriction:>;
+The only trickiness is that we must <<EtaExpansion#,eta expand>> the
+definition of `f` and `a` to work around the <<ValueRestriction#>>;
 we frequently use eta expansion for this purpose without mention.
 
 [source,sml]
@@ -111,7 +110,7 @@ val a = fn z => Fold.step0 step z
 ----
 
 One can easily apply the fold equation to verify by hand that `f`
-applied to any number of `a`'s evaluates to `()`.
+applied to any number of `a`&rsquo;s evaluates to `()`.
 
 [source,sml]
 ----
@@ -124,7 +123,7 @@ f a ... a $
 ----
 
 
-== Example: variable-argument sum ==
+== Example: variable-argument sum
 
 Let's look at an example that computes something: a variable-argument
 function `sum` and a stepper `a` such that
@@ -152,7 +151,7 @@ sum (a 1) (a 2) (a 3) $ = 6
 ----
 
 
-== Step1 ==
+== Step1
 
 It is sometimes syntactically convenient to omit the parentheses
 around the steps in a fold.  This is easily done by defining a new
@@ -198,14 +197,14 @@ val prod = fn z => Fold.fold (1, fn p => p) z
 val ` = fn z => Fold.step1 (fn (i, p) => i * p) z
 ----
 
-The functions `prod` and +&grave;+ satisfy the following equation.
+The functions `prod` and `{backtick}` satisfy the following equation.
 [source,sml]
 ----
 prod `i1 `i2 ... `im $ = i1 * i2 * ... * im
 ----
 
-Note that in SML, +&grave;i1+ is two different tokens, +&grave;+ and
-`i1`.  We often use +&grave;+ for an instance of a `step1` function
+Note that in SML, `{backtick}i1` is two different tokens, `{backtick}` and
+`i1`.  We often use `{backtick}` for an instance of a `step1` function
 because of its syntactic unobtrusiveness and because no space is
 required to separate it from an alphanumeric token.
 
@@ -219,7 +218,7 @@ prod (`i1) (`i2) ... (`im) $
 ----
 
 
-== Example: list literals ==
+== Example: list literals
 
 SML already has a syntax for list literals, e.g. `[w, x, y, z]`.
 However, using fold, we can define our own syntax.
@@ -256,11 +255,11 @@ definition of `list`, and to treat `list` as a truly variable
 argument function, performing an arbitrary computation after receiving
 all of its arguments.
 
-See <:ArrayLiteral:> for a similar use of `fold` that provides a
+See <<ArrayLiteral#>> for a similar use of `fold` that provides a
 syntax for array and vector literals, which are not built in to SML.
 
 
-== Fold right ==
+== Fold right
 
 Just as `fold` is analogous to a fold left, in which the functions
 are applied to the accumulator left-to-right, we can define a variant
@@ -322,7 +321,7 @@ structure Foldr =
 ----
 
 
-== Example: list literals via fold right ==
+== Example: list literals via fold right
 
 Revisiting the list literal example from earlier, we can use fold
 right to define a syntax for list literals that doesn't do a reversal.
@@ -347,7 +346,7 @@ MLton will simplify away all of the intermediate function composition,
 so the the fold-right approach will be more efficient.
 
 
-== Mixing steppers ==
+== Mixing steppers
 
 All of the examples so far have used the same step function throughout
 a fold.  This need not be the case.  For example, consider the
@@ -398,13 +397,13 @@ n `1 O `7 $ = 71
 
 That is, we've defined a syntax for writing octal integer constants,
 with a special syntax, `O`, for the zero digit (admittedly
-contrived, since one could just write +&grave;0+ instead of `O`).
+contrived, since one could just write `{backtick}0` instead of `O`).
 
-See <:NumericLiteral:> for a practical extension of this approach that
+See <<NumericLiteral#>> for a practical extension of this approach that
 supports numeric constants in any base and of any type.
 
 
-== (Seemingly) dependent types ==
+== (Seemingly) dependent types
 
 A normal list fold always returns the same type no matter what
 elements are in the list or how long the list is.  Variable-argument
@@ -460,7 +459,7 @@ As a reminder, this is well-typed SML.  You can check it out in any
 implementation.
 
 
-== (Seemingly) dependently-typed functional results ==
+== (Seemingly) dependently-typed functional results
 
 Fold is especially useful when it returns a curried function whose
 arity depends on the number of arguments.  For example, consider the
@@ -475,8 +474,8 @@ val I = fn z => Fold.step0 (fn f => fn i => fn x => f (x + i)) z
 The `makeSum` folder constructs a function whose arity depends on
 the number of `I` arguments and that adds together all of its
 arguments.  For example,
-`makeSum I $` is of type `int -> int` and
-`makeSum I I $` is of type `int -> int -> int`.
+`makeSum I $` is of type `int \-> int` and
+`makeSum I I $` is of type `int \-> int \-> int`.
 
 One can use the fold equation to verify that the `makeSum` works
 correctly.  For example, one can easily check by hand the following
@@ -501,8 +500,8 @@ val R = fn z => Foldr.step0 (fn f => fn x: real => fn r => f (x + r)) z
 ----
 
 With these definitions, `makeSum I R $` is of type
-`int -> real -> real` and `makeSum R I I $` is of type
-`real -> int -> int -> real`.  One can use the foldr equation to
+`int \-> real \-> real` and `makeSum R I I $` is of type
+`real \-> int \-> int \-> real`.  One can use the foldr equation to
 check the following equations.
 
 [source,sml]
@@ -517,11 +516,11 @@ in which the specifiers `I` and `R` appear is the same as the
 order in which the arguments appear.  Had we used `fold`, things
 would have been reversed.
 
-An extension of this idea is sufficient to define <:Printf:>-like
+An extension of this idea is sufficient to define <<Printf#>>-like
 functions in SML.
 
 
-== An idiom for combining steps ==
+== An idiom for combining steps
 
 It is sometimes useful to combine a number of steps together and name
 them as a single step.  As a simple example, suppose that one often
@@ -558,7 +557,7 @@ fold u (fn u => fold u s1 s2 ... sn)
 ----
 
 
-== Post composition ==
+== Post composition
 
 Suppose we already have a function defined via fold,
 `w = fold (a, f)`, and we would like to construct a new fold
@@ -612,10 +611,10 @@ post (w, g) s1 s2 ... sn $
 = g (w s1 ... sn $)
 ----
 
-For a practical example of post composition, see <:ArrayLiteral:>.
+For a practical example of post composition, see <<ArrayLiteral#>>.
 
 
-== Lift ==
+== Lift
 
 We now define a peculiar-looking function, `lift0`, that is,
 equationally speaking, equivalent to the identity function on a step
@@ -654,7 +653,7 @@ lies in the typing of fold expressions, which we have, until now, left
 unexplained.
 
 
-== Typing ==
+== Typing
 
 Perhaps the most surprising aspect of fold is that it can be checked
 by the SML type system.  The types involved in fold expressions are
@@ -734,8 +733,8 @@ type ('a, 'b, 'c, 'd) step = 'a * ('b -> 'c) -> 'd
 
 As a fold proceeds over its arguments, it maintains two things: the
 accumulator, of type `'a`, and the finishing function, of type
-`'b -> 'c`.  Each step in the fold is a function that takes those
-two pieces (i.e. `'a * ('b -> 'c)` and does something to them
+`'b \-> 'c`.  Each step in the fold is a function that takes those
+two pieces (i.e. `'a * ('b \-> 'c)` and does something to them
 (i.e. produces `'d`).  The result type of the step is completely
 left open to be filled in by type inference, as it is an arrow type
 that is capable of consuming the rest of the arguments to the fold.
@@ -756,8 +755,8 @@ type ('a, 'b, 'c, 'd) t = ('a * ('b -> 'c) -> 'd) -> 'd
 ----
 
 This shows that the only thing a folder does is to hand its
-accumulator (`'a`) and finisher (`'b -> 'c`) to the next step
-(`'a * ('b -> 'c) -> 'd`).  If SML had <:FirstClassPolymorphism:first-class polymorphism>,
+accumulator (`'a`) and finisher (`'b \-> 'c`) to the next step
+(`'a * ('b \-> 'c) \-> 'd`).  If SML had <<FirstClassPolymorphism#,first-class polymorphism>>,
 we would write the fold type as follows.
 
 [source,sml]
@@ -797,11 +796,11 @@ type ('a1, 'a2, 'b, 'c, 'd) step0 =
 ----
 
 So, a step function takes the accumulator (`'a1`) and finishing
-function (`'b -> 'c`), which will be passed to it by the previous
+function (`'b \-> 'c`), which will be passed to it by the previous
 folder, and transforms them to a new folder.  This new folder has a
 new accumulator (`'a2`) and the same finishing function.
 
-Again, imagining that SML had <:FirstClassPolymorphism:first-class polymorphism> makes the type
+Again, imagining that SML had <<FirstClassPolymorphism#,first-class polymorphism>> makes the type
 clearer.
 
 [source,sml]
@@ -811,7 +810,7 @@ type ('a1, 'a2) step0 =
 ----
 
 Thus, in essence, a `step0` function is a wrapper around a
-function of type `'a1 -> 'a2`, which is exactly what the
+function of type `'a1 \-> 'a2`, which is exactly what the
 definition of `step0` does.
 
 [source,sml]
@@ -831,7 +830,7 @@ type ('a11, 'a12, 'a2, 'b, 'c, 'd) step1 =
 ----
 
 A `step1` function takes the accumulator (`'a12`) and finisher
-(`'b -> 'c`) passed to it by the previous folder and transforms
+(`'b \-> 'c`) passed to it by the previous folder and transforms
 them into a function that consumes the next argument (`'a11`) and
 produces a folder that will continue the fold with a new accumulator
 (`'a2`) and the same finisher.
@@ -844,9 +843,9 @@ fun step1 (h: 'a11 * 'a12 -> 'a2)
    fold (h (a11, a12), f)
 ----
 
-With <:FirstClassPolymorphism:first-class polymorphism>, a `step1` function is more clearly
+With <<FirstClassPolymorphism#,first-class polymorphism>>, a `step1` function is more clearly
 seen as a wrapper around a binary function of type
-`'a11 * 'a12 -> 'a2`.
+`'a11 * 'a12 \-> 'a2`.
 
 [source,sml]
 ----
@@ -856,7 +855,7 @@ type ('a11, 'a12, 'a2) step1 =
 
 The type of `post` is clear: it takes a folder with a finishing
 function that produces type `'c1`, and a function of type
-`'c1 -> 'c2` to postcompose onto the folder.  It returns a new
+`'c1 \-> 'c2` to postcompose onto the folder.  It returns a new
 folder with a finishing function that produces type `'c2`.
 
 [source,sml]
@@ -872,7 +871,7 @@ fun post (w: ('a, 'b, 'c1, 'd) t,
 We will return to `lift0` after an example.
 
 
-== An example typing ==
+== An example typing
 
 Let's type check our simplest example, a variable-argument fold.
 Recall that we have a folder `f` and a stepper `a` defined as
@@ -990,9 +989,9 @@ each step, and the type of the finisher, which doesn't change from
 step to step.
 
 
-== Typing lift ==
+== Typing lift
 
-The lack of <:FirstClassPolymorphism:first-class polymorphism> in SML
+The lack of <<FirstClassPolymorphism#,first-class polymorphism>> in SML
 causes problems if one wants to use a step in a first-class way.
 Consider the following `double` function, which takes a step, `s`, and
 produces a composite step that does `s` twice.
@@ -1048,7 +1047,7 @@ Of course, we must eta wrap the call `double` in order to use its
 result, which is a step function, polymorphically.
 
 
-== Hiding the type of the accumulator ==
+== Hiding the type of the accumulator
 
 For clarity and to avoid mistakes, it can be useful to hide the type
 of the accumulator in a fold.  Reworking the simple variable-argument
@@ -1074,22 +1073,22 @@ matching to make it abstract.  This can prevent improper manipulation
 of the accumulator by client code and ensure invariants that the
 folder and stepper would like to maintain.
 
-For a practical example of this technique, see <:ArrayLiteral:>.
+For a practical example of this technique, see <<ArrayLiteral#>>.
 
 
-== Also see ==
+== Also see
 
 Fold has a number of practical applications.  Here are some of them.
 
-* <:ArrayLiteral:>
-* <:Fold01N:>
-* <:FunctionalRecordUpdate:>
-* <:NumericLiteral:>
-* <:OptionalArguments:>
-* <:Printf:>
-* <:VariableArityPolymorphism:>
+* <<ArrayLiteral#>>
+* <<Fold01N#>>
+* <<FunctionalRecordUpdate#>>
+* <<NumericLiteral#>>
+* <<OptionalArguments#>>
+* <<Printf#>>
+* <<VariableArityPolymorphism#>>
 
 There are a number of related techniques.  Here are some of them.
 
-* <:StaticSum:>
-* <:TypeIndexedValues:>
+* <<StaticSum#>>
+* <<TypeIndexedValues#>>

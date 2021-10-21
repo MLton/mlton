@@ -1,14 +1,13 @@
-RunningOnFreeBSD
-================
+= RunningOnFreeBSD
 
 MLton runs fine on http://www.freebsd.org/[FreeBSD].
 
-== Notes ==
+== Notes
 
 * MLton is available as a http://www.freebsd.org/[FreeBSD]
 http://www.freebsd.org/cgi/ports.cgi?query=mlton&stype=all[port].
 
-== Known issues ==
+== Known issues
 
 * Executables often run more slowly than on a comparable Linux
 machine.  We conjecture that part of this is due to costs due to heap

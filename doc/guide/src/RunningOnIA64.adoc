@@ -1,9 +1,8 @@
-RunningOnIA64
-=============
+= RunningOnIA64
 
 MLton runs fine on the IA64 architecture.
 
-== Notes ==
+== Notes
 
 * When compiling for IA64, MLton targets the 64-bit ABI.
 
@@ -15,5 +14,5 @@ You can change this by calling MLton with `-cc-opt -O2`.
 
 * When compiling for IA64, MLton uses `-align 8` by default.
 
-* On the IA64, the <:GMP:> library supports multiple ABIs.  See the
-<:GMP:> page for more details.
+* On the IA64, the <<GMP#>> library supports multiple ABIs.  See the
+<<GMP#>> page for more details.

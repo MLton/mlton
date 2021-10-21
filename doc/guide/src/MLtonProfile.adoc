@@ -1,5 +1,4 @@
-MLtonProfile
-============
+= MLtonProfile
 
 [source,sml]
 ----
@@ -20,7 +19,7 @@ signature MLTON_PROFILE =
    end
 ----
 
-`MLton.Profile` provides <:Profiling:> control from within the
+`MLton.Profile` provides <<Profiling#>> control from within the
 program, allowing you to profile individual portions of your
 program. With `MLton.Profile`, you can create many units of profiling
 data (essentially, mappings from functions to counts) during a run of
@@ -72,7 +71,7 @@ When compiling `-profile no`, `withData (d, f)` is equivalent to
 `f ()`.
 
 
-== Example ==
+== Example
 
 Here is an example, taken from the `examples/profiling` directory,
 showing how to profile the executions of the `fib` and `tak` functions

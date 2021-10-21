@@ -1,21 +1,20 @@
-LambdaFree
-==========
+= LambdaFree
 
-<:LambdaFree:> is an analysis pass for the <:SXML:>
-<:IntermediateLanguage:>, invoked from <:ClosureConvert:>.
+<<LambdaFree#>> is an analysis pass for the <<SXML#>>
+<<IntermediateLanguage#>>, invoked from <<ClosureConvert#>>.
 
-== Description ==
+== Description
 
-This pass descends the entire <:SXML:> program and attaches a property
+This pass descends the entire <<SXML#>> program and attaches a property
 to each `Lambda` `PrimExp.t` in the program.  Then, you can use
 `lambdaFree` and `lambdaRec` to get free variables of that `Lambda`.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/closure-convert/lambda-free.sig)>
-* <!ViewGitFile(mlton,master,mlton/closure-convert/lambda-free.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/closure-convert/lambda-free.sig[`lambda-free.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/closure-convert/lambda-free.fun[`lambda-free.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 For `Lambda`-s bound in a `Fun` dec, `lambdaFree` gives the union of
 the frees of the entire group of mutually recursive functions.  Hence,

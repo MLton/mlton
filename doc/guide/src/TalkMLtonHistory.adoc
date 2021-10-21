@@ -1,10 +1,9 @@
-TalkMLtonHistory
-================
+= TalkMLtonHistory
 
-== MLton History ==
+== MLton History
 
 [cols="<25%,<75%"]
-|====
+|===
 | April 1997  | Stephen Weeks wrote a defunctorizer for SML/NJ
 | Aug. 1997   | Begin independent compiler (`smlc`)
 | Oct. 1997   | Monomorphiser
@@ -14,12 +13,12 @@ TalkMLtonHistory
 | Jan. 2003   | MLton at 112,204 lines
 | Jan. 2004   | MLton at 122,299 lines
 | Nov. 2004   | MLton at 141,311 lines
-|====
+|===
 
 {nbsp} +
 {nbsp} +
 
-See <:History:>.
+See <<History#>>.
 
 {nbsp} +
 {nbsp} +
@@ -28,6 +27,6 @@ See <:History:>.
 '''
 
 [cols="<,>"]
-|====
-|<:TalkMLtonFeatures: Prev>|<:TalkDiveIn: Next>
-|====
+|===
+|<<TalkMLtonFeatures#,Prev>>|<<TalkDiveIn#,Next>>
+|===

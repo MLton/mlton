@@ -1,15 +1,14 @@
-Monomorphise
-============
+= Monomorphise
 
-<:Monomorphise:> is a translation pass from the <:XML:>
-<:IntermediateLanguage:> to the <:SXML:> <:IntermediateLanguage:>.
+<<Monomorphise#>> is a translation pass from the <<XML#>>
+<<IntermediateLanguage#>> to the <<SXML#>> <<IntermediateLanguage#>>.
 
-== Description ==
+== Description
 
 Monomorphisation eliminates polymorphic values and datatype
 declarations by duplicating them for each type at which they are used.
 
-Consider the following <:XML:> program.
+Consider the following <<XML#>> program.
 [source,sml]
 ----
 datatype 'a t = T of 'a
@@ -19,7 +18,7 @@ val b = f 2
 val z = f (3, 4)
 ----
 
-The result of monomorphising this program is the following <:SXML:> program:
+The result of monomorphising this program is the following <<SXML#>> program:
 [source,sml]
 ----
 datatype t1 = T1 of int
@@ -31,12 +30,12 @@ val b = f1 2
 val z = f2 (3, 4)
 ----
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/xml/monomorphise.sig)>
-* <!ViewGitFile(mlton,master,mlton/xml/monomorphise.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/xml/monomorphise.sig[`monomorphise.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/xml/monomorphise.fun[`monomorphise.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 The monomorphiser works by making one pass over the entire program.
 On the way down, it creates a cache for each variable declared in a
@@ -76,7 +75,7 @@ val b = g1 14
 val c = f2 (1, 2)
 ----
 
-== Pathological datatype declarations ==
+== Pathological datatype declarations
 
 SML allows a pathological polymorphic datatype declaration in which
 recursive uses of the defined type constructor are applied to

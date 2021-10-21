@@ -1,5 +1,4 @@
-CrossCompiling
-==============
+= CrossCompiling
 
 MLton's `-target` flag directs MLton to cross compile a program for
 another platform.  By default, MLton is only able to compile for the
@@ -41,7 +40,7 @@ will create `hello-world`, which you should be able to run on a Sparc
 Solaris machine.
 
 
-== Cross-compiling alternatives ==
+== Cross-compiling alternatives
 
 Building and maintaining a cross-compiler toolchain is complex.  You
 may find it simpler to use `mlton -keep g` to generate the files on

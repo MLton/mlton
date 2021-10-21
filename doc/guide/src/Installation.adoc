@@ -1,5 +1,4 @@
-Installation
-============
+= Installation
 
 MLton runs on a variety of platforms and is distributed in both source and
 binary form.
@@ -53,43 +52,43 @@ $ make PREFIX=/opt/mlton install
 
 Installation of MLton creates the following files and directories.
 
-* ++__prefix__/bin/mllex++
+* ``__prefix__/bin/mllex``
 +
-The <:MLLex:> lexer generator.
+The <<MLLex#>> lexer generator.
 
-* ++__prefix__/bin/mlnlffigen++
+* ``__prefix__/bin/mlnlffigen``
 +
-The <:MLNLFFI:ML-NLFFI> tool.
+The <<MLNLFFI#,ML-NLFFI>> tool.
 
-* ++__prefix__/bin/mlprof++
+* ``__prefix__/bin/mlprof``
 +
-A <:Profiling:> tool.
+A <<Profiling#>> tool.
 
-* ++__prefix__/bin/mlton++
+* ``__prefix__/bin/mlton``
 +
 A script to call the compiler.  This script may be moved anywhere,
-however, it makes use of files in ++__prefix__/lib/mlton++.
+however, it makes use of files in ``__prefix__/lib/mlton``.
 
-* ++__prefix__/bin/mlyacc++
+* ``__prefix__/bin/mlyacc``
 +
-The <:MLYacc:> parser generator.
+The <<MLYacc#>> parser generator.
 
-* ++__prefix__/lib/mlton++
+* ``__prefix__/lib/mlton``
 +
 Directory containing libraries and include files needed during compilation.
 
-* ++__prefix__/share/man/man1/{mllex,mlnlffigen,mlprof,mlton,mlyacc}.1++
+* ``__prefix__/share/man/man1/{mllex,mlnlffigen,mlprof,mlton,mlyacc}.1``
 +
 Man pages.
 
-* ++__prefix__/share/doc/mlton++
+* ``__prefix__/share/doc/mlton``
 +
 Directory containing the user guide for MLton, mllex, and mlyacc, as
 well as example SML programs (in the `examples` directory), and license
 information.
 
 
-== Hello, World! ==
+== Hello, World!
 
 Once you have installed MLton, create a file called `hello-world.sml`
 with the following contents.
@@ -104,10 +103,10 @@ mlton hello-world.sml
 ----
 
 You can now run `hello-world` to verify that it works.  There are more
-small examples in ++__prefix__/share/doc/mlton/examples++.
+small examples in ``__prefix__/share/doc/mlton/examples``.
 
 
-== Installation on Cygwin ==
+== Installation on Cygwin
 
 When installing the Cygwin `tgz`, you should use Cygwin's `bash` and
 `tar`.  The use of an archiving tool that is not aware of Cygwin's

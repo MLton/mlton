@@ -1,5 +1,4 @@
-MLtonPointer
-============
+= MLtonPointer
 
 [source,sml]
 ----
@@ -56,7 +55,7 @@ compares the pointer `p1` to the pointer `p2` (as addresses).
 returns the number of bytes `w` such that `add (p2, w) = p1`.  Does
 not check for overflow.
 
-* ++get__<X>__ (p, i)++
+* ``get__<X>__ (p, i)``
 +
 returns the object stored at index i of the array of _X_ objects
 pointed to by `p`.  For example, `getWord32 (p, 7)` returns the 32-bit
@@ -66,7 +65,7 @@ word stored 28 bytes beyond `p`.
 +
 the null pointer, i.e. 0.
 
-* ++set__<X>__ (p, i, v)++
+* ``set__<X>__ (p, i, v)``
 +
 assigns `v` to the object stored at index i of the array of _X_
 objects pointed to by `p`.  For example, `setWord32 (p, 7, w)` stores

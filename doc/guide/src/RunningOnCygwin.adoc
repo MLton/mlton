@@ -1,5 +1,4 @@
-RunningOnCygwin
-===============
+= RunningOnCygwin
 
 MLton runs on the http://www.cygwin.com/[Cygwin] emulation layer,
 which provides a Posix-like environment while running on Windows.  To
@@ -11,20 +10,20 @@ binary `tgz` in your Cygwin environment.
 To run MLton cross-compiled executables on Windows, you must install
 the Cygwin `dll` on the Windows machine.
 
-== Known issues ==
+== Known issues
 
 * Time profiling is disabled.
 
 * Cygwin's `mmap` emulation is less than perfect.  Sometimes it
 interacts badly with `Posix.Process.fork`.
 
-* The <!RawGitFile(mlton,master,regression/socket.sml)> regression
+* The https://raw.github.com/MLton/mlton/master/regression/socket.sml[`socket.sml`] regression
 test fails.  We suspect this is not a bug and is simply due to our
 test relying on a certain behavior when connecting to a socket that
 has not yet accepted, which is handled differently on Cygwin than
 other platforms.  Any help in understanding and resolving this issue
 is appreciated.
 
-== Also see ==
+== Also see
 
-* <:RunningOnMinGW:RunningOnMinGW>
+* <<RunningOnMinGW#,RunningOnMinGW>>

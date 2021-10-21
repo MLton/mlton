@@ -1,5 +1,4 @@
-SureshJagannathan
-=================
+= SureshJagannathan
 
 I am an Associate Professor at the http://www.cs.purdue.edu/[Department of Computer Science] at Purdue University.
 My research focus is in programming language design and implementation, concurrency,

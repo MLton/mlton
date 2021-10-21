@@ -1,8 +1,7 @@
-OptionalArguments
-=================
+= OptionalArguments
 
-<:StandardML:Standard ML> does not have built-in support for optional
-arguments.  Nevertheless, using <:Fold:>, it is easy to define
+<<StandardML#,Standard ML>> does not have built-in support for optional
+arguments.  Nevertheless, using <<Fold#>>, it is easy to define
 functions that take optional arguments.
 
 For example, suppose that we have the following definition of a
@@ -31,7 +30,7 @@ f' `2 `3.0 $
 f' `2 `3.0 `"four" $
 ----
 
-The optional argument indicator, +&grave;+, is not special syntax ---
+The optional argument indicator, `{backtick}`, is not special syntax ---
 it is a normal SML value, defined in the `OptionalArg` structure
 below.
 
@@ -52,7 +51,7 @@ The definition of `f'` is eta expanded as with all uses of fold.  A
 call to `OptionalArg.make` is supplied with a variable number of
 defaults (in this case, three), the end-of-arguments terminator, `$`,
 and the function to run, taking its arguments as an n-ary
-<:ProductType:product>.  In this case, the function simply converts
+<<ProductType#,product>>.  In this case, the function simply converts
 the product to an ordinary tuple and calls `f`.  Often, the function
 body will simply be written directly.
 
@@ -127,7 +126,7 @@ associative, so that the product argument pattern can be written
 without parentheses (since `&` is left associative).
 
 
-== Labelled optional arguments ==
+== Labelled optional arguments
 
 In addition to the positional optional arguments described above, it
 is sometimes useful to have labelled optional arguments.  These allow
@@ -136,7 +135,7 @@ a caller of `f` can supply values for `a` and `b` by name.  If no
 value is supplied then the default is used.
 
 Labelled optional arguments are a simple extension of
-<:FunctionalRecordUpdate:> using post composition.  Suppose, for
+<<FunctionalRecordUpdate#>> using post composition.  Suppose, for
 example, that one wants a function `f` with labelled optional
 arguments `a` and `b` with default values `0` and `0.0` respectively.
 If one has a functional-record-update function `updateAB` for records

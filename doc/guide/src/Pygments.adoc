@@ -1,12 +1,11 @@
-Pygments
-========
+= Pygments
 
 http://pygments.org/[Pygments] is a generic syntax highlighter.  Here is a _lexer_ for highlighting
-<:StandardML: Standard ML>.
+<<StandardML#,Standard ML>>.
 
-* <!ViewGitDir(mlton,master,ide/pygments/sml_lexer)> -- Provides highlighting of keywords, special constants, and (nested) comments.
+* https://github.com/MLton/mlton/tree/master/ide/pygments/sml_lexer[`sml_lexer`] -- Provides highlighting of keywords, special constants, and (nested) comments.
 
-== Install and use ==
+== Install and use
 * Checkout all files and install as a http://pygments.org/[Pygments] plugin.
 +
 ----
@@ -17,6 +16,6 @@ $ python setup.py install
 
 * Invoke `pygmentize` with `-l sml`.
 
-== Feedback ==
+== Feedback
 
-Comments and suggestions should be directed to <:MatthewFluet:>.
+Comments and suggestions should be directed to <<MatthewFluet#>>.

@@ -1,5 +1,4 @@
-MLtonReal
-=========
+= MLtonReal
 
 [source,sml]
 ----

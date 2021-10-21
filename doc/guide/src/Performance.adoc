@@ -1,22 +1,21 @@
-Performance
-===========
+= Performance
 
 This page compares the performance of a number of SML compilers on a
 range of benchmarks.
 
 This page compares the following SML compiler versions.
 
-* <:Home:MLton> 20171211 (git 79d4a623c)
-* <:MLKit:ML Kit> 4.3.12 (20171210)
-* <:MoscowML:Moscow ML> 2.10.1 ++ (git f529b33bb, 20170711)
-* <:PolyML:Poly/ML> 5.7.2 Testing (git 5.7.1-35-gcb73407a)
-* <:SMLNJ:SML/NJ> 110.81 (20170501)
+* <<Home#,MLton>> 20171211 (git 79d4a623c)
+* <<MLKit#,ML Kit>> 4.3.12 (20171210)
+* <<MoscowML#,Moscow ML>> 2.10.1 `` (git f529b33bb, 20170711)
+* <<PolyML#,Poly/ML>> 5.7.2 Testing (git 5.7.1-35-gcb73407a)
+* <<SMLNJ#,SML/NJ>> 110.81 (20170501)
 
-There are tables for <:#RunTime:run time>, <:#CodeSize:code size>, and
-<:#CompileTime:compile time>.
+There are tables for <<#RunTime,run time>>, <<#CodeSize,code size>>, and
+<<#CompileTime,compile time>>.
 
 
-== Setup ==
+== Setup
 
 All benchmarks were compiled and run on a 2.6 GHz Core i7-5600U with 16G of
 RAM.  The benchmarks were compiled with the default settings for all
@@ -27,21 +26,22 @@ The SML/NJ executables were produced by wrapping the entire program in
 a `local` declaration whose body performs an `SMLofNJ.exportFn`.
 
 For more details, or if you want to run the benchmarks yourself,
-please see the <!ViewGitDir(mlton,master,benchmark)> directory of our
-<:Sources:>.
+please see the https://github.com/MLton/mlton/tree/master/benchmark[`benchmark`] directory of our
+<<Sources#>>.
 
 All of the benchmarks are available for download from this page.  Some
 of the benchmarks were obtained from the SML/NJ benchmark suite.  Some
 of the benchmarks expect certain input files to exist in the
-<!ViewGitDir(mlton,master,benchmark/tests/DATA)> subdirectory.
+https://github.com/MLton/mlton/tree/master/benchmark/tests/DATA[`DATA`] subdirectory.
 
-* <!RawGitFile(mlton,master,benchmark/tests/hamlet.sml)> <!RawGitFile(mlton,master,benchmark/tests/DATA/hamlet-input.sml)>
-* <!RawGitFile(mlton,master,benchmark/tests/ray.sml)> <!RawGitFile(mlton,master,benchmark/tests/DATA/ray)>
-* <!RawGitFile(mlton,master,benchmark/tests/raytrace.sml)> <!RawGitFile(mlton,master,benchmark/tests/DATA/chess.gml)>
-* <!RawGitFile(mlton,master,benchmark/tests/vliw.sml)> <!RawGitFile(mlton,master,benchmark/tests/DATA/ndotprod.s)>
+* https://raw.github.com/MLton/mlton/master/benchmark/tests/hamlet.sml[`hamlet.sml`] https://raw.github.com/MLton/mlton/master/benchmark/tests/DATA/hamlet-input.sml[`hamlet-input.sml`]
+* https://raw.github.com/MLton/mlton/master/benchmark/tests/ray.sml[`ray.sml`] https://raw.github.com/MLton/mlton/master/benchmark/tests/DATA/ray[`ray`]
+* https://raw.github.com/MLton/mlton/master/benchmark/tests/raytrace.sml[`raytrace.sml`] https://raw.github.com/MLton/mlton/master/benchmark/tests/DATA/chess.gml[`chess.gml`]
+* https://raw.github.com/MLton/mlton/master/benchmark/tests/vliw.sml[`vliw.sml`] https://raw.github.com/MLton/mlton/master/benchmark/tests/DATA/ndotprod.s[`ndotprod.s`]
 
 
-== <!Anchor(RunTime)>Run-time ratio ==
+[#RunTime]
+== Run-time ratio
 
 The following table gives the ratio of the run time of each benchmark
 when compiled by another compiler to the run time when compiled by
@@ -52,62 +52,63 @@ entry means the compiler failed to compile the benchmark or that the
 benchmark failed to run.
 
 [options="header",cols="<2,5*<1"]
-|====
+|===
 |benchmark|MLton|ML-Kit|MosML|Poly/ML|SML/NJ
-|<!RawGitFile(mlton,master,benchmark/tests/barnes-hut.sml)>|1.00|10.11|19.36|2.98|1.24
-|<!RawGitFile(mlton,master,benchmark/tests/boyer.sml)>|1.00|*|7.87|1.22|1.75
-|<!RawGitFile(mlton,master,benchmark/tests/checksum.sml)>|1.00|30.79|*|10.94|9.08
-|<!RawGitFile(mlton,master,benchmark/tests/count-graphs.sml)>|1.00|6.51|40.42|2.34|2.32
-|<!RawGitFile(mlton,master,benchmark/tests/DLXSimulator.sml)>|1.00|0.97|*|0.60|*
-|<!RawGitFile(mlton,master,benchmark/tests/even-odd.sml)>|1.00|0.50|11.50|0.42|0.42
-|<!RawGitFile(mlton,master,benchmark/tests/fft.sml)>|1.00|7.35|81.51|4.03|1.19
-|<!RawGitFile(mlton,master,benchmark/tests/fib.sml)>|1.00|1.41|10.94|1.25|1.17
-|<!RawGitFile(mlton,master,benchmark/tests/flat-array.sml)>|1.00|7.19|68.33|5.28|13.16
-|<!RawGitFile(mlton,master,benchmark/tests/hamlet.sml)>|1.00|4.97|22.85|1.58|*
-|<!RawGitFile(mlton,master,benchmark/tests/imp-for.sml)>|1.00|4.99|57.84|3.34|4.67
-|<!RawGitFile(mlton,master,benchmark/tests/knuth-bendix.sml)>|1.00|*|18.43|3.18|3.06
-|<!RawGitFile(mlton,master,benchmark/tests/lexgen.sml)>|1.00|2.76|7.94|3.19|*
-|<!RawGitFile(mlton,master,benchmark/tests/life.sml)>|1.00|1.80|20.19|0.89|1.50
-|<!RawGitFile(mlton,master,benchmark/tests/logic.sml)>|1.00|5.10|11.06|1.15|1.27
-|<!RawGitFile(mlton,master,benchmark/tests/mandelbrot.sml)>|1.00|3.50|25.52|1.33|1.28
-|<!RawGitFile(mlton,master,benchmark/tests/matrix-multiply.sml)>|1.00|29.40|183.02|7.41|15.19
-|<!RawGitFile(mlton,master,benchmark/tests/md5.sml)>|1.00|95.18|*|32.61|47.47
-|<!RawGitFile(mlton,master,benchmark/tests/merge.sml)>|1.00|1.42|*|0.74|3.24
-|<!RawGitFile(mlton,master,benchmark/tests/mlyacc.sml)>|1.00|1.83|8.45|0.84|*
-|<!RawGitFile(mlton,master,benchmark/tests/model-elimination.sml)>|1.00|4.03|12.42|1.70|2.25
-|<!RawGitFile(mlton,master,benchmark/tests/mpuz.sml)>|1.00|3.73|57.44|2.05|3.22
-|<!RawGitFile(mlton,master,benchmark/tests/nucleic.sml)>|1.00|3.96|*|1.73|1.20
-|<!RawGitFile(mlton,master,benchmark/tests/output1.sml)>|1.00|6.26|30.85|7.82|5.99
-|<!RawGitFile(mlton,master,benchmark/tests/peek.sml)>|1.00|9.37|44.78|2.18|2.15
-|<!RawGitFile(mlton,master,benchmark/tests/psdes-random.sml)>|1.00|*|*|2.79|3.59
-|<!RawGitFile(mlton,master,benchmark/tests/ratio-regions.sml)>|1.00|5.68|165.56|3.92|37.52
-|<!RawGitFile(mlton,master,benchmark/tests/ray.sml)>|1.00|12.05|25.08|8.73|1.75
-|<!RawGitFile(mlton,master,benchmark/tests/raytrace.sml)>|1.00|*|*|2.11|3.33
-|<!RawGitFile(mlton,master,benchmark/tests/simple.sml)>|1.00|2.95|24.03|3.67|1.93
-|<!RawGitFile(mlton,master,benchmark/tests/smith-normal-form.sml)>|1.00|*|*|1.04|*
-|<!RawGitFile(mlton,master,benchmark/tests/string-concat.sml)>|1.00|1.88|28.01|0.70|2.67
-|<!RawGitFile(mlton,master,benchmark/tests/tailfib.sml)>|1.00|1.58|23.57|0.90|1.04
-|<!RawGitFile(mlton,master,benchmark/tests/tak.sml)>|1.00|1.69|15.90|1.57|2.01
-|<!RawGitFile(mlton,master,benchmark/tests/tensor.sml)>|1.00|*|*|*|2.07
-|<!RawGitFile(mlton,master,benchmark/tests/tsp.sml)>|1.00|2.19|66.76|3.27|1.48
-|<!RawGitFile(mlton,master,benchmark/tests/tyan.sml)>|1.00|*|19.43|1.08|1.03
-|<!RawGitFile(mlton,master,benchmark/tests/vector32-concat.sml)>|1.00|13.85|*|1.80|12.48
-|<!RawGitFile(mlton,master,benchmark/tests/vector64-concat.sml)>|1.00|*|*|*|13.92
-|<!RawGitFile(mlton,master,benchmark/tests/vector-rev.sml)>|1.00|7.88|68.85|9.39|68.80
-|<!RawGitFile(mlton,master,benchmark/tests/vliw.sml)>|1.00|2.46|15.39|1.43|1.55
-|<!RawGitFile(mlton,master,benchmark/tests/wc-input1.sml)>|1.00|6.00|*|29.25|9.54
-|<!RawGitFile(mlton,master,benchmark/tests/wc-scanStream.sml)>|1.00|80.43|*|19.45|8.71
-|<!RawGitFile(mlton,master,benchmark/tests/zebra.sml)>|1.00|4.62|35.56|1.68|9.97
-|<!RawGitFile(mlton,master,benchmark/tests/zern.sml)>|1.00|*|*|*|1.60
-|====
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/barnes-hut.sml[`barnes-hut.sml`]|1.00|10.11|19.36|2.98|1.24
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/boyer.sml[`boyer.sml`]|1.00|*|7.87|1.22|1.75
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/checksum.sml[`checksum.sml`]|1.00|30.79|*|10.94|9.08
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/count-graphs.sml[`count-graphs.sml`]|1.00|6.51|40.42|2.34|2.32
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/DLXSimulator.sml[`DLXSimulator.sml`]|1.00|0.97|*|0.60|*
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/even-odd.sml[`even-odd.sml`]|1.00|0.50|11.50|0.42|0.42
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/fft.sml[`fft.sml`]|1.00|7.35|81.51|4.03|1.19
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/fib.sml[`fib.sml`]|1.00|1.41|10.94|1.25|1.17
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/flat-array.sml[`flat-array.sml`]|1.00|7.19|68.33|5.28|13.16
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/hamlet.sml[`hamlet.sml`]|1.00|4.97|22.85|1.58|*
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/imp-for.sml[`imp-for.sml`]|1.00|4.99|57.84|3.34|4.67
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/knuth-bendix.sml[`knuth-bendix.sml`]|1.00|*|18.43|3.18|3.06
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/lexgen.sml[`lexgen.sml`]|1.00|2.76|7.94|3.19|*
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/life.sml[`life.sml`]|1.00|1.80|20.19|0.89|1.50
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/logic.sml[`logic.sml`]|1.00|5.10|11.06|1.15|1.27
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/mandelbrot.sml[`mandelbrot.sml`]|1.00|3.50|25.52|1.33|1.28
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/matrix-multiply.sml[`matrix-multiply.sml`]|1.00|29.40|183.02|7.41|15.19
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/md5.sml[`md5.sml`]|1.00|95.18|*|32.61|47.47
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/merge.sml[`merge.sml`]|1.00|1.42|*|0.74|3.24
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/mlyacc.sml[`mlyacc.sml`]|1.00|1.83|8.45|0.84|*
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/model-elimination.sml[`model-elimination.sml`]|1.00|4.03|12.42|1.70|2.25
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/mpuz.sml[`mpuz.sml`]|1.00|3.73|57.44|2.05|3.22
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/nucleic.sml[`nucleic.sml`]|1.00|3.96|*|1.73|1.20
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/output1.sml[`output1.sml`]|1.00|6.26|30.85|7.82|5.99
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/peek.sml[`peek.sml`]|1.00|9.37|44.78|2.18|2.15
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/psdes-random.sml[`psdes-random.sml`]|1.00|*|*|2.79|3.59
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/ratio-regions.sml[`ratio-regions.sml`]|1.00|5.68|165.56|3.92|37.52
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/ray.sml[`ray.sml`]|1.00|12.05|25.08|8.73|1.75
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/raytrace.sml[`raytrace.sml`]|1.00|*|*|2.11|3.33
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/simple.sml[`simple.sml`]|1.00|2.95|24.03|3.67|1.93
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/smith-normal-form.sml[`smith-normal-form.sml`]|1.00|*|*|1.04|*
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/string-concat.sml[`string-concat.sml`]|1.00|1.88|28.01|0.70|2.67
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/tailfib.sml[`tailfib.sml`]|1.00|1.58|23.57|0.90|1.04
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/tak.sml[`tak.sml`]|1.00|1.69|15.90|1.57|2.01
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/tensor.sml[`tensor.sml`]|1.00|*|*|*|2.07
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/tsp.sml[`tsp.sml`]|1.00|2.19|66.76|3.27|1.48
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/tyan.sml[`tyan.sml`]|1.00|*|19.43|1.08|1.03
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/vector32-concat.sml[`vector32-concat.sml`]|1.00|13.85|*|1.80|12.48
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/vector64-concat.sml[`vector64-concat.sml`]|1.00|*|*|*|13.92
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/vector-rev.sml[`vector-rev.sml`]|1.00|7.88|68.85|9.39|68.80
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/vliw.sml[`vliw.sml`]|1.00|2.46|15.39|1.43|1.55
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/wc-input1.sml[`wc-input1.sml`]|1.00|6.00|*|29.25|9.54
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/wc-scanStream.sml[`wc-scanStream.sml`]|1.00|80.43|*|19.45|8.71
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/zebra.sml[`zebra.sml`]|1.00|4.62|35.56|1.68|9.97
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/zern.sml[`zern.sml`]|1.00|*|*|*|1.60
+|===
 
-<!Anchor(SNFNote)>
+[[SNFNote]]
 Note: for SML/NJ, the
-<!RawGitFile(mlton,master,benchmark/tests/smith-normal-form.sml)>
+https://raw.github.com/MLton/mlton/master/benchmark/tests/smith-normal-form.sml[`smith-normal-form.sml`]
 benchmark was killed after running for over 51,000 seconds.
 
 
-== <!Anchor(CodeSize)>Code size ==
+[#CodeSize]
+== Code size
 
 The following table gives the code size of each benchmark in bytes.
 The size for MLton and the ML Kit is the sum of text and data for the
@@ -120,108 +121,109 @@ the SML/NJ runtime system (approximately 100K).  A * in an entry means
 that the compiler failed to compile the benchmark.
 
 [options="header",cols="<2,5*<1"]
-|====
+|===
 |benchmark|MLton|ML-Kit|MosML|Poly/ML|SML/NJ
-|<!RawGitFile(mlton,master,benchmark/tests/barnes-hut.sml)>|180,788|810,267|199,503|148,120|402,480
-|<!RawGitFile(mlton,master,benchmark/tests/boyer.sml)>|250,246|*|248,018|196,984|496,664
-|<!RawGitFile(mlton,master,benchmark/tests/checksum.sml)>|122,422|225,274|*|106,088|406,560
-|<!RawGitFile(mlton,master,benchmark/tests/count-graphs.sml)>|151,878|250,126|187,048|144,032|428,136
-|<!RawGitFile(mlton,master,benchmark/tests/DLXSimulator.sml)>|223,073|827,483|*|272,664|*
-|<!RawGitFile(mlton,master,benchmark/tests/even-odd.sml)>|122,350|87,586|181,415|106,072|380,928
-|<!RawGitFile(mlton,master,benchmark/tests/fft.sml)>|145,008|237,230|186,228|131,400|418,896
-|<!RawGitFile(mlton,master,benchmark/tests/fib.sml)>|122,310|87,402|181,312|106,088|380,928
-|<!RawGitFile(mlton,master,benchmark/tests/flat-array.sml)>|121,958|104,102|181,464|106,072|394,256
-|<!RawGitFile(mlton,master,benchmark/tests/hamlet.sml)>|1,503,849|2,280,691|407,219|2,249,504|*
-|<!RawGitFile(mlton,master,benchmark/tests/imp-for.sml)>|122,078|89,346|181,470|106,088|381,952
-|<!RawGitFile(mlton,master,benchmark/tests/knuth-bendix.sml)>|193,145|*|192,659|161,080|400,408
-|<!RawGitFile(mlton,master,benchmark/tests/lexgen.sml)>|308,296|826,819|213,128|268,272|*
-|<!RawGitFile(mlton,master,benchmark/tests/life.sml)>|141,862|721,419|186,463|118,552|384,024
-|<!RawGitFile(mlton,master,benchmark/tests/logic.sml)>|211,086|782,667|188,908|198,408|409,624
-|<!RawGitFile(mlton,master,benchmark/tests/mandelbrot.sml)>|122,086|700,075|183,037|106,104|386,048
-|<!RawGitFile(mlton,master,benchmark/tests/matrix-multiply.sml)>|124,398|280,006|184,328|110,232|416,784
-|<!RawGitFile(mlton,master,benchmark/tests/md5.sml)>|150,497|271,794|*|122,624|399,416
-|<!RawGitFile(mlton,master,benchmark/tests/merge.sml)>|123,846|100,858|181,542|106,136|381,960
-|<!RawGitFile(mlton,master,benchmark/tests/mlyacc.sml)>|678,920|1,233,587|263,721|576,728|*
-|<!RawGitFile(mlton,master,benchmark/tests/model-elimination.sml)>|846,779|1,432,283|297,108|777,664|985,304
-|<!RawGitFile(mlton,master,benchmark/tests/mpuz.sml)>|124,126|229,078|184,440|114,584|392,232
-|<!RawGitFile(mlton,master,benchmark/tests/nucleic.sml)>|298,038|507,186|*|475,808|456,744
-|<!RawGitFile(mlton,master,benchmark/tests/output1.sml)>|157,973|699,003|181,680|118,800|380,928
-|<!RawGitFile(mlton,master,benchmark/tests/peek.sml)>|156,401|201,138|183,438|110,456|385,072
-|<!RawGitFile(mlton,master,benchmark/tests/psdes-random.sml)>|126,486|106,166|*|106,088|393,256
-|<!RawGitFile(mlton,master,benchmark/tests/ratio-regions.sml)>|150,174|265,694|190,088|184,536|414,760
-|<!RawGitFile(mlton,master,benchmark/tests/ray.sml)>|260,863|736,795|195,064|198,976|512,160
-|<!RawGitFile(mlton,master,benchmark/tests/raytrace.sml)>|384,905|*|*|446,424|623,824
-|<!RawGitFile(mlton,master,benchmark/tests/simple.sml)>|365,578|895,139|197,765|1,051,952|708,696
-|<!RawGitFile(mlton,master,benchmark/tests/smith-normal-form.sml)>|286,474|*|*|262,616|547,984
-|<!RawGitFile(mlton,master,benchmark/tests/string-concat.sml)>|119,102|140,626|183,249|106,088|390,160
-|<!RawGitFile(mlton,master,benchmark/tests/tailfib.sml)>|122,110|87,890|181,369|106,072|381,952
-|<!RawGitFile(mlton,master,benchmark/tests/tak.sml)>|122,246|87,402|181,349|106,088|376,832
-|<!RawGitFile(mlton,master,benchmark/tests/tensor.sml)>|186,545|*|*|*|421,984
-|<!RawGitFile(mlton,master,benchmark/tests/tsp.sml)>|163,033|722,571|188,634|126,984|393,264
-|<!RawGitFile(mlton,master,benchmark/tests/tyan.sml)>|235,449|*|195,401|184,816|478,296
-|<!RawGitFile(mlton,master,benchmark/tests/vector32-concat.sml)>|123,790|104,398|*|106,200|394,256
-|<!RawGitFile(mlton,master,benchmark/tests/vector64-concat.sml)>|123,846|*|*|*|405,552
-|<!RawGitFile(mlton,master,benchmark/tests/vector-rev.sml)>|122,982|104,614|181,534|106,072|394,256
-|<!RawGitFile(mlton,master,benchmark/tests/vliw.sml)>|538,074|1,182,851|249,884|580,792|749,752
-|<!RawGitFile(mlton,master,benchmark/tests/wc-input1.sml)>|186,152|699,459|191,347|127,200|386,048
-|<!RawGitFile(mlton,master,benchmark/tests/wc-scanStream.sml)>|196,232|700,131|191,539|127,232|387,072
-|<!RawGitFile(mlton,master,benchmark/tests/zebra.sml)>|230,433|128,354|186,322|127,048|390,184
-|<!RawGitFile(mlton,master,benchmark/tests/zern.sml)>|156,902|*|*|*|453,768
-|====
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/barnes-hut.sml[`barnes-hut.sml`]|180,788|810,267|199,503|148,120|402,480
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/boyer.sml[`boyer.sml`]|250,246|*|248,018|196,984|496,664
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/checksum.sml[`checksum.sml`]|122,422|225,274|*|106,088|406,560
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/count-graphs.sml[`count-graphs.sml`]|151,878|250,126|187,048|144,032|428,136
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/DLXSimulator.sml[`DLXSimulator.sml`]|223,073|827,483|*|272,664|*
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/even-odd.sml[`even-odd.sml`]|122,350|87,586|181,415|106,072|380,928
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/fft.sml[`fft.sml`]|145,008|237,230|186,228|131,400|418,896
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/fib.sml[`fib.sml`]|122,310|87,402|181,312|106,088|380,928
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/flat-array.sml[`flat-array.sml`]|121,958|104,102|181,464|106,072|394,256
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/hamlet.sml[`hamlet.sml`]|1,503,849|2,280,691|407,219|2,249,504|*
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/imp-for.sml[`imp-for.sml`]|122,078|89,346|181,470|106,088|381,952
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/knuth-bendix.sml[`knuth-bendix.sml`]|193,145|*|192,659|161,080|400,408
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/lexgen.sml[`lexgen.sml`]|308,296|826,819|213,128|268,272|*
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/life.sml[`life.sml`]|141,862|721,419|186,463|118,552|384,024
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/logic.sml[`logic.sml`]|211,086|782,667|188,908|198,408|409,624
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/mandelbrot.sml[`mandelbrot.sml`]|122,086|700,075|183,037|106,104|386,048
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/matrix-multiply.sml[`matrix-multiply.sml`]|124,398|280,006|184,328|110,232|416,784
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/md5.sml[`md5.sml`]|150,497|271,794|*|122,624|399,416
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/merge.sml[`merge.sml`]|123,846|100,858|181,542|106,136|381,960
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/mlyacc.sml[`mlyacc.sml`]|678,920|1,233,587|263,721|576,728|*
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/model-elimination.sml[`model-elimination.sml`]|846,779|1,432,283|297,108|777,664|985,304
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/mpuz.sml[`mpuz.sml`]|124,126|229,078|184,440|114,584|392,232
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/nucleic.sml[`nucleic.sml`]|298,038|507,186|*|475,808|456,744
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/output1.sml[`output1.sml`]|157,973|699,003|181,680|118,800|380,928
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/peek.sml[`peek.sml`]|156,401|201,138|183,438|110,456|385,072
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/psdes-random.sml[`psdes-random.sml`]|126,486|106,166|*|106,088|393,256
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/ratio-regions.sml[`ratio-regions.sml`]|150,174|265,694|190,088|184,536|414,760
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/ray.sml[`ray.sml`]|260,863|736,795|195,064|198,976|512,160
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/raytrace.sml[`raytrace.sml`]|384,905|*|*|446,424|623,824
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/simple.sml[`simple.sml`]|365,578|895,139|197,765|1,051,952|708,696
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/smith-normal-form.sml[`smith-normal-form.sml`]|286,474|*|*|262,616|547,984
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/string-concat.sml[`string-concat.sml`]|119,102|140,626|183,249|106,088|390,160
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/tailfib.sml[`tailfib.sml`]|122,110|87,890|181,369|106,072|381,952
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/tak.sml[`tak.sml`]|122,246|87,402|181,349|106,088|376,832
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/tensor.sml[`tensor.sml`]|186,545|*|*|*|421,984
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/tsp.sml[`tsp.sml`]|163,033|722,571|188,634|126,984|393,264
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/tyan.sml[`tyan.sml`]|235,449|*|195,401|184,816|478,296
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/vector32-concat.sml[`vector32-concat.sml`]|123,790|104,398|*|106,200|394,256
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/vector64-concat.sml[`vector64-concat.sml`]|123,846|*|*|*|405,552
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/vector-rev.sml[`vector-rev.sml`]|122,982|104,614|181,534|106,072|394,256
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/vliw.sml[`vliw.sml`]|538,074|1,182,851|249,884|580,792|749,752
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/wc-input1.sml[`wc-input1.sml`]|186,152|699,459|191,347|127,200|386,048
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/wc-scanStream.sml[`wc-scanStream.sml`]|196,232|700,131|191,539|127,232|387,072
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/zebra.sml[`zebra.sml`]|230,433|128,354|186,322|127,048|390,184
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/zern.sml[`zern.sml`]|156,902|*|*|*|453,768
+|===
 
 
-== <!Anchor(CompileTime)>Compile time ==
+[#CompileTime]
+== Compile time
 
 The following table gives the compile time of each benchmark in
 seconds.  A * in an entry means that the compiler failed to compile
 the benchmark.
 
 [options="header",cols="<2,5*<1"]
-|====
+|===
 |benchmark|MLton|ML-Kit|MosML|Poly/ML|SML/NJ
-|<!RawGitFile(mlton,master,benchmark/tests/barnes-hut.sml)>|2.70|0.89|0.15|0.29|0.20
-|<!RawGitFile(mlton,master,benchmark/tests/boyer.sml)>|2.87|*|0.14|0.20|0.41
-|<!RawGitFile(mlton,master,benchmark/tests/checksum.sml)>|2.21|0.24|*|0.07|0.05
-|<!RawGitFile(mlton,master,benchmark/tests/count-graphs.sml)>|2.28|0.34|0.04|0.11|0.21
-|<!RawGitFile(mlton,master,benchmark/tests/DLXSimulator.sml)>|2.93|1.01|*|0.27|*
-|<!RawGitFile(mlton,master,benchmark/tests/even-odd.sml)>|2.23|0.20|0.01|0.07|0.04
-|<!RawGitFile(mlton,master,benchmark/tests/fft.sml)>|2.35|0.28|0.03|0.09|0.10
-|<!RawGitFile(mlton,master,benchmark/tests/fib.sml)>|2.16|0.19|0.01|0.07|0.04
-|<!RawGitFile(mlton,master,benchmark/tests/flat-array.sml)>|2.16|0.20|0.01|0.07|0.04
-|<!RawGitFile(mlton,master,benchmark/tests/hamlet.sml)>|12.28|19.25|23.75|6.44|*
-|<!RawGitFile(mlton,master,benchmark/tests/imp-for.sml)>|2.14|0.20|0.01|0.08|0.04
-|<!RawGitFile(mlton,master,benchmark/tests/knuth-bendix.sml)>|2.48|*|0.08|0.14|0.23
-|<!RawGitFile(mlton,master,benchmark/tests/lexgen.sml)>|3.31|0.75|0.15|0.22|*
-|<!RawGitFile(mlton,master,benchmark/tests/life.sml)>|2.25|0.32|0.03|0.09|0.10
-|<!RawGitFile(mlton,master,benchmark/tests/logic.sml)>|2.72|0.57|0.07|0.17|0.21
-|<!RawGitFile(mlton,master,benchmark/tests/mandelbrot.sml)>|2.14|0.24|0.01|0.07|0.04
-|<!RawGitFile(mlton,master,benchmark/tests/matrix-multiply.sml)>|2.14|0.24|0.01|0.08|0.05
-|<!RawGitFile(mlton,master,benchmark/tests/md5.sml)>|2.31|0.39|*|0.12|0.27
-|<!RawGitFile(mlton,master,benchmark/tests/merge.sml)>|2.15|0.21|0.01|0.07|0.04
-|<!RawGitFile(mlton,master,benchmark/tests/mlyacc.sml)>|7.07|4.53|2.05|0.80|*
-|<!RawGitFile(mlton,master,benchmark/tests/model-elimination.sml)>|6.78|4.76|1.20|1.65|4.78
-|<!RawGitFile(mlton,master,benchmark/tests/mpuz.sml)>|2.14|0.28|0.02|0.08|0.07
-|<!RawGitFile(mlton,master,benchmark/tests/nucleic.sml)>|3.96|2.12|*|0.37|0.49
-|<!RawGitFile(mlton,master,benchmark/tests/output1.sml)>|2.30|0.22|0.01|0.07|0.04
-|<!RawGitFile(mlton,master,benchmark/tests/peek.sml)>|2.26|0.20|0.01|0.07|0.04
-|<!RawGitFile(mlton,master,benchmark/tests/psdes-random.sml)>|2.12|0.22|*|9.83|12.55
-|<!RawGitFile(mlton,master,benchmark/tests/ratio-regions.sml)>|2.59|0.47|0.07|0.16|0.24
-|<!RawGitFile(mlton,master,benchmark/tests/ray.sml)>|2.95|0.46|0.05|0.17|0.14
-|<!RawGitFile(mlton,master,benchmark/tests/raytrace.sml)>|3.93|*|*|0.45|0.74
-|<!RawGitFile(mlton,master,benchmark/tests/simple.sml)>|3.42|1.23|0.30|0.32|0.53
-|<!RawGitFile(mlton,master,benchmark/tests/smith-normal-form.sml)>|3.23|*|*|0.15|0.32
-|<!RawGitFile(mlton,master,benchmark/tests/string-concat.sml)>|2.25|0.28|0.01|0.08|0.05
-|<!RawGitFile(mlton,master,benchmark/tests/tailfib.sml)>|2.24|0.21|0.01|0.08|0.05
-|<!RawGitFile(mlton,master,benchmark/tests/tak.sml)>|2.23|0.20|0.01|0.08|0.05
-|<!RawGitFile(mlton,master,benchmark/tests/tensor.sml)>|2.73|*|*|*|0.44
-|<!RawGitFile(mlton,master,benchmark/tests/tsp.sml)>|2.42|0.38|0.05|0.11|0.11
-|<!RawGitFile(mlton,master,benchmark/tests/tyan.sml)>|2.93|*|0.10|0.27|0.31
-|<!RawGitFile(mlton,master,benchmark/tests/vector32-concat.sml)>|2.23|0.22|*|0.07|0.04
-|<!RawGitFile(mlton,master,benchmark/tests/vector64-concat.sml)>|2.18|*|*|*|0.04
-|<!RawGitFile(mlton,master,benchmark/tests/vector-rev.sml)>|2.23|0.22|0.01|0.08|0.05
-|<!RawGitFile(mlton,master,benchmark/tests/vliw.sml)>|5.25|2.93|0.63|0.94|1.85
-|<!RawGitFile(mlton,master,benchmark/tests/wc-input1.sml)>|2.46|0.24|0.01|0.08|0.05
-|<!RawGitFile(mlton,master,benchmark/tests/wc-scanStream.sml)>|2.61|0.25|0.01|0.08|0.05
-|<!RawGitFile(mlton,master,benchmark/tests/zebra.sml)>|2.99|0.35|0.03|0.09|0.11
-|<!RawGitFile(mlton,master,benchmark/tests/zern.sml)>|2.31|*|*|*|0.11
-|====
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/barnes-hut.sml[`barnes-hut.sml`]|2.70|0.89|0.15|0.29|0.20
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/boyer.sml[`boyer.sml`]|2.87|*|0.14|0.20|0.41
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/checksum.sml[`checksum.sml`]|2.21|0.24|*|0.07|0.05
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/count-graphs.sml[`count-graphs.sml`]|2.28|0.34|0.04|0.11|0.21
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/DLXSimulator.sml[`DLXSimulator.sml`]|2.93|1.01|*|0.27|*
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/even-odd.sml[`even-odd.sml`]|2.23|0.20|0.01|0.07|0.04
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/fft.sml[`fft.sml`]|2.35|0.28|0.03|0.09|0.10
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/fib.sml[`fib.sml`]|2.16|0.19|0.01|0.07|0.04
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/flat-array.sml[`flat-array.sml`]|2.16|0.20|0.01|0.07|0.04
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/hamlet.sml[`hamlet.sml`]|12.28|19.25|23.75|6.44|*
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/imp-for.sml[`imp-for.sml`]|2.14|0.20|0.01|0.08|0.04
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/knuth-bendix.sml[`knuth-bendix.sml`]|2.48|*|0.08|0.14|0.23
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/lexgen.sml[`lexgen.sml`]|3.31|0.75|0.15|0.22|*
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/life.sml[`life.sml`]|2.25|0.32|0.03|0.09|0.10
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/logic.sml[`logic.sml`]|2.72|0.57|0.07|0.17|0.21
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/mandelbrot.sml[`mandelbrot.sml`]|2.14|0.24|0.01|0.07|0.04
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/matrix-multiply.sml[`matrix-multiply.sml`]|2.14|0.24|0.01|0.08|0.05
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/md5.sml[`md5.sml`]|2.31|0.39|*|0.12|0.27
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/merge.sml[`merge.sml`]|2.15|0.21|0.01|0.07|0.04
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/mlyacc.sml[`mlyacc.sml`]|7.07|4.53|2.05|0.80|*
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/model-elimination.sml[`model-elimination.sml`]|6.78|4.76|1.20|1.65|4.78
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/mpuz.sml[`mpuz.sml`]|2.14|0.28|0.02|0.08|0.07
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/nucleic.sml[`nucleic.sml`]|3.96|2.12|*|0.37|0.49
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/output1.sml[`output1.sml`]|2.30|0.22|0.01|0.07|0.04
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/peek.sml[`peek.sml`]|2.26|0.20|0.01|0.07|0.04
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/psdes-random.sml[`psdes-random.sml`]|2.12|0.22|*|9.83|12.55
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/ratio-regions.sml[`ratio-regions.sml`]|2.59|0.47|0.07|0.16|0.24
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/ray.sml[`ray.sml`]|2.95|0.46|0.05|0.17|0.14
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/raytrace.sml[`raytrace.sml`]|3.93|*|*|0.45|0.74
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/simple.sml[`simple.sml`]|3.42|1.23|0.30|0.32|0.53
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/smith-normal-form.sml[`smith-normal-form.sml`]|3.23|*|*|0.15|0.32
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/string-concat.sml[`string-concat.sml`]|2.25|0.28|0.01|0.08|0.05
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/tailfib.sml[`tailfib.sml`]|2.24|0.21|0.01|0.08|0.05
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/tak.sml[`tak.sml`]|2.23|0.20|0.01|0.08|0.05
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/tensor.sml[`tensor.sml`]|2.73|*|*|*|0.44
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/tsp.sml[`tsp.sml`]|2.42|0.38|0.05|0.11|0.11
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/tyan.sml[`tyan.sml`]|2.93|*|0.10|0.27|0.31
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/vector32-concat.sml[`vector32-concat.sml`]|2.23|0.22|*|0.07|0.04
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/vector64-concat.sml[`vector64-concat.sml`]|2.18|*|*|*|0.04
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/vector-rev.sml[`vector-rev.sml`]|2.23|0.22|0.01|0.08|0.05
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/vliw.sml[`vliw.sml`]|5.25|2.93|0.63|0.94|1.85
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/wc-input1.sml[`wc-input1.sml`]|2.46|0.24|0.01|0.08|0.05
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/wc-scanStream.sml[`wc-scanStream.sml`]|2.61|0.25|0.01|0.08|0.05
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/zebra.sml[`zebra.sml`]|2.99|0.35|0.03|0.09|0.11
+|https://raw.github.com/MLton/mlton/master/benchmark/tests/zern.sml[`zern.sml`]|2.31|*|*|*|0.11
+|===

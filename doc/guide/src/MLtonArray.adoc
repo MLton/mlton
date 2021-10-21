@@ -1,5 +1,4 @@
-MLtonArray
-==========
+= MLtonArray
 
 [source,sml]
 ----

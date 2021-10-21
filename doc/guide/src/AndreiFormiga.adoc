@@ -1,5 +1,4 @@
-AndreiFormiga
-=============
+= AndreiFormiga
 
 I'm a graduate student just back in academia. I study concurrent and parallel systems, with a great deal of interest in programming languages (theory, design, implementation). I happen to like functional languages.
 

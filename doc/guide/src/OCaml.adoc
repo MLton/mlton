@@ -1,22 +1,21 @@
-OCaml
-=====
+= OCaml
 
-http://caml.inria.fr/[OCaml] is a variant of <:ML:> and is similar to
-<:StandardML:Standard ML>.
+http://caml.inria.fr/[OCaml] is a variant of <<ML#>> and is similar to
+<<StandardML#,Standard ML>>.
 
-== OCaml and SML ==
+== OCaml and SML
 
 Here's a comparison of some aspects of the OCaml and SML languages.
 
-* Standard ML has a formal <:DefinitionOfStandardML:Definition>, while
+* Standard ML has a formal <<DefinitionOfStandardML#,Definition>>, while
 OCaml is specified by its lone implementation and informal
 documentation.
 
-* Standard ML has a number of <:StandardMLImplementations:compilers>,
+* Standard ML has a number of <<StandardMLImplementations#,compilers>>,
 while OCaml has only one.
 
 * OCaml has built-in support for object-oriented programming, while
-Standard ML does not (however, see <:ObjectOrientedProgramming:>).
+Standard ML does not (however, see <<ObjectOrientedProgramming#>>).
 
 * Andreas Rossberg has a
 http://www.mpi-sws.org/%7Erossberg/sml-vs-ocaml.html[side-by-side
@@ -26,7 +25,7 @@ comparison] of the syntax of SML and OCaml.
 http://adam.chlipala.net/mlcomp[point-by-point comparison] of OCaml
 and SML.
 
-== OCaml and MLton ==
+== OCaml and MLton
 
 Here's a comparison of some aspects of OCaml and MLton.
 
@@ -34,7 +33,7 @@ Here's a comparison of some aspects of OCaml and MLton.
 
 ** Both OCaml and MLton have excellent performance.
 
-** MLton performs extensive <:WholeProgramOptimization:>, which can
+** MLton performs extensive <<WholeProgramOptimization#>>, which can
 provide substantial improvements in large, modular programs.
 
 ** MLton uses native types, like 32-bit integers, without any penalty
@@ -58,7 +57,7 @@ penalty.
 ** In MLton, module boundaries have no impact on performance.  In
 OCaml, moving code between modules can cause a performance penalty.
 
-** MLton's <:ForeignFunctionInterface:> is simpler than OCaml's.
+** MLton's <<ForeignFunctionInterface#>> is simpler than OCaml's.
 
 * Tools
 

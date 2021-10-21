@@ -1,5 +1,4 @@
-NeedsReview
-===========
+= NeedsReview
 
 This page documents some patches and bug fixes that need additional review by experienced developers:
 
@@ -7,9 +6,9 @@ This page documents some patches and bug fixes that need additional review by ex
 ** What is an 'original' interface and why does the equivalence of original interfaces implies the equivalence of the actual interfaces?
 ** http://www.mlton.org/pipermail/mlton/2007-September/029991.html
 ** http://www.mlton.org/pipermail/mlton/2007-September/029995.html
-** SVN Revision: <!ViewSVNRev(6046)>
+** SVN Revision: https://github.com/MLton/mlton/search?q=SVN+r6046&type=commits[`r6046`]
 
-* Bug in <:DeepFlatten:> pass:
+* Bug in <<DeepFlatten#>> pass:
 ** Should we allow argument to `Weak_new` to be flattened?
-** SVN Revision: <!ViewSVNRev(6189)> (regression test demonstrating bug)
-** SVN Revision: <!ViewSVNRev(6191)>
+** SVN Revision: https://github.com/MLton/mlton/search?q=SVN+r6189&type=commits[`r6189`] (regression test demonstrating bug)
+** SVN Revision: https://github.com/MLton/mlton/search?q=SVN+r6191&type=commits[`r6191`]

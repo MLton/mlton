@@ -1,9 +1,8 @@
-CallingFromCToSML
-=================
+= CallingFromCToSML
 
-MLton's <:ForeignFunctionInterface:> allows programs to _export_ SML
+MLton's <<ForeignFunctionInterface#>> allows programs to _export_ SML
 functions to be called from C.  Suppose you would like export from SML
-a function of type `real * char -> int` as the C function `foo`.
+a function of type `real * char \-> int` as the C function `foo`.
 MLton extends the syntax of SML to allow expressions like the
 following:
 ----
@@ -16,7 +15,7 @@ prototype
 Int32 foo (Real64 x0, Char x1);
 ----
 The `_export` expression denotes a function of type
-`(real * char -> int) -> unit` that when called with a function
+`(real * char \-> int) \-> unit` that when called with a function
 `f`, arranges for the exported `foo` function to call `f`
 when `foo` is called.  So, for example, the following exports and
 defines `foo`.
@@ -36,17 +35,17 @@ sequence of attributes may follow the function name.
 MLton's `-export-header` option generates a C header file with
 prototypes for all of the functions exported from SML.  Include this
 header file in your C files to type check calls to functions exported
-from SML.  This header file includes ++typedef++s for the
-<:ForeignFunctionInterfaceTypes: types that can be passed between SML and C>.
+from SML.  This header file includes ``typedef``s for the
+<<ForeignFunctionInterfaceTypes#,types that can be passed between SML and C>>.
 
 
-== Example ==
+== Example
 
 Suppose that `export.sml` is
 
 [source,sml]
 ----
-sys::[./bin/InclGitFile.py mlton master doc/examples/ffi/export.sml]
+include::https://raw.github.com/MLton/mlton/master/doc/examples/ffi/export.sml[indent=0]
 ----
 
 Note that the the `reentrant` attribute is used for `_import`-ing the
@@ -73,7 +72,7 @@ Use `export.h` in a C program, `ffi-export.c`, as follows.
 
 [source,c]
 ----
-sys::[./bin/InclGitFile.py mlton master doc/examples/ffi/ffi-export.c]
+include::https://raw.github.com/MLton/mlton/master/doc/examples/ffi/ffi-export.c[indent=0]
 ----
 
 Compile `ffi-export.c` and `export.sml`.
@@ -93,6 +92,6 @@ success
 ----
 
 
-== Download ==
-* <!RawGitFile(mlton,master,doc/examples/ffi/export.sml)>
-* <!RawGitFile(mlton,master,doc/examples/ffi/ffi-export.c)>
+== Download
+* https://raw.github.com/MLton/mlton/master/doc/examples/ffi/export.sml[`export.sml`]
+* https://raw.github.com/MLton/mlton/master/doc/examples/ffi/ffi-export.c[`ffi-export.c`]

@@ -1,43 +1,42 @@
-Release20100608
-===============
+= Release20100608
 
 This is an archived public release of MLton, version 20100608.
 
-== Changes since the last public release ==
+== Changes since the last public release
 
 * New platforms.
-** <:RunningOnAMD64:AMD64>/<:RunningOnDarwin:Darwin> (Mac OS X Snow Leopard)
-** <:RunningOnIA64:IA64>/<:RunningOnHPUX:HPUX>
-** <:RunningOnPowerPC64:PowerPC64>/<:RunningOnAIX:AIX>
+** <<RunningOnAMD64#,AMD64>>/<<RunningOnDarwin#,Darwin>> (Mac OS X Snow Leopard)
+** <<RunningOnIA64#,IA64>>/<<RunningOnHPUX#,HPUX>>
+** <<RunningOnPowerPC64#,PowerPC64>>/<<RunningOnAIX#,AIX>>
 * Compiler.
-** <:CompileTimeOptions:Command-line switches>.
-*** Added: ++-mlb-path-var __<name> <value>__++
-*** Removed: ++-keep sml++, ++-stop sml++
+** <<CompileTimeOptions#,Command-line switches>>.
+*** Added: ``-mlb-path-var __<name> <value>__``
+*** Removed: ``-keep sml``, ``-stop sml``
 ** Improved constant folding of floating-point operations.
-** Experimental: Support for compiling to a C library; see <:LibrarySupport: documentation>.
-** Extended ++-show-def-use __output__++ to include types of variable definitions.
+** Experimental: Support for compiling to a C library; see <<LibrarySupport#,documentation>>.
+** Extended ``-show-def-use __output__`` to include types of variable definitions.
 ** Deprecated features (to be removed in a future release)
 *** Bytecode codegen: The bytecode codegen has not seen significant use and it is not well understood by any of the active developers.
 *** Support for `.cm` files as input: The ML Basis system provides much better infrastructure for "programming in the very large" than the (very) limited support for CM.  The `cm2mlb` tool (available in the source distribution) can be used to convert CM projects to MLB projects, preserving the CM scoping of module identifiers.
-** Bug fixes: see <!RawGitFile(mlton,on-20100608-release,doc/changelog)>
+** Bug fixes: see https://raw.github.com/MLton/mlton/on-20100608-release/doc/changelog[`changelog`]
 * Runtime.
-** <:RunTimeOptions:@MLton switches>.
-*** Added: ++may-page-heap {false|true}++
-** ++may-page-heap++: By default, MLton will not page the heap to disk when unable to grow the heap to accommodate an allocation. (Previously, this behavior was the default, with no means to disable, with security an least-surprise issues.)
-** Bug fixes: see <!RawGitFile(mlton,on-20100608-release,doc/changelog)>
+** <<RunTimeOptions#,@MLton switches>>.
+*** Added: ``may-page-heap {false|true}``
+** ``may-page-heap``: By default, MLton will not page the heap to disk when unable to grow the heap to accommodate an allocation. (Previously, this behavior was the default, with no means to disable, with security an least-surprise issues.)
+** Bug fixes: see https://raw.github.com/MLton/mlton/on-20100608-release/doc/changelog[`changelog`]
 * Language.
-** Allow numeric characters in <:MLBasis:ML Basis> path variables.
+** Allow numeric characters in <<MLBasis#,ML Basis>> path variables.
 * Libraries.
-** <:BasisLibrary:Basis Library>.
-*** Bug fixes: see <!RawGitFile(mlton,on-20100608-release,doc/changelog)>
-** <:MLtonStructure:MLton structure>.
+** <<BasisLibrary#,Basis Library>>.
+*** Bug fixes: see https://raw.github.com/MLton/mlton/on-20100608-release/doc/changelog[`changelog`]
+** <<MLtonStructure#,MLton structure>>.
 *** Added: `MLton.equal`, `MLton.hash`, `MLton.Cont.isolate`, `MLton.GC.Statistics`, `MLton.Pointer.sizeofPointer`, `MLton.Socket.Address.toVector`
 *** Changed:
 *** Deprecated: `MLton.Socket`
-** <:UnsafeStructure:Unsafe structure>.
+** <<UnsafeStructure#,Unsafe structure>>.
 *** Added versions of all of the monomorphic array and vector structures.
 ** Other libraries.
-*** Updated: <:CKitLibrary:ckit library>, <:MLRISCLibrary:MLRISC library>, <:SMLNJLibrary:SML/NJ library>.
+*** Updated: <<CKitLibrary#,ckit library>>, <<MLRISCLibrary#,MLRISC library>>, <<SMLNJLibrary#,SML/NJ library>>.
 * Tools.
 ** `mllex`
 *** Eliminated top-level `type int = Int.int` in output.
@@ -46,45 +45,45 @@ This is an archived public release of MLton, version 20100608.
 ** `mlnlffigen`
 *** Added command-line switches `-linkage archive` and `-linkage shared`.
 *** Deprecated command-line switch `-linkage static`.
-*** Added support for <:RunningOnIA64:IA64> and <:RunningOnHPPA:HPPA> targets.
+*** Added support for <<RunningOnIA64#,IA64>> and <<RunningOnHPPA#,HPPA>> targets.
 ** `mlyacc`
 *** Eliminated top-level `type int = Int.int` in output.
 *** Include `(*#line line:col "file.grm" *)` directives in output.
 
-For a complete list of changes and bug fixes since <:Release20070826:>, see the
-<!RawGitFile(mlton,on-20100608-release,doc/changelog)>
-and <:Bugs20070826:>.
+For a complete list of changes and bug fixes since <<Release20070826#>>, see the
+https://raw.github.com/MLton/mlton/on-20100608-release/doc/changelog[`changelog`]
+and <<Bugs20070826#>>.
 
-== 20100608 binary packages ==
+== 20100608 binary packages
 
 * AMD64 (aka "x86-64" or "x64")
-** http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.amd64-darwin.gmp-macports.tgz[Darwin (.tgz)] 10.3 (Mac OS X Snow Leopard), dynamically linked against <:GMP:> in `/opt/local/lib` (suitable for http://macports.org[MacPorts] install of <:GMP:>)
-** http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.amd64-darwin.gmp-static.tgz[Darwin (.tgz)] 10.3 (Mac OS X Snow Leopard), statically linked against <:GMP:> (but requires <:GMP:> for generated executables)
+** http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.amd64-darwin.gmp-macports.tgz[Darwin (.tgz)] 10.3 (Mac OS X Snow Leopard), dynamically linked against <<GMP#>> in `/opt/local/lib` (suitable for http://macports.org[MacPorts] install of <<GMP#>>)
+** http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.amd64-darwin.gmp-static.tgz[Darwin (.tgz)] 10.3 (Mac OS X Snow Leopard), statically linked against <<GMP#>> (but requires <<GMP#>> for generated executables)
 ** http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.amd64-linux.tgz[Linux], glibc 2.11
 ** http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.amd64-linux.static.tgz[Linux], statically linked
 ** Windows MinGW 32/64 http://sourceforge.net/projects/mlton/files/mlton/20100608/MLton-20100608-1.exe[self-extracting] (28MB) or http://sourceforge.net/projects/mlton/files/mlton/20100608/MLton-20100608-1.msi[MSI] (61MB) installer
 * X86
 ** http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.x86-cygwin.tgz[Cygwin] 1.7.5
-** http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.x86-darwin.gmp-macports.tgz[Darwin (.tgz)] 9.8 (Mac OS X Leopard), dynamically linked against <:GMP:> in `/opt/local/lib` (suitable for http://macports.org[MacPorts] install of <:GMP:>)
-** http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.x86-darwin.gmp-static.tgz[Darwin (.tgz)] 9.8 (Mac OS X Leopard), statically linked against <:GMP:> (but requires <:GMP:> for generated executables)
+** http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.x86-darwin.gmp-macports.tgz[Darwin (.tgz)] 9.8 (Mac OS X Leopard), dynamically linked against <<GMP#>> in `/opt/local/lib` (suitable for http://macports.org[MacPorts] install of <<GMP#>>)
+** http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.x86-darwin.gmp-static.tgz[Darwin (.tgz)] 9.8 (Mac OS X Leopard), statically linked against <<GMP#>> (but requires <<GMP#>> for generated executables)
 ** http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.x86-linux.tgz[Linux], glibc 2.11
 ** http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608-1.x86-linux.static.tgz[Linux], statically linked
 ** Windows MinGW 32/64 http://sourceforge.net/projects/mlton/files/mlton/20100608/MLton-20100608-1.exe[self-extracting] (28MB) or http://sourceforge.net/projects/mlton/files/mlton/20100608/MLton-20100608-1.msi[MSI] (61MB) installer
 
-== 20100608 source packages ==
+== 20100608 source packages
 
  * http://sourceforge.net/projects/mlton/files/mlton/20100608/mlton-20100608.src.tgz[mlton-20100608.src.tgz]
 
-== Packages available at other sites ==
+== Packages available at other sites
 
  * http://packages.debian.org/search?keywords=mlton&searchon=names&suite=all&section=all[Debian]
  * http://www.freebsd.org/cgi/ports.cgi?query=mlton&stype=all[FreeBSD]
  * https://admin.fedoraproject.org/pkgdb/acls/name/mlton[Fedora]
  * http://packages.ubuntu.com/search?suite=default&section=all&arch=any&searchon=names&keywords=mlton[Ubuntu]
 
-== Also see ==
+== Also see
 
-* <:Bugs20100608:>
+* <<Bugs20100608#>>
 * http://www.mlton.org/guide/20100608/[MLton Guide (20100608)].
 +
 A snapshot of the MLton wiki at the time of release.

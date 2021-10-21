@@ -1,5 +1,4 @@
-StandardMLGotchas
-=================
+= StandardMLGotchas
 :toc:
 
 This page contains brief explanations of some recurring sources of
@@ -11,7 +10,7 @@ basics of the language.  While writing your first SML programs, you
 should keep the source code of your programs in a form that is
 accepted by an SML compiler as a whole.
 
-== The `and` keyword ==
+== The `and` keyword
 
 It is a common mistake to misuse the `and` keyword or to not know how
 to introduce mutually recursive definitions.  The purpose of the `and`
@@ -41,7 +40,7 @@ datatype decl = VAL of id * pat * expr
 You can also use `and` as a shorthand in a couple of other places, but
 it is not necessary.
 
-== Constructed patterns ==
+== Constructed patterns
 
 It is a common mistake to forget to parenthesize constructed patterns
 in `fun` bindings.  Consider the following invalid definition:
@@ -93,7 +92,7 @@ fun valOf x = case x of
 
 are fine.
 
-== Declarations and expressions ==
+== Declarations and expressions
 
 It is a common mistake to confuse expressions and declarations.
 Normally an SML source file should only contain declarations.  The
@@ -132,30 +131,30 @@ val () = ...
 ----
 
 
-== Equality types ==
+== Equality types
 
 SML has a fairly intricate built-in notion of equality.  See
-<:EqualityType:> and <:EqualityTypeVariable:> for a thorough
+<<EqualityType#>> and <<EqualityTypeVariable#>> for a thorough
 discussion.
 
 
-== Nested cases ==
+== Nested cases
 
 It is a common mistake to write nested case expressions without the
-necessary parentheses.  See <:UnresolvedBugs:> for a discussion.
+necessary parentheses.  See <<UnresolvedBugs#>> for a discussion.
 
 
-== (op *) ==
+== (op *)
 
 It used to be a common mistake to parenthesize `op {asterisk}` as `(op
 {asterisk})`.  Before SML'97, `{asterisk})` was considered a comment
 terminator in SML and caused a syntax error.  At the time of writing,
-<:SMLNJ:SML/NJ> still rejects the code.  An extra space may be used
+<<SMLNJ#,SML/NJ>> still rejects the code.  An extra space may be used
 for portability: `(op {asterisk} )`. However, parenthesizing `op` is
 redundant, even though it is a widely used convention.
 
 
-== Overloading ==
+== Overloading
 
 A number of standard operators (`+`, `-`, `~`, `*`, `<`, `>`, ...) and
 numeric constants are overloaded for some of the numeric types (`int`,
@@ -178,10 +177,10 @@ assigned a default type.  The above definition gets the type
 val min : int * int -> int
 ----
 
-See <:Overloading:> and <:TypeIndexedValues:> for further discussion.
+See <<Overloading#>> and <<TypeIndexedValues#>> for further discussion.
 
 
-== Semicolons ==
+== Semicolons
 
 It is a common mistake to use redundant semicolons in SML code.  This
 is probably caused by the fact that in an SML REPL, a semicolon (and
@@ -206,21 +205,21 @@ Note that semicolons act as expression (or declaration) separators
 rather than as terminators.
 
 
-== Stale bindings ==
+== Stale bindings
 
 {empty}
 
 
-== Unresolved records ==
+== Unresolved records
 
 {empty}
 
 
-== Value restriction ==
+== Value restriction
 
-See <:ValueRestriction:>.
+See <<ValueRestriction#>>.
 
 
-== Type Variable Scope ==
+== Type Variable Scope
 
-See <:TypeVariableScope:>.
+See <<TypeVariableScope#>>.

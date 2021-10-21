@@ -1,5 +1,4 @@
-Bugs20210117
-============
+= Bugs20210117
 
-Here are the known bugs in <:Release20210117:MLton 20210117>, listed
+Here are the known bugs in <<Release20210117#,MLton 20210117>>, listed
 in reverse chronological order of date reported.

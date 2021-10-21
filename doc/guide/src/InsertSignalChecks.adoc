@@ -1,17 +1,16 @@
-InsertSignalChecks
-==================
+= InsertSignalChecks
 
-<:InsertSignalChecks:> is a pass for the <:RSSA:>
-<:IntermediateLanguage:>, invoked from <:RSSASimplify:>.
+<<InsertSignalChecks#>> is a pass for the <<RSSA#>>
+<<IntermediateLanguage#>>, invoked from <<RSSASimplify#>>.
 
-== Description ==
+== Description
 
 This pass inserts signal checks.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/backend/limit-check.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/backend/limit-check.fun[`limit-check.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 {empty}

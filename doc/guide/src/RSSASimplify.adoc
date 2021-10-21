@@ -1,23 +1,22 @@
-RSSASimplify
-============
+= RSSASimplify
 
-The optimization passes for the <:RSSA:> <:IntermediateLanguage:> are
+The optimization passes for the <<RSSA#>> <<IntermediateLanguage#>> are
 collected and controlled by the `Backend` functor
-(<!ViewGitFile(mlton,master,mlton/backend/backend.sig)>,
-<!ViewGitFile(mlton,master,mlton/backend/backend.fun)>).
+(https://github.com/MLton/mlton/blob/master/mlton/backend/backend.sig[`backend.sig`],
+https://github.com/MLton/mlton/blob/master/mlton/backend/backend.fun[`backend.fun`]).
 
 The following optimization pass is implemented:
 
-* <:BounceVars:>
-* <:CollectStatics:>
-* <:RSSAShrink:>
+* <<BounceVars#>>
+* <<CollectStatics#>>
+* <<RSSAShrink#>>
 
 The following implementation passes are implemented:
 
-* <:ImplementHandlers:>
-* <:ImplementProfiling:>
-* <:InsertLimitChecks:>
-* <:InsertSignalChecks:>
+* <<ImplementHandlers#>>
+* <<ImplementProfiling#>>
+* <<InsertLimitChecks#>>
+* <<InsertSignalChecks#>>
 
 The optimization passes can be controlled from the command-line by the options
 

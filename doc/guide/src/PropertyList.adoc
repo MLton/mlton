@@ -1,5 +1,4 @@
-PropertyList
-============
+= PropertyList
 
 A property list is a dictionary-like data structure into which
 properties (name-value pairs) can be inserted and from which
@@ -53,10 +52,10 @@ functor will produce the following output.
 ----
 
 
-== Implementation ==
+== Implementation
 
 Because property lists can hold values of any type, their
-implementation requires a <:UniversalType:>.  Given that, a property
+implementation requires a <<UniversalType#>>.  Given that, a property
 list is simply a list of elements of the universal type.  Adding a
 property adds to the front of the list, and looking up a property
 scans the list.
@@ -93,12 +92,12 @@ Of course, a serious implementation of property lists would have to
 handle duplicate insertions of the same property, as well as the
 removal of elements in order to avoid space leaks.
 
-== Also see ==
+== Also see
 
 * MLton relies heavily on property lists for attaching information to
 syntax tree nodes in its intermediate languages.  See
-<!ViewGitFile(mlton,master,lib/mlton/basic/property-list.sig)> and
-<!ViewGitFile(mlton,master,lib/mlton/basic/property-list.fun)>.
+https://github.com/MLton/mlton/blob/master/lib/mlton/basic/property-list.sig[`property-list.sig`] and
+https://github.com/MLton/mlton/blob/master/lib/mlton/basic/property-list.fun[`property-list.fun`].
 
-* The <:MLRISCLibrary:> <!Cite(LeungGeorge99, uses property lists
-extensively)>.
+* The <<MLRISCLibrary#>> <<References#LeungGeorge99,uses property lists
+extensively>>.

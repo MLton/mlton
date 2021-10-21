@@ -1,32 +1,31 @@
-SSA
-===
+= SSA
 
-<:SSA:> is an <:IntermediateLanguage:>, translated from <:SXML:> by
-<:ClosureConvert:>, optimized by <:SSASimplify:>, and translated by
-<:ToSSA2:> to <:SSA2:>.
+<<SSA#>> is an <<IntermediateLanguage#>>, translated from <<SXML#>> by
+<<ClosureConvert#>>, optimized by <<SSASimplify#>>, and translated by
+<<ToSSA2#>> to <<SSA2#>>.
 
-== Description ==
+== Description
 
-<:SSA:> is a <:FirstOrder:>, <:SimplyTyped:> <:IntermediateLanguage:>.
-It is the main <:IntermediateLanguage:> used for optimizations.
+<<SSA#>> is a <<FirstOrder#>>, <<SimplyTyped#>> <<IntermediateLanguage#>>.
+It is the main <<IntermediateLanguage#>> used for optimizations.
 
-An <:SSA:> program consists of a collection of datatype declarations,
+An <<SSA#>> program consists of a collection of datatype declarations,
 a sequence of global statements, and a collection of functions, along
 with a distinguished "main" function.  Each function consists of a
 collection of basic blocks, where each basic block is a sequence of
 statements ending with some control transfer.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/ssa.sig)>
-* <!ViewGitFile(mlton,master,mlton/ssa/ssa.fun)>
-* <!ViewGitFile(mlton,master,mlton/ssa/ssa-tree.sig)>
-* <!ViewGitFile(mlton,master,mlton/ssa/ssa-tree.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/ssa.sig[`ssa.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/ssa.fun[`ssa.fun`]
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/ssa-tree.sig[`ssa-tree.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/ssa-tree.fun[`ssa-tree.fun`]
 
-== Type Checking ==
+== Type Checking
 
-Type checking (<!ViewGitFile(mlton,master,mlton/ssa/type-check.sig)>,
-<!ViewGitFile(mlton,master,mlton/ssa/type-check.fun)>) of a <:SSA:> program
+Type checking (https://github.com/MLton/mlton/blob/master/mlton/ssa/type-check.sig[`type-check.sig`],
+https://github.com/MLton/mlton/blob/master/mlton/ssa/type-check.fun[`type-check.fun`]) of a <<SSA#>> program
 verifies the following:
 
 * no duplicate definitions (tycons, cons, vars, labels, funcs)
@@ -36,7 +35,7 @@ verifies the following:
 * `Enter`/`Leave` profile statements match
 * "traditional" well-typedness
 
-== Details and Notes ==
+== Details and Notes
 
 SSA is an abbreviation for Static Single Assignment.
 

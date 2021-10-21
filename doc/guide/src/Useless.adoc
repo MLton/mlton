@@ -1,10 +1,9 @@
-Useless
-=======
+= Useless
 
-<:Useless:> is an optimization pass for the <:SSA:>
-<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+<<Useless#>> is an optimization pass for the <<SSA#>>
+<<IntermediateLanguage#>>, invoked from <<SSASimplify#>>.
 
-== Description ==
+== Description
 
 This pass:
 
@@ -17,11 +16,11 @@ If a useful tuple is coerced to another useful tuple, then all of
 their components must agree (exactly).  It is trivial to convert a
 useful value to a useless one.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/useless.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/useless.fun[`useless.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 It is also trivial to convert a useful tuple to one of its useful
 components -- but this seems hard.

@@ -1,18 +1,17 @@
-Polyvariance
-============
+= Polyvariance
 
-Polyvariance is an optimization pass for the <:SXML:>
-<:IntermediateLanguage:>, invoked from <:SXMLSimplify:>.
+Polyvariance is an optimization pass for the <<SXML#>>
+<<IntermediateLanguage#>>, invoked from <<SXMLSimplify#>>.
 
-== Description ==
+== Description
 
 This pass duplicates a higher-order, `let` bound function at each
 variable reference, if the cost is smaller than some threshold.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/xml/polyvariance.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/xml/polyvariance.fun[`polyvariance.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 {empty}

@@ -1,10 +1,9 @@
-Eclipse
-=======
+= Eclipse
 
 http://eclipse.org/[Eclipse] is an open, extensible IDE.
 
 http://www.cse.iitd.ernet.in/%7Ecsu02132/mldev/[ML-Dev] is a plug-in
-for Eclipse, based on <:SMLNJ:SML/NJ>.
+for Eclipse, based on <<SMLNJ#,SML/NJ>>.
 
 There has been some talk on the MLton mailing list about adding
 support to Eclipse for MLton/SML, and in particular, using

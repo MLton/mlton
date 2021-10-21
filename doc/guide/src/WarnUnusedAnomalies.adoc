@@ -1,7 +1,6 @@
-WarnUnusedAnomalies
-===================
+= WarnUnusedAnomalies
 
-The `warnUnused` <:MLBasisAnnotations:MLBasis annotation> can be used
+The `warnUnused` <<MLBasisAnnotations#,MLBasis annotation>> can be used
 to report unused identifiers.  This can be useful for catching bugs
 and for code maintenance (e.g., eliminating dead code).  However, the
 `warnUnused` annotation can sometimes behave in counter-intuitive

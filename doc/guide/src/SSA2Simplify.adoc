@@ -1,22 +1,21 @@
-SSA2Simplify
-============
+= SSA2Simplify
 
-The optimization passes for the <:SSA2:> <:IntermediateLanguage:> are
+The optimization passes for the <<SSA2#>> <<IntermediateLanguage#>> are
 collected and controlled by the `Simplify2` functor
-(<!ViewGitFile(mlton,master,mlton/ssa/simplify2.sig)>,
-<!ViewGitFile(mlton,master,mlton/ssa/simplify2.fun)>).
+(https://github.com/MLton/mlton/blob/master/mlton/ssa/simplify2.sig[`simplify2.sig`],
+https://github.com/MLton/mlton/blob/master/mlton/ssa/simplify2.fun[`simplify2.fun`]).
 
 The following optimization passes are implemented:
 
-* <:DeepFlatten:>
-* <:RefFlatten:>
-* <:RemoveUnused:>
-* <:Zone:>
+* <<DeepFlatten#>>
+* <<RefFlatten#>>
+* <<RemoveUnused#>>
+* <<Zone#>>
 
 There are additional analysis and rewrite passes that augment many of the other optimization passes:
 
-* <:Restore:>
-* <:Shrink:>
+* <<Restore#>>
+* <<Shrink#>>
 
 The optimization passes can be controlled from the command-line by the options
 

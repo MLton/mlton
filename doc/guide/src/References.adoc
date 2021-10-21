@@ -1,167 +1,169 @@
-References
-==========
+= References
 
-<:#AAA:A>
-<:#BBB:B>
-<:#CCC:C>
-<:#DDD:D>
-<:#EEE:E>
-<:#FFF:F>
-<:#GGG:G>
-<:#HHH:H>
-<:#III:I>
-<:#JJJ:J>
-<:#KKK:K>
-<:#LLL:L>
-<:#MMM:M>
-<:#NNN:N>
-<:#OOO:O>
-<:#PPP:P>
-<:#QQQ:Q>
-<:#RRR:R>
-<:#SSS:S>
-<:#TTT:T>
-<:#UUU:U>
-<:#VVV:V>
-<:#WWW:W>
-<:#XXX:X>
-<:#YYY:Y>
-<:#ZZZ:Z>
+<<#AAA,A>>
+<<#BBB,B>>
+<<#CCC,C>>
+<<#DDD,D>>
+<<#EEE,E>>
+<<#FFF,F>>
+<<#GGG,G>>
+<<#HHH,H>>
+<<#III,I>>
+<<#JJJ,J>>
+<<#KKK,K>>
+<<#LLL,L>>
+<<#MMM,M>>
+<<#NNN,N>>
+<<#OOO,O>>
+<<#PPP,P>>
+<<#QQQ,Q>>
+<<#RRR,R>>
+<<#SSS,S>>
+<<#TTT,T>>
+<<#UUU,U>>
+<<#VVV,V>>
+<<#WWW,W>>
+<<#XXX,X>>
+<<#YYY,Y>>
+<<#ZZZ,Z>>
 
-== <!Anchor(AAA)>A ==
+[#AAA]
+== A
 
- * <!Anchor(AcarEtAl06)>
+ * [[AcarEtAl06]]
  http://www.umut-acar.org/publications/pldi2006.pdf[An Experimental Analysis of Self-Adjusting Computation]
  Umut Acar, Guy Blelloch, Matthias Blume, and Kanat Tangwongsan.
- <:#PLDI:> 2006.
+ <<#PLDI>> 2006.
 
- * <!Anchor(Appel92)>
+ * [[Appel92]]
  http://us.cambridge.org/titles/catalogue.asp?isbn=0521416957[Compiling with Continuations]
  (http://www.addall.com/New/submitNew.cgi?query=0-521-41695-7&type=ISBN&location=10000&state=&dispCurr=USD[addall]).
  ISBN 0521416957.
  Andrew W. Appel.
  Cambridge University Press, 1992.
 
- * <!Anchor(Appel93)>
+ * [[Appel93]]
  http://www.cs.princeton.edu/research/techreps/TR-364-92[A Critique of Standard ML].
  Andrew W. Appel.
- <:#JFP:> 1993.
+ <<#JFP>> 1993.
 
- * <!Anchor(Appel98)>
+ * [[Appel98]]
  http://us.cambridge.org/titles/catalogue.asp?isbn=0521582741[Modern Compiler Implementation in ML]
  (http://www.addall.com/New/submitNew.cgi?query=0-521-58274-1&type=ISBN&location=10000&state=&dispCurr=USD[addall]).
  ISBN 0521582741
  Andrew W. Appel.
  Cambridge University Press, 1998.
 
- * <!Anchor(AppelJim97)>
+ * [[AppelJim97]]
  http://ncstrl.cs.princeton.edu/expand.php?id=TR-556-97[Shrinking Lambda Expressions in Linear Time]
  Andrew Appel and Trevor Jim.
- <:#JFP:> 1997.
+ <<#JFP>> 1997.
 
- * <!Anchor(AppelEtAl94)>
+ * [[AppelEtAl94]]
  http://www.smlnj.org/doc/ML-Lex/manual.html[A lexical analyzer generator for Standard ML. Version 1.6.0]
  Andrew W. Appel, James S. Mattson, and David R. Tarditi.  1994
 
-== <!Anchor(BBB)>B ==
+[#BBB]
+== B
 
- * <!Anchor(BaudinetMacQueen85)>
+ * [[BaudinetMacQueen85]]
  http://www.classes.cs.uchicago.edu/archive/2011/spring/22620-1/papers/macqueen-baudinet85.pdf[Tree Pattern Matching for ML].
  Marianne Baudinet, David MacQueen.  1985.
 +
 ____
 Describes the match compiler used in an early version of
-<:SMLNJ:SML/NJ>.
+<<SMLNJ#,SML/NJ>>.
 ____
 
- * <!Anchor(BentonEtAl98)>
+ * [[BentonEtAl98]]
  http://research.microsoft.com/en-us/um/people/nick/icfp98.pdf[Compiling Standard ML to Java Bytecodes].
  Nick Benton, Andrew Kennedy, and George Russell.
- <:#ICFP:> 1998.
+ <<#ICFP>> 1998.
 
- * <!Anchor(BentonKennedy99)>
+ * [[BentonKennedy99]]
  http://research.microsoft.com/en-us/um/people/nick/SMLJavaInterop.pdf[Interlanguage Working Without Tears: Blending SML with Java].
  Nick Benton and Andrew Kennedy.
- <:#ICFP:> 1999.
+ <<#ICFP>> 1999.
 
- * <!Anchor(BentonKennedy01)>
+ * [[BentonKennedy01]]
  http://research.microsoft.com/en-us/um/people/akenn/sml/ExceptionalSyntax.pdf[Exceptional Syntax].
  Nick Benton and Andrew Kennedy.
- <:#JFP:> 2001.
+ <<#JFP>> 2001.
 
- * <!Anchor(BentonEtAl04)>
+ * [[BentonEtAl04]]
  http://research.microsoft.com/en-us/um/people/nick/p53-Benton.pdf[Adventures in Interoperability: The SML.NET Experience].
  Nick Benton, Andrew Kennedy, and Claudio Russo.
- <:#PPDP:> 2004.
+ <<#PPDP>> 2004.
 
- * <!Anchor(BentonEtAl04_2)>
+ * [[BentonEtAl04_2]]
  http://research.microsoft.com/en-us/um/people/nick/shrinking.pdf[Shrinking Reductions in SML.NET].
  Nick Benton, Andrew Kennedy, Sam Lindley and Claudio Russo.
- <:#IFL:> 2004.
+ <<#IFL>> 2004.
 +
 ____
 Describes a linear-time implementation of an
-<!Cite(AppelJim97,Appel-Jim shrinker)>, using a mutable IL, and shows
+<<References#AppelJim97,Appel-Jim shrinker>>, using a mutable IL, and shows
 that it yields nice speedups in SML.NET's compile times.  There are
 also benchmarks showing that SML.NET when compiled by MLton runs
 roughly five times faster than when compiled by SML/NJ.
 ____
 
- * <!Anchor(Benton05)>
+ * [[Benton05]]
  http://research.microsoft.com/en-us/um/people/nick/benton03.pdf[Embedded Interpreters].
  Nick Benton.
- <:#JFP:> 2005.
+ <<#JFP>> 2005.
 
- * <!Anchor(Berry91)>
+ * [[Berry91]]
  http://www.lfcs.inf.ed.ac.uk/reports/91/ECS-LFCS-91-148/ECS-LFCS-91-148.pdf[The Edinburgh SML Library].
  Dave Berry.
  University of Edinburgh Technical Report ECS-LFCS-91-148, 1991.
 
- * <!Anchor(BerryEtAl93)>
+ * [[BerryEtAl93]]
  http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.36.7958&rep=rep1&type=ps[A semantics for ML concurrency primitives].
  Dave Berry, Robin Milner, and David N. Turner.
- <:#POPL:> 1992.
+ <<#POPL>> 1992.
 
- * <!Anchor(Berry93)>
+ * [[Berry93]]
  http://journals.cambridge.org/abstract_S0956796800000873[Lessons From the Design of a Standard ML Library].
  Dave Berry.
- <:#JFP:> 1993.
+ <<#JFP>> 1993.
 
- * <!Anchor(Bertelsen98)>
+ * [[Bertelsen98]]
  http://www.petermb.dk/sml2jvm.ps.gz[Compiling SML to Java Bytecode].
  Peter Bertelsen.
  Master's Thesis, 1998.
 
- * <!Anchor(Berthomieu00)>
+ * [[Berthomieu00]]
  http://homepages.laas.fr/bernard/oo/ooml.html[OO Programming styles in ML].
  Bernard Berthomieu.
  LAAS Report #2000111, 2000.
 
- * <!Anchor(Blume01)>
+ * [[Blume01]]
  http://people.cs.uchicago.edu/~blume/papers/nlffi-entcs.pdf[No-Longer-Foreign: Teaching an ML compiler to speak C "natively"].
  Matthias Blume.
- <:#BABEL:> 2001.
+ <<#BABEL>> 2001.
 
- * <!Anchor(Blume01_02)>
+ * [[Blume01_02]]
  http://people.cs.uchicago.edu/~blume/pgraph/proposal.pdf[Portable library descriptions for Standard ML].
  Matthias Blume.  2001.
 
- * <!Anchor(Boehm03)>
+ * [[Boehm03]]
  http://www.hpl.hp.com/techreports/2002/HPL-2002-335.html[Destructors, Finalizers, and Synchronization].
  Hans Boehm.
- <:#POPL:> 2003.
+ <<#POPL>> 2003.
 +
 ____
 Discusses a number of issues in the design of finalizers.  Many of the
-design choices are consistent with <:MLtonFinalizable:>.
+design choices are consistent with <<MLtonFinalizable#>>.
 ____
 
-== <!Anchor(CCC)>C ==
+[#CCC]
+== C
 
- * <!Anchor(CejtinEtAl00)>
+ * [[CejtinEtAl00]]
  http://www.cs.purdue.edu/homes/suresh/papers/icfp99.ps.gz[Flow-directed Closure Conversion for Typed Languages].
  Henry Cejtin, Suresh Jagannathan, and Stephen Weeks.
- <:#ESOP:> 2000.
+ <<#ESOP>> 2000.
 +
 ____
 Describes MLton's closure-conversion algorithm, which translates from
@@ -169,44 +171,45 @@ its simply-typed higher-order intermediate language to its
 simply-typed first-order intermediate language.
 ____
 
- * <!Anchor(ChengBlelloch01)>
+ * [[ChengBlelloch01]]
  http://www.cs.cmu.edu/afs/cs/project/pscico/pscico/papers/gc01/pldi-final.pdf[A Parallel, Real-Time Garbage Collector].
  Perry Cheng and Guy E. Blelloch.
- <:#PLDI:> 2001.
+ <<#PLDI>> 2001.
 
- * <!Anchor(Claessen00)>
+ * [[Claessen00]]
  http://users.eecs.northwestern.edu/~robby/courses/395-495-2009-fall/quick.pdf[QuickCheck: A Lightweight Tool for Random Testing of Haskell Programs].
  Koen Claessen and John Hughes.
- <:#ICFP:> 2000.
+ <<#ICFP>> 2000.
 
- * <!Anchor(Clinger98)>
+ * [[Clinger98]]
  http://www.cesura17.net/~will/Professional/Research/Papers/tail.pdf[Proper Tail Recursion and Space Efficiency].
  William D. Clinger.
- <:#PLDI:> 1998.
+ <<#PLDI>> 1998.
 
- * <!Anchor(CooperMorrisett90)>
+ * [[CooperMorrisett90]]
  http://www.eecs.harvard.edu/~greg/papers/jgmorris-mlthreads.ps[Adding Threads to Standard ML].
  Eric C. Cooper and J. Gregory Morrisett.
  CMU Technical Report CMU-CS-90-186, 1990.
 
- * <!Anchor(CouttsEtAl07)>
+ * [[CouttsEtAl07]]
  http://metagraph.org/papers/stream_fusion.pdf[Stream Fusion: From Lists to Streams to Nothing at All].
  Duncan Coutts, Roman Leshchinskiy, and Don Stewart.
  Submitted for publication.  April 2007.
 
-== <!Anchor(DDD)>D ==
+[#DDD]
+== D
 
- * <!Anchor(DamasMilner82)>
+ * [[DamasMilner82]]
  http://groups.csail.mit.edu/pag/6.883/readings/p207-damas.pdf[Principal Type-Schemes for Functional Programs].
  Luis Damas and Robin Milner.
- <:#POPL:> 1982.
+ <<#POPL>> 1982.
 
- * <!Anchor(Danvy98)>
+ * [[Danvy98]]
  http://www.brics.dk/RS/98/12[Functional Unparsing].
  Olivier Danvy.
  BRICS Technical Report RS 98-12, 1998.
 
- * <!Anchor(Deboer05)>
+ * [[Deboer05]]
  http://alleystoughton.us/eXene/dusty-thesis.pdf[Exhancements to eXene].
  Dustin B. deBoer.
  Master of Science Thesis, 2005.
@@ -216,61 +219,63 @@ Describes ways to improve widget concurrency, handling of input focus,
 X resources and selections.
 ____
 
- * <!Anchor(DoligezLeroy93)>
+ * [[DoligezLeroy93]]
  http://cristal.inria.fr/~doligez/publications/doligez-leroy-popl-1993.pdf[A Concurrent, Generational Garbage Collector for a Multithreaded Implementation of ML].
  Damien Doligez and Xavier Leroy.
- <:#POPL:> 1993.
+ <<#POPL>> 1993.
 
- * <!Anchor(Dreyer07)>
+ * [[Dreyer07]]
  http://www.mpi-sws.org/~dreyer/papers/mtc/main-long.pdf[Modular Type Classes].
  Derek Dreyer, Robert Harper, Manuel M.T. Chakravarty, Gabriele Keller.
  University of Chicago Technical Report TR-2007-02, 2006.
 
- * <!Anchor(DreyerBlume07)>
+ * [[DreyerBlume07]]
  http://www.mpi-sws.org/~dreyer/papers/infmod/main-long.pdf[Principal Type Schemes for Modular Programs].
  Derek Dreyer and Matthias Blume.
- <:#ESOP:> 2007.
+ <<#ESOP>> 2007.
 
- * <!Anchor(Dubois95)>
+ * [[Dubois95]]
  ftp://ftp.inria.fr/INRIA/Projects/cristal/Francois.Rouaix/generics.dvi.Z[Extensional Polymorphism].
  Catherin Dubois, Francois Rouaix, and Pierre Weis.
- <:#POPL:> 1995.
+ <<#POPL>> 1995.
 +
 ____
 An extension of ML that allows the definition of ad-hoc polymorphic
 functions by inspecting the type of their argument.
 ____
 
-== <!Anchor(EEE)>E ==
+[#EEE]
+== E
 
- * <!Anchor(Elsman03)>
+ * [[Elsman03]]
  http://www.elsman.com/tldi03.pdf[Garbage Collection Safety for Region-based Memory Management].
  Martin Elsman.
- <:#TLDI:> 2003.
+ <<#TLDI>> 2003.
 
- * <!Anchor(Elsman04)>
+ * [[Elsman04]]
  http://www.elsman.com/ITU-TR-2004-43.pdf[Type-Specialized Serialization with Sharing].
  Martin Elsman.  University of Copenhagen. IT University Technical
  Report TR-2004-43, 2004.
 
-== <!Anchor(FFF)>F ==
+[#FFF]
+== F
 
- * <!Anchor(FelleisenFreidman98)>
+ * [[FelleisenFreidman98]]
  http://mitpress.mit.edu/catalog/item/default.asp?ttype=2&tid=4787[The Little MLer]
  (http://www3.addall.com/New/submitNew.cgi?query=026256114X&type=ISBN[addall]).
  ISBN 026256114X.
  Matthias Felleisen and Dan Freidman.
  The MIT Press, 1998.
 
- * <!Anchor(FlattFindler04)>
+ * [[FlattFindler04]]
  http://www.cs.utah.edu/plt/kill-safe/[Kill-Safe Synchronization Abstractions].
  Matthew Flatt and Robert Bruce Findler.
- <:#PLDI:> 2004.
+ <<#PLDI>> 2004.
 
- * <!Anchor(FluetWeeks01)>
+ * [[FluetWeeks01]]
  http://www.cs.rit.edu/~mtf/research/contification[Contification Using Dominators].
  Matthew Fluet and Stephen Weeks.
- <:#ICFP:> 2001.
+ <<#ICFP>> 2001.
 +
 ____
 Describes contification, a generalization of tail-recursion
@@ -278,31 +283,32 @@ elimination that is an optimization operating on MLton's static single
 assignment (SSA) intermediate language.
 ____
 
- * <!Anchor(FluetPucella06)>
+ * [[FluetPucella06]]
  http://www.cs.rit.edu/~mtf/research/phantom-subtyping/jfp06/jfp06.pdf[Phantom Types and Subtyping].
  Matthew Fluet and Riccardo Pucella.
- <:#JFP:> 2006.
+ <<#JFP>> 2006.
 
- * <!Anchor(Furuse01)>
+ * [[Furuse01]]
  http://jfla.inria.fr/2001/actes/07-furuse.ps[Generic Polymorphism in ML].
  J{empty}. Furuse.
- <:#JFLA:> 2001.
+ <<#JFLA>> 2001.
 +
 ____
 The formalism behind G'CAML, which has an approach to ad-hoc
-polymorphism based on <!Cite(Dubois95)>, the differences being in how
+polymorphism based on <<References#Dubois95,Dubois95>>, the differences being in how
 type checking works an an improved compilation approach for typecase
 that does the matching at compile time, not run time.
 ____
 
-== <!Anchor(GGG)>G ==
+[#GGG]
+== G
 
- * <!Anchor(GansnerReppy93)>
+ * [[GansnerReppy93]]
  http://alleystoughton.us/eXene/1993-trends.pdf[A Multi-Threaded Higher-order User Interface Toolkit].
  Emden R. Gansner and John H. Reppy.
  User Interface Software, 1993.
 
- * <!Anchor(GansnerReppy04)>
+ * [[GansnerReppy04]]
 http://www.cambridge.org/gb/academic/subjects/computer-science/programming-languages-and-applied-logic/standard-ml-basis-library[The Standard ML Basis Library].
  (http://www3.addall.com/New/submitNew.cgi?query=9780521794787&type=ISBN[addall])
  ISBN 9780521794787.
@@ -310,72 +316,73 @@ http://www.cambridge.org/gb/academic/subjects/computer-science/programming-langu
  Cambridge University Press, 2004.
 +
 ____
-An introduction and overview of the <:BasisLibrary:Basis Library>,
+An introduction and overview of the <<BasisLibrary#,Basis Library>>,
 followed by a detailed description of each module.  The module
 descriptions are also available
-http://www.standardml.org/Basis[online].
+https://smlfamily.github.io/Basis[online].
 ____
 
- * <!Anchor(GrossmanEtAl02)>
+ * [[GrossmanEtAl02]]
  http://www.cs.umd.edu/projects/cyclone/papers/cyclone-regions.pdf[Region-based Memory Management in Cyclone].
  Dan Grossman, Greg Morrisett, Trevor Jim, Michael Hicks, Yanling
  Wang, and James Cheney.
- <:#PLDI:> 2002.
+ <<#PLDI>> 2002.
 
-== <!Anchor(HHH)>H ==
+[#HHH]
+== H
 
- * <!Anchor(HallenbergEtAl02)>
+ * [[HallenbergEtAl02]]
  http://www.itu.dk/people/tofte/publ/pldi2002.pdf[Combining Region Inference and Garbage Collection].
  Niels Hallenberg, Martin Elsman, and Mads Tofte.
- <:#PLDI:> 2002.
+ <<#PLDI>> 2002.
 
- * <!Anchor(HansenRichel99)>
+ * [[HansenRichel99]]
  http://www.it.dtu.dk/introSML[Introduction to Programming Using SML]
  (http://www3.addall.com/New/submitNew.cgi?query=0201398206&type=ISBN[addall]).
  ISBN 0201398206.
  Michael R. Hansen, Hans Rischel.
  Addison-Wesley, 1999.
 
- * <!Anchor(Harper11)>
+ * [[Harper11]]
  http://www.cs.cmu.edu/~rwh/isml/book.pdf[Programming in Standard ML].
  Robert Harper.
 
- * <!Anchor(HarperEtAl93)>
+ * [[HarperEtAl93]]
  http://www.cs.cmu.edu/~rwh/papers/callcc/jfp.pdf[Typing First-Class Continuations in ML].
  Robert Harper, Bruce F. Duba, and David MacQueen.
- <:#JFP:> 1993.
+ <<#JFP>> 1993.
 
- * <!Anchor(HarperMitchell92)>
+ * [[HarperMitchell92]]
  http://www.cs.cmu.edu/~rwh/papers/xml/toplas93.pdf[On the Type Structure of Standard ML].
  Robert Harper and John C. Mitchell.
- <:#TOPLAS:> 1992.
+ <<#TOPLAS>> 1992.
 
- * <!Anchor(HauserBenson04)>
+ * [[HauserBenson04]]
  http://doi.ieeecomputersociety.org/10.1109/CSD.2004.1309122[On the Practicality and Desirability of Highly-concurrent, Mostly-functional Programming].
  Carl H. Hauser and David B. Benson.
- <:#ACSD:> 2004.
+ <<#ACSD>> 2004.
 +
 ____
-Describes the use of <:ConcurrentML: Concurrent ML> in implementing
+Describes the use of <<ConcurrentML#,Concurrent ML>> in implementing
 the Ped text editor.  Argues that using large numbers of threads and
 message passing style is a practical and effective way of
 modularizing a program.
 ____
 
- * <!Anchor(HeckmanWilhelm97)>
+ * [[HeckmanWilhelm97]]
  http://rw4.cs.uni-sb.de/~heckmann/abstracts/neuform.html[A Functional Description of TeX's Formula Layout].
  Reinhold Heckmann and Reinhard Wilhelm.
- <:#JFP:> 1997.
+ <<#JFP>> 1997.
 
- * <!Anchor(HicksEtAl03)>
+ * [[HicksEtAl03]]
  http://wwwold.cs.umd.edu/Library/TRs/CS-TR-4514/CS-TR-4514.pdf[Safe and Flexible Memory Management in Cyclone].
  Mike Hicks, Greg Morrisett, Dan Grossman, and Trevor Jim.
  University of Maryland Technical Report CS-TR-4514, 2003.
 
- * <!Anchor(Hurd04)>
+ * [[Hurd04]]
  http://www.gilith.com/research/talks/tphols2004.pdf[Compiling HOL4 to Native Code].
  Joe Hurd.
- <:#TPHOLs:> 2004.
+ <<#TPHOLs>> 2004.
 +
 ____
 Describes a port of HOL from Moscow ML to MLton, the difficulties
@@ -383,71 +390,75 @@ encountered in compiling large programs, and the speedups achieved
 (roughly 10x).
 ____
 
-== <!Anchor(III)>I ==
+[#III]
+== I
 
 {empty}
 
-== <!Anchor(JJJ)>J ==
+[#JJJ]
+== J
 
- * <!Anchor(Jones99)>
+ * [[Jones99]]
  http://www.cs.kent.ac.uk/people/staff/rej/gcbook[Garbage Collection: Algorithms for Automatic Memory Management]
  (http://www3.addall.com/New/submitNew.cgi?query=0471941484&type=ISBN[addall]).
  ISBN 0471941484.
  Richard Jones.
  John Wiley & Sons, 1999.
 
-== <!Anchor(KKK)>K ==
+[#KKK]
+== K
 
- * <!Anchor(Kahrs93)>
+ * [[Kahrs93]]
  http://kar.kent.ac.uk/21122/[Mistakes and Ambiguities in the Definition of Standard ML].
  Stefan Kahrs.
  University of Edinburgh Technical Report ECS-LFCS-93-257, 1993.
 +
 ____
 Describes a number of problems with the
-<!Cite(MilnerEtAl90,1990 Definition)>, many of which were fixed in the
-<!Cite(MilnerEtAl97,1997 Definition)>.
+<<References#MilnerEtAl90,1990 Definition>>, many of which were fixed in the
+<<References#MilnerEtAl97,1997 Definition>>.
 
 Also see the http://www.cs.kent.ac.uk/~smk/errors-new.ps.Z[addenda]
 published in 1996.
 ____
 
- * <!Anchor(Karvonen07)>
+ * [[Karvonen07]]
  http://dl.acm.org/citation.cfm?doid=1292535.1292547[Generics for the Working ML'er].
  Vesa Karvonen.
- <:#ML:> 2007. http://research.microsoft.com/~crusso/ml2007/slides/ml08rp-karvonen-slides.pdf[Slides] from the presentation are also available.
+ <<#ML>> 2007. http://research.microsoft.com/~crusso/ml2007/slides/ml08rp-karvonen-slides.pdf[Slides] from the presentation are also available.
 
- * <!Anchor(Kennedy04)>
+ * [[Kennedy04]]
  http://research.microsoft.com/~akenn/fun/picklercombinators.pdf[Pickler Combinators].
  Andrew Kennedy.
- <:#JFP:> 2004.
+ <<#JFP>> 2004.
 
- * <!Anchor(KoserEtAl03)>
+ * [[KoserEtAl03]]
  http://www.litech.org/~vaughan/pdf/dpcool2003.pdf[sml2java: A Source To Source Translator].
  Justin Koser, Haakon Larsen, Jeffrey A. Vaughan.
- <:#DPCOOL:> 2003.
+ <<#DPCOOL>> 2003.
 
-== <!Anchor(LLL)>L ==
+[#LLL]
+== L
 
- * <!Anchor(Lang99)>
+ * [[Lang99]]
  http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.29.7130&rep=rep1&type=ps[Faster Algorithms for Finding Minimal Consistent DFAs].
  Kevin Lang. 1999.
 
- * <!Anchor(LarsenNiss04)>
+ * [[LarsenNiss04]]
  http://usenix.org/publications/library/proceedings/usenix04/tech/freenix/full_papers/larsen/larsen.pdf[mGTK: An SML binding of Gtk+].
  Ken Larsen and Henning Niss.
  USENIX Annual Technical Conference, 2004.
 
- * <!Anchor(Leibig13)>
+ * [[Leibig13]]
  http://www.cs.rit.edu/~bal6053/msproject/[An LLVM Back-end for MLton].
  Brian Leibig.
  MS Project Report, 2013.
 +
 ____
-Describes MLton's <:LLVMCodegen:>.
+Describes MLton's <<LLVMCodegen#>>.
 ____
 
- * <!Anchor(Leroy90)>
+ * [[Leroy90]]
  http://pauillac.inria.fr/~xleroy/bibrefs/Leroy-ZINC.html[The ZINC Experiment: an Economical Implementation of the ML Language].
  Xavier Leroy.
  Technical report 117, INRIA, 1990.
@@ -458,21 +469,22 @@ compiler and interpreter for ML with a machine model aimed at
 efficient implementation.
 ____
 
- * <!Anchor(Leroy93)>
+ * [[Leroy93]]
  http://pauillac.inria.fr/~xleroy/bibrefs/Leroy-poly-par-nom.html[Polymorphism by Name for References and Continuations].
  Xavier Leroy.
- <:#POPL:> 1993.
+ <<#POPL>> 1993.
 
- * <!Anchor(LeungGeorge99)>
+ * [[LeungGeorge99]]
  http://www.cs.nyu.edu/leunga/my-papers/annotations.ps[MLRISC Annotations].
  Allen Leung and Lal George. 1999.
 
-== <!Anchor(MMM)>M ==
+[#MMM]
+== M
 
- * <!Anchor(MarlowEtAl01)>
+ * [[MarlowEtAl01]]
  http://community.haskell.org/~simonmar/papers/async.pdf[Asynchronous Exceptions in Haskell].
  Simon Marlow, Simon Peyton Jones, Andy Moran and John Reppy.
- <:#PLDI:> 2001.
+ <<#PLDI>> 2001.
 +
 ____
 An asynchronous exception is a signal that one thread can send to
@@ -481,22 +493,22 @@ exception so that it can clean up locks or other state relevant to its
 current context.
 ____
 
- * <!Anchor(MacQueenEtAl84)>
+ * [[MacQueenEtAl84]]
  http://homepages.inf.ed.ac.uk/gdp/publications/Ideal_model.pdf[An Ideal Model for Recursive Polymorphic Types].
  David MacQueen, Gordon Plotkin, Ravi Sethi.
- <:#POPL:> 1984.
+ <<#POPL>> 1984.
 
- * <!Anchor(MacQueenEtAl20)>
+ * [[MacQueenEtAl20]]
  https://doi.org/10.1145/3386336[The History of Standard ML].
  David MacQueen, Robert Harper, and John Reppy.
- <:#HOPL:> 2020.
+ <<#HOPL>> 2020.
 
- * <!Anchor(Matthews91)>
+ * [[Matthews91]]
  http://www.lfcs.inf.ed.ac.uk/reports/91/ECS-LFCS-91-174[A Distributed Concurrent Implementation of Standard ML].
  David Matthews.
  University of Edinburgh Technical Report ECS-LFCS-91-174, 1991.
 
- * <!Anchor(Matthews95)>
+ * [[Matthews95]]
  http://www.lfcs.inf.ed.ac.uk/reports/95/ECS-LFCS-95-335[Papers on Poly/ML].
  David C. J. Matthews.
  University of Edinburgh Technical Report ECS-LFCS-95-335, 1995.
@@ -505,7 +517,7 @@ ____
  Bruce J. McAdam.
  University of Edinburgh Technical Report ECS-LFCS-97-375, 1997.
 
- * <!Anchor(MeierNorgaard93)>
+ * [[MeierNorgaard93]]
  A Just-In-Time Backend for Moscow ML 2.00 in SML.
  Bjarke Meier, Kristian Nørgaard.
  Masters Thesis, 2003.
@@ -518,17 +530,17 @@ The full report is only available in
 http://www.itu.dk/stud/speciale/bmkn/fundanemt/download/report[Danish].
 ____
 
- * <!Anchor(Milner78)>
+ * [[Milner78]]
  http://courses.engr.illinois.edu/cs421/sp2013/project/milner-polymorphism.pdf[A Theory of Type Polymorphism in Programming].
  Robin Milner.
  Journal of Computer and System Sciences, 1978.
 
- * <!Anchor(Milner82)>
+ * [[Milner82]]
  http://homepages.inf.ed.ac.uk/dts/fps/papers/evolved.dvi.gz[How ML Evolved].
  Robin Milner.
  Polymorphism--The ML/LCF/Hope Newsletter, 1983.
 
- * <!Anchor(MilnerTofte91)>
+ * [[MilnerTofte91]]
  http://www.itu.dk/people/tofte/publ/1990sml/1990sml.html[Commentary on Standard ML]
  (http://www3.addall.com/New/submitNew.cgi?query=0262631377&type=ISBN[addall])
  ISBN 0262631377.
@@ -537,10 +549,10 @@ ____
 +
 ____
 Introduces and explains the notation and approach used in
-<!Cite(MilnerEtAl90,The Definition of Standard ML)>.
+<<References#MilnerEtAl90,The Definition of Standard ML>>.
 ____
 
- * <!Anchor(MilnerEtAl90)>
+ * [[MilnerEtAl90]]
  http://www.itu.dk/people/tofte/publ/1990sml/1990sml.html[The Definition of Standard ML].
  (http://www3.addall.com/New/submitNew.cgi?query=0262631326&type=ISBN[addall])
  ISBN 0262631326.
@@ -548,11 +560,11 @@ ____
  The MIT Press, 1990.
 +
 ____
-Superseded by <!Cite(MilnerEtAl97,The Definition of Standard ML (Revised))>.
-Accompanied by the <!Cite(MilnerTofte91,Commentary on Standard ML)>.
+Superseded by <<References#MilnerEtAl97,The Definition of Standard ML (Revised)>>.
+Accompanied by the <<References#MilnerTofte91,Commentary on Standard ML>>.
 ____
 
- * <!Anchor(MilnerEtAl97)>
+ * [[MilnerEtAl97]]
  http://mitpress.mit.edu/books/definition-standard-ml[The Definition of Standard ML (Revised)].
  (http://www3.addall.com/New/submitNew.cgi?query=0262631814&type=ISBN[addall])
  ISBN 0262631814.
@@ -561,31 +573,32 @@ ____
 +
 ____
 A terse and formal specification of Standard ML's syntax and
-semantics.  Supersedes <!Cite(MilnerEtAl90,The Definition of Standard ML)>.
+semantics.  Supersedes <<References#MilnerEtAl90,The Definition of Standard ML>>.
 ____
 
- * <!Anchor(ML2000)>
+ * [[ML2000]]
  http://flint.cs.yale.edu/flint/publications/ml2000.html[Principles and a Preliminary Design for ML2000].
  The ML2000 working group, 1999.
 
- * <!Anchor(Morentsen99)>
+ * [[Morentsen99]]
  http://daimi.au.dk/CPnets/workshop99/papers/Mortensen.pdf[Automatic Code Generation from Coloured Petri Nets for an Access Control System].
  Kjeld H. Mortensen.
  Workshop on Practical Use of Coloured Petri Nets and Design/CPN, 1999.
 
- * <!Anchor(MorrisettTolmach93)>
+ * [[MorrisettTolmach93]]
  http://web.cecs.pdx.edu/~apt/ppopp93.ps[Procs and Locks: a Portable Multiprocessing Platform for Standard ML of New Jersey].
  J{empty}. Gregory Morrisett and Andrew Tolmach.
- <:#PPoPP:> 1993.
+ <<#PPoPP>> 1993.
 
- * <!Anchor(Murphy06)>
+ * [[Murphy06]]
  http://www.cs.cmu.edu/~tom7/papers/grid-ml06.pdf[ML Grid Programming with ConCert].
  Tom Murphy VII.
- <:#ML:> 2006.
+ <<#ML>> 2006.
 
-== <!Anchor(NNN)>N ==
+[#NNN]
+== N
 
- * <!Anchor(Neumann99)>
+ * [[Neumann99]]
  http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.25.9485&rep=rep1&type=ps[fxp - Processing Structured Documents in SML].
  Andreas Neumann.
  Scottish Functional Programming Workshop, 1999.
@@ -595,62 +608,64 @@ Describes http://atseidl2.informatik.tu-muenchen.de/~berlea/Fxp[fxp],
 an XML parser implemented in Standard ML.
 ____
 
- * <!Anchor(Neumann99Thesis)>
+ * [[Neumann99Thesis]]
  http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.25.8108&rep=rep1&type=ps[Parsing and Querying XML Documents in SML].
  Andreas Neumann.
  Doctoral Thesis, 1999.
 
- * <!Anchor(NguyenOhori06)>
+ * [[NguyenOhori06]]
  http://www.pllab.riec.tohoku.ac.jp/~ohori/research/NguyenOhoriPPDP06.pdf[Compiling ML Polymorphism with Explicit Layout Bitmap].
  Huu-Duc Nguyen and Atsushi Ohori.
- <:#PPDP:> 2006.
+ <<#PPDP>> 2006.
 
-== <!Anchor(OOO)>O ==
+[#OOO]
+== O
 
- * <!Anchor(Okasaki99)>
+ * [[Okasaki99]]
 http://www.cambridge.org/gb/academic/subjects/computer-science/programming-languages-and-applied-logic/purely-functional-data-structures[Purely Functional Data Structures].
  ISBN 9780521663502.
  Chris Okasaki.
  Cambridge University Press, 1999.
 
- * <!Anchor(Ohori89)>
+ * [[Ohori89]]
  http://www.pllab.riec.tohoku.ac.jp/~ohori/research/fpca89.pdf[A Simple Semantics for ML Polymorphism].
  Atsushi Ohori.
- <:#FPCA:> 1989.
+ <<#FPCA>> 1989.
 
- * <!Anchor(Ohori95)>
+ * [[Ohori95]]
  http://www.pllab.riec.tohoku.ac.jp/~ohori/research/toplas95.pdf[A Polymorphic Record Calculus and Its Compilation].
  Atsushi Ohori.
- <:#TOPLAS:> 1995.
+ <<#TOPLAS>> 1995.
 
- * <!Anchor(OhoriTakamizawa97)>
+ * [[OhoriTakamizawa97]]
  http://www.pllab.riec.tohoku.ac.jp/~ohori/research/jlsc97.pdf[An Unboxed Operational Semantics for ML Polymorphism].
  Atsushi Ohori and Tomonobu Takamizawa.
- <:#LASC:> 1997.
+ <<#LASC>> 1997.
 
- * <!Anchor(Ohori99)>
+ * [[Ohori99]]
  http://www.pllab.riec.tohoku.ac.jp/~ohori/research/ic98.pdf[Type-Directed Specialization of Polymorphism].
  Atsushi Ohori.
- <:#IC:> 1999.
+ <<#IC>> 1999.
 
- * <!Anchor(OwensEtAl09)>
+ * [[OwensEtAl09]]
  http://www.mpi-sws.org/~turon/re-deriv.pdf[Regular-expression derivatives reexamined].
  Scott Owens, John Reppy, and Aaron Turon.
- <:#JFP:> 2009.
+ <<#JFP>> 2009.
 
-== <!Anchor(PPP)>P ==
+[#PPP]
+== P
 
- * <!Anchor(Paulson96)>
+ * [[Paulson96]]
  http://www.cambridge.org/co/academic/subjects/computer-science/programming-languages-and-applied-logic/ml-working-programmer-2nd-edition[ML For the Working Programmer]
  (http://www3.addall.com/New/submitNew.cgi?query=052156543X&type=ISBN[addall])
  ISBN 052156543X.
  Larry C. Paulson.
  Cambridge University Press, 1996.
 
- * <!Anchor(PetterssonEtAl02)>
+ * [[PetterssonEtAl02]]
  http://user.it.uu.se/~kostis/Papers/flops02_22.ps.gz[The HiPE/x86 Erlang Compiler: System Description and Performance Evaluation].
  Mikael Pettersson, Konstantinos Sagonas, and Erik Johansson.
- <:#FLOPS:> 2002.
+ <<#FLOPS>> 2002.
 +
 ____
 Describes a native x86 Erlang compiler and a comparison of many
@@ -658,40 +673,42 @@ different native x86 compilers (including MLton) and their register
 usage and call stack implementations.
 ____
 
- * <!Anchor(Price09)>
+ * [[Price09]]
  http://rogerprice.org/#UG[User's Guide to ML-Lex and ML-Yacc]
  Roger Price.  2009.
 
- * <!Anchor(Pucella98)>
+ * [[Pucella98]]
  http://arxiv.org/abs/cs.PL/0405080[Reactive Programming in Standard ML].
  Riccardo R. Puccella.  1998.
- <:#ICCL:> 1998.
+ <<#ICCL>> 1998.
 
-== <!Anchor(QQQ)>Q ==
+[#QQQ]
+== Q
 
 {empty}
 
-== <!Anchor(RRR)>R ==
+[#RRR]
+== R
 
- * <!Anchor(Ramsey90)>
+ * [[Ramsey90]]
  https://www.cs.princeton.edu/research/techreps/TR-262-90[Concurrent Programming in ML].
  Norman Ramsey.
  Princeton University Technical Report CS-TR-262-90, 1990.
 
- * <!Anchor(Ramsey11)>
+ * [[Ramsey11]]
  http://www.cs.tufts.edu/~nr/pubs/embedj-abstract.html[Embedding an Interpreted Language Using Higher-Order Functions and Types].
  Norman Ramsey.
- <:#JFP:> 2011.
+ <<#JFP>> 2011.
 
- * <!Anchor(RamseyFisherGovereau05)>
+ * [[RamseyFisherGovereau05]]
  http://www.cs.tufts.edu/~nr/pubs/els-abstract.html[An Expressive Language of Signatures].
  Norman Ramsey, Kathleen Fisher, and Paul Govereau.
- <:#ICFP:> 2005.
+ <<#ICFP>> 2005.
 
- * <!Anchor(RedwineRamsey04)>
+ * [[RedwineRamsey04]]
  http://www.cs.tufts.edu/~nr/pubs/widen-abstract.html[Widening Integer Arithmetic].
  Kevin Redwine and Norman Ramsey.
- <:#CC:> 2004.
+ <<#CC>> 2004.
 +
 ____
 Describes a method to implement numeric types and operations (like
@@ -699,12 +716,12 @@ Describes a method to implement numeric types and operations (like
 processor.
 ____
 
- * <!Anchor(Reppy88)>
+ * [[Reppy88]]
  Synchronous Operations as First-Class Values.
  John Reppy.
- <:#PLDI:> 1988.
+ <<#PLDI>> 1988.
 
- * <!Anchor(Reppy07)>
+ * [[Reppy07]]
  http://www.cambridge.org/co/academic/subjects/computer-science/distributed-networked-and-mobile-computing/concurrent-programming-ml[Concurrent Programming in ML]
  (http://www3.addall.com/New/submitNew.cgi?query=9780521714723&type=ISBN[addall]).
  ISBN 9780521714723.
@@ -712,31 +729,32 @@ ____
  Cambridge University Press, 2007.
 +
 ____
-Describes <:ConcurrentML:>.
+Describes <<ConcurrentML#>>.
 ____
 
- * <!Anchor(Reynolds98)>
+ * [[Reynolds98]]
  https://users-cs.au.dk/hosc/local/HOSC-11-4-pp355-361.pdf[Definitional Interpreters Revisited].
  John C. Reynolds.
- <:#HOSC:> 1998.
+ <<#HOSC>> 1998.
 
- * <!Anchor(Reynolds98_2)>
+ * [[Reynolds98_2]]
  https://users-cs.au.dk/hosc/local/HOSC-11-4-pp363-397.pdf[Definitional Interpreters for Higher-Order Programming Languages]
  John C. Reynolds.
- <:#HOSC:> 1998.
+ <<#HOSC>> 1998.
 
- * <!Anchor(Rossberg01)>
+ * [[Rossberg01]]
  http://www.mpi-sws.org/~rossberg/papers/Rossberg%20-%20Defects%20in%20the%20Revised%20Definition%20of%20Standard%20ML%20%5B2007-01-22%20Update%5D.pdf[Defects in the Revised Definition of Standard ML].
  Andreas Rossberg. 2001.
 
-== <!Anchor(SSS)>S ==
+[#SSS]
+== S
 
- * <!Anchor(Sansom91)>
+ * [[Sansom91]]
  http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.24.1020&rep=rep1&type=ps[Dual-Mode Garbage Collection].
  Patrick M. Sansom.
  Workshop on the Parallel Implementation of Functional Languages, 1991.
 
- * <!Anchor(ScottRamsey00)>
+ * [[ScottRamsey00]]
  http://www.cs.tufts.edu/~nr/pubs/match-abstract.html[When Do Match-Compilation Heuristics Matter].
  Kevin Scott and Norman Ramsey.
  University of Virginia Technical Report CS-2000-13, 2000.
@@ -747,44 +765,44 @@ match-compilation heuristics and showed that choice of heuristic
 usually does not significantly affect code size or run time.
 ____
 
- * <!Anchor(Sestoft96)>
+ * [[Sestoft96]]
  http://www.itu.dk/~sestoft/papers/match.ps.gz[ML Pattern Match Compilation and Partial Evaluation].
  Peter Sestoft.
  Partial Evaluation, 1996.
 +
 ____
 Describes the derivation of the match compiler used in
-<:MoscowML:Moscow ML>.
+<<MoscowML#,Moscow ML>>.
 ____
 
- * <!Anchor(ShaoAppel94)>
+ * [[ShaoAppel94]]
  http://flint.cs.yale.edu/flint/publications/closure.html[Space-Efficient Closure Representations].
  Zhong Shao and Andrew W. Appel.
- <:#LFP:> 1994.
+ <<#LFP>> 1994.
 
- * <!Anchor(Shipman02)>
- <!Attachment(References,Shipman02.pdf,Unix System Programming with Standard ML)>.
+ * [[Shipman02]]
+ link:References.attachments/Shipman02.pdf[Unix System Programming with Standard ML].
  Anthony L. Shipman.
  2002.
 +
 ____
-Includes a description of the <:Swerve:> HTTP server written in SML.
+Includes a description of the <<Swerve#>> HTTP server written in SML.
 ____
 
- * <!Anchor(Signoles03)>
+ * [[Signoles03]]
  Calcul Statique des Applications de Modules Parametres.
  Julien Signoles.
- <:#JFLA:> 2003.
+ <<#JFLA>> 2003.
 +
 ____
 Describes a http://caml.inria.fr/cgi-bin/hump.en.cgi?contrib=382[defunctorizer]
 for OCaml, and compares it to existing defunctorizers, including MLton.
 ____
 
- * <!Anchor(SittampalamEtAl04)>
+ * [[SittampalamEtAl04]]
  http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.4.1349&rep=rep1&type=ps[Incremental Execution of Transformation Specifications].
  Ganesh Sittampalam, Oege de Moor, and Ken Friis Larsen.
- <:#POPL:> 2004.
+ <<#POPL>> 2004.
 +
 ____
 Mentions a port from Moscow ML to MLton of
@@ -792,60 +810,61 @@ http://www.itu.dk/research/muddy/[MuDDY], an SML wrapper around the
 http://sourceforge.net/projects/buddy[BuDDY] BDD package.
 ____
 
- * <!Anchor(SwaseyEtAl06)>
+ * [[SwaseyEtAl06]]
  http://www.cs.cmu.edu/~tom7/papers/smlsc2-ml06.pdf[A Separate Compilation Extension to Standard ML].
  David Swasey, Tom Murphy VII, Karl Crary and Robert Harper.
- <:#ML:> 2006.
+ <<#ML>> 2006.
 
-== <!Anchor(TTT)>T ==
+[#TTT]
+== T
 
- * <!Anchor(TarditiAppel00)>
+ * [[TarditiAppel00]]
  http://www.smlnj.org/doc/ML-Yacc/index.html[ML-Yacc User's Manual. Version 2.4]
  David R. Tarditi and Andrew W. Appel. 2000.
 
- * <!Anchor(TarditiEtAl90)>
+ * [[TarditiEtAl90]]
  http://research.microsoft.com/pubs/68738/loplas-sml2c.ps[No Assembly Required: Compiling Standard ML to C].
  David Tarditi, Peter Lee, and Anurag Acharya. 1990.
 
- * <!Anchor(ThorupTofte94)>
+ * [[ThorupTofte94]]
  http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.53.5372&rep=rep1&type=ps[Object-oriented programming and Standard ML].
  Lars Thorup and Mads Tofte.
- <:#ML:>, 1994.
+ <<#ML>>, 1994.
 
- * <!Anchor(Tofte90)>
+ * [[Tofte90]]
  Type Inference for Polymorphic References.
  Mads Tofte.
- <:#IC:> 1990.
+ <<#IC>> 1990.
 
- * <!Anchor(Tofte96)>
+ * [[Tofte96]]
  https://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.165.95&rank=1[Essentials of Standard ML Modules].
  Mads Tofte.
 
- * <!Anchor(Tofte09)>
- <!Attachment(References,Tofte09.pdf,Tips for Computer Scientists on Standard ML (Revised))>.
+ * [[Tofte09]]
+ link:References.attachments/Tofte09.pdf[Tips for Computer Scientists on Standard ML (Revised)].
  Mads Tofte.
 
- * <!Anchor(TolmachAppel95)>
+ * [[TolmachAppel95]]
  http://web.cecs.pdx.edu/~apt/jfp95.ps[A Debugger for Standard ML].
  Andrew Tolmach and Andrew W. Appel.
- <:#JFP:> 1995.
+ <<#JFP>> 1995.
 
- * <!Anchor(Tolmach97)>
+ * [[Tolmach97]]
  http://web.cecs.pdx.edu/~apt/tic97.ps[Combining Closure Conversion with Closure Analysis using Algebraic Types].
  Andrew Tolmach.
- <:#TIC:> 1997.
+ <<#TIC>> 1997.
 +
 ____
 Describes a closure-conversion algorithm for a monomorphic IL.  The
 algorithm uses a unification-based flow analysis followed by
 defunctionalization and is similar to the approach used in MLton
-(<!Cite(CejtinEtAl00)>).
+(<<References#CejtinEtAl00,CejtinEtAl00>>).
 ____
 
- * <!Anchor(TolmachOliva98)>
+ * [[TolmachOliva98]]
  http://web.cecs.pdx.edu/~apt/jfp98.ps[From ML to Ada: Strongly-typed Language Interoperability via Source Translation].
  Andrew Tolmach and Dino Oliva.
- <:#JFP:> 1998.
+ <<#JFP>> 1998.
 +
 ____
 Describes a compiler for RML, a core SML-like language.  The compiler
@@ -853,27 +872,30 @@ is similar in structure to MLton, using monomorphisation,
 defunctionalization, and optimization on a first-order IL.
 ____
 
-== <!Anchor(UUU)>U ==
+[#UUU]
+== U
 
- * <!Anchor(Ullman98)>
+ * [[Ullman98]]
  http://www-db.stanford.edu/~ullman/emlp.html[Elements of ML Programming]
  (http://www3.addall.com/New/submitNew.cgi?query=0137903871&type=ISBN[addall]).
  ISBN 0137903871.
  Jeffrey D. Ullman.
  Prentice-Hall, 1998.
 
-== <!Anchor(VVV)>V ==
+[#VVV]
+== V
 
 {empty}
 
-== <!Anchor(WWW)>W ==
+[#WWW]
+== W
 
- * <!Anchor(Wand84)>
+ * [[Wand84]]
  http://portal.acm.org/citation.cfm?id=800527[A Types-as-Sets Semantics for Milner-Style Polymorphism].
  Mitchell Wand.
- <:#POPL:> 1984.
+ <<#POPL>> 1984.
 
- * <!Anchor(Wang01)>
+ * [[Wang01]]
  http://ncstrl.cs.princeton.edu/expand.php?id=TR-640-01[Managing Memory with Types].
  Daniel C. Wang.
  PhD Thesis.
@@ -883,17 +905,17 @@ Chapter 6 describes an implementation of a type-preserving garbage
 collector for MLton.
 ____
 
- * <!Anchor(WangAppel01)>
+ * [[WangAppel01]]
  http://www.cs.princeton.edu/~appel/papers/typegc.pdf[Type-Preserving Garbage Collectors].
  Daniel C. Wang and Andrew W. Appel.
- <:#POPL:> 2001.
+ <<#POPL>> 2001.
 +
 ____
 Shows how to modify MLton to generate a strongly-typed garbage
 collector as part of a program.
 ____
 
- * <!Anchor(WangMurphy02)>
+ * [[WangMurphy02]]
  http://www.cs.cmu.edu/~tom7/papers/wang-murphy-recursion.pdf[Programming With Recursion Schemes].
  Daniel C. Wang and Tom Murphy VII.
 +
@@ -902,71 +924,74 @@ Describes a programming technique for data abstraction, along with
 benchmarks of MLton and other SML compilers.
 ____
 
- * <!Anchor(Weeks06)>
- <!Attachment(References,060916-mlton.pdf,Whole-Program Compilation in MLton)>.
+ * [[Weeks06]]
+ link:References.attachments/060916-mlton.pdf[Whole-Program Compilation in MLton].
  Stephen Weeks.
- <:#ML:> 2006.
+ <<#ML>> 2006.
 
- * <!Anchor(Wright95)>
+ * [[Wright95]]
  http://homepages.inf.ed.ac.uk/dts/fps/papers/wright.ps.gz[Simple Imperative Polymorphism].
  Andrew Wright.
- <:#LASC:>, 8(4):343-355, 1995.
+ <<#LASC>>, 8(4):343-355, 1995.
 +
 ____
-The origin of the <:ValueRestriction:>.
+The origin of the <<ValueRestriction#>>.
 ____
 
-== <!Anchor(XXX)>X ==
+[#XXX]
+== X
 
 {empty}
 
-== <!Anchor(YYY)>Y ==
+[#YYY]
+== Y
 
- * <!Anchor(Yang98)>
+ * [[Yang98]]
  http://cs.nyu.edu/zheyang/papers/YangZ\--ICFP98.html[Encoding Types in ML-like Languages].
  Zhe Yang.
- <:#ICFP:> 1998.
+ <<#ICFP>> 1998.
 
-== <!Anchor(ZZZ)>Z ==
+[#ZZZ]
+== Z
 
- * <!Anchor(ZiarekEtAl06)>
+ * [[ZiarekEtAl06]]
  http://www.cs.purdue.edu/homes/lziarek/icfp06.pdf[Stabilizers: A Modular Checkpointing Abstraction for Concurrent Functional Programs].
  Lukasz Ziarek, Philip Schatz, and Suresh Jagannathan.
- <:#ICFP:> 2006.
+ <<#ICFP>> 2006.
 
- * <!Anchor(ZiarekEtAl08)>
+ * [[ZiarekEtAl08]]
  http://www.cse.buffalo.edu/~lziarek/hosc.pdf[Flattening tuples in an SSA intermediate representation].
  Lukasz Ziarek, Stephen Weeks, and Suresh Jagannathan.
- <:#HOSC:> 2008.
+ <<#HOSC>> 2008.
 
 
-== Abbreviations ==
+== Abbreviations
 
-* <!Anchor(ACSD)> ACSD = International Conference on Application of Concurrency to System Design
-* <!Anchor(BABEL)> BABEL = Workshop on multi-language infrastructure and interoperability
-* <!Anchor(CC)> CC = International Conference on Compiler Construction
-* <!Anchor(DPCOOL)> DPCOOL = Workshop on Declarative Programming in the Context of OO Languages
-* <!Anchor(ESOP)> ESOP = European Symposium on Programming
-* <!Anchor(FLOPS)> FLOPS = Symposium on Functional and Logic Programming
-* <!Anchor(FPCA)> FPCA = Conference on Functional Programming Languages and Computer Architecture
-* <!Anchor(HOPL)> HOPL = History of Programming Languages
-* <!Anchor(HOSC)> HOSC = Higher-Order and Symbolic Computation
-* <!Anchor(IC)> IC = Information and Computation
-* <!Anchor(ICCL)> ICCL = IEEE International Conference on Computer Languages
-* <!Anchor(ICFP)> ICFP = International Conference on Functional Programming
-* <!Anchor(IFL)> IFL = International Workshop on Implementation and Application of Functional Languages
-* <!Anchor(IVME)> IVME = Workshop on Interpreters, Virtual Machines and Emulators
-* <!Anchor(JFLA)> JFLA = Journees Francophones des Langages Applicatifs
-* <!Anchor(JFP)> JFP = Journal of Functional Programming
-* <!Anchor(LASC)> LASC = Lisp and Symbolic Computation
-* <!Anchor(LFP)> LFP = Lisp and Functional Programming
-* <!Anchor(ML)> ML = Workshop on ML
-* <!Anchor(PLDI)> PLDI = Conference on Programming Language Design and Implementation
-* <!Anchor(POPL)> POPL = Symposium on Principles of Programming Languages
-* <!Anchor(PPDP)> PPDP = International Conference on Principles and Practice of Declarative Programming
-* <!Anchor(PPoPP)> PPoPP = Principles and Practice of Parallel Programming
-* <!Anchor(TCS)> TCS = IFIP International Conference on Theoretical Computer Science
-* <!Anchor(TIC)> TIC = Types in Compilation
-* <!Anchor(TLDI)> TLDI = Workshop on Types in Language Design and Implementation
-* <!Anchor(TOPLAS)> TOPLAS = Transactions on Programming Languages and Systems
-* <!Anchor(TPHOLs)> TPHOLs = International Conference on Theorem Proving in Higher Order Logics
+* [[ACSD]] ACSD = International Conference on Application of Concurrency to System Design
+* [[BABEL]] BABEL = Workshop on multi-language infrastructure and interoperability
+* [[CC]] CC = International Conference on Compiler Construction
+* [[DPCOOL]] DPCOOL = Workshop on Declarative Programming in the Context of OO Languages
+* [[ESOP]] ESOP = European Symposium on Programming
+* [[FLOPS]] FLOPS = Symposium on Functional and Logic Programming
+* [[FPCA]] FPCA = Conference on Functional Programming Languages and Computer Architecture
+* [[HOPL]] HOPL = History of Programming Languages
+* [[HOSC]] HOSC = Higher-Order and Symbolic Computation
+* [[IC]] IC = Information and Computation
+* [[ICCL]] ICCL = IEEE International Conference on Computer Languages
+* [[ICFP]] ICFP = International Conference on Functional Programming
+* [[IFL]] IFL = International Workshop on Implementation and Application of Functional Languages
+* [[IVME]] IVME = Workshop on Interpreters, Virtual Machines and Emulators
+* [[JFLA]] JFLA = Journees Francophones des Langages Applicatifs
+* [[JFP]] JFP = Journal of Functional Programming
+* [[LASC]] LASC = Lisp and Symbolic Computation
+* [[LFP]] LFP = Lisp and Functional Programming
+* [[ML]] ML = Workshop on ML
+* [[PLDI]] PLDI = Conference on Programming Language Design and Implementation
+* [[POPL]] POPL = Symposium on Principles of Programming Languages
+* [[PPDP]] PPDP = International Conference on Principles and Practice of Declarative Programming
+* [[PPoPP]] PPoPP = Principles and Practice of Parallel Programming
+* [[TCS]] TCS = IFIP International Conference on Theoretical Computer Science
+* [[TIC]] TIC = Types in Compilation
+* [[TLDI]] TLDI = Workshop on Types in Language Design and Implementation
+* [[TOPLAS]] TOPLAS = Transactions on Programming Languages and Systems
+* [[TPHOLs]] TPHOLs = International Conference on Theorem Proving in Higher Order Logics

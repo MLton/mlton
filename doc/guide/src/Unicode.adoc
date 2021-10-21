@@ -1,24 +1,23 @@
-Unicode
-=======
+= Unicode
 
-== Support in The Definition of Standard ML ==
+== Support in The Definition of Standard ML
 
 There is no real support for Unicode in the
-<:DefinitionOfStandardML:Definition>; there are only a few throw-away
+<<DefinitionOfStandardML#,Definition>>; there are only a few throw-away
 sentences along the lines of "the characters with numbers 0 to 127
 coincide with the ASCII character set."
 
-== Support in The Standard ML Basis Library ==
+== Support in The Standard ML Basis Library
 
-Neither is there real support for Unicode in the <:BasisLibrary:Basis
-Library>.  The general consensus (which includes the opinions of the
+Neither is there real support for Unicode in the <<BasisLibrary#,Basis
+Library>>.  The general consensus (which includes the opinions of the
 editors of the Basis Library) is that the `WideChar` and `WideString`
 structures are insufficient for the purposes of Unicode.  There is no
 `LargeChar` structure, which in itself is a deficiency, since a
 programmer can not program against the largest supported character
 size.
 
-== Current Support in MLton ==
+== Current Support in MLton
 
 MLton, as a minor extension over the Definition, supports UTF-8 byte
 sequences in text constants.  This feature enables "UTF-8 convenience"
@@ -26,8 +25,8 @@ sequences in text constants.  This feature enables "UTF-8 convenience"
 to copy text from a browser and paste it into a string constant in an
 editor and, furthermore, if the string is printed to a terminal, then
 will (typically) appear as the original text.  See the
-<:SuccessorML#ExtendedTextConsts:extended text constants feature of
-Successor ML> for more details.
+<<SuccessorML#ExtendedTextConsts,extended text constants feature of
+Successor ML>> for more details.
 
 MLton, also as a minor extension over the Definition, supports
 `\Uxxxxxxxx` numeric escapes in text constants and has preliminary
@@ -36,7 +35,7 @@ internal support for 16- and 32-bit characters and strings.
 MLton provides `WideChar` and `WideString` structures, corresponding
 to 32-bit characters and strings, respectively.
 
-== Questions and Discussions ==
+== Questions and Discussions
 
 There are periodic flurries of questions and discussion about Unicode
 in MLton/SML.  In December 2004, there was a discussion that led to
@@ -53,7 +52,7 @@ some coding.
 
  * http://www.mlton.org/pipermail/mlton/2005-November/028300.html
 
-== Also see ==
+== Also see
 
-The <:fxp:> XML parser has some support for dealing with Unicode
+The <<fxp#>> XML parser has some support for dealing with Unicode
 documents.

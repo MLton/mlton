@@ -1,20 +1,19 @@
-CompilerPassTemplate
-====================
+= CompilerPassTemplate
 
-An analysis pass for the <:ZZZ:> <:IntermediateLanguage:>, invoked from <:ZZZOtherPass:>.
-An implementation pass for the <:ZZZ:> <:IntermediateLanguage:>, invoked from <:ZZZSimplify:>.
-An optimization pass for the <:ZZZ:> <:IntermediateLanguage:>, invoked from <:ZZZSimplify:>.
-A rewrite pass for the <:ZZZ:> <:IntermediateLanguage:>, invoked from <:ZZZOtherPass:>.
-A translation pass from the <:ZZA:> <:IntermediateLanguage:> to the <:ZZB:> <:IntermediateLanguage:>.
+An analysis pass for the <<ZZZ#>> <<IntermediateLanguage#>>, invoked from <<ZZZOtherPass#>>.
+An implementation pass for the <<ZZZ#>> <<IntermediateLanguage#>>, invoked from <<ZZZSimplify#>>.
+An optimization pass for the <<ZZZ#>> <<IntermediateLanguage#>>, invoked from <<ZZZSimplify#>>.
+A rewrite pass for the <<ZZZ#>> <<IntermediateLanguage#>>, invoked from <<ZZZOtherPass#>>.
+A translation pass from the <<ZZA#>> <<IntermediateLanguage#>> to the <<ZZB#>> <<IntermediateLanguage#>>.
 
-== Description ==
+== Description
 
 A short description of the pass.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ZZZ.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ZZZ.fun[`ZZZ.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 Relevant details and notes.

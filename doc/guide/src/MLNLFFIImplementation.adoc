@@ -1,20 +1,19 @@
-MLNLFFIImplementation
-=====================
+= MLNLFFIImplementation
 
-MLton's implementation(s) of the <:MLNLFFI:> library differs from the
+MLton's implementation(s) of the <<MLNLFFI#>> library differs from the
 SML/NJ implementation in two important ways:
 
 * MLton cannot utilize the `Unsafe.cast` "cheat" described in Section
-3.7 of <!Cite(Blume01)>.  (MLton's representation of
-<:Closure:closures> and
-<:PackedRepresentation:aggressive representation> optimizations make
+3.7 of <<References#Blume01,Blume01>>.  (MLton's representation of
+<<Closure#,closures>> and
+<<PackedRepresentation#,aggressive representation>> optimizations make
 an `Unsafe.cast` even more "unsafe" than in other implementations.)
 +
 --
 We have considered two solutions:
 
 ** One solution is to utilize an additional type parameter (as
-described in Section 3.7 of <!Cite(Blume01)>):
+described in Section 3.7 of <<References#Blume01,Blume01>>):
 +
 __________
 [source,sml]
@@ -49,10 +48,10 @@ While this means that type-annotated programs may not type-check under
 both the SML/NJ implementation and the MLton implementation, this
 should not be a problem in practice.  Tools, like `ml-nlffigen`, which
 are necessarily implementation dependent (in order to make
-<:CallingFromSMLToCFunctionPointer:calls through a C function
-pointer>), may be easily extended to emit the additional type
+<<CallingFromSMLToCFunctionPointer#,calls through a C function
+pointer>>), may be easily extended to emit the additional type
 parameter.  Client code which uses such generated glue-code (e.g.,
-Section 1 of <!Cite(Blume01)>) need rarely write type-annotations,
+Section 1 of <<References#Blume01,Blume01>>) need rarely write type-annotations,
 thanks to the magic of type inference.
 
 ** The above implementation suffers from two disadvantages.
@@ -66,22 +65,22 @@ moot).
 Second, it appears to unnecessarily duplicate type information.  For
 example, an external C variable of type `int (* f[3])(int)` (that is,
 an array of three function pointers), would be represented by the SML
-type `(((sint -> sint) fptr, dec dg3) arr, sint -> sint, rw) obj`.
-One might well ask why the `'f` instantiation (`sint -> sint` in this
+type `(((sint \-> sint) fptr, dec dg3) arr, sint \-> sint, rw) obj`.
+One might well ask why the `'f` instantiation (`sint \-> sint` in this
 case) cannot be _extracted_ from the `'t` instantiation
-(`((sint -> sint) fptr, dec dg3) arr` in this case), obviating the
+(`((sint \-> sint) fptr, dec dg3) arr` in this case), obviating the
 need for a separate _function-type_ type argument.  There are a number
 of components to an complete answer to this question.  Foremost is the
-fact that <:StandardML: Standard ML> supports neither (general)
+fact that <<StandardML#,Standard ML>> supports neither (general)
 type-level functions nor intensional polymorphism.
 +
 A more direct answer for MLNLFFI is that in the SML/NJ implemention,
 the definition of the types `('t, 'c) obj` and `('t, 'c) ptr` are made
-in such a way that the type variables `'t` and `'c` are <:PhantomType:
-phantom> (not contributing to the run-time representation of an
+in such a way that the type variables `'t` and `'c` are <<PhantomType#,
+phantom>> (not contributing to the run-time representation of an
 `('t, 'c) obj` or `('t, 'c) ptr` value), despite the fact that the
-types `((sint -> sint) fptr, rw) ptr` and
-`((double -> double) fptr, rw) ptr` necessarily carry distinct (and
+types `((sint \-> sint) fptr, rw) ptr` and
+`((double \-> double) fptr, rw) ptr` necessarily carry distinct (and
 type incompatible) run-time (C-)type information (RTTI), corresponding
 to the different calling conventions of the two C functions.  The
 `Unsafe.cast` "cheat" overcomes the type incompatibility without
@@ -96,7 +95,7 @@ representation of RTTI.
 +
 This is not without some small drawbacks.  Because many of the types
 used to instantiate `'t` carry more structure than is strictly
-necessary for `'t`'s RTTI, it is sometimes necessary to wrap and
+necessary for `'t`&rsquo;s RTTI, it is sometimes necessary to wrap and
 unwrap RTTI to accommodate the additional structure.  (In the other
 implementations, the corresponding operations can pass along the RTTI
 unchanged.)  However, these coercions contribute minuscule overhead;
@@ -105,26 +104,26 @@ eliminate the RTTI from the final program.
 
 The implementation distributed with MLton uses the second solution.
 
-Bonus question: Why can't one use a <:UniversalType: universal type>
+Bonus question: Why can't one use a <<UniversalType#,universal type>>
 to eliminate the use of `Unsafe.cast`?
 
 ** Answer: ???
 --
 
 * MLton (in both of the above implementations) provides a richer
-`MLRep` structure, utilizing ++Int__<N>__++ and ++Word__<N>__++
+`MLRep` structure, utilizing ``Int__<N>__`` and ``Word__<N>__``
 structures.
 +
 --
 [source,sml]
------
+----
 structure MLRep = struct
     structure Char =
        struct
           structure Signed = Int8
           structure Unsigned = Word8
           (* word-style bit-operations on integers... *)
-          structure <:SignedBitops:> = IntBitOps(structure I = Signed
+          structure <<SignedBitops#>> = IntBitOps(structure I = Signed
                                              structure W = Unsigned)
        end
     structure Short =
@@ -132,7 +131,7 @@ structure MLRep = struct
           structure Signed = Int16
           structure Unsigned = Word16
           (* word-style bit-operations on integers... *)
-          structure <:SignedBitops:> = IntBitOps(structure I = Signed
+          structure <<SignedBitops#>> = IntBitOps(structure I = Signed
                                              structure W = Unsigned)
        end
     structure Int =
@@ -140,7 +139,7 @@ structure MLRep = struct
           structure Signed = Int32
           structure Unsigned = Word32
           (* word-style bit-operations on integers... *)
-          structure <:SignedBitops:> = IntBitOps(structure I = Signed
+          structure <<SignedBitops#>> = IntBitOps(structure I = Signed
                                              structure W = Unsigned)
        end
     structure Long =
@@ -148,15 +147,15 @@ structure MLRep = struct
           structure Signed = Int32
           structure Unsigned = Word32
           (* word-style bit-operations on integers... *)
-          structure <:SignedBitops:> = IntBitOps(structure I = Signed
+          structure <<SignedBitops#>> = IntBitOps(structure I = Signed
                                              structure W = Unsigned)
        end
-    structure <:LongLong:> =
+    structure <<LongLong#>> =
        struct
           structure Signed = Int64
           structure Unsigned = Word64
           (* word-style bit-operations on integers... *)
-          structure <:SignedBitops:> = IntBitOps(structure I = Signed
+          structure <<SignedBitops#>> = IntBitOps(structure I = Signed
                                              structure W = Unsigned)
        end
     structure Float = Real32

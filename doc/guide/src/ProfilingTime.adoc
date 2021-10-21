@@ -1,14 +1,13 @@
-ProfilingTime
-=============
+= ProfilingTime
 
-With MLton and `mlprof`, you can <:Profiling:profile> your program to
+With MLton and `mlprof`, you can <<Profiling#,profile>> your program to
 find out how much time is spent in each function over an entire run of
 the program.  To do so, compile your program with `-profile time`.
 For example, suppose that `tak.sml` contains the following.
 
 [source,sml]
 ----
-sys::[./bin/InclGitFile.py mlton master doc/examples/profiling/tak.sml]
+include::https://raw.github.com/MLton/mlton/master/doc/examples/profiling/tak.sml[indent=0]
 ----
 
 Compile with time profiling and run the program.
@@ -60,10 +59,10 @@ which may perturb the results.
 
 You can also compile with `-profile time -profile-branch true` to find
 out how much time is spent in each branch of a function; see
-<:ProfilingCounts:> for more details on `-profile-branch`.
+<<ProfilingCounts#>> for more details on `-profile-branch`.
 
 
-== Caveats ==
+== Caveats
 
 With `-profile time`, use of the following in your program will cause
 a run-time error, since they would interfere with the profiler signal

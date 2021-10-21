@@ -1,18 +1,17 @@
-PolyEqual
-=========
+= PolyEqual
 
-<:PolyEqual:> is an optimization pass for the <:SSA:>
-<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+<<PolyEqual#>> is an optimization pass for the <<SSA#>>
+<<IntermediateLanguage#>>, invoked from <<SSASimplify#>>.
 
-== Description ==
+== Description
 
 This pass implements polymorphic equality.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/poly-equal.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/poly-equal.fun[`poly-equal.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 For each datatype, tycon, and vector type, it builds and equality
 function and translates calls to `MLton_equal` into calls to that

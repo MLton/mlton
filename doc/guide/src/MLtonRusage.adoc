@@ -1,5 +1,4 @@
-MLtonRusage
-===========
+= MLtonRusage
 
 [source,sml]
 ----
@@ -24,7 +23,7 @@ program execution.  This affects the behavior of both `rusage` and
 `Timer.checkCPUTimes`, both of which will return gc times of zero with
 `measureGC false`.  Garbage collection time is always measured when
 either `gc-messages` or `gc-summary` is given as a
-<:RunTimeOptions:runtime system option>.
+<<RunTimeOptions#,runtime system option>>.
 
 * `rusage ()`
 +

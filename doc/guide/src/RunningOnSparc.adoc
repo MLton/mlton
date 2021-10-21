@@ -1,9 +1,8 @@
-RunningOnSparc
-==============
+= RunningOnSparc
 
 MLton runs fine on the Sparc architecture.
 
-== Notes ==
+== Notes
 
 * When compiling for Sparc, MLton targets the 32-bit Sparc
 architecture (i.e., Sparc V8).
@@ -22,13 +21,13 @@ this speeds up reals, it also may increase object sizes.  If your
 program does not make significant use of reals, you might see a
 speedup with `-align 4`.
 
-== Known issues ==
+== Known issues
 
-* Bootstrapping on the <:RunningOnSparc:Sparc architecture> is so slow
+* Bootstrapping on the <<RunningOnSparc#,Sparc architecture>> is so slow
 as to be impractical (many hours on a 500MHz UltraSparc).  For this
 reason, we strongly recommend building with a
-<:CrossCompiling:cross compiler>.
+<<CrossCompiling#,cross compiler>>.
 
-== Also see ==
+== Also see
 
-* <:RunningOnSolaris:>
+* <<RunningOnSolaris#>>

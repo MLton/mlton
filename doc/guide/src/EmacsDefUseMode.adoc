@@ -1,8 +1,7 @@
-EmacsDefUseMode
-===============
+= EmacsDefUseMode
 
-MLton provides an <:CompileTimeOptions:option>,
-++-show-def-use __file__++, to output precise (giving exact source
+MLton provides an <<CompileTimeOptions#,option>>,
+``-show-def-use __file__``, to output precise (giving exact source
 locations) and accurate (including all uses and no false data)
 whole-program def-use information to a file.  Unlike typical tags
 facilities, the information includes local variables and distinguishes
@@ -12,14 +11,14 @@ which can be particularly useful while reading SML programs compiled
 with MLton (such as the MLton compiler itself).
 
 
-== Screen Capture ==
+== Screen Capture
 
 Note the highlighting and the type displayed in the minibuffer.
 
 image::EmacsDefUseMode.attachments/def-use-capture.png[align="center"]
 
 
-== Features ==
+== Features
 
 * Highlights definitions and uses.  Different colors for definitions, unused definitions, and uses.
 * Shows types (with highlighting) of variable definitions in the minibuffer.
@@ -30,13 +29,13 @@ image::EmacsDefUseMode.attachments/def-use-capture.png[align="center"]
 * Supports both http://www.gnu.org/software/emacs/[Gnu Emacs] and http://www.xemacs.org[XEmacs].
 
 
-== Download ==
+== Download
 
 There is no separate package for the def-use mode although the mode
 has been relatively stable for some time already.  To install the mode
 you need to get the Emacs Lisp, `*.el`, files from MLton's repository:
-<!ViewGitDir(mlton,master,ide/emacs)>.  The easiest way to get the files
-is to use <:Git:> to access MLton's <:Sources:sources>.
+https://github.com/MLton/mlton/tree/master/ide/emacs[`emacs`].  The easiest way to get the files
+is to use <<Git#>> to access MLton's <<Sources#,sources>>.
 
 /////
 If you only want the Emacs lisp files, you can use the following
@@ -46,7 +45,7 @@ svn co svn://mlton.org/mlton/trunk/ide/emacs mlton-emacs-ide
 ----
 /////
 
-== Setup ==
+== Setup
 
 The easiest way to load def-use mode is to first tell Emacs where to
 find the files.  For example, add
@@ -68,17 +67,17 @@ also want to start `def-use-mode` automatically by adding
 to your Emacs init file.  Once the def-use mode is activated, you
 should see the `DU` indicator on the mode line.
 
-== Usage ==
+== Usage
 
 To use def-use mode one typically first sets up the program's makefile
 or build script so that the def-use information is saved each time the
-program is compiled.  In addition to the ++-show-def-use __file__++
-option, the ++-prefer-abs-paths true++ expert option is required.
+program is compiled.  In addition to the ``-show-def-use __file__``
+option, the ``-prefer-abs-paths true`` expert option is required.
 Note that the time it takes to save the information is small (compared
 to type-checking), so it is recommended to simply add the options to
 the MLton invocation that compiles the program.  However, it is only
 necessary to type check the program (or library), so one can specify
-the ++-stop tc++ option.  For example, suppose you have a program
+the ``-stop tc`` option.  For example, suppose you have a program
 defined by an MLB file named `my-prg.mlb`, you can save the def-use
 information to the file `my-prg.du` by invoking MLton as:
 
@@ -101,15 +100,15 @@ see the variable being highlighted.  (Note that specifications in
 signatures do not define variables.)
 
 You might also want to setup and use the
-<:EmacsBgBuildMode:Bg-Build mode> to start builds automatically.
+<<EmacsBgBuildMode#,Bg-Build mode>> to start builds automatically.
 
 
-== Types ==
+== Types
 
 `-show-def-use` output was extended to include types of variable
-definitions in revision <!ViewSVNRev(6333)>.  To get good type names, the
+definitions in revision https://github.com/MLton/mlton/search?q=SVN+r6333&type=commits[`r6333`].  To get good type names, the
 types must be in scope at the end of the program.  If you are using the
-<:MLBasis:ML Basis> system, this means that the root MLB-file for your
+<<MLBasis#,ML Basis>> system, this means that the root MLB-file for your
 application should not wrap the libraries used in the application inside
 `local ... in ... end`, because that would remove them from the scope before
 the end of the program.

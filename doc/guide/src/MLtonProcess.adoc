@@ -1,5 +1,4 @@
-MLtonProcess
-============
+= MLtonProcess
 
 [source,sml]
 ----
@@ -65,7 +64,7 @@ signature MLTON_PROCESS =
 ----
 
 
-== Spawn ==
+== Spawn
 
 The `spawn` functions provide an alternative to the
 `fork`/`exec` idiom that is typically used to create a new
@@ -93,7 +92,7 @@ and start a new process running that executable with the arguments
 `args`.  Like `Posix.Process.execp`.
 
 
-== Create ==
+== Create
 
 `MLton.Process.create` provides functionality similar to
 `Unix.executeInEnv`, but provides more control control over the input,
@@ -105,7 +104,7 @@ standard `Unix.execute`, `Unix.executeInEnv`, and `OS.Process.system`.
 The following types and sub-structures are used by the `create`
 function.  They provide static type checking of correct stream usage.
 
-=== Child ===
+=== Child
 
 * `('use, 'dir) Child.t`
 +
@@ -135,7 +134,7 @@ stream so that the stream may be used by `Child.*`. An `any` stream
 may have had use `none` or `'use` prior to calling `Param.forget`. If
 the stream was `none` and is used, `MisuseOfForget` is raised.
 
-=== Param ===
+=== Param
 
 * `('use, 'dir) Param.t`
 +
@@ -189,7 +188,7 @@ of the `Child.*` functions and/or the `Param.child` function.
 This will connect the input/output of the child process to the
 corresponding stream of the parent process.
 
-=== Process ===
+=== Process
 
 * `type ('stdin, 'stdout, 'stderr) t`
 +
@@ -265,7 +264,7 @@ mean anything depending on the host platform.  A good value is
 waits for the child process to terminate and return its exit status.
 
 
-== Important usage notes ==
+== Important usage notes
 
 When building an application with many pipes between child processes,
 it is important to ensure that there are no cycles in the undirected
@@ -291,7 +290,7 @@ function. Be careful when using it to ensure that the child process
 only operates on either `stdin` or `stdout`, but not both.
 
 
-== Example use of MLton.Process.create ==
+== Example use of MLton.Process.create
 
 The following example program launches the `ipconfig` utility, pipes
 its output through `grep`, and then reads the result back into the

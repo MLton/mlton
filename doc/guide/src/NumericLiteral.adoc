@@ -1,14 +1,13 @@
-NumericLiteral
-==============
+= NumericLiteral
 
-Numeric literals in <:StandardML:Standard ML> can be written in either
+Numeric literals in <<StandardML#,Standard ML>> can be written in either
 decimal or hexadecimal notation.  Sometimes it can be convenient to
-write numbers down in other bases.  Fortunately, using <:Fold:>, it is
+write numbers down in other bases.  Fortunately, using <<Fold#>>, it is
 possible to define a concise syntax for numeric literals that allows
 one to write numeric constants in any base and of various types
 (`int`, `IntInf.int`, `word`, and more).
 
-We will define constants `I`, `II`, `W`, and +`+ so
+We will define constants `I`, `II`, `W`, and ``` so
 that, for example,
 [source,sml]
 ----
@@ -82,9 +81,9 @@ write down the various numeric types.  It also allows users to add new
 constants for additional numeric types, by supplying the necessary
 arguments to make.
 
-Second, the step function, +&grave;+, is abstracted over the actual
+Second, the step function, `{backtick}`, is abstracted over the actual
 construction operation, which is created by make, and passed along the
-fold.  This allows the same constant, +&grave;+, to be used for all
+fold.  This allows the same constant, `{backtick}`, to be used for all
 numeric types.  The alternative approach, having a different step
 function for each numeric type, would be more painful to use.
 

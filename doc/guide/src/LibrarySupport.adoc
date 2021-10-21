@@ -1,13 +1,12 @@
-LibrarySupport
-==============
+= LibrarySupport
 
 MLton supports both linking to and creating system-level libraries.
-While Standard ML libraries should be designed with the <:MLBasis:> system to work with other Standard ML programs,
+While Standard ML libraries should be designed with the <<MLBasis#>> system to work with other Standard ML programs,
 system-level library support allows MLton to create libraries for use by other programming languages.
 Even more importantly, system-level library support allows MLton to access libraries from other languages.
 This article will explain how to use libraries portably with MLton.
 
-== The Basics ==
+== The Basics
 
 A Dynamic Shared Object (DSO) is a piece of executable code written in a format understood by the operating system.
 Executable programs and dynamic libraries are the two most common examples of a DSO.
@@ -29,12 +28,12 @@ In both cases, it is importing that symbol, but the scope of the import differs.
 Similarly, a DSO might export a symbol for use only within itself, or it might export a symbol for use by other DSOs.
 Some symbols are resolved at compile time by the linker (those used within the DSO) and some are resolved at runtime by the dynamic link loader (symbols accessed between DSOs).
 
-== Symbols in MLton ==
+== Symbols in MLton
 
-Symbols in MLton are both imported and exported via the <:ForeignFunctionInterface:>.
+Symbols in MLton are both imported and exported via the <<ForeignFunctionInterface#>>.
 The notation `_import "symbolname"` imports functions, `_symbol "symbolname"` imports variables, and `_address "symbolname"` imports an address.
 To create and export a symbol, `_export "symbolname"` creates a function symbol and `_symbol "symbolname" 'alloc'` creates and exports a variable.
-For details of the syntax and restrictions on the supported FFI types, read the <:ForeignFunctionInterface:> page.
+For details of the syntax and restrictions on the supported FFI types, read the <<ForeignFunctionInterface#>> page.
 In this discussion it only matters that every FFI use is either an import or an export.
 
 When exporting a symbol, MLton supports controlling the export scope.
@@ -43,7 +42,7 @@ Conversely, if the symbol should also be available to other DSOs the symbol has 
 Generally, one should have as few public exports as possible.
 Since they are public, other DSOs will come to depend on them, limiting your ability to change them.
 You specify the export scope in MLton by putting `private` or `public` after the symbol's name in an FFI directive.
-eg: `_export "foo" private: int->int;` or `_export "bar" public: int->int;` .
+eg: `_export "foo" private: int\->int;` or `_export "bar" public: int\->int;` .
 
 For technical reasons, the linker and loader on various platforms need to know the scope of a symbol being imported.
 If the symbol is exported by the same DSO, use `public` or `private` as appropriate.
@@ -60,7 +59,7 @@ Summary of symbol scopes:
 * `external`: used for importing symbols from another DSO
 * All uses of a symbol within a DSO (both imports and exports) must agree on the symbol scope
 
-== Output Formats ==
+== Output Formats
 
 MLton can create executables (`-format executable`) and dynamic shared libraries (`-format library`).
 To link a shared library, use `-link-opt -l<dso_name>`.
@@ -94,7 +93,7 @@ Related options:
 * `-libname x`: controls the name of the special `_open` and `_close` functions.
 
 
-== Interfacing with C ==
+== Interfacing with C
 
 MLton can generate a C header file.
 When the output format is not an executable, it creates one by default named `libname.h`.
@@ -125,7 +124,7 @@ val cFoo = _import "cFoo" public: unit -> int;
 ----
 
 
-== Operating-system specific details ==
+== Operating-system specific details
 
 On Windows, `libarchive` and `archive` are the same.
 However, depending on this will lead to portability problems.

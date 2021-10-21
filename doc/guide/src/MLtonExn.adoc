@@ -1,5 +1,4 @@
-MLtonExn
-========
+= MLtonExn
 
 [source,sml]
 ----

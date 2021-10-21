@@ -1,8 +1,7 @@
-MLtonStructure
-==============
+= MLtonStructure
 
 The `MLton` structure contains a lot of functionality that is not
-available in the <:BasisLibrary:Basis Library>.  As a warning,
+available in the <<BasisLibrary#,Basis Library>>.  As a warning,
 please keep in mind that the `MLton` structure and its
 substructures do change from release to release of MLton.
 
@@ -72,37 +71,37 @@ structure MLton:
 ----
 
 
-== Substructures ==
+== Substructures
 
-* <:MLtonArray:>
-* <:MLtonBinIO:>
-* <:MLtonCont:>
-* <:MLtonExn:>
-* <:MLtonFinalizable:>
-* <:MLtonGC:>
-* <:MLtonIntInf:>
-* <:MLtonIO:>
-* <:MLtonItimer:>
-* <:MLtonMonoArray:>
-* <:MLtonMonoVector:>
-* <:MLtonPlatform:>
-* <:MLtonPointer:>
-* <:MLtonProcEnv:>
-* <:MLtonProcess:>
-* <:MLtonRandom:>
-* <:MLtonReal:>
-* <:MLtonRlimit:>
-* <:MLtonRusage:>
-* <:MLtonSignal:>
-* <:MLtonSyslog:>
-* <:MLtonTextIO:>
-* <:MLtonThread:>
-* <:MLtonVector:>
-* <:MLtonWeak:>
-* <:MLtonWord:>
-* <:MLtonWorld:>
+* <<MLtonArray#>>
+* <<MLtonBinIO#>>
+* <<MLtonCont#>>
+* <<MLtonExn#>>
+* <<MLtonFinalizable#>>
+* <<MLtonGC#>>
+* <<MLtonIntInf#>>
+* <<MLtonIO#>>
+* <<MLtonItimer#>>
+* <<MLtonMonoArray#>>
+* <<MLtonMonoVector#>>
+* <<MLtonPlatform#>>
+* <<MLtonPointer#>>
+* <<MLtonProcEnv#>>
+* <<MLtonProcess#>>
+* <<MLtonRandom#>>
+* <<MLtonReal#>>
+* <<MLtonRlimit#>>
+* <<MLtonRusage#>>
+* <<MLtonSignal#>>
+* <<MLtonSyslog#>>
+* <<MLtonTextIO#>>
+* <<MLtonThread#>>
+* <<MLtonVector#>>
+* <<MLtonWeak#>>
+* <<MLtonWord#>>
+* <<MLtonWorld#>>
 
-== Values ==
+== Values
 
 * `eq (x, y)`
 +
@@ -114,7 +113,7 @@ pointer equality.  The semantics is a bit murky.
 * `equal (x, y)`
 +
 returns true if `x` and `y` are structurally equal.  For equality
-types, this is the same as <:PolymorphicEquality:>.  For other types,
+types, this is the same as <<PolymorphicEquality#>>.  For other types,
 it is a conservative approximation of equivalence.
 
 * `hash x`
@@ -150,13 +149,14 @@ returns the amount of heap space (in bytes) taken by all reachable
 live data.  It takes time proportional to the size of live data.
 
 
-== <!Anchor(size)>Example of `MLton.size` ==
+[#size]
+== Example of `MLton.size`
 
 This example, `size.sml`, demonstrates the application of `MLton.size`
 to many different kinds of objects.
 [source,sml]
 ----
-sys::[./bin/InclGitFile.py mlton master doc/examples/size/size.sml]
+include::https://raw.github.com/MLton/mlton/master/doc/examples/size/size.sml[indent=0]
 ----
 
 Compile and run as usual.

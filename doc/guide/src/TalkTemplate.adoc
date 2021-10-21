@@ -1,7 +1,6 @@
-TalkTemplate
-============
+= TalkTemplate
 
-== Title ==
+== Title
 
  * Bullet
  * Bullet
@@ -14,6 +13,6 @@ TalkTemplate
 '''
 
 [cols="<,>"]
-|====
-|<:ZZZPrev: Prev>|<:ZZZNext: Next>
-|====
+|===
+|<<ZZZPrev#,Prev>>|<<ZZZNext#,Next>>
+|===

@@ -1,17 +1,16 @@
-BounceVars
-==========
+= BounceVars
 
-<:BounceVars:> is an optimization pass for the <:RSSA:>
-<:IntermediateLanguage:>, invoked from <:RSSASimplify:>.
+<<BounceVars#>> is an optimization pass for the <<RSSA#>>
+<<IntermediateLanguage#>>, invoked from <<RSSASimplify#>>.
 
-== Description ==
+== Description
 
-<:BounceVars:> splits the live ranges of RSSA variables.
+<<BounceVars#>> splits the live ranges of RSSA variables.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/backend/bounce-vars.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/backend/bounce-vars.fun[`bounce-vars.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 See https://github.com/MLton/mlton/pull/299 for details.

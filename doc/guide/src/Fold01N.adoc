@@ -1,7 +1,6 @@
-Fold01N
-=======
+= Fold01N
 
-A common use pattern of <:Fold:> is to define a variable-arity
+A common use pattern of <<Fold#>> is to define a variable-arity
 function that combines multiple arguments together using a binary
 function.  It is slightly tricky to do this directly using fold,
 because of the special treatment required for the case of zero or one
@@ -30,7 +29,7 @@ structure Fold01N =
 
 If one has a value `zero`, and functions `start`, `c`, and `finish`,
 then one can define a variable-arity function `f` and stepper
-+&grave;+ as follows.
+`{backtick}` as follows.
 [source,sml]
 ----
 val f = fn z => Fold01N.fold {finish = finish, start = start, zero = zero} z
@@ -47,10 +46,10 @@ f `a1 `a2 `a3 $ = finish (c (c (start a1, a2), a3))
 ...
 ----
 
-For an example of `Fold01N`, see <:VariableArityPolymorphism:>.
+For an example of `Fold01N`, see <<VariableArityPolymorphism#>>.
 
 
-== Typing Fold01N ==
+== Typing Fold01N
 
 Here is the signature for `Fold01N`.  We use a trick to avoid having
 to duplicate the definition of some rather complex types in both the

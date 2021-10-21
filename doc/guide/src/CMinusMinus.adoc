@@ -1,5 +1,4 @@
-CMinusMinus
-===========
+= CMinusMinus
 
 https://www.cs.tufts.edu/~nr/c--/index.html[C--] is a portable assembly language intended
 to make it easy for compilers for different high-level languages to
@@ -8,6 +7,6 @@ made to generate C--.
 
 * http://www.mlton.org/pipermail/mlton/2005-March/026850.html
 
-== Also see ==
+== Also see
 
- * <:LLVM:>
+ * <<LLVM#>>

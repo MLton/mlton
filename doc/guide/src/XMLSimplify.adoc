@@ -1,15 +1,14 @@
-XMLSimplify
-===========
+= XMLSimplify
 
-The optimization passes for the <:XML:> <:IntermediateLanguage:> are
+The optimization passes for the <<XML#>> <<IntermediateLanguage#>> are
 collected and controlled by the `XmlSimplify` functor
-(<!ViewGitFile(mlton,master,mlton/xml/xml-simplify.sig)>,
-<!ViewGitFile(mlton,master,mlton/xml/xml-simplify.fun)>).
+(https://github.com/MLton/mlton/blob/master/mlton/xml/xml-simplify.sig[`xml-simplify.sig`],
+https://github.com/MLton/mlton/blob/master/mlton/xml/xml-simplify.fun[`xml-simplify.fun`]).
 
 The following optimization passes are implemented:
 
-* <:XMLSimplifyTypes:>
-* <:XMLShrink:>
+* <<XMLSimplifyTypes#>>
+* <<XMLShrink#>>
 
 The optimization passes can be controlled from the command-line by the options
 

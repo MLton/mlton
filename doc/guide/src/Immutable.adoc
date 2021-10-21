@@ -1,7 +1,6 @@
-Immutable
-=========
+= Immutable
 
-Immutable means not <:Mutable:mutable> and is an adjective meaning
-"can not be modified".  Most values in <:StandardML:Standard ML> are
+Immutable means not <<Mutable#,mutable>> and is an adjective meaning
+"can not be modified".  Most values in <<StandardML#,Standard ML>> are
 immutable.  For example, constants, tuples, records, lists, and
 vectors are all immutable.

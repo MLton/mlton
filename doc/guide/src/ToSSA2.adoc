@@ -1,25 +1,24 @@
-ToSSA2
-======
+= ToSSA2
 
-<:ToSSA2:> is a translation pass from the <:SSA:>
-<:IntermediateLanguage:> to the <:SSA2:> <:IntermediateLanguage:>.
+<<ToSSA2#>> is a translation pass from the <<SSA#>>
+<<IntermediateLanguage#>> to the <<SSA2#>> <<IntermediateLanguage#>>.
 
-== Description ==
+== Description
 
-This pass is a simple conversion from a <:SSA:> program into a
-<:SSA2:> program.
+This pass is a simple conversion from a <<SSA#>> program into a
+<<SSA2#>> program.
 
 The only interesting portions of the translation are:
 
-* an <:SSA:> `ref` type becomes an object with a single mutable field
+* an <<SSA#>> `ref` type becomes an object with a single mutable field
 * `array`, `vector`, and `ref` are eliminated in favor of select and updates
 * `Case` transfers separate discrimination and constructor argument selects
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/ssa-to-ssa2.sig)>
-* <!ViewGitFile(mlton,master,mlton/ssa/ssa-to-ssa2.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/ssa-to-ssa2.sig[`ssa-to-ssa2.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/ssa-to-ssa2.fun[`ssa-to-ssa2.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 {empty}

@@ -1,19 +1,18 @@
-RedundantTests
-==============
+= RedundantTests
 
-<:RedundantTests:> is an optimization pass for the <:SSA:>
-<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+<<RedundantTests#>> is an optimization pass for the <<SSA#>>
+<<IntermediateLanguage#>>, invoked from <<SSASimplify#>>.
 
-== Description ==
+== Description
 
 This pass simplifies conditionals whose results are implied by a
 previous conditional test.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/redundant-tests.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/redundant-tests.fun[`redundant-tests.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 An additional test will sometimes eliminate the overflow test when
 adding or subtracting 1.  In particular, it will eliminate it in the

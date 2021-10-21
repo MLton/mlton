@@ -1,11 +1,10 @@
-RunningOnOpenBSD
-================
+= RunningOnOpenBSD
 
 MLton runs fine on http://www.openbsd.org/[OpenBSD].
 
-== Known issues ==
+== Known issues
 
-* The <!RawGitFile(mlton,master,regression/socket.sml)> regression
+* The https://raw.github.com/MLton/mlton/master/regression/socket.sml[`socket.sml`] regression
 test fails.  We suspect this is not a bug and is simply due to our
 test relying on a certain behavior when connecting to a socket that
 has not yet accepted, which is handled differently on OpenBSD than

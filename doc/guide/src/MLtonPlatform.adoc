@@ -1,5 +1,4 @@
-MLtonPlatform
-=============
+= MLtonPlatform
 
 [source,sml]
 ----

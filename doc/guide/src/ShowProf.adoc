@@ -1,7 +1,6 @@
-ShowProf
-========
+= ShowProf
 
-If an executable is compiled for <:Profiling:profiling>, then it
+If an executable is compiled for <<Profiling#,profiling>>, then it
 accepts a special command-line runtime system argument, `show-prof`,
 that outputs information about the source functions that are profiled.
 Normally, this information is used by `mlprof`.  This page documents

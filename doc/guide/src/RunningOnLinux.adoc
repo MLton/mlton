@@ -1,4 +1,3 @@
-RunningOnLinux
-==============
+= RunningOnLinux
 
 MLton runs fine on Linux.

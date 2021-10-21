@@ -1,5 +1,4 @@
-MLtonGC
-=======
+= MLtonGC
 
 [source,sml]
 ----

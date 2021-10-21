@@ -1,5 +1,4 @@
-LineDirective
-=============
+= LineDirective
 
 To aid in the debugging of code produced by program generators such
 as https://www.cs.tufts.edu/~nr/noweb/[Noweb], MLton supports

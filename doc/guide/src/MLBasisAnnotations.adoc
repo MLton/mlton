@@ -1,7 +1,6 @@
-MLBasisAnnotations
-==================
+= MLBasisAnnotations
 
-<:MLBasis:ML Basis> annotations control options that affect the
+<<MLBasis#,ML Basis>> annotations control options that affect the
 elaboration of SML source files.  Conceptually, a basis file is
 elaborated in a default annotation environment (just as it is
 elaborated in an empty basis).  The declaration
@@ -17,7 +16,7 @@ conveniently specify multiple annotations, the following derived form
 is provided:
 
 ****
-`ann` `"_ann_"` ( `"_ann_"` )^{plus}^ `in` `_basdec_` `end`
+`ann` `"_ann_` ( `_ann_"` )^{plus}^ `in` `_basdec_` `end`
 =>
 `ann` `"_ann_"` `in` `ann` ( `"_ann_"` )^{plus}^ `in` `_basdec_` `end` `end`
 ****
@@ -26,39 +25,39 @@ Here are the available annotations.  In the explanation below, for
 annotations that take an argument, the first value listed is the
 default.
 
-* +allowFFI {false|true}+
+* `allowFFI {false|true}`
 +
 If `true`, allow `_address`, `_export`, `_import`, and `_symbol`
 expressions to appear in source files.  See
-<:ForeignFunctionInterface:>.
+<<ForeignFunctionInterface#>>.
 
-* +allowSuccessorML {false|true}+
+* `allowSuccessorML {false|true}`
 +
-Allow or disallow all of the <:SuccessorML:> features.  This is a
+Allow or disallow all of the <<SuccessorML#>> features.  This is a
 proxy for all of the following annotations.
 
-** +allowDoDecls {false|true}+
+** `allowDoDecls {false|true}`
 +
-If `true`, allow a +do _exp_+ declaration form.
+If `true`, allow a `do _exp_` declaration form.
 
-** +allowExtendedConsts {false|true}+
+** `allowExtendedConsts {false|true}`
 +
 Allow or disallow all of the extended constants features.  This is a
 proxy for all of the following annotations.
 
-*** +allowExtendedNumConsts {false|true}+
+*** `allowExtendedNumConsts {false|true}`
 +
 If `true`, allow extended numeric constants.
 
-*** +allowExtendedTextConsts {false|true}+
+*** `allowExtendedTextConsts {false|true}`
 +
 If `true`, allow extended text constants.
 
-** +allowLineComments {false|true}+
+** `allowLineComments {false|true}`
 +
-If `true`, allow line comments beginning with the token ++(*)++.
+If `true`, allow line comments beginning with the token ``(*)``.
 
-** +allowOptBar {false|true}+
+** `allowOptBar {false|true}`
 +
 If `true`, allow a bar to appear before the first match rule of a
 `case`, `fn`, or `handle` expression, allow a bar to appear before the
@@ -66,99 +65,99 @@ first function-value binding of a `fun` declaration, and allow a bar
 to appear before the first constructor binding or description of a
 `datatype` declaration or specification.
 
-** +allowOptSemicolon {false|true}+
+** `allowOptSemicolon {false|true}`
 +
 If `true`, allows a semicolon to appear after the last expression in a
 sequence expression or `let` body.
 
-** +allowOrPats {false|true}+
+** `allowOrPats {false|true}`
 +
 If `true`, allows disjunctive (a.k.a., "or") patterns of the form
-+_pat_ | _pat_+.
+`_pat_ | _pat_`.
 
-** +allowRecordPunExps {false|true}+
+** `allowRecordPunExps {false|true}`
 +
 If `true`, allows record punning expressions.
 
-** +allowSigWithtype {false|true}+
+** `allowSigWithtype {false|true}`
 +
 If `true`, allows `withtype` to modify a `datatype` specification in a
 signature.
 
-** +allowVectorExpsAndPats {false|true}+
+** `allowVectorExpsAndPats {false|true}`
 +
 Allow or disallow vector expressions and vector patterns.  This is a
 proxy for all of the following annotations.
 
-*** +allowVectorExps {false|true}+
+*** `allowVectorExps {false|true}`
 +
 If `true`, allow vector expressions.
 
-*** +allowVectorPats {false|true}+
+*** `allowVectorPats {false|true}`
 +
 If `true`, allow vector patterns.
 
-* +forceUsed+
+* `forceUsed`
 +
 Force all identifiers in the basis denoted by the body of the `ann` to
 be considered used; use in conjunction with `warnUnused true`.
 
-* +nonexhaustiveBind {warn|error|ignore}+
+* `nonexhaustiveBind {warn|error|ignore}`
 +
 If `error` or `warn`, report nonexhaustive patterns in `val`
 declarations (i.e., pattern-match failures that raise the `Bind`
 exception).  An error will abort a compile, while a warning will not.
 
-* +nonexhaustiveExnBind {default|ignore}+
+* `nonexhaustiveExnBind {default|ignore}`
 +
 If `ignore`, suppress errors and warnings about nonexhaustive matches
 in `val` declarations that arise solely from unmatched exceptions.
 If `default`, follow the behavior of `nonexhaustiveBind`.
 
-* +nonexhaustiveExnMatch {default|ignore}+
+* `nonexhaustiveExnMatch {default|ignore}`
 +
 If `ignore`, suppress errors and warnings about nonexhaustive matches
 in `fn` expressions, `case` expressions, and `fun` declarations that
 arise solely from unmatched exceptions.  If `default`, follow the
 behavior of `nonexhaustiveMatch`.
 
-* +nonexhaustiveExnRaise {ignore|default}+
+* `nonexhaustiveExnRaise {ignore|default}`
 +
 If `ignore`, suppress errors and warnings about nonexhaustive matches
 in `handle` expressions that arise solely from unmatched exceptions.
 If `default`, follow the behavior of `nonexhaustiveRaise`.
 
-* +nonexhaustiveMatch {warn|error|ignore}+
+* `nonexhaustiveMatch {warn|error|ignore}`
 +
 If `error` or `warn`, report nonexhaustive patterns in `fn`
 expressions, `case` expressions, and `fun` declarations (i.e.,
 pattern-match failures that raise the `Match` exception).  An error
 will abort a compile, while a warning will not.
 
-* +nonexhaustiveRaise {ignore|warn|error}+
+* `nonexhaustiveRaise {ignore|warn|error}`
 +
 If `error` or `warn`, report nonexhaustive patterns in `handle`
 expressions (i.e., pattern-match failures that implicitly (re)raise
 the unmatched exception).  An error will abort a compile, while a
 warning will not.
 
-* +redundantBind {warn|error|ignore}+
+* `redundantBind {warn|error|ignore}`
 +
 If `error` or `warn`, report redundant patterns in `val` declarations.
 An error will abort a compile, while a warning will not.
 
-* +redundantMatch {warn|error|ignore}+
+* `redundantMatch {warn|error|ignore}`
 +
 If `error` or `warn`, report redundant patterns in `fn` expressions,
 `case` expressions, and `fun` declarations.  An error will abort a
 compile, while a warning will not.
 
-* +redundantRaise {warn|error|ignore}+
+* `redundantRaise {warn|error|ignore}`
 +
 If `error` or `warn`, report redundant patterns in `handle`
 expressions.  An error will abort a compile, while a warning will not.
 
-* +resolveScope {strdec|dec|topdec|program}+
+* `resolveScope {strdec|dec|topdec|program}`
 +
 Used to control the scope at which overload constraints are resolved
 to default types (if not otherwise resolved by type inference) and the
@@ -173,24 +172,24 @@ to the largest enclosing _strdec_) and at the smallest enclosing
 _program_ (which corresponds to a single `.sml` file and does not
 correspond to the whole `.mlb` program).
 
-* +sequenceNonUnit {ignore|error|warn}+
+* `sequenceNonUnit {ignore|error|warn}`
 +
 If `error` or `warn`, report when `e1` is not of type `unit` in the
 sequence expression `(e1; e2)`.  This can be helpful in detecting
 curried applications that are mistakenly not fully applied.  To
 silence spurious messages, you can use `ignore e1`.
 
-* +valrecConstr {warn|error|ignore}+
+* `valrecConstr {warn|error|ignore}`
 +
 If `error` or `warn`, report when a `val rec` (or `fun`) declaration
 redefines an identifier that previously had constructor status.  An
 error will abort a compile, while a warning will not.
 
-* +warnUnused {false|true}+
+* `warnUnused {false|true}`
 +
 Report unused identifiers.
 
-== Next Steps ==
+== Next Steps
 
- * <:MLBasisAnnotationExamples:>
- * <:WarnUnusedAnomalies:>
+ * <<MLBasisAnnotationExamples#>>
+ * <<WarnUnusedAnomalies#>>

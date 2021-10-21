@@ -1,47 +1,46 @@
-SSASimplify
-===========
+= SSASimplify
 
-The optimization passes for the <:SSA:> <:IntermediateLanguage:> are
+The optimization passes for the <<SSA#>> <<IntermediateLanguage#>> are
 collected and controlled by the `Simplify` functor
-(<!ViewGitFile(mlton,master,mlton/ssa/simplify.sig)>,
-<!ViewGitFile(mlton,master,mlton/ssa/simplify.fun)>).
+(https://github.com/MLton/mlton/blob/master/mlton/ssa/simplify.sig[`simplify.sig`],
+https://github.com/MLton/mlton/blob/master/mlton/ssa/simplify.fun[`simplify.fun`]).
 
 The following optimization passes are implemented:
 
-* <:CombineConversions:>
-* <:CommonArg:>
-* <:CommonBlock:>
-* <:CommonSubexp:>
-* <:ConstantPropagation:>
-* <:Contify:>
-* <:DuplicateGlobals:>
-* <:Flatten:>
-* <:Inline:>
-* <:IntroduceLoops:>
-* <:KnownCase:>
-* <:LocalFlatten:>
-* <:LocalRef:>
-* <:LoopInvariant:>
-* <:LoopUnfoll:>
-* <:LoopUnswitch:>
-* <:Redundant:>
-* <:RedundantTests:>
-* <:RemoveUnused:>
-* <:ShareZeroVec:>
-* <:SimplifyTypes:>
-* <:SplitTypes:>
-* <:Useless:>
+* <<CombineConversions#>>
+* <<CommonArg#>>
+* <<CommonBlock#>>
+* <<CommonSubexp#>>
+* <<ConstantPropagation#>>
+* <<Contify#>>
+* <<DuplicateGlobals#>>
+* <<Flatten#>>
+* <<Inline#>>
+* <<IntroduceLoops#>>
+* <<KnownCase#>>
+* <<LocalFlatten#>>
+* <<LocalRef#>>
+* <<LoopInvariant#>>
+* <<LoopUnfoll#>>
+* <<LoopUnswitch#>>
+* <<Redundant#>>
+* <<RedundantTests#>>
+* <<RemoveUnused#>>
+* <<ShareZeroVec#>>
+* <<SimplifyTypes#>>
+* <<SplitTypes#>>
+* <<Useless#>>
 
 The following implementation passes are implemented:
 
-* <:PolyEqual:>
-* <:PolyHash:>
+* <<PolyEqual#>>
+* <<PolyHash#>>
 
 There are additional analysis and rewrite passes that augment many of the other optimization passes:
 
-* <:Multi:>
-* <:Restore:>
-* <:Shrink:>
+* <<Multi#>>
+* <<Restore#>>
+* <<Shrink#>>
 
 The optimization passes can be controlled from the command-line by the options:
 

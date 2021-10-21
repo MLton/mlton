@@ -1,11 +1,10 @@
-TalkDiveIn
-==========
+= TalkDiveIn
 
-== Dive In ==
+== Dive In
 
- * to <:Development:>
- * to <:Documentation:>
- * to <:Download:>
+ * to <<Development#>>
+ * to <<Documentation#>>
+ * to <<Download#>>
 
 {nbsp} +
 {nbsp} +
@@ -14,6 +13,6 @@ TalkDiveIn
 '''
 
 [cols="<,>"]
-|====
-|<:TalkMLtonHistory: Prev>|
-|====
+|===
+|<<TalkMLtonHistory#,Prev>>|
+|===

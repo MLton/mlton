@@ -1,9 +1,8 @@
-RunningOnAlpha
-==============
+= RunningOnAlpha
 
 MLton runs fine on the Alpha architecture.
 
-== Notes ==
+== Notes
 
 * When compiling for Alpha, MLton doesn't support native code
 generation (`-codegen native`).  Hence, performance is not as good as

@@ -1,5 +1,4 @@
-JohnnyAndersen
-==============
+= JohnnyAndersen
 
 Johnny Andersen (aka Anoq of the Sun)
 

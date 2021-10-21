@@ -1,28 +1,27 @@
-Release20041109
-===============
+= Release20041109
 
 This is an archived public release of MLton, version 20041109.
 
-== Changes since the last public release ==
+== Changes since the last public release
 
 * New platforms:
 ** x86: FreeBSD 5.x, OpenBSD
 ** PowerPC: Darwin (MacOSX)
-* Support for the <:MLBasis: ML Basis system>, a new mechanism supporting programming in the very large, separate delivery of library sources, and more.
+* Support for the <<MLBasis#,ML Basis system>>, a new mechanism supporting programming in the very large, separate delivery of library sources, and more.
 * Support for dynamic libraries.
-* Support for <:ConcurrentML:> (CML).
+* Support for <<ConcurrentML#>> (CML).
 * New structures: `Int2`, `Int3`, ..., `Int31` and `Word2`, `Word3`, ..., `Word31`.
 * Front-end bug fixes and improvements.
-* A new form of profiling with ++-profile count++, which can be used to test code coverage.
-* A bytecode generator, available via ++-codegen bytecode++.
+* A new form of profiling with ``-profile count``, which can be used to test code coverage.
+* A bytecode generator, available via ``-codegen bytecode``.
 * Representation improvements:
 ** Tuples and datatypes are packed to decrease space usage.
 ** Ref cells may be unboxed into their containing object.
 ** Arrays of tuples may represent the tuples unboxed.
 
 For a complete list of changes and bug fixes since 20040227, see the
-<!RawGitFile(mlton,on-20041109-release,doc/changelog)>.
+https://raw.github.com/MLton/mlton/on-20041109-release/doc/changelog[`changelog`].
 
-== Also see ==
+== Also see
 
-* <:Bugs20041109:>
+* <<Bugs20041109#>>

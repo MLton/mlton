@@ -1,83 +1,82 @@
-Bugs20100608
-============
+= Bugs20100608
 
-Here are the known bugs in <:Release20100608:MLton 20100608>, listed
+Here are the known bugs in <<Release20100608#,MLton 20100608>>, listed
 in reverse chronological order of date reported.
 
-* <!Anchor(bug11)>
+* [[bug11]]
 Bugs in `REAL.signBit`, `REAL.copySign`, and `REAL.toDecimal`/`REAL.fromDecimal`.
 +
 Thanks to Phil Clayton for the bug report and examples.
 +
-Fixed by revisions <!ViewSVNRev(7571)>, <!ViewSVNRev(7572)>, and <!ViewSVNRev(7573)>.
+Fixed by revisions https://github.com/MLton/mlton/search?q=SVN`r7571&type=commits[`r7571`], https://github.com/MLton/mlton/search?q=SVN`r7572&type=commits[`r7572`], and https://github.com/MLton/mlton/search?q=SVN+r7573&type=commits[`r7573`].
 
-* <!Anchor(bug10)>
+* [[bug10]]
 Bug in elaboration of type variables with and without equality status.
 +
 Thanks to Rob Simmons for the bug report and examples.
 +
-Fixed by revision <!ViewSVNRev(7565)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r7565&type=commits[`r7565`].
 
-* <!Anchor(bug09)>
-Bug in <:Redundant:redundant> <:SSA:> optimization.
+* [[bug09]]
+Bug in <<Redundant#,redundant>> <<SSA#>> optimization.
 +
 Thanks to Lars Magnusson for the bug report and example.
 +
-Fixed by revision <!ViewSVNRev(7561)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r7561&type=commits[`r7561`].
 
-* <!Anchor(bug08)>
-Bug in <:SSA:>/<:SSA2:> <:Shrink:shrinker> that could erroneously turn a non-tail function call with a `Bug` transfer as its continuation into a tail function call.
+* [[bug08]]
+Bug in <<SSA#>>/<<SSA2#>> <<Shrink#,shrinker>> that could erroneously turn a non-tail function call with a `Bug` transfer as its continuation into a tail function call.
 +
 Thanks to Lars Bergstrom for the bug report.
 +
-Fixed by revision <!ViewSVNRev(7546)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r7546&type=commits[`r7546`].
 
-* <!Anchor(bug07)>
-Bug in translation from <:SSA2:> to <:RSSA:> with `case` expressions over non-primitive-sized words.
+* [[bug07]]
+Bug in translation from <<SSA2#>> to <<RSSA#>> with `case` expressions over non-primitive-sized words.
 +
-Fixed by revision <!ViewSVNRev(7544)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r7544&type=commits[`r7544`].
 
-* <!Anchor(bug06)>
-Bug with <:SSA:>/<:SSA2:> type checking of case expressions over words.
+* [[bug06]]
+Bug with <<SSA#>>/<<SSA2#>> type checking of case expressions over words.
 +
-Fixed by revision <!ViewSVNRev(7542)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r7542&type=commits[`r7542`].
 
-* <!Anchor(bug05)>
+* [[bug05]]
 Bug with treatment of `as`-patterns, which should not allow the redefinition of constructor status.
 +
 Thanks to Michael Norrish for the bug report.
 +
-Fixed by revision <!ViewSVNRev(7530)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r7530&type=commits[`r7530`].
 
-* <!Anchor(bug04)>
-Bug with treatment of `nan` in <:CommonSubexp:common subexpression elimination> <:SSA:> optimization.
+* [[bug04]]
+Bug with treatment of `nan` in <<CommonSubexp#,common subexpression elimination>> <<SSA#>> optimization.
 +
 Thanks to Alexandre Hamez for the bug report.
 +
-Fixed by revision <!ViewSVNRev(7503)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r7503&type=commits[`r7503`].
 
-* <!Anchor(bug03)>
-Bug in translation from <:SSA2:> to <:RSSA:> with weak pointers.
+* [[bug03]]
+Bug in translation from <<SSA2#>> to <<RSSA#>> with weak pointers.
 +
 Thanks to Alexandre Hamez for the bug report.
 +
-Fixed by revision <!ViewSVNRev(7502)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r7502&type=commits[`r7502`].
 
-* <!Anchor(bug02)>
+* [[bug02]]
 Bug in amd64 codegen calling convention for varargs C calls.
 +
-Thanks to <:HenryCejtin:> for the bug report and <:WesleyTerpstra:> for the initial diagnosis.
+Thanks to <<HenryCejtin#>> for the bug report and <<WesleyTerpstra#>> for the initial diagnosis.
 +
-Fixed by revision <!ViewSVNRev(7501)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r7501&type=commits[`r7501`].
 
-* <!Anchor(bug01)>
-Bug in comment-handling in lexer for <:MLYacc:>'s input language.
+* [[bug01]]
+Bug in comment-handling in lexer for <<MLYacc#>>&rsquo;s input language.
 +
 Thanks to Michael Norrish for the bug report and patch.
 +
-Fixed by revision <!ViewSVNRev(7500)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r7500&type=commits[`r7500`].
 
-* <!Anchor(bug00)>
+* [[bug00]]
 Bug in elaboration of function clauses with different numbers of arguments that would raise an uncaught `Subscript` exception.
 +
-Fixed by revision <!ViewSVNRev(75497)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r75497&type=commits[`r75497`].

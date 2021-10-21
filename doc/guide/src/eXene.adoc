@@ -1,8 +1,7 @@
-eXene
-=====
+= eXene
 
 http://people.cs.uchicago.edu/%7Ejhr/eXene/index.html[eXene] is a
-multi-threaded X Window System toolkit written in <:ConcurrentML:>.
+multi-threaded X Window System toolkit written in <<ConcurrentML#>>.
 
 There is a group at K-State working toward
 http://www.cis.ksu.edu/%7Estough/eXene/[eXene 2.0].

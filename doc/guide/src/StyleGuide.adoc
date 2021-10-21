@@ -1,6 +1,5 @@
-StyleGuide
-==========
+= StyleGuide
 
 These conventions are chosen so that inertia is towards modularity, code reuse and finding bugs early, _not_ to save typing.
 
-* <:SyntacticConventions:>
+* <<SyntacticConventions#>>

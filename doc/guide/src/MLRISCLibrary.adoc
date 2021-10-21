@@ -1,5 +1,4 @@
-MLRISCLibrary
-=============
+= MLRISCLibrary
 
 The http://www.cs.nyu.edu/leunga/www/MLRISC/Doc/html/index.html[MLRISC
 Library] is a framework for retargetable and optimizing compiler back
@@ -10,12 +9,12 @@ out-of-the box with MLton.
 As of 20210117, MLton includes a port of the MLRISC Library
 synchronized with SML/NJ version 110.99.
 
-== Usage ==
+== Usage
 
 * You can import a sub-library of the MLRISC Library into an MLB file with:
 +
 [options="header"]
-|====
+|===
 |MLB file|Description
 |`$(SML_LIB)/mlrisc-lib/mlb/ALPHA.mlb`|The ALPHA backend
 |`$(SML_LIB)/mlrisc-lib/mlb/AMD64.mlb`|The AMD64 backend
@@ -38,10 +37,10 @@ synchronized with SML/NJ version 110.99.
 |`$(SML_LIB)/mlrisc-lib/mlb/SPARC.mlb`|The Sparc backend
 |`$(SML_LIB)/mlrisc-lib/mlb/StagedAlloc.mlb`|
 |`$(SML_LIB)/mlrisc-lib/mlb/Visual.mlb`|
-|=====
+|===
 
-* If you are porting a project from SML/NJ's <:CompilationManager:> to
-MLton's <:MLBasis: ML Basis system> using `cm2mlb`, note that the
+* If you are porting a project from SML/NJ's <<CompilationManager#>> to
+MLton's <<MLBasis#,ML Basis system>> using `cm2mlb`, note that the
 following map is included by default:
 +
 ----
@@ -53,7 +52,7 @@ This will automatically convert a `$SMLNJ-MLRISC/MLRISC.cm` import in
 an input `.cm` file into a `$(SML_LIB)/mlrisc-lib/mlb/MLRISC.mlb`
 import in the output `.mlb` file.
 
-== Details ==
+== Details
 
 The following changes were made to the MLRISC Library, in addition to
 deriving the `.mlb` files from the `.cm` files:
@@ -61,9 +60,9 @@ deriving the `.mlb` files from the `.cm` files:
 * eliminate sequential `withtype` expansions: Most could be rewritten as a sequence of type definitions and datatype definitions.
 * eliminate higher-order functors: Every higher-order functor definition and application could be uncurried in the obvious way.
 * eliminate `where <str> = <str>`: Quite painful to expand out all the flexible types in the respective structures.  Furthermore, many of the implied type equalities aren't needed, but it's too hard to pick out the right ones.
-* `library/array-noneq.sml` (added, not exported): Implements `signature ARRAY_NONEQ`, similar to `signature ARRAY` from the <:BasisLibrary:Basis Library>, but replacing the latter's `eqtype 'a array = 'a array` and `type 'a vector = 'a Vector.vector` with `type 'a array` and `type 'a vector`.  Thus, array-like containers may match `ARRAY_NONEQ`, whereas only the pervasive `'a array` container may match `ARRAY`.  (SML/NJ's implementation of `signature ARRAY` omits the type realizations.)
+* `library/array-noneq.sml` (added, not exported): Implements `signature ARRAY_NONEQ`, similar to `signature ARRAY` from the <<BasisLibrary#,Basis Library>>, but replacing the latter's `eqtype 'a array = 'a array` and `type 'a vector = 'a Vector.vector` with `type 'a array` and `type 'a vector`.  Thus, array-like containers may match `ARRAY_NONEQ`, whereas only the pervasive `'a array` container may match `ARRAY`.  (SML/NJ's implementation of `signature ARRAY` omits the type realizations.)
 * `library/dynamic-array.sml` and `library/hash-array.sml` (modifed): Replace `include ARRAY` with `include ARRAY_NONEQ`; see above.
 
-== Patch ==
+== Patch
 
-* <!ViewGitFile(mlton,master,lib/mlrisc-lib/MLRISC.patch)>
+* https://github.com/MLton/mlton/blob/master/lib/mlrisc-lib/MLRISC.patch[`MLRISC.patch`]

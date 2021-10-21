@@ -1,8 +1,7 @@
-Google Summer of Code (2014)
-============================
+= Google Summer of Code (2014)
 :toc:
 
-== Mentors ==
+== Mentors
 
 The following developers have agreed to serve as mentors for the 2014 Google Summer of Code:
 
@@ -14,9 +13,9 @@ The following developers have agreed to serve as mentors for the 2014 Google Sum
 * http://www.cs.purdue.edu/homes/suresh/[Suresh Jagannathan]
 /////
 
-== Ideas List ==
+== Ideas List
 
-=== Implement a Partial Redundancy Elimination (PRE) Optimization ===
+=== Implement a Partial Redundancy Elimination (PRE) Optimization
 
 Partial redundancy elimination (PRE) is a program transformation that
 removes operations that are redundant on some, but not necessarily all
@@ -42,7 +41,7 @@ Recommended Skills: SML programming experience; some middle-end compiler experie
 Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
 /////
 
-=== Design and Implement a Heap Profiler ===
+=== Design and Implement a Heap Profiler
 
 A heap profile is a description of the space usage of a program.  A
 heap profile is concerned with the allocation, retention, and
@@ -66,7 +65,7 @@ Recommended Skills: C and SML programming experience; some experience with UI an
 Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
 /////
 
-=== Garbage Collector Improvements ===
+=== Garbage Collector Improvements
 
 The garbage collector plays a significant role in the performance of
 functional languages.  Garbage collect too often, and program
@@ -100,7 +99,7 @@ Recommended Skills: C programming experience; some operating systems and/or syst
 Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
 /////
 
-=== Implement Successor{nbsp}ML Language Features ===
+=== Implement Successor{nbsp}ML Language Features
 
 Any programming language, including Standard{nbsp}ML, can be improved.
 The community has identified a number of modest extensions and
@@ -121,7 +120,7 @@ Recommended Skills: SML programming experience; some front-end compiler experien
 Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
 /////
 
-=== Implement Source-level Debugging ===
+=== Implement Source-level Debugging
 
 Debugging is a fact of programming life.  Unfortunately, most SML
 implementations (including MLton) provide little to no source-level
@@ -150,7 +149,7 @@ Recommended Skills: SML programming experience; some compiler experience
 Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
 /////
 
-=== Region Based Memory Management ===
+=== Region Based Memory Management
 
 Region based memory management is an alternative automatic memory
 management scheme to garbage collection.  Regions can be inferred by
@@ -178,7 +177,7 @@ Recommended Skills: SML programming experience; C programming experience; some c
 Mentor: http://www.cse.buffalo.edu/%7Elziarek/[Lukasz (Luke) Ziarek]
 /////
 
-=== Integration of Multi-MLton ===
+=== Integration of Multi-MLton
 
 http://multimlton.cs.purdue.edu[MultiMLton] is a compiler and runtime
 environment that targets scalable multicore platforms.  It is an
@@ -206,7 +205,7 @@ Recommended Skills: SML programming experience; C programming experience; some c
 Mentor: http://www.cse.buffalo.edu/%7Elziarek/[Lukasz (Luke) Ziarek]
 /////
 
-=== Concurrent{nbsp}ML Improvements ===
+=== Concurrent{nbsp}ML Improvements
 
 http://cml.cs.uchicago.edu/[Concurrent ML] is an SML concurrency
 library based on synchronous message passing.  MLton has a partial
@@ -234,7 +233,7 @@ Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
 /////
 
 /////
-=== SML3d Development ===
+=== SML3d Development
 
 The SML3d Project is a collection of libraries to support 3D graphics
 programming using Standard ML and the http://opengl.org/[OpenGL]

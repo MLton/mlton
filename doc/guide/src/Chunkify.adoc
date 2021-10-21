@@ -1,20 +1,19 @@
-Chunkify
-========
+= Chunkify
 
-<:Chunkify:> is an analysis pass for the <:RSSA:>
-<:IntermediateLanguage:>, invoked from <:ToMachine:>.
+<<Chunkify#>> is an analysis pass for the <<RSSA#>>
+<<IntermediateLanguage#>>, invoked from <<ToMachine#>>.
 
-== Description ==
+== Description
 
-It partitions all the labels (function and block) in an <:RSSA:>
+It partitions all the labels (function and block) in an <<RSSA#>>
 program into disjoint sets, referred to as chunks.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/backend/chunkify.sig)>
-* <!ViewGitFile(mlton,master,mlton/backend/chunkify.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/backend/chunkify.sig[`chunkify.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/backend/chunkify.fun[`chunkify.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
-Breaking large <:RSSA:> functions into chunks is necessary for
-reasonable compile times with the <:CCodegen:> and the <:LLVMCodegen:>.
+Breaking large <<RSSA#>> functions into chunks is necessary for
+reasonable compile times with the <<CCodegen#>> and the <<LLVMCodegen#>>.

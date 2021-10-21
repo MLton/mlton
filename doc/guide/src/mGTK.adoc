@@ -1,5 +1,4 @@
-mGTK
-====
+= mGTK
 
 http://mgtk.sourceforge.net/[mGTK] is a wrapper for
 http://www.gtk.org/[GTK+], a GUI toolkit.
@@ -11,6 +10,6 @@ release page].  To test it, after unpacking, do `cd examples; make
 mlton`, after which you should be able to run the many examples
 (`signup-mlton`, `listview-mlton`, ...).
 
-== Also see ==
+== Also see
 
-* <:Glade:>
+* <<Glade#>>

@@ -1,7 +1,6 @@
-TalkMLtonFeatures
-=================
+= TalkMLtonFeatures
 
-== MLton Features ==
+== MLton Features
 
  * Supports full Standard ML language and Basis Library
  * Generates standalone executables
@@ -13,7 +12,7 @@ TalkMLtonFeatures
 {nbsp} +
 {nbsp} +
 
-See <:Features:>.
+See <<Features#>>.
 
 {nbsp} +
 {nbsp} +
@@ -22,6 +21,6 @@ See <:Features:>.
 '''
 
 [cols="<,>"]
-|====
-|<:TalkFolkLore: Prev>|<:TalkMLtonHistory: Next>
-|====
+|===
+|<<TalkFolkLore#,Prev>>|<<TalkMLtonHistory#,Next>>
+|===

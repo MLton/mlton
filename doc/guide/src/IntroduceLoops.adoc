@@ -1,15 +1,14 @@
-IntroduceLoops
-==============
+= IntroduceLoops
 
-<:IntroduceLoops:> is an optimization pass for the <:SSA:>
-<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+<<IntroduceLoops#>> is an optimization pass for the <<SSA#>>
+<<IntermediateLanguage#>>, invoked from <<SSASimplify#>>.
 
-== Description ==
+== Description
 
-This pass rewrites any <:SSA:> function that calls itself in tail
+This pass rewrites any <<SSA#>> function that calls itself in tail
 position into one with a local loop and no self tail calls.
 
-A <:SSA:> function like
+A <<SSA#>> function like
 ----
 fun F (arg_0, arg_1) = L_0 ()
   ...
@@ -32,10 +31,10 @@ fun F (arg_0', arg_1') = loopS_0 ()
   ...
 ----
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/introduce-loops.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/introduce-loops.fun[`introduce-loops.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 {empty}

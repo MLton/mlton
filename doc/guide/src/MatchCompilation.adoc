@@ -1,14 +1,13 @@
-MatchCompilation
-================
+= MatchCompilation
 
 Match compilation is the process of translating an SML match into a
 nested tree (or dag) of simple case expressions and tests.
 
-MLton's match compiler is described <:MatchCompile:here>.
+MLton's match compiler is described <<MatchCompile#,here>>.
 
-== Match compilation in other compilers ==
+== Match compilation in other compilers
 
-* <!Cite(BaudinetMacQueen85)>
-* <!Cite(Leroy90)>, pages 60-69.
-* <!Cite(Sestoft96)>
-* <!Cite(ScottRamsey00)>
+* <<References#BaudinetMacQueen85,BaudinetMacQueen85>>
+* <<References#Leroy90,Leroy90>>, pages 60-69.
+* <<References#Sestoft96,Sestoft96>>
+* <<References#ScottRamsey00,ScottRamsey00>>

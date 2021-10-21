@@ -1,19 +1,18 @@
-CombineConversions
-==================
+= CombineConversions
 
-<:CombineConversions:> is an optimization pass for the <:SSA:>
-<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+<<CombineConversions#>> is an optimization pass for the <<SSA#>>
+<<IntermediateLanguage#>>, invoked from <<SSASimplify#>>.
 
-== Description ==
+== Description
 
 This pass looks for and simplifies nested calls to (signed)
 extension/truncation.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/combine-conversions.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/combine-conversions.fun[`combine-conversions.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 It processes each block in dfs order (visiting definitions before uses):
 

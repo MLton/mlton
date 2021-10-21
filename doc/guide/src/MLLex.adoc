@@ -1,24 +1,23 @@
-MLLex
-=====
+= MLLex
 
-<:MLLex:> is a lexical analyzer generator for <:StandardML:Standard ML>
+<<MLLex#>> is a lexical analyzer generator for <<StandardML#,Standard ML>>
 modeled after the Lex lexical analyzer generator.
 
-A version of MLLex, ported from the <:SMLNJ:SML/NJ> sources, is
+A version of MLLex, ported from the <<SMLNJ#,SML/NJ>> sources, is
 distributed with MLton.
 
-== Description ==
+== Description
 
 MLLex takes as input the lex language as defined in the ML-Lex manual,
 and outputs a lexical analyzer in SML.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mllex/lexgen.sml)>
-* <!ViewGitFile(mlton,master,mllex/main.sml)>
-* <!ViewGitFile(mlton,master,mllex/call-main.sml)>
+* https://github.com/MLton/mlton/blob/master/mllex/lexgen.sml[`lexgen.sml`]
+* https://github.com/MLton/mlton/blob/master/mllex/main.sml[`main.sml`]
+* https://github.com/MLton/mlton/blob/master/mllex/call-main.sml[`call-main.sml`]
 
-== Details and Notes ==
+== Details and Notes
 
 There are 3 main passes in the MLLex tool:
 
@@ -26,9 +25,9 @@ There are 3 main passes in the MLLex tool:
 * DFA construction. In this pass, a DFA is constructed by the algorithm of H. Yamada et. al.
 * Output. In this pass, the generated DFA is written out as a transition table, along with a table-driven algorithm, to an SML file.
 
-== Also see ==
+== Also see
 
-* <!Attachment(Documentation,mllex.pdf)>
-* <:MLYacc:>
-* <!Cite(AppelEtAl94)>
-* <!Cite(Price09)>
+* link:Documentation.attachments/mllex.pdf[`mllex.pdf`]
+* <<MLYacc#>>
+* <<References#AppelEtAl94,AppelEtAl94>>
+* <<References#Price09,Price09>>

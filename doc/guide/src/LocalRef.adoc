@@ -1,27 +1,26 @@
-LocalRef
-========
+= LocalRef
 
-<:LocalRef:> is an optimization pass for the <:SSA:>
-<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+<<LocalRef#>> is an optimization pass for the <<SSA#>>
+<<IntermediateLanguage#>>, invoked from <<SSASimplify#>>.
 
-== Description ==
+== Description
 
-This pass optimizes `ref` cells local to a <:SSA:> function:
+This pass optimizes `ref` cells local to a <<SSA#>> function:
 
 * global `ref`-s only used in one function are moved to the function
 
 * `ref`-s only created, read from, and written to (i.e., don't escape)
 are converted into function local variables
 
-Uses <:Multi:> and <:Restore:>.
+Uses <<Multi#>> and <<Restore#>>.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/local-ref.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/local-ref.fun[`local-ref.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
-Moving a global `ref` requires the <:Multi:> analysis, because a
+Moving a global `ref` requires the <<Multi#>> analysis, because a
 global `ref` can only be moved into a function that is executed at
 most once.
 
@@ -29,7 +28,7 @@ Conversion of non-escaping `ref`-s is structured in three phases:
 
 * analysis -- a variable `r = Ref_ref x` escapes if
 ** `r` is used in any context besides `Ref_assign (r, _)` or `Ref_deref r`
-** all uses `r` reachable from a (direct or indirect) call to `Thread_copyCurrent` are of the same flavor (either `Ref_assign` or `Ref_deref`); this also requires the <:Multi:> analysis.
+** all uses `r` reachable from a (direct or indirect) call to `Thread_copyCurrent` are of the same flavor (either `Ref_assign` or `Ref_deref`); this also requires the <<Multi#>> analysis.
 
 * transformation
 +
@@ -41,4 +40,4 @@ Conversion of non-escaping `ref`-s is structured in three phases:
 +
 Note that the resulting program violates the SSA condition.
 
-* <:Restore:> -- restore the SSA condition.
+* <<Restore#>> -- restore the SSA condition.

@@ -1,26 +1,25 @@
-TypeIndexedValues
-=================
+= TypeIndexedValues
 
-<:StandardML:Standard ML> does not support ad hoc polymorphism.  This
+<<StandardML#,Standard ML>> does not support ad hoc polymorphism.  This
 presents a challenge to programmers.  The problem is that at first
 glance there seems to be no practical way to implement something like
 a function for converting a value of any type to a string or a
 function for computing a hash value for a value of any type.
 Fortunately there are ways to implement type-indexed values in SML as
-discussed in <!Cite(Yang98)>.  Various articles such as
-<!Cite(Danvy98)>, <!Cite(Ramsey11)>, <!Cite(Elsman04)>,
-<!Cite(Kennedy04)>, and <!Cite(Benton05)> also contain examples of
+discussed in <<References#Yang98,Yang98>>.  Various articles such as
+<<References#Danvy98,Danvy98>>, <<References#Ramsey11,Ramsey11>>, <<References#Elsman04,Elsman04>>,
+<<References#Kennedy04,Kennedy04>>, and <<References#Benton05,Benton05>> also contain examples of
 type-indexed values.
 
 *NOTE:* The technique used in the following example uses an early (and
 somewhat broken) variation of the basic technique used in an
 experimental generic programming library (see
-<!ViewGitFile(mltonlib,master,com/ssh/generic/unstable/README)>) that can
+https://github.com/MLton/mltonlib/blob/master/com/ssh/generic/unstable/README[`README`]) that can
 be found from the MLton repository.  The generic programming library
 also includes a more advanced generic pretty printing function (see
-<!ViewGitFile(mltonlib,master,com/ssh/generic/unstable/public/value/pretty.sig)>).
+https://github.com/MLton/mltonlib/blob/master/com/ssh/generic/unstable/public/value/pretty.sig[`pretty.sig`]).
 
-== Example: Converting any SML value to (roughly) SML syntax ==
+== Example: Converting any SML value to (roughly) SML syntax
 
 Consider the problem of converting any SML value to a textual
 presentation that matches the syntax of SML as closely as possible.
@@ -28,7 +27,7 @@ One solution is a type-indexed function that maps a given type to a
 function that maps any value (of the type) to its textual
 presentation.  A type-indexed function like this can be useful for a
 variety of purposes.  For example, one could use it to show debugging
-information.  We'll call this function "`show`".
+information.  We'll call this function `show`.
 
 We'll do a fairly complete implementation of `show`.  We do not
 distinguish infix and nonfix constructors, but that is not an
@@ -46,11 +45,11 @@ Finally, it would also make sense to show sharing of references and
 arrays.  We'll leave these improvements to an actual library
 implementation.
 
-The following code uses the <:Fixpoints:fixpoint framework> and other
+The following code uses the <<Fixpoints#,fixpoint framework>> and other
 utilities from an Extended Basis library (see
-<!ViewGitFile(mltonlib,master,com/ssh/extended-basis/unstable/README)>).
+https://github.com/MLton/mltonlib/blob/master/com/ssh/extended-basis/unstable/README[`README`]).
 
-=== Signature ===
+=== Signature
 
 Let's consider the design of the `SHOW` signature:
 [source,sml]
@@ -119,7 +118,7 @@ incomplete record, tuple, and datatype type-indices from each other
 and from complete type-indices.  Also, names of record labels and
 datatype constructors need to be provided by the user.
 
-==== Arbitrary user-defined datatypes ====
+==== Arbitrary user-defined datatypes
 
 Perhaps the most important pattern is how the design supports
 arbitrary user-defined datatypes.  A number of combinators together
@@ -155,7 +154,7 @@ Again, the purpose of the type `s` is to distinguish incomplete sums
 from complete type-indices of type `t`, which usually isn't necessary.
 
 Finally, to support recursive datatypes, including sets of mutually
-recursive datatypes, a <:Fixpoints:fixpoint tier> is provided:
+recursive datatypes, a <<Fixpoints#,fixpoint tier>> is provided:
 [source,sml]
 ----
 val Y : 'a t Tie.t
@@ -165,9 +164,9 @@ Together these combinators (with the more domain specific combinators
 `U`, `L`, `tuple`, `record`, `C0`, `C1`, and `data`) enable one to
 encode a type-index for any user-defined datatype.
 
-==== Exceptions ====
+==== Exceptions
 
-The `exn` type in SML is a <:UniversalType:universal type> into which
+The `exn` type in SML is a <<UniversalType#,universal type>> into which
 all types can be embedded.  SML also allows a program to generate new
 exception variants at run-time.  Thus a mechanism is required to register
 handlers for particular variants:
@@ -198,7 +197,7 @@ end
 Note that a single handler may actually handle an arbitrary number of
 different exceptions.
 
-==== Other types ====
+==== Other types
 
 Some built-in and standard types typically require special treatment
 due to their special nature.  The most important of these are arrays
@@ -215,7 +214,7 @@ The set of base types to support also needs to be considered unless
 one exports an interface for constructing type-indices for entirely
 new base types.
 
-== Usage ==
+== Usage
 
 Before going to the implementation, let's look at some examples.  For
 the following examples, we'll assume a structure binding
@@ -278,7 +277,7 @@ in
                 L"c" bool))
 end
 
-val "{a = SOME 1, b = 3.0, c = false}" =
+val "{a = SOME 1, b = 3.0, c = false}"
     let open Show in show abc end
        {a = SOME 1, b = 3.0, c = false}
 ----
@@ -402,7 +401,7 @@ or an array, one needs to check whether that reference or array has
 already been seen before.  When `ref` or `array` is called with a
 type-index, a new cyclicity checker is instantiated.
 
-== Implementation ==
+== Implementation
 
 [source,sml]
 ----
@@ -584,9 +583,9 @@ end
 ----
 
 
-== Also see ==
+== Also see
 
 There are a number of related techniques.  Here are some of them.
 
-* <:Fold:>
-* <:StaticSum:>
+* <<Fold#>>
+* <<StaticSum#>>

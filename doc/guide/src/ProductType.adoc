@@ -1,7 +1,6 @@
-ProductType
-===========
+= ProductType
 
-<:StandardML:Standard ML> has special syntax for products (tuples). A
+<<StandardML#,Standard ML>> has special syntax for products (tuples). A
 product type is written as
 [source,sml]
 ----
@@ -16,7 +15,7 @@ and a product pattern is written as
 In most situations the syntax is quite convenient.  However, there are
 situations where the syntax is cumbersome.  There are also situations
 in which it is useful to construct and destruct n-ary products
-inductively, especially when using <:Fold:>.
+inductively, especially when using <<Fold#>>.
 
 In such situations, it is useful to have a binary product datatype
 with an infix constructor defined as follows.
@@ -46,7 +45,7 @@ The symbol `&` is inspired by the Curry-Howard isomorphism: the proof
 of a conjunction `(A & B)` is a pair of proofs `(a, b)`.
 
 
-== Example: parser combinators ==
+== Example: parser combinators
 
 A typical parser combinator library provides a combinator that has a
 type of the form.
@@ -83,7 +82,7 @@ p1 & p2 & p3 & ... & pN
 which is considerably more concise.
 
 
-== Also see ==
+== Also see
 
-* <:VariableArityPolymorphism:>
-* <:Utilities:>
+* <<VariableArityPolymorphism#>>
+* <<Utilities#>>

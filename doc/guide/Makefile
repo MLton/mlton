@@ -101,9 +101,9 @@ conf/html5/mlton.css: ;
 define MK_HTML5
 $(1)_TARGETS := $$(addprefix $(1)/, $$(HTML5_TARGETS))
 
-$(1)/% : src_dr/%.adoc bin/mk-git-attribute-entity-flags.sh $$(ASCIIDOCTOR_HTML5_DEPS)
+$(1)/% : src/%.adoc bin/mk-git-attribute-entity-flags.sh $$(ASCIIDOCTOR_HTML5_DEPS)
 	@$$(MKDIR) $$(dir $$@)
-	$$(ASCIIDOCTOR) $$(ASCIIDOCTOR_HTML5_FLAGS) $$(shell ./bin/mk-git-attribute-entity-flags.sh $$(subst src_dr,src,$$<)) --attribute=mlton-guide-host=$(1) -o $$@ $$<
+	$$(ASCIIDOCTOR) $$(ASCIIDOCTOR_HTML5_FLAGS) --attribute=mlton-guide-host=$(1) $$(shell ./bin/mk-git-attribute-entity-flags.sh $$<) -o $$@ $$<
 
 $(1)/% : src/%
 	@$$(MKDIR) $$(dir $$@)
@@ -123,15 +123,6 @@ $(eval $(call MK_HTML5,mlton.sourceforge.io))
 .PHONY: upload_mlton.sourceforge.io
 upload_mlton.sourceforge.io: mlton.sourceforge.io
 	rsync -avzP --delete -e ssh mlton.sourceforge.io/ fluet,mlton@web.sourceforge.net:htdocs/wiki
-
-
-src_dr/Index.adoc: src/Index.adoc
-	$(CP) $< $@
-
-.PRECIOUS: src_dr/%.adoc
-src_dr/%.adoc: src/%.adoc ./bin/asciidoc-to-asciidoctor.sh
-	@$(MKDIR) $(dir $@)
-	./bin/asciidoc-to-asciidoctor.sh $< $@
 
 
 ######

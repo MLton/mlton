@@ -1,12 +1,11 @@
-GMP
-===
+= GMP
 
 The https://gmplib.org[GMP] library (GNU Multiple Precision
 arithmetic library) is a library for arbitrary precision integer
 arithmetic.  MLton uses the GMP library to implement the
-<:BasisLibrary: Basis Library> `IntInf` module.
+<<BasisLibrary#,Basis Library>> `IntInf` module.
 
-== Known issues ==
+== Known issues
 
 * There is a known problem with the GMP library (prior to version
 4.2.x), where it requires a lot of stack space for some computations,

@@ -1,19 +1,18 @@
-Codegen
-=======
+= Codegen
 
-<:Codegen:> is a translation pass from the <:Machine:>
-<:IntermediateLanguage:> to one or more compilation units that can be
+<<Codegen#>> is a translation pass from the <<Machine#>>
+<<IntermediateLanguage#>> to one or more compilation units that can be
 compiled to native object code by an external tool.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitDir(mlton,master,mlton/codegen)>
+* https://github.com/MLton/mlton/tree/master/mlton/codegen[`codegen`]
 
-== Details and Notes ==
+== Details and Notes
 
-The following <:Codegen:codegens> are implemented:
+The following <<Codegen#,codegens>> are implemented:
 
-* <:AMD64Codegen:>
-* <:CCodegen:>
-* <:LLVMCodegen:>
-* <:X86Codegen:>
+* <<AMD64Codegen#>>
+* <<CCodegen#>>
+* <<LLVMCodegen#>>
+* <<X86Codegen#>>

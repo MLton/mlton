@@ -1,17 +1,16 @@
-Bugs20041109
-============
+= Bugs20041109
 
-Here are the known bugs in <:Release20041109:MLton 20041109>, listed
+Here are the known bugs in <<Release20041109#,MLton 20041109>>, listed
 in reverse chronological order of date reported.
 
-* <!Anchor(bug17)>
+* [[bug17]]
  `MLton.Finalizable.touch` doesn't necessarily keep values alive
  long enough.  Our SVN has a patch to the compiler.  You must rebuild
  the compiler in order for the patch to take effect.
 +
 Thanks to Florian Weimer for reporting this bug.
 
-* <!Anchor(bug16)>
+* [[bug16]]
  A bug in an optimization pass may incorrectly transform a program
  to flatten ref cells into their containing data structure, yielding a
  type-error in the transformed program.  Our CVS has a
@@ -19,9 +18,9 @@ Thanks to Florian Weimer for reporting this bug.
  to the compiler.  You must rebuild the compiler in order for the
  patch to take effect.
 +
-Thanks to <:VesaKarvonen:> for reporting this bug.
+Thanks to <<VesaKarvonen#>> for reporting this bug.
 
-* <!Anchor(bug15)>
+* [[bug15]]
  A bug in the front end mistakenly allows unary constructors to be
  used without an argument in patterns.  For example, the following
  program is accepted, and triggers a large internal error.
@@ -35,7 +34,7 @@ We have fixed the problem in our CVS.
 +
 Thanks to William Lovas for reporting this bug.
 
-* <!Anchor(bug14)>
+* [[bug14]]
  A bug in `Posix.IO.{getlk,setlk,setlkw}` causes a link-time error:
  `undefined reference to Posix_IO_FLock_typ`
  Our CVS has a
@@ -44,7 +43,7 @@ Thanks to William Lovas for reporting this bug.
 +
 Thanks to Adam Chlipala for reporting this bug.
 
-* <!Anchor(bug13)>
+* [[bug13]]
  A bug can cause programs compiled with `-profile alloc` to
  segfault.  Our CVS has a
  http://mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton/mlton/backend/ssa-to-rssa.fun.diff?r1=1.106&r2=1.107[patch]
@@ -53,7 +52,7 @@ Thanks to Adam Chlipala for reporting this bug.
 +
 Thanks to John Reppy for reporting this bug.
 
-* <!Anchor(bug12)>
+* [[bug12]]
  A bug in an optimization pass may incorrectly flatten ref cells
  into their containing data structure, breaking the sharing between
  the cells.  Our CVS has a
@@ -63,7 +62,7 @@ Thanks to John Reppy for reporting this bug.
 +
 Thanks to Paul Govereau for reporting this bug.
 
-* <!Anchor(bug11)>
+* [[bug11]]
  Some arrays or vectors, such as `(char * char) vector`, are
  incorrectly implemented, and will conflate the first and second
  components of each element.  Our CVS has a
@@ -73,7 +72,7 @@ Thanks to Paul Govereau for reporting this bug.
 +
 Thanks to Scott Cruzen for reporting this bug.
 
-* <!Anchor(bug10)>
+* [[bug10]]
  `Socket.Ctl.getLINGER` and `Socket.Ctl.setLINGER`
  mistakenly raise `Subscript`.
  Our CVS has a
@@ -82,12 +81,12 @@ Thanks to Scott Cruzen for reporting this bug.
 +
 Thanks to Ray Racine for reporting the bug.
 
-* <!Anchor(bug09)>
- <:ConcurrentML: CML> `Mailbox.send` makes a call in the wrong atomic context.
+* [[bug09]]
+ <<ConcurrentML#,CML>> `Mailbox.send` makes a call in the wrong atomic context.
  Our CVS has a http://mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton/lib/cml/core-cml/mailbox.sml.diff?r1=1.3&r2=1.4[patch]
  to the CML implementation.
 
-* <!Anchor(bug08)>
+* [[bug08]]
  `OS.Path.joinDirFile` and `OS.Path.toString` did not
  raise `InvalidArc` when they were supposed to.  They now do.
  Our CVS has a http://mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton/basis-library/system/path.sml.diff?r1=1.8&r2=1.11[patch]
@@ -95,7 +94,7 @@ Thanks to Ray Racine for reporting the bug.
 +
 Thanks to Andreas Rossberg for reporting the bug.
 
-* <!Anchor(bug07)>
+* [[bug07]]
  The front end incorrectly disallows sequences of expressions
  (separated by semicolons) after a topdec has already been processed.
  For example, the following is incorrectly rejected.
@@ -111,7 +110,7 @@ We have fixed the problem in our CVS.
 +
 Thanks to Andreas Rossberg for reporting the bug.
 
-* <!Anchor(bug06)>
+* [[bug06]]
  The front end incorrectly disallows expansive `val`
  declarations that bind a type variable that doesn't occur in the
  type of the value being bound.   For example, the following is
@@ -126,14 +125,14 @@ We have fixed the problem in our CVS.
 +
 Thanks to Andreas Rossberg for reporting this bug.
 
-* <!Anchor(bug05)>
+* [[bug05]]
  The x86 codegen fails to account for the possibility that a 64-bit
  move could interfere with itself (as simulated by 32-bit moves).  We
  have fixed the problem in our CVS.
 +
 Thanks to Scott Cruzen for reporting this bug.
 
-* <!Anchor(bug04)>
+* [[bug04]]
  `NetHostDB.scan` and `NetHostDB.fromString` incorrectly
  raise an exception on internet addresses whose last component is a
  zero, e.g `0.0.0.0`.  Our CVS has a
@@ -141,7 +140,7 @@ Thanks to Scott Cruzen for reporting this bug.
 +
 Thanks to Scott Cruzen for reporting this bug.
 
-* <!Anchor(bug03)>
+* [[bug03]]
  `StreamIO.inputLine` has an off-by-one error causing it to drop
  the first character after a newline in some situations.  Our CVS has a
  http://mlton.org/cgi-bin/viewcvs.cgi/mlton/mlton/basis-library/io/stream-io.fun.diff?r1=text&tr1=1.29&r2=text&tr2=1.30&diff_format=h[patch].
@@ -149,7 +148,7 @@ Thanks to Scott Cruzen for reporting this bug.
 +
 Thanks to Scott Cruzen for reporting this bug.
 
-* <!Anchor(bug02)>
+* [[bug02]]
  `BinIO.getInstream` and `TextIO.getInstream` are
  implemented incorrectly.  This also impacts the behavior of
  `BinIO.scanStream` and `TextIO.scanStream`.  If you (directly
@@ -158,9 +157,9 @@ Thanks to Scott Cruzen for reporting this bug.
  stream, you may lose input data.  We have fixed the problem in our
  CVS.
 +
-Thanks to <:WesleyTerpstra:> for reporting this bug.
+Thanks to <<WesleyTerpstra#>> for reporting this bug.
 
-* <!Anchor(bug01)>
+* [[bug01]]
  `Posix.ProcEnv.setpgid` doesn't work.  If you compile a program
  that uses it, you will get a link time error
 +

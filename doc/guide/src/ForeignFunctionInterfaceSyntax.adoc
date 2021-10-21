@@ -1,27 +1,26 @@
-ForeignFunctionInterfaceSyntax
-==============================
+= ForeignFunctionInterfaceSyntax
 
 MLton extends the syntax of SML with expressions that enable a
-<:ForeignFunctionInterface:> to C.  The following description of the
+<<ForeignFunctionInterface#>> to C.  The following description of the
 syntax uses some abbreviations.
 
 [options="header"]
-|====
-| C base type | _cBaseTy_ | <:ForeignFunctionInterfaceTypes: Foreign Function Interface types>
+|===
+| C base type | _cBaseTy_ | <<ForeignFunctionInterfaceTypes#,Foreign Function Interface types>>
 | C argument type | _cArgTy_ | `_cBaseTy_~1~ * ... * _cBaseTy_~n~` or `unit`
 | C return type | _cRetTy_ | `_cBaseTy_` or `unit`
-| C function type | _cFuncTy_ | `_cArgTy_ -> _cRetTy_`
+| C function type | _cFuncTy_ | `_cArgTy_ \-> _cRetTy_`
 | C pointer type | _cPtrTy_ | `MLton.Pointer.t`
-|====
+|===
 
 The type annotation and the semicolon are not optional in the syntax
-of <:ForeignFunctionInterface:> expressions.  However, the type is
+of <<ForeignFunctionInterface#>> expressions.  However, the type is
 lexed, parsed, and elaborated as an SML type, so any type (including
 type abbreviations) may be used, so long as it elaborates to a type of
 the correct form.
 
 
-== Address ==
+== Address
 
 ----
 _address "CFunctionOrVariableName" attr... : cPtrTy;
@@ -31,14 +30,14 @@ Denotes the address of the C function or variable.
 
 `attr...` denotes a (possibly empty) sequence of attributes.  The following attributes are recognized:
 
-* `external` : import with external symbol scope (see <:LibrarySupport:>) (default).
-* `private` : import with private symbol scope (see <:LibrarySupport:>).
-* `public` : import with public symbol scope (see <:LibrarySupport:>).
+* `external` : import with external symbol scope (see <<LibrarySupport#>>) (default).
+* `private` : import with private symbol scope (see <<LibrarySupport#>>).
+* `public` : import with public symbol scope (see <<LibrarySupport#>>).
 
-See <:MLtonPointer: MLtonPointer> for functions that manipulate C pointers.
+See <<MLtonPointer#,MLtonPointer>> for functions that manipulate C pointers.
 
 
-== Symbol ==
+== Symbol
 
 ----
 _symbol "CVariableName" attr... : (unit -> cBaseTy) * (cBaseTy -> unit);
@@ -50,9 +49,9 @@ must be identical.
 `attr...` denotes a (possibly empty) sequence of attributes.  The following attributes are recognized:
 
 * `alloc` : allocate storage (and export a symbol) for the C variable.
-* `external` : import or export with external symbol scope (see <:LibrarySupport:>) (default if not `alloc`).
-* `private` : import or export with private symbol scope (see <:LibrarySupport:>).
-* `public` : import or export with public symbol scope (see <:LibrarySupport:>) (default if `alloc`).
+* `external` : import or export with external symbol scope (see <<LibrarySupport#>>) (default if not `alloc`).
+* `private` : import or export with private symbol scope (see <<LibrarySupport#>>).
+* `public` : import or export with public symbol scope (see <<LibrarySupport#>>) (default if `alloc`).
 
 
 ----
@@ -63,24 +62,24 @@ Denotes the _getter_ and _setter_ for a C pointer to a variable.
 The __cBaseTy__s must be identical.
 
 
-== Import ==
+== Import
 
 ----
 _import "CFunctionName" attr... : cFuncTy;
 ----
 
 Denotes an SML function whose behavior is implemented by calling the C
-function.  See <:CallingFromSMLToC: Calling from SML to C> for more
+function.  See <<CallingFromSMLToC#,Calling from SML to C>> for more
 details.
 
 `attr...` denotes a (possibly empty) sequence of attributes.  The following attributes are recognized:
 
 * `cdecl` : call with the `cdecl` calling convention (default).
-* `external` : import with external symbol scope (see <:LibrarySupport:>) (default).
+* `external` : import with external symbol scope (see <<LibrarySupport#>>) (default).
 * `impure`: assert that the function depends upon state and/or performs side effects (default).
-* `private` : import with private symbol scope (see <:LibrarySupport:>).
-* `public` : import with public symbol scope (see <:LibrarySupport:>).
-* `pure`: assert that the function does not depend upon state or perform any side effects; such functions are subject to various optimizations (e.g., <:CommonSubexp:>, <:RemoveUnused:>)
+* `private` : import with private symbol scope (see <<LibrarySupport#>>).
+* `public` : import with public symbol scope (see <<LibrarySupport#>>).
+* `pure`: assert that the function does not depend upon state or perform any side effects; such functions are subject to various optimizations (e.g., <<CommonSubexp#>>, <<RemoveUnused#>>)
 * `reentrant`: assert that the function (directly or indirectly) calls an `_export`-ed SML function.
 * `stdcall` : call with the `stdcall` calling convention (ignored except on Cygwin and MinGW).
 
@@ -96,16 +95,16 @@ function through a C function pointer.
 
 * `cdecl` : call with the `cdecl` calling convention (default).
 * `impure`: assert that the function depends upon state and/or performs side effects (default).
-* `pure`: assert that the function does not depend upon state or perform any side effects; such functions are subject to various optimizations (e.g., <:CommonSubexp:>, <:RemoveUnused:>)
+* `pure`: assert that the function does not depend upon state or perform any side effects; such functions are subject to various optimizations (e.g., <<CommonSubexp#>>, <<RemoveUnused#>>)
 * `reentrant`: assert that the function (directly or indirectly) calls an `_export`-ed SML function.
 * `stdcall` : call with the `stdcall` calling convention (ignored except on Cygwin and MinGW).
 
 See
-<:CallingFromSMLToCFunctionPointer: Calling from SML to C function pointer>
+<<CallingFromSMLToCFunctionPointer#,Calling from SML to C function pointer>>
 for more details.
 
 
-== Export ==
+== Export
 
 ----
 _export "CFunctionName" attr... : cFuncTy -> unit;
@@ -122,8 +121,8 @@ definition of `CFunctionName`.
 `attr...` denotes a (possibly empty) sequence of attributes.  The following attributes are recognized:
 
 * `cdecl` : call with the `cdecl` calling convention (default).
-* `private` : export with private symbol scope (see <:LibrarySupport:>).
-* `public` : export with public symbol scope (see <:LibrarySupport:>) (default).
+* `private` : export with private symbol scope (see <<LibrarySupport#>>).
+* `public` : export with public symbol scope (see <<LibrarySupport#>>) (default).
 * `stdcall` : call with the `stdcall` calling convention (ignored except on Cygwin and MinGW).
 
-See <:CallingFromCToSML: Calling from C to SML> for more details.
+See <<CallingFromCToSML#,Calling from C to SML>> for more details.

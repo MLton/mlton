@@ -1,5 +1,4 @@
-WholeProgramOptimization
-========================
+= WholeProgramOptimization
 
 Whole-program optimization is a compilation technique in which
 optimizations operate over the entire program.  This allows the

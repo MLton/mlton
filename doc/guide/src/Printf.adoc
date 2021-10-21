@@ -1,8 +1,7 @@
-Printf
-======
+= Printf
 
 Programmers coming from C or Java often ask if
-<:StandardML:Standard ML> has a `printf` function.  It does not.
+<<StandardML#,Standard ML>> has a `printf` function.  It does not.
 However, it is possible to implement your own version with only a few
 lines of code.
 
@@ -49,7 +48,7 @@ printf <spec1> ... <specn> $ <arg1> ... <argm>
 ----
 
 where each `<speci>` is either a specifier like `B`, `I`, or `R`, or
-is an inline string, like ++&grave;"foo"++.  A backtick (+&grave;+)
+is an inline string, like `{backtick}"foo"`.  A backtick (`{backtick}`)
 must precede each inline string.  Each `<argi>` must be of the
 appropriate type for the corresponding specifier.
 
@@ -105,10 +104,10 @@ val () = printf `"Test "I2`"  a string "S`"\n" $ (1, 2) "hello"
 ----
 
 
-== Printf via <:Fold:> ==
+== Printf via <<Fold#>>
 
 `printf` is best viewed as a special case of variable-argument
-<:Fold:> that inductively builds a function as it processes its
+<<Fold#>> that inductively builds a function as it processes its
 arguments.  Here is the definition of a `Printf` structure in terms of
 fold.  The structure is equivalent to the above one, except that it
 uses the standard `$` instead of a specialized one.
@@ -158,7 +157,7 @@ val () = printf (XB I)`"  "(XB R)`"\n" $ 1 true 2.0 false
 ----
 
 
-== Also see ==
+== Also see
 
-* <:PrintfGentle:>
-* <!Cite(Danvy98, Functional Unparsing)>
+* <<PrintfGentle#>>
+* <<References#Danvy98,Functional Unparsing>>

@@ -1,17 +1,16 @@
-ObjectOrientedProgramming
-=========================
+= ObjectOrientedProgramming
 
-<:StandardML:Standard ML> does not have explicit support for
+<<StandardML#,Standard ML>> does not have explicit support for
 object-oriented programming.  Here are some papers that show how to
 express certain object-oriented concepts in SML.
 
-* <!Cite(Berthomieu00, OO Programming styles in ML)>
+* <<References#Berthomieu00,OO Programming styles in ML>>
 
-* <!Cite(ThorupTofte94, Object-oriented programming and Standard ML)>
+* <<References#ThorupTofte94,Object-oriented programming and Standard ML>>
 
-* <!Cite(LarsenNiss04, mGTK: An SML binding of Gtk+)>
+* <<References#LarsenNiss04,mGTK: An SML binding of Gtk+>>
 
-* <!Cite(FluetPucella06, Phantom Types and Subtyping)>
+* <<References#FluetPucella06,Phantom Types and Subtyping>>
 
 The question of OO programming in SML comes up every now and then.
 The following discusses a simple object-oriented (OO) programming
@@ -19,7 +18,7 @@ technique in Standard ML.  The reader is assumed to be able to read
 Java and SML code.
 
 
-== Motivation ==
+== Motivation
 
 SML doesn't provide subtyping, but it does provide parametric
 polymorphism, which can be used to encode some forms of subtyping.
@@ -63,7 +62,7 @@ we ignore subtyping and rather concentrate on a very simple and basic
 dynamic dispatch technique.
 
 
-== Dynamic Dispatch Using a Recursive Record of Functions ==
+== Dynamic Dispatch Using a Recursive Record of Functions
 
 Quite simply, the basic idea is to implement a "virtual function
 table" using a record that is wrapped inside a (possibly recursive)
@@ -202,14 +201,14 @@ difficult to see that this technique quite simply doesn't require a huge
 amount of extra verbiage and is more than usable in practice.
 
 
-== SML Modules and Dynamic Dispatch ==
+== SML Modules and Dynamic Dispatch
 
 One might wonder about how SML modules and the dynamic dispatch
 technique work together.  Let's investigate!  Let's use a simple
 dispenser framework as a concrete example.  (Note that this isn't
 intended to be an introduction to the SML module system.)
 
-=== Programming with SML Modules ===
+=== Programming with SML Modules
 
 Using SML signatures we can specify abstract data types (ADTs) such as
 dispensers.  Here is a signature for an "abstract" functional (as
@@ -316,7 +315,7 @@ val q = Q.push (1, Stack.empty)
 
 will give a type error.
 
-=== Combining SML Modules and Dynamic Dispatch ===
+=== Combining SML Modules and Dynamic Dispatch
 
 Let's then combine SML modules and the dynamic dispatch technique
 introduced in this article.  First we define an interface for

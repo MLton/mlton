@@ -1,12 +1,11 @@
-Enscript
-========
+= Enscript
 
 http://www.gnu.org/s/enscript/[GNU Enscript] converts ASCII files to
 PostScript, HTML, and other output languages, applying language
-sensitive highlighting (similar to <:Emacs:>'s font lock mode).  Here
-are a few _states_ files for highlighting <:StandardML: Standard ML>.
+sensitive highlighting (similar to <<Emacs#>>&rsquo;s font lock mode).  Here
+are a few _states_ files for highlighting <<StandardML#,Standard ML>>.
 
-* <!ViewGitFile(mlton,master,ide/enscript/sml_simple.st)> -- Provides highlighting of keywords, string and character constants, and (nested) comments.
+* https://github.com/MLton/mlton/blob/master/ide/enscript/sml_simple.st[`sml_simple.st`] -- Provides highlighting of keywords, string and character constants, and (nested) comments.
 /////
 +
 [source,sml]
@@ -18,7 +17,7 @@ end
 ----
 /////
 
-* <!ViewGitFile(mlton,master,ide/enscript/sml_verbose.st)> -- Supersedes
+* https://github.com/MLton/mlton/blob/master/ide/enscript/sml_verbose.st[`sml_verbose.st`] -- Supersedes
 the above, adding highlighting of numeric constants.  Due to the
 limited parsing available, numeric record labels are highlighted as
 numeric constants, in all contexts.  Likewise, a binding precedence
@@ -43,7 +42,7 @@ end
 ----
 /////
 
-* <!ViewGitFile(mlton,master,ide/enscript/sml_fancy.st)> -- Supersedes the
+* https://github.com/MLton/mlton/blob/master/ide/enscript/sml_fancy.st[`sml_fancy.st`] -- Supersedes the
 above, adding highlighting of type and constructor bindings,
 highlighting of explicit binding of type variables at `val` and `fun`
 declarations, and separate highlighting of core and modules level
@@ -69,7 +68,7 @@ end
 ----
 /////
 
-* <!ViewGitFile(mlton,master,ide/enscript/sml_gaudy.st)> -- Supersedes the
+* https://github.com/MLton/mlton/blob/master/ide/enscript/sml_gaudy.st[`sml_gaudy.st`] -- Supersedes the
 above, adding highlighting of type annotations, in both expressions
 and signatures.  Due to the limited parsing available, it is assumed
 that the input is a syntactically correct, top-level declaration.
@@ -91,16 +90,16 @@ end
 ----
 /////
 
-== Install and use ==
+== Install and use
 
 * Version 1.6.3 of http://people.ssh.com/mtr/genscript[GNU Enscript]
 ** Copy all files to `/usr/share/enscript/hl/` or `.enscript/` in your home directory.
 ** Invoke `enscript` with `--highlight=sml_simple` (or `--highlight=sml_verbose` or `--highlight=sml_fancy` or `--highlight=sml_gaudy`).
 
 * Version 1.6.1 of http://people.ssh.com/mtr/genscript[GNU Enscript]
-** Append <!ViewGitFile(mlton,master,ide/enscript/sml_all.st)> to `/usr/share/enscript/enscript.st`
+** Append https://github.com/MLton/mlton/blob/master/ide/enscript/sml_all.st[`sml_all.st`] to `/usr/share/enscript/enscript.st`
 ** Invoke `enscript` with `--pretty-print=sml_simple` (or `--pretty-print=sml_verbose` or `--pretty-print=sml_fancy` or `--pretty-print=sml_gaudy`).
 
-== Feedback ==
+== Feedback
 
-Comments and suggestions should be directed to <:MatthewFluet:>.
+Comments and suggestions should be directed to <<MatthewFluet#>>.

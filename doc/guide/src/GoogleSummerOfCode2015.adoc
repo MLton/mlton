@@ -1,8 +1,7 @@
-Google Summer of Code (2015)
-============================
+= Google Summer of Code (2015)
 :toc:
 
-== Mentors ==
+== Mentors
 
 The following developers have agreed to serve as mentors for the 2015 Google Summer of Code:
 
@@ -14,10 +13,10 @@ The following developers have agreed to serve as mentors for the 2015 Google Sum
 * http://www.cs.purdue.edu/homes/suresh/[Suresh Jagannathan]
 /////
 
-== Ideas List ==
+== Ideas List
 
 /////
-=== Implement a Partial Redundancy Elimination (PRE) Optimization ===
+=== Implement a Partial Redundancy Elimination (PRE) Optimization
 
 Partial redundancy elimination (PRE) is a program transformation that
 removes operations that are redundant on some, but not necessarily all
@@ -42,7 +41,7 @@ Recommended Skills: SML programming experience; some middle-end compiler experie
 Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
 /////
 
-=== Design and Implement a Heap Profiler ===
+=== Design and Implement a Heap Profiler
 
 A heap profile is a description of the space usage of a program.  A
 heap profile is concerned with the allocation, retention, and
@@ -66,7 +65,7 @@ Recommended Skills: C and SML programming experience; some experience with UI an
 Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
 /////
 
-=== Garbage Collector Improvements ===
+=== Garbage Collector Improvements
 
 The garbage collector plays a significant role in the performance of
 functional languages.  Garbage collect too often, and program
@@ -103,7 +102,7 @@ Recommended Skills: C programming experience; some operating systems and/or syst
 Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
 /////
 
-=== Heap-allocated Activation Records ===
+=== Heap-allocated Activation Records
 
 Activation records (a.k.a., stack frames) are traditionally allocated
 on a stack.  This naturally corresponds to the call-return pattern of
@@ -136,7 +135,7 @@ Recommended Skills: SML programming experience; some middle- and back-end compil
 Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
 /////
 
-=== Correctly Rounded Floating-point Binary-to-Decimal and Decimal-to-Binary Conversion Routines in Standard ML ===
+=== Correctly Rounded Floating-point Binary-to-Decimal and Decimal-to-Binary Conversion Routines in Standard ML
 
 The
 http://en.wikipedia.org/wiki/IEEE_754-2008[IEEE Standard for Floating-Point Arithmetic (IEEE 754)]
@@ -145,7 +144,7 @@ However, it is a _binary_ (base 2) representation of floating-point
 values, while many applications call for input and output of
 floating-point values in _decimal_ (base 10) representation.  The
 _decimal-to-binary_ conversion problem takes a decimal floating-point
-representation (e.g., a string like +"0.1"+) and returns the best
+representation (e.g., a string like `"0.1"`) and returns the best
 binary floating-point representation of that number.  The
 _binary-to-decimal_ conversion problem takes a binary floating-point
 representation and returns a decimal floating-point representation
@@ -162,11 +161,11 @@ what is required by the
 http://standardml.org/Basis/[Standard ML Basis Library] and induces an
 external dependency on the compiler.  Native implementations of these
 conversion routines in Standard ML would obviate the dependency on the
-+gdtoa+ library, while also being able to take advantage of Standard
+`gdtoa` library, while also being able to take advantage of Standard
 ML features in the implementation (e.g., the published algorithms
 often require use of infinite precision arithmetic, which is provided
-by the +IntInf+ structure in Standard ML, but is provided in an ad hoc
-fasion in the +gdtoa+ library).
+by the `IntInf` structure in Standard ML, but is provided in an ad hoc
+fasion in the `gdtoa` library).
 
 This project aims to develop a native implementation of the conversion
 routines in Standard ML.
@@ -187,7 +186,7 @@ Recommended Skills: SML programming experience; algorithm design and implementat
 Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
 /////
 
-=== Implement Source-level Debugging ===
+=== Implement Source-level Debugging
 
 Debugging is a fact of programming life.  Unfortunately, most SML
 implementations (including MLton) provide little to no source-level
@@ -216,7 +215,7 @@ Recommended Skills: SML programming experience; some compiler experience
 Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
 /////
 
-=== Region Based Memory Management ===
+=== Region Based Memory Management
 
 Region based memory management is an alternative automatic memory
 management scheme to garbage collection.  Regions can be inferred by
@@ -244,7 +243,7 @@ Recommended Skills: SML programming experience; C programming experience; some c
 Mentor: http://www.cse.buffalo.edu/%7Elziarek/[Lukasz (Luke) Ziarek]
 /////
 
-=== Adding Real-Time Capabilities ===
+=== Adding Real-Time Capabilities
 
 This project focuses on exposing real-time APIs from a real-time OS
 kernel at the SML level.  This will require mapping the current MLton
@@ -254,9 +253,9 @@ associating priorities with MLton threads and building priority based
 scheduling algorithms.  Additionally, support for perdioc, aperiodic,
 and sporadic tasks should be supported.  A real-time SML library will
 need to be created to provide a forward facing interface for
-programmers.  Stretch goals include reworking the MLton +atomic+
+programmers.  Stretch goals include reworking the MLton `atomic`
 statement and associated synchronization primitives built on top of
-the MLton +atomic+ statement.
+the MLton `atomic` statement.
 
 Recommended Skills: SML programming experience; C programming experience; real-time experience a plus but not required
 
@@ -264,7 +263,7 @@ Recommended Skills: SML programming experience; C programming experience; real-t
 Mentor: http://www.cse.buffalo.edu/%7Elziarek/[Lukasz (Luke) Ziarek]
 /////
 
-=== Real-Time Garbage Collection ===
+=== Real-Time Garbage Collection
 
 This project focuses on modifications to the MLton GC to support
 real-time garbage collection.  We will model the real-time GC on the
@@ -287,7 +286,7 @@ Mentor: http://www.cse.buffalo.edu/%7Elziarek/[Lukasz (Luke) Ziarek]
 /////
 
 /////
-=== Concurrent{nbsp}ML Improvements ===
+=== Concurrent{nbsp}ML Improvements
 
 http://cml.cs.uchicago.edu/[Concurrent ML] is an SML concurrency
 library based on synchronous message passing.  MLton has a partial
@@ -314,7 +313,7 @@ Mentor: http://www.cs.rit.edu/%7Emtf[Matthew Fluet]
 /////
 
 /////
-=== SML3d Development ===
+=== SML3d Development
 
 The SML3d Project is a collection of libraries to support 3D graphics
 programming using Standard ML and the http://opengl.org/[OpenGL]

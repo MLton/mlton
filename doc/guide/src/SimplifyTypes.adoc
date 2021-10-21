@@ -1,10 +1,9 @@
-SimplifyTypes
-=============
+= SimplifyTypes
 
-<:SimplifyTypes:> is an optimization pass for the <:SSA:>
-<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+<<SimplifyTypes#>> is an optimization pass for the <<SSA#>>
+<<IntermediateLanguage#>>, invoked from <<SSASimplify#>>.
 
-== Description ==
+== Description
 
 This pass computes a "cardinality" of each datatype, which is an
 abstraction of the number of values of the datatype.
@@ -30,11 +29,11 @@ This pass marks constructors as one of:
 
 This pass also removes `Useless` and `Transparent` constructors.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/simplify-types.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/simplify-types.fun[`simplify-types.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 This pass must happen before polymorphic equality is implemented because
 

@@ -1,10 +1,9 @@
-MLBasisExamples
-===============
+= MLBasisExamples
 
-Here are some example uses of <:MLBasis:ML Basis> files.
+Here are some example uses of <<MLBasis#,ML Basis>> files.
 
 
-== Complete program ==
+== Complete program
 
 Suppose your complete program consists of the files `file1.sml`, ...,
 `filen.sml`, which depend upon libraries `lib1.mlb`, ..., `libm.mlb`.
@@ -27,7 +26,7 @@ in earlier bases), producing a basis in which `file1.sml`, ...,
 `filen.sml` are elaborated, adding additional bindings to the basis.
 
 
-== Export filter ==
+== Export filter
 
 Suppose you only want to export certain structures, signatures, and
 functors from a collection of files.
@@ -49,7 +48,7 @@ in addition to `F` and `S`, such names are not accessible to programs
 and libraries that import this `.mlb`.
 
 
-== Export filter with renaming ==
+== Export filter with renaming
 
 Suppose you want an export filter, but want to rename one of the
 modules.
@@ -70,7 +69,7 @@ Note that `functor F` is an abbreviation for `functor F = F`, which
 simply exports an identifier under the same name.
 
 
-== Import filter ==
+== Import filter
 
 Suppose you only want to import a functor `F` from one library and a
 structure `S` from another library.
@@ -94,7 +93,7 @@ filen.sml
 ----
 
 
-== Import filter with renaming ==
+== Import filter with renaming
 
 Suppose you want to import a structure `S` from one library and
 another structure `S` from another library.
@@ -118,7 +117,7 @@ filen.sml
 ----
 
 
-== Full Basis ==
+== Full Basis
 
 Since the Modules level of SML is the natural means for organizing
 program and library components, MLB files provide convenient syntax
@@ -127,7 +126,7 @@ identifiers provides a mechanism that is not available in SML).
 However, please note that `.mlb` files elaborate to full bases
 including top-level types and values (including infix status), in
 addition to structures, signatures, and functors.  For example,
-suppose you wished to extend the <:BasisLibrary:Basis Library> with an
+suppose you wished to extend the <<BasisLibrary#,Basis Library>> with an
 `('a, 'b) either` datatype corresponding to a disjoint sum; the type
 and some operations should be available at the top-level;
 additionally, a signature and structure provide the complete

@@ -1,9 +1,8 @@
-FirstClassPolymorphism
-======================
+= FirstClassPolymorphism
 
 First-class polymorphism is the ability to treat polymorphic functions
 just like other values: pass them as arguments, store them in data
-structures, etc.  Although <:StandardML:Standard ML> does have
+structures, etc.  Although <<StandardML#,Standard ML>> does have
 polymorphic functions, it does not support first-class polymorphism.
 
 For example, the following declares and uses the polymorphic function
@@ -54,7 +53,7 @@ Error: z.sml 1.36-1.43.
 ----
 
 The errors arise because the argument `id` is _not_ polymorphic;
-rather, it is monomorphic, with type `'a -> 'a`.  It is perfectly
+rather, it is monomorphic, with type `'a \-> 'a`.  It is perfectly
 valid to apply `id` to a value of type `'a`, as in the following
 [source,sml]
 ----
@@ -71,7 +70,7 @@ fun useId (id: 'a -> 'a) = (id 13; id "foo")
 
 While the type specifications on `id` look identical, they mean
 different things.  The difference can be made clearer by explicitly
-<:TypeVariableScope:scoping the type variables>.
+<<TypeVariableScope#,scoping the type variables>>.
 [source,sml]
 ----
 val 'a id: 'a -> 'a = fn x => x
@@ -79,11 +78,11 @@ fun 'a useId (id: 'a -> 'a) = (id 13; id "foo")  (* type error *)
 ----
 
 In `val 'a id`, the type variable scoping means that for any `'a`,
-`id` has type `'a -> 'a`.  Hence, `id` can be applied to arguments of
+`id` has type `'a \-> 'a`.  Hence, `id` can be applied to arguments of
 type `int`, `real`, etc.  Similarly, in `fun 'a useId`, the scoping
 means that `useId` is a polymorphic function that for any `'a` takes a
-function of type `'a -> 'a` and does something.  Thus, `useId` could
-be applied to a function of type `int -> int`, `real -> real`, etc.
+function of type `'a \-> 'a` and does something.  Thus, `useId` could
+be applied to a function of type `int \-> int`, `real \-> real`, etc.
 
 One could imagine an extension of SML that allowed scoping of type
 variables at places other than `fun` or `val` declarations, as in the
@@ -93,5 +92,5 @@ fun useId (id: ('a).'a -> 'a) = (id 13; id "foo")  (* not SML *)
 ----
 
 Such an extension would need to be thought through very carefully, as
-it could cause significant complications with <:TypeInference:>,
+it could cause significant complications with <<TypeInference#>>,
 possible even undecidability.

@@ -1,23 +1,22 @@
-Zone
-====
+= Zone
 
-<:Zone:> is an optimization pass for the <:SSA2:>
-<:IntermediateLanguage:>, invoked from <:SSA2Simplify:>.
+<<Zone#>> is an optimization pass for the <<SSA2#>>
+<<IntermediateLanguage#>>, invoked from <<SSA2Simplify#>>.
 
-== Description ==
+== Description
 
-This pass breaks large <:SSA2:> functions into zones, which are
+This pass breaks large <<SSA2#>> functions into zones, which are
 connected subgraphs of the dominator tree.  For each zone, at the node
 that dominates the zone (the "zone root"), it places a tuple
 collecting all of the live variables at that node.  It replaces any
 variables used in that zone with offsets from the tuple.  The goal is
-to decrease the liveness information in large <:SSA:> functions.
+to decrease the liveness information in large <<SSA#>> functions.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/zone.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/zone.fun[`zone.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 Compute strongly-connected components to avoid put tuple constructions
 in loops.

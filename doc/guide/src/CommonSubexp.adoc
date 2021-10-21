@@ -1,18 +1,17 @@
-CommonSubexp
-============
+= CommonSubexp
 
-<:CommonSubexp:> is an optimization pass for the <:SSA:>
-<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+<<CommonSubexp#>> is an optimization pass for the <<SSA#>>
+<<IntermediateLanguage#>>, invoked from <<SSASimplify#>>.
 
-== Description ==
+== Description
 
 It eliminates instances of common subexpressions.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/common-subexp.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/common-subexp.fun[`common-subexp.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 In addition to getting the usual sorts of things like
 

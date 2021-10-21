@@ -1,10 +1,9 @@
-MLBasisSyntaxAndSemantics
-=========================
+= MLBasisSyntaxAndSemantics
 
-An <:MLBasis:ML Basis> (MLB) file should have the `.mlb` suffix and
+An <<MLBasis#,ML Basis>> (MLB) file should have the `.mlb` suffix and
 should contain a basis declaration.
 
-== Syntax ==
+== Syntax
 
 A basis declaration (`_basdec_`) must be one of the following forms.
 
@@ -26,25 +25,25 @@ A basis expression (`_basexp_`) must be of one the following forms.
 * `let` `_basdec_` `in` `_basexp_` `end`
 
 Nested SML-style comments (enclosed with `({asterisk}` and `*)`) are ignored
-(but <:LineDirective:>s are recognized).
+(but <<LineDirective#>>s are recognized).
 
 Paths can be relative or absolute.  Relative paths are relative to the
 directory containing the MLB file.  Paths may include path variables
-and are expanded according to a <:MLBasisPathMap:path map>.  Unquoted
-paths may include alpha-numeric characters and the symbols "`-`" and
-"`_`", along with the arc separator "`/`" and extension separator
-"`.`".  More complicated paths, including paths with spaces, may be
+and are expanded according to a <<MLBasisPathMap#,path map>>.  Unquoted
+paths may include alpha-numeric characters and the symbols `-` and
+`_`, along with the arc separator `/` and extension separator
+`.`.  More complicated paths, including paths with spaces, may be
 included by quoting the path with `"`.  A quoted path is lexed as an
 SML string constant.
 
-<:MLBasisAnnotations:Annotations> allow a library author to
+<<MLBasisAnnotations#,Annotations>> allow a library author to
 control options that affect the elaboration of SML source files.
 
-== Semantics ==
+== Semantics
 
-There is a <!Attachment(MLBasis,mlb-formal.pdf,formal semantics)> for
+There is a link:MLBasis.attachments/mlb-formal.pdf[formal semantics] for
 ML Basis files in the style of the
-<:DefinitionOfStandardML:Definition>.  Here, we give an informal
+<<DefinitionOfStandardML#,Definition>>.  Here, we give an informal
 explanation.
 
 An SML structure is a collection of types, values, and other

@@ -1,19 +1,18 @@
-AllocateVariables
-=================
+= AllocateVariables
 
-<:AllocateVariables:> is an analysis pass for the <:RSSA:>
-<:IntermediateLanguage:>, invoked from <:ToMachine:>.
+<<AllocateVariables#>> is an analysis pass for the <<RSSA#>>
+<<IntermediateLanguage#>>, invoked from <<ToMachine#>>.
 
-== Description ==
+== Description
 
-Computes an allocation of <:RSSA:> variables as <:Machine:> temporary
+Computes an allocation of <<RSSA#>> variables as <<Machine#>> temporary
 or stack-offset operands.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/backend/allocate-variables.sig)>
-* <!ViewGitFile(mlton,master,mlton/backend/allocate-variables.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/backend/allocate-variables.sig[`allocate-variables.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/backend/allocate-variables.fun[`allocate-variables.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 {empty}

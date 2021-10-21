@@ -1,13 +1,12 @@
-StandardMLHistory
-=================
+= StandardMLHistory
 
-<:StandardML:Standard ML> grew out of <:ML:> in the early 1980s.
+<<StandardML#,Standard ML>> grew out of <<ML#>> in the early 1980s.
 
-For an excellent overview of SML's history, see <!Cite(MacQueenEtAl20,The
-History of Standard ML)>.
+For an excellent overview of SML's history, see <<References#MacQueenEtAl20,The
+History of Standard ML>>.
 
 For an abbreviated overview of SML's history, see Appendix F of the
-<:DefinitionOfStandardML:Definition>.
+<<DefinitionOfStandardML#,Definition>>.
 
-For an overview if its history before 1982, see <!Cite(Milner82, How
-ML Evolved)>.
+For an overview if its history before 1982, see <<References#Milner82,How
+ML Evolved>>.

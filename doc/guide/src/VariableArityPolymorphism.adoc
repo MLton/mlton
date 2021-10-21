@@ -1,7 +1,6 @@
-VariableArityPolymorphism
-=========================
+= VariableArityPolymorphism
 
-<:StandardML:Standard ML> programmers often face the problem of how to
+<<StandardML#,Standard ML>> programmers often face the problem of how to
 provide a variable-arity polymorphic function.  For example, suppose
 one is defining a combinator library, e.g. for parsing or pickling.
 The signature for such a library might look something like the
@@ -47,7 +46,7 @@ a combinator for a large tuple, he is out of luck.  Third, this
 approach often requires a lot of duplicate code in the implementation
 of the combinators.
 
-Fortunately, using <:Fold01N:> and <:ProductType:products>, one can
+Fortunately, using <<Fold01N#>> and <<ProductType#,products>>, one can
 provide an interface and implementation that solves all these
 problems.  Here is a simple pickling module that converts values to
 strings.

@@ -1,5 +1,4 @@
-Drawbacks
-=========
+= Drawbacks
 
 MLton has several drawbacks due to its use of whole-program
 compilation.
@@ -20,4 +19,4 @@ ten minutes.
 +
 Because of whole-program compilation, MLton does not provide an
 interactive top level.  In particular, it does not implement the
-optional <:BasisLibrary:Basis Library> function `use`.
+optional <<BasisLibrary#,Basis Library>> function `use`.

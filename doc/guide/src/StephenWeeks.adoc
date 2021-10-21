@@ -1,5 +1,4 @@
-StephenWeeks
-============
+= StephenWeeks
 
 I live in the New York City area and work at http://janestcapital.com[Jane Street Capital].
 

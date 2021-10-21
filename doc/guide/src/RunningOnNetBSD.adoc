@@ -1,9 +1,8 @@
-RunningOnNetBSD
-===============
+= RunningOnNetBSD
 
 MLton runs fine on http://www.netbsd.org/[NetBSD].
 
-== Installing the correct packages for NetBSD ==
+== Installing the correct packages for NetBSD
 
 The NetBSD system installs 3rd party packages by a mechanism known as
 pkgsrc. This is a tree of Makefiles which when invoked downloads the
@@ -27,22 +26,22 @@ package
 
 * `textproc/asciidoc`.
 
-== Tips for compiling and using MLton on NetBSD ==
+== Tips for compiling and using MLton on NetBSD
 
 MLton can be a memory-hog on computers with little memory.  While
 640Mb of RAM ought to be enough to self-compile MLton one might want
 to do some tuning to the NetBSD VM subsystem in order to succeed.  The
-notes presented here is what <:JesperLouisAndersen:> uses for
+notes presented here is what <<JesperLouisAndersen#>> uses for
 compiling MLton on his laptop.
 
-=== The NetBSD VM subsystem ===
+=== The NetBSD VM subsystem
 
 NetBSD uses a VM subsystem named
 http://www.ccrc.wustl.edu/pub/chuck/tech/uvm/[UVM].
 http://www.selonen.org/arto/netbsd/vm_tune.html[Tuning the VM system]
 can be done via the `sysctl(8)`-interface with the "VM" MIB set.
 
-=== Tuning the NetBSD VM subsystem for MLton ===
+=== Tuning the NetBSD VM subsystem for MLton
 
 MLton uses a lot of anonymous pages when it is running. Thus, we will
 need to tune up the default of 80 for anonymous pages.  Setting

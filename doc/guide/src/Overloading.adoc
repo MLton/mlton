@@ -1,7 +1,6 @@
-Overloading
-===========
+= Overloading
 
-In <:StandardML:Standard ML>, constants (like `13`, `0w13`, `13.0`)
+In <<StandardML#,Standard ML>>, constants (like `13`, `0w13`, `13.0`)
 are overloaded, meaning that they can denote a constant of the
 appropriate type as determined by context.  SML defines the
 overloading classes _Int_, _Real_, and _Word_, which denote the sets
@@ -9,13 +8,13 @@ of types that integer, real, and word constants may take on.  In
 MLton, these are defined as follows.
 
 [cols="^25%,<75%"]
-|=====
+|===
 | _Int_  | `Int2.int`, `Int3.int`, ... `Int32.int`, `Int64.int`, `Int.int`, `IntInf.int`, `LargeInt.int`, `FixedInt.int`, `Position.int`
 | _Real_ | `Real32.real`, `Real64.real`, `Real.real`, `LargeReal.real`
 | _Word_ | `Word2.word`, `Word3.word`, ... `Word32.word`, `Word64.word`, `Word.word`, `LargeWord.word`, `SysWord.word`
-|=====
+|===
 
-The <:DefinitionOfStandardML:Definition> allows flexibility in how
+The <<DefinitionOfStandardML#,Definition>> allows flexibility in how
 much context is used to resolve overloading.  It says that the context
 is _no larger than the smallest enclosing structure-level
 declaration_, but that _an implementation may require that a smaller
@@ -25,20 +24,20 @@ not determined by context, then it takes on a default type.  In MLton,
 these are defined as follows.
 
 [cols="^25%,<75%"]
-|=====
+|===
 | _Int_ | `Int.int`
 | _Real_ | `Real.real`
 | _Word_ | `Word.word`
-|=====
+|===
 
 Other implementations may use a smaller context or different default
 types.
 
-== Also see ==
+== Also see
 
- * http://www.standardml.org/Basis/top-level-chapter.html[discussion of overloading in the Basis Library]
+ * https://smlfamily.github.io/Basis/top-level-chapter.html[discussion of overloading in the Basis Library]
 
-== Examples ==
+== Examples
 
  * The following program is rejected.
 +

@@ -1,9 +1,8 @@
-Release20200722
-===============
+= Release20200722
 
 Here you can download the latest public release of MLton, version 20200722.
 
-== Changes since <:Release20180207:MLton 20180207> ==
+== Changes since <<Release20180207#,MLton 20180207>>
 
 * Compiler.
   ** Added expert `-pi-style {default|npi|pic|pie}` and
@@ -36,10 +35,10 @@ Here you can download the latest public release of MLton, version 20200722.
   ** Basis Library.
     *** Change `OS.IO.poll` to not be restarted when interrupted by a
     signal.  (This is consistent with `Socket.select`.)
-    *** Add `MLton.sizeAll: unit -> IntInf.int` that returns the size
+    *** Add `MLton.sizeAll: unit \-> IntInf.int` that returns the size
     of reachable live data.
-    *** Change type of `MLton.size` from `'a -> int` to
-    `'a -> IntInf.int`, because with 64-bit systems, the size of a
+    *** Change type of `MLton.size` from `'a \-> int` to
+    `'a \-> IntInf.int`, because with 64-bit systems, the size of a
     single object can exceed that representable by a signed 32-bit
     integer.
   ** Other libraries.
@@ -57,26 +56,26 @@ Here you can download the latest public release of MLton, version 20200722.
   BSD-style.
 
 For a complete list of changes and bug fixes since
-<:Release20180207:>, see the
-<!ViewGitFile(mlton,on-20200722-release,CHANGELOG.adoc)> and
-<:Bugs20180207:>.
+<<Release20180207#>>, see the
+https://github.com/MLton/mlton/blob/on-20200722-release/CHANGELOG.adoc[`CHANGELOG.adoc`] and
+<<Bugs20180207#>>.
 
-== 20200722 binary packages ==
+== 20200722 binary packages
 
 * AMD64 (aka "x86-64" or "x64")
-** https://sourceforge.net/projects/mlton/files/mlton/20200722/mlton-20200722-1.amd64-darwin.gmp-homebrew.tgz[Darwin (.tgz)] 19.6 (Mac OS X Catalina), dynamically linked against <:GMP:> in `/usr/local/lib` (suitable for https://brew.sh/[Homebrew] install of <:GMP:>)
-** https://sourceforge.net/projects/mlton/files/mlton/20200722/mlton-20200722-1.amd64-darwin.gmp-static.tgz[Darwin (.tgz)] 19.6 (Mac OS X Catalina), statically linked against <:GMP:> (but requires <:GMP:> for generated executables)
-** https://sourceforge.net/projects/mlton/files/mlton/20200722/mlton-20200722-1.amd64-darwin-17.7.gmp-homebrew.tgz[Darwin (.tgz)] 17.7 (Mac OS X High Sierra), dynamically linked against <:GMP:> in `/usr/local/lib` (suitable for https://brew.sh/[Homebrew] install of <:GMP:>)
-** https://sourceforge.net/projects/mlton/files/mlton/20200722/mlton-20200722-1.amd64-darwin-17.7.gmp-static.tgz[Darwin (.tgz)] 17.7 (Mac OS X High Sierra), statically linked against <:GMP:> (but requires <:GMP:> for generated executables)
+** https://sourceforge.net/projects/mlton/files/mlton/20200722/mlton-20200722-1.amd64-darwin.gmp-homebrew.tgz[Darwin (.tgz)] 19.6 (Mac OS X Catalina), dynamically linked against <<GMP#>> in `/usr/local/lib` (suitable for https://brew.sh/[Homebrew] install of <<GMP#>>)
+** https://sourceforge.net/projects/mlton/files/mlton/20200722/mlton-20200722-1.amd64-darwin.gmp-static.tgz[Darwin (.tgz)] 19.6 (Mac OS X Catalina), statically linked against <<GMP#>> (but requires <<GMP#>> for generated executables)
+** https://sourceforge.net/projects/mlton/files/mlton/20200722/mlton-20200722-1.amd64-darwin-17.7.gmp-homebrew.tgz[Darwin (.tgz)] 17.7 (Mac OS X High Sierra), dynamically linked against <<GMP#>> in `/usr/local/lib` (suitable for https://brew.sh/[Homebrew] install of <<GMP#>>)
+** https://sourceforge.net/projects/mlton/files/mlton/20200722/mlton-20200722-1.amd64-darwin-17.7.gmp-static.tgz[Darwin (.tgz)] 17.7 (Mac OS X High Sierra), statically linked against <<GMP#>> (but requires <<GMP#>> for generated executables)
 ** https://sourceforge.net/projects/mlton/files/mlton/20200722/mlton-20200722-1.amd64-linux.tgz[Linux], glibc 2.27 (Ubuntu 18.04)
 
-== 20200722 source packages ==
+== 20200722 source packages
 
  * https://sourceforge.net/projects/mlton/files/mlton/20200722/mlton-20200722.src.tgz[mlton-20200722.src.tgz]
 
-== Also see ==
+== Also see
 
-* <:Bugs20200722:>
+* <<Bugs20200722#>>
 * http://www.mlton.org/guide/20200722/[MLton Guide (20200722)].
 +
 A snapshot of the MLton website at the time of release.

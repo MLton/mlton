@@ -1,6 +1,5 @@
-Mutable
-=======
+= Mutable
 
 Mutable is an adjective meaning "can be modified".  In
-<:StandardML:Standard ML>, ref cells and arrays are mutable, while all
-other values are <:Immutable:immutable>.
+<<StandardML#,Standard ML>>, ref cells and arrays are mutable, while all
+other values are <<Immutable#,immutable>>.

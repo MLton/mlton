@@ -1,7 +1,6 @@
-TypeConstructor
-===============
+= TypeConstructor
 
-In <:StandardML:Standard ML>, a type constructor is a function from
+In <<StandardML#,Standard ML>>, a type constructor is a function from
 types to types.  Type constructors can be _nullary_, meaning that
 they take no arguments, as in `char`, `int`, and `real`.
 Type constructors can be _unary_, meaning that they take one

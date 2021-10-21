@@ -1,5 +1,4 @@
-MLtonVector
-===========
+= MLtonVector
 
 [source,sml]
 ----

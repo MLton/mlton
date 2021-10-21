@@ -1,5 +1,4 @@
-FAQ
-===
+= FAQ
 :toc:
 
 Feel free to ask questions and to update answers by editing this page.
@@ -7,39 +6,39 @@ Since we try to make as much information as possible available on the
 web site and we like to avoid duplication, many of the answers are
 simply links to a web page that answers the question.
 
-== How do you pronounce MLton? ==
+== How do you pronounce MLton?
 
-<:Pronounce:>
+<<Pronounce#>>
 
-== What SML software has been ported to MLton? ==
+== What SML software has been ported to MLton?
 
-<:Libraries:>
+<<Libraries#>>
 
-== What graphical libraries are available for MLton? ==
+== What graphical libraries are available for MLton?
 
-<:Libraries:>
+<<Libraries#>>
 
-== How does MLton's performance compare to other SML compilers and to other languages? ==
+== How does MLton's performance compare to other SML compilers and to other languages?
 
-MLton has <:Performance:excellent performance>.
+MLton has <<Performance#,excellent performance>>.
 
-== Does MLton treat monomorphic arrays and vectors specially? ==
+== Does MLton treat monomorphic arrays and vectors specially?
 
 MLton implements monomorphic arrays and vectors (e.g. `BoolArray`,
 `Word8Vector`) exactly as instantiations of their polymorphic
 counterpart (e.g. `bool array`, `Word8.word vector`).  Thus, there is
 no need to use the monomorphic versions except when required to
-interface with the <:BasisLibrary:Basis Library> or for portability
+interface with the <<BasisLibrary#,Basis Library>> or for portability
 with other SML implementations.
 
-== Why do I get a Segfault/Bus error in a program that uses `IntInf`/`LargeInt` to calculate numbers with several hundred thousand digits? ==
+== Why do I get a Segfault/Bus error in a program that uses `IntInf`/`LargeInt` to calculate numbers with several hundred thousand digits?
 
-<:GMP:>
+<<GMP#>>
 
-== How can I decrease compile-time memory usage? ==
+== How can I decrease compile-time memory usage?
 
 * Compile with `-verbose 3` to find out if the problem is due to an
-SSA optimization pass.  If so, compile with ++-disable-pass __pass__++ to
+SSA optimization pass.  If so, compile with ``-disable-pass __pass__`` to
 skip that pass.
 
 * Compile with `@MLton hash-cons 0.5 --`, which will instruct the
@@ -48,9 +47,9 @@ runtime to hash cons the heap every other GC.
 * Compile with `-polyvariance false`, which is an undocumented option
 that causes less code duplication.
 
-Also, please <:Contact:> us to let us know the problem to help us
+Also, please <<Contact#>> us to let us know the problem to help us
 better understand MLton's limitations.
 
-== How portable is SML code across SML compilers? ==
+== How portable is SML code across SML compilers?
 
-<:StandardMLPortability:>
+<<StandardMLPortability#>>

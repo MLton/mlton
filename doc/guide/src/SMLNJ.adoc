@@ -1,18 +1,17 @@
-SMLNJ
-=====
+= SMLNJ
 
 http://www.smlnj.org/[SML/NJ] is a
-<:StandardMLImplementations:Standard ML implementation>.  It is a
+<<StandardMLImplementations#,Standard ML implementation>>.  It is a
 native code compiler that runs on a variety of platforms and has a
 number of libraries and tools.
 
-We maintain a list of SML/NJ's <:SMLNJDeviations:deviations> from
-<:DefinitionOfStandardML:The Definition of Standard ML>.
+We maintain a list of SML/NJ's <<SMLNJDeviations#,deviations>> from
+<<DefinitionOfStandardML#,The Definition of Standard ML>>.
 
 MLton has support for some features of SML/NJ in order to ease porting
 between MLton and SML/NJ.
 
-* <:CompilationManager:> (CM)
-* <:LineDirective:>s
-* <:SMLofNJStructure:>
-* <:UnsafeStructure:>
+* <<CompilationManager#>> (CM)
+* <<LineDirective#>>s
+* <<SMLofNJStructure#>>
+* <<UnsafeStructure#>>

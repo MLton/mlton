@@ -1,9 +1,8 @@
-MLBasisAnnotationExamples
-=========================
+= MLBasisAnnotationExamples
 
-Here are some example uses of <:MLBasisAnnotations:>.
+Here are some example uses of <<MLBasisAnnotations#>>.
 
-== Eliminate spurious warnings in automatically generated code ==
+== Eliminate spurious warnings in automatically generated code
 
 Programs that automatically generate source code can often produce
 nonexhaustive patterns, relying on invariants of the generated code to
@@ -31,7 +30,7 @@ end
 ----
 
 
-== Deliver a library ==
+== Deliver a library
 
 Standard ML libraries can be delivered via `.mlb` files.  Authors of
 such libraries should strive to be mindful of the ways in which
@@ -73,5 +72,5 @@ warn` have the obvious effect on elaboration.  The annotations
 any identifiers that do not contribute to the exported modules, and
 preventing warnings on exported modules that are not used in the
 remainder of the program.  Many of the
-<:MLBasisAvailableLibraries:available libraries> are delivered with
+<<MLBasisAvailableLibraries#,available libraries>> are delivered with
 these annotations.

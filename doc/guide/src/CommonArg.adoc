@@ -1,10 +1,9 @@
-CommonArg
-=========
+= CommonArg
 
-<:CommonArg:> is an optimization pass for the <:SSA:>
-<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+<<CommonArg#>> is an optimization pass for the <<SSA#>>
+<<IntermediateLanguage#>>, invoked from <<SSASimplify#>>.
 
-== Description ==
+== Description
 
 It optimizes instances of `Goto` transfers that pass the same
 arguments to the same label; e.g.
@@ -44,18 +43,18 @@ for the jump to `L_3`, space (either stack slots or temporaries) for
 the arguments of `L_3`, etc.  It may also expose some other
 optimizations, if more information is known about `x` or `y`.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/common-arg.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/common-arg.fun[`common-arg.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 Three analyses were originally proposed to drive the optimization
 transformation.  Only the _Dominator Analysis_ is currently
 implemented.  (Implementations of the other analyses are available in
-the <:Sources:repository history>.)
+the <<Sources#,repository history>>.)
 
-=== Syntactic Analysis ===
+=== Syntactic Analysis
 
 The simplest analysis I could think of maintains
 ----
@@ -102,13 +101,13 @@ L_5 ()
    ...
 ----
 where a common argument is passed to a loop (and is invariant through
-the loop).  Of course, the <:LoopInvariant:> optimization pass would
+the loop).  Of course, the <<LoopInvariant#>> optimization pass would
 normally introduce a local loop and essentially reduce this to the
 first example, but I have seen this in practice, which suggests that
-some optimizations after <:LoopInvariant:> do enough simplifications
+some optimizations after <<LoopInvariant#>> do enough simplifications
 to introduce (new) loop invariant arguments.
 
-=== Fixpoint Analysis ===
+=== Fixpoint Analysis
 
 However, the above analysis and transformation doesn't cover the cases
 where eliminating one common argument exposes the opportunity to
@@ -144,7 +143,7 @@ varInfo: Var.t -> VarLattice.t
 ----
 VarLattice.t ~=~ Bot | Point of Var.t | Top
 ----
-(but is implemented by the <:FlatLattice:> functor with a `lessThan`
+(but is implemented by the <<FlatLattice#>> functor with a `lessThan`
 list and `value ref` under the hood), initialized to `Bot`.
 
 * For each variable `v` bound in a `Statement.t` or in the
@@ -203,20 +202,20 @@ propagate on `Point x` -- we have no hope of eliminating `x`, but if
 we hold `x` constant, then we have a chance of eliminating arguments
 for which `x` is passed as an actual.
 
-=== Dominator Analysis ===
+=== Dominator Analysis
 
 Does anyone see where this is going yet?  Pausing for a little
-thought, <:MatthewFluet:> realized that he had once before tried
+thought, <<MatthewFluet#>> realized that he had once before tried
 proposing this kind of "fix" to a fixed-point analysis -- when we were
-first investigating the <:Contify:> optimization in light of John
+first investigating the <<Contify#>> optimization in light of John
 Reppy's CWS paper.  Of course, that "fix" failed because it defined a
 non-monotonic function and one couldn't take the fixed point.  But,
-<:StephenWeeks:> suggested a dominator based approach, and we were
+<<StephenWeeks#>> suggested a dominator based approach, and we were
 able to show that, indeed, the dominator analysis subsumed both the
 previous call based analysis and the cont based analysis.  And, a
 moment's reflection reveals further parallels: when
-`varInfo: Var.t -> Var.t option list ref`, we have something analogous
-to the call analysis, and when `varInfo: Var.t -> VarLattice.t`, we
+`varInfo: Var.t \-> Var.t option list ref`, we have something analogous
+to the call analysis, and when `varInfo: Var.t \-> VarLattice.t`, we
 have something analogous to the cont analysis.  Maybe there is
 something analogous to the dominator approach (and therefore superior
 to the previous analyses).
@@ -241,11 +240,11 @@ a formal presentation could prove) that the dominator analysis
 subsumes the "syntactic" and "fixpoint" based analyses in this context
 as well and that the dominator analysis gets "everything" in one go.
 
-=== Final Thoughts ===
+=== Final Thoughts
 
 I must admit, I was rather surprised at this progression and final
 result.  At the outset, I never would have thought of a connection
-between <:Contify:> and <:CommonArg:> optimizations.  They would seem
+between <<Contify#>> and <<CommonArg#>> optimizations.  They would seem
 to be two completely different optimizations.  Although, this may not
 really be the case.  As one of the reviewers of the ICFP paper said:
 ____
@@ -273,36 +272,36 @@ with the dominator analysis.  When we wrote the contification paper, I
 assumed that the dominator analysis was a specialized solution to a
 specialized problem; we never suggested that it was a technique suited
 to a larger class of analyses.  After initially finding a connection
-between <:Contify:> and <:CommonArg:> (and thinking that the only
+between <<Contify#>> and <<CommonArg#>> (and thinking that the only
 connection was the technique), I wondered if the dominator technique
 really was applicable to a larger class of analyses.  That is still a
 question, but after writing up the above, I'm suspecting that the
 "real story" is that the dominator analysis is a solution to the
-common argument optimization, and that the <:Contify:> optimization is
-specializing <:CommonArg:> to the case of continuation arguments (with
+common argument optimization, and that the <<Contify#>> optimization is
+specializing <<CommonArg#>> to the case of continuation arguments (with
 a different transformation at the end).  (Note, a whole-program,
 inter-procedural common argument analysis doesn't really make sense
-(in our <:SSA:> <:IntermediateLanguage:>), because the only way of
+(in our <<SSA#>> <<IntermediateLanguage#>>), because the only way of
 passing values between functions is as arguments.  (Unless of course
 in the case that the common argument is also a constant argument, in
-which case <:ConstantPropagation:> could lift it to a global.)  The
-inter-procedural <:Contify:> optimization works out because there we
+which case <<ConstantPropagation#>> could lift it to a global.)  The
+inter-procedural <<Contify#>> optimization works out because there we
 move the function to the argument.)
 
 Anyways, it's still unclear to me whether or not the dominator based
 approach solves other kinds of problems.
 
-=== Phase Ordering ===
+=== Phase Ordering
 
 On the downside, the optimization doesn't have a huge impact on
 runtime, although it does predictably saved some code size.  I stuck
-it in the optimization sequence after <:Flatten:> and (the third round
-of) <:LocalFlatten:>, since it seems to me that we could have cases
+it in the optimization sequence after <<Flatten#>> and (the third round
+of) <<LocalFlatten#>>, since it seems to me that we could have cases
 where some components of a tuple used as an argument are common, but
 the whole tuple isn't.  I think it makes sense to add it after
-<:IntroduceLoops:> and <:LoopInvariant:> (even though <:CommonArg:>
-get some things that <:LoopInvariant:> gets, it doesn't get all of
+<<IntroduceLoops#>> and <<LoopInvariant#>> (even though <<CommonArg#>>
+get some things that <<LoopInvariant#>> gets, it doesn't get all of
 them).  I also think that it makes sense to add it before
-<:CommonSubexp:>, since identifying variables could expose more common
+<<CommonSubexp#>>, since identifying variables could expose more common
 subexpressions.  I would think a similar thought applies to
-<:RedundantTests:>.
+<<RedundantTests#>>.

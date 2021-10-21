@@ -1,101 +1,100 @@
-Bugs20051202
-============
+= Bugs20051202
 
-Here are the known bugs in <:Release20051202:MLton 20051202>, listed
+Here are the known bugs in <<Release20051202#,MLton 20051202>>, listed
 in reverse chronological order of date reported.
 
-* <!Anchor(bug16)>
-Bug in the http://www.standardml.org/Basis/real.html#SIG:REAL.fmt:VAL[++Real__<N>__.fmt++], http://www.standardml.org/Basis/real.html#SIG:REAL.fromString:VAL[++Real__<N>__.fromString++], http://www.standardml.org/Basis/real.html#SIG:REAL.scan:VAL[++Real__<N>__.scan++], and http://www.standardml.org/Basis/real.html#SIG:REAL.toString:VAL[++Real__<N>__.toString++] functions of the <:BasisLibrary:Basis Library> implementation.  These functions were using `TO_NEAREST` semantics, but should obey the current rounding mode.  (Only ++Real__<N>__.fmt StringCvt.EXACT++, ++Real__<N>__.fromDecimal++, and ++Real__<N>__.toDecimal++ are specified to override the current rounding mode with `TO_NEAREST` semantics.)
+* [[bug16]]
+Bug in the https://smlfamily.github.io/Basis/real.html#SIG:REAL.fmt:VAL[``Real__<N>__.fmt``], https://smlfamily.github.io/Basis/real.html#SIG:REAL.fromString:VAL[``Real__<N>__.fromString``], https://smlfamily.github.io/Basis/real.html#SIG:REAL.scan:VAL[``Real__<N>__.scan``], and https://smlfamily.github.io/Basis/real.html#SIG:REAL.toString:VAL[``Real__<N>__.toString``] functions of the <<BasisLibrary#,Basis Library>> implementation.  These functions were using `TO_NEAREST` semantics, but should obey the current rounding mode.  (Only ``Real__<N>__.fmt StringCvt.EXACT``, ``Real__<N>__.fromDecimal``, and ``Real__<N>__.toDecimal`` are specified to override the current rounding mode with `TO_NEAREST` semantics.)
 +
 Thanks to Sean McLaughlin for the bug report.
 +
-Fixed by revision <!ViewSVNRev(5827)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r5827&type=commits[`r5827`].
 
-* <!Anchor(bug15)>
+* [[bug15]]
 Bug in the treatment of floating-point operations.  Floating-point operations depend on the current rounding mode, but were being treated as pure.
 +
 Thanks to Sean McLaughlin for the bug report.
 +
-Fixed by revision <!ViewSVNRev(5794)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r5794&type=commits[`r5794`].
 
-* <!Anchor(bug14)>
-Bug in the http://www.standardml.org/Basis/real.html#SIG:REAL.toInt:VAL[++Real32.toInt++] function of the <:BasisLibrary:Basis Library> implementation could lead incorrect results when applied to a `Real32.real` value numerically close to `valOf(Int.maxInt)`.
+* [[bug14]]
+Bug in the https://smlfamily.github.io/Basis/real.html#SIG:REAL.toInt:VAL[``Real32.toInt``] function of the <<BasisLibrary#,Basis Library>> implementation could lead incorrect results when applied to a `Real32.real` value numerically close to `valOf(Int.maxInt)`.
 +
-Fixed by revision <!ViewSVNRev(5764)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r5764&type=commits[`r5764`].
 
-* <!Anchor(bug13)>
-The http://www.standardml.org/Basis/socket.html[++Socket++] structure of the <:BasisLibrary:Basis Library> implementation used `andb` rather than `orb` to unmarshal socket options (for ++Socket.Ctl.get__<OPT>__++ functions).
+* [[bug13]]
+The https://smlfamily.github.io/Basis/socket.html[``Socket``] structure of the <<BasisLibrary#,Basis Library>> implementation used `andb` rather than `orb` to unmarshal socket options (for ``Socket.Ctl.get__<OPT>__`` functions).
 +
 Thanks to Anders Petersson for the bug report and patch.
 +
-Fixed by revision <!ViewSVNRev(5735)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r5735&type=commits[`r5735`].
 
-* <!Anchor(bug12)>
-Bug in the http://www.standardml.org/Basis/date.html[++Date++] structure of the <:BasisLibrary:Basis Library> implementation yielded some functions that would erroneously raise `Date` when applied to a year before 1900.
+* [[bug12]]
+Bug in the https://smlfamily.github.io/Basis/date.html[``Date``] structure of the <<BasisLibrary#,Basis Library>> implementation yielded some functions that would erroneously raise `Date` when applied to a year before 1900.
 +
 Thanks to Joe Hurd for the bug report.
 +
-Fixed by revision <!ViewSVNRev(5732)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r5732&type=commits[`r5732`].
 
-* <!Anchor(bug11)>
+* [[bug11]]
 Bug in monomorphisation pass could exhibit the error `Type error: type mismatch`.
 +
 Thanks to Vesa Karvonen for the bug report.
 +
-Fixed by revision <!ViewSVNRev(5731)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r5731&type=commits[`r5731`].
 
-* <!Anchor(bug10)>
-The http://www.standardml.org/Basis/pack-float.html#SIG:PACK_REAL.toBytes:VAL[++PackReal__<N>__.toBytes++] function in the <:BasisLibrary:Basis Library> implementation incorrectly shared (and mutated) the result vector.
+* [[bug10]]
+The https://smlfamily.github.io/Basis/pack-float.html#SIG:PACK_REAL.toBytes:VAL[``PackReal__<N>__.toBytes``] function in the <<BasisLibrary#,Basis Library>> implementation incorrectly shared (and mutated) the result vector.
 +
 Thanks to Eric McCorkle for the bug report and patch.
 +
-Fixed by revision <!ViewSVNRev(5281)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r5281&type=commits[`r5281`].
 
-* <!Anchor(bug09)>
+* [[bug09]]
 Bug in elaboration of FFI forms.  Using a unary FFI types (e.g., `array`, `ref`, `vector`) in places where `MLton.Pointer.t` was required would lead to an internal error `TypeError`.
 +
-Fixed by revision <!ViewSVNRev(4890)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r4890&type=commits[`r4890`].
 
-* <!Anchor(bug08)>
-The http://www.standardml.org/Basis/mono-vector.html[++MONO_VECTOR++] signature of the <:BasisLibrary:Basis Library> implementation incorrectly omits the specification of `find`.
+* [[bug08]]
+The https://smlfamily.github.io/Basis/mono-vector.html[``MONO_VECTOR``] signature of the <<BasisLibrary#,Basis Library>> implementation incorrectly omits the specification of `find`.
 +
-Fixed by revision <!ViewSVNRev(4707)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r4707&type=commits[`r4707`].
 
-* <!Anchor(bug07)>
+* [[bug07]]
 The optimizer reports an internal error (`TypeError`) when an imported C function is called but not used.
 +
 Thanks to "jq" for the bug report.
 +
-Fixed by revision <!ViewSVNRev(4690)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r4690&type=commits[`r4690`].
 
-* <!Anchor(bug06)>
+* [[bug06]]
 Bug in pass to flatten data structures.
 +
 Thanks to Joe Hurd for the bug report.
 +
-Fixed by revision <!ViewSVNRev(4662)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r4662&type=commits[`r4662`].
 
-* <!Anchor(bug05)>
+* [[bug05]]
 The native codegen's implementation of the C-calling convention failed to widen 16-bit arguments to 32-bits.
 +
-Fixed by revision <!ViewSVNRev(4631)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r4631&type=commits[`r4631`].
 
-* <!Anchor(bug04)>
-The http://www.standardml.org/Basis/pack-float.html[++PACK_REAL++] structures of the <:BasisLibrary:Basis Library> implementation used byte, rather than element, indexing.
+* [[bug04]]
+The https://smlfamily.github.io/Basis/pack-float.html[``PACK_REAL``] structures of the <<BasisLibrary#,Basis Library>> implementation used byte, rather than element, indexing.
 +
-Fixed by revision <!ViewSVNRev(4411)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r4411&type=commits[`r4411`].
 
-* <!Anchor(bug03)>
+* [[bug03]]
 `MLton.share` could cause a segmentation fault.
 +
-Fixed by revision <!ViewSVNRev(4400)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r4400&type=commits[`r4400`].
 
-* <!Anchor(bug02)>
+* [[bug02]]
 The SSA simplifier could eliminate an irredundant test.
 +
-Fixed by revision <!ViewSVNRev(4370)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r4370&type=commits[`r4370`].
 
-* <!Anchor(bug01)>
+* [[bug01]]
 A program with a very large number of functors could exhibit the error `ElaborateEnv.functorClosure: firstTycons`.
 +
-Fixed by revision <!ViewSVNRev(4344)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r4344&type=commits[`r4344`].

@@ -1,7 +1,6 @@
-TalkStandardML
-==============
+= TalkStandardML
 
-== Standard ML ==
+== Standard ML
 
  * a high-level language makes
    ** a programmer's life easier
@@ -15,7 +14,7 @@ TalkStandardML
 {nbsp} +
 {nbsp} +
 
-Also see <:StandardML:Standard ML>.
+Also see <<StandardML#,Standard ML>>.
 
 {nbsp} +
 {nbsp} +
@@ -24,6 +23,6 @@ Also see <:StandardML:Standard ML>.
 '''
 
 [cols="<,>"]
-|====
-|<:Talk: Prev>|<:TalkMLtonApproach: Next>
-|====
+|===
+|<<Talk#,Prev>>|<<TalkMLtonApproach#,Next>>
+|===

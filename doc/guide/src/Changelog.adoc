@@ -1,8 +1,7 @@
-Changelog
-=========
+= Changelog
 
-* <!ViewGitFile(mlton,master,CHANGELOG.adoc)>
+* https://github.com/MLton/mlton/blob/master/CHANGELOG.adoc[`CHANGELOG.adoc`]
 
 ----
-sys::[./bin/InclGitFile.py mlton master CHANGELOG.adoc]
+include::https://raw.github.com/MLton/mlton/master/CHANGELOG.adoc[indent=0]
 ----

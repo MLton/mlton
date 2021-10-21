@@ -1,63 +1,62 @@
-StandardML
-==========
+= StandardML
 :toc:
 
 Standard ML (SML) is a programming language that combines excellent
 support for rapid prototyping, modularity, and development of large
 programs, with performance approaching that of C.
 
-== SML Resources ==
+== SML Resources
 
-* <:StandardMLTutorials:Tutorials>
-* <:StandardMLBooks:Books>
-* <:StandardMLImplementations:Implementations>
+* <<StandardMLTutorials#,Tutorials>>
+* <<StandardMLBooks#,Books>>
+* <<StandardMLImplementations#,Implementations>>
 // * http://google.com/coop/cse?cx=014714656471597805969%3Afzuz7eybmcy[SML web search] from Google Co-op
 
-== Aspects of SML ==
+== Aspects of SML
 
-* <:DefineTypeBeforeUse:>
-* <:EqualityType:>
-* <:EqualityTypeVariable:>
-* <:GenerativeDatatype:>
-* <:GenerativeException:>
-* <:Identifier:>
-* <:OperatorPrecedence:>
-* <:Overloading:>
-* <:PolymorphicEquality:>
-* <:TypeVariableScope:>
-* <:ValueRestriction:>
+* <<DefineTypeBeforeUse#>>
+* <<EqualityType#>>
+* <<EqualityTypeVariable#>>
+* <<GenerativeDatatype#>>
+* <<GenerativeException#>>
+* <<Identifier#>>
+* <<OperatorPrecedence#>>
+* <<Overloading#>>
+* <<PolymorphicEquality#>>
+* <<TypeVariableScope#>>
+* <<ValueRestriction#>>
 
-== Using SML ==
+== Using SML
 
-* <:Fixpoints:>
-* <:ForLoops:>
-* <:FunctionalRecordUpdate:>
-* <:InfixingOperators:>
-* <:Lazy:>
-* <:ObjectOrientedProgramming:>
-* <:OptionalArguments:>
-* <:Printf:>
-* <:PropertyList:>
-* <:ReturnStatement:>
-* <:Serialization:>
-* <:StandardMLGotchas:>
-* <:StyleGuide:>
-* <:TipsForWritingConciseSML:>
-* <:UniversalType:>
+* <<Fixpoints#>>
+* <<ForLoops#>>
+* <<FunctionalRecordUpdate#>>
+* <<InfixingOperators#>>
+* <<Lazy#>>
+* <<ObjectOrientedProgramming#>>
+* <<OptionalArguments#>>
+* <<Printf#>>
+* <<PropertyList#>>
+* <<ReturnStatement#>>
+* <<Serialization#>>
+* <<StandardMLGotchas#>>
+* <<StyleGuide#>>
+* <<TipsForWritingConciseSML#>>
+* <<UniversalType#>>
 
-== Programming in SML ==
+== Programming in SML
 
-* <:Emacs:>
-* <:Enscript:>
-* <:Pygments:>
+* <<Emacs#>>
+* <<Enscript#>>
+* <<Pygments#>>
 
-== Notes ==
+== Notes
 
-* <:StandardMLHistory: History of SML>
-* <:Regions:>
+* <<StandardMLHistory#,History of SML>>
+* <<Regions#>>
 
-== Related Languages ==
+== Related Languages
 
-* <:Alice:>
-* <:FSharp:F#>
-* <:OCaml:>
+* <<Alice#>>
+* <<FSharp#,F#>>
+* <<OCaml#>>

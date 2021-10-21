@@ -1,5 +1,4 @@
-fxp
-===
+= fxp
 
 http://atseidl2.informatik.tu-muenchen.de/%7Eberlea/Fxp/[fxp] is an XML
 parser written in Standard ML.

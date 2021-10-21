@@ -1,16 +1,15 @@
-RunningOnAMD64
-==============
+= RunningOnAMD64
 
 MLton runs fine on the AMD64 (aka "x86-64" or "x64") architecture.
 
-== Notes ==
+== Notes
 
 * When compiling for AMD64, MLton targets the 64-bit ABI.
 
 * On AMD64, MLton supports native code generation (`-codegen native` or `-codegen amd64`).
 
 * When compiling for AMD64, MLton uses `-align 8` by default.  Using
-`-align 4` may be incompatible with optimized builds of the <:GMP:>
+`-align 4` may be incompatible with optimized builds of the <<GMP#>>
 library, which assume 8-byte alignment.  (See the thread at
 http://www.mlton.org/pipermail/mlton/2009-October/030674.html for more
 details.)

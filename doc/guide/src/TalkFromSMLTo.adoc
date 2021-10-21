@@ -1,7 +1,6 @@
-TalkFromSMLTo
-=============
+= TalkFromSMLTo
 
-== From Standard ML to S-T F-O IL ==
+== From Standard ML to S-T F-O IL
 
  * What issues arise when translating from Standard ML into an intermediate language?
 
@@ -12,6 +11,6 @@ TalkFromSMLTo
 '''
 
 [cols="<,>"]
-|====
-|<:TalkMLtonApproach: Prev>|<:TalkHowModules: Next>
-|====
+|===
+|<<TalkMLtonApproach#,Prev>>|<<TalkHowModules#,Next>>
+|===

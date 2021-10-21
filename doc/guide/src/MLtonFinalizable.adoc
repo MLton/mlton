@@ -1,5 +1,4 @@
-MLtonFinalizable
-================
+= MLtonFinalizable
 
 [source,sml]
 ----
@@ -20,10 +19,10 @@ attached.  A container holds a value, which is reachable as long as
 the container itself is reachable.  A _finalizer_ is a function that
 runs at some point after garbage collection determines that the
 container to which it is attached has become
-<:Reachability:unreachable>.  A finalizer is treated like a signal
+<<Reachability#,unreachable>>.  A finalizer is treated like a signal
 handler, in that it runs asynchronously in a separate thread, with
 signals blocked, and will not interrupt a critical section (see
-<:MLtonThread:>).
+<<MLtonThread#>>).
 
 * `addFinalizer (v, f)`
 +
@@ -45,27 +44,27 @@ when the garbage collector determines that `v` is unreachable.
 
 * `touch v`
 +
-ensures that `v`'s finalizers will not run before the call to `touch`.
+ensures that `v`&rsquo;s finalizers will not run before the call to `touch`.
 
 * `withValue (v, f)`
 +
 returns the result of applying `f` to the value of `v` and ensures
-that `v`'s finalizers will not run before `f` completes.  The call to
+that `v`&rsquo;s finalizers will not run before `f` completes.  The call to
 `f` is a nontail call.
 
 
-== Example ==
+== Example
 
 Suppose that `finalizable.sml` contains the following:
 [source,sml]
 ----
-sys::[./bin/InclGitFile.py mlton master doc/examples/finalizable/finalizable.sml]
+include::https://raw.github.com/MLton/mlton/master/doc/examples/finalizable/finalizable.sml[indent=0]
 ----
 
 Suppose that `cons.c` contains the following.
 [source,c]
 ----
-sys::[./bin/InclGitFile.py mlton master doc/examples/finalizable/cons.c]
+include::https://raw.github.com/MLton/mlton/master/doc/examples/finalizable/cons.c[indent=0]
 ----
 
 We can compile these to create an executable with
@@ -95,7 +94,7 @@ listFree (0x08072890)
 ----
 
 
-== Synchronous Finalizers ==
+== Synchronous Finalizers
 
 Finalizers in MLton are asynchronous.  That is, they run at an
 unspecified time, interrupting the user program.  It is also possible,
@@ -106,6 +105,6 @@ unresolved design issues.  See the thread at
 
 * http://www.mlton.org/pipermail/mlton/2004-September/016570.html
 
-== Also see ==
+== Also see
 
-* <!Cite(Boehm03)>
+* <<References#Boehm03,Boehm03>>

@@ -1,16 +1,15 @@
-DefinitionOfStandardML
-======================
+= DefinitionOfStandardML
 
-<!Cite(MilnerEtAl97, The Definition of Standard ML (Revised))> is a
-terse and formal specification of <:StandardML:Standard ML>'s syntax
+<<References#MilnerEtAl97,The Definition of Standard ML (Revised)>> is a
+terse and formal specification of <<StandardML#,Standard ML>>&rsquo;s syntax
 and semantics.  The language specified by this book is often referred
 to as SML 97. You can check its syntax
 http://www.mpi-sws.org/~rossberg/sml.html[grammar] online (thanks to
 Andreas Rossberg).
 
-<!Cite(MilnerEtAl90, The Definition of Standard ML)> is an older
+<<References#MilnerEtAl90,The Definition of Standard ML>> is an older
 version of the definition, published in 1990. The accompanying
-<!Cite(MilnerTofte91, Commentary)> introduces and explains the notation
+<<References#MilnerTofte91,Commentary>> introduces and explains the notation
 and approach. The same notation is used in the SML 97 definition, so it
 is worth keeping the older definition and its commentary at hand if you
 intend a close study of the definition.

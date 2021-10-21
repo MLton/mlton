@@ -1,7 +1,6 @@
-DefineTypeBeforeUse
-===================
+= DefineTypeBeforeUse
 
-<:StandardML:Standard ML> requires types to be defined before they are
+<<StandardML#,Standard ML>> requires types to be defined before they are
 used.  Because of type inference, the use of a type can be implicit;
 hence, this requirement is more subtle than it might appear.  For
 example, the following program is not type correct, because the type

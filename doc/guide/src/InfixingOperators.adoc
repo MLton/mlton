@@ -1,8 +1,7 @@
-InfixingOperators
-=================
+= InfixingOperators
 
 Fixity specifications are not part of signatures in
-<:StandardML:Standard ML>. When one wants to use a module that
+<<StandardML#,Standard ML>>. When one wants to use a module that
 provides functions designed to be used as infix operators there are
 several obvious alternatives:
 
@@ -17,7 +16,7 @@ the top-level should be avoided.
 infix applications. The duplication becomes inconvenient if the
 operators are widely used. Duplication of code should be avoided.
 
-* Use non-standard extensions, such as the <:MLBasis: ML Basis system>
+* Use non-standard extensions, such as the <<MLBasis#,ML Basis system>>
 to control the scope of fixity declarations. This has the obvious
 drawback of reduced portability.
 
@@ -31,10 +30,10 @@ describes a slightly less obvious alternative that can sometimes be
 useful. The idea is to approximate Haskell's special syntax for
 treating any identifier enclosed in grave accents (backquotes) as an
 infix operator. In Haskell, instead of writing the prefix application
-`f x y` one can write the infix application ++x &grave;f&grave; y++.
+`f x y` one can write the infix application `x {backtick}f{backtick} y`.
 
 
-== Infixing operators ==
+== Infixing operators
 
 Let's first take a look at the definitions of the operators:
 
@@ -51,7 +50,7 @@ infix  0 :=
 
 The left and right sectioning operators, `<\` and `/>`, are useful in
 SML for partial application of infix operators.
-<!Cite(Paulson96, ML For the Working Programmer)> describes curried
+<<References#Paulson96,ML For the Working Programmer>> describes curried
 functions `secl` and `secr` for the same purpose on pages 179-181.
 For example,
 
@@ -85,7 +84,7 @@ xN </fN/> ... x2 </f2/> x1 </f1/> x0  =  fN (xN, ... f2 (x2, f1 (x1, x0)) ...)
 ----
 
 
-=== Examples ===
+=== Examples
 
 As a fairly realistic example, consider providing a function for sequencing
 comparisons:
@@ -109,7 +108,7 @@ fun compare (fad, fbe, fcf) ((a, b, c), (d, e, f)) =
     fad (a, d) <\Order.orWhenEq\> `fbe (b, e) <\Order.orWhenEq\> `fcf (c, f)
 ----
 
-where +&grave;+ is defined as
+where `{backtick}` is defined as
 
 [source,sml]
 ----
@@ -122,8 +121,8 @@ as an infix operator. Fortunately we can use the infixing operators
 and don't have to.
 
 Another fairly realistic example would be to use the infixing operators with
-the technique described on the <:Printf:> page. Assuming that you would have
-a `Printf` module binding `printf`, +&grave;+, and formatting combinators
+the technique described on the <<Printf#>> page. Assuming that you would have
+a `Printf` module binding `printf`, `{backtick}`, and formatting combinators
 named `int` and `string`, you could write
 
 [source,sml]
@@ -148,7 +147,7 @@ structure P = Printf
 ----
 
 
-== Application and piping operators ==
+== Application and piping operators
 
 The left and right application operators may also provide some notational
 convenience on their own. In general,
@@ -215,14 +214,14 @@ where `||` is supposed to be a combinator provided by the parsing combinator
 library.
 
 
-== About precedences ==
+== About precedences
 
 You probably noticed that we redefined the
-<:OperatorPrecedence:precedences> of the function composition operator
+<<OperatorPrecedence#,precedences>> of the function composition operator
 `o` and the assignment operator `:=`. Doing so is not strictly
 necessary, but can be convenient and should be relatively
 safe. Consider the following motivating examples from
-<:WesleyTerpstra: Wesley W. Terpstra> relying on the redefined
+<<WesleyTerpstra#,Wesley W. Terpstra>> relying on the redefined
 precedences:
 
 [source,sml]
@@ -236,7 +235,7 @@ x := s <\String.sub\> i
 
 In imperative languages, assignment usually has the lowest precedence
 (ignoring statement separators). The precedence of `:=` in the
-<:BasisLibrary: Basis Library> is perhaps unnecessarily high, because
+<<BasisLibrary#,Basis Library>> is perhaps unnecessarily high, because
 an expression of the form `r := x` always returns a unit, which makes
 little sense to combine with anything. Dropping `:=` to the lowest
 precedence level makes it behave more like in other imperative
@@ -244,21 +243,21 @@ languages.
 
 The case for `o` is different. With the exception of `before` and
 `:=`, it doesn't seem to make much sense to use `o` with any of the
-operators defined by the <:BasisLibrary: Basis Library> in an
+operators defined by the <<BasisLibrary#,Basis Library>> in an
 unparenthesized expression. This is simply because none of the other
 operators deal with functions. It would seem that the precedence of
 `o` could be chosen completely arbitrarily from the set `{1, ..., 9}`
 without having any adverse effects with respect to other infix
-operators defined by the <:BasisLibrary: Basis Library>.
+operators defined by the <<BasisLibrary#,Basis Library>>.
 
 
-== Design of the symbols ==
+== Design of the symbols
 
-The closest approximation of Haskell's ++x &grave;f&grave; y++ syntax
+The closest approximation of Haskell's `x {backtick}f{backtick} y` syntax
 achievable in Standard ML would probably be something like
-++x &grave;f^ y++, but `^` is already used for string
-concatenation by the <:BasisLibrary: Basis Library>. Other
-combinations of the characters +&grave;+ and `^` would be
+`x {backtick}f^ y`, but `^` is already used for string
+concatenation by the <<BasisLibrary#,Basis Library>>. Other
+combinations of the characters `{backtick}` and `^` would be
 possible, but none seems clearly the best visually. The symbols `<\`,
 `\>`, `</`, and `/>` are reasonably concise and have a certain
 self-documenting appearance and symmetry, which can help to remember
@@ -266,6 +265,6 @@ them.  As the names suggest, the symbols of the piping operators `>|`
 and `|<` are inspired by Unix shell pipelines.
 
 
-== Also see ==
+== Also see
 
- * <:Utilities:>
+ * <<Utilities#>>

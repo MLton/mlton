@@ -1,12 +1,11 @@
-LLVM
-====
+= LLVM
 
 The http://www.llvm.org/[LLVM Project] is a collection of modular and
 reusable compiler and toolchain technologies.
 
 MLton supports code generation via LLVM (`-codegen llvm`); see
-<:LLVMCodegen:>.
+<<LLVMCodegen#>>.
 
-== Also see ==
+== Also see
 
-* <:CMinusMinus:>
+* <<CMinusMinus#>>

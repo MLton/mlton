@@ -1,27 +1,26 @@
-MLLPTLibrary
-============
+= MLLPTLibrary
 
 The
 http://smlnj-gforge.cs.uchicago.edu/projects/ml-lpt/[ML-LPT Library]
-is a support library for the <:MLULex:> scanner generator and the
-<:MLAntlr:> parser generator.  The ML-LPT Library is distributed with
+is a support library for the <<MLULex#>> scanner generator and the
+<<MLAntlr#>> parser generator.  The ML-LPT Library is distributed with
 SML/NJ.
 
 As of 20210117, MLton includes the ML-LPT Library synchronized with
 SML/NJ version 110.99.
 
-== Usage ==
+== Usage
 
 * You can import the ML-LPT Library into an MLB file with:
 +
 [options="header"]
-|=====
+|===
 |MLB file|Description
 |`$(SML_LIB)/mllpt-lib/mllpt-lib.mlb`|
-|=====
+|===
 
-* If you are porting a project from SML/NJ's <:CompilationManager:> to
-MLton's <:MLBasis: ML Basis system> using `cm2mlb`, note that the
+* If you are porting a project from SML/NJ's <<CompilationManager#>> to
+MLton's <<MLBasis#,ML Basis system>> using `cm2mlb`, note that the
 following map is included by default:
 +
 ----
@@ -34,10 +33,10 @@ This will automatically convert a `$/mllpt-lib.cm` import in an input
 `.cm` file into a `$(SML_LIB)/mllpt-lib/mllpt-lib.mlb` import in the
 output `.mlb` file.
 
-== Details ==
+== Details
 
 {empty}
 
-== Patch ==
+== Patch
 
-* <!ViewGitFile(mlton,master,lib/mllpt-lib/ml-lpt.patch)>
+* https://github.com/MLton/mlton/blob/master/lib/mllpt-lib/ml-lpt.patch[`ml-lpt.patch`]

@@ -1,5 +1,4 @@
-MLtonSyslog
-===========
+= MLtonSyslog
 
 [source,sml]
 ----

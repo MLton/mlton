@@ -1,5 +1,4 @@
-Logo
-====
+= Logo
 
 ifdef::basebackend-html[]
 image::Logo.attachments/mlton.svg[align="center",height="128",width="128"]
@@ -8,12 +7,12 @@ ifdef::basebackend-docbook[]
 image::Logo.attachments/mlton-128.pdf[align="center"]
 endif::[]
 
-== Files ==
+== Files
 
-* <!Attachment(Logo,mlton.svg)>
-* <!Attachment(Logo,mlton-1024.png)>
-* <!Attachment(Logo,mlton-512.png)>
-* <!Attachment(Logo,mlton-256.png)>
-* <!Attachment(Logo,mlton-128.png)>
-* <!Attachment(Logo,mlton-64.png)>
-* <!Attachment(Logo,mlton-32.png)>
+* link:Logo.attachments/mlton.svg[`mlton.svg`]
+* link:Logo.attachments/mlton-1024.png[`mlton-1024.png`]
+* link:Logo.attachments/mlton-512.png[`mlton-512.png`]
+* link:Logo.attachments/mlton-256.png[`mlton-256.png`]
+* link:Logo.attachments/mlton-128.png[`mlton-128.png`]
+* link:Logo.attachments/mlton-64.png[`mlton-64.png`]
+* link:Logo.attachments/mlton-32.png[`mlton-32.png`]

@@ -1,12 +1,11 @@
-SyntacticConventions
-====================
+= SyntacticConventions
 :toc:
 
 Here are a number of syntactic conventions useful for programming in
 SML.
 
 
-== General ==
+== General
 
 * A line of code never exceeds 80 columns.
 
@@ -19,7 +18,7 @@ SML.
 * When using `:`, there is no space before the colon, and a single space after it.
 
 
-== Identifiers ==
+== Identifiers
 
 * Variables, record labels and type constructors begin with and use
 small letters, using capital letters to separate words.
@@ -58,7 +57,7 @@ BINARY_HEAP
 ----
 
 
-== Types ==
+== Types
 
 * Alphabetize record labels.  In a record type, there are spaces after
 colons and commas, but not before colons or commas, or at the
@@ -187,7 +186,7 @@ not
 ----
 
 
-== Core ==
+== Core
 
 * A core expression or declaration split over multiple lines does not
 contain any blank lines.
@@ -309,7 +308,7 @@ x + y
 x * y - z
 ----
 
-* Avoid redundant parentheses.  Use <:OperatorPrecedence:>.  So, write
+* Avoid redundant parentheses.  Use <<OperatorPrecedence#>>.  So, write
 +
 [source,sml]
 ----
@@ -343,7 +342,7 @@ case e1 of
  | p3 => e3
 ----
 
-* A `datatype`'s constructors are alphabetized.
+* A `datatype`&rsquo;s constructors are alphabetized.
 +
 [source,sml]
 ----
@@ -458,7 +457,7 @@ val p =
 ----
 
 
-== Signatures ==
+== Signatures
 
 * A `signature` declaration is indented as follows.
 +
@@ -512,7 +511,7 @@ end
 ----
 
 
-== Structures ==
+== Structures
 
 * A `structure` declaration has a space on both sides of the `=`.
 +
@@ -565,7 +564,7 @@ end
 ----
 
 
-== Functors ==
+== Functors
 
 * A `functor` declaration has spaces after each `:` (or `:>`) but not
 before, and a space before and after the `=`.  It is indented as

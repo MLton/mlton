@@ -1,20 +1,19 @@
-MatchCompile
-============
+= MatchCompile
 
-<:MatchCompile:> is a translation pass, agnostic in the
-<:IntermediateLanguage:>s between which it translates.
+<<MatchCompile#>> is a translation pass, agnostic in the
+<<IntermediateLanguage#>>s between which it translates.
 
-== Description ==
+== Description
 
-<:MatchCompilation:Match compilation> converts a case expression with
+<<MatchCompilation#,Match compilation>> converts a case expression with
 nested patterns into a case expression with flat patterns.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/match-compile/match-compile.sig)>
-* <!ViewGitFile(mlton,master,mlton/match-compile/match-compile.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/match-compile/match-compile.sig[`match-compile.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/match-compile/match-compile.fun[`match-compile.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 [source,sml]
 ----
@@ -31,7 +30,7 @@ val matchCompile:
 
 `matchCompile` is complicated by the desire for modularity between the
 match compiler and its caller.  Its caller is responsible for building
-the right hand side of a rule `p => e`.  On the other hand, the match
+the right hand side of a rule `p \=> e`.  On the other hand, the match
 compiler is responsible for destructing the test and binding new
 variables to the components.  In order to connect the new variables
 created by the match compiler with the variables in the pattern `p`,

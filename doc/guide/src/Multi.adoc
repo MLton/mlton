@@ -1,23 +1,22 @@
-Multi
-=====
+= Multi
 
-<:Multi:> is an analysis pass for the <:SSA:>
-<:IntermediateLanguage:>, invoked from <:ConstantPropagation:> and
-<:LocalRef:>.
+<<Multi#>> is an analysis pass for the <<SSA#>>
+<<IntermediateLanguage#>>, invoked from <<ConstantPropagation#>> and
+<<LocalRef#>>.
 
-== Description ==
+== Description
 
-This pass analyzes the control flow of a <:SSA:> program to determine
-which <:SSA:> functions and blocks might be executed more than once or
+This pass analyzes the control flow of a <<SSA#>> program to determine
+which <<SSA#>> functions and blocks might be executed more than once or
 by more than one thread.  It also determines when a program uses
 threads and when functions and blocks directly or indirectly invoke
 `Thread_copyCurrent`.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/multi.sig)>
-* <!ViewGitFile(mlton,master,mlton/ssa/multi.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/multi.sig[`multi.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/multi.fun[`multi.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 {empty}

@@ -1,5 +1,4 @@
-EmacsBgBuildMode
-================
+= EmacsBgBuildMode
 
 Do you really want to think about starting a build of you project?
 What if you had a personal slave that would restart a build of your
@@ -14,7 +13,7 @@ for working with MLton due to the longer compile times.  By the time
 you start wondering about possible errors, the build is already on the
 way.
 
-== Functionality and Features ==
+== Functionality and Features
 
 * Each time a file is saved, and after a user configurable delay
 period has been exhausted, a build is started silently in the
@@ -40,14 +39,14 @@ can build a given maximum number of projects concurrently.
 http://www.xemacs.org[XEmacs].
 
 
-== Download ==
+== Download
 
 There is no package for the mode at the moment.  To install the mode you
 need to fetch the Emacs Lisp, `*.el`, files from the MLton repository:
-<!ViewGitDir(mlton,master,ide/emacs)>.
+https://github.com/MLton/mlton/tree/master/ide/emacs[`emacs`].
 
 
-== Setup ==
+== Setup
 
 The easiest way to load the mode is to first tell Emacs where to find the
 files.  For example, add
@@ -70,7 +69,7 @@ to your Emacs init file.  Once the mode is activated, you should see
 the `BGB` indicator on the mode line.
 
 
-=== MLton and Compilation-Mode ===
+=== MLton and Compilation-Mode
 
 At the time of writing, neither Gnu Emacs nor XEmacs contain an error
 regexp that would match MLton's messages.
@@ -99,19 +98,19 @@ If you use XEmacs, insert the following code into your `init.el` file:
 (compilation-build-compilation-error-regexp-alist)
 ----
 
-== Usage ==
+== Usage
 
 Typically projects are built (or compiled) using a tool like http://www.gnu.org/software/make/[`make`],
 but the details vary.  The bg-build mode needs a project configuration file to
 know how to build your project.  A project configuration file basically contains
 an Emacs Lisp expression calling a function named `bg-build` that returns a
 project object.  A simple example of a project configuration file would be the
-(<!ViewGitFile(mltonlib,master,com/ssh/async/unstable/example/smlbot/Build.bgb)>)
+(https://github.com/MLton/mltonlib/blob/master/com/ssh/async/unstable/example/smlbot/Build.bgb[`Build.bgb`])
 file used with smlbot:
 
 [source,cl]
 ----
-sys::[./bin/InclGitFile.py mltonlib master com/ssh/async/unstable/example/smlbot/Build.bgb 5:]
+include::https://raw.github.com/MLton/mltonlib/master/com/ssh/async/unstable/example/smlbot/Build.bgb[indent=0,lines=5..-1]
 ----
 
 The `bg-build` function takes a number of keyword arguments:

@@ -1,9 +1,8 @@
-OperatorPrecedence
-==================
+= OperatorPrecedence
 
-<:StandardML:Standard ML> has a built in notion of precedence for
+<<StandardML#,Standard ML>> has a built in notion of precedence for
 certain symbols.  Every program that includes the
-<:BasisLibrary:Basis Library> automatically gets the following infix
+<<BasisLibrary#,Basis Library>> automatically gets the following infix
 declarations.  Higher number indicates higher precedence.
 
 [source,sml]

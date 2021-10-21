@@ -1,9 +1,8 @@
-Glade
-=====
+= Glade
 
 http://glade.gnome.org/features.html[Glade] is a tool for generating
 Gtk user interfaces.
 
-<:WesleyTerpstra:> is working on a Glade->mGTK converter.
+<<WesleyTerpstra#>> is working on a Glade->mGTK converter.
 
 * http://www.mlton.org/pipermail/mlton/2004-December/016865.html

@@ -1,7 +1,6 @@
-TypeVariableScope
-=================
+= TypeVariableScope
 
-In <:StandardML:Standard ML>, every type variable is _scoped_ (or
+In <<StandardML#,Standard ML>>, every type variable is _scoped_ (or
 bound) at a particular point in the program.  A type variable can be
 either implicitly scoped or explicitly scoped.  For example, `'a` is
 implicitly scoped in
@@ -40,7 +39,7 @@ enclosing `val` or `fun` declaration.  Scope inference shows that the
 first and second example above are equivalent to the third and fourth
 example, respectively.
 
-Section 4.6 of the <:DefinitionOfStandardML:Definition> specifies
+Section 4.6 of the <<DefinitionOfStandardML#,Definition>> specifies
 precisely the scope of an implicitly scoped type variable.  A free
 occurrence of a type variable `'a` in a declaration `d` is said to be
 _unguarded_ in `d` if `'a` is not part of a smaller declaration.  A
@@ -49,7 +48,7 @@ type variable `'a` is implicitly scoped at `d` if `'a` is unguarded in
 `d`.
 
 
-== Scope inference examples ==
+== Scope inference examples
 
 * In this example,
 +
@@ -83,7 +82,7 @@ declaration is equivalent to the following.
 val 'a f = fn x => let exception E of 'a in E x end
 ----
 
-* In this example (taken from the <:DefinitionOfStandardML:Definition>),
+* In this example (taken from the <<DefinitionOfStandardML#,Definition>>),
 +
 [source,sml]
 ----
@@ -116,7 +115,7 @@ and the declaration is equivalent to the following.
 val 'a f = (fn x: 'a => x) (fn y => y)
 ----
 +
-This does not type check due to the <:ValueRestriction:>.
+This does not type check due to the <<ValueRestriction#>>.
 
 * In this example,
 +
@@ -162,11 +161,11 @@ constraint, as in `fun f (x: 'a)`, or by explicitly scoping `'a`, as
 in `fun 'a f x = ...`.
 
 
-== Restrictions on type variable scope ==
+== Restrictions on type variable scope
 
 It is not allowed to scope a type variable within a declaration in
 which it is already in scope (see the last restriction listed on page
-9 of the <:DefinitionOfStandardML:Definition>).  For example, the
+9 of the <<DefinitionOfStandardML#,Definition>>).  For example, the
 following program is invalid.
 
 [source,sml]
