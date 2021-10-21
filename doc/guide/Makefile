@@ -7,48 +7,49 @@ export LC_ALL = C
 
 NULL :=
 
-ASCIIDOC := asciidoc
-ifeq (true, $(call HAVE_CMD,$(ASCIIDOC)))
-ASCIIDOC_CONF_DIR := $(shell $(ASCIIDOC) -v /dev/null 2>&1 | head -n 1 | sed 's|.*reading: \(.*\)/asciidoc.conf|\1|')
-else
-ASCIIDOC_CONF_DIR :=
-endif
-ASCIIDOC_MLTON_FLAGS := $(shell cat conf/asciidoc-mlton.flags | sed 's|^\#.*||' | sed "s|MLTON_VERSION|$(MLTON_VERSION)|")
-ASCIIDOC_MLTON_DEPS := bin/InclGitFile.py conf/asciidoc-mlton.flags $(shell cat conf/asciidoc-mlton.flags | sed -n 's|^.*\(conf/.*\)$$|\1|p')
-ASCIIDOC_HTML5_FLAGS := $(ASCIIDOC_MLTON_FLAGS) $(shell cat conf/asciidoc-html5.flags | sed 's|^\#.*||')
-ASCIIDOC_HTML5_DEPS := $(ASCIIDOC_MLTON_DEPS) conf/asciidoc-html5.flags $(shell cat conf/asciidoc-html5.flags | sed -n 's|^.*\(conf/.*\)$$|\1|p')
-ASCIIDOC_DOCBOOK45_FLAGS := $(ASCIIDOC_MLTON_FLAGS) $(shell cat conf/asciidoc-docbook45.flags | sed 's|^\#.*||')
-ASCIIDOC_DOCBOOK45_DEPS := $(ASCIIDOC_MLTON_DEPS) conf/asciidoc-docbook45.flags $(shell cat conf/asciidoc-docbook45.flags | sed -n 's|^.*\(conf/.*\)$$|\1|p')
+RUBY := ruby
 
-DBLATEX := dblatex
+ASCIIDOCTOR := asciidoctor
+ASCIIDOCTOR_FLAGS := --verbose
+ASCIIDOCTOR_FLAGS += --attribute=mlton-version=$(MLTON_VERSION)
+ASCIIDOCTOR_FLAGS += --attribute=allow-uri-read
+ASCIIDOCTOR_FLAGS += --attribute=source-highlighter=rouge
+ROUGE_STYLE := github
+ASCIIDOCTOR_FLAGS += --attribute=rouge-style=$(ROUGE_STYLE)
+ASCIIDOCTOR_HTML5_FLAGS := $(ASCIIDOCTOR_FLAGS)
+# ASCIIDOCTOR_HTML5_FLAGS += --attribute=source-highlighter=highlight.js
+# HIGHLIGHTJS_LANGUAGES := sml
+# ASCIIDOCTOR_HTML5_FLAGS += --attribute=highlightjs-languages=$(HIGHLIGHTJS_LANGUAGES)
+ASCIIDOCTOR_HTML5_FLAGS += --backend html5
+ASCIIDOCTOR_HTML5_FLAGS += -r ./lib/preprocess-docinfoprocessor.rb
+ASCIIDOCTOR_HTML5_FLAGS += --attribute=docinfo=shared
+ASCIIDOCTOR_HTML5_FLAGS += --attribute=docinfodir="../conf/html5"
+# ASCIIDOCTOR_HTML5_FLAGS += --attribute=noheader
+ASCIIDOCTOR_HTML5_FLAGS += --attribute=nofooter
+ASCIIDOCTOR_HTML5_FLAGS += --attribute=outfilesuffix=
+ASCIIDOCTOR_HTML5_FLAGS += --attribute=relfilesuffix=
+ASCIIDOCTOR_HTML5_FLAGS += --attribute=linkcss
+ASCIIDOCTOR_HTML5_FLAGS += --attribute=copycss!
+ASCIIDOCTOR_HTML5_DEPS := conf/html5/docinfo conf/html5/docinfo-header.inc conf/html5/docinfo-footer.inc
+
+LOGO_SIZES := 16 32 64 128 256 512 1024
 
 GEN_PAGES := Index mlton-guide
-GEN_ATTACHMENTS := $(foreach size,16 32 64 128 256 512 1024,Logo.attachments/mlton-$(size).png Logo.attachments/mlton-$(size).pdf)
+GEN_ATTACHMENTS := $(foreach S,$(LOGO_SIZES),Logo.attachments/mlton-$(S).png)
+GEN_ATTACHMENTS += $(foreach S,$(LOGO_SIZES),Logo.attachments/mlton-$(S).pdf)
 
-SRC_PAGES := $(filter-out $(GEN_PAGES),$(patsubst ./%.adoc,%,$(shell cd src ; find . -type f -name '*.adoc')))
-SRC_ATTACHMENTS := $(filter-out $(GEN_ATTACHMENTS),$(patsubst ./%,%,$(foreach dir,$(shell cd src ; find . -type d -name '*.attachments'),$(shell cd src ; find $(dir) -type f ! -name '.gitignore' ! -name '.gitattributes'))))
+SRC_PAGES := $(filter-out $(GEN_PAGES),$(patsubst ./%.adoc,%,$(shell cd src ; $(FIND) . -type f -name '*.adoc')))
+SRC_ATTACHMENTS := $(filter-out $(GEN_ATTACHMENTS),$(patsubst ./%,%,$(foreach dir,$(shell cd src ; $(FIND) . -type d -name '*.attachments'),$(shell cd src ; $(FIND) $(dir) -type f ! -name '.gitignore' ! -name '.gitattributes'))))
 
-HTML5_XTRA := asciidoc.css asciidoc.js pygments.css mlton.css mlton-gcse.js index.html
+HTML5_XTRA := asciidoctor.css rouge-$(ROUGE_STYLE).css mlton.css index.html
 HTML5_XTRA_PAGES := Index
-
-MLTON_ORG_XTRA := $(HTML5_XTRA)
-MLTON_ORG_XTRA_PAGES := $(HTML5_XTRA_PAGES)
-MLTON_ORG_XTRA_ATTACHMENTS := $(foreach size,16 32 64 128 256 512 1024,Logo.attachments/mlton-$(size).png)
-MLTON_ORG := $(addprefix www.mlton.org/, $(SRC_PAGES) $(SRC_ATTACHMENTS) $(MLTON_ORG_XTRA) $(MLTON_ORG_XTRA_PAGES) $(MLTON_ORG_XTRA_ATTACHMENTS))
-MLTON_ORG_TORM := $(filter-out $(MLTON_ORG),$(shell if [ -d www.mlton.org ]; then find www.mlton.org -type f; fi))
-
-LOCALHOST_XTRA := $(filter-out mlton-gcse.js,$(HTML5_XTRA))
-LOCALHOST_XTRA_PAGES := $(HTML5_XTRA_PAGES)
-LOCALHOST_XTRA_ATTACHMENTS := $(foreach size,16 32 64 128 256 512 1024,Logo.attachments/mlton-$(size).png)
-LOCALHOST := $(addprefix localhost/, $(SRC_PAGES) $(SRC_ATTACHMENTS) $(LOCALHOST_XTRA) $(LOCALHOST_XTRA_PAGES) $(LOCALHOST_XTRA_ATTACHMENTS))
-LOCALHOST_TORM := $(filter-out $(LOCALHOST),$(shell if [ -d localhost ]; then find localhost -type f; fi))
+HTML5_XTRA_ATTACHMENTS := $(foreach S,$(LOGO_SIZES),Logo.attachments/mlton-$(S).png)
+HTML5_TARGETS := $(HTML5_XTRA) $(SRC_PAGES) $(SRC_ATTACHMENTS) $(HTML5_XTRA_PAGES) $(HTML5_XTRA_ATTACHMENTS)
 
 
 ALL :=
-ifeq (true, $(call HAVE_CMD,$(ASCIIDOC)))
-ifeq (true, $(call HAVE_CMD,pygmentize))
+ifeq (true, $(call HAVE_CMD,$(ASCIIDOCTOR)))
 ALL += $(LOCALHOST) localhost-rm
-endif
 endif
 
 
@@ -65,45 +66,13 @@ CONVERT := no-convert
 endif
 endif
 
-%-16.png : %.svg
-	$(CONVERT) $< -resize 16x16 $@
-%-32.png : %.svg
-	$(CONVERT) $< -resize 32x32 $@
-%-64.png : %.svg
-	$(CONVERT) $< -resize 64x64 $@
-%-128.png : %.svg
-	$(CONVERT) $< -resize 128x128 $@
-%-256.png : %.svg
-	$(CONVERT) $< -resize 256x256 $@
-%-512.png : %.svg
-	$(CONVERT) $< -resize 512x512 $@
-%-1024.png : %.svg
-	$(CONVERT) $< -resize 1024x1024 $@
+define MK_CONVERT_RESIZE
+%-$(3).$(2) : %.$(1)
+	$$(CONVERT) $$< -resize $(3)x$(3) $$@
+endef
+$(foreach S,$(LOGO_SIZES),$(eval $(call MK_CONVERT_RESIZE,svg,png,$S)))
+$(foreach S,$(LOGO_SIZES),$(eval $(call MK_CONVERT_RESIZE,svg,pdf,$S)))
 
-%-16.pdf : %.svg
-	$(CONVERT) $< -resize 16x16 $@
-%-32.pdf : %.svg
-	$(CONVERT) $< -resize 32x32 $@
-%-64.pdf : %.svg
-	$(CONVERT) $< -resize 64x64 $@
-%-128.pdf : %.svg
-	$(CONVERT) $< -resize 128x128 $@
-%-256.pdf : %.svg
-	$(CONVERT) $< -resize 256x256 $@
-%-512.pdf : %.svg
-	$(CONVERT) $< -resize 512x512 $@
-%-1024.pdf : %.svg
-	$(CONVERT) $< -resize 1024x1024 $@
-
-
-conf/specialsections.conf : $(ASCIIDOC_CONF_DIR)/lang-en.conf bin/mk-specialsections-conf.sh
-	./bin/mk-specialsections-conf.sh $< $@
-
-conf/html5-header.conf : $(ASCIIDOC_CONF_DIR)/html5.conf bin/mk-html5-header-conf.sh
-	./bin/mk-html5-header-conf.sh $< $@
-
-conf/html5-footer.conf : $(ASCIIDOC_CONF_DIR)/html5.conf bin/mk-html5-footer-conf.sh
-	./bin/mk-html5-footer-conf.sh $< $@
 
 
 src/Index.adoc : bin/mk-index.sh $(foreach page,$(SRC_PAGES),src/$(page).adoc)
@@ -113,75 +82,61 @@ src/mlton-guide.adoc : bin/mk-mlton-guide.sh $(foreach page,$(SRC_PAGES),src/$(p
 	./bin/mk-mlton-guide.sh $(SRC_PAGES) > $@
 
 
-$(ASCIIDOC_CONF_DIR)/stylesheets/asciidoc.css: ;
-%/asciidoc.css : $(ASCIIDOC_CONF_DIR)/stylesheets/asciidoc.css
-	mkdir -p $(dir $@) ; cp $< $@
+%/asciidoctor.css :
+	@mkdir -p $(dir $@)
+	$(RUBY) -e "require 'asciidoctor'" -e "Asciidoctor::Stylesheets.instance.write_primary_stylesheet '$(dir $@)'"
+%/rouge-$(ROUGE_STYLE).css :
+	@mkdir -p $(dir $@)
+	$(RUBY) -e "require 'asciidoctor'" -e "rsh = Asciidoctor::SyntaxHighlighter::create 'rouge'" -e "::File.write (::File.join '$(dir $@)', (rsh.stylesheet_basename '$(ROUGE_STYLE)')), (rsh.read_stylesheet '$(ROUGE_STYLE)'), mode: Asciidoctor::FILE_WRITE_MODE"
 
-$(ASCIIDOC_CONF_DIR)/javascripts/asciidoc.js: ;
-%/asciidoc.js : $(ASCIIDOC_CONF_DIR)/javascripts/asciidoc.js
-	mkdir -p $(dir $@) ; cp $< $@
+conf/html5/mlton.css: ;
+%/mlton.css : conf/html5/mlton.css
+	$(MKDIR) $(dir $@) ; $(CP) $< $@
 
-$(ASCIIDOC_CONF_DIR)/stylesheets/pygments.css: ;
-%/pygments.css : $(ASCIIDOC_CONF_DIR)/stylesheets/pygments.css
-	mkdir -p $(dir $@) ; cp $< $@
-
-conf/mlton.css: ;
-%/mlton.css : conf/mlton.css
-	mkdir -p $(dir $@) ; cp $< $@
-
-conf/mlton-gcse.js: ;
-%/mlton-gcse.js : conf/mlton-gcse.js
-	mkdir -p $(dir $@) ; cp $< $@
 
 %/index.html : %/Home
-	rm -f $@ ; mkdir -p $(dir $@) ; ln -s Home $@ ; touch $@
+	$(RM) $@ ; $(MKDIR) $(dir $@) ; ln -s Home $@ ; touch $@
 
 
-www.mlton.org/% : src/%.adoc $(ASCIIDOC_HTML5_DEPS) bin/mk-git-attribute-entity-flags.sh
-	mkdir -p $(dir $@) ; $(ASCIIDOC) $(ASCIIDOC_HTML5_FLAGS) $(shell ./bin/mk-git-attribute-entity-flags.sh $<) -a mlton-guide-host=www.mlton.org -a mlton-guide-page=$(basename $(notdir $<)) -o $@ $<
+define MK_HTML5
+$(1)_TARGETS := $$(addprefix $(1)/, $$(HTML5_TARGETS))
 
-www.mlton.org/% : src/%
-	mkdir -p $(dir $@) ; cp -prf $< $@
+$(1)/% : src_dr/%.adoc bin/mk-git-attribute-entity-flags.sh $$(ASCIIDOCTOR_HTML5_DEPS)
+	@$$(MKDIR) $$(dir $$@)
+	$$(ASCIIDOCTOR) $$(ASCIIDOCTOR_HTML5_FLAGS) $$(shell ./bin/mk-git-attribute-entity-flags.sh $$(subst src_dr,src,$$<)) --attribute=mlton-guide-host=$(1) -o $$@ $$<
 
-.PHONY: www.mlton.org-rm
-www.mlton.org-rm: $(MLTON_ORG)
-	@rm -rf $(MLTON_ORG_TORM)
+$(1)/% : src/%
+	@$$(MKDIR) $$(dir $$@)
+	$$(CP) $$< $$@
 
-.PHONY: www.mlton.org
-www.mlton.org: $(MLTON_ORG)
+.PHONY: $(1)-rm
+$(1)-rm: $$($(1)_TARGETS)
+	@$$(RM) $$(filter-out $$($(1)_TARGETS),$$(shell if [ -d $(1) ]; then $$(FIND) $(1) -type f; fi))
 
-.PHONY: upload_www.mlton.org
-upload_www.mlton.org: $(MLTON_ORG) www.mlton.org-rm
-	rsync -avzP --delete -e ssh www.mlton.org/ fluet,mlton@web.sourceforge.net:htdocs/wiki
+.PHONY: $(1)
+$(1): $$($(1)_TARGETS) $(1)-rm
+endef
 
+$(eval $(call MK_HTML5,localhost))
+$(eval $(call MK_HTML5,mlton.sourceforge.io))
 
-localhost/% : src/%.adoc $(ASCIIDOC_HTML5_DEPS)
-	mkdir -p $(dir $@) ; $(ASCIIDOC) $(ASCIIDOC_HTML5_FLAGS) -a mlton-guide-host=localhost -a mlton-guide-page=$(basename $(notdir $<)) -o $@ $<
-
-localhost/% : src/%
-	mkdir -p $(dir $@) ; cp -prf $< $@
-
-.PHONY: localhost-rm
-localhost-rm: $(LOCALHOST)
-	@rm -rf $(LOCALHOST_TORM)
-
-.PHONY: localhost
-localhost: $(LOCALHOST) localhost-rm
-
-src/mlton-guide.xml : src/mlton-guide.adoc conf/asciidoc-docbook45.flags $(ASCIIDOC_DOCBOOK45_DEPS)
-	mkdir -p $(dir $@) ; $(ASCIIDOC) $(ASCIIDOC_DOCBOOK45_FLAGS) -o $@ $<
-	@true || xmllint --nonet --noout --valid $@ || true
-mlton-guide.pdf : src/mlton-guide.xml src/Logo.attachments/mlton-128.pdf conf/mlton-dblatex.xsl conf/mlton-dblatex.sty
-	$(DBLATEX) -t pdf -p conf/mlton-dblatex.xsl -s conf/mlton-dblatex.sty -o $@ $<
+.PHONY: upload_mlton.sourceforge.io
+upload_mlton.sourceforge.io: mlton.sourceforge.io
+	rsync -avzP --delete -e ssh mlton.sourceforge.io/ fluet,mlton@web.sourceforge.net:htdocs/wiki
 
 
-.PHONY: check-git-links
-check-git-links:
-	@./bin/check-git-links.sh $(SRC_PAGES)
+src_dr/Index.adoc: src/Index.adoc
+	$(CP) $< $@
+
+.PRECIOUS: src_dr/%.adoc
+src_dr/%.adoc: src/%.adoc ./bin/asciidoc-to-asciidoctor.sh
+	@$(MKDIR) $(dir $@)
+	./bin/asciidoc-to-asciidoctor.sh $< $@
+
 
 ######
 
-SHOW_VARS += ASCIIDOC_CONF_DIR ASCIIDOC_HTML5_FLAGS ASCIIDOC_HTML5_DEPS
+SHOW_VARS += ASCIIDOCTOR_HTML5_FLAGS
 SHOW_VARS += GEN_PAGES GEN_ATTACHMENTS SRC_PAGES SRC_ATTACHMENTS
 
 $(eval $(MK_SHOW_CONFIG))

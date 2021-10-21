@@ -1,5 +1,0 @@
---attribute=lang=en
---attribute='newline=\n'
---attribute=mlton-version=MLTON_VERSION
---conf-file=conf/mlton-asciidoc.conf
---conf-file=conf/specialsections.conf
