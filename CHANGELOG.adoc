@@ -8,6 +8,10 @@ Here are the changes from version 20210117 to YYYYMMDD.
 
 === Details
 
+* 2021-10-21
+  ** Migrate website sources from http://asciidoc.org/[AsciiDoc] to
+  http://asciidoctor.org/[AsciiDoctor].
+
 * 2021-08-19
   ** Simplify time profiling by eliminating the `ProfileTimeLabel`
   approach and supporting infrastructure.  The `ProfileTimeField`
@@ -121,10 +125,10 @@ Here are the changes from version 20180206 to version 20200722.
   ** Basis Library.
     *** Change `OS.IO.poll` to not be restarted when interrupted by a
     signal.  (This is consistent with `Socket.select`.)
-    *** Add `MLton.sizeAll: unit -> IntInf.int` that returns the size
+    *** Add `+MLton.sizeAll: unit -> IntInf.int+` that returns the size
     of reachable live data.
-    *** Change type of `MLton.size` from `'a -> int` to
-    `'a -> IntInf.int`, because with 64-bit systems, the size of a
+    *** Change type of `MLton.size` from `+'a -> int+` to
+    `+'a -> IntInf.int+`, because with 64-bit systems, the size of a
     single object can exceed that representable by a signed 32-bit
     integer.
   ** Other libraries.
@@ -211,10 +215,10 @@ Here are the changes from version 20180206 to version 20200722.
   ** Fix a number of instances of excessive live data during compilation.
   ** Disable `Zone` SSA optimization pass by default; the `Zone` pass
   is known to not be safe-for-space.
-  ** Add `MLton.sizeAll: unit -> IntInf.int` that returns the size of
+  ** Add `+MLton.sizeAll: unit -> IntInf.int+` that returns the size of
   reachable live data.
-  ** Change type of `MLton.size` from `'a -> int` to
-  `'a -> IntInf.int`, because with 64-bit systems, the size of a
+  ** Change type of `MLton.size` from `+'a -> int+` to
+  `+'a -> IntInf.int+`, because with 64-bit systems, the size of a
   single object can exceed that representable by a signed 32-bit
   integer.
 
@@ -517,22 +521,22 @@ Here are the changes from version 20130715 to version 20180206.
 
 * 2017-10-21
   ** Add unsafe operations for array uninitialization and raw arrays.
-    *** Rename `Array_uninit: SeqIndex.int -> 'a array` primitive to
-    `Array_alloc: SeqIndex.int -> 'a array`.
-    *** Add `Array_uninit: 'a array * SeqIndex.int -> unit` primitive to set all
+    *** Rename `+Array_uninit: SeqIndex.int -> 'a array+` primitive to
+    `+Array_alloc: SeqIndex.int -> 'a array+`.
+    *** Add `+Array_uninit: 'a array * SeqIndex.int -> unit+` primitive to set all
     objptrs in the element at the given index to a bogus non-objptr value
     (`0wx1`).  One motivation for this primitive is to support space-efficient
     polymorphic resizeable arrays.  When shrinking a resizeable array, we would
-    like to "`NULL`" out the elements that are no longer part of the logical
+    like to `NULL` out the elements that are no longer part of the logical
     array, in order to avoid a (logical) space leak.
-    *** Add `Array_uninitIsNop: 'a array -> bool` primitive to answer if the
+    *** Add `+Array_uninitIsNop: 'a array -> bool+` primitive to answer if the
     `Array_uninit` primitive applied to the same array would be a nop (i.e., if
     the array has no objptrs in the elements).  This can be used to skip a
     bulk-`Array_uninit` loop when it is known that the `Array_uninit` operations
     would be nops.
-    *** Add `Array_allocRaw: SeqIndex.int -> 'a array` primitive to allocate an
+    *** Add `+Array_allocRaw: SeqIndex.int -> 'a array+` primitive to allocate an
     array, but with a header that indicates that the array has no objptrs.  Add
-    `Array_toArray: 'a array -> 'a array` primitive to update the header of an
+    `+Array_toArray: 'a array -> 'a array+` primitive to update the header of an
     `Array_allocRaw` allocated array to reveal the objptrs.  One motiviation for
     this primitive is that, in a parallel setting, the uninitialization of an
     array can be a sequential bottleneck.  The `Array_allocRaw` is a constant
@@ -567,9 +571,9 @@ Here are the changes from version 20130715 to version 20180206.
   supported by NSF CISE Research Infrastructure (CRI) award.
 
 * 2017-08-21
-  ** Introduce `Array_copyArray: 'a array * SeqIndex.int * 'a array *
-  SeqIndex.int * SeqIndex.int -> unit` and `Array_copyVector: 'a array *
-  SeqIndex.int * 'a vector * SeqIndex.int * SeqIndex.int -> unit` primitives
+  ** Introduce `+Array_copyArray: 'a array * SeqIndex.int * 'a array *
+  SeqIndex.int * SeqIndex.int -> unit+` and `+Array_copyVector: 'a array *
+  SeqIndex.int * 'a vector * SeqIndex.int * SeqIndex.int -> unit+` primitives
   which are used to implement a number of array and vector construction
   functions, particularly `append`, `concat`, and `concatWith`.  The primitives
   compile to `memmove` operations, which (significantly) outperforms MLton's
@@ -584,9 +588,9 @@ Here are the changes from version 20130715 to version 20180206.
   ** Generalize the `subWord` primitives to
 +
 ----
-      | WordArray_subWord of {seqSize:WordSize.t, eleSize: WordSize.t}
-      | WordArray_updateWord of {seqSize: WordSize.t, eleSize: WordSize.t}
-      | WordVector_subWord of {seqSize: WordSize.t, eleSize: WordSize.t}
+| WordArray_subWord of {seqSize:WordSize.t, eleSize: WordSize.t}
+| WordArray_updateWord of {seqSize: WordSize.t, eleSize: WordSize.t}
+| WordVector_subWord of {seqSize: WordSize.t, eleSize: WordSize.t}
 ----
 +
 Undertaken by Bryan Camp at RIT supported by NSF CISE Research Infrastructure
@@ -661,8 +665,8 @@ Undertaken by Bryan Camp at RIT supported by NSF CISE Research Infrastructure
   website.
 
 * 2017-04-14
-  ** Add support for vector expressions (`#[e1, e2, ..., en]`) and vector
-  patterns (`#[p1, p2, ..., pn]`) and add `Vector_vector` n-ary primitive.
+  ** Add support for vector expressions (`+#[e1, e2, ..., en]+`) and vector
+  patterns (`+#[p1, p2, ..., pn]+`) and add `Vector_vector` n-ary primitive.
   Initial support for vector expressions and the `Vector_vector` primitive were
   undertaken by Krishna Ravikumar as an RIT CS MS Capstone Project.
 
@@ -858,7 +862,7 @@ Undertaken by Bryan Camp at RIT supported by NSF CISE Research Infrastructure
    non-printable characters SML-escaped). Otherwise, display as an SML/NJ-style
    `#[0x0, 0xF]` vector literal.
     *** Update initialization of `static struct GC_vectorInit vectorInits[]`
-   constants in runtime. If the `WordXVector`'s (primitive) `elementSize` is
+   constants in runtime. If the `WordXVector`&rsquo;s (primitive) `elementSize` is
    `WordSize.W8`, then emit a C-escaped string constant. Otherwise, emit a
    C-array initialization.
 
@@ -994,9 +998,12 @@ Here are the changes from version 20100608 to version 20130715.
 
 * 2012-10-09
   ** Fixed bug in elaboration that erroneously accepted the following:
-
-      signature S = sig structure A : sig type t end
-                              and B : sig type t end where type t = A.t end
++
+[source,sml]
+----
+signature S = sig structure A : sig type t end
+                        and B : sig type t end where type t = A.t end
+----
 
 * 2012-09-04
   ** Introduce an MLB annotation to control overload and flex record resolution
@@ -1015,14 +1022,20 @@ Here are the changes from version 20100608 to version 20130715.
 * 2012-06-01
   ** Cosmetic improvements to type-error messages.
   ** Fixed bug in elaboration that erroneously rejected the following:
-
-      datatype ('a, ''a) t = T
-      type ('a, ''a) u = unit
-
-  and erroneously accepted the following:
-
-      fun f (x: 'a) : ''a = x
-      fun g (x: 'a) : ''a = if x = x then x else x
++
+[source,sml]
+----
+datatype ('a, ''a) t = T
+type ('a, ''a) u = unit
+----
++
+and erroneously accepted the following:
++
+[source,sml]
+----
+fun f (x: 'a) : ''a = x
+fun g (x: 'a) : ''a = if x = x then x else x
+----
 
 * 2012-02-24
   ** Fixed bug in redundant SSA optimization.
@@ -1068,7 +1081,7 @@ Here are the changes from version 20100608 to version 20130715.
   ** Fixed bug in amd64 codegen calling convention for varargs C calls.
 
 * 2011-01-17
-  ** Fixed bug in comment-handling in lexer for `mlyacc`'s input language.
+  ** Fixed bug in comment-handling in lexer for `mlyacc`&rsquo;s input language.
 
 * 2010-06-22
   ** Fixed bug in elaboration of function clauses with different numbers of
@@ -1275,7 +1288,7 @@ Here are the changes from version 20070826 to version 20100608.
 
 * 2008-01-09
   ** Extended `MLton_equal` to be a structural equality on all types, including
-  `real` and `->` types.
+  `real` and `+->+` types.
 
 * 2007-12-18
   ** Changed ML-Yacc and ML-Lex to output line directives so that MLton's
@@ -1300,8 +1313,8 @@ Here are the changes from version 20070826 to version 20100608.
   ** Better constant folding of `IntInf` operations.
 
 * 2007-12-07
-  ** Fixed bug in algebraic simplification of `RealX` primitives.  `Real.<= (x,
-  x)` is `false` when `x` is `NaN`.
+  ** Fixed bug in algebraic simplification of `RealX` primitives.  `+Real.<= (x,
+  x)+` is `false` when `x` is `NaN`.
 
 * 2007-11-29
   ** Fixed bug in type inference of flexible records.  This would later cause
@@ -1877,7 +1890,7 @@ Here are the changes from version 20040227 to 20041109.
   ** Made `-detect-overflow` and `-safe` expert options.
 
 * 2004-08-30
-  ** Added `val MLton.share: 'a -> unit`, which maximizes sharing in a heap
+  ** Added `+val MLton.share: 'a -> unit+`, which maximizes sharing in a heap
   object.
 
 * 2004-08-27
@@ -1899,10 +1912,10 @@ Here are the changes from version 20040227 to 20041109.
   `UnequalLengths` exception.
 
 * 2004-07-01
-  ** Added `val MLton.Exn.addExnMessager: (exn -> string option) -> unit`.
+  ** Added `+val MLton.Exn.addExnMessager: (exn -> string option) -> unit+`.
 
 * 2004-06-23
-  ** Runtime system options that take memory sizes now accept a "`g`" suffix
+  ** Runtime system options that take memory sizes now accept a `g` suffix
   indicating gigabytes.  They also now take a real instead of an integer,
   e.g. `fixed-heap 0.5g`.  They also now accept uppercase, e.g. `150M`.
 
@@ -2106,7 +2119,7 @@ readable way with full type information.
 
 * 2003-09-22
   ** Fixed `Real.toManExp` so that the mantissa is in [0.5, 1), not [1, 2).  The
-  spec says that 1.0 <= man * radix < radix, which since radix is 2, implies
+  spec says that 1.0 &le; man * radix < radix, which since radix is 2, implies
   that the mantissa is in [0.5, 1).
   ** Added `Time.{from,to}Nanoseconds`.
 
@@ -2200,8 +2213,11 @@ Here are the changes from version 20030711 to 20030716.
 * 2003-07-15
   ** Fixed bug that caused a segfault when attempting to create an
   array that was too large, e.g
-
-      1 + Array.sub (Array.tabulate (valOf Int.maxInt, fn i => i), 0)
++
+[source,sml]
+----
+1 + Array.sub (Array.tabulate (valOf Int.maxInt, fn i => i), 0)
+----
 
   ** mlton now checks the command line arguments following the file to compile
   that are passed to the linker to make sure they are reasonable.
@@ -2276,7 +2292,7 @@ correct using the gdtoa library.
 
 * 2003-06-18
   ** Regularization of options:
-    *** `-diag` --> `-diag-pass`
+    *** `-diag` -> `-diag-pass`
     *** `-drop-pass` takes a regexp
 
 * 2003-06-06
@@ -2289,11 +2305,13 @@ correct using the gdtoa library.
 
 * 2003-06-03
   ** Fixed bug in SSA optimizer that could cause the error message:
-
-      Type error: Type.equals
-      {from = char vector, to = unit vector}
-      Type error: analyze raised exception loopStatement: ...
-      unhandled exception: TypeError
++
+----
+Type error: Type.equals
+{from = char vector, to = unit vector}
+Type error: analyze raised exception loopStatement: ...
+unhandled exception: TypeError
+----
 
 * 2003-06-02
   ** Fixed `Real.rem` to work correctly on `inf`-s and `nan`-s.
@@ -2403,10 +2421,10 @@ library, compile with `-basis 1997`.
 
 * 2003-02-11
   ** Regularization of options:
-    *** `-l` --> `-link`
-    *** `-L` --> `-lib-search`
-    *** `-o` --> `-output`
-    *** `-v` --> `-verbose`
+    *** `-l` -> `-link`
+    *** `-L` -> `-lib-search`
+    *** `-o` -> `-output`
+    *** `-v` -> `-verbose`
 
 * 2003-02-10
   ** Added option to `mlton`: `-profile-combine {false|true}`
@@ -2535,8 +2553,11 @@ message.
 
 * 2002-05-31
   ** Fixed bug in overloading of `/` so that the following now type checks:
-
-      fun f (x, y) = x + y / y
++
+[source,sml]
+----
+fun f (x, y) = x + y / y
+----
 
 * 2002-04-26
   ** Added back `max-heap` runtime option.
@@ -2567,9 +2588,9 @@ Here are the changes from version 20011006 to version 20020410.
 
 * 2002-03-27
   ** Regularization of options
-    *** `-g` --> `-degug {false|true}`
-    *** `-h n` --> `-fixed-heap n`
-    *** `-p` --> `-profile {false|true}`
+    *** `-g` -> `-degug {false|true}`
+    *** `-h n` -> `-fixed-heap n`
+    *** `-p` -> `-profile {false|true}`
 
 * 2002-03-22
   ** Set up the stubs so that MLton can be compiled in the standard basis
@@ -2699,27 +2720,36 @@ Here are the changes from version 20010806 to version 20011006.
 
 * 2001-10-05
   ** Fixed a bug in polymorphic layered patterns, like
-
-      val 'a a as b = []
-
-  These would always fail due to the variable `a` not being handled correctly.
++
+[source,sml]
+----
+val 'a a as b = []
+----
++
+These would always fail due to the variable `a` not being handled correctly.
   ** Fixed the syntax of `val rec` so that a pattern is allowed on the left-hand
   side of the `=`.  Thus, we used to reject, but now accept, the following.
-
-      val rec a as b as c = fn _ => ()
-      val rec a : unit -> unit : unit -> unit = fn () => ()
-
-  Thanks again to Andreas Rossberg's test files.  This is now tested for in
-  `valrec.sml`.
++
+[source,sml]
+----
+val rec a as b as c = fn _ => ()
+val rec a : unit -> unit : unit -> unit = fn () => ()
+----
++
+Thanks again to Andreas Rossberg's test files.  This is now tested for in
+`valrec.sml`.
   ** Fixed dynamic semantics of `val rec` so that if `val rec` is used to
   override constructor status, then at run time, the `Bind` exception is raised
   as per rule 126 of the Definition.  So, for example, the following program
   type checks and compiles, but raises `Bind` at run time.
-
-      val rec NONE = fn () => ()
-      val _ = NONE ()
-
-  Again, this is checked in `valrec.sml`.
++
+[source,sml]
+----
+val rec NONE = fn () => ()
+val _ = NONE ()
+----
++
+Again, this is checked in `valrec.sml`.
   ** Added `\r\n` to ml.lex so that Windows style newlines are acceptable in
   input files.
 
@@ -2767,18 +2797,24 @@ Here are the changes from version 20010806 to version 20011006.
 
 * 2001-08-22
   ** Added support for #line directives of the form
-
-      (*#line line.col "file"*)
-
-  These directives only affect error messages produced by the parser and
-  elaborator.
++
+[source,sml]
+----
+(*#line line.col "file"*)
+----
++
+These directives only affect error messages produced by the parser and
+elaborator.
 
 * 2001-08-17
   ** Fixed bug in RemoveUnused optimzation that caused the following program to
   fail to compile.
-
-      fun f l = case l of [] => f l | _ :: l => f l
-      val _ = f [13]
++
+[source,sml]
+----
+fun f l = case l of [] => f l | _ :: l => f l
+val _ = f [13]
+----
 
 * 2001-08-14
   ** New x86-codegen infrastructure.
@@ -2853,10 +2889,12 @@ control-flow graphs, and dominator trees
   stack across basic blocks.
   ** Added production to the grammar on page 58 of the Definition that had been
   missing from MLton since day one.
-
-      program ::= exp ; <program>
-
-  Also updated docs to reflect change.
++
+----
+program ::= exp ; <program>
+----
++
+Also updated docs to reflect change.
   ** Modified grammar to accept the empty program.
   ** Added `-type-check` expert flag to turn on type checking in ILs.
 
@@ -2869,9 +2907,9 @@ control-flow graphs, and dominator trees
   ** Improved CPS shrinker so that `if`-tests where the `then` and `else` branch
   jump to the same label is turned into a direct jump.
   ** Improved CPS shrinker (`Prim.apply`) to handle constructors
-    *** `A = A` --> `true`
-    *** `A = B` --> `false`
-    *** `A x` = `B y` --> `false`
+    *** `A = A` -> `true`
+    *** `A = B` -> `false`
+    *** `A x` = `B y` -> `false`
   ** Rewrote a lot of loops in the basis library to use inequalities instead of
   equality for the loop termination test so that the (forthcoming) overflow
   detection elimination will work on the loop index variable.
@@ -2954,10 +2992,13 @@ Here are the changes from the 20000906 version to the 20010706 version.
   ** Fixed bug in remove-unused that caused polymorphic equality to return
   `true` sometimes when constructors were never used in a pattern match.  For
   example, the following (in which `A` and `B` are not used as patterns):
-
-      datatype t = A | B
-      datatype u = C of t
-      val _ = if C A = C B then raise Fail "bug" else ()
++
+[source,sml]
+----
+datatype t = A | B
+datatype u = C of t
+val _ = if C A = C B then raise Fail "bug" else ()
+----
 
 * 2001-03-27
   ** Fixed bug that caused all of the following to fail:
@@ -3064,10 +3105,13 @@ Here are the changes from the 20000906 version to the 20010706 version.
   ** Fixed several bugs in the front end grammar and elaborator that caused type
   specifications to be handled incorrectly.  The following three programs used
   to be handled incorrectly, but are now handled correctly.
-
-      signature S = sig type t and u = int end (* reject *)
-      signature S = sig type t = int and u = t end (* accept *)
-      signature S = sig eqtype t and u = int end (* reject *)
++
+[source,sml]
+----
+signature S = sig type t and u = int end (* reject *)
+signature S = sig type t = int and u = t end (* accept *)
+signature S = sig eqtype t and u = int end (* reject *)
+----
 
 * 2000-10-25
   ** Changes to `main.sml` to run complete compiles with `-native` switch.
@@ -3089,15 +3133,18 @@ Here are the changes from the 20000906 version to the 20010706 version.
   RHAT 7.0 `cpp` which silently truncates (very) long lines.
   ** Fixed bug in grammar that didn't allow `op` to occur in datatype and
   exception bindings, causing the following to fail
-
-      datatype t = op T
-      exception op E = op Fail
++
+[source,sml]
+----
+datatype t = op T
+exception op E = op Fail
+----
 
   ** Improved error messages in CM processor.  Fixed bug in CM Alias handling.
 
 * 2000-10-18
-  ** Fixed two bugs in the gc that did comparisons with `(s->limit -
-  s->frontier)`, which of course doesn't work if `frontier` is beyond `limit`,
+  ** Fixed two bugs in the gc that did comparisons with `+(s->limit -
+  s->frontier)+`, which of course doesn't work if `frontier` is beyond `limit`,
   since these are unsigned.  This could have caused segfaults, except that the
   mutator checks the `frontier` upon return from the GC.
 
@@ -3317,7 +3364,7 @@ Here are the changes from the 1999-07-12 to the 20000712 version.
 * 1999-12-22
   ** Fixed bug in `src/closure-convert/abstract-value.fun` that caused a
   compiler failure whenever a program had a vector where the element type
-  contained an `->`.
+  contained an `+->+`.
 
 * 1999-12-10
   ** Changed dead code elimination in `core-ml/dead-code.fun` so that wildcard
