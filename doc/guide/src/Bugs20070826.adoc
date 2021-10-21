@@ -107,7 +107,7 @@ Thanks to Ville Laurikari for the bug report.
 Fixed by revision <!ViewSVNRev(6261)>.
 
 * <!Anchor(bug09)>
-Bug in algebraic simplification of real primitives.  http://www.standardml.org/Basis/real.html#SIG:REAL.\|@LTE\|:VAL[++REAL__<N>__.\<=(x, x)++] is `false` when `x` is NaN.
+Bug in algebraic simplification of real primitives.  http://www.standardml.org/Basis/real.html#SIG:REAL.\|@LTE\|:VAL[" ``Real__<N>__.\<=(x, x)``"] is `false` when `x` is NaN.
 +
 Fixed by revision <!ViewSVNRev(6242)>.
 

@@ -147,12 +147,12 @@ necessary parentheses.  See <:UnresolvedBugs:> for a discussion.
 
 == (op *) ==
 
-It used to be a common mistake to parenthesize `op *` as `(op *)`.
-Before SML'97, `*)` was considered a comment terminator in SML and
-caused a syntax error.  At the time of writing, <:SMLNJ:SML/NJ> still
-rejects the code.  An extra space may be used for portability:
-`(op * )`. However, parenthesizing `op` is redundant, even though it
-is a widely used convention.
+It used to be a common mistake to parenthesize `op {asterisk}` as `(op
+{asterisk})`.  Before SML'97, `{asterisk})` was considered a comment
+terminator in SML and caused a syntax error.  At the time of writing,
+<:SMLNJ:SML/NJ> still rejects the code.  An extra space may be used
+for portability: `(op {asterisk} )`. However, parenthesizing `op` is
+redundant, even though it is a widely used convention.
 
 
 == Overloading ==

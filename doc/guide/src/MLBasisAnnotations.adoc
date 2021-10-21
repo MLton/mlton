@@ -5,17 +5,21 @@ MLBasisAnnotations
 elaboration of SML source files.  Conceptually, a basis file is
 elaborated in a default annotation environment (just as it is
 elaborated in an empty basis).  The declaration
-++ann++{nbsp}++"++__ann__++"++{nbsp}++in++{nbsp}__basdec__{nbsp}++end++
-merges the annotation _ann_ with the "current" annotation environment
-for the elaboration of _basdec_.  To allow for future expansion,
-++"++__ann__++"++ is lexed as a single SML string constant.  To
+
+****
+`ann` `"_ann_"` `in` `_basdec_` `end`
+****
+
+merges the annotation `_ann_` with the "current" annotation
+environment for the elaboration of `_basdec_`.  To allow for future
+expansion, `"_ann_"` is lexed as a single SML string constant.  To
 conveniently specify multiple annotations, the following derived form
 is provided:
 
 ****
-+ann+ ++"++__ann__++"++ (++"++__ann__++"++ )^\+^ +in+ _basdec_ +end+
+`ann` `"_ann_"` ( `"_ann_"` )^{plus}^ `in` `_basdec_` `end`
 =>
-+ann+ ++"++__ann__++"++ +in+ +ann+ (++"++__ann__++"++)^\+^ +in+ _basdec_ +end+ +end+
+`ann` `"_ann_"` `in` `ann` ( `"_ann_"` )^{plus}^ `in` `_basdec_` `end` `end`
 ****
 
 Here are the available annotations.  In the explanation below, for
@@ -30,7 +34,6 @@ expressions to appear in source files.  See
 
 * +allowSuccessorML {false|true}+
 +
---
 Allow or disallow all of the <:SuccessorML:> features.  This is a
 proxy for all of the following annotations.
 
@@ -40,7 +43,6 @@ If `true`, allow a +do _exp_+ declaration form.
 
 ** +allowExtendedConsts {false|true}+
 +
---
 Allow or disallow all of the extended constants features.  This is a
 proxy for all of the following annotations.
 
@@ -51,7 +53,6 @@ If `true`, allow extended numeric constants.
 *** +allowExtendedTextConsts {false|true}+
 +
 If `true`, allow extended text constants.
---
 
 ** +allowLineComments {false|true}+
 +
@@ -86,7 +87,6 @@ signature.
 
 ** +allowVectorExpsAndPats {false|true}+
 +
---
 Allow or disallow vector expressions and vector patterns.  This is a
 proxy for all of the following annotations.
 
@@ -97,8 +97,6 @@ If `true`, allow vector expressions.
 *** +allowVectorPats {false|true}+
 +
 If `true`, allow vector patterns.
---
---
 
 * +forceUsed+
 +

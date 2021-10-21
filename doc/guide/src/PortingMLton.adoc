@@ -131,18 +131,19 @@ until all the regressions pass.
 == Bootstrap ==
 
 The idea for bootstrapping MLton on a new platform is as follows:
- * send the current sources to a remote machine (using ssh)
- * build the MLton runtime system on the remote machine
- * receive the built runtime system from the remote machine as a new target on
-   the host machine
- * build bootstrap compiler sources on the host machine for the new target
- * send the boostrap sources to the remote machine
- * build the boostrap compiler on the remote machine using the boostrap
-   compiler sources
- * complete the MLton build on the remote machine with the boostrap compiler to
-   obtain a boot package
- * build MLton on the remote machine from clean sources using the boot package
- * receive the built binary release from the remote machine
+
+* send the current sources to a remote machine (using ssh)
+* build the MLton runtime system on the remote machine
+* receive the built runtime system from the remote machine as a new target on
+  the host machine
+* build bootstrap compiler sources on the host machine for the new target
+* send the boostrap sources to the remote machine
+* build the boostrap compiler on the remote machine using the boostrap
+  compiler sources
+* complete the MLton build on the remote machine with the boostrap compiler to
+  obtain a boot package
+* build MLton on the remote machine from clean sources using the boot package
+* receive the built binary release from the remote machine
 
 The `remote-bootstrap` goal of the root `Makefile` automates this process; see
 comments in the root `Makefile`.  Here is an example bootstrapping on an OpenBSD

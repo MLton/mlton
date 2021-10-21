@@ -44,7 +44,7 @@ Below is a complete list of what MLton implements.
 
 `eqtype int`
 
-++datatype 'a list = nil | {two-colons} of ('a * 'a list)++
+`datatype 'a list = nil | {two-colons} of ('a * 'a list)`
 
 `datatype 'a option = NONE | SOME of 'a`
 

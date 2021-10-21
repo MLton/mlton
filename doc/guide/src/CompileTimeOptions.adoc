@@ -27,7 +27,7 @@ The default varies depending on architecture.
 * ++-as-opt __option__++
 +
 Pass _option_ to `cc` when compiling assembler code.  If you wish to
-pass an option to the assembler, you must use ``cc``'s `-Wa,` syntax.
+pass an option to the assembler, you must use `cc`'s `-Wa,` syntax.
 
 * ++-cc-opt __option__++
 +

@@ -8,9 +8,9 @@ syntax uses some abbreviations.
 [options="header"]
 |====
 | C base type | _cBaseTy_ | <:ForeignFunctionInterfaceTypes: Foreign Function Interface types>
-| C argument type | _cArgTy_ | _cBaseTy_~1~ `*` ... `*` _cBaseTy_~n~ or `unit`
-| C return type | _cRetTy_ | _cBaseTy_ or `unit`
-| C function type | _cFuncTy_ | _cArgTy_ `->` _cRetTy_
+| C argument type | _cArgTy_ | `_cBaseTy_~1~ * ... * _cBaseTy_~n~` or `unit`
+| C return type | _cRetTy_ | `_cBaseTy_` or `unit`
+| C function type | _cFuncTy_ | `_cArgTy_ -> _cRetTy_`
 | C pointer type | _cPtrTy_ | `MLton.Pointer.t`
 |====
 

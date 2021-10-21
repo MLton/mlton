@@ -14,7 +14,7 @@ Examples: `abc`, `ABC123`, `Abc_123`, `'a`.
  ! % & $ # + - / : < = > ? @ | ~ ` ^ | *
 ----
 +
-Examples: `+=`, `<=`, `>>`, `$`.
+Examples: `+=`, `\<=`, `>>`, `$`.
 
 With the exception of `=`, reserved words can not be identifiers.
 

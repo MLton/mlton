@@ -257,14 +257,14 @@ allows for simpler refactoring.
 * <!Anchor(OrPats)>
 Disjunctive (Or) Patterns: +allowOrPats {false|true}+
 +
-Allow disjunctive (a.k.a., "or") patterns of the form +_pat~1~_ |
-_pat~2~_+, which matches a value that matches either +_pat~1~_+ or
-+_pat~2~_+.  Disjunctive patterns have lower precedence than `as`
-patterns and constraint patterns, much as `orelse` expressions have
-lower precedence than `andalso` expressions and constraint
-expressions.  Both sub-patterns of a disjunctive pattern must bind the
-same variables with the same types.  The following example uses
-disjunctive patterns:
+Allow disjunctive (a.k.a., "or") patterns of the form
++_pat~1~_ | _pat~2~_+, which matches a value that matches either
++_pat~1~_+ or +_pat~2~_+.  Disjunctive patterns have lower precedence
+than `as` patterns and constraint patterns, much as `orelse`
+expressions have lower precedence than `andalso` expressions and
+constraint expressions.  Both sub-patterns of a disjunctive pattern
+must bind the same variables with the same types.  The following
+example uses disjunctive patterns:
 +
 [source,sml]
 ----
@@ -346,10 +346,16 @@ proxy for all of the following annotations.
 ** <!Anchor(VectorExps)>
 Vector Expressions: +allowVectorExps {false|true}+
 +
-Allow vector expressions of the form +#[_exp~0~_, _exp~1~_, ..., _exp~n-1~_]+ (where _n ≥ 0_).  The expression has type +_τ_ vector+ when each expression _exp~i~_ has type +_τ_+.
+Allow vector expressions of the form
++#[_exp~0~_, _exp~1~_, ..., _exp~n-1~_]+ (where _n ≥ 0_).  The
+expression has type +_τ_ vector+ when each expression +_exp~i~_+ has
+type +_τ_+.
 
 ** <!Anchor(VectorPats)>
 Vector Patterns: +allowVectorPats {false|true}+
 +
-Allow vector patterns of the form +#[_pat~0~_, _pat~1~_, ..., _pat~n-1~_]+ (where _n ≥ 0_).  The pattern matches values of type +_τ_ vector+ when each pattern _pat~i~_ matches values of type +_τ_+.
+Allow vector patterns of the form
++#[_pat~0~_, _pat~1~_, ..., _pat~n-1~_]+ (where _n ≥ 0_).  The pattern
+matches values of type +_τ_ vector+ when each pattern +_pat~i~_+
+matches values of type +_τ_+.
 --

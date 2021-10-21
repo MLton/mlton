@@ -6,26 +6,26 @@ should contain a basis declaration.
 
 == Syntax ==
 
-A basis declaration (_basdec_) must be one of the following forms.
+A basis declaration (`_basdec_`) must be one of the following forms.
 
-* +basis+ _basid_ +=+ _basexp_ (+and+ _basid_ +=+ _basexp_)^*^
-* +open+ _basid~1~_ ... _basid~n~_
-* +local+ _basdec_ +in+ _basdec_ +end+
-* _basdec_ [+;+] _basdec_
-* +structure+ _strid_ [+=+ _strid_]  (+and+ _strid_[+=+ _strid_])^*^
-* +signature+ _sigid_ [+=+ _sigid_]  (+and+ _sigid_ [+=+ _sigid_])^*^
-* +functor+ _funid_ [+=+ _funid_]  (+and+ _funid_ [+=+ _funid_])^*^
-* __path__++.sml++, __path__++.sig++, or __path__++.fun++
-* __path__++.mlb++
-* +ann+ ++"++_ann_++"++ +in+ _basdec_ +end+
+* `basis` `_basid_` `=` `_basexp_` (`and` `_basid_` `=` `_basexp_`)^{asterisk}^
+* `open` `_basid~1~_` ... `_basid~n~_`
+* `local` `_basdec_` `in` `_basdec_` `end`
+* `_basdec_` [`;`] `_basdec_`
+* `structure` `_strid_` [`=` `_strid_`]  (`and` `_strid_`[`=` `_strid_`])^{asterisk}^
+* `signature` `_sigid_` [`=` `_sigid_`]  (`and` `_sigid_` [`=` `_sigid_`])^{asterisk}^
+* `functor` `_funid_` [`=` `_funid_`]  (`and` `_funid_` [`=` `_funid_`])^{asterisk}^
+* `_path_.sml`, `_path_.sig`, or `_path_.fun`
+* `_path_.mlb`
+* `ann` `"_ann_"` `in` `_basdec_` `end`
 
-A basis expression (_basexp_) must be of one the following forms.
+A basis expression (`_basexp_`) must be of one the following forms.
 
-* +bas+ _basdec_ +end+
-* _basid_
-* +let+ _basdec_ +in+ _basexp_ +end+
+* `bas` `_basdec_` `end`
+* `_basid_`
+* `let` `_basdec_` `in` `_basexp_` `end`
 
-Nested SML-style comments (enclosed with `(*` and `*)`) are ignored
+Nested SML-style comments (enclosed with `({asterisk}` and `*)`) are ignored
 (but <:LineDirective:>s are recognized).
 
 Paths can be relative or absolute.  Relative paths are relative to the
