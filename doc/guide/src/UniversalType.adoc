@@ -1,8 +1,7 @@
-UniversalType
-=============
+= UniversalType
 
 A universal type is a type into which all other types can be embedded.
-Here's a <:StandardML:Standard ML> signature for a universal type.
+Here's a <<StandardML#,Standard ML>> signature for a universal type.
 
 [source,sml]
 ----
@@ -62,13 +61,13 @@ Standard ML does not have explicit support for universal types;
 however, there are at least two ways to implement them.
 
 
-== Implementation Using Exceptions ==
+== Implementation Using Exceptions
 
 While the intended use of SML exceptions is for exception handling, an
 accidental feature of their design is that the `exn` type is a
 universal type.  The implementation relies on being able to declare
 exceptions locally to a function and on the fact that exceptions are
-<:GenerativeException:generative>.
+<<GenerativeException#,generative>>.
 
 [source,sml]
 ----
@@ -90,7 +89,7 @@ structure U:> UNIVERSAL_TYPE =
 ----
 
 
-== Implementation Using Functions and References ==
+== Implementation Using Functions and References
 
 [source,sml]
 ----
@@ -123,7 +122,7 @@ Note that due to the use of a shared ref cell, the above
 implementation is not thread safe.
 
 One could try to simplify the above implementation by eliminating the
-`clear` function, making `type t = unit -> unit`.
+`clear` function, making `type t = unit \-> unit`.
 
 [source,sml]
 ----
@@ -150,6 +149,6 @@ we do not clear `r'` before returning from `project`, then `r'` will
 keep the value alive, even though it is useless.
 
 
-== Also see ==
+== Also see
 
-* <:PropertyList:>: Lisp-style property lists implemented with a universal type
+* <<PropertyList#>>: Lisp-style property lists implemented with a universal type

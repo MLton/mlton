@@ -1,5 +1,4 @@
-MLton
-=====
+= MLton
 
 MLton is a whole-program optimizing compiler for the Standard{nbsp}ML
 programming language.  MLton generates small executables with
@@ -15,18 +14,18 @@ libraries, a simple and fast C foreign function interface, the ML
 Basis system for programming with source libraries, and tools such as
 a lexer generator, a parser generator, and a profiler.
 
-== What's new? ==
+== What's new?
 
-* 20210117: Please try out our latest release, <:Release20210117:MLton 20210117>.
+* 20210117: Please try out our latest release, <<Release20210117#,MLton 20210117>>.
 
-== Next steps ==
+== Next steps
 
 * Visit the https://github.com/MLton/mlton[MLton GitHub repository].
-* Read about MLton's <:Features:>.
-* Look at <:Documentation:>.
-* See some <:Users:> of MLton.
+* Read about MLton's <<Features#>>.
+* Look at <<Documentation#>>.
+* See some <<Users#>> of MLton.
 * Download MLton from https://sourceforge.net/projects/mlton/files/mlton/20201002[SourceForge] or https://github.com/MLton/mlton/releases/tag/on-20201002-release[GitHub].
-* Meet the MLton <:Developers:>.
-* Get involved with MLton <:Development:>.
-* User-maintained <:FAQ:>.
-* <:Contact:> us.
+* Meet the MLton <<Developers#>>.
+* Get involved with MLton <<Development#>>.
+* User-maintained <<FAQ#>>.
+* <<Contact#>> us.

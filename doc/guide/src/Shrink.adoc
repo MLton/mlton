@@ -1,35 +1,34 @@
-Shrink
-======
+= Shrink
 
-<:Shrink:> is a rewrite pass for the <:SSA:> and <:SSA2:>
-<:IntermediateLanguage:>s, invoked from every optimization pass (see
-<:SSASimplify:> and <:SSA2Simplify:>).
+<<Shrink#>> is a rewrite pass for the <<SSA#>> and <<SSA2#>>
+<<IntermediateLanguage#>>s, invoked from every optimization pass (see
+<<SSASimplify#>> and <<SSA2Simplify#>>).
 
-== Description ==
+== Description
 
 This pass implements a whole family of compile-time reductions, like:
 
 * `#1(a, b)` => `a`
-* `case C x of C y => e` => `let y = x in e`
+* `case C x of C y \=> e` => `let y = x in e`
 * constant folding, copy propagation
 * eta blocks
 * tuple reconstruction elimination
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/shrink.sig)>
-* <!ViewGitFile(mlton,master,mlton/ssa/shrink.fun)>
-* <!ViewGitFile(mlton,master,mlton/ssa/shrink2.sig)>
-* <!ViewGitFile(mlton,master,mlton/ssa/shrink2.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/shrink.sig[`shrink.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/shrink.fun[`shrink.fun`]
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/shrink2.sig[`shrink2.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/shrink2.fun[`shrink2.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
-The <:Shrink:> pass is run after every <:SSA:> and <:SSA2:>
+The <<Shrink#>> pass is run after every <<SSA#>> and <<SSA2#>>
 optimization pass.
 
-The <:Shrink:> implementation also includes functions to eliminate
-unreachable blocks from a <:SSA:> or <:SSA2:> program or function.
-The <:Shrink:> pass does not guarantee to eliminate all unreachable
+The <<Shrink#>> implementation also includes functions to eliminate
+unreachable blocks from a <<SSA#>> or <<SSA2#>> program or function.
+The <<Shrink#>> pass does not guarantee to eliminate all unreachable
 blocks.  Doing so would unduly complicate the implementation, and it
 is almost always the case that all unreachable blocks are eliminated.
 However, a small number of optimization passes require that the input
@@ -37,6 +36,6 @@ have no unreachable blocks (essentially, when the analysis works on
 the control flow graph and the rewrite iterates on the vector of
 blocks).  These passes explicitly call `eliminateDeadBlocks`.
 
-The <:Shrink:> pass has a special case to turn a non-tail call where
+The <<Shrink#>> pass has a special case to turn a non-tail call where
 the continuation and handler only do `Profile` statements into a tail
 call where the `Profile` statements precede the tail call.

@@ -1,12 +1,11 @@
-EqualityTypeVariable
-====================
+= EqualityTypeVariable
 
 An equality type variable is a type variable that starts with two or
 more primes, as in `''a` or `''b`.  The canonical use of equality type
-variables is in specifying the type of the <:PolymorphicEquality:>
-function, which is `''a * ''a -> bool`.  Equality type variables
+variables is in specifying the type of the <<PolymorphicEquality#>>
+function, which is `''a * ''a \-> bool`.  Equality type variables
 ensure that polymorphic equality is only used on
-<:EqualityType:equality types>, by requiring that at every use of a
+<<EqualityType#,equality types>>, by requiring that at every use of a
 polymorphic value, equality type variables are instantiated by
 equality types.
 
@@ -39,9 +38,9 @@ Error: z.sml 1.30-1.34.
 ----
 
 As an example of using such a function that requires equality types,
-suppose that `f` has polymorphic type `''a -> unit`.  Then, `f 13` is
+suppose that `f` has polymorphic type `''a \-> unit`.  Then, `f 13` is
 type correct because `int` is an equality type.  On the other hand,
-`f 13.0` and `f (fn x => x)` are not type correct, because `real` and
+`f 13.0` and `f (fn x \=> x)` are not type correct, because `real` and
 arrow types are not equality types.  We can test these facts with the
 following short programs.  First, we verify that such an `f` can be
 applied to integers.
@@ -86,7 +85,7 @@ functor Ok (S: sig val f: ''a -> unit end):
 ----
 
 This functor concisely verifies that a function of polymorphic type
-`''a -> unit` can be safely used as a function of type `int -> unit`.
+`''a \-> unit` can be safely used as a function of type `int \-> unit`.
 
 As above, we can verify that such an `f` can not be used at
 non-equality types.
@@ -118,7 +117,7 @@ Error: z.sml 5.4-5.36.
 ----
 
 
-== Equality type variables in type and datatype declarations ==
+== Equality type variables in type and datatype declarations
 
 Equality type variables can be used in type and datatype declarations;
 however they play no special role.  For example,

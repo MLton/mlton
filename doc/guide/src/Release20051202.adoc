@@ -1,45 +1,44 @@
-Release20051202
-===============
+= Release20051202
 
 This is an archived public release of MLton, version 20051202.
 
-== Changes since the last public release ==
+== Changes since the last public release
 
-* The <:License:MLton license> is now BSD-style instead of the GPL.
-* New platforms: <:RunningOnMinGW:X86/MinGW> and HPPA/Linux.
+* The <<License#,MLton license>> is now BSD-style instead of the GPL.
+* New platforms: <<RunningOnMinGW#,X86/MinGW>> and HPPA/Linux.
 * Improved and expanded documentation, based on the MLton wiki.
 * Compiler.
 ** improved exception history.
-** <:CompileTimeOptions:Command-line switches>.
-*** Added: ++-as-opt++, ++-mlb-path-map++, ++-target-as-opt++, ++-target-cc-opt++.
-*** Removed: ++-native++, ++-sequence-unit++, ++-warn-match++, ++-warn-unused++.
+** <<CompileTimeOptions#,Command-line switches>>.
+*** Added: ``-as-opt``, ``-mlb-path-map``, ``-target-as-opt``, ``-target-cc-opt``.
+*** Removed: ``-native``, ``-sequence-unit``, ``-warn-match``, ``-warn-unused``.
 * Language.
-** <:ForeignFunctionInterface:FFI> syntax changes and extensions.
+** <<ForeignFunctionInterface#,FFI>> syntax changes and extensions.
 *** Added: `_symbol`.
 *** Changed: `_export`, `_import`.
 *** Removed: `_ffi`.
-** <:MLBasisAnnotations:ML Basis annotations>.
+** <<MLBasisAnnotations#,ML Basis annotations>>.
 *** Added: `allowFFI`, `nonexhaustiveExnMatch`, `nonexhaustiveMatch`, `redundantMatch`, `sequenceNonUnit`.
 *** Deprecated: `allowExport`, `allowImport`, `sequenceUnit`, `warnMatch`.
 * Libraries.
 ** Basis Library.
 *** Added: `Int1`, `Word1`.
-** <:MLtonStructure:MLton structure>.
+** <<MLtonStructure#,MLton structure>>.
 *** Added: `Process.create`, `ProcEnv.setgroups`, `Rusage.measureGC`, `Socket.fdToSock`, `Socket.Ctl.getError`.
 *** Changed: `MLton.Platform.Arch`.
 ** Other libraries.
-*** Added: <:CKitLibrary:ckit>, <:MLNLFFI:ML-NLFFI library>, <:SMLNJLibrary:SML/NJ library>.
+*** Added: <<CKitLibrary#,ckit>>, <<MLNLFFI#,ML-NLFFI library>>, <<SMLNJLibrary#,SML/NJ library>>.
 * Tools.
 ** Updates of `mllex` and `mlyacc` from SML/NJ.
-** Added <:MLNLFFI:mlnlffigen>.
-** <:Profiling:> supports better inclusion/exclusion of code.
+** Added <<MLNLFFI#,mlnlffigen>>.
+** <<Profiling#>> supports better inclusion/exclusion of code.
 
 For a complete list of changes and bug fixes since
-<:Release20041109:>, see the
-<!RawGitFile(mlton,on-20051202-release,doc/changelog)> and
-<:Bugs20041109:>.
+<<Release20041109#>>, see the
+https://raw.github.com/MLton/mlton/on-20051202-release/doc/changelog[`changelog`] and
+<<Bugs20041109#>>.
 
-== 20051202 binary packages ==
+== 20051202 binary packages
 
 * x86
 ** http://sourceforge.net/projects/mlton/files/mlton/20051202/mlton-20051202-1.i386-cygwin.tgz[Cygwin] 1.5.18-1
@@ -57,22 +56,22 @@ For a complete list of changes and bug fixes since
 * Sparc
 ** http://sourceforge.net/projects/mlton/files/mlton/20051202/mlton-20051202-1.sparc-solaris.tgz[Solaris] 8
 
-== 20051202 source packages ==
+== 20051202 source packages
 
 * http://sourceforge.net/projects/mlton/files/mlton/20051202/mlton-20051202-1.src.tgz[source tgz]
 * Debian http://sourceforge.net/projects/mlton/files/mlton/20051202/mlton_20051202-1.dsc[dsc], http://sourceforge.net/projects/mlton/files/mlton/20051202/mlton_20051202-1.diff.gz[diff.gz], http://sourceforge.net/projects/mlton/files/mlton/20051202/mlton_20051202.orig.tar.gz[orig.tar.gz]
 * RedHat http://sourceforge.net/projects/mlton/files/mlton/20051202/mlton-20051202-1.src.rpm[source rpm]
 
-== Packages available at other sites ==
+== Packages available at other sites
 
 * http://packages.debian.org/cgi-bin/search_packages.pl?searchon=names&version=all&exact=1&keywords=mlton[Debian]
 * http://www.freebsd.org/cgi/ports.cgi?query=mlton&stype=all[FreeBSD]
 * Fedora Core http://fedoraproject.org/extras/4/i386/repodata/repoview/mlton-0-20051202-8.fc4.html[4] http://fedoraproject.org/extras/5/i386/repodata/repoview/mlton-0-20051202-8.fc5.html[5]
 * http://packages.ubuntu.com/dapper/devel/mlton[Ubuntu]
 
-== Also see ==
+== Also see
 
-* <:Bugs20051202:>
+* <<Bugs20051202#>>
 * http://www.mlton.org/guide/20051202/[MLton Guide (20051202)].
 +
 A snapshot of the MLton wiki at the time of release.

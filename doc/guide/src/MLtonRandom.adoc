@@ -1,5 +1,4 @@
-MLtonRandom
-===========
+= MLtonRandom
 
 [source,sml]
 ----

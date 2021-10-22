@@ -1,14 +1,13 @@
-ProfilingTheStack
-=================
+= ProfilingTheStack
 
-For all forms of <:Profiling:>, you can gather counts for all
+For all forms of <<Profiling#>>, you can gather counts for all
 functions on the stack, not just the currently executing function.  To
 do so, compile your program with `-profile-stack true`.  For example,
 suppose that `list-rev.sml` contains the following.
 
 [source,sml]
 ----
-sys::[./bin/InclGitFile.py mlton master doc/examples/profiling/list-rev.sml]
+include::https://raw.github.com/MLton/mlton/master/doc/examples/profiling/list-rev.sml[indent=0]
 ----
 
 Compile with stack profiling and then run the program.

@@ -1,5 +1,4 @@
-MLtonThread
-===========
+= MLtonThread
 
 [source,sml]
 ----
@@ -96,17 +95,17 @@ thread `rt`.  It is an error for `f` to perform another `switch`.  `f`
 is guaranteed to run atomically.
 
 
-== Example of non-preemptive threads ==
+== Example of non-preemptive threads
 
 [source,sml]
 ----
-sys::[./bin/InclGitFile.py mlton master doc/examples/thread/non-preemptive-threads.sml]
+include::https://raw.github.com/MLton/mlton/master/doc/examples/thread/non-preemptive-threads.sml[indent=0]
 ----
 
 
-== Example of preemptive threads ==
+== Example of preemptive threads
 
 [source,sml]
 ----
-sys::[./bin/InclGitFile.py mlton master doc/examples/thread/preemptive-threads.sml]
+include::https://raw.github.com/MLton/mlton/master/doc/examples/thread/preemptive-threads.sml[indent=0]
 ----

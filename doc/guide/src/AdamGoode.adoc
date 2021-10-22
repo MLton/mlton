@@ -1,5 +1,4 @@
-AdamGoode
-=========
+= AdamGoode
 
  * I maintain the Fedora package of MLton, in https://admin.fedoraproject.org/pkgdb/packages/name/mlton[Fedora].
  * I have contributed some patches for Makefiles and PDF documentation building.

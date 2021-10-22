@@ -1,5 +1,4 @@
-MLtonCont
-=========
+= MLtonCont
 
 [source,sml]
 ----
@@ -48,6 +47,6 @@ a generalization of throw that evaluates `th ()` in the context of
 another continuation, it will see `k`, not the current continuation.
 
 
-== Also see ==
+== Also see
 
-* <:MLtonContIsolateImplementation:>
+* <<MLtonContIsolateImplementation#>>

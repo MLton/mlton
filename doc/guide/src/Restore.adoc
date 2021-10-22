@@ -1,30 +1,29 @@
-Restore
-=======
+= Restore
 
-<:Restore:> is a rewrite pass for the <:SSA:> and <:SSA2:>
-<:IntermediateLanguage:>s, invoked from <:KnownCase:> and
-<:LocalRef:>.
+<<Restore#>> is a rewrite pass for the <<SSA#>> and <<SSA2#>>
+<<IntermediateLanguage#>>s, invoked from <<KnownCase#>> and
+<<LocalRef#>>.
 
-== Description ==
+== Description
 
-This pass restores the SSA condition for a violating <:SSA:> or
-<:SSA2:> program; the program must satisfy:
+This pass restores the SSA condition for a violating <<SSA#>> or
+<<SSA2#>> program; the program must satisfy:
 ____
 Every path from the root to a use of a variable (excluding globals)
 passes through a def of that variable.
 ____
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/restore.sig)>
-* <!ViewGitFile(mlton,master,mlton/ssa/restore.fun)>
-* <!ViewGitFile(mlton,master,mlton/ssa/restore2.sig)>
-* <!ViewGitFile(mlton,master,mlton/ssa/restore2.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/restore.sig[`restore.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/restore.fun[`restore.fun`]
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/restore2.sig[`restore2.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/restore2.fun[`restore2.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
-Based primarily on Section 19.1 of <!Cite(Appel98, Modern Compiler
-Implementation in ML)>.
+Based primarily on Section 19.1 of <<References#Appel98,Modern Compiler
+Implementation in ML>>.
 
 The main deviation is the calculation of liveness of the violating
 variables, which is used to predicate the insertion of phi arguments.

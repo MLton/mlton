@@ -1,5 +1,4 @@
-MLtonIntInf
-===========
+= MLtonIntInf
 
 [source,sml]
 ----
@@ -25,7 +24,7 @@ MLton represents an arbitrary precision integer either as an unboxed
 word with the bottom bit set to 1 and the top bits representing a
 small signed integer, or as a pointer to a vector of words, where the
 first word indicates the sign and the rest are the limbs of a
-<:GMP:> big integer.
+<<GMP#>> big integer.
 
 * `type t`
 +
@@ -37,7 +36,7 @@ returns true iff both `a` and `b` are small.
 
 * `gcd (a, b)`
 +
-uses <:GMP:GMP's> fast gcd implementation.
+uses <<GMP#,GMP's>> fast gcd implementation.
 
 * `isSmall a`
 +

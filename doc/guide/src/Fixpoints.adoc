@@ -1,21 +1,20 @@
-Fixpoints
-=========
+= Fixpoints
 
 This page discusses a framework that makes it possible to compute
 fixpoints over arbitrary products of abstract types.  The code is from
 an Extended Basis library
-(<!ViewGitFile(mltonlib,master,com/ssh/extended-basis/unstable/README)>).
+(https://github.com/MLton/mltonlib/blob/master/com/ssh/extended-basis/unstable/README[`README`]).
 
 First the signature of the framework
-(<!ViewGitFile(mltonlib,master,com/ssh/extended-basis/unstable/public/generic/tie.sig)>):
+(https://github.com/MLton/mltonlib/blob/master/com/ssh/extended-basis/unstable/public/generic/tie.sig[`tie.sig`]):
 [source,sml]
 ----
-sys::[./bin/InclGitFile.py mltonlib master com/ssh/extended-basis/unstable/public/generic/tie.sig 6:]
+include::https://raw.github.com/MLton/mltonlib/master/com/ssh/extended-basis/unstable/public/generic/tie.sig[indent=0,lines=6..-1]
 ----
 
-`fix` is a <:TypeIndexedValues:type-indexed> function.  The type-index
+`fix` is a <<TypeIndexedValues#,type-indexed>> function.  The type-index
 parameter to `fix` is called a "witness".  To compute fixpoints over
-products, one uses the +*&grave;+ operator to combine witnesses.  To provide
+products, one uses the `*{backtick}` operator to combine witnesses.  To provide
 a fixpoint combinator for an abstract type, one implements a witness
 providing a thunk whose instantiation allocates a fresh, mutable proxy
 and a procedure for updating the proxy with the solution.  Naturally
@@ -25,15 +24,15 @@ combinator is a generalization of `tier`.  The `iso` combinator is
 provided for reusing existing witnesses.
 
 Note that instead of using an infix operator, we could alternatively
-employ an interface using <:Fold:>.  Also, witnesses are eta-expanded
-to work around the <:ValueRestriction:value restriction>, while
+employ an interface using <<Fold#>>.  Also, witnesses are eta-expanded
+to work around the <<ValueRestriction#,value restriction>>, while
 maintaining abstraction.
 
 Here is the implementation
-(<!ViewGitFile(mltonlib,master,com/ssh/extended-basis/unstable/detail/generic/tie.sml)>):
+(https://github.com/MLton/mltonlib/blob/master/com/ssh/extended-basis/unstable/detail/generic/tie.sml[`tie.sml`]):
 [source,sml]
 ----
-sys::[./bin/InclGitFile.py mltonlib master com/ssh/extended-basis/unstable/detail/generic/tie.sml 6:]
+include::https://raw.github.com/MLton/mltonlib/master/com/ssh/extended-basis/unstable/detail/generic/tie.sml[indent=0,lines=6..-1]
 ----
 
 Let's then take a look at a couple of additional examples.

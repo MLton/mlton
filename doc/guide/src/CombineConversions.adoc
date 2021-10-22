@@ -1,19 +1,18 @@
-CombineConversions
-==================
+= CombineConversions
 
-<:CombineConversions:> is an optimization pass for the <:SSA:>
-<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+<<CombineConversions#>> is an optimization pass for the <<SSA#>>
+<<IntermediateLanguage#>>, invoked from <<SSASimplify#>>.
 
-== Description ==
+== Description
 
 This pass looks for and simplifies nested calls to (signed)
 extension/truncation.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/combine-conversions.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/combine-conversions.fun[`combine-conversions.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 It processes each block in dfs order (visiting definitions before uses):
 
@@ -35,7 +34,7 @@ x3 = Word_extdToWord (W2, W3, {signed=s2}) x2
 +
 This is guaranteed because `W2 = W3` will always trigger optimization.
 
-* Case `W1 <= W3 <= W2`:
+* Case `W1 &le; W3 &le; W2`:
 +
 ----
 x3 = Word_extdToWord (W1, W3, {signed=s1}) x1
@@ -51,15 +50,15 @@ x3 = Word_extdToWord (W1, W3, {signed=s1}) x1
 +
 unoptimized, because there are no conversions past `W1` and `x2 = x1`
 
-* Case `W3 <= W2 <= W1  OR  W3 <= W1 <= W2`:
+* Case `W3 &le; W2 &le; W1  OR  W3 &le; W1 &le; W2`:
 +
 ----
 x_3 = Word_extdToWord (W1, W3, {signed=_}) x1
 ----
 +
-because `W3 <= W1 && W3 <= W2`, just clip `x1`
+because `W3 &le; W1 && W3 &le; W2`, just clip `x1`
 
-* Case `W2 < W1 <= W3  OR  W2 < W3 <= W1`:
+* Case `W2 < W1 &le; W3  OR  W2 < W3 &le; W1`:
 +
 unoptimized, because `W2 < W1 && W2 < W3`, has truncation effect
 

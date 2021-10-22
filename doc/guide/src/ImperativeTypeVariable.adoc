@@ -1,8 +1,7 @@
-ImperativeTypeVariable
-======================
+= ImperativeTypeVariable
 
-In <:StandardML:Standard ML>, an imperative type variable is a type
+In <<StandardML#,Standard ML>>, an imperative type variable is a type
 variable whose second character is a digit, as in `'1a` or
 `'2b`.  Imperative type variables were used as an alternative to
-the <:ValueRestriction:> in an earlier version of SML, but no longer play
+the <<ValueRestriction#>> in an earlier version of SML, but no longer play
 a role.  They are treated exactly as other type variables.

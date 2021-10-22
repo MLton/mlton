@@ -1,5 +1,4 @@
-Projects
-========
+= Projects
 
 We have lots of ideas for projects to improve MLton, many of which we
 do not have time to implement, or at least haven't started on yet.
@@ -13,9 +12,9 @@ mailto:MLton-devel@mlton.org[`MLton-devel@mlton.org`].
 * Source-level debugger
 * Heap profiler
 * Interfaces to libraries: OpenGL, Gtk+, D-BUS, ...
-* More libraries written in SML (see <!ViewGitProj(mltonlib)>)
+* More libraries written in SML (see https://github.com/MLton/mltonlib[`mltonlib`])
 * Additional constant types: `structure Real80: REAL`, ...
-* An IDE (possibly integrated with <:Eclipse:>)
+* An IDE (possibly integrated with <<Eclipse#>>)
 * Port MLRISC and use for code generation
 * Optimizations
 ** Improved closure representation
@@ -24,7 +23,7 @@ Right now, MLton's closure conversion algorithm uses a simple flat closure to re
 +
 *** http://www.mlton.org/pipermail/mlton/2003-October/024570.html
 *** http://www.mlton.org/pipermail/mlton-user/2007-July/001150.html
-*** <!Cite(ShaoAppel94)>
+*** <<References#ShaoAppel94,ShaoAppel94>>
 ** Elimination of array bounds checks in loops
 ** Elimination of overflow checks on array index computations
 ** Common-subexpression elimination of repeated array subscripts

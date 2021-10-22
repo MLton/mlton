@@ -1,18 +1,17 @@
-DuplicateGlobals
-================
+= DuplicateGlobals
 
-<:DuplicateGlobals:> is an optimization pass for the <:SSA:>
-<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+<<DuplicateGlobals#>> is an optimization pass for the <<SSA#>>
+<<IntermediateLanguage#>>, invoked from <<SSASimplify#>>.
 
-== Description ==
+== Description
 
-<:DuplicateGlobals:> introduces a distinct instance of a `ConApp` global for
+<<DuplicateGlobals#>> introduces a distinct instance of a `ConApp` global for
 each distict use within the program.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/duplicate-globals.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/duplicate-globals.fun[`duplicate-globals.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 {empty}

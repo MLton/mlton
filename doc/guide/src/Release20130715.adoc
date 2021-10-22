@@ -1,9 +1,8 @@
-Release20130715
-===============
+= Release20130715
 
 This is an archived public release of MLton, version 20130715.
 
-== Changes since the last public release ==
+== Changes since the last public release
 
 // * New platforms.
 // ** ???
@@ -11,25 +10,25 @@ This is an archived public release of MLton, version 20130715.
 ** Cosmetic improvements to type-error messages.
 ** Removed features:
 *** Bytecode codegen: The bytecode codegen had not seen significant use and it was not well understood by any of the active developers.
-*** Support for `.cm` files as input: The <:MLBasis:ML Basis system> provides much better infrastructure for "programming in the very large" than the (very) limited support for CM.  The `cm2mlb` tool (available in the source distribution) can be used to convert CM projects to MLB projects, preserving the CM scoping of module identifiers.
-** Bug fixes: see <!RawGitFile(mlton,on-20130715-release,doc/changelog)>
+*** Support for `.cm` files as input: The <<MLBasis#,ML Basis system>> provides much better infrastructure for "programming in the very large" than the (very) limited support for CM.  The `cm2mlb` tool (available in the source distribution) can be used to convert CM projects to MLB projects, preserving the CM scoping of module identifiers.
+** Bug fixes: see https://raw.github.com/MLton/mlton/on-20130715-release/doc/changelog[`changelog`]
 * Runtime.
-** Bug fixes: see <!RawGitFile(mlton,on-20130715-release,doc/changelog)>
+** Bug fixes: see https://raw.github.com/MLton/mlton/on-20130715-release/doc/changelog[`changelog`]
 * Language.
 ** Interpret `(*#line line:col "file" *)` directives as relative file names.
-** <:MLBasisAnnotations:ML Basis annotations>.
+** <<MLBasisAnnotations#,ML Basis annotations>>.
 *** Added: `resolveScope`
 * Libraries.
-** <:BasisLibrary:Basis Library>.
+** <<BasisLibrary#,Basis Library>>.
 *** Improved performance of `String.concatWith`.
 *** Use bit operations for `REAL.class` and other low-level operations.
 *** Support additional variables with `Posix.ProcEnv.sysconf`.
-*** Bug fixes: see <!RawGitFile(mlton,on-20130715-release,doc/changelog)>
-** <:MLtonStructure:MLton structure>.
+*** Bug fixes: see https://raw.github.com/MLton/mlton/on-20130715-release/doc/changelog[`changelog`]
+** <<MLtonStructure#,MLton structure>>.
 *** Removed: `MLton.Socket`
 ** Other libraries.
-*** Updated: <:CKitLibrary:ckit library>, <:MLRISCLibrary:MLRISC library>, <:SMLNJLibrary:SML/NJ library>
-*** Added: <:MLLPTLibrary:MLLPT library>
+*** Updated: <<CKitLibrary#,ckit library>>, <<MLRISCLibrary#,MLRISC library>>, <<SMLNJLibrary#,SML/NJ library>>
+*** Added: <<MLLPTLibrary#,MLLPT library>>
 * Tools.
 ** `mllex`
 *** Generate `(*#line line:col "file.lex" *)` directives with simple (relative) file names, rather than absolute paths.
@@ -38,15 +37,15 @@ This is an archived public release of MLton, version 20130715.
 *** Fixed bug in comment-handling in lexer.
 
 For a complete list of changes and bug fixes since
-<:Release20100608:>, see the
-<!RawGitFile(mlton,on-20130715-release,doc/changelog)> and
-<:Bugs20100608:>.
+<<Release20100608#>>, see the
+https://raw.github.com/MLton/mlton/on-20130715-release/doc/changelog[`changelog`] and
+<<Bugs20100608#>>.
 
-== 20130715 binary packages ==
+== 20130715 binary packages
 
 * AMD64 (aka "x86-64" or "x64")
-** http://sourceforge.net/projects/mlton/files/mlton/20130715/mlton-20130715-1.amd64-darwin.gmp-macports.tgz[Darwin (.tgz)] 11.4 (Mac OS X Lion), dynamically linked against <:GMP:> in `/opt/local/lib` (suitable for http://macports.org[MacPorts] install of <:GMP:>)
-** http://sourceforge.net/projects/mlton/files/mlton/20130715/mlton-20130715-1.amd64-darwin.gmp-static.tgz[Darwin (.tgz)] 11.4 (Mac OS X Lion), statically linked against <:GMP:> (but requires <:GMP:> for generated executables)
+** http://sourceforge.net/projects/mlton/files/mlton/20130715/mlton-20130715-1.amd64-darwin.gmp-macports.tgz[Darwin (.tgz)] 11.4 (Mac OS X Lion), dynamically linked against <<GMP#>> in `/opt/local/lib` (suitable for http://macports.org[MacPorts] install of <<GMP#>>)
+** http://sourceforge.net/projects/mlton/files/mlton/20130715/mlton-20130715-1.amd64-darwin.gmp-static.tgz[Darwin (.tgz)] 11.4 (Mac OS X Lion), statically linked against <<GMP#>> (but requires <<GMP#>> for generated executables)
 ** http://sourceforge.net/projects/mlton/files/mlton/20130715/mlton-20130715-1.amd64-linux.tgz[Linux], glibc 2.15
 // ** http://sourceforge.net/projects/mlton/files/mlton/20130715/mlton-20130715-1.amd64-linux.static.tgz[Linux], statically linked
 // ** Windows MinGW 32/64 http://sourceforge.net/projects/mlton/files/mlton/20130715/MLton-20130715-1.exe[self-extracting] (28MB) or http://sourceforge.net/projects/mlton/files/mlton/20130715/MLton-20130715-1.msi[MSI] (61MB) installer
@@ -56,20 +55,20 @@ For a complete list of changes and bug fixes since
 // ** http://sourceforge.net/projects/mlton/files/mlton/20130715/mlton-20130715-1.x86-linux.static.tgz[Linux], statically linked
 // ** Windows MinGW 32/64 http://sourceforge.net/projects/mlton/files/mlton/20130715/MLton-20130715-1.exe[self-extracting] (28MB) or http://sourceforge.net/projects/mlton/files/mlton/20130715/MLton-20130715-1.msi[MSI] (61MB) installer
 
-== 20130715 source packages ==
+== 20130715 source packages
 
  * http://sourceforge.net/projects/mlton/files/mlton/20130715/mlton-20130715.src.tgz[mlton-20130715.src.tgz]
 
-== Downstream packages ==
+== Downstream packages
 
  * http://packages.debian.org/search?keywords=mlton&searchon=names&suite=all&section=all[Debian]
  * http://www.freebsd.org/cgi/ports.cgi?query=mlton&stype=all[FreeBSD]
  * https://admin.fedoraproject.org/pkgdb/acls/name/mlton[Fedora]
  * http://packages.ubuntu.com/search?suite=default&section=all&arch=any&searchon=names&keywords=mlton[Ubuntu]
 
-== Also see ==
+== Also see
 
-* <:Bugs20130715:>
+* <<Bugs20130715#>>
 * http://www.mlton.org/guide/20130715/[MLton Guide (20130715)].
 +
 A snapshot of the MLton website at the time of release.

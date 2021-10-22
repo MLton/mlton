@@ -1,33 +1,32 @@
-Defunctorize
-============
+= Defunctorize
 
-<:Defunctorize:> is a translation pass from the <:CoreML:>
-<:IntermediateLanguage:> to the <:XML:> <:IntermediateLanguage:>.
+<<Defunctorize#>> is a translation pass from the <<CoreML#>>
+<<IntermediateLanguage#>> to the <<XML#>> <<IntermediateLanguage#>>.
 
-== Description ==
+== Description
 
-This pass converts a <:CoreML:> program to an <:XML:> program by
+This pass converts a <<CoreML#>> program to an <<XML#>> program by
 performing:
 
 * linearization
-* <:MatchCompile:>
+* <<MatchCompile#>>
 * polymorphic `val` dec expansion
 * `datatype` lifting (to the top-level)
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/defunctorize/defunctorize.sig)>
-* <!ViewGitFile(mlton,master,mlton/defunctorize/defunctorize.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/defunctorize/defunctorize.sig[`defunctorize.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/defunctorize/defunctorize.fun[`defunctorize.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 This pass is grossly misnamed and does not perform defunctorization.
 
-=== Datatype Lifting ===
+=== Datatype Lifting
 
 This pass moves all `datatype` declarations to the top level.
 
-<:StandardML:Standard ML> `datatype` declarations can contain type
+<<StandardML#,Standard ML>> `datatype` declarations can contain type
 variables that are not bound in the declaration itself.  For example,
 the following program is valid.
 [source,sml]
@@ -69,9 +68,9 @@ fun 'a f (x: 'a) =
    end
 ----
 
-== Historical Notes ==
+== Historical Notes
 
-The <:Defunctorize:> pass originally eliminated
-<:StandardML:Standard ML> functors by duplicating their body at each
-application.  These duties have been adopted by the <:Elaborate:>
+The <<Defunctorize#>> pass originally eliminated
+<<StandardML#,Standard ML>> functors by duplicating their body at each
+application.  These duties have been adopted by the <<Elaborate#>>
 pass.

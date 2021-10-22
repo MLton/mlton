@@ -1,12 +1,11 @@
-SMLNET
-======
+= SMLNET
 
 http://www.cl.cam.ac.uk/research/tsg/SMLNET[SML.NET] is a
-<:StandardMLImplementations:Standard ML implementation> that
+<<StandardMLImplementations#,Standard ML implementation>> that
 targets the .NET Common Language Runtime.
 
-SML.NET is based on the <:MLj:MLj> compiler.
+SML.NET is based on the <<MLj#,MLj>> compiler.
 
-== Also see ==
+== Also see
 
-* <!Cite(BentonEtAl04)>
+* <<References#BentonEtAl04,BentonEtAl04>>

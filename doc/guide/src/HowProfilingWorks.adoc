@@ -1,7 +1,6 @@
-HowProfilingWorks
-=================
+= HowProfilingWorks
 
-Here's how <:Profiling:> works.  If profiling is on, the front end
+Here's how <<Profiling#>> works.  If profiling is on, the front end
 (elaborator) inserts `Enter` and `Leave` statements into the source
 program for function entry and exit.  For example,
 [source,sml]
@@ -27,29 +26,28 @@ name; there is also lexical nesting and file position.
 
 Most of the middle of the compiler ignores, but preserves, `Enter` and
 `Leave`.  However, so that profiling preserves tail calls, the
-<:Shrink:SSA shrinker> has an optimization that notices when the only
+<<Shrink#,SSA shrinker>> has an optimization that notices when the only
 operations that cause a call to be a nontail call are profiling
 operations, and if so, moves them before the call, turning it into a
 tail call. If you observe a program that has a tail call that appears
 to be turned into a nontail when compiled with profiling, please
-<:Bug:report a bug>.
+<<Bug#,report a bug>>.
 
 There is the `checkProf` function in
-<!ViewGitFile(mlton,master,mlton/ssa/type-check.fun)>, which checks that
+https://github.com/MLton/mlton/blob/master/mlton/ssa/type-check.fun[`type-check.fun`], which checks that
 the `Enter`/`Leave` statements match up.
 
-In the backend, just before translating to the <:Machine: Machine IL>,
+In the backend, just before translating to the <<Machine#,Machine IL>>,
 the profiler uses the `Enter`/`Leave` statements to infer the "local"
 portion of the control stack at each program point.  The profiler then
-removes the ++Enter++s/++Leave++s and inserts different information
-depending on which kind of profiling is happening.  For time profiling
-(with the <:AMD64Codegen:> and <:X86Codegen:>), the profiler
-inserts code that sets a global field that records the local control
-stack.  For allocation profiling, the profiler inserts calls to a C
-function that will maintain byte counts.  With stack profiling, the
-profiler also inserts a call to a C function at each nontail call in
-order to maintain information at runtime about what SML functions are
-on the stack.
+removes the ``Enter``s/``Leave``s and inserts different information
+depending on which kind of profiling is happening.  For time
+profiling, the profiler inserts code that sets a global field that
+records the local control stack.  For allocation profiling, the
+profiler inserts calls to a C function that will maintain byte counts.
+With stack profiling, the profiler also inserts a call to a C function
+at each nontail call in order to maintain information at runtime about
+what SML functions are on the stack.
 
 At run time, the profiler associates counters (either clock ticks or
 byte counts) with source functions.  When the program finishes, the
@@ -63,7 +61,7 @@ times per second and increments the appropriate counter, determined by
 looking at the global field that records the local control stack and
 mapping that to the current source function.
 
-== Caveats ==
+== Caveats
 
 There may be a few missed clock ticks or bytes allocated at the very
 end of the program after the data is written.

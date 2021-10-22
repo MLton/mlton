@@ -1,26 +1,25 @@
-LLVMCodegen
-===========
+= LLVMCodegen
 
-The <:LLVMCodegen:> is a <:Codegen:code generator> that translates the
-<:Machine:> <:IntermediateLanguage:> to <:LLVM:> assembly, which is
-further optimized and compiled to native object code by the <:LLVM:>
+The <<LLVMCodegen#>> is a <<Codegen#,code generator>> that translates the
+<<Machine#>> <<IntermediateLanguage#>> to <<LLVM#>> assembly, which is
+further optimized and compiled to native object code by the <<LLVM#>>
 toolchain.
 
-It requires <:LLVM:> version 3.7 or greater to be installed.
+It requires <<LLVM#>> version 3.7 or greater to be installed.
 
-In benchmarks performed on the <:RunningOnAMD64:AMD64> architecture,
+In benchmarks performed on the <<RunningOnAMD64#,AMD64>> architecture,
 code size with this generator is usually slightly smaller than either
-the <:AMD64Codegen:native> or the <:CCodegen:C> code generators. Compile
-time is worse than <:AMD64Codegen:native>, but slightly better than
-<:CCodegen:C>. Run time is often better than either <:AMD64Codegen:native>
-or <:CCodegen:C>.
+the <<AMD64Codegen#,native>> or the <<CCodegen#,C>> code generators. Compile
+time is worse than <<AMD64Codegen#,native>>, but slightly better than
+<<CCodegen#,C>>. Run time is often better than either <<AMD64Codegen#,native>>
+or <<CCodegen#,C>>.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/codegen/llvm-codegen/llvm-codegen.sig)>
-* <!ViewGitFile(mlton,master,mlton/codegen/llvm-codegen/llvm-codegen.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/codegen/llvm-codegen/llvm-codegen.sig[`llvm-codegen.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/codegen/llvm-codegen/llvm-codegen.fun[`llvm-codegen.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
-The <:LLVMCodegen:> was initially developed by Brian Leibig (see
-<!Cite(Leibig13,An LLVM Back-end for MLton)>).
+The <<LLVMCodegen#>> was initially developed by Brian Leibig (see
+<<References#Leibig13,An LLVM Back-end for MLton>>).

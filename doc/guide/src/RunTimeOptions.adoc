@@ -1,5 +1,4 @@
-RunTimeOptions
-==============
+= RunTimeOptions
 
 Executables produced by MLton take command line arguments that control
 the runtime system.  These arguments are optional, and occur before
@@ -30,19 +29,19 @@ mlton @MLton fixed-heap 0.5g -- foo.sml
 ----
 
 
-== Options ==
+== Options
 
-* ++fixed-heap __x__{k|K|m|M|g|G}++
+* ``fixed-heap __x__{k|K|m|M|g|G}``
 +
 Use a fixed size heap of size _x_, where _x_ is a real number and the
 trailing letter indicates its units.
 +
 [cols="^25%,<75%"]
-|====
+|===
 | `k` or `K` | 1024
 | `m` or `M` | 1,048,576
 | `g` or `G` | 1,073,741,824
-|====
+|===
 +
 A value of `0` means to use almost all the RAM present on the machine.
 +
@@ -51,53 +50,53 @@ SML code, including memory for the stack (or stacks, if there are
 multiple threads).  It does not, however, include any memory used for
 code itself or memory used by C globals, the C stack, or malloc.
 
-* ++gc-messages++
+* ``gc-messages``
 +
 Print a message at the start and end of every garbage collection.
 
-* ++gc-summary++
+* ``gc-summary``
 +
 Print a summary of garbage collection statistics upon program
 termination to standard error.
 
-* ++gc-summary-file __file__++
+* ``gc-summary-file __file__``
 +
 Print a summary of garbage collection statistics upon program
 termination to the file specified by _file_.
 
-* ++load-world __world__++
+* ``load-world __world__``
 +
 Restart the computation with the file specified by _world_, which must
 have been created by a call to `MLton.World.save` by the same
-executable.  See <:MLtonWorld:>.
+executable.  See <<MLtonWorld#>>.
 
-* ++max-heap __x__{k|K|m|M|g|G}++
+* ``max-heap __x__{k|K|m|M|g|G}``
 +
 Run the computation with an automatically resized heap that is never
 larger than _x_, where _x_ is a real number and the trailing letter
 indicates the units as with `fixed-heap`.  The heap size for
 `max-heap` is accounted for as with `fixed-heap`.
 
-* ++may-page-heap {false|true}++
+* ``may-page-heap {false|true}``
 +
 Enable paging the heap to disk when unable to grow the heap to a
 desired size.
 
-* ++no-load-world++
+* ``no-load-world``
 +
 Disable `load-world`.  This can be used as an argument to the compiler
 via `-runtime no-load-world` to create executables that will not load
 a world.  This may be useful to ensure that set-uid executables do not
 load some strange world.
 
-* ++ram-slop __x__++
+* ``ram-slop __x__``
 +
 Multiply _x_ by the amount of RAM on the machine to obtain what the
 runtime views as the amount of RAM it can use.  Typically _x_ is less
 than 1, and is used to account for space used by other programs
 running on the same machine.
 
-* ++stop++
+* ``stop``
 +
 Causes the runtime to stop processing `@MLton` arguments once the next
 `--` is reached.  This can be used as an argument to the compiler via

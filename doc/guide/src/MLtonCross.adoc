@@ -1,5 +1,4 @@
-MLtonCross
-==========
+= MLtonCross
 
 The debian package MLton-Cross adds various targets to MLton. In
 combination with the emdebian project, this allows a debian system to
@@ -24,8 +23,8 @@ Currently, these targets are supported:
 ** -target x86-64-linux-gnu (mlton-target-x86-64-linux-gnu)
 
 
-== Download ==
+== Download
 
 MLton-Cross is kept in-sync with the current MLton release.
 
-* <!Attachment(MLtonCross,mlton-cross_20100608.orig.tar.gz)>
+* link:MLtonCross.attachments/mlton-cross_20100608.orig.tar.gz[`mlton-cross_20100608.orig.tar.gz`]

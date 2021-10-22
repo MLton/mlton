@@ -1,12 +1,11 @@
-SelfCompiling
-=============
+= SelfCompiling
 
-If you want to compile MLton, you must first get the <:Sources:>. You
+If you want to compile MLton, you must first get the <<Sources#>>. You
 can compile with either MLton or SML/NJ, but we strongly recommend
 using MLton, since it generates a much faster and more robust
 executable.
 
-== Compiling with MLton ==
+== Compiling with MLton
 
 To compile with MLton, you need the binary versions of `mlton`,
 `mllex`, and `mlyacc` that come with the MLton binary package.  To be
@@ -22,7 +21,7 @@ MLton using another version the `Makefile` automatically uses
 `mlton-stubs.mlb`, which will put in enough stubs to emulate the
 `structure MLton`.  Once MLton is built, the `Makefile` will rebuild
 MLton with itself, this time using `mlton.mlb` and the real
-`structure MLton` from the <:BasisLibrary:Basis Library>.  This second round
+`structure MLton` from the <<BasisLibrary#,Basis Library>>.  This second round
 of compilation is essential in order to achieve a fast and robust
 MLton.
 
@@ -35,18 +34,18 @@ to memory consumed by other processes.  In this case, you may see an
 `Out of memory` message, or self-compilation may become extremely
 slow.  The only fix is to make sure that enough memory is available.
 
-=== Possible Errors ===
+=== Possible Errors
 
-* The C compiler may not be able to find the <:GMP:> header file,
+* The C compiler may not be able to find the <<GMP#>> header file,
 `gmp.h` leading to an error like the following.
 +
 ----
   cenv.h:49:18: fatal error: gmp.h: No such file or directory
 ----
 +
-The solution is to install (or build) <:GMP:> on your machine.  If you
+The solution is to install (or build) <<GMP#>> on your machine.  If you
 install it at a location not on the default seach path, then run
-++make WITH_GMP_INC_DIR=__/path/to/gmp/include__ WITH_GMP_LIB_DIR=__/path/to/gmp/lib__++.
+``make WITH_GMP_INC_DIR=__/path/to/gmp/include__ WITH_GMP_LIB_DIR=__/path/to/gmp/lib__``.
 
 * The following errors indicates that a binary version of MLton could
 not be found in your path.
@@ -67,7 +66,7 @@ the latter doesn't exist when the build starts; it is the target being
 built.  Failure to find a `mlton` in your path will abort the build.
 
 
-== Compiling with SML/NJ ==
+== Compiling with SML/NJ
 
 To compile with SML/NJ, run `make bootstrap-smlnj` from within the
 root directory of the sources.  You must use a recent version of
@@ -76,7 +75,7 @@ the lexer and parser.  Then, it calls SML/NJ with the appropriate
 `sources.cm` file.  Once MLton is built with SML/NJ, the `Makefile`
 will rebuild MLton with this SML/NJ built MLton and then will rebuild
 MLton with the MLton built MLton.  Building with SML/NJ takes
-significant time (particularly during the "`parseAndElaborate`" phase
+significant time (particularly during the `parseAndElaborate` phase
 when the SML/NJ built MLton is compiling MLton).  Unless you are doing
 compiler development and need rapid recompilation, we recommend
 compiling with MLton.

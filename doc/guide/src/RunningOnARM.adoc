@@ -1,9 +1,8 @@
-RunningOnARM
-============
+= RunningOnARM
 
 MLton runs fine on the ARM architecture.
 
-== Notes ==
+== Notes
 
 * When compiling for ARM, MLton doesn't support native code generation
 (`-codegen native`).  Hence, performance is not as good as it might be

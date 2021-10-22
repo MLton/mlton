@@ -1,11 +1,10 @@
-RemoveUnused
-============
+= RemoveUnused
 
-<:RemoveUnused:> is an optimization pass for both the <:SSA:> and
-<:SSA2:> <:IntermediateLanguage:>s, invoked from <:SSASimplify:> and
-<:SSA2Simplify:>.
+<<RemoveUnused#>> is an optimization pass for both the <<SSA#>> and
+<<SSA2#>> <<IntermediateLanguage#>>s, invoked from <<SSASimplify#>> and
+<<SSA2Simplify#>>.
 
-== Description ==
+== Description
 
 This pass aggressively removes unused:
 
@@ -21,11 +20,11 @@ This pass aggressively removes unused:
 * handlers from non-tail calls (mayRaise analysis)
 * continuations from non-tail calls (mayReturn analysis)
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/remove-unused.fun)>
-* <!ViewGitFile(mlton,master,mlton/ssa/remove-unused2.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/remove-unused.fun[`remove-unused.fun`]
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/remove-unused2.fun[`remove-unused2.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 {empty}

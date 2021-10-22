@@ -1,20 +1,19 @@
-ToRSSA
-======
+= ToRSSA
 
-<:ToRSSA:> is a translation pass from the <:SSA2:>
-<:IntermediateLanguage:> to the <:RSSA:> <:IntermediateLanguage:>.
+<<ToRSSA#>> is a translation pass from the <<SSA2#>>
+<<IntermediateLanguage#>> to the <<RSSA#>> <<IntermediateLanguage#>>.
 
-== Description ==
+== Description
 
-This pass converts a <:SSA2:> program into a <:RSSA:> program.
+This pass converts a <<SSA2#>> program into a <<RSSA#>> program.
 
-It uses <:PackedRepresentation:>.
+It uses <<PackedRepresentation#>>.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/backend/ssa2-to-rssa.sig)>
-* <!ViewGitFile(mlton,master,mlton/backend/ssa2-to-rssa.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/backend/ssa2-to-rssa.sig[`ssa2-to-rssa.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/backend/ssa2-to-rssa.fun[`ssa2-to-rssa.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 {empty}

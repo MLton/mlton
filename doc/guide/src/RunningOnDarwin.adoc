@@ -1,26 +1,25 @@
-RunningOnDarwin
-===============
+= RunningOnDarwin
 
 MLton runs fine on Darwin (and on Mac OS X).
 
-== Notes ==
+== Notes
 
-* MLton requires the <:GMP:> library, which is available via
+* MLton requires the <<GMP#>> library, which is available via
 https://brew.sh/[Homebrew], http://www.macports.com[MacPorts],
 and http://www.finkproject.org[Fink].
 n
-* For Intel-based Macs, MLton targets the <:RunningOnAMD64:AMD64
-architecture> on Darwin 10 (Mac OS X Snow Leopard) and higher and
-targets the <:RunningOnX86:x86 architecture> on Darwin 8 (Mac OS X
+* For Intel-based Macs, MLton targets the <<RunningOnAMD64#,AMD64
+architecture>> on Darwin 10 (Mac OS X Snow Leopard) and higher and
+targets the <<RunningOnX86#,x86 architecture>> on Darwin 8 (Mac OS X
 Tiger) and Darwin 9 (Mac OS X Leopard).
 
-== Known issues ==
+== Known issues
 
 * Executables that save and load worlds on Darwin 11 (Mac OS X Lion)
 and higher should be compiled with `-link-opt -fno-PIE` ; see
-<:MLtonWorld:> for more details.
+<<MLtonWorld#>> for more details.
 
-* <:ProfilingTime:> may give inaccurate results on multi-processor
+* <<ProfilingTime#>> may give inaccurate results on multi-processor
 machines.  The `SIGPROF` signal, used to sample the profiled program,
 is supposed to be delivered 100 times a second (i.e., at 10000us
 intervals), but there can be delays of over 1 minute between the
@@ -30,8 +29,8 @@ http://lists.apple.com/archives/Unix-porting/2007/Aug/msg00000.html[here]
 and
 http://lists.apple.com/archives/Darwin-dev/2007/Aug/msg00045.html[here].
 
-== Also see ==
+== Also see
 
-* <:RunningOnAMD64:>
-* <:RunningOnPowerPC:>
-* <:RunningOnX86:>
+* <<RunningOnAMD64#>>
+* <<RunningOnPowerPC#>>
+* <<RunningOnX86#>>

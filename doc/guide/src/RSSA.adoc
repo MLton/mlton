@@ -1,21 +1,20 @@
-RSSA
-====
+= RSSA
 
-<:RSSA:> is an <:IntermediateLanguage:>, translated from <:SSA2:> by
-<:ToRSSA:>, optimized by <:RSSASimplify:>, and translated by
-<:ToMachine:> to <:Machine:>.
+<<RSSA#>> is an <<IntermediateLanguage#>>, translated from <<SSA2#>> by
+<<ToRSSA#>>, optimized by <<RSSASimplify#>>, and translated by
+<<ToMachine#>> to <<Machine#>>.
 
-== Description ==
+== Description
 
-<:RSSA:> is a <:IntermediateLanguage:> that makes representation
+<<RSSA#>> is a <<IntermediateLanguage#>> that makes representation
 decisions explicit.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/backend/rssa.sig)>
-* <!ViewGitFile(mlton,master,mlton/backend/rssa.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/backend/rssa.sig[`rssa.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/backend/rssa.fun[`rssa.fun`]
 
-== Type Checking ==
+== Type Checking
 
 The new type language is aimed at expressing bit-level control over
 layout and associated packing of data representations.  There are
@@ -26,7 +25,7 @@ based on subtyping, not type equality.  So, for example, the singleton
 type `0xFFFFEEBB` whose only inhabitant is the eponymous constant is a
 subtype of the type `Word32`.
 
-== Details and Notes ==
+== Details and Notes
 
-SSA is an abbreviation for Static Single Assignment.  The <:RSSA:>
-<:IntermediateLanguage:> is a variant of SSA.
+SSA is an abbreviation for Static Single Assignment.  The <<RSSA#>>
+<<IntermediateLanguage#>> is a variant of SSA.

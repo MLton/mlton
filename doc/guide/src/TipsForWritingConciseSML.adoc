@@ -1,5 +1,4 @@
-TipsForWritingConciseSML
-========================
+= TipsForWritingConciseSML
 
 SML is a rich enough language that there are often several ways to
 express things.  This page contains miscellaneous tips (ideas not
@@ -7,7 +6,7 @@ rules) for writing concise SML.  The metric that we are interested in
 here is the number of tokens or words (rather than the number of
 lines, for example).
 
-== Datatypes in Signatures ==
+== Datatypes in Signatures
 
 A seemingly frequent source of repetition in SML is that of datatype
 definitions in signatures and structures.  Actually, it isn't
@@ -35,7 +34,7 @@ end
 ----
 
 the types `AnExp.exp` and `AnotherExp.exp` are two distinct types.  If
-such <:GenerativeDatatype:generativity> isn't desired or needed, you
+such <<GenerativeDatatype#,generativity>> isn't desired or needed, you
 can avoid the repetition:
 
 [source,sml]
@@ -56,7 +55,7 @@ end
 Keep in mind that this isn't semantically equivalent to the original.
 
 
-== Clausal Function Definitions ==
+== Clausal Function Definitions
 
 The syntax of clausal function definitions is rather repetitive.  For
 example,
@@ -118,7 +117,7 @@ fun eval env =
 ----
 
 
-== Parentheses ==
+== Parentheses
 
 It is a good idea to avoid using lots of irritating superfluous
 parentheses.  An important rule to know is that prefix function
@@ -159,7 +158,7 @@ case (a, b) of
 ----
 
 Such case expressions can be written more concisely with an
-<:ProductType:infix product constructor>:
+<<ProductType#,infix product constructor>>:
 
 [source,sml]
 ----
@@ -169,7 +168,7 @@ case a & b of
 ----
 
 
-== Conditionals ==
+== Conditionals
 
 Repeated sequences of conditionals such as
 
@@ -217,7 +216,7 @@ An advantage is that no datatype definition is needed.  A disadvantage
 is that you can't combine multiple dispatch results easily.
 
 
-== Command-Query Fusion ==
+== Command-Query Fusion
 
 Many are familiar with the
 http://en.wikipedia.org/wiki/Command-Query_Separation[Command-Query

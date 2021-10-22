@@ -1,5 +1,4 @@
-MLtonWeak
-=========
+= MLtonWeak
 
 [source,sml]
 ----
@@ -13,7 +12,7 @@ signature MLTON_WEAK =
 ----
 
 A weak pointer is a pointer to an object that is nulled if the object
-becomes <:Reachability:unreachable> due to garbage collection.  The
+becomes <<Reachability#,unreachable>> due to garbage collection.  The
 weak pointer does not itself cause the object it points to be retained
 by the garbage collector -- only other strong pointers can do that.
 For objects that are not allocated in the heap, like integers, a weak

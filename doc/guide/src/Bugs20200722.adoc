@@ -1,13 +1,12 @@
-Bugs20200722
-============
+= Bugs20200722
 
-Here are the known bugs in <:Release20200722:MLton 20200722>, listed
+Here are the known bugs in <<Release20200722#,MLton 20200722>>, listed
 in reverse chronological order of date reported.
 
-* <!Anchor(bug01)>
+* [[bug01]]
 Bug in `RssaShrink` that could fail with a `no RssaShrink.replaceVar property`
 internal compiler error.
 +
 Thanks to Steve Sims and bitmappergit for the bug reports.
 +
-Fixed by commit <!ViewGitCommit(mlton,d4dbe316f)>.
+Fixed by commit https://github.com/MLton/mlton/commit/d4dbe316f[`d4dbe316f`].

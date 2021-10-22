@@ -1,37 +1,36 @@
-SSA2
-====
+= SSA2
 
-<:SSA2:> is an <:IntermediateLanguage:>, translated from <:SSA:> by
-<:ToSSA2:>, optimized by <:SSA2Simplify:>, and translated by
-<:ToRSSA:> to <:RSSA:>.
+<<SSA2#>> is an <<IntermediateLanguage#>>, translated from <<SSA#>> by
+<<ToSSA2#>>, optimized by <<SSA2Simplify#>>, and translated by
+<<ToRSSA#>> to <<RSSA#>>.
 
-== Description ==
+== Description
 
-<:SSA2:> is a <:FirstOrder:>, <:SimplyTyped:>
-<:IntermediateLanguage:>, a slight variant of the <:SSA:>
-<:IntermediateLanguage:>,
+<<SSA2#>> is a <<FirstOrder#>>, <<SimplyTyped#>>
+<<IntermediateLanguage#>>, a slight variant of the <<SSA#>>
+<<IntermediateLanguage#>>,
 
-Like <:SSA:>, an <:SSA2:> program consists of a collection of datatype
+Like <<SSA#>>, an <<SSA2#>> program consists of a collection of datatype
 declarations, a sequence of global statements, and a collection of
 functions, along with a distinguished "main" function.  Each function
 consists of a collection of basic blocks, where each basic block is a
 sequence of statements ending with some control transfer.
 
-Unlike <:SSA:>, <:SSA2:> includes mutable fields in objects and makes
+Unlike <<SSA#>>, <<SSA2#>> includes mutable fields in objects and makes
 the vector type constructor n-ary instead of unary.  This allows
-optimizations like <:RefFlatten:> and <:DeepFlatten:> to be expressed.
+optimizations like <<RefFlatten#>> and <<DeepFlatten#>> to be expressed.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/ssa2.sig)>
-* <!ViewGitFile(mlton,master,mlton/ssa/ssa2.fun)>
-* <!ViewGitFile(mlton,master,mlton/ssa/ssa-tree2.sig)>
-* <!ViewGitFile(mlton,master,mlton/ssa/ssa-tree2.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/ssa2.sig[`ssa2.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/ssa2.fun[`ssa2.fun`]
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/ssa-tree2.sig[`ssa-tree2.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/ssa-tree2.fun[`ssa-tree2.fun`]
 
-== Type Checking ==
+== Type Checking
 
-Type checking (<!ViewGitFile(mlton,master,mlton/ssa/type-check2.sig)>,
-<!ViewGitFile(mlton,master,mlton/ssa/type-check2.fun)>) of a <:SSA2:>
+Type checking (https://github.com/MLton/mlton/blob/master/mlton/ssa/type-check2.sig[`type-check2.sig`],
+https://github.com/MLton/mlton/blob/master/mlton/ssa/type-check2.fun[`type-check2.fun`]) of a <<SSA2#>>
 program verifies the following:
 
 * no duplicate definitions (tycons, cons, vars, labels, funcs)
@@ -41,6 +40,6 @@ program verifies the following:
 * `Enter`/`Leave` profile statements match
 * "traditional" well-typedness
 
-== Details and Notes ==
+== Details and Notes
 
 SSA is an abbreviation for Static Single Assignment.

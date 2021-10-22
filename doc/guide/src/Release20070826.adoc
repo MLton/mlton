@@ -1,70 +1,69 @@
-Release20070826
-===============
+= Release20070826
 
 This is an archived public release of MLton, version 20070826.
 
-== Changes since the last public release ==
+== Changes since the last public release
 
 * New platforms:
-** <:RunningOnAMD64:AMD64>/<:RunningOnLinux:Linux>, <:RunningOnAMD64:AMD64>/<:RunningOnFreeBSD:FreeBSD>
-** <:RunningOnHPPA:HPPA>/<:RunningOnHPUX:HPUX>
-** <:RunningOnPowerPC:PowerPC>/<:RunningOnAIX:AIX>
-** <:RunningOnX86:X86>/<:RunningOnDarwin:Darwin (Mac OS X)>
+** <<RunningOnAMD64#,AMD64>>/<<RunningOnLinux#,Linux>>, <<RunningOnAMD64#,AMD64>>/<<RunningOnFreeBSD#,FreeBSD>>
+** <<RunningOnHPPA#,HPPA>>/<<RunningOnHPUX#,HPUX>>
+** <<RunningOnPowerPC#,PowerPC>>/<<RunningOnAIX#,AIX>>
+** <<RunningOnX86#,X86>>/<<RunningOnDarwin#,Darwin (Mac OS X)>>
 * Compiler.
 ** Support for 64-bit platforms.
 *** Native amd64 codegen.
-** <:CompileTimeOptions:Compile-time options>.
-*** Added: ++-codegen amd64++, ++-codegen x86++, ++-default-type __type__++, ++-profile-val {false|true}++.
-*** Changed: ++-stop f++ (file listing now includes `.mlb` files).
+** <<CompileTimeOptions#,Compile-time options>>.
+*** Added: ``-codegen amd64``, ``-codegen x86``, ``-default-type __type__``, ``-profile-val {false|true}``.
+*** Changed: ``-stop f`` (file listing now includes `.mlb` files).
 ** Bytecode codegen.
 *** Support for exception history.
 *** Support for profiling.
 * Language.
-*** <:MLBasisAnnotations:ML Basis annotations>.
+*** <<MLBasisAnnotations#,ML Basis annotations>>.
 **** Removed: `allowExport`, `allowImport`, `sequenceUnit`, `warnMatch`.
 * Libraries.
-** <:BasisLibrary:Basis Library>.
+** <<BasisLibrary#,Basis Library>>.
 *** Added: `PackWord16Big`, `PackWord16Little`, `PackWord64Big`, `PackWord64Little`.
-*** Bug fixes: see <!RawGitFile(mlton,on-20070826-release,doc/changelog)>.
-** <:MLtonStructure:MLton structure>.
+*** Bug fixes: see https://raw.github.com/MLton/mlton/on-20070826-release/doc/changelog[`changelog`].
+** <<MLtonStructure#,MLton structure>>.
 *** Added: `MLTON_MONO_ARRAY`, `MLTON_MONO_VECTOR`, `MLTON_REAL`, `MLton.BinIO.tempPrefix`, `MLton.CharArray`, `MLton.CharVector`, `MLton.Exn.defaultTopLevelHandler`, `MLton.Exn.getTopLevelHandler`, `MLton.Exn.setTopLevelHandler`, `MLton.IntInf.BigWord`, `Mlton.IntInf.SmallInt`, `MLton.LargeReal`, `MLton.LargeWord`, `MLton.Real`, `MLton.Real32`, `MLton.Real64`, `MLton.Rlimit.Rlim`, `MLton.TextIO.tempPrefix`, `MLton.Vector.create`, `MLton.Word.bswap`, `MLton.Word8.bswap`, `MLton.Word16`, `MLton.Word32`, `MLton.Word64`, `MLton.Word8Array`, `MLton.Word8Vector`.
 *** Changed: `MLton.Array.unfoldi`, `MLton.IntInf.rep`, `MLton.Rlimit`, `MLton.Vector.unfoldi`.
 *** Deprecated: `MLton.Socket`.
 ** Other libraries.
-*** Added: <:MLRISCLibrary:MLRISC library>.
-*** Updated: <:CKitLibrary:ckit library>, <:SMLNJLibrary:SML/NJ library>.
+*** Added: <<MLRISCLibrary#,MLRISC library>>.
+*** Updated: <<CKitLibrary#,ckit library>>, <<SMLNJLibrary#,SML/NJ library>>.
 * Tools.
 
 For a complete list of changes and bug fixes since
-<:Release20051202:>, see the
-<!RawGitFile(mlton,on-20070826-release,doc/changelog)> and
-<:Bugs20051202:>.
+<<Release20051202#>>, see the
+https://raw.github.com/MLton/mlton/on-20070826-release/doc/changelog[`changelog`] and
+<<Bugs20051202#>>.
 
-== 20070826 binary packages ==
+== 20070826 binary packages
 
 * AMD64
 ** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.amd64-linux.tgz[Linux], glibc 2.3
 * HPPA
-** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.hppa-hpux1100.tgz[HPUX] 11.00 and above, statically linked against <:GMP:>
+** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.hppa-hpux1100.tgz[HPUX] 11.00 and above, statically linked against <<GMP#>>
 * PowerPC
-** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.powerpc-aix51.tgz[AIX] 5.1 and above, statically linked against <:GMP:>
-** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.powerpc-darwin.gmp-static.tgz[Darwin] 8.10 (Mac OS X), statically linked against <:GMP:>
-** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.powerpc-darwin.gmp-macports.tgz[Darwin] 8.10 (Mac OS X), dynamically linked against <:GMP:> in `/opt/local/lib` (suitable for http://macports.org[MacPorts] install of <:GMP:>)
+** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.powerpc-aix51.tgz[AIX] 5.1 and above, statically linked against <<GMP#>>
+** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.powerpc-darwin.gmp-static.tgz[Darwin] 8.10 (Mac OS X), statically linked against <<GMP#>>
+** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.powerpc-darwin.gmp-macports.tgz[Darwin] 8.10 (Mac OS X), dynamically linked against <<GMP#>> in `/opt/local/lib` (suitable for http://macports.org[MacPorts] install of <<GMP#>>)
 * Sparc
-** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.sparc-solaris8.tgz[Solaris] 8 and above, statically linked against <:GMP:>
+** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.sparc-solaris8.tgz[Solaris] 8 and above, statically linked against <<GMP#>>
 * X86
 ** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-cygwin.tgz[Cygwin] 1.5.24-2
-** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-darwin.gmp-macports.tgz[Darwin (.tgz)] 8.10 (Mac OS X), dynamically linked against <:GMP:> in `/opt/local/lib` (suitable for http://macports.org[MacPorts] install of <:GMP:>)
-** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-darwin.gmp-macports.dmg[Darwin (.dmg)] 8.10 (Mac OS X), dynamically linked against <:GMP:> in `/opt/local/lib` (suitable for http://macports.org[MacPorts] install of <:GMP:>)
-** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-darwin.gmp-static.tgz[Darwin (.tgz)] 8.10 (Mac OS X), statically linked against <:GMP:>
-** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-darwin.gmp-static.dmg[Darwin (.dmg)] 8.10 (Mac OS X), statically linked against <:GMP:>
+** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-darwin.gmp-macports.tgz[Darwin (.tgz)] 8.10 (Mac OS X), dynamically linked against <<GMP#>> in `/opt/local/lib` (suitable for http://macports.org[MacPorts] install of <<GMP#>>)
+** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-darwin.gmp-macports.dmg[Darwin (.dmg)] 8.10 (Mac OS X), dynamically linked against <<GMP#>> in `/opt/local/lib` (suitable for http://macports.org[MacPorts] install of <<GMP#>>)
+** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-darwin.gmp-static.tgz[Darwin (.tgz)] 8.10 (Mac OS X), statically linked against <<GMP#>>
+** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-darwin.gmp-static.dmg[Darwin (.dmg)] 8.10 (Mac OS X), statically linked against <<GMP#>>
 ** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-freebsd.tgz[FreeBSD]
 ** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-linux.tgz[Linux], glibc 2.3
-** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-linux.glibc213.gmp-static.tgz[Linux], glibc 2.1, statically linked against <:GMP:>
-** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-mingw.gmp-dll.tgz[MinGW], dynamically linked against <:GMP:> (requires `libgmp-3.dll`)
-** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-mingw.gmp-static.tgz[MinGW], statically linked against <:GMP:>
+** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-linux.glibc213.gmp-static.tgz[Linux], glibc 2.1, statically linked against <<GMP#>>
+** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-mingw.gmp-dll.tgz[MinGW], dynamically linked against <<GMP#>> (requires `libgmp-3.dll`)
+** http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.x86-mingw.gmp-static.tgz[MinGW], statically linked against <<GMP#>>
 
-== 20070826 source packages ==
+== 20070826 source packages
 
  * http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton-20070826-1.src.tgz[source tgz]
 
@@ -72,16 +71,16 @@ For a complete list of changes and bug fixes since
  http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton_20070826-1.diff.gz[diff.gz],
  http://sourceforge.net/projects/mlton/files/mlton/20070826/mlton_20070826.orig.tar.gz[orig.tar.gz]
 
-== Packages available at other sites ==
+== Packages available at other sites
 
 * http://packages.debian.org/search?keywords=mlton&searchon=names&suite=all&section=all[Debian]
 * http://www.freebsd.org/cgi/ports.cgi?query=mlton&stype=all[FreeBSD]
 * https://admin.fedoraproject.org/pkgdb/packages/name/mlton[Fedora]
 * http://packages.ubuntu.com/cgi-bin/search_packages.pl?keywords=mlton&searchon=names&version=all&release=all[Ubuntu]
 
-== Also see ==
+== Also see
 
-* <:Bugs20070826:>
+* <<Bugs20070826#>>
 * http://www.mlton.org/guide/20070826/[MLton Guide (20070826)].
 +
 A snapshot of the MLton wiki at the time of release.

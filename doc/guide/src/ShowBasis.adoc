@@ -1,5 +1,4 @@
-ShowBasis
-=========
+= ShowBasis
 
 MLton has a flag, `-show-basis <file>`, that causes MLton to pretty
 print to _file_ the basis defined by the input program.  For example,
@@ -17,7 +16,7 @@ val f: int -> int
 If you only want to see the basis and do not wish to compile the
 program, you can call MLton with `-stop tc`.
 
-== Displaying signatures ==
+== Displaying signatures
 
 When displaying signatures, MLton prefixes types defined in the
 signature them with `_sig.` to distinguish them from types defined in the
@@ -98,7 +97,7 @@ signature S =
    end
 ----
 
-== Displaying structures ==
+== Displaying structures
 
 When displaying structures, MLton uses signature constraints wherever
 possible, combined with `where type` clauses to specify the meanings

@@ -1,18 +1,17 @@
-EtaExpansion
-============
+= EtaExpansion
 
 Eta expansion is a simple syntactic change used to work around the
-<:ValueRestriction:> in <:StandardML:Standard ML>.
+<<ValueRestriction#>> in <<StandardML#,Standard ML>>.
 
 The eta expansion of an expression `e` is the expression
-`fn z => e z`, where `z` does not occur in `e`.  This only
+`fn z \=> e z`, where `z` does not occur in `e`.  This only
 makes sense if `e` denotes a function, i.e. is of arrow type.  Eta
 expansion delays the evaluation of `e` until the function is
 applied, and will re-evaluate `e` each time the function is
 applied.
 
 The name "eta expansion" comes from the eta-conversion rule of the
-<:LambdaCalculus:lambda calculus>.  Expansion refers to the
+<<LambdaCalculus#,lambda calculus>>.  Expansion refers to the
 directionality of the equivalence being used, namely taking `e` to
-`fn z => e z` rather than `fn z => e z` to `e` (eta
+`fn z \=> e z` rather than `fn z \=> e z` to `e` (eta
 contraction).

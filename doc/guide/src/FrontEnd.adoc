@@ -1,27 +1,26 @@
-FrontEnd
-========
+= FrontEnd
 
-<:FrontEnd:> is a translation pass from source to the <:AST:>
-<:IntermediateLanguage:>.
+<<FrontEnd#>> is a translation pass from source to the <<AST#>>
+<<IntermediateLanguage#>>.
 
-== Description ==
+== Description
 
 This pass performs lexing and parsing to produce an abstract syntax
 tree.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/front-end/front-end.sig)>
-* <!ViewGitFile(mlton,master,mlton/front-end/front-end.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/front-end/front-end.sig[`front-end.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/front-end/front-end.fun[`front-end.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
-The lexer is produced by <:MLLex:> from
-<!ViewGitFile(mlton,master,mlton/front-end/ml.lex)>.
+The lexer is produced by <<MLLex#>> from
+https://github.com/MLton/mlton/blob/master/mlton/front-end/ml.lex[`ml.lex`].
 
-The parser is produced by <:MLYacc:> from
-<!ViewGitFile(mlton,master,mlton/front-end/ml.grm)>.
+The parser is produced by <<MLYacc#>> from
+https://github.com/MLton/mlton/blob/master/mlton/front-end/ml.grm[`ml.grm`].
 
 The specifications for the lexer and parser were originally taken from
-<:SMLNJ: SML/NJ> (version 109.32), but have been heavily modified
+<<SMLNJ#,SML/NJ>> (version 109.32), but have been heavily modified
 since then.

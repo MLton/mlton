@@ -1,7 +1,6 @@
-Talk
-====
+= Talk
 
-== The MLton Standard ML Compiler ==
+== The MLton Standard ML Compiler
 
 *Henry Cejtin, Matthew Fluet, Suresh Jagannathan, Stephen Weeks*
 
@@ -12,6 +11,6 @@ Talk
 '''
 
 [cols="<,>"]
-|====
-||<:TalkStandardML: Next>
-|====
+|===
+||<<TalkStandardML#,Next>>
+|===

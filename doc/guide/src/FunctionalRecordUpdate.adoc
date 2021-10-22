@@ -1,8 +1,7 @@
-FunctionalRecordUpdate
-======================
+= FunctionalRecordUpdate
 
 Functional record update is the copying of a record while replacing
-the values of some of the fields.  <:StandardML:Standard ML> does not
+the values of some of the fields.  <<StandardML#,Standard ML>> does not
 have explicit syntax for functional record update.  We will show below
 how to implement functional record update in SML, with a little
 boilerplate code.
@@ -49,7 +48,7 @@ advanced implementation, that, while complex underneath, is a reusable
 library that admits simple use.
 
 
-== Simple implementation ==
+== Simple implementation
 
 To support functional record update on the record type
 
@@ -91,16 +90,16 @@ e withA 16 withB 17
 This approach suffers from the fact that the amount of boilerplate
 code is quadratic in the number of record fields.  Furthermore,
 changing, adding, or deleting a field requires time proportional to
-the number of fields (because each ++with__<L>__++ function must be
-changed).  It is also annoying to have to define a ++with__<L>__++
+the number of fields (because each ``with__<L>__`` function must be
+changed).  It is also annoying to have to define a ``with__<L>__``
 function, possibly with a fixity declaration, for each field.
 
 Fortunately, there is a solution to these problems.
 
 
-== Advanced implementation ==
+== Advanced implementation
 
-Using <:Fold:> one can define a family of ++makeUpdate__<N>__++
+Using <<Fold#>> one can define a family of ``makeUpdate__<N>__``
 functions and single _update_ operator `U` so that one can define a
 functional record update function for any record type simply by
 specifying a (trivial) isomorphism between that type and function
@@ -125,7 +124,7 @@ The functions `from` (think _from function arguments_) and `to` (think
 _to function arguements_) specify an isomorphism between `a`,`b`
 records and function arguments.  There is a second use of `from` to
 work around the lack of
-<:FirstClassPolymorphism:first-class polymorphism> in SML.
+<<FirstClassPolymorphism#,first-class polymorphism>> in SML.
 
 With the definition of `updateAB` in place, the following expressions
 are valid.
@@ -190,7 +189,7 @@ update {f1 = v1, ..., fn = vn} (set#fi1 vi1) ... (set#fim vim) $
 ----
 
 
-== The `FunctionalRecordUpdate` structure ==
+== The `FunctionalRecordUpdate` structure
 
 Here is the implementation of functional record update.
 
@@ -230,8 +229,8 @@ structure FunctionalRecordUpdate =
 
 The idea of `makeUpdate` is to build a record of functions which can
 replace the contents of one argument out of a list of arguments.  The
-functions ++f__<X>__++ replace the 0th, 1st, ... argument with their
-argument `z`. The ++c__<X>__++ functions pass the first __X__ `f`
+functions ``f__<X>__`` replace the 0th, 1st, ... argument with their
+argument `z`. The ``c__<X>__`` functions pass the first __X__ `f`
 functions to the record constructor.
 
 The `#field` notation of Standard ML allows us to select the map
@@ -241,7 +240,7 @@ function and piping the list into the record constructor, functional
 record update is achieved.
 
 
-== Efficiency ==
+== Efficiency
 
 With MLton, the efficiency of this approach is as good as one would
 expect with the special syntax.  Namely a sequence of updates will be
@@ -249,12 +248,12 @@ optimized into a single record construction that copies the unchanged
 fields and fills in the changed fields with their new values.
 
 Before Sep 14, 2009, this page advocated an alternative implementation
-of <:FunctionalRecordUpdate:>.  However, the old structure caused
+of <<FunctionalRecordUpdate#>>.  However, the old structure caused
 exponentially increasing compile times.  We advise you to switch to
 the newer version.
 
 
-== Applications ==
+== Applications
 
 Functional record update can be used to implement labelled
-<:OptionalArguments:optional arguments>.
+<<OptionalArguments#,optional arguments>>.

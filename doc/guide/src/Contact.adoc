@@ -1,7 +1,6 @@
-Contact
-=======
+= Contact
 
-== Mailing lists ==
+== Mailing lists
 
 There are three mailing lists available.
 
@@ -36,7 +35,7 @@ http://www.mlton.org/pipermail/mlton-commit/[archive (PiperMail; through 201110)
 --
 
 
-=== Mailing list policies ===
+=== Mailing list policies
 
 * Both mailing lists are unmoderated.  However, the mailing lists are
 configured to discard all spam, to hold all non-subscriber posts
@@ -53,7 +52,7 @@ an email containing the discussion text and a link to any large files.
 members who might otherwise be expected to provide a fast response
 should send a message when they will be offline for more than a few
 days.  The convention is to put
-"++__userid__ offline until __date__++" in the subject line to make it
+"``__userid__ offline until __date__``" in the subject line to make it
 easy to scan.
 /////
 
@@ -67,6 +66,6 @@ mailto:MLton-devel@mlton.org[`MLton-devel@mlton.org`], particularly
 when the discussion shifts from how to use MLton to how to modify
 MLton (e.g., to fix a bug identified by the initial discussion).
 
-== IRC ==
+== IRC
 
 * Some MLton developers and users are in channel `#sml` on http://freenode.net.

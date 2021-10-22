@@ -1,8 +1,0 @@
-# -v
--b html5
---attribute=source-highlighter=pygments
-# --attribute=disable-javascript
---attribute=linkcss
---conf-file=conf/html5-header.conf
---conf-file=conf/html5-footer.conf
---conf-file=conf/mlton-html5.conf

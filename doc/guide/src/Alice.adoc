@@ -1,5 +1,4 @@
-Alice
-=====
+= Alice
 
 http://www.ps.uni-saarland.de/alice[Alice ML] is an extension of SML with
 concurrency, dynamic typing, components, distribution, and constraint

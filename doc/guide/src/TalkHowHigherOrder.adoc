@@ -1,7 +1,6 @@
-TalkHowHigherOrder
-==================
+= TalkHowHigherOrder
 
-== Higher-order Functions ==
+== Higher-order Functions
 
  * How does one represent SML's higher-order functions?
  * MLton's answer: defunctionalize
@@ -9,7 +8,7 @@ TalkHowHigherOrder
 {nbsp} +
 {nbsp} +
 
-See <:ClosureConvert:>.
+See <<ClosureConvert#>>.
 
 {nbsp} +
 {nbsp} +
@@ -17,6 +16,6 @@ See <:ClosureConvert:>.
 
 '''
 [cols="<,>"]
-|====
-|<:TalkMLtonApproach: Prev>|<:TalkWholeProgram: Next>
-|====
+|===
+|<<TalkMLtonApproach#,Prev>>|<<TalkWholeProgram#,Next>>
+|===

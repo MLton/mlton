@@ -1,12 +1,11 @@
-ConcurrentMLImplementation
-==========================
+= ConcurrentMLImplementation
 
-Here are some notes on MLton's implementation of <:ConcurrentML:>.
+Here are some notes on MLton's implementation of <<ConcurrentML#>>.
 
 Concurrent ML was originally implemented for SML/NJ.  It was ported to
 MLton in the summer of 2004.  The main difference between the
 implementations is that SML/NJ uses continuations to implement CML
-threads, while MLton uses its underlying <:MLtonThread:thread>
+threads, while MLton uses its underlying <<MLtonThread#,thread>>
 package.  Presently, MLton's threads are a little more heavyweight
 than SML/NJ's continuations, but it's pretty clear that there is some
 fat there that could be trimmed.
@@ -22,7 +21,7 @@ val throw: 'a cont -> 'a -> 'b
 ----
 
 The implementation of CML in MLton is built upon the first-class
-threads of the <:MLtonThread:> module.
+threads of the <<MLtonThread#>> module.
 [source,sml]
 ----
 type 'a t
@@ -209,7 +208,7 @@ than it is in the SML/NJ implementation, and encapsulated all of the
 * eliminated all of the "by hand" inlining
 
 
-== Future Extensions ==
+== Future Extensions
 
 The CML documentation says the following:
 ____
@@ -255,7 +254,7 @@ leave the second thread blocked.  We could solve this by adjusting the
 `TransID.trans_id types` and the "cleaner" functions to look for both
 canceled transactions and transactions on killed threads.
 
-John Reppy says that <!Cite(MarlowEtAl01)> and <!Cite(FlattFindler04)>
+John Reppy says that <<References#MarlowEtAl01,MarlowEtAl01>> and <<References#FlattFindler04,FlattFindler04>>
 explain why `CML.kill` would be a bad idea.
 
 Between `CML.timeOutEvt` and `CML.kill`, one could give an efficient
@@ -275,7 +274,7 @@ function that doesn't complete in a given time.
 ----
 
 
-== Space Safety ==
+== Space Safety
 
 There are some CML related posts on the MLton mailing list:
 

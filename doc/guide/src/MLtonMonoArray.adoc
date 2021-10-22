@@ -1,5 +1,4 @@
-MLtonMonoArray
-==============
+= MLtonMonoArray
 
 [source,sml]
 ----

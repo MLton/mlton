@@ -1,22 +1,21 @@
-Features
-========
+= Features
 
 MLton has the following features.
 
-== Robustness ==
+== Robustness
 
-* Supports the full SML{nbsp}97 language as given in <:DefinitionOfStandardML:The Definition of Standard{nbsp}ML (Revised)>.
+* Supports the full SML{nbsp}97 language as given in <<DefinitionOfStandardML#,The Definition of Standard{nbsp}ML (Revised)>>.
 +
 If there is a program that is valid according to the
-<:DefinitionOfStandardML:Definition> that is rejected by MLton, or a
+<<DefinitionOfStandardML#,Definition>> that is rejected by MLton, or a
 program that is invalid according to the
-<:DefinitionOfStandardML:Definition> that is accepted by MLton, it is
-a bug.  For a list of known bugs, see <:UnresolvedBugs:>.
+<<DefinitionOfStandardML#,Definition>> that is accepted by MLton, it is
+a bug.  For a list of known bugs, see <<UnresolvedBugs#>>.
 
-* A complete implementation of the <:BasisLibrary:Basis Library>.
+* A complete implementation of the <<BasisLibrary#,Basis Library>>.
 +
-MLton's implementation matches latest <:BasisLibrary:Basis Library>
-http://www.standardml.org/Basis[specification], and includes a
+MLton's implementation matches latest <<BasisLibrary#,Basis Library>>
+https://smlfamily.github.io/Basis[specification], and includes a
 complete implementation of all the required modules, as well as many
 of the optional modules.
 
@@ -38,9 +37,9 @@ of MLton was compiled by MLton.
 
 * Support for large files, using 64-bit file positions.
 
-== Performance ==
+== Performance
 
-* Executables have <:Performance:excellent runtime performance>.
+* Executables have <<Performance#,excellent runtime performance>>.
 
 * Generates small executables.
 +
@@ -62,139 +61,139 @@ natural C-like representation.  This is fast and supports easy
 exchange of data with C.  Monomorphic arrays (and vectors) use the
 same C-like representations as their polymorphic counterparts.
 
-* Multiple <:GarbageCollection:garbage collection> strategies.
+* Multiple <<GarbageCollection#,garbage collection>> strategies.
 
-* Fast arbitrary precision arithmetic (`IntInf`) based on <:GMP:>.
+* Fast arbitrary precision arithmetic (`IntInf`) based on <<GMP#>>.
 +
 For `IntInf` intensive programs, MLton can be an order of magnitude or
 more faster than Poly/ML or SML/NJ.
 
-== Tools ==
+== Tools
 
-* Source-level <:Profiling:> of both time and allocation.
-* <:MLLex:> lexer generator
-* <:MLYacc:> parser generator
-* <:MLNLFFIGen:> foreign-function-interface generator
+* Source-level <<Profiling#>> of both time and allocation.
+* <<MLLex#>> lexer generator
+* <<MLYacc#>> parser generator
+* <<MLNLFFIGen#>> foreign-function-interface generator
 
-== Extensions ==
+== Extensions
 
-* The <:MLBasis:ML Basis system> for programming in the very large, separate delivery of library sources, and more.
+* The <<MLBasis#,ML Basis system>> for programming in the very large, separate delivery of library sources, and more.
 
-* A number of useful <:SuccessorML:language extensions>.
+* A number of useful <<SuccessorML#,language extensions>>.
 
-* A simple and fast C <:ForeignFunctionInterface:> that supports calling from SML to C and from C to SML.
+* A simple and fast C <<ForeignFunctionInterface#>> that supports calling from SML to C and from C to SML.
 
 * A number of extension libraries that provide useful functionality
-that cannot be implemented with the <:BasisLibrary:Basis Library>.
-See below for an overview and <:MLtonStructure:> for details.
+that cannot be implemented with the <<BasisLibrary#,Basis Library>>.
+See below for an overview and <<MLtonStructure#>> for details.
 
-** <:MLtonCont:continuations>
+** <<MLtonCont#,continuations>>
 +
 MLton supports continuations via `callcc` and `throw`.
 
-** <:MLtonFinalizable:finalization>
+** <<MLtonFinalizable#,finalization>>
 +
 MLton supports finalizable values of arbitrary type.
 
-** <:MLtonItimer:interval timers>
+** <<MLtonItimer#,interval timers>>
 +
 MLton supports the functionality of the C `setitimer` function.
 
-** <:MLtonRandom:random numbers>
+** <<MLtonRandom#,random numbers>>
 +
 MLton has functions similar to the C `rand` and `srand` functions, as well as support for access to `/dev/random` and `/dev/urandom`.
 
-** <:MLtonRlimit:resource limits>
+** <<MLtonRlimit#,resource limits>>
 +
 MLton has functions similar to the C `getrlimit` and `setrlimit` functions.
 
-** <:MLtonRusage:resource usage>
+** <<MLtonRusage#,resource usage>>
 +
 MLton supports a subset of the functionality of the C `getrusage` function.
 
-** <:MLtonSignal:signal handlers>
+** <<MLtonSignal#,signal handlers>>
 +
 MLton supports signal handlers written in SML.  Signal handlers run in
 a separate MLton thread, and have access to the thread that was
 interrupted by the signal.  Signal handlers can be used in conjunction
 with threads to implement preemptive multitasking.
 
-** <:MLtonStructure:size primitive>
+** <<MLtonStructure#,size primitive>>
 +
 MLton includes a primitive that returns the size (in bytes) of any
 object.  This can be useful in understanding the space behavior of a
 program.
 
-** <:MLtonSyslog:system logging>
+** <<MLtonSyslog#,system logging>>
 +
 MLton has a complete interface to the C `syslog` function.
 
-** <:MLtonThread:threads>
+** <<MLtonThread#,threads>>
 +
 MLton has support for its own threads, upon which either preemptive or
 non-preemptive multitasking can be implemented.  MLton also has
-support for <:ConcurrentML:Concurrent ML> (CML).
+support for <<ConcurrentML#,Concurrent ML>> (CML).
 
-** <:MLtonWeak:weak pointers>
+** <<MLtonWeak#,weak pointers>>
 +
 MLton supports weak pointers, which allow the garbage collector to
 reclaim objects that it would otherwise be forced to keep.  Weak
 pointers are also used to provide finalization.
 
-** <:MLtonWorld:world save and restore>
+** <<MLtonWorld#,world save and restore>>
 +
 MLton has a facility for saving the entire state of a computation to a
 file and restarting it later.  This facility can be used for staging
 and for checkpointing computations.  It can even be used from within
 signal handlers, allowing interrupt driven checkpointing.
 
-== Portability ==
+== Portability
 
 * Runs on a wide variety of platforms.
 
-** <:RunningOnARM:ARM>:
-*** <:RunningOnLinux:Linux> (Debian)
-*** <:RunningOnFreeBSD:FreeBSD>
+** <<RunningOnARM#,ARM>>:
+*** <<RunningOnLinux#,Linux>> (Debian)
+*** <<RunningOnFreeBSD#,FreeBSD>>
 
-** <:RunningOnAlpha:Alpha>:
-*** <:RunningOnLinux:Linux> (Debian)
+** <<RunningOnAlpha#,Alpha>>:
+*** <<RunningOnLinux#,Linux>> (Debian)
 
-** <:RunningOnAMD64:AMD64>:
-*** <:RunningOnDarwin:Darwin> (Mac OS X)
-*** <:RunningOnFreeBSD:FreeBSD>
-*** <:RunningOnLinux:Linux> (Debian, Fedora, Ubuntu, ...)
-*** <:RunningOnOpenBSD:OpenBSD>
-*** <:RunningOnSolaris:Solaris> (10 and above)
+** <<RunningOnAMD64#,AMD64>>:
+*** <<RunningOnDarwin#,Darwin>> (Mac OS X)
+*** <<RunningOnFreeBSD#,FreeBSD>>
+*** <<RunningOnLinux#,Linux>> (Debian, Fedora, Ubuntu, ...)
+*** <<RunningOnOpenBSD#,OpenBSD>>
+*** <<RunningOnSolaris#,Solaris>> (10 and above)
 
-** <:RunningOnHPPA:HPPA>:
-*** <:RunningOnHPUX:HPUX> (11.11 and above)
-*** <:RunningOnLinux:Linux> (Debian)
+** <<RunningOnHPPA#,HPPA>>:
+*** <<RunningOnHPUX#,HPUX>> (11.11 and above)
+*** <<RunningOnLinux#,Linux>> (Debian)
 
-** <:RunningOnIA64:IA64>:
-*** <:RunningOnHPUX:HPUX> (11.11 and above)
-*** <:RunningOnLinux:Linux> (Debian)
+** <<RunningOnIA64#,IA64>>:
+*** <<RunningOnHPUX#,HPUX>> (11.11 and above)
+*** <<RunningOnLinux#,Linux>> (Debian)
 
-** <:RunningOnPowerPC:PowerPC>:
-*** <:RunningOnAIX:AIX> (5.2 and above)
-*** <:RunningOnDarwin:Darwin> (Mac OS X)
-*** <:RunningOnLinux:Linux> (Debian, Fedora, ...)
+** <<RunningOnPowerPC#,PowerPC>>:
+*** <<RunningOnAIX#,AIX>> (5.2 and above)
+*** <<RunningOnDarwin#,Darwin>> (Mac OS X)
+*** <<RunningOnLinux#,Linux>> (Debian, Fedora, ...)
 
-** <:RunningOnPowerPC64:PowerPC64>:
-*** <:RunningOnAIX:AIX> (5.2 and above)
+** <<RunningOnPowerPC64#,PowerPC64>>:
+*** <<RunningOnAIX#,AIX>> (5.2 and above)
 
-** <:RunningOnS390:S390>
-*** <:RunningOnLinux:Linux> (Debian)
+** <<RunningOnS390#,S390>>
+*** <<RunningOnLinux#,Linux>> (Debian)
 
-** <:RunningOnSparc:Sparc>
-*** <:RunningOnLinux:Linux> (Debian)
-*** <:RunningOnSolaris:Solaris> (8 and above)
+** <<RunningOnSparc#,Sparc>>
+*** <<RunningOnLinux#,Linux>> (Debian)
+*** <<RunningOnSolaris#,Solaris>> (8 and above)
 
-** <:RunningOnX86:X86>:
-*** <:RunningOnCygwin:Cygwin>/Windows
-*** <:RunningOnDarwin:Darwin> (Mac OS X)
-*** <:RunningOnFreeBSD:FreeBSD>
-*** <:RunningOnLinux:Linux> (Debian, Fedora, Ubuntu, ...)
-*** <:RunningOnMinGW:MinGW>/Windows
-*** <:RunningOnNetBSD:NetBSD>
-*** <:RunningOnOpenBSD:OpenBSD>
-*** <:RunningOnSolaris:Solaris> (10 and above)
+** <<RunningOnX86#,X86>>:
+*** <<RunningOnCygwin#,Cygwin>>/Windows
+*** <<RunningOnDarwin#,Darwin>> (Mac OS X)
+*** <<RunningOnFreeBSD#,FreeBSD>>
+*** <<RunningOnLinux#,Linux>> (Debian, Fedora, Ubuntu, ...)
+*** <<RunningOnMinGW#,MinGW>>/Windows
+*** <<RunningOnNetBSD#,NetBSD>>
+*** <<RunningOnOpenBSD#,OpenBSD>>
+*** <<RunningOnSolaris#,Solaris>> (10 and above)

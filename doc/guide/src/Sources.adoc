@@ -1,21 +1,20 @@
-Sources
-=======
+= Sources
 
-We maintain our sources with <:Git:>.  You can
+We maintain our sources with <<Git#>>.  You can
 https://github.com/MLton/mlton/[view them on the web] or access
 them with a git client.
 
 Anonymous read-only access is available via
-----------
+----
 https://github.com/MLton/mlton.git
-----------
+----
 or
-----------
+----
 git://github.com/MLton/mlton.git
-----------
+----
 
 
-== Commit email ==
+== Commit email
 
 All commits are sent to
 mailto:MLton-commit@mlton.org[`MLton-commit@mlton.org`]
@@ -26,23 +25,23 @@ read-only mailing list for commit emails.  Discussion should go to
 mailto:MLton-devel@mlton.org[`MLton-devel@mlton.org`].
 
 /////
-If the first line of a commit log message begins with "++MAIL{nbsp} ++",
+If the first line of a commit log message begins with "``MAIL{nbsp} ``",
 then the commit message will be sent with the subject as the rest of
 that first line, and will also be sent to
 mailto:MLton-devel@mlton.org[`MLton-devel@mlton.org`].
 /////
 
 
-== Changelog ==
+== Changelog
 
-See <!ViewGitFile(mlton,master,CHANGELOG.adoc)> for a list of
+See https://github.com/MLton/mlton/blob/master/CHANGELOG.adoc[`CHANGELOG.adoc`] for a list of
 changes and bug fixes.
 
 
-== Subversion ==
+== Subversion
 
-Prior to 20130308, we used <:Subversion:>.
+Prior to 20130308, we used <<Subversion#>>.
 
-== CVS ==
+== CVS
 
-Prior to 20050730, we used <:CVS:>.
+Prior to 20050730, we used <<CVS#>>.

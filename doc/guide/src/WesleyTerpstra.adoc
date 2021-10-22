@@ -1,5 +1,4 @@
-WesleyTerpstra
-==============
+= WesleyTerpstra
 
 Wesley W. Terpstra is a PhD student at the Technische Universitat Darmstadt (Germany).
 

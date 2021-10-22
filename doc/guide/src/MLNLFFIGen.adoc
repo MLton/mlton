@@ -1,8 +1,7 @@
-MLNLFFIGen
-==========
+= MLNLFFIGen
 
-`mlnlffigen` generates a <:MLNLFFI:> binding from a collection of `.c`
-files. It is based on the <:CKitLibrary:>, which is primarily designed
+`mlnlffigen` generates a <<MLNLFFI#>> binding from a collection of `.c`
+files. It is based on the <<CKitLibrary#>>, which is primarily designed
 to handle standardized C and thus does not understand many (any?)
 compiler extensions; however, it attempts to recover from errors when
 seeing unrecognized definitions.

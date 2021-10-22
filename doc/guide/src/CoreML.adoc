@@ -1,24 +1,23 @@
-CoreML
-======
+= CoreML
 
-<:CoreML:Core ML> is an <:IntermediateLanguage:>, translated from
-<:AST:> by <:Elaborate:>, optimized by <:CoreMLSimplify:>, and
-translated by <:Defunctorize:> to <:XML:>.
+<<CoreML#,Core ML>> is an <<IntermediateLanguage#>>, translated from
+<<AST#>> by <<Elaborate#>>, optimized by <<CoreMLSimplify#>>, and
+translated by <<Defunctorize#>> to <<XML#>>.
 
-== Description ==
+== Description
 
-<:CoreML:> is polymorphic, higher-order, and has nested patterns.
+<<CoreML#>> is polymorphic, higher-order, and has nested patterns.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/core-ml/core-ml.sig)>
-* <!ViewGitFile(mlton,master,mlton/core-ml/core-ml.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/core-ml/core-ml.sig[`core-ml.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/core-ml/core-ml.fun[`core-ml.fun`]
 
-== Type Checking ==
+== Type Checking
 
-The <:CoreML:> <:IntermediateLanguage:> has no independent type
+The <<CoreML#>> <<IntermediateLanguage#>> has no independent type
 checker.
 
-== Details and Notes ==
+== Details and Notes
 
 {empty}

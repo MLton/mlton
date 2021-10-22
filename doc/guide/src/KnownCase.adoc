@@ -1,15 +1,14 @@
-KnownCase
-=========
+= KnownCase
 
-<:KnownCase:> is an optimization pass for the <:SSA:>
-<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+<<KnownCase#>> is an optimization pass for the <<SSA#>>
+<<IntermediateLanguage#>>, invoked from <<SSASimplify#>>.
 
-== Description ==
+== Description
 
 This pass duplicates and simplifies `Case` transfers when the
 constructor of the scrutinee is known.
 
-Uses <:Restore:>.
+Uses <<Restore#>>.
 
 For example, the program
 [source,sml]
@@ -22,7 +21,7 @@ val rec last =
 val _ = 1 + last [2, 3, 4, 5, 6, 7]
 ----
 
-gives rise to the <:SSA:> function
+gives rise to the <<SSA#>> function
 
 ----
 fun last_0 (x_142) = loopS_1 ()
@@ -62,12 +61,12 @@ fun last_0 (x_142) = loopS_1 ()
     L_74 (x_227, x_226, x_145)
 ----
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/known-case.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/known-case.fun[`known-case.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
-One interesting aspect of <:KnownCase:>, is that it often has the
+One interesting aspect of <<KnownCase#>>, is that it often has the
 effect of unrolling list traversals by one iteration, moving the
 `nil`/`::` check to the end of the loop, rather than the beginning.

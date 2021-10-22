@@ -1,5 +1,4 @@
-MLtonRlimit
-===========
+= MLtonRlimit
 
 [source,sml]
 ----

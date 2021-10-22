@@ -1,5 +1,4 @@
-ManualPage
-==========
+= ManualPage
 
 MLton is run from the command line with a collection of options
 followed by a file name and a list of files to compile, assemble, and
@@ -14,14 +13,14 @@ a valid SML program, in which case MLton compiles the program to
 produce an executable `foo`.  Since MLton does not support separate
 compilation, the program must be the entire program you wish to
 compile.  However, the program may refer to signatures and structures
-defined in the <:BasisLibrary:Basis Library>.
+defined in the <<BasisLibrary#,Basis Library>>.
 
 Larger programs, spanning many files, can be compiled with the
-<:MLBasis:ML Basis system>.  In this case, `mlton foo.mlb` will
+<<MLBasis#,ML Basis system>>.  In this case, `mlton foo.mlb` will
 compile the complete SML program described by the basis `foo.mlb`,
 which may specify both SML files and additional bases.
 
-== Next Steps ==
+== Next Steps
 
-* <:CompileTimeOptions:>
-* <:RunTimeOptions:>
+* <<CompileTimeOptions#>>
+* <<RunTimeOptions#>>

@@ -1,5 +1,4 @@
-SML3d
-=====
+= SML3d
 
 The http://sml3d.cs.uchicago.edu/[SML3d Project] is a collection of
 libraries to support 3D graphics programming using Standard ML and the

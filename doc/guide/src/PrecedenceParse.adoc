@@ -1,19 +1,18 @@
-PrecedenceParse
-===============
+= PrecedenceParse
 
-<:PrecedenceParse:> is an analysis/rewrite pass for the <:AST:>
-<:IntermediateLanguage:>, invoked from <:Elaborate:>.
+<<PrecedenceParse#>> is an analysis/rewrite pass for the <<AST#>>
+<<IntermediateLanguage#>>, invoked from <<Elaborate#>>.
 
-== Description ==
+== Description
 
-This pass rewrites <:AST:> function clauses, expressions, and patterns
-to resolve <:OperatorPrecedence:>.
+This pass rewrites <<AST#>> function clauses, expressions, and patterns
+to resolve <<OperatorPrecedence#>>.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/elaborate/precedence-parse.sig)>
-* <!ViewGitFile(mlton,master,mlton/elaborate/precedence-parse.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/elaborate/precedence-parse.sig[`precedence-parse.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/elaborate/precedence-parse.fun[`precedence-parse.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 {empty}

@@ -1,11 +1,10 @@
-Users
-=====
+= Users
 
 Here is a list of companies, projects, and courses that use or have
 used MLton.  If you use MLton and are not here, please add your
 project with a brief description and a link.  Thanks.
 
-== Companies ==
+== Companies
 
 * http://www.hardcoreprocessing.com/[Hardcore Processing] uses MLton as a http://www.hardcoreprocessing.com/Freeware/MLTonWin32.html[crosscompiler from Linux to Windows] for graphics and game software.
 ** http://www.cex3d.net/[CEX3D Converter], a conversion program for 3D objects.
@@ -15,10 +14,10 @@ project with a brief description and a link.  Thanks.
 // * http://www.sourcelight.com/[Sourcelight Technologies] uses MLton internally for prototyping and for processing databases as part of their system that makes personalized movie recommen
 * http://www.reactive-systems.com/[Reactive Systems] uses MLton to build Reactis, a model-based testing and validation package used in the automotive and aerospace industries.
 
-== Projects ==
+== Projects
 
 * http://www-ia.hiof.no/%7Erolando/adate_intro.html[ADATE], Automatic Design of Algorithms Through Evolution, a system for automatic programming i.e., inductive inference of algorithms. ADATE can automatically generate non-trivial and novel algorithms written in Standard ML.
-* http://types.bu.edu/reports/Dim+Wes+Mul+Tur+Wel+Con:TIC-2000-LNCS.html[CIL], a compiler for SML based on intersection and union types.
+* http://types.bu.edu/reports/Dim`Wes`Mul`Tur`Wel+Con:TIC-2000-LNCS.html[CIL], a compiler for SML based on intersection and union types.
 * http://www.cs.cmu.edu/%7Econcert/[ConCert], a project investigating certified code for grid computing.
 * http://hcoop.sourceforge.net/[Cooperative Internet hosting tools]
 // * http://www.eecs.harvard.edu/%7Estein/[DesynchFS], a programming model and distributed file system for large clusters
@@ -27,20 +26,20 @@ project with a brief description and a link.  Thanks.
 * https://github.com/heron-solver/heron[Heron], a discrete-event simulation solver for polychronous timed systems
 * http://code.google.com/p/kepler-code/[KeplerCode], independent verification of the computational aspects of proofs of the Kepler conjecture and the Dodecahedral conjecture.
 * http://www.gilith.com/research/metis/[Metis], a first-order prover (used in the http://hol.sourceforge.net/[HOL4 theorem prover] and the http://isabelle.in.tum.de/[Isabelle theorem prover]).
-* http://tom7misc.cvs.sourceforge.net/viewvc/tom7misc/net/mlftpd/[mlftpd], an ftp daemon written in SML.  <:TomMurphy:> is also working on http://tom7misc.cvs.sourceforge.net/viewvc/tom7misc/net/[replacements for standard network services] in SML.  He also uses MLton to build his entries (http://www.cs.cmu.edu/%7Etom7/icfp2001/[2001], http://www.cs.cmu.edu/%7Etom7/icfp2002/[2002], http://www.cs.cmu.edu/%7Etom7/icfp2004/[2004], http://www.cs.cmu.edu/%7Etom7/icfp2005/[2005]) in the annual ICFP programming contest.
+* http://tom7misc.cvs.sourceforge.net/viewvc/tom7misc/net/mlftpd/[mlftpd], an ftp daemon written in SML.  <<TomMurphy#>> is also working on http://tom7misc.cvs.sourceforge.net/viewvc/tom7misc/net/[replacements for standard network services] in SML.  He also uses MLton to build his entries (http://www.cs.cmu.edu/%7Etom7/icfp2001/[2001], http://www.cs.cmu.edu/%7Etom7/icfp2002/[2002], http://www.cs.cmu.edu/%7Etom7/icfp2004/[2004], http://www.cs.cmu.edu/%7Etom7/icfp2005/[2005]) in the annual ICFP programming contest.
 * http://www.informatik.uni-freiburg.de/proglang/research/software/mlope/[MLOPE], an offline partial evaluator for Standard ML.
 * http://www.ida.liu.se/%7Epelab/rml/[RML], a system for developing, compiling and debugging and teaching structural operational semantics (SOS) and natural semantics specifications.
 * http://www.macs.hw.ac.uk/ultra/skalpel/index.html[Skalpel], a type-error slicer for SML
 // * http://alleystoughton.us/smlnjtrans/[SMLNJtrans], a program for generating SML/NJ transcripts in LaTeX.
 * http://www.cs.cmu.edu/%7Etom7/ssapre/[SSA PRE], an implementation of Partial Redundancy Elimination for MLton.
-* <:Stabilizers:>, a modular checkpointing abstraction for concurrent functional programs.
+* <<Stabilizers#>>, a modular checkpointing abstraction for concurrent functional programs.
 * http://ttic.uchicago.edu/%7Epl/sa-sml/[Self-Adjusting SML], self-adjusting computation, a model of computing where programs can automatically adjust to changes to their data.
 * http://faculty.ist.unomaha.edu/winter/ShiftLab/TL_web/TL_index.html[TL System], providing general-purpose support for rewrite-based transformation over elements belonging to a (user-defined) domain language.
 * http://projects.laas.fr/tina/[Tina] (Time Petri net Analyzer)
 * http://www.twelf.org/[Twelf] an implementation of the LF logical framework.
 * http://www.cs.indiana.edu/%7Errnewton/wavescope/[WaveScript/WaveScript], a sensor network project; the WaveScript compiler can generate SML (MLton) code.
 
-== Courses ==
+== Courses
 
 * http://www.eecs.harvard.edu/%7Enr/cs152/[Harvard CS-152], undergraduate programming languages.
 * http://www.ia-stud.hiof.no/%7Erolando/PL/[Høgskolen i Østfold IAI30202], programming languages.

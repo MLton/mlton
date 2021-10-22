@@ -1,11 +1,10 @@
-Closure
-=======
+= Closure
 
 A closure is a data structure that is the run-time representation of a
 function.
 
 
-== Typical Implementation ==
+== Typical Implementation
 
 In a typical implementation, a closure consists of a _code pointer_
 (indicating what the function does) and an _environment_ containing
@@ -21,7 +20,7 @@ in
 end
 ----
 
-the closure for `fn y => x + y` contains a pointer to a piece of code
+the closure for `fn y \=> x + y` contains a pointer to a piece of code
 that knows to take its argument and add the value of `x` to it, plus
 the environment recording the value of `x` as `5`.
 
@@ -29,10 +28,10 @@ To call a function, the code pointer is extracted and jumped to,
 passing in some agreed upon location the environment and the argument.
 
 
-== MLton's Implementation ==
+== MLton's Implementation
 
 MLton does not implement closures traditionally.  Instead, based on
 whole-program higher-order control-flow analysis, MLton represents a
 function as an element of a sum type, where the variant indicates
 which function it is and carries the free variables as arguments.  See
-<:ClosureConvert:> and <!Cite(CejtinEtAl00)> for details.
+<<ClosureConvert#>> and <<References#CejtinEtAl00,CejtinEtAl00>> for details.

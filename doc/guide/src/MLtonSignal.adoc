@@ -1,5 +1,4 @@
-MLtonSignal
-===========
+= MLtonSignal
 
 [source,sml]
 ----
@@ -55,7 +54,7 @@ error for a signal handler to raise an exception that is not handled
 within the signal handler itself.
 
 A signal handler is never invoked while the running thread is in a
-critical section (see <:MLtonThread:>).  Invoking a signal handler
+critical section (see <<MLtonThread#>>).  Invoking a signal handler
 implicitly enters a critical section and the normal return of a signal
 handler implicitly exits the critical section; hence, a signal handler
 is never interrupted by another signal handler.
@@ -170,10 +169,10 @@ mask and returns.
 `SIGVTALRM`, the signal for virtual timers.
 
 
-== Interruptible System Calls ==
+== Interruptible System Calls
 
 Signal handling interacts in a non-trivial way with those functions in
-the <:BasisLibrary:Basis Library> that correspond directly to
+the <<BasisLibrary#,Basis Library>> that correspond directly to
 interruptible system calls (a subset of those functions that may raise
 `OS.SysError`).  The desire is that these functions should have
 predictable semantics.  The principal concerns are:

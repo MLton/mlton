@@ -1,12 +1,11 @@
-Bugs20201002
-============
+= Bugs20201002
 
-Here are the known bugs in <:Release20201002:MLton 20201002>, listed
+Here are the known bugs in <<Release20201002#,MLton 20201002>>, listed
 in reverse chronological order of date reported.
 
-* <!Anchor(bug01)>
+* [[bug01]]
 Bug in `SimplifyTypes` SSA optimization pass (`simplifyTypes raised: Option`).
 +
 Thanks to Martin Elsman for the bug report.
 +
-Fixed by commit <!ViewGitCommit(mlton,8ca4fb0c1)>.
+Fixed by commit https://github.com/MLton/mlton/commit/8ca4fb0c1[`8ca4fb0c1`].

@@ -1,34 +1,33 @@
-SXML
-====
+= SXML
 
-<:SXML:> is an <:IntermediateLanguage:>, translated from <:XML:> by
-<:Monomorphise:>, optimized by <:SXMLSimplify:>, and translated by
-<:ClosureConvert:> to <:SSA:>.
+<<SXML#>> is an <<IntermediateLanguage#>>, translated from <<XML#>> by
+<<Monomorphise#>>, optimized by <<SXMLSimplify#>>, and translated by
+<<ClosureConvert#>> to <<SSA#>>.
 
-== Description ==
+== Description
 
-SXML is a simply-typed version of <:XML:>.
+SXML is a simply-typed version of <<XML#>>.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/xml/sxml.sig)>
-* <!ViewGitFile(mlton,master,mlton/xml/sxml.fun)>
-* <!ViewGitFile(mlton,master,mlton/xml/sxml-tree.sig)>
+* https://github.com/MLton/mlton/blob/master/mlton/xml/sxml.sig[`sxml.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/xml/sxml.fun[`sxml.fun`]
+* https://github.com/MLton/mlton/blob/master/mlton/xml/sxml-tree.sig[`sxml-tree.sig`]
 
-== Type Checking ==
+== Type Checking
 
-<:SXML:> shares the type checker for <:XML:>.
+<<SXML#>> shares the type checker for <<XML#>>.
 
-== Details and Notes ==
+== Details and Notes
 
-There are only two differences between <:XML:> and <:SXML:>.  First,
-<:SXML:> `val`, `fun`, and `datatype` declarations always have an
-empty list of type variables.  Second, <:SXML:> variable references
+There are only two differences between <<XML#>> and <<SXML#>>.  First,
+<<SXML#>> `val`, `fun`, and `datatype` declarations always have an
+empty list of type variables.  Second, <<SXML#>> variable references
 always have an empty list of type arguments.  Constructors uses can
 only have a nonempty list of type arguments if the constructor is a
 primitive.
 
 Although we could rely on the type system to enforce these constraints
-by parameterizing the <:XML:> signature, <:StephenWeeks:> did so in a
+by parameterizing the <<XML#>> signature, <<StephenWeeks#>> did so in a
 previous version of the compiler, and the software engineering gains
 were not worth the effort.

@@ -1,5 +1,4 @@
-HenryCejtin
-===========
+= HenryCejtin
 
 I was one of the original developers of Mathematica (actually employee #1).
 My background is a combination of mathematics and computer science.

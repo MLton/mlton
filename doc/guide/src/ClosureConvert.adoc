@@ -1,23 +1,22 @@
-ClosureConvert
-==============
+= ClosureConvert
 
-<:ClosureConvert:> is a translation pass from the <:SXML:>
-<:IntermediateLanguage:> to the <:SSA:> <:IntermediateLanguage:>.
+<<ClosureConvert#>> is a translation pass from the <<SXML#>>
+<<IntermediateLanguage#>> to the <<SSA#>> <<IntermediateLanguage#>>.
 
-== Description ==
+== Description
 
-It converts an <:SXML:> program into an <:SSA:> program.
+It converts an <<SXML#>> program into an <<SSA#>> program.
 
-<:Defunctionalization:> is the technique used to eliminate
-<:Closure:>s (see <!Cite(CejtinEtAl00)>).
+<<Defunctionalization#>> is the technique used to eliminate
+<<Closure#>>s (see <<References#CejtinEtAl00,CejtinEtAl00>>).
 
-Uses <:Globalize:> and <:LambdaFree:> analyses.
+Uses <<Globalize#>> and <<LambdaFree#>> analyses.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/closure-convert/closure-convert.sig)>
-* <!ViewGitFile(mlton,master,mlton/closure-convert/closure-convert.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/closure-convert/closure-convert.sig[`closure-convert.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/closure-convert/closure-convert.fun[`closure-convert.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 {empty}

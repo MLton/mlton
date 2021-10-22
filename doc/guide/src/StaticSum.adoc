@@ -1,5 +1,4 @@
-StaticSum
-=========
+= StaticSum
 
 While SML makes it impossible to write functions whose types would
 depend on the values of their arguments, or so called dependently
@@ -10,12 +9,12 @@ the types of parametrically polymorphic functions like `map` and
 is less commonplace, however, is to write functions whose behavior
 would depend on the types of their arguments.  Nevertheless, there are
 several techniques for writing such functions.
-<:TypeIndexedValues:Type-indexed values> and <:Fold:fold> are two such
+<<TypeIndexedValues#,Type-indexed values>> and <<Fold#,fold>> are two such
 techniques.  This page presents another such technique dubbed static
 sums.
 
 
-== Ordinary Sums ==
+== Ordinary Sums
 
 Consider the sum type as defined below:
 [source,sml]
@@ -53,7 +52,7 @@ The above definition of `succ` cannot be typed, because there is no
 type for the codomain within SML.
 
 
-== Static Sums ==
+== Static Sums
 
 Interestingly, it is possible to define values `inL`, `inR`, and
 `match` that satisfy the laws
@@ -137,25 +136,25 @@ is somewhat limited in SML.  So, don't throw away the ordinary sum
 type just yet.  Static sums can nevertheless be quite useful.
 
 
-=== Example: Send and Receive with Argument Type Dependent Result Types ===
+=== Example: Send and Receive with Argument Type Dependent Result Types
 
 In some situations it would seem useful to define functions whose
 result type would depend on some of the arguments.  Traditionally such
 functions have been thought to be impossible in SML and the solution
 has been to define multiple functions.  For example, the
-http://www.standardml.org/Basis/socket.html[`Socket` structure] of the
+https://smlfamily.github.io/Basis/socket.html[`Socket` structure] of the
 Basis library defines 16 `send` and 16 `recv` functions.  In contrast,
 the Net structure
-(<!ViewGitFile(mltonlib,master,com/sweeks/basic/unstable/net.sig)>) of the
+(https://github.com/MLton/mltonlib/blob/master/com/sweeks/basic/unstable/net.sig[`net.sig`]) of the
 Basic library designed by Stephen Weeks defines only a single `send`
 and a single `receive` and the result types of the functions depend on
 their arguments.  The implementation
-(<!ViewGitFile(mltonlib,master,com/sweeks/basic/unstable/net.sml)>) uses
+(https://github.com/MLton/mltonlib/blob/master/com/sweeks/basic/unstable/net.sml[`net.sml`]) uses
 static sums (with a slighly different signature:
-<!ViewGitFile(mltonlib,master,com/sweeks/basic/unstable/static-sum.sig)>).
+https://github.com/MLton/mltonlib/blob/master/com/sweeks/basic/unstable/static-sum.sig[`static-sum.sig`]).
 
 
-=== Example: Picking Monad Results ===
+=== Example: Picking Monad Results
 
 Suppose that we need to write a parser that accepts a pair of integers
 and returns their sum given a monadic parsing combinator library.  A
@@ -208,11 +207,11 @@ us to write the parser as
 ----
 val p = `lparen ^ \int ^ `comma ^ \int ^ `rparen @ (fn x & y => x + y)
 ----
-using four auxiliary combinators: +&grave;+, `\`, `^`, and `@`.
+using four auxiliary combinators: `{backtick}`, `\`, `^`, and `@`.
 
 Roughly speaking
 
-* +&grave;p+ means that the result of `p` is dropped,
+* `{backtick}p` means that the result of `p` is dropped,
 * `\p` means that the result of `p` is taken,
 * `p ^ q` means that results of `p` and `q` are taken as a product, and
 * `p @ a` means that the results of `p` are passed to the function `a` and that result is returned.
@@ -221,7 +220,7 @@ The difficulty is in implementing the concatenation combinator `^`.
 The type of the result of the concatenation depends on the types of
 the arguments.
 
-Using static sums and the <:ProductType:product type>, the pick
+Using static sums and the <<ProductType#,product type>>, the pick
 notation for monads can be implemented as follows:
 [source,sml]
 ----
@@ -284,9 +283,9 @@ end
 ----
 
 
-== Also see ==
+== Also see
 
 There are a number of related techniques.  Here are some of them.
 
-* <:Fold:>
-* <:TypeIndexedValues:>
+* <<Fold#>>
+* <<TypeIndexedValues#>>

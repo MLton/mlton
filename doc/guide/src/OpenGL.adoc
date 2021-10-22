@@ -1,19 +1,18 @@
-OpenGL
-======
+= OpenGL
 
 There are at least two interfaces to OpenGL for MLton/SML, both of
 which should be considered alpha quality.
 
-* <:MikeThomas:> built a low-level interface, directly translating
+* <<MikeThomas#>> built a low-level interface, directly translating
 many of the functions, covering GL, GLU, and GLUT.  This is available
-in the MLton <:Sources:>:
-<!ViewGitDir(mltonlib,master,org/mlton/mike/opengl)>.  The code
+in the MLton <<Sources#>>:
+https://github.com/MLton/mltonlib/tree/master/org/mlton/mike/opengl[`opengl`].  The code
 contains a number of small, standard OpenGL examples translated to
 SML.
 
-* <:ChrisClearwater:> has written at least an interface to GL, and
+* <<ChrisClearwater#>> has written at least an interface to GL, and
 possibly more.  See
 ** http://mlton.org/pipermail/mlton/2005-January/026669.html
 
-<:Contact:> us for more information or an update on the status of
+<<Contact#>> us for more information or an update on the status of
 these projects.

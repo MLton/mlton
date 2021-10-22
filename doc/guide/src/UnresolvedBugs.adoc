@@ -1,20 +1,19 @@
-UnresolvedBugs
-==============
+= UnresolvedBugs
 
 Here are the places where MLton deviates from
-<:DefinitionOfStandardML:The Definition of Standard ML (Revised)> and
-the <:BasisLibrary:Basis Library>.  In general, MLton complies with
-the <:DefinitionOfStandardML:Definition> quite closely, typically much
+<<DefinitionOfStandardML#,The Definition of Standard ML (Revised)>> and
+the <<BasisLibrary#,Basis Library>>.  In general, MLton complies with
+the <<DefinitionOfStandardML#,Definition>> quite closely, typically much
 more closely than other SML compilers (see, e.g., our list of
-<:SMLNJDeviations:SML/NJ's deviations>).  In fact, the four deviations
+<<SMLNJDeviations#,SML/NJ's deviations>>).  In fact, the four deviations
 listed here are the only known deviations, and we have no immediate
 plans to fix them.  If you find a deviation not listed here, please
-report a <:Bug:>.
+report a <<Bug#>>.
 
 We don't plan to fix these bugs because the first (parsing nested
 cases) has historically never been accepted by any SML compiler, the
 second clearly indicates a problem in the
-<:DefinitionOfStandardML:Definition>, and the remaining are difficult
+<<DefinitionOfStandardML#,Definition>>, and the remaining are difficult
 to resolve in the context of MLton's implementaton of Standard ML (and
 unlikely to be problematic in practice).
 
@@ -42,8 +41,8 @@ evaluating `val rec` (and `fun`) declarations that redefine
 identifiers that previously had constructor status.  (By default,
 MLton does warn at compile time about `val rec` (and `fun`)
 declarations that redefine identifiers that previously had
-constructors status; see the `valrecConstr` <:MLBasisAnnotations:ML
-Basis annotation>.)  For example, the Definition requires the
+constructors status; see the `valrecConstr` <<MLBasisAnnotations#,ML
+Basis annotation>>.)  For example, the Definition requires the
 following program to type check, but also (bizarelly) requires it to
 raise the `Bind` exception
 +
@@ -82,8 +81,8 @@ val _ = fn (t1, t2 : t) => eq (t1, t2)
 ----
 +
 Other implementations will typically reject this program, because they
-make an early choice for the type of `eq` to be `''a * ''a -> bool`
-instead of `t * t -> bool`.  The choice is understandable, since the
+make an early choice for the type of `eq` to be `''a * ''a \-> bool`
+instead of `t * t \-> bool`.  The choice is understandable, since the
 Definition accepts the following program.
 +
 [source,sml]
@@ -124,4 +123,4 @@ val _ = A.f 10
 val _ = B.f false
 ----
 +
-See <!Cite(DreyerBlume07)> for more details.
+See <<References#DreyerBlume07,DreyerBlume07>> for more details.

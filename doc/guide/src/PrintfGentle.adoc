@@ -1,12 +1,11 @@
-PrintfGentle
-============
+= PrintfGentle
 :toc:
 
-This page provides a gentle introduction and derivation of <:Printf:>,
+This page provides a gentle introduction and derivation of <<Printf#>>,
 with sections and arrangement more suitable to a talk.
 
 
-== Introduction ==
+== Introduction
 
 SML does not have `printf`.  Could we define it ourselves?
 
@@ -23,7 +22,7 @@ of arguments.  Actually they take one argument, but if that's a tuple,
 it can only have a fixed number of components.
 
 
-== From tupling to currying ==
+== From tupling to currying
 
 What about currying to get around the typing problem?
 
@@ -44,7 +43,7 @@ This can't work, because `printf` can only have one type.  SML doesn't
 support programmer-defined overloading.
 
 
-== Overloading and dependent types ==
+== Overloading and dependent types
 
 Even without worrying about number of arguments, there is another
 problem.  The type of `printf` depends on the format string.
@@ -66,7 +65,7 @@ Again, this can't possibly working because SML doesn't have
 overloading, and types can't depend on values.
 
 
-== Idea: express type information in the format string ==
+== Idea: express type information in the format string
 
 If we express type information in the format string, then different
 uses of `printf` can have different types.
@@ -87,7 +86,7 @@ Now, our two calls to `printf` type check, because the format
 string specializes `printf` to the appropriate type.
 
 
-== The types of format characters ==
+== The types of format characters
 
 What should the type of format characters `D` and `F` be?  Each format
 character requires an additional argument of the appropriate type to
@@ -108,7 +107,7 @@ val printf: (unit, 'a) t -> 'a
 Don't worry.  In the end, type inference will guess and verify for us.
 
 
-== Understanding guess and verify ==
+== Understanding guess and verify
 
 Now, let's build up a format string and a specialized `printf`.
 
@@ -141,7 +140,7 @@ val () = p 14 19.0
 ----
 
 
-== Type checking this using a functor ==
+== Type checking this using a functor
 
 [source,sml]
 ----
@@ -165,7 +164,7 @@ functor Test (P: PRINTF) =
 ----
 
 
-== Implementing `Printf` ==
+== Implementing `Printf`
 
 Think of a format character as a formatter transformer.  It takes the
 formatter for the part of the format string before it and transforms
@@ -193,7 +192,7 @@ structure Printf: PRINTF =
 ----
 
 
-== Testing printf ==
+== Testing printf
 
 [source,sml]
 ----
@@ -201,7 +200,7 @@ structure Z = Test (Printf)
 ----
 
 
-== User-definable formats ==
+== User-definable formats
 
 The definition of the format characters is pretty much the same.
 Within the `Printf` structure we can define a format character
@@ -217,7 +216,7 @@ val F = fn z => newFormat Real.toString z
 ----
 
 
-== A core `Printf` ==
+== A core `Printf`
 
 We can now have a very small `PRINTF` signature, and define all
 the format strings externally to the core module.
@@ -250,7 +249,7 @@ structure Printf: PRINTF =
 ----
 
 
-== Extending to fprintf ==
+== Extending to fprintf
 
 One can implement fprintf by threading the outstream through all the
 transformers.
@@ -289,7 +288,7 @@ structure Printf: PRINTF =
 ----
 
 
-== Notes ==
+== Notes
 
 * Lesson: instead of using dependent types for a function, express the
 the dependency in the type of the argument.
@@ -339,7 +338,7 @@ structure PrintfLazyList: PRINTF =
 ----
 
 
-== Also see ==
+== Also see
 
-* <:Printf:>
-* <!Cite(Danvy98, Functional Unparsing)>
+* <<Printf#>>
+* <<References#Danvy98,Functional Unparsing>>

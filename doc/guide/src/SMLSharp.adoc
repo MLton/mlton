@@ -1,8 +1,7 @@
-SMLSharp
-========
+= SMLSharp
 
 http://www.pllab.riec.tohoku.ac.jp/smlsharp/[SML#] is an
-<:StandardMLImplementations:implementation> of an extension of SML.
+<<StandardMLImplementations#,implementation>> of an extension of SML.
 
 It includes some
 http://www.pllab.riec.tohoku.ac.jp/smlsharp/?Tools[generally useful SML tools]

@@ -1,7 +1,6 @@
-Pronounce
-=========
+= Pronounce
 
-Here is <!Attachment(Pronounce,pronounce-mlton.mp3,how "MLton" sounds)>.
+Here is link:Pronounce.attachments/pronounce-mlton.mp3[how "MLton" sounds].
 
 "MLton" is pronounced in two syllables, with stress on the first
 syllable.  The first syllable sounds like the word _mill_ (as in

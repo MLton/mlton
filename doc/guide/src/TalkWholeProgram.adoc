@@ -1,7 +1,6 @@
-TalkWholeProgram
-================
+= TalkWholeProgram
 
-== Whole Program Compiler ==
+== Whole Program Compiler
 
  * Each of these techniques requires whole-program analysis
  * But, additional benefits:
@@ -16,6 +15,6 @@ TalkWholeProgram
 '''
 
 [cols="<,>"]
-|====
-|<:TalkHowHigherOrder: Prev>|<:TalkFolkLore: Next>
-|====
+|===
+|<<TalkHowHigherOrder#,Prev>>|<<TalkFolkLore#,Next>>
+|===

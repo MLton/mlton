@@ -1,9 +1,8 @@
-Git
-===
+= Git
 
 http://git-scm.com/[Git] is a distributed version control system.  The
 MLton project currently uses Git to maintain its
-<:Sources:source code>.
+<<Sources#,source code>>.
 
 Here are some online Git resources.
 

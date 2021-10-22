@@ -1,35 +1,34 @@
-Credits
-=======
+= Credits
 
 MLton was designed and implemented by HenryCejtin,
-MatthewFluet, SureshJagannathan, and <:StephenWeeks:>.
+MatthewFluet, SureshJagannathan, and <<StephenWeeks#>>.
 
- * <:HenryCejtin:> wrote the `IntInf` implementation, the original
+ * <<HenryCejtin#>> wrote the `IntInf` implementation, the original
  profiler, the original man pages, the `.spec` files for the RPMs,
  and lots of little hacks to speed stuff up.
 
- * <:MatthewFluet:> implemented the X86 and AMD64 native code generators,
+ * <<MatthewFluet#>> implemented the X86 and AMD64 native code generators,
  ported `mlprof` to work with the native code generator, did a lot
  of work on the SSA optimizer, both adding new optimizations and
  improving or porting existing optimizations, updated the
- <:BasisLibrary:Basis Library> implementation, ported
- <:ConcurrentML:> and <:MLNLFFI:ML-NLFFI> to MLton, implemented the
- <:MLBasis: ML Basis system>, ported MLton to 64-bit platforms,
+ <<BasisLibrary#,Basis Library>> implementation, ported
+ <<ConcurrentML#>> and <<MLNLFFI#,ML-NLFFI>> to MLton, implemented the
+ <<MLBasis#,ML Basis system>>, ported MLton to 64-bit platforms,
  and currently leads the project.
 
- * <:SureshJagannathan:> implemented some early inlining and uncurrying
+ * <<SureshJagannathan#>> implemented some early inlining and uncurrying
  optimizations.
 
- * <:StephenWeeks:> implemented most of the original version of MLton, and
+ * <<StephenWeeks#>> implemented most of the original version of MLton, and
  continues to keep his fingers in most every part.
 
 Many people have helped us over the years.  Here is an alphabetical
 list.
 
- * <:JesperLouisAndersen:> sent several patches to improve the runtime on
+ * <<JesperLouisAndersen#>> sent several patches to improve the runtime on
  FreeBSD and ported MLton to run on NetBSD and OpenBSD.
 
- * <:JohnnyAndersen:> implemented `BinIO`, modified MLton so it could
+ * <<JohnnyAndersen#>> implemented `BinIO`, modified MLton so it could
  cross compile to MinGW, and provided useful discussion about
  cross-compilation.
 
@@ -38,17 +37,17 @@ list.
  * Ross Bayer added the `-keep ast` compile-time option and experimented with
  porting the build system to CMake.
 
- * Kevin Bradley added initial support for <:SuccessorML:> features.
+ * Kevin Bradley added initial support for <<SuccessorML#>> features.
 
  * Bryan Camp added `-disable-pass _regex_` and `enable-pass _regex_` compile
  options to generalize `-drop-pass _regex_` and added `Array_copyArray` and
  `Array_copyVector` primitives.
 
- * Jason Carr added a parser combinator library and a parser for the <:SXML:>
+ * Jason Carr added a parser combinator library and a parser for the <<SXML#>>
  IR, extended compilation to start with a `.sxml` file, experimented with
- alternate control-flow analyses for <:ClosureConvert: closure conversion>,
- added new <:DuplicateGlobals:> and <:SplitTypes:> <:SSA:> optimization passes,
- improved <:RSSAShrink:>, added a new <:BounceVars:> <:RSSA:> optimization pass,
+ alternate control-flow analyses for <<ClosureConvert#,closure conversion>>,
+ added new <<DuplicateGlobals#>> and <<SplitTypes#>> <<SSA#>> optimization passes,
+ improved <<RSSAShrink#>>, added a new <<BounceVars#>> <<RSSA#>> optimization pass,
  added `-llvm-aamd {none|tbaa}` to control including alias-analysis metadata
  when compiling with LLVM, implemented static allocation and initialization of
  global objects.
@@ -66,11 +65,11 @@ list.
  `struct`/`union` arguments.
 
  * Martin Elsman provided helpful discussions in the development of
- the <:MLBasis:ML Basis system>.
+ the <<MLBasis#,ML Basis system>>.
 
  * Brent Fulgham ported MLton most of the way to MinGW.
 
- * <:AdamGoode:> provided a script to build the PDF MLton Guide and
+ * <<AdamGoode#>> provided a script to build the PDF MLton Guide and
  maintains the
  https://admin.fedoraproject.org/pkgdb/acls/name/mlton[Fedora]
  packages.
@@ -81,18 +80,18 @@ list.
  * Joe Hurd provided useful discussion and feedback on source-level
  profiling.
 
- * Manan Joshi added a parser for the <:SSA2:> IR.
+ * Manan Joshi added a parser for the <<SSA2#>> IR.
 
- * <:VesaKarvonen:> contributed `esml-mode.el` and `esml-mlb-mode.el` (see <:Emacs:>),
+ * <<VesaKarvonen#>> contributed `esml-mode.el` and `esml-mlb-mode.el` (see <<Emacs#>>),
  contributed patches for improving match warnings,
- contributed `esml-du-mlton.el` and extended def-use output to include types of variable definitions (see <:EmacsDefUseMode:>), and
+ contributed `esml-du-mlton.el` and extended def-use output to include types of variable definitions (see <<EmacsDefUseMode#>>), and
  improved constant folding of floating-point operations.
 
  * Richard Kelsey provided helpful discussions.
 
  * Ville Laurikari ported MLton to IA64/HPUX, HPPA/HPUX, PowerPC/AIX, PowerPC64/AIX.
 
- * Brian Leibig implemented the <:LLVMCodegen:>.
+ * Brian Leibig implemented the <<LLVMCodegen#>>.
 
  * Geoffrey Mainland helped with FreeBSD packaging.
 
@@ -102,7 +101,7 @@ list.
  `Overflow`-checking primitives and special-case code required (e.g., `Arith`
  transfers in IRs) to support them.
 
- * <:TomMurphy:> wrote the original version of `MLton.Syslog` as part
+ * <<TomMurphy#>> wrote the original version of `MLton.Syslog` as part
  of his `mlftpd` project, and has sent many useful bug reports and
  suggestions.
 
@@ -115,37 +114,37 @@ list.
 
  * Filip Pizlo ported MLton to (PowerPC) Darwin.
 
- * Vedant Raiththa extended the <:ForeignFunctionInterface:> with support for
+ * Vedant Raiththa extended the <<ForeignFunctionInterface#>> with support for
  `pure` and `impure` attributes to `_import`.
 
  * Krishna Ravikumar added initial support for vector expressions and the
  `Vector_vector` primitive.
 
- * James Reilly added a parser for the <:SSA:> IR.
+ * James Reilly added a parser for the <<SSA#>> IR.
 
  * John Reppy assisted in porting MLton to Intel Mac.
 
  * Sam Rushing ported MLton to FreeBSD.
 
  * Rob Simmons refactored the array and vector implementation in the
- <:BasisLibrary: Basis Library:> into a primitive implementation (using
+ <<BasisLibrary#,Basis Library:>> into a primitive implementation (using
  `SeqInt.int` for indexing) and a wrapper implementation (using the default
  `Int.int` for indexing).
 
  * Jeffrey Mark Siskind provided helpful discussions and inspiration
  with his Stalin Scheme compiler.
 
- * Matthew Surawski added <:LoopUnroll:> and <:LoopUnswitch:> SSA optimizations.
+ * Matthew Surawski added <<LoopUnroll#>> and <<LoopUnswitch#>> SSA optimizations.
 
- * <:WesleyTerpstra:> added support for `MLton.Process.create`, made
- a number of contributions to the <:ForeignFunctionInterface:>,
+ * <<WesleyTerpstra#>> added support for `MLton.Process.create`, made
+ a number of contributions to the <<ForeignFunctionInterface#>>,
  contributed a number of runtime system patches,
- added support for compiling to a <:LibrarySupport:C library>,
- ported MLton to http://mingw.org[MinGW] and all http://packages.debian.org/search?keywords=mlton&searchon=names&suite=all&section=all[Debian] supported architectures with <:CrossCompiling:cross-compiling> support,
+ added support for compiling to a <<LibrarySupport#,C library>>,
+ ported MLton to http://mingw.org[MinGW] and all http://packages.debian.org/search?keywords=mlton&searchon=names&suite=all&section=all[Debian] supported architectures with <<CrossCompiling#,cross-compiling>> support,
  and maintains the http://packages.debian.org/search?keywords=mlton&searchon=names&suite=all&section=all[Debian] and http://mingw.org[MinGW] packages.
 
  * Maksim Yegorov added rudimentary support for `./configure` and other
- improvements to the build system and implemented the <:ShareZeroVec:> SSA
+ improvements to the build system and implemented the <<ShareZeroVec#>> SSA
  optimization.
 
  * Luke Ziarek assisted in porting MLton to (PowerPC) Darwin.
@@ -154,25 +153,25 @@ We have also benefited from other software development tools and
 used code from other sources.
 
  * MLton was developed using
- <:SMLNJ:Standard ML of New Jersey> and the
- <:CompilationManager:Compilation Manager (CM)>
+ <<SMLNJ#,Standard ML of New Jersey>> and the
+ <<CompilationManager#,Compilation Manager (CM)>>
 
  * MLton's lexer (`mlton/frontend/ml.lex`), parser
  (`mlton/frontend/ml.grm`), and precedence-parser
  (`mlton/elaborate/precedence-parse.fun`) are modified versions of
  code from SML/NJ.
 
- * The MLton <:BasisLibrary:Basis Library> implementation of
+ * The MLton <<BasisLibrary#,Basis Library>> implementation of
  conversions between binary and decimal representations of reals uses
  David Gay's http://www.netlib.org/fp/[gdtoa] library.
 
- * The MLton <:BasisLibrary:Basis Library> implementation uses
+ * The MLton <<BasisLibrary#,Basis Library>> implementation uses
  modified versions of  portions of the the SML/NJ Basis Library
  implementation modules `OS.IO`, `Posix.IO`, `Process`,
  and `Unix`.
 
- * The MLton <:BasisLibrary:Basis Library> implementation uses
- modified versions of portions of the <:MLKit:ML Kit> Version 4.1.4
+ * The MLton <<BasisLibrary#,Basis Library>> implementation uses
+ modified versions of portions of the <<MLKit#,ML Kit>> Version 4.1.4
  Basis Library implementation modules `Path`, `Time`, and
  `Date`.
 
@@ -184,11 +183,11 @@ used code from other sources.
 
  * MLton uses the http://www.gnu.org/software/gmp/gmp.html[GNU multiprecision library] for its implementation of `IntInf`.
 
- * MLton's implementation of <:MLLex: mllex>, <:MLYacc: mlyacc>,
- the <:CKitLibrary:ckit Library>,
- the <:MLLPTLibrary:ML-LPT Library>,
- the <:MLRISCLibrary:MLRISC Library>,
- the <:SMLNJLibrary:SML/NJ Library>,
- <:ConcurrentML:Concurrent ML>,
- mlnlffigen and <:MLNLFFI:ML-NLFFI>
+ * MLton's implementation of <<MLLex#,mllex>>, <<MLYacc#,mlyacc>>,
+ the <<CKitLibrary#,ckit Library>>,
+ the <<MLLPTLibrary#,ML-LPT Library>>,
+ the <<MLRISCLibrary#,MLRISC Library>>,
+ the <<SMLNJLibrary#,SML/NJ Library>>,
+ <<ConcurrentML#,Concurrent ML>>,
+ mlnlffigen and <<MLNLFFI#,ML-NLFFI>>
  are modified versions of code from SML/NJ.

@@ -1,13 +1,12 @@
-Bugs20200817
-============
+= Bugs20200817
 
-Here are the known bugs in <:Release20200817:MLton 20200817>, listed
+Here are the known bugs in <<Release20200817#,MLton 20200817>>, listed
 in reverse chronological order of date reported.
 
-* <!Anchor(bug01)>
+* [[bug01]]
 Bug in handling of weak objects during mark-compact GC that could result in a
 segmentation fault.
 +
 Thanks to Bernard Berthomieu for the bug report.
 +
-Fixed by commit <!ViewGitCommit(mlton,47a781c3c)>.
+Fixed by commit https://github.com/MLton/mlton/commit/47a781c3c[`47a781c3c`].

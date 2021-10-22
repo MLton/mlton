@@ -1,12 +1,11 @@
-EqualityType
-============
+= EqualityType
 
-An equality type is a type to which <:PolymorphicEquality:> can be
-applied.  The <:DefinitionOfStandardML:Definition> and the
-<:BasisLibrary:Basis Library> precisely spell out which types are
+An equality type is a type to which <<PolymorphicEquality#>> can be
+applied.  The <<DefinitionOfStandardML#,Definition>> and the
+<<BasisLibrary#,Basis Library>> precisely spell out which types are
 equality types.
 
-* `bool`, `char`, `IntInf.int`, ++Int__<N>__.int++, `string`, and ++Word__<N>__.word++ are equality types.
+* `bool`, `char`, `IntInf.int`, ``Int__<N>__.int``, `string`, and ``Word__<N>__.word`` are equality types.
 
 * for any `t`, both `t array` and `t ref` are equality types.
 
@@ -14,7 +13,7 @@ equality types.
 
 * if `t1`, ..., `tn` are equality types, then `t1 * ... * tn` and `{l1: t1, ..., ln: tn}` are equality types.
 
-* if `t1`, ..., `tn` are equality types and `t` <:AdmitsEquality:>, then `(t1, ..., tn) t` is an equality type.
+* if `t1`, ..., `tn` are equality types and `t` <<AdmitsEquality#>>, then `(t1, ..., tn) t` is an equality type.
 
 To check that a type t is an equality type, use the following idiom.
 [source,sml]
@@ -25,7 +24,7 @@ structure S: sig eqtype t end =
    end
 ----
 
-Notably, `exn` and `real` are not equality types.  Neither is `t1 -> t2`, for any `t1` and `t2`.
+Notably, `exn` and `real` are not equality types.  Neither is `t1 \-> t2`, for any `t1` and `t2`.
 
 Equality on arrays and ref cells is by identity, not structure.
 For example, `ref 13 = ref 13` is `false`.

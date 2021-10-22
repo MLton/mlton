@@ -1,18 +1,17 @@
-LanguageChanges
-===============
+= LanguageChanges
 
 We are sometimes asked to modify MLton to change the language it
 compiles.  In short, we are conservative about making such changes.
 There are a number of reasons for this.
 
-* <:DefinitionOfStandardML:The Definition of Standard ML> is an
+* <<DefinitionOfStandardML#,The Definition of Standard ML>> is an
 extremely high standard of specification.  The value of the Definition
 would be significantly diluted by changes that are not specified at an
 equally high level, and the dilution increases with the complexity of
 the language change and its interaction with other language features.
 
 * The SML community is small and there are a number of
-<:StandardMLImplementations:SML implementations>.  Without an
+<<StandardMLImplementations#,SML implementations>>.  Without an
 agreed-upon standard, it becomes very difficult to port programs
 between compilers, and the community would be balkanized.
 
@@ -27,9 +26,9 @@ program development.
 
 Despite these drawbacks, we have extended SML in a couple of cases.
 
-* <:ForeignFunctionInterface: Foreign function interface>
-* <:MLBasis: ML Basis system>
-* <:SuccessorML: Successor ML features>
+* <<ForeignFunctionInterface#,Foreign function interface>>
+* <<MLBasis#,ML Basis system>>
+* <<SuccessorML#,Successor ML features>>
 
 We allow these language extensions because they provide functionality
 that is impossible to achieve without them or have non-trivial
@@ -42,7 +41,7 @@ hope of users using them without name clashes.  The ML Basis system
 addresses this problem.  We have also provided a formal specification
 of the ML Basis system at the level of the Definition.
 
-== Also see ==
+== Also see
 
 * http://www.mlton.org/pipermail/mlton/2004-August/016165.html
 * http://www.mlton.org/pipermail/mlton-user/2004-December/000320.html

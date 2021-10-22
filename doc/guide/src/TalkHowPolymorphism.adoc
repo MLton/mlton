@@ -1,7 +1,6 @@
-TalkHowPolymorphism
-===================
+= TalkHowPolymorphism
 
-== Polymorphism ==
+== Polymorphism
 
  * How does one represent SML's polymorphism?
  * MLton's answer: monomorphise
@@ -9,7 +8,7 @@ TalkHowPolymorphism
 {nbsp} +
 {nbsp} +
 
-See <:Monomorphise:>.
+See <<Monomorphise#>>.
 
 {nbsp} +
 {nbsp} +
@@ -18,6 +17,6 @@ See <:Monomorphise:>.
 '''
 
 [cols="<,>"]
-|====
-|<:TalkHowModules: Prev>|<:TalkHowHigherOrder: Next>
-|====
+|===
+|<<TalkHowModules#,Prev>>|<<TalkHowHigherOrder#,Next>>
+|===

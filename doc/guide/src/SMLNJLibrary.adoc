@@ -1,5 +1,4 @@
-SMLNJLibrary
-============
+= SMLNJLibrary
 
 The http://www.smlnj.org/doc/smlnj-lib/index.html[SML/NJ Library] is a
 collection of libraries that are distributed with SML/NJ.  Due to
@@ -9,12 +8,12 @@ out-of-the box with MLton.
 As of 20210117, MLton includes a port of the SML/NJ Library
 synchronized with SML/NJ version 110.99.
 
-== Usage ==
+== Usage
 
 * You can import a sub-library of the SML/NJ Library into an MLB file with:
 +
 [options="header"]
-|=====
+|===
 |MLB file|Description
 |`$(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb`|Various utility modules, included collections, simple formating, ...
 |`$(SML_LIB)/smlnj-lib/Controls/controls-lib.mlb`|A library for managing control flags in an application.
@@ -30,13 +29,13 @@ synchronized with SML/NJ version 110.99.
 |`$(SML_LIB)/smlnj-lib/Unix/unix-lib.mlb`|Utilities for Unix-based operating systems.
 |`$(SML_LIB)/smlnj-lib/UUID/uuid-lib.mlb`|Utilities for Unix-based operating systems.
 |`$(SML_LIB)/smlnj-lib/XML/xml-lib.mlb`|XML library.
-|=====
+|===
 
-* If you are porting a project from SML/NJ's <:CompilationManager:> to
-MLton's <:MLBasis: ML Basis system> using `cm2mlb`, note that the
+* If you are porting a project from SML/NJ's <<CompilationManager#>> to
+MLton's <<MLBasis#,ML Basis system>> using `cm2mlb`, note that the
 following maps are included by default:
 +
------
+----
 # SMLNJ Library
 $SMLNJ-LIB                              $(SML_LIB)/smlnj-lib
 $smlnj-lib.cm                           $(SML_LIB)/smlnj-lib/Util
@@ -58,7 +57,7 @@ This will automatically convert a `$/smlnj-lib.cm` import in an input
 `.cm` file into a `$(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb` import in
 the output `.mlb` file.
 
-== Details ==
+== Details
 
 The following changes were made to the SML/NJ Library, in addition to
 deriving the `.mlb` files from the `.cm` files:
@@ -69,15 +68,15 @@ deriving the `.mlb` files from the `.cm` files:
 * `SExp/sexp.sml` (modified): Fixed non-exhaustive match warning (and latent bug) in `compare` function.
 * `Util/dynamic-array.sml` (modified): Rewrote use of `Array.fromVector`.
 * `Util/base64.sml` (modified): Rewrote use of `Unsafe.CharVector.create` and `Unsafe.CharVector.update`; MLton assumes that vectors are immutable.
-* `Util/engine.mlton.sml` (added, not exported): Implements `structure Engine`, providing time-limited, resumable computations using <:MLtonThread:>, <:MLtonSignal:>, and <:MLtonItimer:>.
+* `Util/engine.mlton.sml` (added, not exported): Implements `structure Engine`, providing time-limited, resumable computations using <<MLtonThread#>>, <<MLtonSignal#>>, and <<MLtonItimer#>>.
 * `Util/graph-scc-fn.sml` (modified): Rewrote use of `where` structure specification.
-* `Util/hash-table-rep.sml` (modified): The computation of the `maxSize` computes succesive powers of two less than or equal to `Array.maxLen`, which overflows under MLton.  Add a `handle Overflow => i` to properly find the correct maximum size.
+* `Util/hash-table-rep.sml` (modified): The computation of the `maxSize` computes succesive powers of two less than or equal to `Array.maxLen`, which overflows under MLton.  Add a `handle Overflow \=> i` to properly find the correct maximum size.
 * `Util/redblack-map-fn.sml` (modified): Rewrote use of `where` structure specification.
 * `Util/redblack-set-fn.sml` (modified): Rewrote use of `where` structure specification.
 * `Util/time-limit.mlb` (added): Exports `structure TimeLimit`, which is _not_ exported by `smlnj-lib.mlb`.  Since MLton is very conservative in the presence of threads and signals, program performance may be adversely affected by unnecessarily including `structure TimeLimit`.
 * `Util/time-limit.mlton.sml` (added): Implements `structure TimeLimit` using `structure Engine`.  The SML/NJ implementation of `structure TimeLimit` uses SML/NJ's first-class continuations, signals, and interval timer.
 * `Util/utf8.sml` (modified): Rewrote use of `String.implodeRev` (see https://github.com/SMLFamily/BasisLibrary/wiki/2015-003d-STRING).
 
-== Patch ==
+== Patch
 
-* <!ViewGitFile(mlton,master,lib/smlnj-lib/smlnj-lib.patch)>
+* https://github.com/MLton/mlton/blob/master/lib/smlnj-lib/smlnj-lib.patch[`smlnj-lib.patch`]

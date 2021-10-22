@@ -1,9 +1,8 @@
-RunningOnS390
-=============
+= RunningOnS390
 
 MLton runs fine on the S390 architecture.
 
-== Notes ==
+== Notes
 
 * When compiling for S390, MLton doesn't support native code
 generation (`-codegen native`).  Hence, performance is not as good as

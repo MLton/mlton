@@ -1,22 +1,21 @@
-ForeignFunctionInterface
-========================
+= ForeignFunctionInterface
 
 MLton's foreign function interface (FFI) extends Standard ML and makes
 it easy to take the address of C global objects, access C global
 variables, call from SML to C, and call from C to SML.  MLton also
-provides <:MLNLFFI:ML-NLFFI>, which is a higher-level FFI for calling
+provides <<MLNLFFI#,ML-NLFFI>>, which is a higher-level FFI for calling
 C functions and manipulating C data from SML.
 
-== Overview ==
-* <:ForeignFunctionInterfaceTypes:Foreign Function Interface Types>
-* <:ForeignFunctionInterfaceSyntax:Foreign Function Interface Syntax>
+== Overview
+* <<ForeignFunctionInterfaceTypes#,Foreign Function Interface Types>>
+* <<ForeignFunctionInterfaceSyntax#,Foreign Function Interface Syntax>>
 
-== Importing Code into SML ==
-* <:CallingFromSMLToC:Calling From SML To C>
-* <:CallingFromSMLToCFunctionPointer:Calling From SML To C Function Pointer>
+== Importing Code into SML
+* <<CallingFromSMLToC#,Calling From SML To C>>
+* <<CallingFromSMLToCFunctionPointer#,Calling From SML To C Function Pointer>>
 
-== Exporting Code from SML ==
-* <:CallingFromCToSML:Calling From C To SML>
+== Exporting Code from SML
+* <<CallingFromCToSML#,Calling From C To SML>>
 
-== Building System Libraries ==
-* <:LibrarySupport:Library Support>
+== Building System Libraries
+* <<LibrarySupport#,Library Support>>

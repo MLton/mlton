@@ -1,5 +1,4 @@
-MichaelNorrish
-==============
+= MichaelNorrish
 
 I am a researcher at http://nicta.com.au[NICTA], with a web-page http://web.rsise.anu.edu.au/%7Emichaeln/[here].
 

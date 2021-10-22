@@ -1,6 +1,5 @@
-TomMurphy
-=========
+= TomMurphy
 
-Tom Murphy VII is a long time MLton user and occasional contributor. He works on programming languages for his PhD work at Carnegie Mellon in Pittsburgh, USA. <:AdamGoode:> lives on the same floor of Wean Hall.
+Tom Murphy VII is a long time MLton user and occasional contributor. He works on programming languages for his PhD work at Carnegie Mellon in Pittsburgh, USA. <<AdamGoode#>> lives on the same floor of Wean Hall.
 
 http://tom7.org[Home page]

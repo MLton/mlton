@@ -1,12 +1,11 @@
-MLj
-===
+= MLj
 
 http://www.dcs.ed.ac.uk/home/mlj/[MLj] is a
-<:StandardMLImplementations:Standard ML implementation> that targets
+<<StandardMLImplementations#,Standard ML implementation>> that targets
 Java bytecode.  It is no longer maintained.  It has morphed into
-<:SMLNET:SML.NET>.
+<<SMLNET#,SML.NET>>.
 
-== Also see ==
+== Also see
 
-* <!Cite(BentonEtAl98)>
-* <!Cite(BentonKennedy99)>
+* <<References#BentonEtAl98,BentonEtAl98>>
+* <<References#BentonKennedy99,BentonKennedy99>>

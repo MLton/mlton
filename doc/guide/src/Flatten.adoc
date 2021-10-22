@@ -1,12 +1,11 @@
-Flatten
-=======
+= Flatten
 
-<:Flatten:> is an optimization pass for the <:SSA:>
-<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+<<Flatten#>> is an optimization pass for the <<SSA#>>
+<<IntermediateLanguage#>>, invoked from <<SSASimplify#>>.
 
-== Description ==
+== Description
 
-This pass flattens arguments to <:SSA:> constructors, blocks, and
+This pass flattens arguments to <<SSA#>> constructors, blocks, and
 functions.
 
 If a tuple is explicitly available at all uses of a function
@@ -28,10 +27,10 @@ type.
 
 * The tuple is reconstructed at each `Case` transfer target.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/flatten.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/flatten.fun[`flatten.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 {empty}

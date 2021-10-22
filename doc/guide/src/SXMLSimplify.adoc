@@ -1,25 +1,24 @@
-SXMLSimplify
-============
+= SXMLSimplify
 
-The optimization passes for the <:SXML:> <:IntermediateLanguage:> are
+The optimization passes for the <<SXML#>> <<IntermediateLanguage#>> are
 collected and controlled by the `SxmlSimplify` functor
-(<!ViewGitFile(mlton,master,mlton/xml/sxml-simplify.sig)>,
-<!ViewGitFile(mlton,master,mlton/xml/sxml-simplify.fun)>).
+(https://github.com/MLton/mlton/blob/master/mlton/xml/sxml-simplify.sig[`sxml-simplify.sig`],
+https://github.com/MLton/mlton/blob/master/mlton/xml/sxml-simplify.fun[`sxml-simplify.fun`]).
 
 The following optimization passes are implemented:
 
-* <:Polyvariance:>
-* <:SXMLShrink:>
+* <<Polyvariance#>>
+* <<SXMLShrink#>>
 
 The following implementation passes are implemented:
 
-* <:ImplementExceptions:>
-* <:ImplementSuffix:>
+* <<ImplementExceptions#>>
+* <<ImplementSuffix#>>
 
 The following optimization passes are not implemented, but might prove useful:
 
-* <:Uncurry:>
-* <:LambdaLift:>
+* <<Uncurry#>>
+* <<LambdaLift#>>
 
 The optimization passes can be controlled from the command-line by the options
 

@@ -1,5 +1,4 @@
-VesaKarvonen
-============
+= VesaKarvonen
 
 Vesa Karvonen is a student at the http://www.cs.helsinki.fi/index.en.html[University of Helsinki].
 His interests lie in programming techniques that allow complex programs to be expressed
@@ -20,10 +19,10 @@ get an idea of what he'd like to see. Some specific notes:
   * show type at point
   * robust, consistent indentation
   * show documentation
-  * jump to definition (see <:EmacsDefUseMode:>)
+  * jump to definition (see <<EmacsDefUseMode#>>)
 --
 +
-<:EmacsBgBuildMode:> has also been written for working with MLton.
+<<EmacsBgBuildMode#>> has also been written for working with MLton.
 
 * Documented and cataloged libraries. Perhaps something like
 http://www.boost.org[Boost], but for SML libraries.  Here is a partial
@@ -31,15 +30,15 @@ list of libraries, tools, and frameworks Vesa is or has been working
 on:
 +
 --
-  * Asynchronous Programming Library (<!ViewGitFile(mltonlib,master,com/ssh/async/unstable/README)>)
-  * Extended Basis Library (<!ViewGitFile(mltonlib,master,com/ssh/extended-basis/unstable/README)>)
-  * Generic Programming Library (<!ViewGitFile(mltonlib,master,com/ssh/generic/unstable/README)>)
-  * Pretty Printing Library (<!ViewGitFile(mltonlib,master,com/ssh/prettier/unstable/README)>)
-  * Random Generator Library (<!ViewGitFile(mltonlib,master,com/ssh/random/unstable/README)>)
-  * RPC (Remote Procedure Call) Library (<!ViewGitFile(mltonlib,master,org/mlton/vesak/rpc-lib/unstable/README)>)
-  * http://www.libsdl.org/[SDL] Binding (<!ViewGitFile(mltonlib,master,org/mlton/vesak/sdl/unstable/README)>)
-  * Unit Testing Library (<!ViewGitFile(mltonlib,master,com/ssh/unit-test/unstable/README)>)
-  * Use Library (<!ViewGitFile(mltonlib,master,org/mlton/vesak/use-lib/unstable/README)>)
-  * Windows Library (<!ViewGitFile(mltonlib,master,com/ssh/windows/unstable/README)>)
+  * Asynchronous Programming Library (https://github.com/MLton/mltonlib/blob/master/com/ssh/async/unstable/README[`README`])
+  * Extended Basis Library (https://github.com/MLton/mltonlib/blob/master/com/ssh/extended-basis/unstable/README[`README`])
+  * Generic Programming Library (https://github.com/MLton/mltonlib/blob/master/com/ssh/generic/unstable/README[`README`])
+  * Pretty Printing Library (https://github.com/MLton/mltonlib/blob/master/com/ssh/prettier/unstable/README[`README`])
+  * Random Generator Library (https://github.com/MLton/mltonlib/blob/master/com/ssh/random/unstable/README[`README`])
+  * RPC (Remote Procedure Call) Library (https://github.com/MLton/mltonlib/blob/master/org/mlton/vesak/rpc-lib/unstable/README[`README`])
+  * http://www.libsdl.org/[SDL] Binding (https://github.com/MLton/mltonlib/blob/master/org/mlton/vesak/sdl/unstable/README[`README`])
+  * Unit Testing Library (https://github.com/MLton/mltonlib/blob/master/com/ssh/unit-test/unstable/README[`README`])
+  * Use Library (https://github.com/MLton/mltonlib/blob/master/org/mlton/vesak/use-lib/unstable/README[`README`])
+  * Windows Library (https://github.com/MLton/mltonlib/blob/master/com/ssh/windows/unstable/README[`README`])
 --
-Note that most of these libraries have been ported to several <:StandardMLImplementations:SML implementations>.
+Note that most of these libraries have been ported to several <<StandardMLImplementations#,SML implementations>>.

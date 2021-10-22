@@ -1,10 +1,9 @@
-RSSAShrink
-==========
+= RSSAShrink
 
-<:RSSAShrink:> is an optimization pass for the <:RSSA:>
-<:IntermediateLanguage:>.
+<<RSSAShrink#>> is an optimization pass for the <<RSSA#>>
+<<IntermediateLanguage#>>.
 
-== Description ==
+== Description
 
 This pass implements a whole family of compile-time reductions, like:
 
@@ -12,10 +11,10 @@ This pass implements a whole family of compile-time reductions, like:
 * inline the `Goto` to a block with a unique predecessor
 * eliminate blocks that simply pass arguments to another block (e.g., jump chaining)
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/backend/rssa.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/backend/rssa.fun[`rssa.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 {empty}

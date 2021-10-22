@@ -1,8 +1,7 @@
-ML
-==
+= ML
 
 ML stands for _meta language_.  ML was originally designed in the
 1970s as a programming language to assist theorem proving in the logic
 LCF.  In the 1980s, ML split into two variants,
-<:StandardML:Standard ML> and <:OCaml:>, both of which are still used
+<<StandardML#,Standard ML>> and <<OCaml#>>, both of which are still used
 today.

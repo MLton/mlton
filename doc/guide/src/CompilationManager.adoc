@@ -1,19 +1,18 @@
-CompilationManager
-==================
+= CompilationManager
 
 The http://www.smlnj.org/doc/CM/index.html[Compilation Manager] (CM) is SML/NJ's mechanism for supporting programming-in-the-very-large.
 
-== Porting SML/NJ CM files to MLton ==
+== Porting SML/NJ CM files to MLton
 
 To help in porting CM files to MLton, the MLton source distribution
 includes the sources for a utility, `cm2mlb`, that will print an
-<:MLBasis: ML Basis> file with essentially the same semantics as the
+<<MLBasis#,ML Basis>> file with essentially the same semantics as the
 CM file -- handling the full syntax of CM supported by your installed
 SML/NJ version and correctly handling export filters.  When `cm2mlb`
 encounters a `.cm` import, it attempts to convert it to a
 corresponding `.mlb` import.  CM anchored paths are translated to
 paths according to a default configuration file
-(<!ViewGitFile(mlton,master,util/cm2mlb/cm2mlb-map)>). For example,
+(https://github.com/MLton/mlton/blob/master/util/cm2mlb/cm2mlb-map[`cm2mlb-map`]). For example,
 the default configuration includes
 ----
 # Standard ML Basis Library

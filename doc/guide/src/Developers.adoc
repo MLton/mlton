@@ -1,30 +1,29 @@
-Developers
-==========
+= Developers
 
 Here is a picture of the MLton team at a meeting in Chicago in August
 2003.  From left to right we have:
 
 [align="center",frame="none",cols="^"]
-|=====
-|<:StephenWeeks:> -- <:MatthewFluet:> -- <:HenryCejtin:> -- <:SureshJagannathan:>
-|=====
+|===
+|<<StephenWeeks#>> -- <<MatthewFluet#>> -- <<HenryCejtin#>> -- <<SureshJagannathan#>>
+|===
 
 image::Developers.attachments/team.jpg[align="center"]
 
-Also see the <:Credits:> for a list of specific contributions.
+Also see the <<Credits#>> for a list of specific contributions.
 
 
-== Developers list ==
+== Developers list
 
 A number of people read the developers mailing list,
 mailto:MLton-devel@mlton.org[`MLton-devel@mlton.org`], and make
 contributions there.  Here's a list of those who have a page here.
 
-* <:AndreiFormiga:>
-* <:JesperLouisAndersen:>
-* <:JohnnyAndersen:>
-* <:MichaelNorrish:>
-* <:MikeThomas:>
-* <:RayRacine:>
-* <:WesleyTerpstra:>
-* <:VesaKarvonen:>
+* <<AndreiFormiga#>>
+* <<JesperLouisAndersen#>>
+* <<JohnnyAndersen#>>
+* <<MichaelNorrish#>>
+* <<MikeThomas#>>
+* <<RayRacine#>>
+* <<WesleyTerpstra#>>
+* <<VesaKarvonen#>>

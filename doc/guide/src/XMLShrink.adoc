@@ -1,35 +1,34 @@
-XMLShrink
-=========
+= XMLShrink
 
-XMLShrink is an optimization pass for the <:XML:>
-<:IntermediateLanguage:>, invoked from <:XMLSimplify:>.
+XMLShrink is an optimization pass for the <<XML#>>
+<<IntermediateLanguage#>>, invoked from <<XMLSimplify#>>.
 
-== Description ==
+== Description
 
 This pass performs optimizations based on a reduction system.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/xml/shrink.sig)>
-* <!ViewGitFile(mlton,master,mlton/xml/shrink.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/xml/shrink.sig[`shrink.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/xml/shrink.fun[`shrink.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
-The simplifier is based on <!Cite(AppelJim97, Shrinking Lambda
-Expressions in Linear Time)>.
+The simplifier is based on <<References#AppelJim97,Shrinking Lambda
+Expressions in Linear Time>>.
 
 The source program may contain functions that are only called once, or
 not even called at all.  Match compilation introduces many such
 functions.  In order to reduce the program size, speed up later
 phases, and improve the flow analysis, a source to source simplifier
-is run on <:XML:> after type inference and match compilation.
+is run on <<XML#>> after type inference and match compilation.
 
 The simplifier implements the reductions shown below.  The reductions
 eliminate unnecessary declarations (see the side constraint in the
 figure), applications where the function is immediate, and case
 statements where the test is immediate.  Declarations can be
 eliminated only when the expression is nonexpansive (see Section 4.7
-of the <:DefinitionOfStandardML: Definition>), which is a syntactic
+of the <<DefinitionOfStandardML#,Definition>>), which is a syntactic
 condition that ensures that the expression has no effects
 (assignments, raises, or nontermination).  The reductions on case
 statements do not show the other irrelevant cases that may exist.  The

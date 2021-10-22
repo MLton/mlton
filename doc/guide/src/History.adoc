@@ -1,5 +1,4 @@
-History
-=======
+= History
 
 In April 1997, Stephen Weeks wrote a defunctorizer for Standard ML and
 integrated it with SML/NJ.  The defunctorizer used SML/NJ's visible

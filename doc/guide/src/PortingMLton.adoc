@@ -1,11 +1,10 @@
-PortingMLton
-============
+= PortingMLton
 
 Porting MLton to a new target platform (architecture or OS) involves
 the following steps.
 
 1. Make the necessary changes to the scripts, runtime system,
-<:BasisLibrary: Basis Library> implementation, and compiler.
+<<BasisLibrary#,Basis Library>> implementation, and compiler.
 
 2. Get the regressions working using a cross compiler.
 
@@ -20,7 +19,7 @@ Some of the following steps will not be necessary if MLton already
 supports the architecture or operating system being ported to.
 
 
-== What code to change ==
+== What code to change
 
 * Scripts.
 +
@@ -48,7 +47,7 @@ The goal of this step is to be able to successfully run `make` in the
 
 * Add rounding mode control to `basis/Real/IEEEReal.c` for the new arch (if not `HAS_FEROUND`)
 
-* Build and install the <:GMP:> development library.  This varies from platform to platform.
+* Build and install the <<GMP#>> development library.  This varies from platform to platform.
 --
 
 * Basis Library implementation (`basis-library/*`)
@@ -94,7 +93,7 @@ If the there is a mismatch, you may see the error message
 `strange arch` or `strange os`.
 
 
-== Running the regressions with a cross compiler ==
+== Running the regressions with a cross compiler
 
 When porting to a new platform, it is always best to get all (or as
 many as possible) of the regressions working before moving to a self
@@ -128,34 +127,35 @@ Repeat this step, interleaved with appropriate compiler modifications,
 until all the regressions pass.
 
 
-== Bootstrap ==
+== Bootstrap
 
 The idea for bootstrapping MLton on a new platform is as follows:
- * send the current sources to a remote machine (using ssh)
- * build the MLton runtime system on the remote machine
- * receive the built runtime system from the remote machine as a new target on
-   the host machine
- * build bootstrap compiler sources on the host machine for the new target
- * send the boostrap sources to the remote machine
- * build the boostrap compiler on the remote machine using the boostrap
-   compiler sources
- * complete the MLton build on the remote machine with the boostrap compiler to
-   obtain a boot package
- * build MLton on the remote machine from clean sources using the boot package
- * receive the built binary release from the remote machine
+
+* send the current sources to a remote machine (using ssh)
+* build the MLton runtime system on the remote machine
+* receive the built runtime system from the remote machine as a new target on
+  the host machine
+* build bootstrap compiler sources on the host machine for the new target
+* send the boostrap sources to the remote machine
+* build the boostrap compiler on the remote machine using the boostrap
+  compiler sources
+* complete the MLton build on the remote machine with the boostrap compiler to
+  obtain a boot package
+* build MLton on the remote machine from clean sources using the boot package
+* receive the built binary release from the remote machine
 
 The `remote-bootstrap` goal of the root `Makefile` automates this process; see
 comments in the root `Makefile`.  Here is an example bootstrapping on an OpenBSD
 machine (named `thunder`):
------
+----
 $ make REMOTE_MACHINE=thunder REMOTE_MAKE=gmake REMOTE_MAKEFLAGS=WITH_GMP_DIR=/usr/local remote-bootstrap
------
+----
 
 Once you've got a compiler on the target machine, you should test it by running
 all the regressions normally and by running a couple rounds of self compiles.
 
 
-== Also see ==
+== Also see
 
 * http://www.mlton.org/pipermail/mlton/2002-October/013110.html
 * http://www.mlton.org/pipermail/mlton/2004-July/016029.html

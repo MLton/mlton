@@ -1,5 +1,4 @@
-PhantomType
-===========
+= PhantomType
 
 A phantom type is a type that has no run-time representation, but is
 used to force the type checker to ensure invariants at compile time.
@@ -7,11 +6,11 @@ This is done by augmenting a type with additional arguments (phantom
 type variables) and expressing constraints by choosing phantom types
 to stand for the phantom types in the types of values.
 
-== Also see ==
+== Also see
 
-* <!Cite(Blume01)>
+* <<References#Blume01,Blume01>>
 ** dimensions
 ** C type system
-* <!Cite(FluetPucella06)>
+* <<References#FluetPucella06,FluetPucella06>>
 ** subtyping
-* socket module in <:BasisLibrary:Basis Library>
+* socket module in <<BasisLibrary#,Basis Library>>

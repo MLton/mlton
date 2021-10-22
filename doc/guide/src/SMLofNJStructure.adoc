@@ -1,5 +1,4 @@
-SMLofNJStructure
-================
+= SMLofNJStructure
 
 [source,sml]
 ----
@@ -32,7 +31,7 @@ signature SML_OF_NJ =
 ----
 
 `SMLofNJ` implements a subset of the structure of the same name
-provided in <:SMLNJ:Standard ML of New Jersey>.  It is included to
+provided in <<SMLNJ#,Standard ML of New Jersey>>.  It is included to
 make it easier to port programs between the two systems.  The
 semantics of these functions may be different than in SML/NJ.
 

@@ -1,7 +1,6 @@
-TalkFolkLore
-============
+= TalkFolkLore
 
-== Folk Lore ==
+== Folk Lore
 
  * Defunctorization and monomorphisation are feasible
  * Global control-flow analysis is feasible
@@ -14,6 +13,6 @@ TalkFolkLore
 '''
 
 [cols="<,>"]
-|====
-|<:TalkWholeProgram: Prev>|<:TalkMLtonFeatures: Next>
-|====
+|===
+|<<TalkWholeProgram#,Prev>>|<<TalkMLtonFeatures#,Next>>
+|===

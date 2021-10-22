@@ -1,5 +1,4 @@
-SuccessorML
-===========
+= SuccessorML
 
 The purpose of http://sml-family.org/successor-ml/[successor ML], or
 sML for short, is to provide a vehicle for the continued evolution of
@@ -8,19 +7,19 @@ successor ML to be a living, evolving dialect of ML that is responsive
 to community needs and advances in language design, implementation,
 and semantics.
 
-== SuccessorML Features in MLton ==
+== SuccessorML Features in MLton
 
 The following SuccessorML features have been implemented in MLton.
 The features are disabled by default, and may be enabled utilizing the
-feature's corresponding <:MLBasisAnnotations:ML Basis annotation>
+feature's corresponding <<MLBasisAnnotations#,ML Basis annotation>>
 which is listed directly after the feature name.  In addition, the
-+allowSuccessorML {false|true}+ annotation can be used to
+`allowSuccessorML {false|true}` annotation can be used to
 simultaneously enable all of the features.
 
-* <!Anchor(DoDecls)>
-`do` Declarations: +allowDoDecls {false|true}+
+* [[DoDecls]]
+`do` Declarations: `allowDoDecls {false|true}`
 +
-Allow a +do _exp_+ declaration form, which evaluates _exp_ for its
+Allow a `do _exp_` declaration form, which evaluates _exp_ for its
 side effects.  The following example uses a `do` declaration:
 +
 [source,sml]
@@ -35,15 +34,15 @@ and is equivalent to:
 val () = print "Hello world.\n"
 ----
 
-* <!Anchor(ExtendedConsts)>
-Extended Constants: +allowExtendedConsts {false|true}+
+* [[ExtendedConsts]]
+Extended Constants: `allowExtendedConsts {false|true}`
 +
 --
 Allow or disallow all of the extended constants features.  This is a
 proxy for all of the following annotations.
 
-** <!Anchor(ExtendedNumConsts)>
-Extended Numeric Constants: +allowExtendedNumConsts {false|true}+
+** [[ExtendedNumConsts]]
+Extended Numeric Constants: `allowExtendedNumConsts {false|true}`
 +
 Allow underscores as a separator in numeric constants and allow binary
 integer and word constants.
@@ -51,8 +50,8 @@ integer and word constants.
 Underscores in a numeric constant must occur between digits and
 consecutive underscores are allowed.
 +
-Binary integer constants use the prefix +0b+ and binary word constants
-use the prefix +0wb+.
+Binary integer constants use the prefix `0b` and binary word constants
+use the prefix `0wb`.
 +
 The following example uses extended numeric constants (although it may
 be incorrectly syntax highlighted):
@@ -66,7 +65,8 @@ val i = 4__327__829
 val r = 6.022_140_9e23
 ----
 
-** <!Anchor(ExtendedTextConsts)> Extended Text Constants: +allowExtendedTextConsts {false|true}+
+** [[ExtendedTextConsts]]
+Extended Text Constants: `allowExtendedTextConsts {false|true}`
 +
 Allow characters with integer codes &ge; 128 and &le; 247 that
 correspond to syntactically well-formed UTF-8 byte sequences in text
@@ -175,10 +175,10 @@ s2 = s3 --> true
 ////
 --
 
-* <!Anchor(LineComments)>
-Line Comments: +allowLineComments {false|true}+
+* [[LineComments]]
+Line Comments: `allowLineComments {false|true}`
 +
-Allow line comments beginning with the token ++(*)++.  The following
+Allow line comments beginning with the token ``(*)``.  The following
 example uses a line comment:
 +
 [source,sml]
@@ -200,8 +200,8 @@ val y = 5 (*) This is a line comment *)
 *)
 ----
 
-* <!Anchor(OptBar)>
-Optional Pattern Bars: +allowOptBar {false|true}+
+* [[OptBar]]
+Optional Pattern Bars: `allowOptBar {false|true}`
 +
 Allow a bar to appear before the first match rule of a `case`, `fn`,
 or `handle` expression, allow a bar to appear before the first
@@ -232,8 +232,8 @@ allows for simpler refactoring (e.g., sorting the lines of the
 `datatype` declaration's constructor bindings to put the constructors
 in alphabetical order).
 
-* <!Anchor(OptSemicolon)>
-Optional Semicolons: +allowOptSemicolon {false|true}+
+* [[OptSemicolon]]
+Optional Semicolons: `allowOptSemicolon {false|true}`
 +
 Allow a semicolon to appear after the last expression in a sequence or
 `let`-body expression.  The following example uses a trailing
@@ -253,17 +253,17 @@ fun h z =
 By eliminating the special case of the last element, this feature
 allows for simpler refactoring.
 
-* <!Anchor(OrPats)>
-Disjunctive (Or) Patterns: +allowOrPats {false|true}+
+* [[OrPats]]
+Disjunctive (Or) Patterns: `allowOrPats {false|true}`
 +
-Allow disjunctive (a.k.a., "or") patterns of the form +_pat~1~_ |
-_pat~2~_+, which matches a value that matches either +_pat~1~_+ or
-+_pat~2~_+.  Disjunctive patterns have lower precedence than `as`
-patterns and constraint patterns, much as `orelse` expressions have
-lower precedence than `andalso` expressions and constraint
-expressions.  Both sub-patterns of a disjunctive pattern must bind the
-same variables with the same types.  The following example uses
-disjunctive patterns:
+Allow disjunctive (a.k.a., "or") patterns of the form
+`_pat~1~_ | _pat~2~_`, which matches a value that matches either
+`_pat~1~_` or `_pat~2~_`.  Disjunctive patterns have lower precedence
+than `as` patterns and constraint patterns, much as `orelse`
+expressions have lower precedence than `andalso` expressions and
+constraint expressions.  Both sub-patterns of a disjunctive pattern
+must bind the same variables with the same types.  The following
+example uses disjunctive patterns:
 +
 [source,sml]
 ----
@@ -275,12 +275,12 @@ fun f t =
    | D (x, _) | E (_, x) => x * 2
 ----
 
-* <!Anchor(RecordPunExps)>
-Record Punning Expressions: +allowRecordPunExps {false|true}+
+* [[RecordPunExps]]
+Record Punning Expressions: `allowRecordPunExps {false|true}`
 +
-Allow record punning expressions, whereby an identifier +_vid_+ as an
+Allow record punning expressions, whereby an identifier `_vid_` as an
 expression row in a record expression denotes the expression row
-+_vid_ = _vid_+ (i.e., treating a label as a variable).  The following
+`_vid_ = _vid_` (i.e., treating a label as a variable).  The following
 example uses record punning expressions (and also record punning
 patterns):
 +
@@ -298,8 +298,8 @@ fun incB r =
   case r of {a = a, b = b, c = c} => {a = a, b = b + 1, c = c}
 ----
 
-* <!Anchor(SigWithtype)>
-`withtype` in Signatures: +allowSigWithtype {false|true}+
+* [[SigWithtype]]
+`withtype` in Signatures: `allowSigWithtype {false|true}`
 +
 Allow `withtype` to modify a `datatype` specification in a signature.
 The following example uses `withtype` in a signature (and also
@@ -335,20 +335,26 @@ structure Stream : STREAM =
   end
 ----
 
-* <!Anchor(VectorExpsAndPats)>
-Vector Expressions and Patterns: +allowVectorExpsAndPats {false|true}+
+* [[VectorExpsAndPats]]
+Vector Expressions and Patterns: `allowVectorExpsAndPats {false|true}`
 +
 --
 Allow or disallow vector expressions and vector patterns.  This is a
 proxy for all of the following annotations.
 
-** <!Anchor(VectorExps)>
-Vector Expressions: +allowVectorExps {false|true}+
+** [[VectorExps]]
+Vector Expressions: `allowVectorExps {false|true}`
 +
-Allow vector expressions of the form +#[_exp~0~_, _exp~1~_, ..., _exp~n-1~_]+ (where _n ≥ 0_).  The expression has type +_τ_ vector+ when each expression _exp~i~_ has type +_τ_+.
+Allow vector expressions of the form
+`#[_exp~0~_, _exp~1~_, ..., _exp~n-1~_]` (where _n ≥ 0_).  The
+expression has type `_τ_ vector` when each expression `_exp~i~_` has
+type `_τ_`.
 
-** <!Anchor(VectorPats)>
-Vector Patterns: +allowVectorPats {false|true}+
+** [[VectorPats]]
+Vector Patterns: `allowVectorPats {false|true}`
 +
-Allow vector patterns of the form +#[_pat~0~_, _pat~1~_, ..., _pat~n-1~_]+ (where _n ≥ 0_).  The pattern matches values of type +_τ_ vector+ when each pattern _pat~i~_ matches values of type +_τ_+.
+Allow vector patterns of the form
+`#[_pat~0~_, _pat~1~_, ..., _pat~n-1~_]` (where _n ≥ 0_).  The pattern
+matches values of type `_τ_ vector` when each pattern `_pat~i~_`
+matches values of type `_τ_`.
 --

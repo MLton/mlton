@@ -1,5 +1,4 @@
-MLtonWord
-=========
+= MLtonWord
 
 [source,sml]
 ----

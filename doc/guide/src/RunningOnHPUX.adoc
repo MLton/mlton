@@ -1,8 +1,7 @@
-RunningOnHPUX
-=============
+= RunningOnHPUX
 
 MLton runs fine on HPUX.
 
-== Also see ==
+== Also see
 
-* <:RunningOnHPPA:>
+* <<RunningOnHPPA#>>

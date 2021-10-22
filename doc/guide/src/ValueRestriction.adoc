@@ -1,5 +1,4 @@
-ValueRestriction
-================
+= ValueRestriction
 :toc:
 
 The value restriction is a rule that governs when type inference is
@@ -14,8 +13,8 @@ val f = fn x => x
 val _ = (f "foo"; f 13)
 ----
 
-the expression `fn x => x` is syntactically a value, so `f` has
-polymorphic type `'a -> 'a` and both calls to `f` type check.  On the
+the expression `fn x \=> x` is syntactically a value, so `f` has
+polymorphic type `'a \-> 'a` and both calls to `f` type check.  On the
 other hand, in
 
 [source,sml]
@@ -24,18 +23,18 @@ val f = let in fn x => x end
 val _ = (f "foo"; f 13)
 ----
 
-the expression `let in fn x => end end` is not syntactically a value
-and so `f` can either have type `int -> int` or `string -> string`,
-but not `'a -> 'a`.  Hence, the program does not type check.
+the expression `let in fn x \=> x end` is not syntactically a value
+and so `f` can either have type `int \-> int` or `string \-> string`,
+but not `'a \-> 'a`.  Hence, the program does not type check.
 
-<:DefinitionOfStandardML:The Definition of Standard ML> spells out
+<<DefinitionOfStandardML#,The Definition of Standard ML>> spells out
 precisely which expressions are syntactic values (it refers to such
 expressions as _non-expansive_).  An expression is a value if it is of
 one of the following forms.
 
 * a constant (`13`, `"foo"`, `13.0`, ...)
 * a variable (`x`, `y`, ...)
-* a function (`fn x => e`)
+* a function (`fn x \=> e`)
 * the application of a constructor other than `ref` to a value (`Foo v`)
 * a type constrained value (`v: t`)
 * a tuple in which each field is a value `(v1, v2, ...)`
@@ -43,7 +42,7 @@ one of the following forms.
 * a list in which each element is a value `[v1, v2, ...]`
 
 
-== Why the value restriction exists ==
+== Why the value restriction exists
 
 The value restriction prevents a ref cell (or an array) from holding
 values of different types, which would allow a value of one type to be
@@ -86,7 +85,7 @@ The declaration of `f` is well typed, while the declaration of `r`
 violates the value restriction because `f ()` is not a value.
 
 
-== Unnecessarily rejected programs ==
+== Unnecessarily rejected programs
 
 Unfortunately, the value restriction rejects some programs that could
 be accepted.
@@ -162,7 +161,7 @@ Error: z.sml 4.9-4.15.
 ----
 
 
-== Alternatives to the value restriction ==
+== Alternatives to the value restriction
 
 There would be nothing wrong with treating `f` as polymorphic in
 
@@ -174,7 +173,7 @@ val f = id id
 
 One might think that the value restriction could be relaxed, and that
 only types involving `ref` should be disallowed.  Unfortunately, the
-following example shows that even the type `'a -> 'a` can cause
+following example shows that even the type `'a \-> 'a` can cause
 problems.  If this program were allowed, then we could cast an integer
 to a string (or any other type).
 
@@ -199,7 +198,7 @@ val _ = f "foo"
 ----
 
 The previous version of Standard ML took a different approach
-(<!Cite(MilnerEtAl90)>, <!Cite(Tofte90)>, <:ImperativeTypeVariable:>)
+(<<References#MilnerEtAl90,MilnerEtAl90>>, <<References#Tofte90,Tofte90>>, <<ImperativeTypeVariable#>>)
 than the value restriction.  It encoded information in the type system
 about when ref cells would be created, and used this to prevent a ref
 cell from holding multiple types.  Although it allowed more programs
@@ -214,14 +213,14 @@ to keep hidden to propagate across modules.
 In the early nineties, Andrew Wright studied about 250,000 lines of
 existing SML code and discovered that it did not make significant use
 of the extended typing ability, and proposed the value restriction as
-a simpler alternative (<!Cite(Wright95)>).  This was adopted in the
-revised <:DefinitionOfStandardML:Definition>.
+a simpler alternative (<<References#Wright95,Wright95>>).  This was adopted in the
+revised <<DefinitionOfStandardML#,Definition>>.
 
 
-== Working with the value restriction ==
+== Working with the value restriction
 
 One technique that works with the value restriction is
-<:EtaExpansion:>.  We can use eta expansion to make our `id id`
+<<EtaExpansion#>>.  We can use eta expansion to make our `id id`
 example type check follows.
 
 [source,sml]
@@ -259,7 +258,7 @@ in
 end
 ----
 
-The following example (taken from <!Cite(Wright95)>) creates a ref
+The following example (taken from <<References#Wright95,Wright95>>) creates a ref
 cell to count the number of times a function is called.
 
 [source,sml]
@@ -295,6 +294,6 @@ Of course, one can hide the constructor `T` inside a `local` or behind
 a signature.
 
 
-== Also see ==
+== Also see
 
-* <:ImperativeTypeVariable:>
+* <<ImperativeTypeVariable#>>

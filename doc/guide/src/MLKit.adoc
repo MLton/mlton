@@ -1,18 +1,17 @@
-MLKit
-=====
+= MLKit
 
 The http://sourceforge.net/apps/mediawiki/mlkit[ML Kit] is a
-<:StandardMLImplementations:Standard ML implementation>.
+<<StandardMLImplementations#,Standard ML implementation>>.
 
 MLKit supports:
 
-* <:DefinitionOfStandardML:SML'97>
-** including most of the latest <:BasisLibrary:Basis Library>
-http://www.standardml.org/Basis[specification],
-* <:MLBasis:ML Basis> files
+* <<DefinitionOfStandardML#,SML'97>>
+** including most of the latest <<BasisLibrary#,Basis Library>>
+https://smlfamily.github.io/Basis[specification],
+* <<MLBasis#,ML Basis>> files
 ** and separate compilation,
-* <:Regions:Region-Based Memory Management>
-** and <:GarbageCollection:garbage collection>,
+* <<Regions#,Region-Based Memory Management>>
+** and <<GarbageCollection#,garbage collection>>,
 * Multiple backends, including
 ** native x86,
 ** bytecode, and

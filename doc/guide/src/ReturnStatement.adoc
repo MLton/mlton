@@ -1,25 +1,24 @@
-ReturnStatement
-===============
+= ReturnStatement
 
 Programmers coming from languages that have a `return` statement, such
 as C, Java, and Python, often ask how one can translate functions that
 return early into SML.  This page briefly describes a number of ways
 to translate uses of `return` to SML.
 
-== Conditional iterator function ==
+== Conditional iterator function
 
 A conditional iterator function, such as
-http://www.standardml.org/Basis/list.html#SIG:LIST.find:VAL[`List.find`],
-http://www.standardml.org/Basis/list.html#SIG:LIST.exists:VAL[`List.exists`],
+https://smlfamily.github.io/Basis/list.html#SIG:LIST.find:VAL[`List.find`],
+https://smlfamily.github.io/Basis/list.html#SIG:LIST.exists:VAL[`List.exists`],
 or
-http://www.standardml.org/Basis/list.html#SIG:LIST.all:VAL[`List.all`]
+https://smlfamily.github.io/Basis/list.html#SIG:LIST.all:VAL[`List.all`]
 is probably what you want in most cases.  Unfortunately, it might be
 the case that the particular conditional iteration pattern that you
 want isn't provided for your data structure.  Usually the best
 alternative in such a case is to implement the desired iteration
 pattern as a higher-order function.  For example, to implement a
 `find` function for arrays (which already exists as
-http://www.standardml.org/Basis/array.html#SIG:ARRAY.findi:VAL[`Array.find`])
+https://smlfamily.github.io/Basis/array.html#SIG:ARRAY.findi:VAL[`Array.find`])
 one could write
 
 [source,sml]
@@ -41,25 +40,25 @@ Of course, this technique, while probably the most common case in
 practice, applies only if you are essentially iterating over some data
 structure.
 
-== Escape handler ==
+== Escape handler
 
 Probably the most direct way to translate code using `return`
 statements is to basically implement `return` using exception
 handling.  The mechanism can be packaged into a reusable module with
 the signature
-(<!ViewGitFile(mltonlib,master,com/ssh/extended-basis/unstable/public/control/exit.sig)>):
+(https://github.com/MLton/mltonlib/blob/master/com/ssh/extended-basis/unstable/public/control/exit.sig[`exit.sig`]):
 [source,sml]
 ----
-sys::[./bin/InclGitFile.py mltonlib master com/ssh/extended-basis/unstable/public/control/exit.sig 6:]
+include::https://raw.github.com/MLton/mltonlib/master/com/ssh/extended-basis/unstable/public/control/exit.sig[indent=0,lines=6..-1]
 ----
 
-(<!Cite(HarperEtAl93, Typing First-Class Continuations in ML)>
+(<<References#HarperEtAl93,Typing First-Class Continuations in ML>>
 discusses the typing of a related construct.)  The implementation
-(<!ViewGitFile(mltonlib,master,com/ssh/extended-basis/unstable/detail/control/exit.sml)>)
+(https://github.com/MLton/mltonlib/blob/master/com/ssh/extended-basis/unstable/detail/control/exit.sml[`exit.sml`])
 is straightforward:
 [source,sml]
 ----
-sys::[./bin/InclGitFile.py mltonlib master com/ssh/extended-basis/unstable/detail/control/exit.sml 6:]
+include::https://raw.github.com/MLton/mltonlib/master/com/ssh/extended-basis/unstable/detail/control/exit.sml[indent=0,lines=6..-1]
 ----
 
 Here is an example of how one could implement a `find` function given
@@ -84,7 +83,7 @@ In the above, as soon as the expression `predicate x` evaluates to
 `true` the `app` invocation is terminated.
 
 
-== Continuation-passing Style (CPS) ==
+== Continuation-passing Style (CPS)
 
 A general way to implement complex control patterns is to use
 http://en.wikipedia.org/wiki/Continuation-passing_style[CPS].  In CPS,

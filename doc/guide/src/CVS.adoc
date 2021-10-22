@@ -1,9 +1,8 @@
-CVS
-===
+= CVS
 
 http://www.gnu.org/software/cvs/[CVS] (Concurrent Versions System) is
 a version control system. The MLton project used CVS to maintain its
-<:Sources:source code>, but switched to <:Subversion:> on 20050730.
+<<Sources#,source code>>, but switched to <<Subversion#>> on 20050730.
 
 Here are some online CVS resources.
 

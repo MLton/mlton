@@ -1,7 +1,6 @@
-ProfilingCounts
-===============
+= ProfilingCounts
 
-With MLton and `mlprof`, you can <:Profiling:profile> your program to
+With MLton and `mlprof`, you can <<Profiling#,profile>> your program to
 find out how many times each function is called and how many times
 each branch is taken.  To do so, compile your program with
 `-profile count -profile-branch true`. For example, suppose that
@@ -9,7 +8,7 @@ each branch is taken.  To do so, compile your program with
 
 [source,sml]
 ----
-sys::[./bin/InclGitFile.py mlton master doc/examples/profiling/tak.sml]
+include::https://raw.github.com/MLton/mlton/master/doc/examples/profiling/tak.sml[indent=0]
 ----
 
 Compile with count profiling and run the program.

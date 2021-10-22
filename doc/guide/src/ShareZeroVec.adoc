@@ -1,14 +1,13 @@
-ShareZeroVec
-============
+= ShareZeroVec
 
-<:ShareZeroVec:> is an optimization pass for the <:SSA:>
-<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+<<ShareZeroVec#>> is an optimization pass for the <<SSA#>>
+<<IntermediateLanguage#>>, invoked from <<SSASimplify#>>.
 
-== Description ==
+== Description
 
 An SSA optimization to share zero-length vectors.
 
-From <!ViewGitCommit(mlton,be8c5f576)>, which replaced the use of the
+From https://github.com/MLton/mlton/commit/be8c5f576[`be8c5f576`], which replaced the use of the
 `Array_array0Const` primitive in the Basis Library implementation with a
 (nullary) `Vector_vector` primitive:
 
@@ -22,8 +21,8 @@ vectors are empty. See:
 http://www.mlton.org/pipermail/mlton-devel/2002-February/021523.html
 
 Curiously, the full effect of this optimization has been missing for quite some
-time (perhaps since the port of <:ConstantPropagation:> to the SSA IL).  While
-<:ConstantPropagation:> has "globalized" the nullary application of the
+time (perhaps since the port of <<ConstantPropagation#>> to the SSA IL).  While
+<<ConstantPropagation#>> has "globalized" the nullary application of the
 `Array_array0Const` primitive, it also simultaneously transformed it to an
 application of the `Array_uninit` (previously, the `Array_array`) primitive to
 the zero constant.  The hash-consing of globals, meant to create exactly one
@@ -31,7 +30,7 @@ global for each distinct constant, treats `Array_uninit` primitives as unequal
 (appropriately, since `Array_uninit` allocates an array with identity (though
 the identity may be supressed by a subsequent `Array_toVector`)), hence each
 distinct `Array_array0Const` primitive in the program remained as distinct
-globals.  The limited amount of inlining prior to <:ConstantPropagation:> meant
+globals.  The limited amount of inlining prior to <<ConstantPropagation#>> meant
 that there were typically fewer than a dozen "copies" of the same empty vector
 in a program for a given type.
 
@@ -98,7 +97,7 @@ and associated `ConstantPropagation` treatment.  But, the semantics
 and purpose of `Array_array0Const` was poorly understood, resulting in
 this break.
 
-The <:ShareZeroVec:> pass pursues a different approach: perform the 0-element
+The <<ShareZeroVec#>> pass pursues a different approach: perform the 0-element
 vector "optimization" as a separate optimization, after
 `ConstantPropagation` and `Useless`.  A trivial static analysis is
 used to match `val v: t vector = Array_toVector(t) (a)` with
@@ -129,10 +128,10 @@ transforms creations of static-length vectors (e.g., all the
 `Vector.new<N>` functions) into `Vector_vector` primitives (some of
 which could be globalized).
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/share-zero-vec.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/share-zero-vec.fun[`share-zero-vec.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 {empty}

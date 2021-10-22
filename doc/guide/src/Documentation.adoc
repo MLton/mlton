@@ -1,31 +1,30 @@
-Documentation
-=============
+= Documentation
 
 Documentation is available on the following topics.
 
-* <:StandardML:Standard ML>
-** <:BasisLibrary:Basis Library>
-** <:Libraries: Additional libraries>
-* <:Installation:Installing MLton>
+* <<StandardML#,Standard ML>>
+** <<BasisLibrary#,Basis Library>>
+** <<Libraries#,Additional libraries>>
+* <<Installation#,Installing MLton>>
 * Using MLton
-** <:ForeignFunctionInterface: Foreign function interface (FFI)>
-** <:ManualPage: Manual page> (<:CompileTimeOptions:compile-time options> <:RunTimeOptions:run-time options>)
-** <:MLBasis: ML Basis system>
-** <:MLtonStructure: MLton structure>
-** <:PlatformSpecificNotes: Platform-specific notes>
-** <:Profiling: Profiling>
-** <:TypeChecking: Type checking>
-** Help for porting from <:SMLNJ:SML/NJ> to MLton.
+** <<ForeignFunctionInterface#,Foreign function interface (FFI)>>
+** <<ManualPage#,Manual page>> (<<CompileTimeOptions#,compile-time options>> <<RunTimeOptions#,run-time options>>)
+** <<MLBasis#,ML Basis system>>
+** <<MLtonStructure#,MLton structure>>
+** <<PlatformSpecificNotes#,Platform-specific notes>>
+** <<Profiling#,Profiling>>
+** <<TypeChecking#,Type checking>>
+** Help for porting from <<SMLNJ#,SML/NJ>> to MLton.
 * About MLton
-** <:Credits:>
-** <:Drawbacks:>
-** <:Features:>
-** <:History:>
-** <:License:>
-** <:Talk:>
-** <:WishList:>
+** <<Credits#>>
+** <<Drawbacks#>>
+** <<Features#>>
+** <<History#>>
+** <<License#>>
+** <<Talk#>>
+** <<WishList#>>
 * Tools
-** <:MLLex:> (<!Attachment(Documentation,mllex.pdf)>)
-** <:MLYacc:> (<!Attachment(Documentation,mlyacc.pdf)>)
-** <:MLNLFFIGen:> (<!Attachment(Documentation,mlyacc.pdf)>)
-* <:References:>
+** <<MLLex#>> (link:Documentation.attachments/mllex.pdf[`mllex.pdf`])
+** <<MLYacc#>> (link:Documentation.attachments/mlyacc.pdf[`mlyacc.pdf`])
+** <<MLNLFFIGen#>> (link:Documentation.attachments/mlyacc.pdf[`mlyacc.pdf`])
+* <<References#>>

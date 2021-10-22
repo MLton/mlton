@@ -1,21 +1,20 @@
-SplitTypes
-==========
+= SplitTypes
 
-<:SplitTypes:> is an optimization pass for the <:SSA:> <:IntermediateLanguage:>,
-invoked from <:SSASimplify:>.
+<<SplitTypes#>> is an optimization pass for the <<SSA#>> <<IntermediateLanguage#>>,
+invoked from <<SSASimplify#>>.
 
-== Description ==
+== Description
 
-<:SplitTypes:> performs a unification-based analysis to split a datatype into
+<<SplitTypes#>> performs a unification-based analysis to split a datatype into
 distinct instances for constructed values that are not unified.  Because
 datatypes are recursive, other analyses often conflate all defs and uses of
 `ConApp`-s; `SplitTypes` allows non-unified instances of a datatype to be
 analyzed separately.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/split-types.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/split-types.fun[`split-types.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 {empty}

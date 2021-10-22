@@ -1,25 +1,24 @@
-ImplementSuffix
-===============
+= ImplementSuffix
 
-<:ImplementSuffix:> is a pass for the <:SXML:>
-<:IntermediateLanguage:>, invoked from <:SXMLSimplify:>.
+<<ImplementSuffix#>> is a pass for the <<SXML#>>
+<<IntermediateLanguage#>>, invoked from <<SXMLSimplify#>>.
 
-== Description ==
+== Description
 
 This pass implements the `TopLevel_setSuffix` primitive, which
 installs a function to exit the program.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/xml/implement-suffix.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/xml/implement-suffix.fun[`implement-suffix.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
-<:ImplementSuffix:> works by introducing a new `ref` cell to contain
-the function of type `unit -> unit` that should be called on program
+<<ImplementSuffix#>> works by introducing a new `ref` cell to contain
+the function of type `unit \-> unit` that should be called on program
 exit.
 
-* The following code (appropriately alpha-converted) is appended to the beginning of the <:SXML:> program:
+* The following code (appropriately alpha-converted) is appended to the beginning of the <<SXML#>> program:
 +
 [source,sml]
 ----
@@ -53,7 +52,7 @@ val x_0 =
   Ref_assign (topLevelSuffixCell, f_0)
 ----
 
-* The following code (appropriately alpha-converted) is appended to the end of the <:SXML:> program:
+* The following code (appropriately alpha-converted) is appended to the end of the <<SXML#>> program:
 +
 [source,sml]
 ----

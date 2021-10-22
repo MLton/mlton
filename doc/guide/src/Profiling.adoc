@@ -1,9 +1,8 @@
-Profiling
-=========
+= Profiling
 
 With MLton and `mlprof`, you can profile your program to find out
 bytes allocated, execution counts, or time spent in each function.  To
-profile you program, compile with ++-profile __kind__++, where _kind_
+profile you program, compile with ``-profile __kind__``, where _kind_
 is one of `alloc`, `count`, or `time`.  Then, run the executable,
 which will write an `mlmon.out` file when it finishes.  You can then
 run `mlprof` on the executable and the `mlmon.out` file to see the
@@ -11,15 +10,15 @@ performance data.
 
 Here are the three kinds of profiling that MLton supports.
 
-* <:ProfilingAllocation:>
-* <:ProfilingCounts:>
-* <:ProfilingTime:>
+* <<ProfilingAllocation#>>
+* <<ProfilingCounts#>>
+* <<ProfilingTime#>>
 
-== Next steps ==
+== Next steps
 
-* <:CallGraph:>s to visualize profiling data.
-* <:HowProfilingWorks:>
-* <:MLmon:>
-* <:MLtonProfile:> to selectively profile parts of your program.
-* <:ProfilingTheStack:>
-* <:ShowProf:>
+* <<CallGraph#>>s to visualize profiling data.
+* <<HowProfilingWorks#>>
+* <<MLmon#>>
+* <<MLtonProfile#>> to selectively profile parts of your program.
+* <<ProfilingTheStack#>>
+* <<ShowProf#>>

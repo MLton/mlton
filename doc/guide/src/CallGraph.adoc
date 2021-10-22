@@ -1,7 +1,6 @@
-CallGraph
-=========
+= CallGraph
 
-For easier visualization of <:Profiling:profiling> data, `mlprof` can
+For easier visualization of <<Profiling#,profiling>> data, `mlprof` can
 create a call graph of the program in dot format, from which you can
 use the http://www.research.att.com/sw/tools/graphviz/[graphviz]
 software package to create a PostScript or PNG graph.  For example,
@@ -31,20 +30,20 @@ The argument to `-keep` is an expression describing a set of source
 functions (i.e. graph nodes).  The expression _e_ should be of the
 following form.
 
-* ++all++
-* ++"__s__"++
-* ++(and __e ...__)++
-* ++(from __e__)++
-* ++(not __e__)++
-* ++(or __e__)++
-* ++(pred __e__)++
-* ++(succ __e__)++
-* ++(thresh __x__)++
-* ++(thresh-gc __x__)++
-* ++(thresh-stack __x__)++
-* ++(to __e__)++
+* ``all``
+* ``"__s__"``
+* ``(and __e ...__)``
+* ``(from __e__)``
+* ``(not __e__)``
+* ``(or __e__)``
+* ``(pred __e__)``
+* ``(succ __e__)``
+* ``(thresh __x__)``
+* ``(thresh-gc __x__)``
+* ``(thresh-stack __x__)``
+* ``(to __e__)``
 
-In the grammar, ++all++ denotes the set of all nodes.  ++"__s__"++ is
+In the grammar, ``all`` denotes the set of all nodes.  ``"__s__"`` is
 a regular expression denoting the set of functions whose name
 (followed by a space and the source position) has a prefix matching
 the regexp.  The `and`, `not`, and `or` expressions denote
@@ -81,12 +80,12 @@ MLton's optimizer may duplicate source functions for any of a number
 of reasons (functor duplication, monomorphisation, polyvariance,
 inlining).  By default, all duplicates of a function are treated as
 one.  If you would like to treat the duplicates separately, you can
-use ++mlprof -split __regexp__++, which will cause all duplicates of
+use ``mlprof -split __regexp__``, which will cause all duplicates of
 functions whose name has a prefix matching the regular expression to
 be treated separately.  This can be especially useful for higher-order
 utility functions like `General.o`.
 
-== Caveats ==
+== Caveats
 
 Technically speaking, `mlprof` produces a call-stack graph rather than
 a call graph, because it describes the set of possible call stacks.

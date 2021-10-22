@@ -1,5 +1,4 @@
-UnsafeStructure
-===============
+= UnsafeStructure
 
 This module is a subset of the `Unsafe` module provided by SML/NJ,
 with a few extract operations for `PackWord` and `PackReal`.

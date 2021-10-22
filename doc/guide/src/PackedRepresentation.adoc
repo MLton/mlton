@@ -1,20 +1,19 @@
-PackedRepresentation
-====================
+= PackedRepresentation
 
-<:PackedRepresentation:> is an analysis pass for the <:SSA2:>
-<:IntermediateLanguage:>, invoked from <:ToRSSA:>.
+<<PackedRepresentation#>> is an analysis pass for the <<SSA2#>>
+<<IntermediateLanguage#>>, invoked from <<ToRSSA#>>.
 
-== Description ==
+== Description
 
-This pass analyzes a <:SSA2:> program to compute a packed
+This pass analyzes a <<SSA2#>> program to compute a packed
 representation for each object.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/backend/representation.sig)>
-* <!ViewGitFile(mlton,master,mlton/backend/packed-representation.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/backend/representation.sig[`representation.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/backend/packed-representation.fun[`packed-representation.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 Has a special case to make sure that `true` is represented as `1` and
 `false` is represented as `0`.

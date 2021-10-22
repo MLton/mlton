@@ -1,18 +1,17 @@
-PolyHash
-========
+= PolyHash
 
-<:PolyHash:> is an optimization pass for the <:SSA:>
-<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+<<PolyHash#>> is an optimization pass for the <<SSA#>>
+<<IntermediateLanguage#>>, invoked from <<SSASimplify#>>.
 
-== Description ==
+== Description
 
 This pass implements polymorphic, structural hashing.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/poly-hash.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/poly-hash.fun[`poly-hash.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 For each datatype, tycon, and vector type, it builds and equality
 function and translates calls to `MLton_hash` into calls to that

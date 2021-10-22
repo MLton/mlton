@@ -1,5 +1,4 @@
-ConcurrentML
-============
+= ConcurrentML
 
 http://cml.cs.uchicago.edu/[Concurrent ML] is an SML concurrency
 library based on synchronous message passing.  MLton has an initial
@@ -41,18 +40,18 @@ Because MLton does not wrap the Basis Library for CML, the "right" way
 to call a Basis Library function that is stateful is to wrap the call
 with `MLton.Thread.atomically`.
 
-== Usage ==
+== Usage
 
 * You can import the CML Library into an MLB file with:
 +
 [options="header"]
-|=====
+|===
 |MLB file|Description
 |`$(SML_LIB)/cml/cml.mlb`|
-|====
+|===
 
-* If you are porting a project from SML/NJ's <:CompilationManager:> to
-MLton's <:MLBasis: ML Basis system> using `cm2mlb`, note that the
+* If you are porting a project from SML/NJ's <<CompilationManager#>> to
+MLton's <<MLBasis#,ML Basis system>> using `cm2mlb`, note that the
 following map is included by default:
 +
 ----
@@ -63,7 +62,7 @@ $cml/cml.cm                             $(SML_LIB)/cml/cml.mlb
 +
 This will automatically convert a `$cml/cml.cm` import in an input `.cm` file into a `$(SML_LIB)/cml/cml.mlb` import in the output `.mlb` file.
 
-== Also see ==
+== Also see
 
-* <:ConcurrentMLImplementation:>
-* <:eXene:>
+* <<ConcurrentMLImplementation#>>
+* <<eXene#>>

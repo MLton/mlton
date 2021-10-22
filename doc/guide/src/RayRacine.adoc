@@ -1,5 +1,4 @@
-RayRacine
-=========
+= RayRacine
 
 Using SML in some _Semantic Web_ stuff.   Anyone interested in
 similar, please contact me.  GreyLensman on #sml on IRC or rracine at
@@ -14,4 +13,4 @@ Current areas of coding.
 . SPARQL implementation - not started.
 . Persistent engine based on BerkelyDB - not started.
 . Native implementation of Postgresql protocol - underway, ways to go.
-. I also have a small change to the MLton compiler to add ++PackWord__<N>__++ - changes compile but needs some more work, clean-up and unit tests.
+. I also have a small change to the MLton compiler to add ``PackWord__<N>__`` - changes compile but needs some more work, clean-up and unit tests.

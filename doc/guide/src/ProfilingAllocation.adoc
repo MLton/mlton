@@ -1,14 +1,13 @@
-ProfilingAllocation
-===================
+= ProfilingAllocation
 
-With MLton and `mlprof`, you can <:Profiling:profile> your program to
+With MLton and `mlprof`, you can <<Profiling#,profile>> your program to
 find out how many bytes each function allocates.  To do so, compile
 your program with `-profile alloc`.  For example, suppose that
 `list-rev.sml` is the following.
 
 [source,sml]
 ----
-sys::[./bin/InclGitFile.py mlton master doc/examples/profiling/list-rev.sml]
+include::https://raw.github.com/MLton/mlton/master/doc/examples/profiling/list-rev.sml[indent=0]
 ----
 
 Compile and run `list-rev` as follows.
@@ -37,4 +36,4 @@ because it inserts additional C calls for object allocation.
 
 Compile with `-profile alloc -profile-branch true` to find out how
 much allocation is done in each branch of a function; see
-<:ProfilingCounts:> for more details on `-profile-branch`.
+<<ProfilingCounts#>> for more details on `-profile-branch`.

@@ -1,33 +1,32 @@
-Stabilizers
-===========
+= Stabilizers
 
-== Installation ==
+== Installation
 
 * Stabilizers currently require the MLton sources, this should be fixed by the next release
 
-== License ==
+== License
 
 * Stabilizers are released under the MLton License
 
-== Instructions ==
+== Instructions
 
 * Download and build a source copy of MLton
 * Extract the tar.gz file attached to this page
 * Some examples are provided in the "examples/" sub directory, more examples will be added to this page in the following week
 
-== Bug reports / Suggestions ==
+== Bug reports / Suggestions
 
 * Please send any errors you encounter to schatzp and lziarek at cs.purdue.edu
 * We are looking to expand the usability of stabilizers
 * Please send any suggestions and desired functionality to the above email addresses
 
-== Note ==
+== Note
 
 * This is an alpha release. We expect to have another release shortly with added functionality soon
 * More documentation, such as signatures and descriptions of functionality, will be forthcoming
 
 
-== Documentation ==
+== Documentation
 
 [source,sml]
 ----
@@ -88,10 +87,10 @@ standard assignment (`:=`).  The version of CML distributed rebinds
 the assignment operator that should be used in programs that use
 stabilizers. `:=` is rebound to this by including CML.
 
-== Download ==
+== Download
 
-* <!Attachment(Stabilizers,stabilizers_alpha_2006-10-09.tar.gz)>
+* link:Stabilizers.attachments/stabilizers_alpha_2006-10-09.tar.gz[`stabilizers_alpha_2006-10-09.tar.gz`]
 
-== Also see ==
+== Also see
 
-* <!Cite(ZiarekEtAl06)>
+* <<References#ZiarekEtAl06,ZiarekEtAl06>>

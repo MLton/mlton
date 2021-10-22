@@ -1,31 +1,30 @@
-Bugs20180207
-============
+= Bugs20180207
 
-Here are the known bugs in <:Release20180207:MLton 20180207>, listed
+Here are the known bugs in <<Release20180207#,MLton 20180207>>, listed
 in reverse chronological order of date reported.
 
-* <!Anchor(bug04)>
+* [[bug04]]
 Bug in `CML.sync` with multiple enabled events.
 +
 Thanks to James Cooper for the bug report.
 +
-Fixed by commit <!ViewGitCommit(mlton,0de07d039)>.
+Fixed by commit https://github.com/MLton/mlton/commit/0de07d039[`0de07d039`].
 
-* <!Anchor(bug03)>
-Bug in <:SimplifyTypes:> <:SSA:> optimization pass.
+* [[bug03]]
+Bug in <<SimplifyTypes#>> <<SSA#>> optimization pass.
 +
-Fixed by commit <!ViewGitCommit(mlton,ef0f05961)>.
+Fixed by commit https://github.com/MLton/mlton/commit/ef0f05961[`ef0f05961`].
 
-* <!Anchor(bug02)>
+* [[bug02]]
 Bugs in `MLton.size` and `MLton.share`; calling `MLton.size` or `MLton.share`
 with a non-pointer variant of an object type that could be represented by either
 a pointer or a non-pointer (e.g., the `NONE` variant of an `int list option`)
 would segfault.
 +
-Fixed by commit <!ViewGitCommit(mlton,31689bc27)>.
+Fixed by commit https://github.com/MLton/mlton/commit/31689bc27[`31689bc27`].
 
-* <!Anchor(bug01)>
+* [[bug01]]
 Latent bug in `MLton.GC.collect`; an explicit `MLton.GC.collect` call was passed
 `0` bytes requested rather than the bytes required by the return block(s).
 +
-Fixed by commit <!ViewGitCommit(mlton,1f4daa14d)>.
+Fixed by commit https://github.com/MLton/mlton/commit/1f4daa14d[`1f4daa14d`].

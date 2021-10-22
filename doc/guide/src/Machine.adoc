@@ -1,27 +1,26 @@
-Machine
-=======
+= Machine
 
-<:Machine:> is an <:IntermediateLanguage:>, translated from <:RSSA:>
-by <:ToMachine:> and used as input by the <:Codegen:>.
+<<Machine#>> is an <<IntermediateLanguage#>>, translated from <<RSSA#>>
+by <<ToMachine#>> and used as input by the <<Codegen#>>.
 
-== Description ==
+== Description
 
-<:Machine:> is an <:Untyped:> <:IntermediateLanguage:>, corresponding
+<<Machine#>> is an <<Untyped#>> <<IntermediateLanguage#>>, corresponding
 to an abstract machine with an infinite number of temporaries.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/backend/machine.sig)>
-* <!ViewGitFile(mlton,master,mlton/backend/machine.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/backend/machine.sig[`machine.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/backend/machine.fun[`machine.fun`]
 
-== Type Checking ==
+== Type Checking
 
-The <:Machine:> <:IntermediateLanguage:> has a primitive type checker
-(<!ViewGitFile(mlton,master,mlton/backend/machine.sig)>,
-<!ViewGitFile(mlton,master,mlton/backend/machine.fun)>), which only checks
+The <<Machine#>> <<IntermediateLanguage#>> has a primitive type checker
+(https://github.com/MLton/mlton/blob/master/mlton/backend/machine.sig[`machine.sig`],
+https://github.com/MLton/mlton/blob/master/mlton/backend/machine.fun[`machine.fun`]), which only checks
 some liveness properties.
 
-== Details and Notes ==
+== Details and Notes
 
 The runtime structure sets some constants according to the
 configuration files on the target architecture and OS.

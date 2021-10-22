@@ -1,21 +1,20 @@
-Inline
-======
+= Inline
 
-<:Inline:> is an optimization pass for the <:SSA:>
-<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+<<Inline#>> is an optimization pass for the <<SSA#>>
+<<IntermediateLanguage#>>, invoked from <<SSASimplify#>>.
 
-== Description ==
+== Description
 
-This pass inlines <:SSA:> functions using a size-based metric.
+This pass inlines <<SSA#>> functions using a size-based metric.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/inline.sig)>
-* <!ViewGitFile(mlton,master,mlton/ssa/inline.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/inline.sig[`inline.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/inline.fun[`inline.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
-The <:Inline:> pass can be invoked to use one of three metrics:
+The <<Inline#>> pass can be invoked to use one of three metrics:
 
 * `NonRecursive(product, small)` -- inline any function satisfying `(numCalls - 1) * (size - small) <= product`, where `numCalls` is the static number of calls to the function and `size` is the size of the function.
 * `Leaf(size)` -- inline any leaf function smaller than `size`

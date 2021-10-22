@@ -1,23 +1,22 @@
-Contify
-=======
+= Contify
 
-<:Contify:> is an optimization pass for the <:SSA:>
-<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+<<Contify#>> is an optimization pass for the <<SSA#>>
+<<IntermediateLanguage#>>, invoked from <<SSASimplify#>>.
 
-== Description ==
+== Description
 
 Contification is a compiler optimization that turns a function that
 always returns to the same place into a continuation.  This exposes
 control-flow information that is required by many optimizations,
 including traditional loop optimizations.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/contify.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/contify.fun[`contify.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
-See <!Cite(FluetWeeks01, Contification Using Dominators)>.  The
+See <<References#FluetWeeks01,Contification Using Dominators>>.  The
 intermediate language described in that paper has since evolved to the
-<:SSA:> <:IntermediateLanguage:>; hence, the complication described in
+<<SSA#>> <<IntermediateLanguage#>>; hence, the complication described in
 Section 6.1 is no longer relevant.

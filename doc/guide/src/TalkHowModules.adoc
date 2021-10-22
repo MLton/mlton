@@ -1,7 +1,6 @@
-TalkHowModules
-==============
+= TalkHowModules
 
-== Modules ==
+== Modules
 
  * How does one represent SML's modules?
  * MLton's answer: defunctorize
@@ -9,7 +8,7 @@ TalkHowModules
 {nbsp} +
 {nbsp} +
 
-See <:Elaborate:>.
+See <<Elaborate#>>.
 
 {nbsp} +
 {nbsp} +
@@ -18,6 +17,6 @@ See <:Elaborate:>.
 '''
 
 [cols="<,>"]
-|====
-|<:TalkFromSMLTo: Prev>|<:TalkHowPolymorphism: Next>
-|====
+|===
+|<<TalkFromSMLTo#,Prev>>|<<TalkHowPolymorphism#,Next>>
+|===

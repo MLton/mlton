@@ -1,25 +1,24 @@
-StandardMLImplementations
-=========================
+= StandardMLImplementations
 
-There are a number of implementations of <:StandardML:Standard ML>,
+There are a number of implementations of <<StandardML#,Standard ML>>,
 from interpreters, to byte-code compilers, to incremental compilers,
 to whole-program compilers.
 
-* <:Alice:Alice ML>
-* <:HaMLet:HaMLet>
-* <:MLKit:ML Kit>
-* <:Home:MLton>
-* <:MoscowML:Moscow ML>
-* <:PolyML:Poly/ML>
-* <:SMLSharp:SML#>
-* <:SMLNJ:SML/NJ>
-* <:SMLNET:SML.NET>
-* <:TILT:TILT>
+* <<Alice#,Alice ML>>
+* <<HaMLet#,HaMLet>>
+* <<MLKit#,ML Kit>>
+* <<Home#,MLton>>
+* <<MoscowML#,Moscow ML>>
+* <<PolyML#,Poly/ML>>
+* <<SMLSharp#,SML#>>
+* <<SMLNJ#,SML/NJ>>
+* <<SMLNET#,SML.NET>>
+* <<TILT#,TILT>>
 
-== Not Actively Maintained ==
+== Not Actively Maintained
 
 * http://www.dcs.ed.ac.uk/home/edml/[Edinburgh ML]
-* <:MLj:MLj>
+* <<MLj#,MLj>>
 * MLWorks
-* <:Poplog:>
+* <<Poplog#>>
 * http://www.cs.cornell.edu/Info/People/jgm/til.tar.Z[TIL]

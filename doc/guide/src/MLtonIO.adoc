@@ -1,5 +1,4 @@
-MLtonIO
-=======
+= MLtonIO
 
 [source,sml]
 ----

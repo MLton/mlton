@@ -1,32 +1,31 @@
-AST
-===
+= AST
 
-<:AST:> is the <:IntermediateLanguage:> produced by the <:FrontEnd:>
-and translated by <:Elaborate:> to <:CoreML:>.
+<<AST#>> is the <<IntermediateLanguage#>> produced by the <<FrontEnd#>>
+and translated by <<Elaborate#>> to <<CoreML#>>.
 
-== Description ==
+== Description
 
-The abstract syntax tree produced by the <:FrontEnd:>.
+The abstract syntax tree produced by the <<FrontEnd#>>.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ast/ast-programs.sig)>
-* <!ViewGitFile(mlton,master,mlton/ast/ast-programs.fun)>
-* <!ViewGitFile(mlton,master,mlton/ast/ast-modules.sig)>
-* <!ViewGitFile(mlton,master,mlton/ast/ast-modules.fun)>
-* <!ViewGitFile(mlton,master,mlton/ast/ast-core.sig)>
-* <!ViewGitFile(mlton,master,mlton/ast/ast-core.fun)>
-* <!ViewGitDir(mlton,master,mlton/ast)>
+* https://github.com/MLton/mlton/blob/master/mlton/ast/ast-programs.sig[`ast-programs.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/ast/ast-programs.fun[`ast-programs.fun`]
+* https://github.com/MLton/mlton/blob/master/mlton/ast/ast-modules.sig[`ast-modules.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/ast/ast-modules.fun[`ast-modules.fun`]
+* https://github.com/MLton/mlton/blob/master/mlton/ast/ast-core.sig[`ast-core.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/ast/ast-core.fun[`ast-core.fun`]
+* https://github.com/MLton/mlton/tree/master/mlton/ast[`ast`]
 
-== Type Checking ==
+== Type Checking
 
-The <:AST:> <:IntermediateLanguage:> has no independent type
+The <<AST#>> <<IntermediateLanguage#>> has no independent type
 checker. Type inference is performed on an AST program as part of
-<:Elaborate:>.
+<<Elaborate#>>.
 
-== Details and Notes ==
+== Details and Notes
 
-=== Source locations ===
+=== Source locations
 
 MLton makes use of a relatively clean method for annotating the
 abstract syntax tree with source location information.  Every source
@@ -34,32 +33,32 @@ program phrase is "wrapped" with the `WRAPPED` interface:
 
 [source,sml]
 ----
-sys::[./bin/InclGitFile.py mlton master mlton/control/wrapped.sig 8:19]
+include::https://raw.github.com/MLton/mlton/master/mlton/control/wrapped.sig[indent=0,lines=8..19]
 ----
 
 The key idea is that `node'` is the type of an unannotated syntax
 phrase and `obj` is the type of its annotated counterpart. In the
 implementation, every `node'` is annotated with a `Region.t`
-(<!ViewGitFile(mlton,master,mlton/control/region.sig)>,
-<!ViewGitFile(mlton,master,mlton/control/region.sml)>), which describes the
+(https://github.com/MLton/mlton/blob/master/mlton/control/region.sig[`region.sig`],
+https://github.com/MLton/mlton/blob/master/mlton/control/region.sml[`region.sml`]), which describes the
 syntax phrase's left source position and right source position, where
-`SourcePos.t` (<!ViewGitFile(mlton,master,mlton/control/source-pos.sig)>,
-<!ViewGitFile(mlton,master,mlton/control/source-pos.sml)>) denotes a
+`SourcePos.t` (https://github.com/MLton/mlton/blob/master/mlton/control/source-pos.sig[`source-pos.sig`],
+https://github.com/MLton/mlton/blob/master/mlton/control/source-pos.sml[`source-pos.sml`]) denotes a
 particular file, line, and column.  A typical use of the `WRAPPED`
 interface is illustrated by the following code:
 
 [source,sml]
 ----
-sys::[./bin/InclGitFile.py mlton master mlton/ast/ast-core.sig 46:65]
+include::https://raw.github.com/MLton/mlton/master/mlton/ast/ast-core.sig[indent=0,lines=47..68]
 ----
 
 Thus, AST nodes are cleanly separated from source locations.  By way
-of contrast, consider the approach taken by <:SMLNJ:SML/NJ> (and also
-by the <:CKitLibrary:CKit Library>).  Each datatype denoting a syntax
+of contrast, consider the approach taken by <<SMLNJ#,SML/NJ>> (and also
+by the <<CKitLibrary#,CKit Library>>).  Each datatype denoting a syntax
 phrase dedicates a special constructor for annotating source
 locations:
 [source,sml]
------
+----
 datatype pat = WildPat                             (* empty pattern *)
              | AppPat of {constr:pat,argument:pat} (* application *)
              | MarkPat of pat * region             (* mark a pattern *)

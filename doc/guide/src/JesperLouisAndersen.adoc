@@ -1,5 +1,4 @@
-JesperLouisAndersen
-===================
+= JesperLouisAndersen
 
 Jesper Louis Andersen is an undergraduate student at DIKU, the department of computer science, Copenhagen university. His contributions to MLton are few, though he has made the port of MLton to the NetBSD and OpenBSD platforms.
 
@@ -8,10 +7,10 @@ His general interests in computer science are compiler theory, language theory, 
 He was employed by the university as a system administrator for 2 years, which has set him back somewhat in his studies. Currently he is trying to learn mathematics (real analysis, general topology, complex functional analysis and algebra).
 
 
-== Projects using MLton ==
+== Projects using MLton
 
-=== A register allocator ===
+=== A register allocator
 For internal use at a compiler course at DIKU. It is written in the literate programming style and implements the _Iterated Register Coalescing_ algorithm by Lal George and Andrew Appel http://citeseer.ist.psu.edu/george96iterated.html. The status of the project is that it is unfinished. Most of the basic parts of the algorithm is done, but the interface to the students (simple) datatype takes some conversion.
 
-=== A configuration management system in SML ===
+=== A configuration management system in SML
 At this time, only loose plans exists for this. The plan is to build a Configuration Management system on the principles of the OpenCM system, see http://www.opencm.org/docs.html. The basic idea is to unify "naming" and "identity" into one by uniquely identifying all objects managed in the repository by the use of cryptographic checksums. This mantra guides the rest of the system, providing integrity, accessibility and confidentiality.

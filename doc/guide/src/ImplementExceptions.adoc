@@ -1,17 +1,16 @@
-ImplementExceptions
-===================
+= ImplementExceptions
 
-<:ImplementExceptions:> is a pass for the <:SXML:>
-<:IntermediateLanguage:>, invoked from <:SXMLSimplify:>.
+<<ImplementExceptions#>> is a pass for the <<SXML#>>
+<<IntermediateLanguage#>>, invoked from <<SXMLSimplify#>>.
 
-== Description ==
+== Description
 
 This pass implements exceptions.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/xml/implement-exceptions.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/xml/implement-exceptions.fun[`implement-exceptions.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 {empty}

@@ -1,9 +1,8 @@
-Release20201002
-===============
+= Release20201002
 
 Here you can download the latest public release of MLton, version 20201002.
 
-== Changes since <:Release20200817:MLton 20200817> ==
+== Changes since <<Release20200817#,MLton 20200817>>
 
 * Compiler.
   ** Fixed bug in handling of weak objects during mark-compact GC.
@@ -11,11 +10,11 @@ Here you can download the latest public release of MLton, version 20201002.
   ** Fixes for Solaris and MinGW platforms.
 
 For a complete list of changes and bug fixes since
-<:Release20180207:>, see the
-<!ViewGitFile(mlton,on-20201002-release,CHANGELOG.adoc)> and
-<:Bugs20180207:>.
+<<Release20180207#>>, see the
+https://github.com/MLton/mlton/blob/on-20201002-release/CHANGELOG.adoc[`CHANGELOG.adoc`] and
+<<Bugs20180207#>>.
 
-== Changes since <:Release20200722:MLton 20200722> ==
+== Changes since <<Release20200722#,MLton 20200722>>
 
 * Compiler.
   ** Fixed bug in `RssaShrink` optimization that would result in an unbound
@@ -24,11 +23,11 @@ For a complete list of changes and bug fixes since
   ** Fixes for Solaris and MinGW platforms.
 
 For a complete list of changes and bug fixes since
-<:Release20180207:>, see the
-<!ViewGitFile(mlton,on-20200817-release,CHANGELOG.adoc)> and
-<:Bugs20180207:>.
+<<Release20180207#>>, see the
+https://github.com/MLton/mlton/blob/on-20200817-release/CHANGELOG.adoc[`CHANGELOG.adoc`] and
+<<Bugs20180207#>>.
 
-== Changes since <:Release20180207:MLton 20180207> ==
+== Changes since <<Release20180207#,MLton 20180207>>
 
 * Compiler.
   ** Added expert `-pi-style {default|npi|pic|pie}` and
@@ -61,10 +60,10 @@ For a complete list of changes and bug fixes since
   ** Basis Library.
     *** Change `OS.IO.poll` to not be restarted when interrupted by a
     signal.  (This is consistent with `Socket.select`.)
-    *** Add `MLton.sizeAll: unit -> IntInf.int` that returns the size
+    *** Add `MLton.sizeAll: unit \-> IntInf.int` that returns the size
     of reachable live data.
-    *** Change type of `MLton.size` from `'a -> int` to
-    `'a -> IntInf.int`, because with 64-bit systems, the size of a
+    *** Change type of `MLton.size` from `'a \-> int` to
+    `'a \-> IntInf.int`, because with 64-bit systems, the size of a
     single object can exceed that representable by a signed 32-bit
     integer.
   ** Other libraries.
@@ -82,44 +81,44 @@ For a complete list of changes and bug fixes since
   BSD-style.
 
 For a complete list of changes and bug fixes since
-<:Release20180207:>, see the
-<!ViewGitFile(mlton,on-20200817-release,CHANGELOG.adoc)> and
-<:Bugs20180207:>.
+<<Release20180207#>>, see the
+https://github.com/MLton/mlton/blob/on-20200817-release/CHANGELOG.adoc[`CHANGELOG.adoc`] and
+<<Bugs20180207#>>.
 
-== 20201002 binary packages ==
+== 20201002 binary packages
 
 * AMD64 (aka "x86-64" or "x64")
-** https://sourceforge.net/projects/mlton/files/mlton/20201002/mlton-20201002-1.amd64-darwin-19.6.gmp-homebrew.tgz[Darwin (.tgz)] 19.6 (Mac OS X Catalina), dynamically linked against <:GMP:> in `/usr/local/lib` (suitable for https://brew.sh/[Homebrew] install of <:GMP:>)
-** https://sourceforge.net/projects/mlton/files/mlton/20201002/mlton-20201002-1.amd64-darwin-19.6.gmp-static.tgz[Darwin (.tgz)] 19.6 (Mac OS X Catalina), statically linked against <:GMP:> (but requires <:GMP:> for generated executables)
-** https://sourceforge.net/projects/mlton/files/mlton/20201002/mlton-20201002-1.amd64-darwin-17.7.gmp-homebrew.tgz[Darwin (.tgz)] 17.7 (Mac OS X High Sierra), dynamically linked against <:GMP:> in `/usr/local/lib` (suitable for https://brew.sh/[Homebrew] install of <:GMP:>)
-** https://sourceforge.net/projects/mlton/files/mlton/20201002/mlton-20201002-1.amd64-darwin-17.7.gmp-static.tgz[Darwin (.tgz)] 17.7 (Mac OS X High Sierra), statically linked against <:GMP:> (but requires <:GMP:> for generated executables)
+** https://sourceforge.net/projects/mlton/files/mlton/20201002/mlton-20201002-1.amd64-darwin-19.6.gmp-homebrew.tgz[Darwin (.tgz)] 19.6 (Mac OS X Catalina), dynamically linked against <<GMP#>> in `/usr/local/lib` (suitable for https://brew.sh/[Homebrew] install of <<GMP#>>)
+** https://sourceforge.net/projects/mlton/files/mlton/20201002/mlton-20201002-1.amd64-darwin-19.6.gmp-static.tgz[Darwin (.tgz)] 19.6 (Mac OS X Catalina), statically linked against <<GMP#>> (but requires <<GMP#>> for generated executables)
+** https://sourceforge.net/projects/mlton/files/mlton/20201002/mlton-20201002-1.amd64-darwin-17.7.gmp-homebrew.tgz[Darwin (.tgz)] 17.7 (Mac OS X High Sierra), dynamically linked against <<GMP#>> in `/usr/local/lib` (suitable for https://brew.sh/[Homebrew] install of <<GMP#>>)
+** https://sourceforge.net/projects/mlton/files/mlton/20201002/mlton-20201002-1.amd64-darwin-17.7.gmp-static.tgz[Darwin (.tgz)] 17.7 (Mac OS X High Sierra), statically linked against <<GMP#>> (but requires <<GMP#>> for generated executables)
 ** https://sourceforge.net/projects/mlton/files/mlton/20201002/mlton-20201002-1.amd64-linux.tgz[Linux (.tgz)], glibc 2.27 (Ubuntu 18.04)
-// ** https://sourceforge.net/projects/mlton/files/mlton/20201002/mlton-20201002-amd64-mingw.tgz[MinGW (.tgz)], gcc 10.1.0, statically linked against <:GMP:>; contributed by Bernard Berthomieu; see http://projects.laas.fr/tina/software.php for details and installation instructions
-// ** https://sourceforge.net/projects/mlton/files/mlton/20201002/mlton-20201002-amd64-mingw-gmp-dynamic.tgz[MinGW (.tgz)], gcc 10.1.0, dynamically linked against <:GMP:>; contributed by Bernard Berthomieu; see http://projects.laas.fr/tina/software.php for details and installation instructions
-// ** https://sourceforge.net/projects/mlton/files/mlton/20201002/mlton-20201002-amd64-solaris-gmp-dynamic.tgz[Solaris (.tgz)] 11.4, dynamically linked against <:GMP:>; contributed by Bernard Berthomieu
+// ** https://sourceforge.net/projects/mlton/files/mlton/20201002/mlton-20201002-amd64-mingw.tgz[MinGW (.tgz)], gcc 10.1.0, statically linked against <<GMP#>>; contributed by Bernard Berthomieu; see http://projects.laas.fr/tina/software.php for details and installation instructions
+// ** https://sourceforge.net/projects/mlton/files/mlton/20201002/mlton-20201002-amd64-mingw-gmp-dynamic.tgz[MinGW (.tgz)], gcc 10.1.0, dynamically linked against <<GMP#>>; contributed by Bernard Berthomieu; see http://projects.laas.fr/tina/software.php for details and installation instructions
+// ** https://sourceforge.net/projects/mlton/files/mlton/20201002/mlton-20201002-amd64-solaris-gmp-dynamic.tgz[Solaris (.tgz)] 11.4, dynamically linked against <<GMP#>>; contributed by Bernard Berthomieu
 // * x86
-// ** https://sourceforge.net/projects/mlton/files/mlton/20201002/mlton-20201002-x86-mingw.tgz[MinGW (.tgz)], gcc 10.1.0, statically linked against <:GMP:>; contributed by Bernard Berthomieu; see http://projects.laas.fr/tina/software.php for details and installation instructions
-// ** https://sourceforge.net/projects/mlton/files/mlton/20201002/mlton-20201002-x86-mingw-gmp-dynamic.tgz[MinGW (.tgz)], gcc 10.1.0, dynamically linked against <:GMP:>; contributed by Bernard Berthomieu; see http://projects.laas.fr/tina/software.php for details and installation instructions
-// ** https://sourceforge.net/projects/mlton/files/mlton/20201002/mlton-20201002-x86-solaris-gmp-dynamic.tgz[Solaris (.tgz)] 11.4, dynamically linked against <:GMP:>; contributed by Bernard Berthomieu
+// ** https://sourceforge.net/projects/mlton/files/mlton/20201002/mlton-20201002-x86-mingw.tgz[MinGW (.tgz)], gcc 10.1.0, statically linked against <<GMP#>>; contributed by Bernard Berthomieu; see http://projects.laas.fr/tina/software.php for details and installation instructions
+// ** https://sourceforge.net/projects/mlton/files/mlton/20201002/mlton-20201002-x86-mingw-gmp-dynamic.tgz[MinGW (.tgz)], gcc 10.1.0, dynamically linked against <<GMP#>>; contributed by Bernard Berthomieu; see http://projects.laas.fr/tina/software.php for details and installation instructions
+// ** https://sourceforge.net/projects/mlton/files/mlton/20201002/mlton-20201002-x86-solaris-gmp-dynamic.tgz[Solaris (.tgz)] 11.4, dynamically linked against <<GMP#>>; contributed by Bernard Berthomieu
 
 // === Binary packages available at other sites
 
 // * http://projects.laas.fr/tina/software.php[TINA toolbox]: Includes binary
 //   releases for: amd64-darwin Mac OS X Sierra (both statically and dynamically
-//   linked against <:GMP:>), amd64-linux Ubuntu 14 (both statically and
-//   dynamically linked against <:GMP:>), amd64-mingw and x86-mingw MSys2 (both
-//   statically and dynamically linked against <:GMP:>), amd64-solaris and
+//   linked against <<GMP#>>), amd64-linux Ubuntu 14 (both statically and
+//   dynamically linked against <<GMP#>>), amd64-mingw and x86-mingw MSys2 (both
+//   statically and dynamically linked against <<GMP#>>), amd64-solaris and
 //   x86-solaris Solaris 11.4 (both statically and dynamically linked against
-//   <:GMP:>), and x86-linux Ubuntu 16 (both statically and dynamically linked
-//   against <:GMP:>).
+//   <<GMP#>>), and x86-linux Ubuntu 16 (both statically and dynamically linked
+//   against <<GMP#>>).
 
-== 20201002 source packages ==
+== 20201002 source packages
 
  * https://sourceforge.net/projects/mlton/files/mlton/20201002/mlton-20201002.src.tgz[mlton-20201002.src.tgz]
 
-== Also see ==
+== Also see
 
-* <:Bugs20201002:>
+* <<Bugs20201002#>>
 * http://www.mlton.org/guide/20201002/[MLton Guide (20201002)].
 +
 A snapshot of the MLton website at the time of release.

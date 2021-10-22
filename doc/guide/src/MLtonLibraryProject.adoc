@@ -1,5 +1,4 @@
-MLtonLibraryProject
-===================
+= MLtonLibraryProject
 
 We have a https://github.com/MLton/mltonlib[MLton Library repository]
 that is intended to collect libraries.
@@ -10,13 +9,13 @@ that is intended to collect libraries.
 
 Libraries are kept in the `master` branch, and are grouped according
 to domain name, in the Java package style.  For example,
-<:VesaKarvonen:>, who works at `ssh.com`, has been putting code at:
+<<VesaKarvonen#>>, who works at `ssh.com`, has been putting code at:
 
 =====
   https://github.com/MLton/mltonlib/tree/master/com/ssh
 =====
 
-<:StephenWeeks:>, owning `sweeks.com`, has been putting code at:
+<<StephenWeeks#>>, owning `sweeks.com`, has been putting code at:
 
 =====
   https://github.com/MLton/mltonlib/tree/master/com/sweeks
@@ -48,7 +47,7 @@ to
 =====
 
 So far, libraries in the MLton repository have been licensed under
-MLton's <:License:>.  We haven't decided on whether that will be a
+MLton's <<License#>>.  We haven't decided on whether that will be a
 requirement to be in the repository or not.  For the sake of
 simplicity (a single license) and encouraging widest use of code,
 contributors are encouraged to use that license.  But it may be too
@@ -62,7 +61,7 @@ be able to bring library collections in from many different
 repositories without problems.  And those libraries could even work
 with each other.
 
-At some point we may want to settle on an <:MLBasisPathMap:> variable
+At some point we may want to settle on an <<MLBasisPathMap#>> variable
 for the root of the library project.  Or, we could reuse `SML_LIB`,
 and migrate what we currently keep there into the library
 infrastructure.

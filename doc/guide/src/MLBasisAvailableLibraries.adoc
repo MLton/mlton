@@ -1,65 +1,64 @@
-MLBasisAvailableLibraries
-=========================
+= MLBasisAvailableLibraries
 
-MLton comes with the following <:MLBasis:ML Basis> files available.
+MLton comes with the following <<MLBasis#,ML Basis>> files available.
 
 * `$(SML_LIB)/basis/basis.mlb`
 +
-The <:BasisLibrary:Basis Library>.
+The <<BasisLibrary#,Basis Library>>.
 
 * `$(SML_LIB)/basis/basis-1997.mlb`
 +
-The (deprecated) 1997 version of the <:BasisLibrary:Basis Library>.
+The (deprecated) 1997 version of the <<BasisLibrary#,Basis Library>>.
 
 * `$(SML_LIB)/basis/mlton.mlb`
 +
-The <:MLtonStructure:MLton> structure and signatures.
+The <<MLtonStructure#,MLton>> structure and signatures.
 
 * `$(SML_LIB)/basis/c-types.mlb`
 +
-Various structure aliases useful as <:ForeignFunctionInterfaceTypes:>.
+Various structure aliases useful as <<ForeignFunctionInterfaceTypes#>>.
 
 * `$(SML_LIB)/basis/unsafe.mlb`
 +
-The <:UnsafeStructure:Unsafe> structure and signature.
+The <<UnsafeStructure#,Unsafe>> structure and signature.
 
 * `$(SML_LIB)/basis/sml-nj.mlb`
 +
-The <:SMLofNJStructure:SMLofNJ> structure and signature.
+The <<SMLofNJStructure#,SMLofNJ>> structure and signature.
 
 * `$(SML_LIB)/mlyacc-lib/mlyacc-lib.mlb`
 +
-Modules used by parsers built with <:MLYacc:>.
+Modules used by parsers built with <<MLYacc#>>.
 
 * `$(SML_LIB)/cml/cml.mlb`
 +
-<:ConcurrentML:>, a library for message-passing concurrency.
+<<ConcurrentML#>>, a library for message-passing concurrency.
 
 * `$(SML_LIB)/mlnlffi-lib/mlnlffi-lib.mlb`
 +
-<:MLNLFFI:ML-NLFFI>, a library for foreign function interfaces.
+<<MLNLFFI#,ML-NLFFI>>, a library for foreign function interfaces.
 
 * `$(SML_LIB)/mlrisc-lib/...`
 +
-<:MLRISCLibrary:>, a library for retargetable and optimizing compiler back ends.
+<<MLRISCLibrary#>>, a library for retargetable and optimizing compiler back ends.
 
 * `$(SML_LIB)/smlnj-lib/...`
 +
-<:SMLNJLibrary:>, a collection of libraries distributed with SML/NJ.
+<<SMLNJLibrary#>>, a collection of libraries distributed with SML/NJ.
 
 * `$(SML_LIB)/ckit-lib/ckit-lib.mlb`
 +
-<:CKitLibrary:>, a library for C source code.
+<<CKitLibrary#>>, a library for C source code.
 
 * `$(SML_LIB)/mllpt-lib/mllpt-lib.mlb`
 +
-<:MLLPTLibrary:>, a support library for the <:MLULex:> scanner generator and the <:MLAntlr:> parser generator.
+<<MLLPTLibrary#>>, a support library for the <<MLULex#>> scanner generator and the <<MLAntlr#>> parser generator.
 
 
-== Basis fragments ==
+== Basis fragments
 
 There are a number of specialized ML Basis files for importing
-fragments of the <:BasisLibrary: Basis Library> that can not be
+fragments of the <<BasisLibrary#,Basis Library>> that can not be
 expressed within SML.
 
 * `$(SML_LIB)/basis/pervasive-types.mlb`

@@ -1,9 +1,8 @@
-RunningOnSolaris
-================
+= RunningOnSolaris
 
 MLton runs fine on Solaris.
 
-== Notes ==
+== Notes
 
 * You must install the `binutils`, `gcc`, and `make` packages.  You
 can find out how to get these at
@@ -12,15 +11,15 @@ http://www.sunfreeware.com[sunfreeware.com].
 * Making the documentation requires that you install `latex` and
 `dvips`, which are available in the `tetex` package.
 
-== Known issues ==
+== Known issues
 
-* Bootstrapping on the <:RunningOnSparc:Sparc architecture> is so slow
+* Bootstrapping on the <<RunningOnSparc#,Sparc architecture>> is so slow
 as to be impractical (many hours on a 500MHz UltraSparc).  For this
 reason, we strongly recommend building with a
-<:CrossCompiling:cross compiler>.
+<<CrossCompiling#,cross compiler>>.
 
-== Also see ==
+== Also see
 
-* <:RunningOnAMD64:>
-* <:RunningOnSparc:>
-* <:RunningOnX86:>
+* <<RunningOnAMD64#>>
+* <<RunningOnSparc#>>
+* <<RunningOnX86#>>

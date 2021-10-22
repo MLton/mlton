@@ -1,168 +1,167 @@
-Bugs20070826
-============
+= Bugs20070826
 
-Here are the known bugs in <:Release20070826:MLton 20070826>, listed
+Here are the known bugs in <<Release20070826#,MLton 20070826>>, listed
 in reverse chronological order of date reported.
 
-* <!Anchor(bug25)>
+* [[bug25]]
 Bug in the mark-compact garbage collector where the C library's `memcpy` was used to move objects during the compaction phase; this could lead to heap corruption and segmentation faults with newer versions of gcc and/or glibc, which assume that src and dst in a `memcpy` do not overlap.
 +
-Fixed by revision <!ViewSVNRev(7461)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r7461&type=commits[`r7461`].
 
-* <!Anchor(bug24)>
+* [[bug24]]
 Bug in elaboration of `datatype` declarations with `withtype` bindings.
 +
-Fixed by revision <!ViewSVNRev(7434)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r7434&type=commits[`r7434`].
 
-* <!Anchor(bug23)>
-Performance bug in <:RefFlatten:> optimization pass.
+* [[bug23]]
+Performance bug in <<RefFlatten#>> optimization pass.
 +
 Thanks to Reactive Systems for the bug report.
 +
-Fixed by revision <!ViewSVNRev(7379)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r7379&type=commits[`r7379`].
 
-* <!Anchor(bug22)>
-Performance bug in <:SimplifyTypes:> optimization pass.
+* [[bug22]]
+Performance bug in <<SimplifyTypes#>> optimization pass.
 +
 Thanks to Reactive Systems for the bug report.
 +
-Fixed by revisions <!ViewSVNRev(7377)> and <!ViewSVNRev(7378)>.
+Fixed by revisions https://github.com/MLton/mlton/search?q=SVN`r7377&type=commits[`r7377`] and https://github.com/MLton/mlton/search?q=SVN`r7378&type=commits[`r7378`].
 
-* <!Anchor(bug21)>
+* [[bug21]]
 Bug in amd64 codegen register allocation of indirect C calls.
 +
 Thanks to David Hansel for the bug report.
 +
-Fixed by revision <!ViewSVNRev(7368)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r7368&type=commits[`r7368`].
 
-* <!Anchor(bug20)>
+* [[bug20]]
 Bug in `IntInf.scan` and `IntInf.fromString` where leading spaces were only accepted if the stream had an explicit sign character.
 +
 Thanks to David Hansel for the bug report.
 +
-Fixed by revisions <!ViewSVNRev(7227)> and <!ViewSVNRev(7230)>.
+Fixed by revisions https://github.com/MLton/mlton/search?q=SVN`r7227&type=commits[`r7227`] and https://github.com/MLton/mlton/search?q=SVN`r7230&type=commits[`r7230`].
 
-* <!Anchor(bug19)>
+* [[bug19]]
 Bug in `IntInf.~>>` that could cause a `glibc` assertion.
 +
-Fixed by revisions <!ViewSVNRev(7083)>, <!ViewSVNRev(7084)>, and <!ViewSVNRev(7085)>.
+Fixed by revisions https://github.com/MLton/mlton/search?q=SVN`r7083&type=commits[`r7083`], https://github.com/MLton/mlton/search?q=SVN`r7084&type=commits[`r7084`], and https://github.com/MLton/mlton/search?q=SVN+r7085&type=commits[`r7085`].
 
-* <!Anchor(bug18)>
+* [[bug18]]
 Bug in the return type of `MLton.Process.reap`.
 +
 Thanks to Risto Saarelma for the bug report.
 +
-Fixed by revision <!ViewSVNRev(7029)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r7029&type=commits[`r7029`].
 
-* <!Anchor(bug17)>
+* [[bug17]]
 Bug in `MLton.size` and `MLton.share` when tracing the current stack.
 +
-Fixed by revisions <!ViewSVNRev(6978)>, <!ViewSVNRev(6981)>, <!ViewSVNRev(6988)>, <!ViewSVNRev(6989)>, and <!ViewSVNRev(6990)>.
+Fixed by revisions https://github.com/MLton/mlton/search?q=SVN`r6978&type=commits[`r6978`], https://github.com/MLton/mlton/search?q=SVN`r6981&type=commits[`r6981`], https://github.com/MLton/mlton/search?q=SVN`r6988&type=commits[`r6988`], https://github.com/MLton/mlton/search?q=SVN`r6989&type=commits[`r6989`], and https://github.com/MLton/mlton/search?q=SVN+r6990&type=commits[`r6990`].
 
-* <!Anchor(bug16)>
+* [[bug16]]
 Bug in nested `_export`/`_import` functions.
 +
-Fixed by revision <!ViewSVNRev(6919)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r6919&type=commits[`r6919`].
 
-* <!Anchor(bug15)>
+* [[bug15]]
 Bug in the name mangling of `_import`-ed functions with the `stdcall` convention.
 +
 Thanks to Lars Bergstrom for the bug report.
 +
-Fixed by revision <!ViewSVNRev(6672)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r6672&type=commits[`r6672`].
 
-* <!Anchor(bug14)>
+* [[bug14]]
 Bug in Windows code to page the heap to disk when unable to grow the heap to a desired size.
 +
 Thanks to Sami Evangelista for the bug report.
 +
-Fixed by revisions <!ViewSVNRev(6600)> and <!ViewSVNRev(6624)>.
+Fixed by revisions https://github.com/MLton/mlton/search?q=SVN`r6600&type=commits[`r6600`] and https://github.com/MLton/mlton/search?q=SVN`r6624&type=commits[`r6624`].
 
-* <!Anchor(bug13)>
+* [[bug13]]
 Bug in \*NIX code to page the heap to disk when unable to grow the heap to a desired size.
 +
 Thanks to Nicolas Bertolotti for the bug report and patch.
 +
-Fixed by revisions <!ViewSVNRev(6596)> and <!ViewSVNRev(6600)>.
+Fixed by revisions https://github.com/MLton/mlton/search?q=SVN`r6596&type=commits[`r6596`] and https://github.com/MLton/mlton/search?q=SVN`r6600&type=commits[`r6600`].
 
-* <!Anchor(bug12)>
-Space-safety bug in pass to <:RefFlatten: flatten refs> into containing data structure.
+* [[bug12]]
+Space-safety bug in pass to <<RefFlatten#,flatten refs>> into containing data structure.
 +
 Thanks to Daniel Spoonhower for the bug report and initial diagnosis and patch.
 +
-Fixed by revision <!ViewSVNRev(6395)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r6395&type=commits[`r6395`].
 
-* <!Anchor(bug11)>
+* [[bug11]]
 Bug in the frontend that rejected `op longvid` patterns and expressions.
 +
 Thanks to Florian Weimer for the bug report.
 +
-Fixed by revision <!ViewSVNRev(6347)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r6347&type=commits[`r6347`].
 
-* <!Anchor(bug10)>
-Bug in the http://www.standardml.org/Basis/imperative-io.html#SIG:IMPERATIVE_IO.canInput:VAL[`IMPERATIVE_IO.canInput`] function of the <:BasisLibrary:Basis Library> implementation.
+* [[bug10]]
+Bug in the https://smlfamily.github.io/Basis/imperative-io.html#SIG:IMPERATIVE_IO.canInput:VAL[`IMPERATIVE_IO.canInput`] function of the <<BasisLibrary#,Basis Library>> implementation.
 +
 Thanks to Ville Laurikari for the bug report.
 +
-Fixed by revision <!ViewSVNRev(6261)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r6261&type=commits[`r6261`].
 
-* <!Anchor(bug09)>
-Bug in algebraic simplification of real primitives.  http://www.standardml.org/Basis/real.html#SIG:REAL.\|@LTE\|:VAL[++REAL__<N>__.\<=(x, x)++] is `false` when `x` is NaN.
+* [[bug09]]
+Bug in algebraic simplification of real primitives.  https://smlfamily.github.io/Basis/real.html#SIG:REAL.\|@LTE\|:VAL[" ``Real__<N>__.\<=(x, x)``"] is `false` when `x` is NaN.
 +
-Fixed by revision <!ViewSVNRev(6242)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r6242&type=commits[`r6242`].
 
-* <!Anchor(bug08)>
+* [[bug08]]
 Bug in the FFI visible representation of `Int16.int ref` (and references of other primitive types smaller than 32-bits) on big-endian platforms.
 +
 Thanks to Dave Herman for the bug report.
 +
-Fixed by revision <!ViewSVNRev(6267)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r6267&type=commits[`r6267`].
 
-* <!Anchor(bug07)>
+* [[bug07]]
 Bug in type inference of flexible records.  This would later cause the compiler to raise the `TypeError` exception.
 +
 Thanks to Wesley Terpstra for the bug report.
 +
-Fixed by revision <!ViewSVNRev(6229)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r6229&type=commits[`r6229`].
 
-* <!Anchor(bug06)>
+* [[bug06]]
 Bug in cross-compilation of `gdtoa` library.
 +
 Thanks to Wesley Terpstra for the bug report and patch.
 +
-Fixed by revision <!ViewSVNRev(6620)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r6620&type=commits[`r6620`].
 
-* <!Anchor(bug05)>
-Bug in pass to <:RefFlatten: flatten refs> into containing data structure.
+* [[bug05]]
+Bug in pass to <<RefFlatten#,flatten refs>> into containing data structure.
 +
 Thanks to Ruy Ley-Wild for the bug report.
 +
-Fixed by revision <!ViewSVNRev(6191)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r6191&type=commits[`r6191`].
 
-* <!Anchor(bug04)>
+* [[bug04]]
 Bug in the handling of weak pointers by the mark-compact garbage collector.
 +
 Thanks to Sean McLaughlin for the bug report and Florian Weimer for the initial diagnosis.
 +
-Fixed by revision <!ViewSVNRev(6183)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r6183&type=commits[`r6183`].
 
-* <!Anchor(bug03)>
+* [[bug03]]
 Bug in the elaboration of structures with signature constraints.  This would later cause the compiler to raise the `TypeError` exception.
 +
 Thanks to Vesa Karvonen for the bug report.
 +
-Fixed by revision <!ViewSVNRev(6046)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r6046&type=commits[`r6046`].
 
-* <!Anchor(bug02)>
+* [[bug02]]
 Bug in the interaction of `_export`-ed functions and signal handlers.
 +
 Thanks to Sean McLaughlin for the bug report.
 +
-Fixed by revision <!ViewSVNRev(6013)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r6013&type=commits[`r6013`].
 
-* <!Anchor(bug01)>
+* [[bug01]]
 Bug in the implementation of `_export`-ed functions using the `char` type, leading to a linker error.
 +
 Thanks to Katsuhiro Ueno for the bug report.
 +
-Fixed by revision <!ViewSVNRev(5999)>.
+Fixed by revision https://github.com/MLton/mlton/search?q=SVN+r5999&type=commits[`r5999`].

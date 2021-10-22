@@ -1,5 +1,4 @@
-MLtonContIsolateImplementation
-==============================
+= MLtonContIsolateImplementation
 
 As noted before, it is fairly easy to get the operational behavior of `isolate` with just `callcc` and `throw`, but establishing the right space behavior is trickier.  Here, we show how to start from the obvious, but inefficient, implementation of `isolate` using only `callcc` and `throw`, and 'derive' an equivalent, but more efficient, implementation of `isolate` using MLton's primitive stack capture and copy operations.  This isn't a formal derivation, as we are not formally showing the equivalence of the programs (though I believe that they are all equivalent, modulo the space behavior).
 
@@ -145,9 +144,9 @@ end
 ----
 
 
-Now, to evaluate `base`, we only copy the stack once (instead of 3 times).  Because we don't have a dummy continuation around to initialize the reference cell, the reference cell holds a continuation `option`.  To distinguish between the original evaluation of `base` (when we want to return the continuation) and the subsequent evaluations of `base` (when we want to evaluate a thunk), we capture a `(unit -> unit) option` continuation.
+Now, to evaluate `base`, we only copy the stack once (instead of 3 times).  Because we don't have a dummy continuation around to initialize the reference cell, the reference cell holds a continuation `option`.  To distinguish between the original evaluation of `base` (when we want to return the continuation) and the subsequent evaluations of `base` (when we want to evaluate a thunk), we capture a `(unit \-> unit) option` continuation.
 
-This seems to be as far as we can go without exploiting the concrete implementation of continuations in <:MLtonCont:>.  Examining the implementation, we note that the type of
+This seems to be as far as we can go without exploiting the concrete implementation of continuations in <<MLtonCont#>>.  Examining the implementation, we note that the type of
 continuations is given by
 [source,sml]
 ----
@@ -309,7 +308,7 @@ end
 ----
 
 
-It is perhaps interesting to note that the above implementation was originally 'derived' by specializing implementations of the <:MLtonThread:> `new`, `prepare`, and `switch` functions as if their only use was in the following implementation of `isolate`:
+It is perhaps interesting to note that the above implementation was originally 'derived' by specializing implementations of the <<MLtonThread#>> `new`, `prepare`, and `switch` functions as if their only use was in the following implementation of `isolate`:
 
 [source,sml]
 ----

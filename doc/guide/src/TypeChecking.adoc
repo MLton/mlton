@@ -1,11 +1,10 @@
-TypeChecking
-============
+= TypeChecking
 
-MLton's type checker follows the <:DefinitionOfStandardML:Definition>
+MLton's type checker follows the <<DefinitionOfStandardML#,Definition>>
 closely, so you may find differences between MLton and other SML
 compilers that do not follow the Definition so closely.  In
 particular, SML/NJ has many deviations from the Definition -- please
-see <:SMLNJDeviations:> for those that we are aware of.
+see <<SMLNJDeviations#>> for those that we are aware of.
 
 In some respects MLton's type checker is more powerful than other SML
 compilers, so there are programs that MLton accepts that are rejected
@@ -38,7 +37,7 @@ structure S:
 ----
 
 
-== Type error messages ==
+== Type error messages
 
 To aid in the understanding of type errors, MLton's type checker
 displays type errors differently than other SML compilers.  In
@@ -82,7 +81,7 @@ confusing, or suggestions you may have for improvements to error
 messages.
 
 
-== The shortest/most-recent rule for type names ==
+== The shortest/most-recent rule for type names
 
 In a type error message, MLton often has a number of choices in
 deciding what name to use for a type.  For example, in the following

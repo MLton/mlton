@@ -1,5 +1,4 @@
-CKitLibrary
-===========
+= CKitLibrary
 
 The http://www.smlnj.org/doc/ckit[ckit Library] is a C front end
 written in SML that translates C source code (after preprocessing)
@@ -10,18 +9,18 @@ and MLton, this library will not work out-of-the box with MLton.
 As of 20210117, MLton includes a port of the ckit Library synchronized
 with SML/NJ version 110.99.
 
-== Usage ==
+== Usage
 
 * You can import the ckit Library into an MLB file with:
 +
 [options="header"]
-|=====
+|===
 |MLB file|Description
 |`$(SML_LIB)/ckit-lib/ckit-lib.mlb`|
-|=====
+|===
 
-* If you are porting a project from SML/NJ's <:CompilationManager:> to
-MLton's <:MLBasis: ML Basis system> using `cm2mlb`, note that the
+* If you are porting a project from SML/NJ's <<CompilationManager#>> to
+MLton's <<MLBasis#,ML Basis system>> using `cm2mlb`, note that the
 following map is included by default:
 +
 ----
@@ -34,7 +33,7 @@ This will automatically convert a `$/ckit-lib.cm` import in an input
 `.cm` file into a `$(SML_LIB)/ckit-lib/ckit-lib.mlb` import in the
 output `.mlb` file.
 
-== Details ==
+== Details
 
 The following changes were made to the ckit Library, in addition to
 deriving the `.mlb` file from the `.cm` file:
@@ -45,6 +44,6 @@ deriving the `.mlb` file from the `.cm` file:
 * `parser/parse-tree-sig.sml` (modified): Rewrote use of (sequential) `withtype` in signature.
 * `parser/parse-tree.sml` (modified): Rewrote use of (sequential) `withtype`.
 
-== Patch ==
+== Patch
 
-* <!ViewGitFile(mlton,master,lib/ckit-lib/ckit.patch)>
+* https://github.com/MLton/mlton/blob/master/lib/ckit-lib/ckit.patch[`ckit.patch`]

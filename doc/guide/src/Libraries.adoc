@@ -1,5 +1,4 @@
-Libraries
-=========
+= Libraries
 
 In theory every strictly conforming Standard ML program should run on
 MLton.  However, often large SML projects use implementation specific
@@ -7,42 +6,42 @@ features so some "porting" is required. Here is a partial list of
 software that is known to run on MLton.
 
 * Utility libraries:
-** <:SMLNJLibrary:> - distributed with MLton
-** <:MLtonLibraryProject:> - various libraries located on the MLton subversion repository
-** <!ViewGitDir(mlton,master,lib/mlton)> - the internal MLton utility library, which we hope to cleanup and make more accessible someday
+** <<SMLNJLibrary#>> - distributed with MLton
+** <<MLtonLibraryProject#>> - various libraries located on the MLton subversion repository
+** https://github.com/MLton/mlton/tree/master/lib/mlton[`mlton`] - the internal MLton utility library, which we hope to cleanup and make more accessible someday
 ** http://github.com/seanmcl/sml-ext[sml-ext], a grab bag of libraries for MLton and other SML implementations (by Sean McLaughlin)
-** http://tom7misc.cvs.sourceforge.net/tom7misc/sml-lib/[sml-lib], a grab bag of libraries for MLton and other SML implementations (by <:TomMurphy:>)
+** http://tom7misc.cvs.sourceforge.net/tom7misc/sml-lib/[sml-lib], a grab bag of libraries for MLton and other SML implementations (by <<TomMurphy#>>)
 * Scanner generators:
-** <:MLLPTLibrary:> - distributed with MLton
-** <:MLLex:> - distributed with MLton
-** <:MLULex:> -
+** <<MLLPTLibrary#>> - distributed with MLton
+** <<MLLex#>> - distributed with MLton
+** <<MLULex#>> -
 * Parser generators:
-** <:MLAntlr:> -
-** <:MLLPTLibrary:> - distributed with MLton
-** <:MLYacc:> - distributed with MLton
-* Concurrency: <:ConcurrentML:> - distributed with MLton
+** <<MLAntlr#>> -
+** <<MLLPTLibrary#>> - distributed with MLton
+** <<MLYacc#>> - distributed with MLton
+* Concurrency: <<ConcurrentML#>> - distributed with MLton
 * Graphics
-** <:SML3d:>
-** <:mGTK:>
+** <<SML3d#>>
+** <<mGTK#>>
 * Misc. libraries:
-** <:CKitLibrary:> - distributed with MLton
-** <:MLRISCLibrary:> - distributed with MLton
-** <:MLNLFFI:ML-NLFFI> - distributed with MLton
-** <:Swerve:>, an HTTP server
-** <:fxp:>, an XML parser
+** <<CKitLibrary#>> - distributed with MLton
+** <<MLRISCLibrary#>> - distributed with MLton
+** <<MLNLFFI#,ML-NLFFI>> - distributed with MLton
+** <<Swerve#>>, an HTTP server
+** <<fxp#>>, an XML parser
 
-== Ports in progress ==
+== Ports in progress
 
-<:Contact:> us for details on any of these.
+<<Contact#>> us for details on any of these.
 
-* <:MLDoc:> http://people.cs.uchicago.edu/%7Ejhr/tools/ml-doc.html
-* <:Unicode:>
+* <<MLDoc#>> http://people.cs.uchicago.edu/%7Ejhr/tools/ml-doc.html
+* <<Unicode#>>
 
-== More ==
+== More
 
-More projects using MLton can be seen on the <:Users:> page.
+More projects using MLton can be seen on the <<Users#>> page.
 
-== Software for SML implementations other than MLton ==
+== Software for SML implementations other than MLton
 
 * PostgreSQL
 ** Moscow ML: http://www.dina.kvl.dk/%7Esestoft/mosmllib/Postgres.html

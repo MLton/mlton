@@ -1,21 +1,20 @@
-CommonBlock
-===========
+= CommonBlock
 
-<:CommonBlock:> is an optimization pass for the <:SSA:>
-<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+<<CommonBlock#>> is an optimization pass for the <<SSA#>>
+<<IntermediateLanguage#>>, invoked from <<SSASimplify#>>.
 
-== Description ==
+== Description
 
-It eliminates equivalent blocks in a <:SSA:> function.  The
+It eliminates equivalent blocks in a <<SSA#>> function.  The
 equivalence criteria requires blocks to have no arguments or
 statements and transfer via `Raise`, `Return`, or `Goto` of a single
 global variable.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/common-block.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/common-block.fun[`common-block.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 * Rewrites
 +
@@ -38,7 +37,7 @@ L_Y' ()
   raise (global_Y)
 ----
 +
-to the <:SSA:> function.
+to the <<SSA#>> function.
 
 * Rewrites
 +
@@ -61,7 +60,7 @@ L_Y' ()
   return (global_Y)
 ----
 +
-to the <:SSA:> function.
+to the <<SSA#>> function.
 
 * Rewrites
 +
@@ -84,9 +83,9 @@ L_Y' ()
   L_Z (global_Y)
 ----
 +
-to the <:SSA:> function.
+to the <<SSA#>> function.
 
-The <:Shrink:> pass rewrites all uses of `L_X` to `L_Y'` and drops `L_X`.
+The <<Shrink#>> pass rewrites all uses of `L_X` to `L_Y'` and drops `L_X`.
 
-For example, all uncaught `Overflow` exceptions in a <:SSA:> function
+For example, all uncaught `Overflow` exceptions in a <<SSA#>> function
 share the same raising block.

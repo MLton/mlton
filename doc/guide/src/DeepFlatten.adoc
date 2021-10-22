@@ -1,10 +1,9 @@
-DeepFlatten
-===========
+= DeepFlatten
 
-<:DeepFlatten:> is an optimization pass for the <:SSA2:>
-<:IntermediateLanguage:>, invoked from <:SSA2Simplify:>.
+<<DeepFlatten#>> is an optimization pass for the <<SSA2#>>
+<<IntermediateLanguage#>>, invoked from <<SSA2Simplify#>>.
 
-== Description ==
+== Description
 
 This pass flattens into mutable fields of objects and into vectors.
 
@@ -12,11 +11,11 @@ For example, an `(int * int) ref` is represented by a 2 word
 object, and an `(int * int) array` contains pairs of `int`-s,
 rather than pointers to pairs of `int`-s.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/deep-flatten.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/deep-flatten.fun[`deep-flatten.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 There are some performance issues with the deep flatten pass, where it
 consumes an excessive amount of memory.

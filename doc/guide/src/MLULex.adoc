@@ -1,11 +1,10 @@
-MLULex
-======
+= MLULex
 
 http://smlnj-gforge.cs.uchicago.edu/projects/ml-lpt/[MLULex] is a
-scanner generator for <:StandardML:Standard ML>.
+scanner generator for <<StandardML#,Standard ML>>.
 
-== Also see ==
+== Also see
 
-* <:MLAntlr:>
-* <:MLLPTLibrary:>
-* <!Cite(OwensEtAl09)>
+* <<MLAntlr#>>
+* <<MLLPTLibrary#>>
+* <<References#OwensEtAl09,OwensEtAl09>>

@@ -1,0 +1,46 @@
+/* Don't increase size of first paragraph of preamble. */
+#preamble>.sectionbody>[class="paragraph"]:first-of-type p{font-size:1.0625rem}
+
+/* Don't treat `code` differently when it is the only child of a table element. */
+p.tableblock>code:only-child{padding:.1em .5ex;background:#f7f7f8;}
+
+#mlton-header {
+    border-bottom: 4px dotted #dddddf;
+}
+
+#mlton-header h2 {
+    font-weight: bold;
+}
+
+#mlton-footer {
+    margin-top: 2em;
+    padding-top: 0.5em;
+    border-top: 2px solid #dddddf;
+}
+
+/* The following can be removed once
+ * https://github.com/asciidoctor/asciidoctor/pull/4170 is available in a
+ * released version of AsciiDoctor.
+ */
+#mlton-header,#mlton-footer{
+    width:100%;
+    margin-left:auto;
+    margin-right:auto;
+    margin-top:0;
+    margin-bottom:0;
+    max-width:62.5em;
+    *zoom:1;
+    position:relative;
+    padding-left:.9375em;
+    padding-right:.9375em;
+}
+#mlton-header::before,#mlton-header::after,#mlton-footer::before,#mlton-footer::after {
+    content:" ";
+    display:table;
+}
+#mlton-header::after,#mlton-footer::after{clear:both}
+@media print{
+    #mlton-header,#mlton-footer{
+        max-width:none;
+    }
+}

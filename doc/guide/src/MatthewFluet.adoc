@@ -1,5 +1,4 @@
-MatthewFluet
-============
+= MatthewFluet
 
 Matthew Fluet (
 mailto:matthew.fluet@gmail.com[matthew.fluet@gmail.com]
@@ -19,7 +18,7 @@ Current MLton projects:
 
 Misc. and underspecified TODOs:
 
-* understand <:RefFlatten:> and <:DeepFlatten:>
+* understand <<RefFlatten#>> and <<DeepFlatten#>>
 ** http://www.mlton.org/pipermail/mlton/2005-April/026990.html
 ** http://www.mlton.org/pipermail/mlton/2007-November/030056.html
 ** http://www.mlton.org/pipermail/mlton/2008-April/030250.html
@@ -35,7 +34,7 @@ Misc. and underspecified TODOs:
 * treatment of real constants
 ** http://www.mlton.org/pipermail/mlton/2008-May/030262.html
 ** http://www.mlton.org/pipermail/mlton/2008-June/030271.html
-* representation of `bool` and `_bool` in <:ForeignFunctionInterface:>
+* representation of `bool` and `_bool` in <<ForeignFunctionInterface#>>
 ** http://www.mlton.org/pipermail/mlton/2008-May/030264.html
 * http://www.icfpcontest.org
 ** John Reppy claims that "It looks like the card-marking overhead that one incurs when using generational collection swamps the benefits of generational collection."
@@ -45,9 +44,9 @@ Misc. and underspecified TODOs:
 * `MLton.GC.pack` doesn't keep a small heap if a garbage collection occurs before `MLton.GC.unpack`.
 ** It might be preferable for `MLton.GC.pack` to be implemented as a (new) `MLton.GC.Ratios.setLive 1.1` followed by `MLton.GC.collect ()` and for `MLton.GC.unpack` to be implemented as `MLton.GC.Ratios.setLive 8.0` followed by `MLton.GC.collect ()`.
 * The `static struct GC_objectType objectTypes[] =` array includes many duplicates.  Objects of distinct source type, but equivalent representations (in terms of size, bytes non-pointers, number pointers) can share the objectType index.
-* PolySpace bug: <:Redundant:> optimization (company won't release sample code)
+* PolySpace bug: <<Redundant#>> optimization (company won't release sample code)
 ** http://www.mlton.org/pipermail/mlton/2008-September/030355.html
-* treatment of exception raised during <:BasisLibrary:> evaluation
+* treatment of exception raised during <<BasisLibrary#>> evaluation
 ** http://www.mlton.org/pipermail/mlton/2008-December/030501.html
 ** http://www.mlton.org/pipermail/mlton/2008-December/030502.html
 ** http://www.mlton.org/pipermail/mlton/2008-December/030503.html

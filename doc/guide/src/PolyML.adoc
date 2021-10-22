@@ -1,9 +1,8 @@
-PolyML
-======
+= PolyML
 
 http://www.polyml.org/[Poly/ML] is a
-<:StandardMLImplementations:Standard ML implementation>.
+<<StandardMLImplementations#,Standard ML implementation>>.
 
-== Also see ==
+== Also see
 
- * <!Cite(Matthews95)>
+ * <<References#Matthews95,Matthews95>>

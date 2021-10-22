@@ -1,5 +1,4 @@
-LambdaCalculus
-==============
+= LambdaCalculus
 
 The http://en.wikipedia.org/wiki/Lambda_calculus[lambda calculus] is
-the formal system underlying <:StandardML:Standard ML>.
+the formal system underlying <<StandardML#,Standard ML>>.

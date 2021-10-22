@@ -1,18 +1,17 @@
-RunningOnMinGW
-==============
+= RunningOnMinGW
 
 MLton runs on http://mingw.org[MinGW], a library for porting Unix
 applications to Windows.  Some library functionality is missing or
 changed.
 
-== Notes ==
+== Notes
 
 * To compile MLton on MinGW:
-** The <:GMP:> library is required.
+** The <<GMP#>> library is required.
 ** The Bash shell is required.  If you are using a prebuilt MSYS, you
 probably want to symlink `bash` to `sh`.
 
-== Known issues ==
+== Known issues
 
 * Many functions are unimplemented and will `raise SysErr`.
 ** `MLton.Itimer.set`

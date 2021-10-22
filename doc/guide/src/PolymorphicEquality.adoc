@@ -1,9 +1,8 @@
-PolymorphicEquality
-===================
+= PolymorphicEquality
 :toc:
 
 Polymorphic equality is a built-in function in
-<:StandardML:Standard ML> that compares two values of the same type
+<<StandardML#,Standard ML>> that compares two values of the same type
 for equality.  It is specified as
 
 [source,sml]
@@ -12,21 +11,21 @@ val = : ''a * ''a -> bool
 ----
 
 The `''a` in the specification are
-<:EqualityTypeVariable:equality type variables>, and indicate that
+<<EqualityTypeVariable#,equality type variables>>, and indicate that
 polymorphic equality can only be applied to values of an
-<:EqualityType:equality type>.  It is not allowed in SML to rebind
+<<EqualityType#,equality type>>.  It is not allowed in SML to rebind
 `=`, so a programmer is guaranteed that `=` always denotes polymorphic
 equality.
 
 
-== Equality of ground types ==
+== Equality of ground types
 
 Ground types like `char`, `int`, and `word` may be compared (to values
 of the same type).  For example, `13 = 14` is type correct and yields
 `false`.
 
 
-== Equality of reals ==
+== Equality of reals
 
 The one ground type that can not be compared is `real`.  So,
 `13.0 = 14.0` is not type correct.  One can use `Real.==` to compare
@@ -37,14 +36,14 @@ See http://standardml.org/Basis/real.html for a discussion of why
 `real` is not an equality type.
 
 
-== Equality of functions ==
+== Equality of functions
 
 Comparison of functions is not allowed.
 
 
-== Equality of immutable types ==
+== Equality of immutable types
 
-Polymorphic equality can be used on <:Immutable:immutable> values like
+Polymorphic equality can be used on <<Immutable#,immutable>> values like
 tuples, records, lists, and vectors.  For example,
 
 ----
@@ -75,14 +74,14 @@ different locations in memory.
 Because of structural equality, immutable values can only be compared
 if their components can be compared.  For example, `[1, 2, 3]` can be
 compared, but `[1.0, 2.0, 3.0]` can not.  The SML type system uses
-<:EqualityType:equality types> to ensure that structural equality is
+<<EqualityType#,equality types>> to ensure that structural equality is
 only applied to valid values.
 
 
-== Equality of mutable values ==
+== Equality of mutable values
 
 In contrast to immutable values, polymorphic equality of
-<:Mutable:mutable> values (like ref cells and arrays) is performed by
+<<Mutable#,mutable>> values (like ref cells and arrays) is performed by
 pointer comparison, not by structure.  So, the expression
 
 ----
@@ -106,11 +105,11 @@ end
 ----
 
 
-== Equality of datatypes ==
+== Equality of datatypes
 
 Polymorphic equality of datatypes is structural.  Two values of the
-same datatype are equal if they are of the same <:Variant:variant> and
-if the <:Variant:variant>'s arguments are equal (recursively).  So,
+same datatype are equal if they are of the same <<Variant#,variant>> and
+if the <<Variant#,variant>>&rsquo;s arguments are equal (recursively).  So,
 with the datatype
 
 [source,sml]
@@ -146,7 +145,7 @@ datatype 'a t = A of 'a ref
 one might expect to be able to compare two values of type `real t`,
 because pointer comparison on a ref cell would suffice.
 Unfortunately, the type system can only express that a user-defined
-datatype <:AdmitsEquality:admits equality> or not.  In this case, `t`
+datatype <<AdmitsEquality#,admits equality>> or not.  In this case, `t`
 admits equality, which means that `int t` can be compared but that
 `real t` can not.  We can confirm this with the program
 
@@ -167,7 +166,7 @@ Error: z.sml 2.32-2.36.
 ----
 
 
-== Implementation ==
+== Implementation
 
 Polymorphic equality is implemented by recursively descending the two
 values being compared, stopping as soon as they are determined to be
@@ -185,10 +184,10 @@ comparison fails, then recursively descend the values.
 * If a datatype is an enum (e.g. `datatype t = A | B | C`), then a
 single comparison suffices to compare values of the datatype.  No case
 dispatch is required to determine whether the two values are of the
-same <:Variant:variant>.
+same <<Variant#,variant>>.
 
 * When comparing a known constant non-value-carrying
-<:Variant:variant>, use a single comparison.  For example, the
+<<Variant#,variant>>, use a single comparison.  For example, the
 following code will compile into a single comparison for `A = x`.
 +
 [source,sml]
@@ -202,8 +201,8 @@ fun f x = ... if A = x then ...
 dispatch is required.
 
 
-== Also see ==
+== Also see
 
-* <:AdmitsEquality:>
-* <:EqualityType:>
-* <:EqualityTypeVariable:>
+* <<AdmitsEquality#>>
+* <<EqualityType#>>
+* <<EqualityTypeVariable#>>

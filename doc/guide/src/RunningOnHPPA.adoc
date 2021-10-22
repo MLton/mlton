@@ -1,9 +1,8 @@
-RunningOnHPPA
-=============
+= RunningOnHPPA
 
 MLton runs fine on the HPPA architecture.
 
-== Notes ==
+== Notes
 
 * When compiling for HPPA, MLton targets the 32-bit HPPA architecture.
 

@@ -1,34 +1,33 @@
-Elaborate
-=========
+= Elaborate
 
-<:Elaborate:> is a translation pass from the <:AST:>
-<:IntermediateLanguage:> to the <:CoreML:> <:IntermediateLanguage:>.
+<<Elaborate#>> is a translation pass from the <<AST#>>
+<<IntermediateLanguage#>> to the <<CoreML#>> <<IntermediateLanguage#>>.
 
-== Description ==
+== Description
 
 This pass performs type inference and type checking according to the
-<:DefinitionOfStandardML:Definition>.  It also defunctorizes the
+<<DefinitionOfStandardML#,Definition>>.  It also defunctorizes the
 program, eliminating all module-level constructs.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/elaborate/elaborate.sig)>
-* <!ViewGitFile(mlton,master,mlton/elaborate/elaborate.fun)>
-* <!ViewGitFile(mlton,master,mlton/elaborate/elaborate-env.sig)>
-* <!ViewGitFile(mlton,master,mlton/elaborate/elaborate-env.fun)>
-* <!ViewGitFile(mlton,master,mlton/elaborate/elaborate-modules.sig)>
-* <!ViewGitFile(mlton,master,mlton/elaborate/elaborate-modules.fun)>
-* <!ViewGitFile(mlton,master,mlton/elaborate/elaborate-core.sig)>
-* <!ViewGitFile(mlton,master,mlton/elaborate/elaborate-core.fun)>
-* <!ViewGitDir(mlton,master,mlton/elaborate)>
+* https://github.com/MLton/mlton/blob/master/mlton/elaborate/elaborate.sig[`elaborate.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/elaborate/elaborate.fun[`elaborate.fun`]
+* https://github.com/MLton/mlton/blob/master/mlton/elaborate/elaborate-env.sig[`elaborate-env.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/elaborate/elaborate-env.fun[`elaborate-env.fun`]
+* https://github.com/MLton/mlton/blob/master/mlton/elaborate/elaborate-modules.sig[`elaborate-modules.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/elaborate/elaborate-modules.fun[`elaborate-modules.fun`]
+* https://github.com/MLton/mlton/blob/master/mlton/elaborate/elaborate-core.sig[`elaborate-core.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/elaborate/elaborate-core.fun[`elaborate-core.fun`]
+* https://github.com/MLton/mlton/tree/master/mlton/elaborate[`elaborate`]
 
-== Details and Notes ==
+== Details and Notes
 
-At the modules level, the <:Elaborate:> pass:
+At the modules level, the <<Elaborate#>> pass:
 
 * elaborates signatures with interfaces (see
-<!ViewGitFile(mlton,master,mlton/elaborate/interface.sig)> and
-<!ViewGitFile(mlton,master,mlton/elaborate/interface.fun)>)
+https://github.com/MLton/mlton/blob/master/mlton/elaborate/interface.sig[`interface.sig`] and
+https://github.com/MLton/mlton/blob/master/mlton/elaborate/interface.fun[`interface.fun`])
 +
 The main trick is to use disjoint sets to efficiently handle sharing
 of tycons and of structures and then to copy signatures as dags rather
@@ -55,41 +54,41 @@ a functor.  The dummy structure contains exactly the type information
 that is in the signature, which is what opacity requires.  We then
 replace the variables (and constructors) in the dummy structure with
 the corresponding variables (and constructors) from the actual
-structure so that the translation to <:CoreML:> uses the right stuff.
+structure so that the translation to <<CoreML#>> uses the right stuff.
 For each tycon in the dummy structure, we keep track of the
 corresponding type structure in the actual structure.  This is used
-when producing the <:CoreML:> types (see `expandOpaque` in
-<!ViewGitFile(mlton,master,mlton/elaborate/type-env.sig)> and
-<!ViewGitFile(mlton,master,mlton/elaborate/type-env.fun)>).
+when producing the <<CoreML#>> types (see `expandOpaque` in
+https://github.com/MLton/mlton/blob/master/mlton/elaborate/type-env.sig[`type-env.sig`] and
+https://github.com/MLton/mlton/blob/master/mlton/elaborate/type-env.fun[`type-env.fun`]).
 +
 Then, within each `structure` or `functor` body, for each declaration
-(`<dec>` in the <:StandardML:Standard ML> grammar), the <:Elaborate:>
+(`<dec>` in the <<StandardML#,Standard ML>> grammar), the <<Elaborate#>>
 pass does three steps:
 +
 --
-1. <:ScopeInference:>
+1. <<ScopeInference#>>
 2. {empty}
-** <:PrecedenceParse:>
+** <<PrecedenceParse#>>
 ** `_{ex,im}port` expansion
 ** profiling insertion
 ** unification
 3. Overloaded {constant, function, record pattern} resolution
 --
 
-=== Defunctorization ===
+=== Defunctorization
 
-The <:Elaborate:> pass performs a number of duties historically
-assigned to the <:Defunctorize:> pass.
+The <<Elaborate#>> pass performs a number of duties historically
+assigned to the <<Defunctorize#>> pass.
 
-As part of the <:Elaborate:> pass, all module level constructs
+As part of the <<Elaborate#>> pass, all module level constructs
 (`open`, `signature`, `structure`, `functor`, long identifiers) are
-removed.  This works because the <:Elaborate:> pass assigns a unique
+removed.  This works because the <<Elaborate#>> pass assigns a unique
 name to every type and variable in the program.  This also allows the
-<:Elaborate:> pass to eliminate `local` declarations, which are purely
+<<Elaborate#>> pass to eliminate `local` declarations, which are purely
 for namespace management.
 
 
-== Examples ==
+== Examples
 
 Here are a number of examples of elaboration.
 

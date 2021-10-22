@@ -1,20 +1,19 @@
-Globalize
-=========
+= Globalize
 
-<:Globalize:> is an analysis pass for the <:SXML:>
-<:IntermediateLanguage:>, invoked from <:ClosureConvert:>.
+<<Globalize#>> is an analysis pass for the <<SXML#>>
+<<IntermediateLanguage#>>, invoked from <<ClosureConvert#>>.
 
-== Description ==
+== Description
 
-This pass marks values that are constant, allowing <:ClosureConvert:>
+This pass marks values that are constant, allowing <<ClosureConvert#>>
 to move them out to the top level so they are only evaluated once and
 do not appear in closures.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/closure-convert/globalize.sig)>
-* <!ViewGitFile(mlton,master,mlton/closure-convert/globalize.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/closure-convert/globalize.sig[`globalize.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/closure-convert/globalize.fun[`globalize.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 {empty}

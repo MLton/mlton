@@ -1,5 +1,4 @@
-MLtonProcEnv
-============
+= MLtonProcEnv
 
 [source,sml]
 ----

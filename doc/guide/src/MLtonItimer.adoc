@@ -1,5 +1,4 @@
-MLtonItimer
-===========
+= MLtonItimer
 
 [source,sml]
 ----

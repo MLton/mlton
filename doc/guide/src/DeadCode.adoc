@@ -1,20 +1,19 @@
-DeadCode
-========
+= DeadCode
 
-<:DeadCode:> is an optimization pass for the <:CoreML:>
-<:IntermediateLanguage:>, invoked from <:CoreMLSimplify:>.
+<<DeadCode#>> is an optimization pass for the <<CoreML#>>
+<<IntermediateLanguage#>>, invoked from <<CoreMLSimplify#>>.
 
-== Description ==
+== Description
 
 This pass eliminates declarations from the
-<:BasisLibrary:Basis Library> not needed by the user program.
+<<BasisLibrary#,Basis Library>> not needed by the user program.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/core-ml/dead-code.sig)>
-* <!ViewGitFile(mlton,master,mlton/core-ml/dead-code.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/core-ml/dead-code.sig[`dead-code.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/core-ml/dead-code.fun[`dead-code.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 In order to compile small programs rapidly, a pass of dead code
 elimination is run in order to eliminate as much of the Basis Library
@@ -35,6 +34,6 @@ bindings of the form:
  val _ = ...
 ----
 
-There is an <:MLBasisAnnotations:ML Basis annotation>,
+There is an <<MLBasisAnnotations#,ML Basis annotation>>,
 `deadCode true`, that governs which code is subject to this unsafe
 dead-code elimination.

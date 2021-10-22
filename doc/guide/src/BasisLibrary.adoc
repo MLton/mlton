@@ -1,16 +1,15 @@
-BasisLibrary
-============
+= BasisLibrary
 :toc:
 
-The <:StandardML:Standard ML> Basis Library is a collection of modules
+The <<StandardML#,Standard ML>> Basis Library is a collection of modules
 dealing with basic types, input/output, OS interfaces, and simple
 datatypes.  It is intended as a portable library usable across all
 implementations of SML.  For the official online version of the Basis
-Library specification, see http://www.standardml.org/Basis.
-<!Cite(GansnerReppy04, The Standard ML Basis Library)> is a book
+Library specification, see https://smlfamily.github.io/Basis.
+<<References#GansnerReppy04,The Standard ML Basis Library>> is a book
 version that includes all of the online version and more.  For a
 reverse chronological list of changes to the specification, see
-http://www.standardml.org/Basis/history.html.
+https://smlfamily.github.io/Basis/history.html.
 
 MLton implements all of the required portions of the Basis Library.
 MLton also implements many of the optional structures.  In the future,
@@ -19,10 +18,10 @@ https://github.com/SMLFamily/BasisLibrary/wiki[proposed improvements]
 to the Basis Library.
 
 You can obtain a complete and current list of what's available using
-`mlton -show-basis` (see <:ShowBasis:>).  By default, MLton makes the
+`mlton -show-basis` (see <<ShowBasis#>>).  By default, MLton makes the
 Basis Library available to user programs.  You can also
-<:MLBasisAvailableLibraries:access the Basis Library> from
-<:MLBasis: ML Basis> files.
+<<MLBasisAvailableLibraries#,access the Basis Library>> from
+<<MLBasis#,ML Basis>> files.
 
 MLton purposefully hides the representation of unspecified Basis
 Library types with opaque signature matching.  That is, unless the
@@ -32,7 +31,7 @@ type but itself.
 
 Below is a complete list of what MLton implements.
 
-== Top-level types and constructors ==
+== Top-level types and constructors
 
 `eqtype 'a array`
 
@@ -44,7 +43,7 @@ Below is a complete list of what MLton implements.
 
 `eqtype int`
 
-++datatype 'a list = nil | {two-colons} of ('a * 'a list)++
+`datatype 'a list = nil | {two-colons} of ('a * 'a list)`
 
 `datatype 'a option = NONE | SOME of 'a`
 
@@ -64,7 +63,7 @@ Below is a complete list of what MLton implements.
 
 `eqtype word`
 
-== Top-level exception constructors ==
+== Top-level exception constructors
 
 `Bind`
 
@@ -90,10 +89,10 @@ Below is a complete list of what MLton implements.
 
 `Subscript`
 
-== Top-level values ==
+== Top-level values
 
 MLton does not implement the optional top-level value
-`use: string -> unit`, which conflicts with whole-program
+`use: string \-> unit`, which conflicts with whole-program
 compilation because it allows new code to be loaded dynamically.
 
 MLton implements all other top-level values:
@@ -138,7 +137,7 @@ MLton implements all other top-level values:
 `valOf`,
 `vector`
 
-== Overloaded identifiers ==
+== Overloaded identifiers
 
 `*`,
 `+`,
@@ -153,7 +152,7 @@ MLton implements all other top-level values:
 `div`,
 `mod`
 
-== Top-level signatures ==
+== Top-level signatures
 
 `ARRAY`
 
@@ -281,7 +280,7 @@ MLton implements all other top-level values:
 
 `WORD`
 
-== Top-level structures ==
+== Top-level structures
 
 `structure Array: ARRAY`
 
@@ -646,7 +645,7 @@ end
 
 `structure Word64VectorSlice: MONO_VECTOR_SLICE`
 
-== Top-level functors ==
+== Top-level functors
 
 `ImperativeIO`
 
@@ -658,7 +657,7 @@ end
 `VectorSlice` in addition to the arguments specified in the Basis
 Library specification.
 
-== Type equivalences ==
+== Type equivalences
 
 The following types are equivalent.
 ----
@@ -669,7 +668,7 @@ LargeWord = Word64.word
 ----
 
 The default `int`, `real`, and `word` types may be set by the
-++-default-type __type__++ <:CompileTimeOptions: compile-time option>.
+``-default-type __type__`` <<CompileTimeOptions#,compile-time option>>.
 By default, the following types are equivalent:
 ----
 int = Int.int = Int32.int
@@ -677,7 +676,7 @@ real = Real.real = Real64.real
 word = Word.word = Word32.word
 ----
 
-== Real and Math functions ==
+== Real and Math functions
 
 The `Real`, `Real32`, and `Real64` modules are implemented
 using the `C` math library, so the SML functions will reflect the
@@ -686,7 +685,7 @@ to unify the differences between the math libraries on different
 platforms, and in particular to handle exceptional cases according to
 the Basis Library specification.  However, there will be differences
 due to different numerical algorithms and cases we may have missed.
-Please submit a <:Bug:bug report> if you encounter an error in
+Please submit a <<Bug#,bug report>> if you encounter an error in
 the handling of an exceptional case.
 
 On x86, real arithmetic is implemented internally using 80 bits of

@@ -1,7 +1,6 @@
-CallingFromSMLToC
-=================
+= CallingFromSMLToC
 
-MLton's <:ForeignFunctionInterface:> allows an SML program to _import_
+MLton's <<ForeignFunctionInterface#>> allows an SML program to _import_
 C functions.  Suppose you would like to import from C a function with
 the following prototype:
 [source,c]
@@ -12,7 +11,7 @@ MLton extends the syntax of SML to allow expressions like the following:
 ----
 _import "foo": real * char -> int;
 ----
-This expression denotes a function of type `real * char -> int` whose
+This expression denotes a function of type `real * char \-> int` whose
 behavior is implemented by calling the C function whose name is `foo`.
 Thinking in terms of C, imagine that there are C variables `d` of type
 `double`, `c` of type `unsigned char`, and `i` of type `int`.  Then,
@@ -28,21 +27,21 @@ The function name is followed by a (possibly empty) sequence of
 attributes, analogous to C `__attribute__` specifiers.
 
 
-== Example ==
+== Example
 
 `import.sml` imports the C function `ffi` and the C variable `FFI_INT`
 as follows.
 
 [source,sml]
 ----
-sys::[./bin/InclGitFile.py mlton master doc/examples/ffi/import.sml]
+include::https://raw.github.com/MLton/mlton/master/doc/examples/ffi/import.sml[indent=0]
 ----
 
 `ffi-import.c` is
 
 [source,c]
 ----
-sys::[./bin/InclGitFile.py mlton master doc/examples/ffi/ffi-import.c]
+include::https://raw.github.com/MLton/mlton/master/doc/examples/ffi/ffi-import.c[indent=0]
 ----
 
 Compile and run the program.
@@ -54,11 +53,11 @@ success
 ----
 
 
-== Download ==
-* <!RawGitFile(mlton,master,doc/examples/ffi/import.sml)>
-* <!RawGitFile(mlton,master,doc/examples/ffi/ffi-import.c)>
+== Download
+* https://raw.github.com/MLton/mlton/master/doc/examples/ffi/import.sml[`import.sml`]
+* https://raw.github.com/MLton/mlton/master/doc/examples/ffi/ffi-import.c[`ffi-import.c`]
 
 
-== Next Steps ==
+== Next Steps
 
-* <:CallingFromSMLToCFunctionPointer:>
+* <<CallingFromSMLToCFunctionPointer#>>

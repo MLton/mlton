@@ -1,8 +1,7 @@
-ForLoops
-========
+= ForLoops
 
 A `for`-loop is typically used to iterate over a range of consecutive
-integers that denote indices of some sort.  For example, in <:OCaml:>
+integers that denote indices of some sort.  For example, in <<OCaml#>>
 a `for`-loop takes either the form
 ----
 for <name> = <lower> to <upper> do <body> done
@@ -15,17 +14,17 @@ for <name> = <upper> downto <lower> do <body> done
 Some languages provide considerably more flexible `for`-loop or
 `foreach`-constructs.
 
-A bit surprisingly, <:StandardML:Standard ML> provides special syntax
+A bit surprisingly, <<StandardML#,Standard ML>> provides special syntax
 for `while`-loops, but not for `for`-loops.  Indeed, in SML, many uses
 of `for`-loops are better expressed using `app`, `foldl`/`foldr`,
 `map` and many other higher-order functions provided by the
-<:BasisLibrary:Basis Library> for manipulating lists, vectors and
+<<BasisLibrary#,Basis Library>> for manipulating lists, vectors and
 arrays.  However, the Basis Library does not provide a function for
 iterating over a range of integer values.  Fortunately, it is very
 easy to write one.
 
 
-== A fairly simple design ==
+== A fairly simple design
 
 The following implementation imitates both the syntax and semantics of
 the OCaml `for`-loop.
@@ -81,7 +80,7 @@ is fairly readable, but tends to cause the body of the loop to be
 indented quite deeply.
 
 
-== Off-by-one ==
+== Off-by-one
 
 The above design has an annoying feature.  In practice, the upper
 bound of the iterated range is almost always excluded and most loops
@@ -99,7 +98,7 @@ idiomatic with very little practice.  The iterator combinators
 described below exclude the upper bound by default.
 
 
-== Iterator combinators ==
+== Iterator combinators
 
 While the simple `for`-function described in the previous section is
 probably good enough for many uses, it is a bit cumbersome when one
@@ -162,11 +161,11 @@ A few notes are in order:
 * The `@@` combinator produces an iterator for the concatenation of the given iterators.
 
 * The `**` combinator produces an iterator for the Cartesian product of the given iterators.
-** See <:ProductType:> for the type constructor `('a, 'b) product` used in the type of the iterator produced by `**`.
+** See <<ProductType#>> for the type constructor `('a, 'b) product` used in the type of the iterator produced by `**`.
 
 * The `using` combinator allows one to iterate over slices, streams and many other kinds of sequences.
 
-* `when` is the filtering combinator.  The name `when` is   inspired by <:OCaml:>'s guard clauses.
+* `when` is the filtering combinator.  The name `when` is   inspired by <<OCaml#>>&rsquo;s guard clauses.
 
 * `by` is the mapping combinator.
 

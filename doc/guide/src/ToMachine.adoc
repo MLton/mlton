@@ -1,32 +1,31 @@
-ToMachine
-=========
+= ToMachine
 
-<:ToMachine:> is a translation pass from the <:RSSA:>
-<:IntermediateLanguage:> to the <:Machine:> <:IntermediateLanguage:>.
+<<ToMachine#>> is a translation pass from the <<RSSA#>>
+<<IntermediateLanguage#>> to the <<Machine#>> <<IntermediateLanguage#>>.
 
-== Description ==
+== Description
 
-This pass converts from a <:RSSA:> program into a <:Machine:> program.
+This pass converts from a <<RSSA#>> program into a <<Machine#>> program.
 
-It uses <:AllocateVariables:>, <:Chunkify:>, and <:ParallelMove:>.
+It uses <<AllocateVariables#>>, <<Chunkify#>>, and <<ParallelMove#>>.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/backend/backend.sig)>
-* <!ViewGitFile(mlton,master,mlton/backend/backend.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/backend/backend.sig[`backend.sig`]
+* https://github.com/MLton/mlton/blob/master/mlton/backend/backend.fun[`backend.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
-Because the MLton runtime system is shared by all <:Codegen:codegens>, it is most
-convenient to decide on stack layout _before_ any <:Codegen:codegen> takes over.
-In particular, we compute all the stack frame info for each <:RSSA:>
-function, including stack size, <:GarbageCollection:garbage collector>
-masks for each frame, etc.  To do so, the <:Machine:>
-<:IntermediateLanguage:> imagines an abstract machine with an infinite
+Because the MLton runtime system is shared by all <<Codegen#,codegens>>, it is most
+convenient to decide on stack layout _before_ any <<Codegen#,codegen>> takes over.
+In particular, we compute all the stack frame info for each <<RSSA#>>
+function, including stack size, <<GarbageCollection#,garbage collector>>
+masks for each frame, etc.  To do so, the <<Machine#>>
+<<IntermediateLanguage#>> imagines an abstract machine with an infinite
 number of temporaries of every size.  A liveness analysis
 determines, for each variable, whether or not it is live across a
 point where the runtime system might take over (for example, any
-garbage collection point) or a non-tail call to another <:RSSA:>
+garbage collection point) or a non-tail call to another <<RSSA#>>
 function.  Those that are live go on the stack, while those that
 aren't live go into temporaries.  From this information, we know
 all we need to about each stack frame.  On the downside, nothing

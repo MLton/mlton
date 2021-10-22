@@ -1,18 +1,17 @@
-CommonSubexp
-============
+= CommonSubexp
 
-<:CommonSubexp:> is an optimization pass for the <:SSA:>
-<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+<<CommonSubexp#>> is an optimization pass for the <<SSA#>>
+<<IntermediateLanguage#>>, invoked from <<SSASimplify#>>.
 
-== Description ==
+== Description
 
 It eliminates instances of common subexpressions.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/common-subexp.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/common-subexp.fun[`common-subexp.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 In addition to getting the usual sorts of things like
 
@@ -43,18 +42,3 @@ rewritten to
 val a = Array_uninit n
 val b = n
 ----
-
-`Arith` transfers are handled specially.  The _result_ of an `Arith`
-transfer can be used in _common_ `Arith` transfers that it dominates:
-
-* {empty}
-+
-----
-val l = (n + m) + (n + m)
-
-val k = (l + n) + ((l + m) handle Overflow => ((l + m)
-                                               handle Overflow => l + n))
-----
-+
-is rewritten so that `(n + m)` is computed exactly once, as are
-`(l + n)` and `(l + m)`.

@@ -1,10 +1,9 @@
-Redundant
-=========
+= Redundant
 
-<:Redundant:> is an optimization pass for the <:SSA:>
-<:IntermediateLanguage:>, invoked from <:SSASimplify:>.
+<<Redundant#>> is an optimization pass for the <<SSA#>>
+<<IntermediateLanguage#>>, invoked from <<SSASimplify#>>.
 
-== Description ==
+== Description
 
 The redundant SSA optimization eliminates redundant function and label
 arguments; an argument of a function or label is redundant if it is
@@ -25,14 +24,14 @@ statements are initialized to singleton equivalence classes.  The
 fixed-point analysis repeatedly refines these equivalence classes on
 the formals by the equivalence classes of the actuals.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/redundant.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/redundant.fun[`redundant.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
-The reason <:Redundant:> got put in was due to some output of the
-<:ClosureConvert:> pass converter where the environment record, or
+The reason <<Redundant#>> got put in was due to some output of the
+<<ClosureConvert#>> pass converter where the environment record, or
 components of it, were passed around in several places.  That may have
 been more relevant with polyvariant analyses (which are long gone).
 But it still seems possibly relevant, especially with more aggressive

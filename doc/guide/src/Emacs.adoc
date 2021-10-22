@@ -1,21 +1,20 @@
-Emacs
-=====
+= Emacs
 
-== SML modes ==
+== SML modes
 
 There are a few Emacs modes for SML.
 
 * https://elpa.gnu.org/packages/sml-mode.html
 
-* <!ViewGitFile(mlton,master,ide/emacs/mlton.el)> contains the Emacs lisp that <:StephenWeeks:> uses to interact with MLton (in addition to using `sml-mode`).
+* https://github.com/MLton/mlton/blob/master/ide/emacs/mlton.el[`mlton.el`] contains the Emacs lisp that <<StephenWeeks#>> uses to interact with MLton (in addition to using `sml-mode`).
 
-== MLB modes ==
+== MLB modes
 
-There is a mode for editing <:MLBasis: ML Basis> files.
+There is a mode for editing <<MLBasis#,ML Basis>> files.
 
-* <!ViewGitFile(mlton,master,ide/emacs/esml-mlb-mode.el)> (plus other files)
+* https://github.com/MLton/mlton/blob/master/ide/emacs/esml-mlb-mode.el[`esml-mlb-mode.el`] (plus other files)
 
-== Completion ==
+== Completion
 
 * https://github.com/MatthewFluet/company-mlton[`company-mlton`]
 +
@@ -28,22 +27,22 @@ are loaded from a basis file created by `mlton` using `-show-basis file` or
 `(*#showBasis "file"*)`.
 _____
 
-== Definitions and uses ==
+== Definitions and uses
 
 There is a mode that supports the precise def-use information that
 MLton can output.  It highlights definitions and uses and provides
 commands for navigation (e.g., `jump-to-def`, `jump-to-next`,
 `list-all-refs`).  It can be handy, for example, for navigating in the
-MLton compiler source code.  See <:EmacsDefUseMode:> for further
+MLton compiler source code.  See <<EmacsDefUseMode#>> for further
 information.
 
-== Building in the background ==
+== Building in the background
 
 Tired of manually starting/stopping/restarting builds after editing
-files?  Now you don't have to.  See <:EmacsBgBuildMode:> for further
+files?  Now you don't have to.  See <<EmacsBgBuildMode#>> for further
 information.
 
-== Error messages ==
+== Error messages
 
 MLton's error messages are not among those that the Emacs `next-error`
 parser natively understands.  The easiest way to fix this is to add

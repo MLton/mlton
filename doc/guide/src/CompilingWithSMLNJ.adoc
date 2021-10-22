@@ -1,10 +1,9 @@
-CompilingWithSMLNJ
-==================
+= CompilingWithSMLNJ
 
-You can compile MLton with <:SMLNJ:SML/NJ>, however the resulting
+You can compile MLton with <<SMLNJ#,SML/NJ>>, however the resulting
 compiler will run much more slowly than MLton compiled by itself.  We
 don't recommend using SML/NJ as a means of
-<:PortingMLton:porting MLton> to a new platform or bootstrapping on a
+<<PortingMLton#,porting MLton>> to a new platform or bootstrapping on a
 new platform.
 
 If you do want to build MLton with SML/NJ, it is best to have a binary

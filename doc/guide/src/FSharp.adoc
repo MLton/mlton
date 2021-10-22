@@ -1,8 +1,7 @@
-FSharp
-======
+= FSharp
 
 http://research.microsoft.com/en-us/um/cambridge/projects/fsharp/[F#]
 is a functional programming language developed at Microsoft Research.
-F# was partly inspired by the <:OCaml:OCaml> language and shares some
+F# was partly inspired by the <<OCaml#,OCaml>> language and shares some
 common core constructs with it.  F# is integrated with Visual Studio
 2010 as a first-class language.

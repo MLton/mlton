@@ -1,18 +1,17 @@
-Releases
-========
+= Releases
 
 Public releases of MLton:
 
-* <:Release20210117:>
-* <:Release20201002:>
-* <:Release20200817:>
-* <:Release20200722:>
-* <:Release20180207:>
-* <:Release20130715:>
-* <:Release20100608:>
-* <:Release20070826:>
-* <:Release20051202:>
-* <:Release20041109:>
+* <<Release20210117#>>
+* <<Release20201002#>>
+* <<Release20200817#>>
+* <<Release20200722#>>
+* <<Release20180207#>>
+* <<Release20130715#>>
+* <<Release20100608#>>
+* <<Release20070826#>>
+* <<Release20051202#>>
+* <<Release20041109#>>
 * Release20040227
 * Release20030716
 * Release20030711

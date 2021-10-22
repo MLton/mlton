@@ -1,5 +1,4 @@
-Reachability
-============
+= Reachability
 
 Reachability is a notion dealing with the graph of heap objects
 maintained at runtime.  Nodes in the graph are heap objects and edges
@@ -14,7 +13,7 @@ nodes, and can only ever access nodes that are reachable by following
 edges from these root nodes.  Nodes that are _unreachable_ can be
 garbage collected.
 
-== Also see ==
+== Also see
 
- * <:MLtonFinalizable:>
- * <:MLtonWeak:>
+ * <<MLtonFinalizable#>>
+ * <<MLtonWeak#>>

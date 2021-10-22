@@ -1,7 +1,6 @@
-MLBasis
-=======
+= MLBasis
 
-The ML Basis system extends <:StandardML:Standard ML> to support
+The ML Basis system extends <<StandardML#,Standard ML>> to support
 programming-in-the-very-large, namespace management at the module
 level, separate delivery of library sources, and more.  While Standard
 ML modules are a sophisticated language for programming-in-the-large,
@@ -11,11 +10,11 @@ libraries provided by different vendors.
 
 The ML Basis system is a simple, yet powerful, approach that builds
 upon the programmer's intuitive notion (and
-<:DefinitionOfStandardML: The Definition of Standard ML (Revised)>'s
+<<DefinitionOfStandardML#,The Definition of Standard ML (Revised)>>&rsquo;s
 formal notion) of the top-level environment (a _basis_).  The system
-is designed as a natural extension of <:StandardML: Standard ML>; the
+is designed as a natural extension of <<StandardML#,Standard ML>>; the
 formal specification of the ML Basis system
-(<!Attachment(MLBasis,mlb-formal.pdf)>) is given in the style
+(link:MLBasis.attachments/mlb-formal.pdf[`mlb-formal.pdf`]) is given in the style
 of the Definition.
 
 Here are some of the key features of the ML Basis system:
@@ -38,10 +37,10 @@ limiting the scope of (i.e, hiding) and renaming identifiers.
 To import a module, its defining file must appear in some ML Basis
 file.
 
-== Next steps ==
+== Next steps
 
-* <:MLBasisSyntaxAndSemantics:>
-* <:MLBasisExamples:>
-* <:MLBasisPathMap:>
-* <:MLBasisAnnotations:>
-* <:MLBasisAvailableLibraries:>
+* <<MLBasisSyntaxAndSemantics#>>
+* <<MLBasisExamples#>>
+* <<MLBasisPathMap#>>
+* <<MLBasisAnnotations#>>
+* <<MLBasisAvailableLibraries#>>

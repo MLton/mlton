@@ -1,8 +1,7 @@
-LineDirective
-=============
+= LineDirective
 
 To aid in the debugging of code produced by program generators such
-as http://www.eecs.harvard.edu/%7Enr/noweb/[Noweb], MLton supports
+as https://www.cs.tufts.edu/~nr/noweb/[Noweb], MLton supports
 comments with line directives of the form
 [source,sml]
 ----

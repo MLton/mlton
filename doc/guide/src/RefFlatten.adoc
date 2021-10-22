@@ -1,10 +1,9 @@
-RefFlatten
-==========
+= RefFlatten
 
-<:RefFlatten:> is an optimization pass for the <:SSA2:>
-<:IntermediateLanguage:>, invoked from <:SSA2Simplify:>.
+<<RefFlatten#>> is an optimization pass for the <<SSA2#>>
+<<IntermediateLanguage#>>, invoked from <<SSA2Simplify#>>.
 
-== Description ==
+== Description
 
 This pass flattens a `ref` cell into its containing object.
 The idea is to replace, where possible, a type like
@@ -19,11 +18,11 @@ with a type like
 
 where the `[m]` indicates a mutable field of a tuple.
 
-== Implementation ==
+== Implementation
 
-* <!ViewGitFile(mlton,master,mlton/ssa/ref-flatten.fun)>
+* https://github.com/MLton/mlton/blob/master/mlton/ssa/ref-flatten.fun[`ref-flatten.fun`]
 
-== Details and Notes ==
+== Details and Notes
 
 The savings is obvious, I hope.  We avoid an extra heap-allocated
 object for the `ref`, which in the above case saves two words.  We
@@ -54,7 +53,7 @@ container is live.
 
 Prevent flattening of `unit ref`-s.
 
-<:RefFlatten:> is safe for space.  The idea is to prevent a `ref`
+<<RefFlatten#>> is safe for space.  The idea is to prevent a `ref`
 being flattened into an object that has a component of unbounded size
 (other than possibly the `ref` itself) unless we can prove that at
 each point the `ref` is live, then the containing object is live too.

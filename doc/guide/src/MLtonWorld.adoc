@@ -1,5 +1,4 @@
-MLtonWorld
-==========
+= MLtonWorld
 
 [source,sml]
 ----
@@ -25,7 +24,7 @@ loads the saved computation from file `f`.
 +
 saves the entire state of the computation to the file `f`.  The
 computation can then be restarted at a later time using `World.load`
-or the `load-world` <:RunTimeOptions:runtime option>.  The call to
+or the `load-world` <<RunTimeOptions#,runtime option>>.  The call to
 `save` in the original computation returns `Original` and the call in
 the restarted world returns `Clone`.
 
@@ -35,9 +34,9 @@ saves the entire state of the computation to the file `f` that will
 resume with thread `rt` upon restart.
 
 
-== Notes ==
+== Notes
 
-<!Anchor(ASLR)>
+[[ASLR]]
 Executables that save and load worlds are incompatible with
 http://en.wikipedia.org/wiki/Address_space_layout_randomization[address space layout randomization (ASLR)]
 of the executable (though, not of shared libraries).  The state of a
@@ -49,15 +48,15 @@ different base address.
 Executables that save and load worlds should be compiled with an
 option to suppress the generation of position-independent executables.
 
-* <:RunningOnDarwin:Darwin 11 (Mac OS X Lion) and higher> : `-link-opt -fno-PIE`
+* <<RunningOnDarwin#,Darwin 11 (Mac OS X Lion) and higher>> : `-link-opt -fno-PIE`
 
 
-== Example ==
+== Example
 
 Suppose that `save-world.sml` contains the following.
 [source,sml]
 ----
-sys::[./bin/InclGitFile.py mlton master doc/examples/save-world/save-world.sml]
+include::https://raw.github.com/MLton/mlton/master/doc/examples/save-world/save-world.sml[indent=0]
 ----
 
 Then, if we compile `save-world.sml` and run it, the `Original`
@@ -69,7 +68,7 @@ I am the original
 ----
 
 We can then load `world` using the `load-world`
-<:RunTimeOptions:run time option>.
+<<RunTimeOptions#,run time option>>.
 ----
 % ./save-world @MLton load-world world --
 I am the clone

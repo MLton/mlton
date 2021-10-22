@@ -1,7 +1,6 @@
-Identifier
-==========
+= Identifier
 
-In <:StandardML:Standard ML>, there are syntactically two kinds of
+In <<StandardML#,Standard ML>>, there are syntactically two kinds of
 identifiers.
 
 * Alphanumeric: starts with a letter or prime (`'`) and is followed by letters, digits, primes and underbars (`_`).
@@ -14,7 +13,7 @@ Examples: `abc`, `ABC123`, `Abc_123`, `'a`.
  ! % & $ # + - / : < = > ? @ | ~ ` ^ | *
 ----
 +
-Examples: `+=`, `<=`, `>>`, `$`.
+Examples: `+=`, `\<=`, `>>`, `$`.
 
 With the exception of `=`, reserved words can not be identifiers.
 

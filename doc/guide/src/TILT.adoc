@@ -1,5 +1,4 @@
-TILT
-====
+= TILT
 
 http://www.cs.cornell.edu/home/jgm/tilt.html[TILT] is a
-<:StandardMLImplementations:Standard ML implementation>.
+<<StandardMLImplementations#,Standard ML implementation>>.

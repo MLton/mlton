@@ -1,19 +1,18 @@
-MLmon
-=====
+= MLmon
 
-An `mlmon.out` file records dynamic <:Profiling:profiling> counts.
+An `mlmon.out` file records dynamic <<Profiling#,profiling>> counts.
 
-== File format ==
+== File format
 
 An `mlmon.out` file is a text file with a sequence of lines.
 
-* The string "`MLton prof`".
+* The string `MLton prof`.
 
-* The string "`alloc`", "`count`", or "`time`", depending on the kind
+* The string `alloc`, `count`, or `time`, depending on the kind
 of profiling information, corresponding to the command-line argument
 supplied to `mlton -profile`.
 
-* The string "`current`" or "`stack`" depending on whether profiling
+* The string `current` or `stack` depending on whether profiling
 data was gathered for only the current function (the top of the stack)
 or for all functions on the stack.  This corresponds to whether the
 executable was compiled with `-profile-stack false` or `-profile-stack

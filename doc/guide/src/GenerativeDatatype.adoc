@@ -1,7 +1,6 @@
-GenerativeDatatype
-==================
+= GenerativeDatatype
 
-In <:StandardML:Standard ML>, datatype declarations are said to be
+In <<StandardML#,Standard ML>>, datatype declarations are said to be
 _generative_, because each time a datatype declaration is evaluated,
 it yields a new type.  Thus, any attempt to mix the types will lead to
 a type error at compile-time.  The following program, which does not
@@ -31,6 +30,6 @@ val a2 = A
 val _ = if true then a1 else a2
 ----
 
-== Also see ==
+== Also see
 
- * <:GenerativeException:>
+ * <<GenerativeException#>>

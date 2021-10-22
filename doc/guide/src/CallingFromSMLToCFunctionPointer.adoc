@@ -1,7 +1,6 @@
-CallingFromSMLToCFunctionPointer
-================================
+= CallingFromSMLToCFunctionPointer
 
-Just as MLton can <:CallingFromSMLToC:directly call C functions>, it
+Just as MLton can <<CallingFromSMLToC#,directly call C functions>>, it
 is possible to make indirect function calls; that is, function calls
 through a function pointer.  MLton extends the syntax of SML to allow
 expressions like the following:
@@ -26,7 +25,7 @@ _import * attr... : cPtrTy -> cFuncTy;
 The type and the semicolon are not optional.
 
 
-== Example ==
+== Example
 
 This example uses `dlopen` and friends (imported using normal
 `_import`) to dynamically load the math library (`libm`) and call the
@@ -34,7 +33,7 @@ This example uses `dlopen` and friends (imported using normal
 
 [source,sml]
 ----
-sys::[./bin/InclGitFile.py mlton master doc/examples/ffi/iimport.sml]
+include::https://raw.github.com/MLton/mlton/master/doc/examples/ffi/iimport.sml[indent=0]
 ----
 
 Compile and run `iimport.sml`.
@@ -53,5 +52,5 @@ switch when linking only when on the specified platform.  Compile with
 `-verbose 1` to see in more detail what's being passed to `gcc`.
 
 
-== Download ==
-* <!RawGitFile(mlton,master,doc/examples/ffi/iimport.sml)>
+== Download
+* https://raw.github.com/MLton/mlton/master/doc/examples/ffi/iimport.sml[`iimport.sml`]

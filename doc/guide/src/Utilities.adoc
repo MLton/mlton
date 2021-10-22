@@ -1,11 +1,10 @@
-Utilities
-=========
+= Utilities
 
 This page is a collection of basic utilities used in the examples on
 various pages.  See
 
- * <:InfixingOperators:>, and
- * <:ProductType:>
+ * <<InfixingOperators#>>, and
+ * <<ProductType#>>
 
 for longer discussions on some of these utilities.
 

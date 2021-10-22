@@ -1,19 +1,18 @@
-AdmitsEquality
-==============
+= AdmitsEquality
 
-A <:TypeConstructor:> admits equality if whenever it is applied to
-equality types, the result is an <:EqualityType:>.  This notion enables
+A <<TypeConstructor#>> admits equality if whenever it is applied to
+equality types, the result is an <<EqualityType#>>.  This notion enables
 one to determine whether a type constructor application yields an
 equality type solely from the application, without looking at the
 definition of the type constructor.  It helps to ensure that
-<:PolymorphicEquality:> is only applied to sensible values.
+<<PolymorphicEquality#>> is only applied to sensible values.
 
 The definition of admits equality depends on whether the type
 constructor was declared by a `type` definition or a
 `datatype` declaration.
 
 
-== Type definitions ==
+== Type definitions
 
 For type definition
 
@@ -101,10 +100,10 @@ did not admit equality, highlighting the problematic component
 (`real`).
 
 
-== Datatype declarations ==
+== Datatype declarations
 
 For a type constructor declared by a datatype declaration to admit
-equality, every <:Variant:variant> of the datatype must admit equality.  For
+equality, every <<Variant#,variant>> of the datatype must admit equality.  For
 example, the following datatype admits equality because `bool` and
 `char * int` are equality types.
 
@@ -122,7 +121,7 @@ datatype t = A | B | C
 ----
 
 For a parameterized datatype constructor to admit equality, we
-consider each <:Variant:variant> as a type definition, and require that the
+consider each <<Variant#,variant>> as a type definition, and require that the
 definition admit equality.  For example, for the datatype
 
 [source,sml]
@@ -173,7 +172,7 @@ MLton indicates the problematic constructor (`B`), as well as
 the problematic component of the constructor's argument.
 
 
-=== Recursive datatypes ===
+=== Recursive datatypes
 
 A recursive datatype like
 
@@ -183,12 +182,12 @@ datatype t = A | B of int * t
 ----
 
 introduces a new problem, since in order to decide whether `t`
-admits equality, we need to know for the `B` <:Variant:variant> whether
-`t` admits equality.  The <:DefinitionOfStandardML:Definition>
+admits equality, we need to know for the `B` <<Variant#,variant>> whether
+`t` admits equality.  The <<DefinitionOfStandardML#,Definition>>
 answers this question by requiring a type constructor to admit
 equality if it is consistent to do so.  So, in our above example, if
-we assume that `t` admits equality, then the <:Variant:variant>
-`B of int * t` admits equality.  Then, since the `A` <:Variant:variant>
+we assume that `t` admits equality, then the <<Variant#,variant>>
+`B of int * t` admits equality.  Then, since the `A` <<Variant#,variant>>
 trivially admits equality, so does the type constructor `t`.
 Thus, it was consistent to assume that `t` admits equality, and
 so, `t` does admit equality.
@@ -200,7 +199,7 @@ On the other hand, in the following declaration
 datatype t = A | B of real * t
 ----
 
-if we assume that `t` admits equality, then the `B` <:Variant:variant>
+if we assume that `t` admits equality, then the `B` <<Variant#,variant>>
 does not admit equality.  Hence, the type constructor `t` does not
 admit equality, and our assumption was inconsistent.  Hence, `t`
 does not admit equality.
