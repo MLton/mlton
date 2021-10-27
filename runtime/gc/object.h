@@ -1,4 +1,4 @@
-/* Copyright (C) 2016,2019 Matthew Fluet.
+/* Copyright (C) 2016,2019,2021 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -61,7 +61,7 @@ COMPILE_TIME_ASSERT(sizeof_objptr__eq__sizeof_header,
 #define TYPE_INDEX_BITS    19
 #define TYPE_INDEX_MASK    ((GC_header)0x000FFFFE)
 #define TYPE_INDEX_SHIFT   1
-#define COUNTER_BITS       10
+#define COUNTER_BITS       11
 #define COUNTER_MASK       ((GC_header)0x7FF00000)
 #define COUNTER_SHIFT      20
 #define MARK_BITS          1
