@@ -1,4 +1,4 @@
-## Copyright (C) 2009,2011,2013,2017-2020 Matthew Fluet.
+## Copyright (C) 2009,2011,2013,2017-2021 Matthew Fluet.
  # Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -56,8 +56,8 @@ basis-no-check:
 	( \
 	cd "$(SRC)/basis-library" && \
 	$(FIND) . -type f '(' -name '*.mlb' -o -name '*.sml' -o -name '*.sig' -o -name '*.fun' ')' | \
-	$(XARGS) $(TAR) cf - | \
-	( cd "$(LIB)/sml/basis" && $(TAR) xf - ) \
+	$(TAR) -c -T - -f - | \
+	( cd "$(LIB)/sml/basis" && $(TAR) -x -f - ) \
 	)
 
 .PHONY: basis-check
@@ -98,8 +98,8 @@ define LIBRARIES_NO_CHECK_TEMPLATE
 	( \
 	cd "$(SRC)/lib/$(1)$(2)" && \
 	$(FIND) . '!' -path '*/.cm/*' $(3) -type f '(' -name '*.mlb' -o -name '*.sml' -o -name '*.sig' -o -name '*.fun' ')' | \
-	$(XARGS) $(TAR) cf - | \
-	( cd "$(LIB)/sml/$(1)" && $(TAR) xf - ) \
+	$(TAR) -c -T - -f - | \
+	( cd "$(LIB)/sml/$(1)" && $(TAR) -x -f - ) \
 	)
 
 endef
@@ -421,14 +421,14 @@ install-docs:
 	(								\
 		cd "$(SRC)/doc" &&					\
 		$(FIND) examples -type f '!' -name .gitignore		\
-			| $(XARGS) $(TAR) cf -				\
-			| ( cd "$(TDOC)/" && $(TAR) xf - )		\
+			| $(TAR) -c -T - f -				\
+			| ( cd "$(TDOC)/" && $(TAR) -x -f - )		\
 	)
 	(								\
 		cd "$(SRC)/doc" &&					\
 		$(FIND) license -type f '!' -name .gitignore		\
-			| $(XARGS) $(TAR) cf -				\
-			| ( cd "$(TDOC)/" && $(TAR) xf - )		\
+			| $(TAR) -c -T - -f -				\
+			| ( cd "$(TDOC)/" && $(TAR) -x -f - )		\
 	)
 	if [ -d "$(SRC)/doc/guide/localhost" ]; then			\
 		$(CP) "$(SRC)/doc/guide/localhost" "$(TDOC)/guide";	\
@@ -436,8 +436,8 @@ install-docs:
 	(								\
 		cd "$(SRC)/util" &&					\
 		$(FIND) cm2mlb -type f '!' -name .gitignore		\
-			| $(XARGS) $(TAR) cf -				\
-			| ( cd "$(TDOC)/" && $(TAR) xf - )		\
+			| $(TAR) -c -T - f -				\
+			| ( cd "$(TDOC)/" && $(TAR) -x -f - )		\
 	)
 	(								\
 		cd "$(SRC)/regression" &&				\
