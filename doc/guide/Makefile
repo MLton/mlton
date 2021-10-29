@@ -122,7 +122,7 @@ $(eval $(call MK_HTML5,mlton.sourceforge.io))
 
 .PHONY: upload_mlton.sourceforge.io
 upload_mlton.sourceforge.io: mlton.sourceforge.io
-	rsync -avzP --delete -e ssh mlton.sourceforge.io/ fluet,mlton@web.sourceforge.net:htdocs/wiki
+	$(RSYNC) -avzP --delete -e ssh mlton.sourceforge.io/ fluet,mlton@web.sourceforge.net:htdocs/wiki
 
 
 ######
