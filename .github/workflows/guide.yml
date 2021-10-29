@@ -1,0 +1,40 @@
+name: Build and Publish Website/Guide
+
+# Controls when the workflow will run
+on:
+  push:
+    branches:
+      - master
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  build-deploy-guide:
+    # Only run on `MLton` organization
+    if: github.repository_owner == 'MLton'
+
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+
+      - name: Setup SSH
+        run: ./.github/scripts/setup_ssh.sh
+        env:
+          SSH_KEY: ${{ secrets.MLTON_SOURCEFORGE_IO_SSH_KEY }}
+          SSH_CONFIG: ${{ secrets.MLTON_SOURCEFORGE_IO_SSH_CONFIG }}
+          SSH_KNOWN_HOSTS: ${{ secrets.MLTON_SOURCEFORGE_IO_SSH_KNOWN_HOSTS }}
+
+      - name: Install AsciiDoctor
+        run: sudo gem install asciidoctor
+      - name: Install Rouge
+        run: sudo gem install rouge
+
+      - name: Build
+        run: make -j 2 -C doc/guide mlton.sourceforge.io
+
+      - name: Publish
+        run: make -C doc/guide upload_mlton.sourceforge.io
