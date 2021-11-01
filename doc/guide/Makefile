@@ -120,9 +120,10 @@ endef
 $(eval $(call MK_HTML5,localhost))
 $(eval $(call MK_HTML5,mlton.sourceforge.io))
 
+MLTON_SOURCEFORGE_IO_USER := nobody
 .PHONY: upload_mlton.sourceforge.io
 upload_mlton.sourceforge.io: mlton.sourceforge.io
-	$(RSYNC) -avzP --delete -e ssh mlton.sourceforge.io/ fluet,mlton@web.sourceforge.net:htdocs/wiki
+	$(RSYNC) -avzP --delete -e ssh mlton.sourceforge.io/ $(MLTON_SOURCEFORGE_IO_USER),mlton@web.sourceforge.net:htdocs/wiki
 
 
 ######
