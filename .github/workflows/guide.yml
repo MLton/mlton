@@ -26,9 +26,10 @@ jobs:
       - name: Setup SSH
         run: ./.github/scripts/setup_ssh.sh
         env:
-          SSH_KEY: ${{ secrets.MLTON_SOURCEFORGE_IO_SSH_KEY }}
-          SSH_CONFIG: ${{ secrets.MLTON_SOURCEFORGE_IO_SSH_CONFIG }}
-          SSH_KNOWN_HOSTS: ${{ secrets.MLTON_SOURCEFORGE_IO_SSH_KNOWN_HOSTS }}
+          SSH_KEY_RSA: ${{ secrets.MLTON_WEBMASTER_SSH_KEY_RSA }}
+          SSH_KEY_ED25519: ${{ secrets.MLTON_WEBMASTER_SSH_KEY_ED25519 }}
+          SSH_CONFIG: ${{ secrets.MLTON_WEBMASTER_SSH_CONFIG }}
+          SSH_KNOWN_HOSTS: ${{ secrets.MLTON_WEBMASTER_SSH_KNOWN_HOSTS }}
 
       - name: Install AsciiDoctor
         run: sudo gem install asciidoctor
@@ -39,4 +40,4 @@ jobs:
         run: make -j 2 -C doc/guide mlton.sourceforge.io
 
       - name: Deploy
-        run: make -C doc/guide upload_mlton.sourceforge.io
+        run: make -C doc/guide MLTON_SOURCEFORGE_IO_USER=mlton-webmaster upload_mlton.sourceforge.io
