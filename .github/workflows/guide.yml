@@ -1,4 +1,4 @@
-name: Build and Publish Website/Guide
+name: Publish Website/Guide
 
 # Controls when the workflow will run
 on:
@@ -36,5 +36,5 @@ jobs:
       - name: Build
         run: make -j 2 -C doc/guide mlton.sourceforge.io
 
-      - name: Publish
+      - name: Deploy
         run: make -C doc/guide upload_mlton.sourceforge.io
