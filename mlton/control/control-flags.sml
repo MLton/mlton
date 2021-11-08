@@ -933,6 +933,10 @@ val exnHistory = control {name = "exn history",
                           default = false,
                           toString = Bool.toString}
 
+val forceHandlesSignals = control {name = "force handles signals",
+                                   default = false,
+                                   toString = Bool.toString}
+
 structure Format =
    struct
       datatype t =

@@ -214,6 +214,8 @@ signature CONTROL_FLAGS =
 
       val exnHistory: bool ref
 
+      val forceHandlesSignals: bool ref
+
       structure Format:
          sig
             datatype t =
