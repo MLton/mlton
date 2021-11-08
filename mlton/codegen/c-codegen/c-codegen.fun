@@ -1028,8 +1028,9 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                   concat ["G", C.args [Type.toC (Global.ty g),
                                        Int.toString (Global.index g)]]
              | Label l => labelIndexAsString (l, {pretty = true})
-             | Offset {base, offset, ty} =>
-                  concat ["O", C.args [Type.toC ty,
+             | Offset {base, offset, ty, volatile} =>
+                  concat ["O", C.args [concat [if volatile then "volatile " else "",
+                                               Type.toC ty],
                                        toString base,
                                        C.bytes offset]]
              | SequenceOffset {base, index, offset, scale, ty} =>

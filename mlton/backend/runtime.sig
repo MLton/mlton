@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2016-2017,2019-2020 Matthew Fluet.
+(* Copyright (C) 2009,2016-2017,2019-2021 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -33,6 +33,7 @@ signature RUNTIME =
             val layout: t -> Layout.t
             val offset: t -> Bytes.t (* Field offset in struct GC_state. *)
             val toString: t -> string
+            val volatile: t -> bool
          end
       structure RObjectType:
          sig

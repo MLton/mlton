@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2016-2017,2019-2020 Matthew Fluet.
+(* Copyright (C) 2009,2016-2017,2019-2021 Matthew Fluet.
  * Copyright (C) 2002-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -61,6 +61,13 @@ structure GCField =
           | StackTop => "StackTop"
 
       val layout = Layout.str o toString
+
+      val volatile =
+         fn AtomicState => true
+          | CurSourceSeqIndex => true
+          | Limit => true
+          | SignalIsPending => true
+          | _ => false
    end
 
 structure RObjectType =
