@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2011,2014,2017,2019-2020 Matthew Fluet.
+(* Copyright (C) 2009,2011,2014,2017,2019-2021 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -862,6 +862,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
           case p of
              Prim.MLton_installSignalHandler => true
            | _ => false)
+         orelse !Control.forceHandlesSignals
       fun translateFormals v =
          Vector.keepAllMap (v, fn (x, t) =>
                             Option.map (toRtype t, fn t => (x, t)))
