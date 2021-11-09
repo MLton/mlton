@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019-2020 Matthew Fluet.
+(* Copyright (C) 2009,2019-2021 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -163,7 +163,6 @@ fun insertFunction (f: Function.t,
                     ensureFree: Label.t -> Bytes.t) =
    let
       val {args, blocks, name, raises, returns, start} = Function.dest f
-      val lessThan = Prim.Word_lt (WordSize.csize (), {signed = false})
       val newBlocks = ref []
       local
          val r: Label.t option ref = ref NONE
@@ -386,7 +385,7 @@ fun insertFunction (f: Function.t,
                        dst = SOME (res, Type.csize ()),
                        prim = Prim.CPointer_diff}
                    val (statements, transfer) =
-                      primApp (lessThan,
+                      primApp (Prim.Word_lt (WordSize.csize (), {signed = false}),
                                Operand.Var {var = res, ty = Type.csize ()},
                                amount,
                                z)
