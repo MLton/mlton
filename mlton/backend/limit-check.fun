@@ -191,16 +191,16 @@ fun insertFunction (f: Function.t,
                                      symbolScope = CFunction.SymbolScope.Private,
                                      target = CFunction.Target.Direct "MLton_heapCheckTooLarge"}
                      val _ =
-                        newBlocks :=
-                        Block.T {args = Vector.new0 (),
-                                 kind = Kind.Jump,
-                                 label = l,
-                                 statements = Vector.new0 (),
-                                 transfer =
-                                 Transfer.CCall {args = Vector.new0 (),
-                                                 func = cfunc,
-                                                 return = NONE}}
-                        :: !newBlocks
+                        List.push
+                        (newBlocks,
+                         Block.T {args = Vector.new0 (),
+                                  kind = Kind.Jump,
+                                  label = l,
+                                  statements = Vector.new0 (),
+                                  transfer =
+                                  Transfer.CCall {args = Vector.new0 (),
+                                                  func = cfunc,
+                                                  return = NONE}})
                   in
                      l
                   end
