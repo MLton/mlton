@@ -232,40 +232,40 @@ fun insertFunction (f: Function.t,
                 let
                    val collect = Label.newNoname ()
                    val collectReturn = Label.newNoname ()
-                   val dontCollect = Label.newNoname ()
-                   val (dontCollect', collectReturnStatements, force) =
+                   val doneCollect = Label.newNoname ()
+                   val (dontCollect, collectReturnStatements, force) =
                       case !Control.gcCheck of
                          Control.First =>
                             let
                                val flag = newFlag ()
-                               val dontCollect' = Label.newNoname ()
+                               val dontCollect = Label.newNoname ()
                                val _ =
                                   List.push
                                   (newBlocks,
                                    Block.T
                                    {args = Vector.new0 (),
                                     kind = Kind.Jump,
-                                    label = dontCollect',
+                                    label = dontCollect,
                                     statements = Vector.new0 (),
                                     transfer =
                                     Transfer.ifBoolE
                                     (flag,
                                      !Control.gcExpect,
-                                     {falsee = dontCollect,
+                                     {falsee = doneCollect,
                                       truee = collect})})
                             in
-                               (dontCollect',
+                               (dontCollect,
                                 Vector.new1
                                 (Statement.Move {dst = flag,
                                                  src = Operand.bool false}),
                                 flag)
                             end
                        | Control.Limit =>
-                            (dontCollect, Vector.new0 (), Operand.bool false)
+                            (doneCollect, Vector.new0 (), Operand.bool false)
                        | Control.Every =>
                             (collect, Vector.new0 (), Operand.bool true)
                    val func = CFunction.gc {maySwitchThreads = handlesSignals}
-                   val _ = 
+                   val _ =
                       newBlocks :=
                       Block.T {args = Vector.new0 (),
                                kind = Kind.Jump,
@@ -277,22 +277,21 @@ fun insertFunction (f: Function.t,
                                                                 force),
                                             func = func,
                                             return = SOME collectReturn})}
-                      :: (Block.T
-                          {args = Vector.new0 (),
-                           kind = Kind.CReturn {func = func},
-                           label = collectReturn,
-                           statements = collectReturnStatements,
-                           transfer = Transfer.Goto {dst = dontCollect,
-                                                     args = Vector.new0 ()}})
+                      :: Block.T {args = Vector.new0 (),
+                                  kind = Kind.CReturn {func = func},
+                                  label = collectReturn,
+                                  statements = collectReturnStatements,
+                                  transfer = Transfer.Goto {dst = doneCollect,
+                                                            args = Vector.new0 ()}}
                       :: Block.T {args = Vector.new0 (),
                                   kind = Kind.Jump,
-                                  label = dontCollect,
+                                  label = doneCollect,
                                   statements = statements,
                                   transfer = transfer}
                       :: !newBlocks
                 in
                    {collect = collect,
-                    dontCollect = dontCollect'}
+                    dontCollect = dontCollect}
                 end
              fun newBlock (isFirst, statements, transfer) =
                 let
