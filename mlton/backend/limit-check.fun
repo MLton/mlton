@@ -94,6 +94,36 @@ structure CFunction =
       open CFunction Type.BuiltInCFunction
    end
 
+structure BytesAllocated =
+   struct
+      datatype t =
+         Dynamic of Operand.t
+       | Static of Bytes.t
+
+      (*
+      fun layout ba =
+         let
+            open Layout
+         in
+            case ba of
+               Dynamic oper => seq [str "Dynamic ", Operand.layout oper]
+             | Static bytes => seq [str "Static ", Bytes.layout bytes]
+         end
+      val toString = Layout.toString o layout
+      *)
+
+      val zero = Static Bytes.zero
+
+      fun isBig ba =
+         case ba of
+            Dynamic _ => true
+          | Static bytes =>
+               (* 512 is small and arbitrary *)
+               if Bytes.<= (bytes, Bytes.fromInt 512)
+                  then false
+                  else true
+   end
+
 structure Statement =
    struct
       open Statement
@@ -108,35 +138,25 @@ structure Transfer =
    struct
       open Transfer
 
-      datatype bytesAllocated =
-         Big of Operand.t
-       | Small of Bytes.t
-
-      fun bytesAllocated (t: t): bytesAllocated =
+      fun bytesAllocated (t: t): BytesAllocated.t =
          case t of
             CCall {args, func, ...} =>
                (case CFunction.bytesNeeded func of
-                   NONE => Small Bytes.zero
+                   NONE => BytesAllocated.zero
                  | SOME i =>
                       let
-                         val z = Vector.sub (args, i)
+                         val arg = Vector.sub (args, i)
                       in
-                         case z of
+                         case arg of
                             Operand.Const c =>
                                (case c of
                                    Const.Word w =>
-                                      let
-                                         val w = WordX.toIntInf w
-                                      in
-                                         (* 512 is small and arbitrary *)
-                                         if w <= 512 
-                                            then Small (Bytes.fromIntInf w)
-                                         else Big z
-                                      end
-                                 | _ => Error.bug "LimitCheck.Transfer.bytesAllocated: strange numBytes")
-                          | _ => Big z
+                                      BytesAllocated.Static
+                                      (Bytes.fromIntInf (WordX.toIntInf w))
+                                 | _ => Error.bug "LimitCheck.Transfer.bytesAllocated: strange bytesNeeded argument")
+                          | _ => BytesAllocated.Dynamic arg
                       end)
-          | _ => Small Bytes.zero
+          | _ => BytesAllocated.zero
    end
 
 structure Block =
@@ -152,8 +172,8 @@ structure Block =
                           Bytes.+ (ac, b)
                        end),
           case Transfer.bytesAllocated transfer of
-             Transfer.Big _ => Bytes.zero
-           | Transfer.Small b => b)
+             BytesAllocated.Dynamic _ => Bytes.zero
+           | BytesAllocated.Static b => b)
    end
 
 fun insertFunction (f: Function.t,
@@ -438,62 +458,45 @@ fun insertFunction (f: Function.t,
              fun bigAllocation (bytesNeeded: Operand.t): unit =
                 let
                    val extraBytes = blockCheckAmount {blockIndex = i}
+                   val bytes = Var.newNoname ()
+                   val test = Var.newNoname ()
+                   val extraBytes =
+                      SOME (WordX.fromBytes (extraBytes, WordSize.csize ()))
+                      handle Overflow => NONE
                 in
-                   case bytesNeeded of
-                      Operand.Const c =>
-                         (case c of
-                             Const.Word w =>
-                                heapCheckNonZero
-                                (Bytes.+
-                                 (Bytes.fromIntInf (WordX.toIntInf w),
-                                  extraBytes))
-                           | _ => Error.bug "LimitCheck.bigAllocation: strange constant bytesNeeded")
-                    | _ =>
-                         let
-                            val bytes = Var.newNoname ()
-                            val test = Var.newNoname ()
-                            val extraBytes =
-                               let
-                                  val extraBytes =
-                                     WordX.fromBytes (extraBytes, WordSize.csize ())
-                               in
-                                  SOME extraBytes
-                               end handle Overflow => NONE
-                         in
-                            case extraBytes of
-                               NONE => ignore (gotoHeapCheckTooLarge ())
-                             | SOME extraBytes =>
-                                  (ignore o newBlock)
-                                  (true,
-                                   Vector.new2
-                                   (Statement.PrimApp
-                                    {args = Vector.new2
-                                            (Operand.word extraBytes,
-                                             bytesNeeded),
-                                     dst = SOME (bytes, Type.csize ()),
-                                     prim = Prim.Word_add (WordSize.csize ())},
-                                    Statement.PrimApp
-                                    {args = Vector.new2
-                                            (Operand.word extraBytes,
-                                             bytesNeeded),
-                                     dst = SOME (test, Type.bool),
-                                     prim = Prim.Word_addCheckP
-                                            (WordSize.csize (),
-                                             {signed = false})}),
-                                   Transfer.ifBoolE
-                                   (Operand.Var {var = test, ty = Type.bool},
-                                    !Control.gcExpect,
-                                    {falsee = heapCheck (false,
-                                                         Operand.Var
-                                                         {var = bytes,
-                                                          ty = Type.csize ()}),
-                                     truee = heapCheckTooLarge ()}))
-                         end
+                   case extraBytes of
+                      NONE => ignore (gotoHeapCheckTooLarge ())
+                    | SOME extraBytes =>
+                         (ignore o newBlock)
+                         (true,
+                          Vector.new2
+                          (Statement.PrimApp
+                           {args = Vector.new2
+                            (Operand.word extraBytes,
+                             bytesNeeded),
+                            dst = SOME (bytes, Type.csize ()),
+                            prim = Prim.Word_add (WordSize.csize ())},
+                           Statement.PrimApp
+                           {args = Vector.new2
+                            (Operand.word extraBytes,
+                             bytesNeeded),
+                            dst = SOME (test, Type.bool),
+                            prim = Prim.Word_addCheckP
+                            (WordSize.csize (),
+                             {signed = false})}),
+                          Transfer.ifBoolE
+                          (Operand.Var {var = test, ty = Type.bool},
+                           !Control.gcExpect,
+                           {falsee = heapCheck (false,
+                                                Operand.Var
+                                                {var = bytes,
+                                                 ty = Type.csize ()}),
+                            truee = heapCheckTooLarge ()}))
                 end
           in
              case Transfer.bytesAllocated transfer of
-                Transfer.Big z => bigAllocation z
-              | Transfer.Small _ => smallAllocation ()
+                BytesAllocated.Dynamic z => bigAllocation z
+              | BytesAllocated.Static _ => smallAllocation ()
           end)
    in
       Function.new {args = args,
@@ -530,26 +533,25 @@ fun isolateBigTransfers (f: Function.t): Function.t =
          Vector.foreach
          (blocks,
           fn block as Block.T {args, kind, label, statements, transfer} =>
-          case Transfer.bytesAllocated transfer of
-             Transfer.Big _ =>
-                let
-                   val l = Label.newNoname ()
-                in
-                   List.push (newBlocks,
-                              Block.T {args = args,
-                                       kind = kind,
-                                       label = label,
-                                       statements = statements,
-                                       transfer = Goto {args = Vector.new0 (),
-                                                        dst = l}})
-                   ; List.push (newBlocks,
-                                Block.T {args = Vector.new0 (),
-                                         kind = Kind.Jump,
-                                         label = l,
-                                         statements = Vector.new0 (),
-                                         transfer = transfer})
-                end
-           | Transfer.Small _ => List.push (newBlocks, block))
+          if BytesAllocated.isBig (Transfer.bytesAllocated transfer)
+             then let
+                     val l = Label.newNoname ()
+                  in
+                     List.push (newBlocks,
+                                Block.T {args = args,
+                                         kind = kind,
+                                         label = label,
+                                         statements = statements,
+                                         transfer = Goto {args = Vector.new0 (),
+                                                          dst = l}})
+                     ; List.push (newBlocks,
+                                  Block.T {args = Vector.new0 (),
+                                           kind = Kind.Jump,
+                                           label = l,
+                                           statements = Vector.new0 (),
+                                           transfer = transfer})
+                  end
+             else List.push (newBlocks, block))
       val blocks = Vector.fromListRev (!newBlocks)
    in
       Function.new {args = args,
@@ -603,10 +605,7 @@ fun insertCoalesce (f: Function.t, handlesSignals, newFlag, tyconTy) =
           let
              val Block.T {kind, transfer, ...} = Vector.sub (blocks, i)
              datatype z = datatype Kind.t
-             val isBigAlloc =
-                case Transfer.bytesAllocated transfer of
-                   Transfer.Big _ => true
-                 | Transfer.Small _ => false
+             val isBigAlloc = BytesAllocated.isBig (Transfer.bytesAllocated transfer)
              val b =
                 case kind of
                    Cont _ => true
