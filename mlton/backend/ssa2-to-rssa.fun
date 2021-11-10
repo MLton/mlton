@@ -1427,8 +1427,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                      end)
                                | Prim.Thread_atomicEnd =>
                                     (* gcState.atomicState--;
-                                     * if (gcState.signalsInfo.signalIsPending
-                                     *     and 0 == gcState.atomicState)
+                                     * if (0 == gcState.atomicState
+                                     *     and gcState.signalsInfo.signalIsPending)
                                      *   gc;
                                      *)
                                     split
@@ -1461,24 +1461,24 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                             {args = args,
                                              func = func,
                                              return = SOME (returnFromHandler ())}}
-                                        fun testAtomicState () =
+                                        fun testSignalIsPending () =
                                            newBlock
                                            {args = Vector.new0 (),
                                             kind = Kind.Jump,
                                             statements = Vector.new0 (),
                                             transfer =
-                                            Transfer.ifZero
-                                            (Runtime AtomicState,
+                                            Transfer.ifBool
+                                            (Runtime SignalIsPending,
                                              {falsee = continue,
                                               truee = switchToHandler ()})}
                                      in
                                         (bumpAtomicState ~1,
                                          if handlesSignals
                                             then
-                                               Transfer.ifBool
-                                               (Runtime SignalIsPending,
+                                               Transfer.ifZero
+                                               (Runtime AtomicState,
                                                 {falsee = continue,
-                                                 truee = testAtomicState ()})
+                                                 truee = testSignalIsPending ()})
                                          else
                                             Transfer.Goto {args = Vector.new0 (),
                                                            dst = continue})
