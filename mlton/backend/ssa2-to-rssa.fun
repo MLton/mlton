@@ -1391,7 +1391,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                         val tmp = Var.newNoname ()
                                         val size = WordSize.cpointer ()
                                         val ty = Type.cpointer ()
-                                        val statements =
+                                        fun statements () =
                                            Vector.new2
                                            (Statement.PrimApp
                                             {args = (Vector.new2
@@ -1405,11 +1405,11 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                             Statement.Move
                                             {dst = Runtime Limit,
                                              src = Var {ty = ty, var = tmp}})
-                                        val signalIsPending =
+                                        fun signalIsPending () =
                                            newBlock
                                            {args = Vector.new0 (),
                                             kind = Kind.Jump,
-                                            statements = statements,
+                                            statements = statements (),
                                             transfer = (Transfer.Goto
                                                         {args = Vector.new0 (),
                                                          dst = continue})}
@@ -1420,7 +1420,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                Transfer.ifBool
                                                (Runtime SignalIsPending,
                                                 {falsee = continue,
-                                                 truee = signalIsPending})
+                                                 truee = signalIsPending ()})
                                          else
                                             Transfer.Goto {args = Vector.new0 (),
                                                            dst = continue})
@@ -1438,7 +1438,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                         datatype z = datatype GCField.t
                                         val func =
                                            CFunction.gc {maySwitchThreads = true}
-                                        val returnFromHandler =
+                                        fun returnFromHandler () =
                                            newBlock
                                            {args = Vector.new0 (),
                                             kind = Kind.CReturn {func = func},
@@ -1451,7 +1451,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                            (GCState,
                                             Operand.zero (WordSize.csize ()),
                                             Operand.bool false)
-                                        val switchToHandler =
+                                        fun switchToHandler () =
                                            newBlock
                                            {args = Vector.new0 (),
                                             kind = Kind.Jump,
@@ -1460,8 +1460,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                             Transfer.CCall
                                             {args = args,
                                              func = func,
-                                             return = SOME returnFromHandler}}
-                                        val testAtomicState =
+                                             return = SOME (returnFromHandler ())}}
+                                        fun testAtomicState () =
                                            newBlock
                                            {args = Vector.new0 (),
                                             kind = Kind.Jump,
@@ -1470,7 +1470,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                             Transfer.ifZero
                                             (Runtime AtomicState,
                                              {falsee = continue,
-                                              truee = switchToHandler})}
+                                              truee = switchToHandler ()})}
                                      in
                                         (bumpAtomicState ~1,
                                          if handlesSignals
@@ -1478,7 +1478,7 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                Transfer.ifBool
                                                (Runtime SignalIsPending,
                                                 {falsee = continue,
-                                                 truee = testAtomicState})
+                                                 truee = testAtomicState ()})
                                          else
                                             Transfer.Goto {args = Vector.new0 (),
                                                            dst = continue})
