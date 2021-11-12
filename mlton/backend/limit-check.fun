@@ -87,8 +87,6 @@ structure Control =
                            loopExits = true})
    end
 
-datatype z = datatype Transfer.t
-
 structure CFunction =
    struct
       open CFunction Type.BuiltInCFunction
@@ -596,8 +594,8 @@ fun isolateBigTransfers (f: Function.t): Function.t =
                                          kind = kind,
                                          label = label,
                                          statements = statements,
-                                         transfer = Goto {args = Vector.new0 (),
-                                                          dst = l}})
+                                         transfer = Transfer.Goto {args = Vector.new0 (),
+                                                                   dst = l}})
                      ; List.push (newBlocks,
                                   Block.T {args = Vector.new0 (),
                                            kind = Kind.Jump,
