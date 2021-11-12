@@ -67,19 +67,18 @@ struct
 
 open S
 
-structure LimitCheck =
-   struct
-      datatype t = 
-         PerBlock
-       | ExtBasicBlocks
-       | LoopHeaders of {fullCFG: bool,
-                         loopExits: bool}
-   end
-
 structure Control =
    struct
       open Control
 
+      structure LimitCheck =
+         struct
+            datatype t =
+               PerBlock
+             | ExtBasicBlocks
+             | LoopHeaders of {fullCFG: bool,
+                               loopExits: bool}
+         end
       datatype limitCheck = datatype LimitCheck.t
 
       val limitCheck =
