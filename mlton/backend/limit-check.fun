@@ -177,7 +177,8 @@ fun insertFunction (f: Function.t,
                     handlesSignals: bool,
                     newFlag: unit -> Operand.t,
                     blockLimitCheckAmount: Label.t -> Bytes.t,
-                    ensureFree: Label.t -> Bytes.t) =
+                    ensureFree: Label.t -> Bytes.t,
+                    needsSignalCheck: Label.t -> bool) =
    let
       val {args, blocks, name, raises, returns, start} = Function.dest f
       val newBlocks = ref []
@@ -332,7 +333,7 @@ fun insertFunction (f: Function.t,
              datatype limitCheck = Zero | Small | Large of Operand.t
 
              val needsStackCheck = Label.equals (start, label)
-             val needsSignalCheck = false
+             val needsSignalCheck = needsSignalCheck label
              val signalCheckAtLimitCheck = true
 
              fun mkSmallLimitCheck {collect, nextCheck} =
@@ -934,8 +935,11 @@ fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileI
                        in
                           (f, limitCheckCoalesce (f, tyconTy))
                        end
+            val needsSignalCheck = fn (_: Label.t) => false
          in
-            insertFunction (f, handlesSignals, newFlag, blockLimitCheckAmount, ensureFree)
+            insertFunction (f, handlesSignals, newFlag,
+                            blockLimitCheckAmount, ensureFree,
+                            needsSignalCheck)
          end
 
       val main = insertFunction main
