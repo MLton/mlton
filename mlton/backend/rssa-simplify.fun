@@ -13,8 +13,7 @@ structure BounceVars = BounceVars (S)
 structure CollectStatics = CollectStatics (S)
 structure ImplementHandlers = ImplementHandlers (S)
 structure ImplementProfiling = ImplementProfiling (S)
-structure LimitCheck = LimitCheck (S)
-structure SignalCheck = SignalCheck(S)
+structure InsertChecks = InsertChecks (S)
 
 val rssaPasses =
    {name = "rssaShrink1", doit = S.shrink, execute = true} ::
@@ -27,8 +26,7 @@ val rssaPasses =
    {name = "collectStatics.RealConsts",
     doit = CollectStatics.RealConsts.transform,
     execute = true} ::
-   {name = "insertLimitChecks", doit = LimitCheck.transform, execute = true} ::
-   {name = "insertSignalChecks", doit = SignalCheck.transform, execute = true} ::
+   {name = "insertChecks", doit = InsertChecks.transform, execute = true} ::
    (* must be before implementHandlers *)
    {name = "bounceVars", doit = BounceVars.transform, execute = true} ::
    {name = "implementHandlers", doit = ImplementHandlers.transform, execute = true} ::

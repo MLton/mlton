@@ -62,7 +62,7 @@
  * Stack limit checks are completely orthogonal to heap checks, and are simply
  * inserted at the start of each function.
  *)
-functor LimitCheck (S: RSSA_TRANSFORM_STRUCTS): RSSA_TRANSFORM =
+functor InsertChecks (S: RSSA_TRANSFORM_STRUCTS): RSSA_TRANSFORM =
 struct
 
 open S
@@ -878,6 +878,72 @@ fun limitCheckCoalesce (f: Function.t, tyconTy) =
      (blockLimitCheckAmount, ensureFree)
    end
 
+fun signalCheck (f: Function.t) =
+   let
+      val {blocks, start, ...} = Function.dest f
+      val {get = labelIndex: Label.t -> int, set = setLabelIndex, ...} =
+         Property.getSetOnce
+         (Label.plist, Property.initRaise ("index", Label.layout))
+      val _ =
+         Vector.foreachi (blocks, fn (i, Block.T {label, ...}) =>
+                          setLabelIndex (label, i))
+      val g = Graph.new ()
+      val n = Vector.length blocks
+      val {get = nodeIndex: unit Node.t -> int, set = setNodeIndex, ...} =
+         Property.getSetOnce
+         (Node.plist, Property.initRaise ("index", Node.layout))
+      val nodes =
+         Vector.tabulate (n, fn i =>
+                          let
+                             val n = Graph.newNode g
+                             val _ = setNodeIndex (n, i)
+                          in
+                             n
+                          end)
+      fun indexNode i = Vector.sub (nodes, i)
+      val labelNode = indexNode o labelIndex
+      val _ =
+         Vector.foreachi
+         (blocks, fn (i, Block.T {transfer, ...}) =>
+          let
+             val from = indexNode i
+          in
+             if (case transfer of
+                    Transfer.CCall {func, ...} =>
+                       CFunction.maySwitchThreadsFrom func
+                  | _ => false)
+                then ()
+             else
+                Transfer.foreachLabel
+                (transfer, fn to =>
+                 (ignore o Graph.addEdge)
+                 (g, {from = from, to = labelNode to}))
+          end)
+      val needsSignalCheck = Array.new (n, false)
+      (* Add a signal check at each loop header. *)
+      fun loop (f: int Forest.t) =
+         let
+            val {loops, ...} = Forest.dest f
+         in
+            Vector.foreach
+            (loops, fn {headers, child} =>
+             let
+                val _ =
+                   Vector.foreach
+                   (headers, fn i =>
+                    Array.update (needsSignalCheck, i, true))
+             in
+                loop child
+             end)
+         end
+      val () = loop (Graph.loopForestSteensgaard
+                     (g, {root = labelNode start, nodeValue = nodeIndex}))
+      (* Add a signal check at the function entry. *)
+      val _ = Array.update (needsSignalCheck, labelIndex start, true)
+   in
+      fn l => Array.sub (needsSignalCheck, labelIndex l)
+   end
+
 fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileInfo, statics}) =
    let
       fun tyconTy tycon =
@@ -935,7 +1001,10 @@ fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileI
                        in
                           (f, limitCheckCoalesce (f, tyconTy))
                        end
-            val needsSignalCheck = fn (_: Label.t) => false
+            val needsSignalCheck =
+               if handlesSignals
+                  then signalCheck f
+                  else fn (_: Label.t) => false
          in
             insertFunction (f, handlesSignals, newFlag,
                             blockLimitCheckAmount, ensureFree,
