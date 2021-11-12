@@ -551,7 +551,7 @@ fun insertFunction (f: Function.t,
       f
    end
 
-fun insertPerBlock (f: Function.t, handlesSignals, newFlag, tyconTy) =
+fun limitCheckPerBlock (f: Function.t, tyconTy) =
    let
       val {blocks, ...} = Function.dest f
       val {get = blockLimitCheckAmount, set = setBlockLimitCheckAmount, ...} =
@@ -566,7 +566,7 @@ fun insertPerBlock (f: Function.t, handlesSignals, newFlag, tyconTy) =
            Block.objectBytesAllocated
            (block, {tyconTy = tyconTy})))
    in
-      insertFunction (f, handlesSignals, newFlag, blockLimitCheckAmount, fn _ => Bytes.zero)
+      (blockLimitCheckAmount, fn _ => Bytes.zero)
    end
 
 structure Graph = DirectedGraph
@@ -612,9 +612,8 @@ fun isolateBigTransfers (f: Function.t): Function.t =
                     start = start}
    end
 
-fun insertCoalesce (f: Function.t, handlesSignals, newFlag, tyconTy) =
+fun limitCheckCoalesce (f: Function.t, tyconTy) =
    let
-      val f = isolateBigTransfers f
       val {blocks, start, ...} = Function.dest f
       val n = Vector.length blocks
       val {get = labelIndex, set = setLabelIndex, ...} =
@@ -874,7 +873,7 @@ fun insertCoalesce (f: Function.t, handlesSignals, newFlag, tyconTy) =
                             Bytes.layout (maxPath (labelIndex label))]
                     end)))
    in
-      insertFunction (f, handlesSignals, newFlag, blockLimitCheckAmount, ensureFree)
+     (blockLimitCheckAmount, ensureFree)
    end
 
 fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileInfo, statics}) =
@@ -925,14 +924,23 @@ fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileI
                 else (objectTypes, statics))
          end
 
-      datatype z = datatype Control.limitCheck
-      fun insert f =
-         case !Control.limitCheck of
-            PerBlock => insertPerBlock (f, handlesSignals, newFlag, tyconTy)
-          | _ => insertCoalesce (f, handlesSignals, newFlag, tyconTy)
+      val insertFunction = fn f =>
+         let
+            datatype z = datatype Control.LimitCheck.t
+            val (f, (blockLimitCheckAmount, ensureFree)) =
+               case !Control.limitCheck of
+                  PerBlock => (f, limitCheckPerBlock (f, tyconTy))
+                | _ => let
+                          val f = isolateBigTransfers f
+                       in
+                          (f, limitCheckCoalesce (f, tyconTy))
+                       end
+         in
+            insertFunction (f, handlesSignals, newFlag, blockLimitCheckAmount, ensureFree)
+         end
 
-      val main = insert main
-      val functions = List.revMap (functions, insert)
+      val main = insertFunction main
+      val functions = List.revMap (functions, insertFunction)
 
       val (objectTypes, statics) = finishFlags ()
    in
