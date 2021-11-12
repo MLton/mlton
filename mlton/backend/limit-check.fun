@@ -580,6 +580,7 @@ fun isolateBigTransfers (f: Function.t): Function.t =
    let
       val {args, blocks, name, raises, returns, start} = Function.dest f
       val newBlocks = ref []
+      fun newBlock b = List.push (newBlocks, b)
       val () =
          Vector.foreach
          (blocks,
@@ -588,21 +589,19 @@ fun isolateBigTransfers (f: Function.t): Function.t =
              then let
                      val l = Label.newNoname ()
                   in
-                     List.push (newBlocks,
-                                Block.T {args = args,
-                                         kind = kind,
-                                         label = label,
-                                         statements = statements,
-                                         transfer = Transfer.Goto {args = Vector.new0 (),
-                                                                   dst = l}})
-                     ; List.push (newBlocks,
-                                  Block.T {args = Vector.new0 (),
-                                           kind = Kind.Jump,
-                                           label = l,
-                                           statements = Vector.new0 (),
-                                           transfer = transfer})
+                     newBlock (Block.T {args = args,
+                                        kind = kind,
+                                        label = label,
+                                        statements = statements,
+                                        transfer = Transfer.Goto {args = Vector.new0 (),
+                                                                  dst = l}})
+                     ; newBlock (Block.T {args = Vector.new0 (),
+                                          kind = Kind.Jump,
+                                          label = l,
+                                          statements = Vector.new0 (),
+                                          transfer = transfer})
                   end
-             else List.push (newBlocks, block))
+             else newBlock block)
       val blocks = Vector.fromListRev (!newBlocks)
    in
       Function.new {args = args,
