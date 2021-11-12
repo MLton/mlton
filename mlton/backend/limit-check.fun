@@ -179,11 +179,12 @@ structure Block =
 fun insertFunction (f: Function.t,
                     handlesSignals: bool,
                     newFlag: unit -> Operand.t,
-                    blockCheckAmount: {blockIndex: int} -> Bytes.t,
+                    blockLimitCheckAmount: Label.t -> Bytes.t,
                     ensureFree: Label.t -> Bytes.t) =
    let
       val {args, blocks, name, raises, returns, start} = Function.dest f
       val newBlocks = ref []
+      fun newBlock b = List.push (newBlocks, b)
       local
          val r: Label.t option ref = ref NONE
       in
@@ -192,7 +193,7 @@ fun insertFunction (f: Function.t,
                SOME l => l
              | NONE =>
                   let
-                     val l = Label.newNoname ()
+                     val l = Label.newString "heapCheckTooLarge"
                      val _ = r := SOME l
                      val cfunc =
                         CFunction.T {args = Vector.new0 (),
@@ -211,9 +212,8 @@ fun insertFunction (f: Function.t,
                                      symbolScope = CFunction.SymbolScope.Private,
                                      target = CFunction.Target.Direct "MLton_heapCheckTooLarge"}
                      val _ =
-                        List.push
-                        (newBlocks,
-                         Block.T {args = Vector.new0 (),
+                        newBlock
+                        (Block.T {args = Vector.new0 (),
                                   kind = Kind.Jump,
                                   label = l,
                                   statements = Vector.new0 (),
@@ -225,11 +225,13 @@ fun insertFunction (f: Function.t,
                      l
                   end
       end
+      fun gotoHeapCheckTooLarge () =
+         Transfer.Goto {args = Vector.new0 (), dst = heapCheckTooLarge ()}
       val _ =
-         Vector.foreachi
-         (blocks, fn (i, Block.T {args, kind, label, statements, transfer}) =>
+         Vector.foreach
+         (blocks, fn Block.T {args, kind, label, statements, transfer} =>
           let
-             val transfer = 
+             val transfer =
                 case transfer of
                    Transfer.CCall {args, func, return} =>
                       (case CFunction.ensuresBytesFree func of
@@ -247,8 +249,7 @@ fun insertFunction (f: Function.t,
                               func = func,
                               return = return})
                  | _ => transfer
-             val stack = Label.equals (start, label)
-             fun insert (amount: Operand.t (* of type word *)) =
+             fun mkCollect (amount: Operand.t (* of type word *)) =
                 let
                    val collect = Label.newNoname ()
                    val collectReturn = Label.newNoname ()
@@ -260,9 +261,8 @@ fun insertFunction (f: Function.t,
                                val flag = newFlag ()
                                val dontCollect = Label.newNoname ()
                                val _ =
-                                  List.push
-                                  (newBlocks,
-                                   Block.T
+                                  newBlock
+                                  (Block.T
                                    {args = Vector.new0 (),
                                     kind = Kind.Jump,
                                     label = dontCollect,
@@ -313,209 +313,263 @@ fun insertFunction (f: Function.t,
                    {collect = collect,
                     dontCollect = dontCollect}
                 end
-             fun newBlock (isFirst, statements, transfer) =
-                let
-                   val (args, kind, label) =
-                      if isFirst
-                         then (args, kind, label)
-                      else (Vector.new0 (), Kind.Jump, Label.newNoname ())
-                   val _ =
-                      List.push
-                      (newBlocks,
-                       Block.T {args = args,
-                                kind = kind,
-                                label = label,
-                                statements = statements,
-                                transfer = transfer})
-                in
-                   label
-                end
-             fun gotoHeapCheckTooLarge () =
-                newBlock
-                (true,
-                 Vector.new0 (),
-                 Transfer.Goto {args = Vector.new0 (),
-                                dst = heapCheckTooLarge ()})
-             fun primApp (prim, op1, op2, {collect, dontCollect}) =
+             fun primAppIf' (addPrefix, prim, arg1, arg2, expect, {falsee, truee}) =
                 let
                    val res = Var.newNoname ()
                    val s =
-                      Statement.PrimApp {args = Vector.new2 (op1, op2),
+                      Statement.PrimApp {args = Vector.new2 (arg1, arg2),
                                          dst = SOME (res, Type.bool),
                                          prim = prim}
                    val transfer =
                       Transfer.ifBoolE
                       (Operand.Var {var = res, ty = Type.bool},
-                       !Control.gcExpect,
-                       {falsee = dontCollect,
-                        truee = collect})
+                       expect,
+                       {falsee = falsee,
+                        truee = truee})
                 in
-                   (Vector.new1 s, transfer)
+                   (addPrefix s, transfer)
                 end
+             fun primAppIf (prim, arg1, arg2, expect, falsee_truee) =
+                primAppIf' (Vector.new1, prim, arg1, arg2, expect, falsee_truee)
              datatype z = datatype Runtime.GCField.t
-             fun stackCheck (maybeFirst, z): Label.t =
+             datatype limitCheck = Zero | Small | Large of Operand.t
+
+             val needsStackCheck = Label.equals (start, label)
+             val needsSignalCheck = false
+             val signalCheckAtLimitCheck = true
+
+             fun mkSmallLimitCheck {collect, nextCheck} =
                 let
+                   val limitCheck = Label.newString "smallLimitCheck"
                    val (statements, transfer) =
-                      primApp (Prim.CPointer_lt,
-                               Operand.Runtime StackLimit,
-                               Operand.Runtime StackTop,
-                               z)
+                      primAppIf (Prim.CPointer_lt,
+                                 Operand.Runtime Limit,
+                                 Operand.Runtime Frontier,
+                                 !Control.gcExpect,
+                                 {truee = collect,
+                                  falsee = nextCheck})
+                   val _ =
+                      newBlock
+                      (Block.T {label = limitCheck,
+                                kind = Kind.Jump,
+                                args = Vector.new0 (),
+                                statements = statements,
+                                transfer = transfer})
                 in
-                   newBlock (maybeFirst, statements, transfer)
+                   limitCheck
                 end
-             fun maybeStack (): unit =
-                if stack
-                   then ignore (stackCheck
-                                (true,
-                                 insert (Operand.zero (WordSize.csize ()))))
-                else
-                   (* No limit check, just keep the block around. *)
-                   List.push (newBlocks,
-                              Block.T {args = args,
-                                       kind = kind,
-                                       label = label,
-                                       statements = statements,
-                                       transfer = transfer})
-             fun frontierCheck (isFirst,
-                                prim, op1, op2,
-                                z as {collect, dontCollect = _}): Label.t =
+             fun mkLargeLimitCheck (amount, {collect, nextCheck}) =
                 let
-                   val (statements, transfer) = primApp (prim, op1, op2, z)
-                   val l = newBlock (isFirst andalso not stack,
-                                     statements, transfer)
-                in
-                   if stack
-                      then stackCheck (isFirst, {collect = collect,
-                                                 dontCollect = l})
-                   else l
-                end
-             fun heapCheck (isFirst: bool,
-                            amount: Operand.t (* of type word *)): Label.t =
-                let
-                   val z as {collect, ...} = insert amount
-                   val res = Var.newNoname ()
-                   val s =
-                      (* Can't do Limit - Frontier, because don't know that
-                       * Frontier < Limit.
-                       *)
+                   val limitCheck = Label.newString "largeLimitCheck"
+                   val avail = Var.newNoname ()
+                   val calcAvail =
                       Statement.PrimApp
                       {args = Vector.new2 (Operand.Runtime LimitPlusSlop,
                                            Operand.Runtime Frontier),
-                       dst = SOME (res, Type.csize ()),
+                       dst = SOME (avail, Type.csize ()),
                        prim = Prim.CPointer_diff}
                    val (statements, transfer) =
-                      primApp (Prim.Word_lt (WordSize.csize (), {signed = false}),
-                               Operand.Var {var = res, ty = Type.csize ()},
-                               amount,
-                               z)
-                   val statements = Vector.concat [Vector.new1 s, statements]
+                      primAppIf'
+                      (fn cmp => Vector.new2 (calcAvail, cmp),
+                       Prim.Word_lt (WordSize.csize (), {signed = false}),
+                       Operand.Var {var = avail, ty = Type.csize ()},
+                       amount,
+                       !Control.gcExpect,
+                       {truee = collect,
+                        falsee = nextCheck})
+                   val _ =
+                      newBlock
+                      (Block.T {label = limitCheck,
+                                kind = Kind.Jump,
+                                args = Vector.new0 (),
+                                statements = statements,
+                                transfer = transfer})
                 in
-                   if handlesSignals
-                      then
-                         frontierCheck (isFirst,
-                                        Prim.CPointer_equal,
-                                        Operand.Runtime Limit,
-                                        Operand.null,
-                                        {collect = collect,
-                                         dontCollect = newBlock (false,
-                                                                 statements,
-                                                                 transfer)})
-                   else if stack
-                           then
-                              stackCheck
-                              (isFirst,
-                               {collect = collect,
-                                dontCollect =
-                                newBlock (false, statements, transfer)})
-                        else newBlock (isFirst, statements, transfer)
+                   limitCheck
                 end
-             fun heapCheckNonZero (bytes: Bytes.t): unit =
-                ignore
-                (if Bytes.<= (bytes, Runtime.limitSlop)
-                    then frontierCheck (true,
-                                        Prim.CPointer_lt,
-                                        Operand.Runtime Limit,
-                                        Operand.Runtime Frontier,
-                                        insert (Operand.zero (WordSize.csize ())))
-                 else
-                    let
-                       val bytes =
-                          SOME (WordX.fromBytes (bytes, WordSize.csize ()))
-                          handle Overflow => NONE
-                    in
-                       case bytes of
-                          NONE => gotoHeapCheckTooLarge ()
-                        | SOME bytes => heapCheck (true, Operand.word bytes)
-                    end)
-             fun smallAllocation (): unit =
+             fun mkLimitCheck (limitCheck, collect_nextCheck as {nextCheck, ...}) =
+                case limitCheck of
+                   Zero => nextCheck
+                 | Small => mkSmallLimitCheck collect_nextCheck
+                 | Large oper => mkLargeLimitCheck (oper, collect_nextCheck)
+             fun mkSignalCheck (limitCheck, collect_nextCheck as {collect, nextCheck}) =
+                case limitCheck of
+                   Zero =>
+                      if needsSignalCheck
+                         then (* force a limitCheck as signalCheck *)
+                              mkSmallLimitCheck collect_nextCheck
+                         else nextCheck
+                 | Small =>
+                      (* signalCheck handled by Small limitCheck *)
+                      nextCheck
+                 | Large _ =>
+                      if needsSignalCheck
+                         orelse (handlesSignals
+                                 andalso signalCheckAtLimitCheck)
+                         then let
+                                 val signalCheck = Label.newString "signalCheck"
+                                 val (statements, transfer) =
+                                    primAppIf (Prim.CPointer_equal,
+                                               Operand.Runtime Limit,
+                                               Operand.null,
+                                               !Control.gcExpect,
+                                               {truee = collect,
+                                                falsee = nextCheck})
+                                 val _ =
+                                    newBlock
+                                    (Block.T {label = signalCheck,
+                                              kind = Kind.Jump,
+                                              args = Vector.new0 (),
+                                              statements = statements,
+                                              transfer = transfer})
+                              in
+                                 signalCheck
+                              end
+                         else nextCheck
+             fun mkStackCheck {collect, nextCheck} =
+                if needsStackCheck
+                   then let
+                           val stackCheck = Label.newString "stackCheck"
+                           val (statements, transfer) =
+                              primAppIf (Prim.CPointer_lt,
+                                         Operand.Runtime StackLimit,
+                                         Operand.Runtime StackTop,
+                                         !Control.gcExpect,
+                                         {truee = collect,
+                                          falsee = nextCheck})
+                           val _ =
+                              newBlock
+                              (Block.T {label = stackCheck,
+                                        kind = Kind.Jump,
+                                        args = Vector.new0 (),
+                                        statements = statements,
+                                        transfer = transfer})
+                        in
+                           stackCheck
+                        end
+                   else nextCheck
+             fun mkChecks limitCheck =
                 let
-                   val b = blockCheckAmount {blockIndex = i}
+                   val {collect, dontCollect} =
+                      mkCollect (case limitCheck of
+                                    Zero => Operand.zero (WordSize.csize())
+                                  | Small => Operand.zero (WordSize.csize())
+                                  | Large oper => oper)
+                   val nextCheck = dontCollect
+                   val nextCheck =
+                      mkSignalCheck (limitCheck,
+                                     {collect = collect,
+                                      nextCheck = nextCheck})
+                   val nextCheck =
+                      mkLimitCheck (limitCheck,
+                                    {collect = collect,
+                                     nextCheck = nextCheck})
+                   val nextCheck =
+                      mkStackCheck {collect = collect,
+                                    nextCheck = nextCheck}
                 in
-                   if Bytes.isZero b
-                      then maybeStack ()
-                   else heapCheckNonZero b
+                   nextCheck
                 end
-             fun bigAllocation (bytesNeeded: Operand.t): unit =
-                let
-                   val extraBytes = blockCheckAmount {blockIndex = i}
-                   val bytes = Var.newNoname ()
-                   val test = Var.newNoname ()
-                   val extraBytes =
-                      SOME (WordX.fromBytes (extraBytes, WordSize.csize ()))
-                      handle Overflow => NONE
-                in
-                   case extraBytes of
-                      NONE => ignore (gotoHeapCheckTooLarge ())
-                    | SOME extraBytes =>
-                         (ignore o newBlock)
-                         (true,
-                          Vector.new2
-                          (Statement.PrimApp
-                           {args = Vector.new2
-                            (Operand.word extraBytes,
-                             bytesNeeded),
-                            dst = SOME (bytes, Type.csize ()),
-                            prim = Prim.Word_add (WordSize.csize ())},
-                           Statement.PrimApp
-                           {args = Vector.new2
-                            (Operand.word extraBytes,
-                             bytesNeeded),
-                            dst = SOME (test, Type.bool),
-                            prim = Prim.Word_addCheckP
-                            (WordSize.csize (),
-                             {signed = false})}),
-                          Transfer.ifBoolE
-                          (Operand.Var {var = test, ty = Type.bool},
-                           !Control.gcExpect,
-                           {falsee = heapCheck (false,
-                                                Operand.Var
-                                                {var = bytes,
-                                                 ty = Type.csize ()}),
-                            truee = heapCheckTooLarge ()}))
-                end
+             fun gotoChecks limitCheck =
+                Transfer.Goto {args = Vector.new0 (), dst = mkChecks limitCheck}
+             fun bigAllocation (blockBytesNeeded, transferBytesNeeded) =
+                if WordX.isZero blockBytesNeeded
+                   then (Vector.new0 (),
+                         gotoChecks (Large transferBytesNeeded))
+                   else let
+                           val bytesNeededVar = Var.newNoname ()
+                           val bytesNeededTy = Type.csize ()
+                           val bytesNeededDst = (bytesNeededVar, bytesNeededTy)
+                           val bytesNeededOper =
+                              Operand.Var {var = bytesNeededVar,
+                                           ty = bytesNeededTy}
+                           val overflowVar = Var.newNoname ()
+                           val overflowTy = Type.bool
+                           val overflowDst = (overflowVar, overflowTy)
+                           val overflowOper =
+                              Operand.Var {var = overflowVar,
+                                           ty = overflowTy}
+                        in
+                           (Vector.new2
+                            (Statement.PrimApp
+                             {args = Vector.new2 (Operand.word blockBytesNeeded,
+                                                  transferBytesNeeded),
+                              dst = SOME bytesNeededDst,
+                              prim = Prim.Word_add (WordSize.csize ())},
+                             Statement.PrimApp
+                             {args = Vector.new2 (Operand.word blockBytesNeeded,
+                                                  transferBytesNeeded),
+                              dst = SOME overflowDst,
+                              prim = Prim.Word_addCheckP (WordSize.csize (),
+                                                          {signed = false})}),
+                            Transfer.ifBoolE
+                            (overflowOper,
+                             !Control.gcExpect,
+                             {falsee = mkChecks (Large bytesNeededOper),
+                              truee = heapCheckTooLarge ()}))
+                        end
+             val (statements, transfer) =
+                Exn.withEscape
+                (fn escape =>
+                 let
+                    val blockBytesNeeded = blockLimitCheckAmount label
+                    val blockBytesNeededAsCSize =
+                       WordX.fromBytes (blockBytesNeeded, WordSize.csize ())
+                       handle Overflow => escape (Vector.new0 (), gotoHeapCheckTooLarge ())
+                 in
+                    case Transfer.bytesAllocated transfer of
+                       BytesAllocated.Dynamic transferBytesNeeded =>
+                          bigAllocation (blockBytesNeededAsCSize, transferBytesNeeded)
+                     | BytesAllocated.Static _ =>
+                          let
+                             val limitCheck =
+                                if Bytes.isZero blockBytesNeeded
+                                   then Zero
+                                else if Bytes.<= (blockBytesNeeded, Runtime.limitSlop)
+                                   then Small
+                                else Large (Operand.word blockBytesNeededAsCSize)
+                          in
+                             case (limitCheck, needsSignalCheck, needsStackCheck) of
+                                (Zero, false, false) => (statements, transfer)
+                              | _ => (Vector.new0 (), gotoChecks limitCheck)
+                          end
+                 end)
           in
-             case Transfer.bytesAllocated transfer of
-                BytesAllocated.Dynamic z => bigAllocation z
-              | BytesAllocated.Static _ => smallAllocation ()
+             newBlock
+             (Block.T {args = args,
+                       kind = kind,
+                       label = label,
+                       statements = statements,
+                       transfer = transfer})
           end)
+      val f =
+         Function.new {args = args,
+                       blocks = Vector.fromList (!newBlocks),
+                       name = name,
+                       raises = raises,
+                       returns = returns,
+                       start = start}
+      val _ = Function.clear f
    in
-      Function.new {args = args,
-                    blocks = Vector.fromList (!newBlocks),
-                    name = name,
-                    raises = raises,
-                    returns = returns,
-                    start = start}
+      f
    end
 
 fun insertPerBlock (f: Function.t, handlesSignals, newFlag, tyconTy) =
    let
       val {blocks, ...} = Function.dest f
-      fun blockCheckAmount {blockIndex} =
-         Block.objectBytesAllocated
-         (Vector.sub (blocks, blockIndex),
-          {tyconTy = tyconTy})
+      val {get = blockLimitCheckAmount, set = setBlockLimitCheckAmount, ...} =
+         Property.getSetOnce
+         (Label.plist,
+          Property.initRaise ("LimitCheck.insertPerBlock.blockCheckLimitAmount", Label.layout))
+      val _ =
+         Vector.foreach
+         (blocks, fn block =>
+          setBlockLimitCheckAmount
+          (Block.label block,
+           Block.objectBytesAllocated
+           (block, {tyconTy = tyconTy})))
    in
-      insertFunction (f, handlesSignals, newFlag, blockCheckAmount, fn _ => Bytes.zero)
+      insertFunction (f, handlesSignals, newFlag, blockLimitCheckAmount, fn _ => Bytes.zero)
    end
 
 structure Graph = DirectedGraph
@@ -808,12 +862,12 @@ fun insertCoalesce (f: Function.t, handlesSignals, newFlag, tyconTy) =
                   end
                ) arg
       end
-      fun blockCheckAmount {blockIndex} =
+      fun blockLimitCheckAmount blockIndex =
          if Array.sub (mayHaveCheck, blockIndex)
             then maxPath blockIndex
          else Bytes.zero
-      val f = insertFunction (f, handlesSignals, newFlag, blockCheckAmount,
-                              maxPath o labelIndex)
+      val blockLimitCheckAmount = blockLimitCheckAmount o labelIndex
+      val ensureFree = maxPath o labelIndex
       val _ =
          Control.diagnostics
          (fn display =>
@@ -823,9 +877,8 @@ fun insertCoalesce (f: Function.t, handlesSignals, newFlag, tyconTy) =
                     in seq [Label.layout label, str " ",
                             Bytes.layout (maxPath (labelIndex label))]
                     end)))
-      val _ = Function.clear f
    in
-      f
+      insertFunction (f, handlesSignals, newFlag, blockLimitCheckAmount, ensureFree)
    end
 
 fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileInfo, statics}) =
