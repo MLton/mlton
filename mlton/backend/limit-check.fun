@@ -866,12 +866,13 @@ fun limitCheckCoalesce (f: Function.t, tyconTy) =
       val _ =
          Control.diagnostics
          (fn display =>
-          Vector.foreach
-          (blocks, fn Block.T {label, ...} =>
-           display (let open Layout
-                    in seq [Label.layout label, str " ",
-                            Bytes.layout (maxPath (labelIndex label))]
-                    end)))
+          (display (Layout.str "Limit Check maxPaths")
+           ; Vector.foreach
+             (blocks, fn Block.T {label, ...} =>
+              display (let open Layout
+                       in seq [Label.layout label, str " ",
+                               Bytes.layout (maxPath (labelIndex label))]
+                       end))))
    in
      (blockLimitCheckAmount, ensureFree)
    end
@@ -880,8 +881,6 @@ fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileI
    let
       fun tyconTy tycon =
          Vector.sub (objectTypes, ObjptrTycon.index tycon)
-
-      val _ = Control.diagnostic (fn () => Layout.str "Limit Check maxPaths")
 
       val (newFlag, finishFlags) =
          let
