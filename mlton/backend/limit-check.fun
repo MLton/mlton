@@ -334,7 +334,8 @@ fun insertFunction (f: Function.t,
 
              val needsStackCheck = Label.equals (start, label)
              val needsSignalCheck = needsSignalCheck label
-             val signalCheckAtLimitCheck = true
+             val signalCheckAtLimitCheck = true (* turn into a Control flag *)
+             val signalCheckAtLimitCheck = signalCheckAtLimitCheck andalso handlesSignals
 
              fun mkSmallLimitCheck {collect, nextCheck} =
                 let
@@ -402,8 +403,7 @@ fun insertFunction (f: Function.t,
                       nextCheck
                  | Large _ =>
                       if needsSignalCheck
-                         orelse (handlesSignals
-                                 andalso signalCheckAtLimitCheck)
+                         orelse signalCheckAtLimitCheck
                          then let
                                  val signalCheck = Label.newString "signalCheck"
                                  val (statements, transfer) =
