@@ -268,7 +268,7 @@ fun insertFunction (f: Function.t,
                                     transfer =
                                     Transfer.ifBoolE
                                     (flag,
-                                     !Control.gcExpect,
+                                     NONE,
                                      {falsee = doneCollect,
                                       truee = collect})})
                             in
@@ -344,7 +344,7 @@ fun insertFunction (f: Function.t,
                       primAppIf (Prim.CPointer_lt,
                                  Operand.Runtime Limit,
                                  Operand.Runtime Frontier,
-                                 !Control.gcExpect,
+                                 !Control.limitCheckExpect,
                                  {truee = collect,
                                   falsee = nextCheck})
                    val _ =
@@ -373,7 +373,7 @@ fun insertFunction (f: Function.t,
                        Prim.Word_lt (WordSize.csize (), {signed = false}),
                        Operand.Var {var = avail, ty = Type.csize ()},
                        amount,
-                       !Control.gcExpect,
+                       !Control.limitCheckExpect,
                        {truee = collect,
                         falsee = nextCheck})
                    val _ =
@@ -432,7 +432,7 @@ fun insertFunction (f: Function.t,
                               primAppIf (Prim.CPointer_lt,
                                          Operand.Runtime StackLimit,
                                          Operand.Runtime StackTop,
-                                         !Control.gcExpect,
+                                         !Control.stackCheckExpect,
                                          {truee = collect,
                                           falsee = nextCheck})
                            val _ =
@@ -502,7 +502,7 @@ fun insertFunction (f: Function.t,
                                                           {signed = false})}),
                             Transfer.ifBoolE
                             (overflowOper,
-                             !Control.gcExpect,
+                             NONE,
                              {falsee = mkChecks (Large bytesNeededOper),
                               truee = heapCheckTooLarge ()}))
                         end

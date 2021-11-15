@@ -238,8 +238,6 @@ signature CONTROL_FLAGS =
        | Every
       val gcCheck: gcCheck ref
 
-      val gcExpect: bool option ref
-
       val globalizeArrays: bool ref
 
       val globalizeRefs: bool ref
@@ -300,6 +298,8 @@ signature CONTROL_FLAGS =
       
       (* name of the output library *)
       val libname : string ref
+
+      val limitCheckExpect: bool option ref
 
       structure LLVMAliasAnalysisMetaData:
          sig
@@ -474,6 +474,8 @@ signature CONTROL_FLAGS =
        | Smart (* split only when smaller than two, default *)
        | Always
       val splitTypesBool: splitTypesBool ref
+
+      val stackCheckExpect: bool option ref
 
       (* List of pass names to stop at. *)
       val stopPasses: Regexp.Compiled.t list ref

@@ -984,10 +984,6 @@ val gcCheck = control {name = "gc check",
                        default = Limit,
                        toString = GcCheck.toString}
 
-val gcExpect = control {name = "gc check expect",
-                        default = NONE,
-                        toString = Option.toString Bool.toString}
-
 val globalizeArrays = control {name = "globalize arrays",
                                default = false,
                                toString = Bool.toString}
@@ -1109,6 +1105,11 @@ val libTargetDir = control {name = "lib target dir",
                             toString = fn s => s} 
 
 val libname = ref ""
+
+
+val limitCheckExpect = control {name = "limit check expect",
+                                default = NONE,
+                                toString = Option.toString Bool.toString}
 
 structure LLVMAliasAnalysisMetaData =
    struct
@@ -1556,6 +1557,10 @@ datatype splitTypesBool = datatype SplitTypesBool.t
 val splitTypesBool = control {name = "bool type splitting method",
                               default = Smart,
                               toString = SplitTypesBool.toString}
+
+val stackCheckExpect = control {name = "stack check expect",
+                                default = NONE,
+                                toString = Option.toString Bool.toString}
 
 val stopPasses = control {name = "stop passes",
                           default = [],
