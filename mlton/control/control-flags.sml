@@ -1520,6 +1520,25 @@ val showTypes = control {name = "show types",
                          default = true,
                          toString = Bool.toString}
 
+structure SignalCheck =
+   struct
+      datatype t =
+         Always
+       | IfHandlesSignals
+      val toString =
+         fn Always => "always"
+          | IfHandlesSignals => "if-handles-signals"
+   end
+val signalCheck = control {name = "signal check",
+                           default = SignalCheck.IfHandlesSignals,
+                           toString = SignalCheck.toString}
+val signalCheckAtLimitCheck = control {name = "signal check at limit check",
+                                       default = true,
+                                       toString = Bool.toString}
+val signalCheckExpect = control {name = "signal check expect",
+                                 default = NONE,
+                                 toString = Option.toString Bool.toString}
+
 structure SplitTypesBool =
    struct
       datatype t =

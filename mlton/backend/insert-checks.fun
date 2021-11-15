@@ -334,8 +334,8 @@ fun insertFunction (f: Function.t,
 
              val needsStackCheck = Label.equals (start, label)
              val needsSignalCheck = needsSignalCheck label
-             val signalCheckAtLimitCheck = true (* turn into a Control flag *)
-             val signalCheckAtLimitCheck = signalCheckAtLimitCheck andalso handlesSignals
+             val signalCheckAtLimitCheck =
+                !Control.signalCheckAtLimitCheck andalso handlesSignals
 
              fun mkSmallLimitCheck {collect, nextCheck} =
                 let
@@ -410,7 +410,7 @@ fun insertFunction (f: Function.t,
                                     primAppIf (Prim.CPointer_equal,
                                                Operand.Runtime Limit,
                                                Operand.null,
-                                               !Control.gcExpect,
+                                               !Control.signalCheckExpect,
                                                {truee = collect,
                                                 falsee = nextCheck})
                                  val _ =
@@ -1002,7 +1002,9 @@ fun transform (Program.T {functions, handlesSignals, main, objectTypes, profileI
                           (f, limitCheckCoalesce (f, tyconTy))
                        end
             val needsSignalCheck =
-               if handlesSignals
+               if (case !Control.signalCheck of
+                      Control.SignalCheck.Always => true
+                    | Control.SignalCheck.IfHandlesSignals => handlesSignals)
                   then signalCheck f
                   else fn (_: Label.t) => false
          in

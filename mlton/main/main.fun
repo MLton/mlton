@@ -830,6 +830,23 @@ fun makeOptions {usage} =
         boolRef showBasisFlat),
        (Normal, "show-def-use", " <file>", "write def-use information",
         SpaceString (fn s => showDefUse := SOME s)),
+       (Expert, "signal-check", " {if-handles-signals|always}", "when to insert signal checks",
+        SpaceString (fn s =>
+                     signalCheck :=
+                     (case s of
+                         "always" => SignalCheck.Always
+                       | "if-handles-signals" => SignalCheck.IfHandlesSignals
+                       | _ => usage (concat ["invalid -signal-check flag: ", s])))),
+       (Expert, "signal-check-at-limit-check", " {true|false}", "whether to force a signal check at a limit check",
+        boolRef signalCheckAtLimitCheck),
+       (Expert, "signal-check-expect", " {none|false|true}", "whether to expect signal checks to trigger a collection",
+        SpaceString (fn s =>
+                     signalCheckExpect :=
+                     (case s of
+                         "false" => SOME false
+                       | "none" => NONE
+                       | "true" => SOME true
+                       | _ => usage (concat ["invalid -signal-check-expect flag: ", s])))),
        (Expert, "show-types", " {true|false}", "show types in ILs",
         boolRef showTypes),
        (Expert, "split-types-bool", " {smart|always|never}",

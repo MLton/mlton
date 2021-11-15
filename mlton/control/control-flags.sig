@@ -459,6 +459,16 @@ signature CONTROL_FLAGS =
       (* Should types be printed in ILs. *)
       val showTypes: bool ref
 
+      structure SignalCheck:
+         sig
+            datatype t =
+               Always
+             | IfHandlesSignals
+         end
+      val signalCheck: SignalCheck.t ref
+      val signalCheckAtLimitCheck: bool ref
+      val signalCheckExpect: bool option ref
+
       datatype splitTypesBool =
          Never
        | Smart (* split only when smaller than two, default *)
