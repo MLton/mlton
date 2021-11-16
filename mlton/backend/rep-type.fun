@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2010,2014,2016-2017,2019-2020 Matthew Fluet.
+(* Copyright (C) 2009-2010,2014,2016-2017,2019-2021 Matthew Fluet.
  * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -97,6 +97,8 @@ structure Type =
       val compareRes = word WordSize.compareRes
 
       val cptrdiff: unit -> t = word o WordSize.cptrdiff
+
+      val csigatomic: unit -> t = word o WordSize.csigatomic
 
       val csize: unit -> t = word o WordSize.csize
 
@@ -608,7 +610,7 @@ fun ofGCField (f: GCField.t): t =
        | Frontier => cpointer ()
        | Limit => cpointer ()
        | LimitPlusSlop => cpointer ()
-       | SignalIsPending => word32
+       | SignalIsPending => csigatomic ()
        | StackBottom => cpointer ()
        | StackLimit => cpointer ()
        | StackTop => cpointer ()

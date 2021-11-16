@@ -1,4 +1,4 @@
-/* Copyright (C) 2019-2020 Matthew Fluet.
+/* Copyright (C) 2019-2021 Matthew Fluet.
  * Copyright (C) 2000-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -58,8 +58,6 @@ static void MLton_callFromC (CPointer localOpArgsResPtr) {              \
         s->callFromCOpArgsResPtr = localOpArgsResPtr;                   \
         GC_setSavedThread (s, GC_getCurrentThread (s));                 \
         s->atomicState += 3;                                            \
-        if (s->signalsInfo.signalIsPending)                             \
-                s->limit = s->limitPlusSlop - GC_HEAP_LIMIT_SLOP;       \
         /* Return to the C Handler thread. */                           \
         GC_switchToThread (s, GC_getCallFromCHandlerThread (s), 0);     \
         jump = getJumpFromStackTop (s);                                 \
@@ -67,8 +65,6 @@ static void MLton_callFromC (CPointer localOpArgsResPtr) {              \
         s->atomicState += 1;                                            \
         GC_switchToThread (s, GC_getSavedThread (s), 0);                \
         s->atomicState -= 1;                                            \
-        if (0 == s->atomicState && s->signalsInfo.signalIsPending)      \
-                s->limit = 0;                                           \
         if (DEBUG_AMD64CODEGEN)                                         \
                 fprintf (stderr, "MLton_callFromC() done\n");           \
         return;                                                         \

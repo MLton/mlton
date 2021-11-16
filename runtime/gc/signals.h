@@ -1,4 +1,4 @@
-/* Copyright (C) 2010,2019 Matthew Fluet.
+/* Copyright (C) 2010,2019,2021 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -17,7 +17,7 @@ struct GC_signalsInfo {
   /* TRUE iff a signal has been received but not handled by the
    * mutator.
    */
-  volatile uint32_t signalIsPending; 
+  volatile sig_atomic_t signalIsPending;
   /* The signals for which a mutator signal handler needs to run in
    * order to handle the signal.
    */

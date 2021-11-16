@@ -1380,51 +1380,8 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                     end
                                | Prim.Thread_atomicBegin =>
                                     (* gcState.atomicState++;
-                                     * if (gcState.signalsInfo.signalIsPending)
-                                     *   gcState.limit = gcState.limitPlusSlop - LIMIT_SLOP;
                                      *)
-                                    split
-                                    (Vector.new0 (), Kind.Jump, ss,
-                                     fn continue =>
-                                     let
-                                        datatype z = datatype GCField.t
-                                        val tmp = Var.newNoname ()
-                                        val size = WordSize.cpointer ()
-                                        val ty = Type.cpointer ()
-                                        fun statements () =
-                                           Vector.new2
-                                           (Statement.PrimApp
-                                            {args = (Vector.new2
-                                                     (Runtime LimitPlusSlop,
-                                                      Operand.word
-                                                      (WordX.fromBytes
-                                                       (Runtime.limitSlop,
-                                                        size)))),
-                                             dst = SOME (tmp, ty),
-                                             prim = Prim.CPointer_sub},
-                                            Statement.Move
-                                            {dst = Runtime Limit,
-                                             src = Var {ty = ty, var = tmp}})
-                                        fun signalIsPending () =
-                                           newBlock
-                                           {args = Vector.new0 (),
-                                            kind = Kind.Jump,
-                                            statements = statements (),
-                                            transfer = (Transfer.Goto
-                                                        {args = Vector.new0 (),
-                                                         dst = continue})}
-                                     in
-                                        (bumpAtomicState 1,
-                                         if handlesSignals
-                                            then
-                                               Transfer.ifBool
-                                               (Runtime SignalIsPending,
-                                                {falsee = continue,
-                                                 truee = signalIsPending ()})
-                                         else
-                                            Transfer.Goto {args = Vector.new0 (),
-                                                           dst = continue})
-                                     end)
+                                    adds (bumpAtomicState 1)
                                | Prim.Thread_atomicEnd =>
                                     (* gcState.atomicState--;
                                      * if (0 == gcState.atomicState
@@ -1467,8 +1424,9 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                             kind = Kind.Jump,
                                             statements = Vector.new0 (),
                                             transfer =
-                                            Transfer.ifBool
+                                            Transfer.ifBoolE
                                             (Runtime SignalIsPending,
+                                             !Control.signalCheckExpect,
                                              {falsee = continue,
                                               truee = switchToHandler ()})}
                                      in

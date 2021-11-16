@@ -1623,6 +1623,7 @@ structure Target =
             val cint = make "cint"
             val cpointer = make "cpointer"
             val cptrdiff = make "cptrdiff"
+            val csigatomic = make "csigatomic"
             val csize = make "csize"
             val header = make "header"
             val mplimb = make "mplimb"

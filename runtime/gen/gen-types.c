@@ -1,4 +1,4 @@
-/* Copyright (C) 2012,2017,2020 Matthew Fluet.
+/* Copyright (C) 2012,2017,2020-2021 Matthew Fluet.
  * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -415,6 +415,10 @@ int main (int argc, char* argv[]) {
     writeNewline (stdout);
     writeStringWithNewline (stdout, tgtCom ("from <resource.h>"));
     chksystype(rlim_t, "RLim");
+
+    writeNewline (stdout);
+    writeStringWithNewline (stdout, tgtCom ("from <signal.h>"));
+    chksystype(sig_atomic_t, "SigAtomic");
 
     writeNewline (stdout);
     writeStringWithNewline (stdout, tgtCom ("from <sys/types.h>"));

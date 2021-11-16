@@ -15,7 +15,7 @@ struct GC_state {
    * size and improve cache performance.
    */
   pointer frontier; /* heap.start <= frontier < limit */
-  volatile pointer limit; /* limit = heap.start + heap.size */
+  pointer limit; /* limit = heap.start + heap.size */
   pointer stackTop; /* Top of stack in current thread. */
   pointer stackLimit; /* stackBottom + stackSize - maxFrameSize */
   ptrdiff_t exnStack;
@@ -25,7 +25,7 @@ struct GC_state {
   bool amOriginal;
   char **atMLtons; /* Initial @MLton args, processed before command line. */
   int atMLtonsLength;
-  volatile uint32_t atomicState;
+  uint32_t atomicState;
   objptr callFromCHandlerThread; /* Handler for exported C calls (in heap). */
   pointer callFromCOpArgsResPtr; /* Pass op, args, and res from exported C call */
   bool canMinor; /* TRUE iff there is space for a minor gc. */
