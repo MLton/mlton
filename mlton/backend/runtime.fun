@@ -63,7 +63,9 @@ structure GCField =
       val layout = Layout.str o toString
 
       val volatile =
-         fn CurSourceSeqIndex => true
+         fn AtomicState => true
+          | CurSourceSeqIndex => true
+          | Limit => true
           | SignalIsPending => true
           | _ => false
    end

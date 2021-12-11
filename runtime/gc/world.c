@@ -86,7 +86,7 @@ int saveWorldToFILE (GC_state s, FILE *f) {
    * be run in the context of a critical section, which will expect to
    * be in the same context when it is restored.
    */
-  if (fwrite (&s->atomicState, sizeof(uint32_t), 1, f) != 1) return -1;
+  if (fwrite ((uint32_t*)(&s->atomicState), sizeof(uint32_t), 1, f) != 1) return -1;
   if (fwrite (&s->callFromCHandlerThread, sizeof(objptr), 1, f) != 1) return -1;
   if (fwrite (&s->currentThread, sizeof(objptr), 1, f) != 1) return -1;
   if (fwrite (&s->signalHandlerThread, sizeof(objptr), 1, f) != 1) return -1;

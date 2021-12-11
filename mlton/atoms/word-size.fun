@@ -1,4 +1,4 @@
-(* Copyright (C) 2019,2021 Matthew Fluet.
+(* Copyright (C) 2019 Matthew Fluet.
  * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -46,7 +46,6 @@ fun bigIntInfWord () = fromBits (Control.Target.Size.mplimb ())
 fun cint () = fromBits (Control.Target.Size.cint ())
 fun cpointer () = fromBits (Control.Target.Size.cpointer ())
 fun cptrdiff () = fromBits (Control.Target.Size.cptrdiff ())
-fun csigatomic () = fromBits (Control.Target.Size.csigatomic ())
 fun csize () = fromBits (Control.Target.Size.csize ())
 fun objptr () = fromBits (Control.Target.Size.objptr ())
 fun objptrHeader () = fromBits (Control.Target.Size.header ())

@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019,2021 Matthew Fluet.
+(* Copyright (C) 2009,2019 Matthew Fluet.
  * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -29,7 +29,6 @@ signature WORD_SIZE =
       val compareRes: t
       val cpointer: unit -> t
       val cptrdiff: unit -> t
-      val csigatomic: unit -> t
       val csize: unit -> t
       val equals: t * t -> bool
       val fromBits: Bits.t -> t

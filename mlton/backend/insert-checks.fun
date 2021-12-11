@@ -391,42 +391,39 @@ fun insertFunction (f: Function.t,
                    Zero => nextCheck
                  | Small => mkSmallLimitCheck collect_nextCheck
                  | Large oper => mkLargeLimitCheck (oper, collect_nextCheck)
-             fun mkSignalCheck (limitCheck, {collect, nextCheck}) =
-                if needsSignalCheck
-                   orelse (signalCheckAtLimitCheck
-                           andalso (case limitCheck of
-                                       Zero => false
-                                     | _ => true))
-                   then let
-                           val atomicStateCheck = Label.newString "atomicStateCheck"
-                           val _ =
-                              newBlock
-                              (Block.T {label = atomicStateCheck,
-                                        kind = Kind.Jump,
-                                        args = Vector.new0 (),
-                                        statements = Vector.new0 (),
-                                        transfer =
-                                        Transfer.ifZero
-                                        (Operand.Runtime AtomicState,
-                                         {truee = collect,
-                                          falsee = nextCheck})})
-                           val signalIsPendingCheck = Label.newString "signalIsPendingCheck"
-                           val _ =
-                              newBlock
-                              (Block.T {label = signalIsPendingCheck,
-                                        kind = Kind.Jump,
-                                        args = Vector.new0 (),
-                                        statements = Vector.new0 (),
-                                        transfer =
-                                        Transfer.ifBoolE
-                                        (Operand.Runtime SignalIsPending,
-                                         !Control.signalCheckExpect,
-                                         {truee = atomicStateCheck,
-                                          falsee = nextCheck})})
-                        in
-                           signalIsPendingCheck
-                        end
-                   else nextCheck
+             fun mkSignalCheck (limitCheck, collect_nextCheck as {collect, nextCheck}) =
+                case limitCheck of
+                   Zero =>
+                      if needsSignalCheck
+                         then (* force a limitCheck as signalCheck *)
+                              mkSmallLimitCheck collect_nextCheck
+                         else nextCheck
+                 | Small =>
+                      (* signalCheck handled by Small limitCheck *)
+                      nextCheck
+                 | Large _ =>
+                      if needsSignalCheck
+                         orelse signalCheckAtLimitCheck
+                         then let
+                                 val signalCheck = Label.newString "signalCheck"
+                                 val (statements, transfer) =
+                                    primAppIf (Prim.CPointer_equal,
+                                               Operand.Runtime Limit,
+                                               Operand.null,
+                                               !Control.signalCheckExpect,
+                                               {truee = collect,
+                                                falsee = nextCheck})
+                                 val _ =
+                                    newBlock
+                                    (Block.T {label = signalCheck,
+                                              kind = Kind.Jump,
+                                              args = Vector.new0 (),
+                                              statements = statements,
+                                              transfer = transfer})
+                              in
+                                 signalCheck
+                              end
+                         else nextCheck
              fun mkStackCheck {collect, nextCheck} =
                 if needsStackCheck
                    then let

@@ -1,4 +1,4 @@
-/* Copyright (C) 2016-2017,2020-2021 Matthew Fluet.
+/* Copyright (C) 2016-2017,2020 Matthew Fluet.
  * Copyright (C) 2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -49,7 +49,6 @@ int main (__attribute__ ((unused)) int argc,
   MkSize (cint, sizeof(C_Int_t));
   MkSize (cpointer, sizeof(C_Pointer_t));
   MkSize (cptrdiff, sizeof(C_Ptrdiff_t));
-  MkSize (csigatomic, sizeof(C_SigAtomic_t));
   MkSize (csize, sizeof(C_Size_t));
   MkSize (header, sizeof(GC_header));
   MkSize (mplimb, sizeof(C_MPLimb_t));

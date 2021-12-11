@@ -502,7 +502,6 @@ signature CONTROL_FLAGS =
                   val cint: unit -> Bits.t
                   val cpointer: unit -> Bits.t
                   val cptrdiff: unit -> Bits.t
-                  val csigatomic: unit -> Bits.t
                   val csize: unit -> Bits.t
                   val header: unit -> Bits.t
                   val mplimb: unit -> Bits.t

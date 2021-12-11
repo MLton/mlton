@@ -1,4 +1,4 @@
-/* Copyright (C) 2019,2021 Matthew Fluet.
+/* Copyright (C) 2019 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -51,16 +51,19 @@ void switchToSignalHandlerThreadIfNonAtomicAndSignalPending (GC_state s) {
   }
 }
 
-/* Signals need to be blocked during the handler (i.e. it should run
- * atomically) because sigaddset does both a read and a write of
- * s->signalsInfo.signalsPending.  The signals are blocked by
- * Posix_Signal_handle (see Posix/Signal/Signal.c).
+/* GC_handler sets s->limit = 0 so that the next limit check will
+ * fail.  Signals need to be blocked during the handler (i.e. it
+ * should run atomically) because sigaddset does both a read and a
+ * write of s->signalsInfo.signalsPending.  The signals are blocked
+ * by Posix_Signal_handle (see Posix/Signal/Signal.c).
  */
 void GC_handler (int signum) {
   GC_state s = MLton_gcState ();
   if (DEBUG_SIGNALS)
     fprintf (stderr, "GC_handler signum = %d\n", signum);
   assert (sigismember (&s->signalsInfo.signalsHandled, signum));
+  if (s->atomicState == 0)
+    s->limit = 0;
   s->signalsInfo.signalIsPending = TRUE;
   sigaddset (&s->signalsInfo.signalsPending, signum);
   if (DEBUG_SIGNALS)
