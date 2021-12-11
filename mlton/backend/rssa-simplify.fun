@@ -27,10 +27,11 @@ val rssaPasses =
     doit = CollectStatics.RealConsts.transform,
     execute = true} ::
    {name = "insertChecks", doit = InsertChecks.transform, execute = true} ::
+   {name = "rssaShrink2", doit = S.shrink, execute = true} ::
    (* must be before implementHandlers *)
    {name = "bounceVars", doit = BounceVars.transform, execute = true} ::
    {name = "implementHandlers", doit = ImplementHandlers.transform, execute = true} ::
-   {name = "rssaShrink2", doit = S.shrink, execute = true} ::
+   {name = "rssaShrink3", doit = S.shrink, execute = true} ::
    {name = "implementProfiling", doit = ImplementProfiling.transform, execute = true} ::
    {name = "rssaOrderFunctions", doit = Program.orderFunctions, execute = true} ::
    {name = "rssaShuffle", doit = Program.shuffle, execute = false} ::
