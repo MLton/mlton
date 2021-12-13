@@ -1063,17 +1063,19 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                     val atomicState = Runtime GCField.AtomicState
                                     val res = Var.newNoname ()
                                     val resTy = Operand.ty atomicState
+                                    val resOper = Var {ty = resTy, var = res}
                                  in
-                                    [Statement.PrimApp
-                                     {args = (Vector.new2
-                                              (atomicState,
-                                               (Operand.word
-                                                (WordX.fromInt (n, WordSize.word32))))),
-                                      dst = SOME (res, resTy),
-                                      prim = Prim.Word_add WordSize.word32},
-                                     Statement.Move
-                                     {dst = atomicState,
-                                      src = Var {ty = resTy, var = res}}]
+                                    ([Statement.PrimApp
+                                      {args = (Vector.new2
+                                               (atomicState,
+                                                (Operand.word
+                                                 (WordX.fromInt (n, WordSize.word32))))),
+                                       dst = SOME (res, resTy),
+                                       prim = Prim.Word_add WordSize.word32},
+                                      Statement.Move
+                                      {dst = atomicState,
+                                       src = resOper}],
+                                     resOper)
                                  end
                               fun ccall {args: Operand.t vector,
                                          func: CFunction.t} =
@@ -1388,33 +1390,38 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                      fn continue =>
                                      let
                                         datatype z = datatype GCField.t
-                                        val tmp = Var.newNoname ()
-                                        val size = WordSize.cpointer ()
-                                        val ty = Type.cpointer ()
-                                        fun statements () =
-                                           Vector.new2
-                                           (Statement.PrimApp
-                                            {args = (Vector.new2
-                                                     (Runtime LimitPlusSlop,
-                                                      Operand.word
-                                                      (WordX.fromBytes
-                                                       (Runtime.limitSlop,
-                                                        size)))),
-                                             dst = SOME (tmp, ty),
-                                             prim = Prim.CPointer_sub},
-                                            Statement.Move
-                                            {dst = Runtime Limit,
-                                             src = Var {ty = ty, var = tmp}})
                                         fun signalIsPending () =
-                                           newBlock
-                                           {args = Vector.new0 (),
-                                            kind = Kind.Jump,
-                                            statements = statements (),
-                                            transfer = (Transfer.Goto
-                                                        {args = Vector.new0 (),
-                                                         dst = continue})}
+                                           let
+                                              val tmp = Var.newNoname ()
+                                              val size = WordSize.cpointer ()
+                                              val ty = Type.cpointer ()
+                                           in
+                                              newBlock
+                                              {args = Vector.new0 (),
+                                               kind = Kind.Jump,
+                                               statements =
+                                               Vector.new2
+                                               (Statement.PrimApp
+                                                {args = (Vector.new2
+                                                         (Runtime LimitPlusSlop,
+                                                          Operand.word
+                                                          (WordX.fromBytes
+                                                           (Runtime.limitSlop,
+                                                            size)))),
+                                                 dst = SOME (tmp, ty),
+                                                 prim = Prim.CPointer_sub},
+                                                Statement.Move
+                                                {dst = Runtime Limit,
+                                                 src = Var {ty = ty, var = tmp}}),
+                                               transfer =
+                                               Transfer.Goto
+                                               {args = Vector.new0 (),
+                                                dst = continue}}
+                                           end
+                                        val (bumpAtomicStateStmts, _) =
+                                           bumpAtomicState 1
                                      in
-                                        (bumpAtomicState 1,
+                                        (bumpAtomicStateStmts,
                                          if handlesSignals
                                             then
                                                Transfer.ifBool
@@ -1426,8 +1433,9 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                                            dst = continue})
                                      end)
                                | Prim.Thread_atomicEnd =>
-                                    (* gcState.atomicState--;
-                                     * if (0 == gcState.atomicState
+                                    (* tmp = gcState.atomicState - 1;
+                                     * gcState.atomicState = tmp;
+                                     * if (0 == tmp
                                      *     and gcState.signalsInfo.signalIsPending)
                                      *   gc;
                                      *)
@@ -1471,12 +1479,14 @@ fun convert (program as S.Program.T {functions, globals, main, ...},
                                             (Runtime SignalIsPending,
                                              {falsee = continue,
                                               truee = switchToHandler ()})}
+                                        val (bumpAtomicStateStmts, bumpAtomicStateTmp) =
+                                           bumpAtomicState ~1
                                      in
-                                        (bumpAtomicState ~1,
+                                        (bumpAtomicStateStmts,
                                          if handlesSignals
                                             then
                                                Transfer.ifZero
-                                               (Runtime AtomicState,
+                                               (bumpAtomicStateTmp,
                                                 {falsee = continue,
                                                  truee = testSignalIsPending ()})
                                          else
