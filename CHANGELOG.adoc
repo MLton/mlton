@@ -8,6 +8,10 @@ Here are the changes from version 20210117 to YYYYMMDD.
 
 === Details
 
+* 2021-12-17
+  ** Fix mismatch in C and SML types for some `_import`-ed runtime
+     functions.
+
 * 2021-10-21
   ** Migrate website sources from http://asciidoc.org/[AsciiDoc] to
   http://asciidoctor.org/[AsciiDoctor].
