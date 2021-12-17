@@ -108,7 +108,8 @@ signature MACHINE =
              | Label of Label.t
              | Offset of {base: t,
                           offset: Bytes.t,
-                          ty: Type.t}
+                          ty: Type.t,
+                          volatile: bool}
              | SequenceOffset of {base: t,
                                   index: t,
                                   offset: Bytes.t,

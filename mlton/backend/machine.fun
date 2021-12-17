@@ -286,7 +286,8 @@ structure Operand =
        | Label of Label.t
        | Offset of {base: t,
                     offset: Bytes.t,
-                    ty: Type.t}
+                    ty: Type.t,
+                    volatile: bool}
        | SequenceOffset of {base: t,
                             index: t,
                             offset: Bytes.t,
@@ -331,8 +332,8 @@ structure Operand =
              | GCState => str "<GCState>"
              | Global g => Global.layout g
              | Label l => Label.layout l
-             | Offset {base, offset, ty} =>
-                  seq [str (concat ["O", Type.name ty, " "]),
+             | Offset {base, offset, ty, volatile} =>
+                  seq [str (concat ["O", if volatile then "V" else "", Type.name ty, " "]),
                        tuple [layout base, Bytes.layout offset],
                        constrain ty]
              | SequenceOffset {base, index, offset, scale, ty} =>
@@ -370,7 +371,8 @@ structure Operand =
       fun gcField field =
          Offset {base = GCState,
                  offset = Runtime.GCField.offset field,
-                 ty = Type.ofGCField field}
+                 ty = Type.ofGCField field,
+                 volatile = Runtime.GCField.volatile field}
 
       val stackOffset = StackOffset o StackOffset.T
 
@@ -472,7 +474,8 @@ structure Statement =
              (* OW(dst, -GC_HEADER_SIZE) = header; *)
              Move {dst = Offset {base = dst,
                                  offset = headerOffset,
-                                 ty = Type.objptrHeader ()},
+                                 ty = Type.objptrHeader (),
+                                 volatile = false},
                    src = header},
              (* Frontier += size; *)
              PrimApp {args = Vector.new2 (Frontier, bytes size),
@@ -506,17 +509,20 @@ structure Statement =
              (* OW(dst, -(GC_HEADER_SIZE + GC_SEQUENCE_LENGTH_SIZE + GC_SEQUENCE_COUNTER_SIZE)) = 0x0; *)
              Move {dst = Offset {base = dst,
                                  offset = counterOffset,
-                                 ty = Type.seqIndex ()},
+                                 ty = Type.seqIndex (),
+                                 volatile = false},
                    src = counter},
              (* OW(dst, -(GC_HEADER_SIZE + GC_SEQUENCE_LENGTH_SIZE)) = length; *)
              Move {dst = Offset {base = dst,
                                  offset = lengthOffset,
-                                 ty = Type.seqIndex ()},
+                                 ty = Type.seqIndex (),
+                                 volatile = false},
                    src = length},
              (* OW(dst, -GC_HEADER_SIZE) = header; *)
              Move {dst = Offset {base = dst,
                                  offset = headerOffset,
-                                 ty = Type.objptrHeader ()},
+                                 ty = Type.objptrHeader (),
+                                 volatile = false},
                    src = header},
              (* Frontier += size; *)
              PrimApp {args = Vector.new2 (Frontier, bytes size),
@@ -1208,7 +1214,7 @@ structure Program =
                            (let val _ = labelBlock l
                             in true
                             end handle _ => false)
-                      | Offset {base, offset, ty} =>
+                      | Offset {base, offset, ty, volatile = _} =>
                            (checkOperand (base, alloc)
                             ; (Type.offsetIsOk
                                {base = Operand.ty base,

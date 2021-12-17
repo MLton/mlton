@@ -248,10 +248,14 @@ structure LLVM =
                                 ", ", Type.toString srcTy, " ", src],
                 (AList.appends o List.map)
                 (args, fn (arg, argTy) => AList.fromList [", ", Type.toString argTy, " ", arg]))
-            fun load {dst = (dst, dstTy), src = (src, srcTy)} =
-               AList.fromList [dst, " = load ", Type.toString dstTy, ", ", Type.toString srcTy, " ", src]
-            fun store {dst = (dst, dstTy), src = (src, srcTy)} =
-               AList.fromList ["store ", Type.toString srcTy, " ", src,  ", ", Type.toString dstTy, " ", dst]
+            fun load' {dst = (dst, dstTy), src = (src, srcTy), volatile} =
+               AList.fromList [dst, " = load ", if volatile then "volatile " else "",
+                               Type.toString dstTy, ", ", Type.toString srcTy, " ", src]
+            fun load {dst, src} = load' {dst = dst, src = src, volatile = false}
+            fun store' {dst = (dst, dstTy), src = (src, srcTy), volatile} =
+               AList.fromList ["store ", if volatile then "volatile " else "",
+                               Type.toString srcTy, " ", src,  ", ", Type.toString dstTy, " ", dst]
+            fun store {dst, src} = store' {dst = dst, src = src, volatile = false}
 
             (* conversion *)
             fun convop {dst = (dst, dstTy), oper, src = (src, srcTy)} =
@@ -1075,9 +1079,9 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
 
             fun operandToLValue oper =
                let
-                  val addr =
+                  val (addr, volatile) =
                      case oper of
-                        Operand.Frontier => frontierVar
+                        Operand.Frontier => (frontierVar, false)
                       | Operand.Global g =>
                            let
                               val ty = Global.ty g
@@ -1088,9 +1092,9 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                               val _ = $(gep {dst = res, src = globalVal (ty, mc),
                                              args = [LLVM.Value.zero WordSize.word32, index]})
                            in
-                              res
+                              (res, false)
                            end
-                      | Operand.Offset {base, offset, ty} =>
+                      | Operand.Offset {base, offset, ty, volatile} =>
                            let
                               val base = operandToRValue base
                               val offset = LLVM.Value.word (WordX.fromBytes (offset, WordSize.word32))
@@ -1099,7 +1103,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                               val _ = $(gep {dst = tmp, src = base, args = [offset]})
                               val _ = $(cast {dst = res, src = tmp})
                            in
-                              res
+                              (res, volatile)
                            end
                       | Operand.SequenceOffset {base, index, offset, scale, ty} =>
                            let
@@ -1117,7 +1121,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                               val _ = $(gep {dst = tmp3, src = tmp2, args = [offset]})
                               val _ = $(cast {dst = res, src = tmp3})
                            in
-                              res
+                              (res, false)
                            end
                       | Operand.StackOffset (StackOffset.T {offset, ty}) =>
                            let
@@ -1131,15 +1135,15 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                                       (offset, WordSize.word32))]})
                               val _ = $(cast {dst = res, src = addr})
                            in
-                              res
+                              (res, false)
                            end
-                      | Operand.StackTop => stackTopVar
-                      | Operand.Temporary t => temporaryVar (Temporary.ty t, Temporary.index t)
+                      | Operand.StackTop => (stackTopVar, false)
+                      | Operand.Temporary t => (temporaryVar (Temporary.ty t, Temporary.index t), false)
                       | _ => Error.bug ("LLVMCodegen.operandToLValue: " ^ Operand.toString oper)
                   val aamd = aamd (oper, mc)
                in
-                  (fn {dst} => addMetaData (load {dst = dst, src = addr}, aamd),
-                   fn {src} => addMetaData (store {dst = addr, src = src}, aamd))
+                  (fn {dst} => addMetaData (load' {dst = dst, src = addr, volatile = volatile}, aamd),
+                   fn {src} => addMetaData (store' {dst = addr, src = src, volatile = volatile}, aamd))
                end
             and operandToRValue oper =
                let

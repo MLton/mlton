@@ -1,4 +1,4 @@
-(* Copyright (C) 2019-2020 Matthew Fluet.
+(* Copyright (C) 2019-2021 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -60,8 +60,7 @@ bounce-vars.fun
 collect-statics.fun
 implement-handlers.fun
 implement-profiling.fun
-limit-check.fun
-signal-check.fun
+insert-checks.fun
 rssa-simplify.sig
 rssa-simplify.fun
 rssa.sig

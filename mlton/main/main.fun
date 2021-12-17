@@ -436,6 +436,8 @@ fun makeOptions {usage} =
         boolRef expert),
        (Normal, "export-header", " <file>", "write C header file for _export's",
         SpaceString (fn s => exportHeader := SOME s)),
+       (Normal, "force-handles-signals", " {false|true}", "force checks for signals",
+        boolRef forceHandlesSignals),
        (Expert, "format",
         concat [" {",
                 String.concatWith
@@ -459,14 +461,6 @@ fun makeOptions {usage} =
                        | "first" => First
                        | "every" => Every
                        | _ => usage (concat ["invalid -gc-check flag: ", s])))),
-       (Expert, "gc-expect", " {none|false|true}", "GC expect",
-        SpaceString (fn s =>
-                     gcExpect :=
-                     (case s of
-                         "false" => SOME false
-                       | "none" => NONE
-                       | "true" => SOME true
-                       | _ => usage (concat ["invalid -gc-expect flag: ", s])))),
        (Expert, "globalize-arrays", " {false|true}", "globalize arrays",
         boolRef globalizeArrays),
        (Expert, "globalize-refs", " {true|false}", "globalize refs",
@@ -575,6 +569,14 @@ fun makeOptions {usage} =
                 else usage (concat ["invalid -layout-width arg: ", Int.toString n]))),
        (Expert, "libname", " <basename>", "the name of the generated library",
         SpaceString (fn s => libname := s)),
+       (Expert, "limit-check-expect", " {none|false|true}", "whether to expect limit checks to trigger a collection",
+        SpaceString (fn s =>
+                     limitCheckExpect :=
+                     (case s of
+                         "false" => SOME false
+                       | "none" => NONE
+                       | "true" => SOME true
+                       | _ => usage (concat ["invalid -limit-check-expect flag: ", s])))),
        (Normal, "link-opt", " <opt>", "pass option to linker",
         (SpaceString o tokenizeOpt)
         (fn s => List.push (linkOpts, {opt = s, pred = OptPred.Yes}))),
@@ -828,6 +830,23 @@ fun makeOptions {usage} =
         boolRef showBasisFlat),
        (Normal, "show-def-use", " <file>", "write def-use information",
         SpaceString (fn s => showDefUse := SOME s)),
+       (Expert, "signal-check", " {if-handles-signals|always}", "when to insert signal checks",
+        SpaceString (fn s =>
+                     signalCheck :=
+                     (case s of
+                         "always" => SignalCheck.Always
+                       | "if-handles-signals" => SignalCheck.IfHandlesSignals
+                       | _ => usage (concat ["invalid -signal-check flag: ", s])))),
+       (Expert, "signal-check-at-limit-check", " {true|false}", "whether to force a signal check at a limit check",
+        boolRef signalCheckAtLimitCheck),
+       (Expert, "signal-check-expect", " {none|false|true}", "whether to expect signal checks to trigger a collection",
+        SpaceString (fn s =>
+                     signalCheckExpect :=
+                     (case s of
+                         "false" => SOME false
+                       | "none" => NONE
+                       | "true" => SOME true
+                       | _ => usage (concat ["invalid -signal-check-expect flag: ", s])))),
        (Expert, "show-types", " {true|false}", "show types in ILs",
         boolRef showTypes),
        (Expert, "split-types-bool", " {smart|always|never}",
@@ -851,6 +870,14 @@ fun makeOptions {usage} =
          case Control.OptimizationPasses.set {il = "ssa2", passes = s} of
             Result.Yes () => ()
           | Result.No s => usage (concat ["invalid -ssa2-passes arg: ", s]))),
+       (Expert, "stack-check-expect", " {none|false|true}", "whether to expect stack checks to trigger a collection",
+        SpaceString (fn s =>
+                     stackCheckExpect :=
+                     (case s of
+                         "false" => SOME false
+                       | "none" => NONE
+                       | "true" => SOME true
+                       | _ => usage (concat ["invalid -stack-check-expect flag: ", s])))),
        (Normal, "stop", " {f|g|o|tc}", "when to stop",
         SpaceString
         (fn s =>

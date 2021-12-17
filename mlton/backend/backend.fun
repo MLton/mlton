@@ -593,7 +593,8 @@ fun toMachine (rssa: Rssa.Program.t) =
                      then bogusOp ty
                      else M.Operand.Offset {base = base,
                                             offset = offset,
-                                            ty = ty}
+                                            ty = ty,
+                                            volatile = false}
                   end
              | ObjptrTycon opt =>
                   M.Operand.word (ObjptrTycon.toHeader opt)
@@ -654,7 +655,8 @@ fun toMachine (rssa: Rssa.Program.t) =
                      fun mkDst {offset, ty} =
                         M.Operand.Offset {base = dst,
                                           offset = offset,
-                                          ty = ty}
+                                          ty = ty,
+                                          volatile = false}
                   in
                      Vector.concat
                      (M.Statement.object {dst = dst,
@@ -1066,7 +1068,8 @@ fun toMachine (rssa: Rssa.Program.t) =
                               (srcs, R.Operand.ty, fn {offset, ty} =>
                                M.Operand.Offset {base = handlerStackTop,
                                                  offset = offset,
-                                                 ty = ty})
+                                                 ty = ty,
+                                                 volatile = false})
                         in
                            if Vector.isEmpty srcs
                               then (Vector.new0 (), M.Transfer.Raise {raisesTo = raisesTo})

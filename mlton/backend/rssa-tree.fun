@@ -425,23 +425,39 @@ structure Transfer =
       fun foreachUse (t, f) = foldUse (t, (), f o #1)
 
       local
-         fun make i = WordX.fromIntInf (i, WordSize.bool)
+         fun make (i, ws) = WordX.fromIntInf (i, ws)
       in
          fun ifBoolE (test, expect, {falsee, truee}) =
-            Switch (Switch.T
-                    {cases = Vector.new2 ((make 0, falsee), (make 1, truee)),
-                     default = NONE,
-                     expect = Option.map (expect, fn expect => if expect then make 1 else make 0),
-                     size = WordSize.bool,
-                     test = test})
+            let
+               val ws =
+                  case Type.deWord (Operand.ty test) of
+                     NONE => Error.bug "RssaTree.Transfer.ifBoolE: non-Word test type"
+                   | SOME ws => ws
+               val make = fn i => make (i, ws)
+            in
+               Switch (Switch.T
+                       {cases = Vector.new2 ((make 0, falsee), (make 1, truee)),
+                        default = NONE,
+                        expect = Option.map (expect, fn expect => if expect then make 1 else make 0),
+                        size = ws,
+                        test = test})
+            end
          fun ifBool (test, branches) = ifBoolE (test, NONE, branches)
          fun ifZero (test, {falsee, truee}) =
-            Switch (Switch.T
-                    {cases = Vector.new1 (make 0, truee),
-                     default = SOME falsee,
-                     expect = NONE,
-                     size = WordSize.bool,
-                     test = test})
+            let
+               val ws =
+                  case Type.deWord (Operand.ty test) of
+                     NONE => Error.bug "RssaTree.Transfer.ifZero: non-Word test type"
+                   | SOME ws => ws
+               val make = fn i => make (i, ws)
+            in
+               Switch (Switch.T
+                       {cases = Vector.new1 (make 0, truee),
+                        default = SOME falsee,
+                        expect = NONE,
+                        size = ws,
+                        test = test})
+            end
       end
 
       fun replace (t: t, fs as {const: Const.t -> Operand.t,

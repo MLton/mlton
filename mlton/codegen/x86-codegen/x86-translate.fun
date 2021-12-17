@@ -293,7 +293,7 @@ struct
           | Global g => Global.toX86Operand g
           | Label l => 
                Vector.new1 (x86.Operand.immediate_label l, x86MLton.pointerSize)
-          | Offset {base = GCState, offset, ty} =>
+          | Offset {base = GCState, offset, ty, volatile = _} =>
                let
                   val offset = Bytes.toInt offset
                   val ty = Type.toCType ty
@@ -301,7 +301,7 @@ struct
                in
                   Vector.new1 (offset, valOf (x86.Operand.size offset))
                end
-          | Offset {base, offset, ty} =>
+          | Offset {base, offset, ty, volatile = _} =>
                let
                  val offset = Bytes.toInt offset
                  val ty = Type.toCType ty

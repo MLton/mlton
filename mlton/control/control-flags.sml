@@ -933,6 +933,10 @@ val exnHistory = control {name = "exn history",
                           default = false,
                           toString = Bool.toString}
 
+val forceHandlesSignals = control {name = "force handles signals",
+                                   default = false,
+                                   toString = Bool.toString}
+
 structure Format =
    struct
       datatype t =
@@ -979,10 +983,6 @@ datatype gcCheck = datatype GcCheck.t
 val gcCheck = control {name = "gc check",
                        default = Limit,
                        toString = GcCheck.toString}
-
-val gcExpect = control {name = "gc check expect",
-                        default = NONE,
-                        toString = Option.toString Bool.toString}
 
 val globalizeArrays = control {name = "globalize arrays",
                                default = false,
@@ -1105,6 +1105,11 @@ val libTargetDir = control {name = "lib target dir",
                             toString = fn s => s} 
 
 val libname = ref ""
+
+
+val limitCheckExpect = control {name = "limit check expect",
+                                default = NONE,
+                                toString = Option.toString Bool.toString}
 
 structure LLVMAliasAnalysisMetaData =
    struct
@@ -1516,6 +1521,25 @@ val showTypes = control {name = "show types",
                          default = true,
                          toString = Bool.toString}
 
+structure SignalCheck =
+   struct
+      datatype t =
+         Always
+       | IfHandlesSignals
+      val toString =
+         fn Always => "always"
+          | IfHandlesSignals => "if-handles-signals"
+   end
+val signalCheck = control {name = "signal check",
+                           default = SignalCheck.IfHandlesSignals,
+                           toString = SignalCheck.toString}
+val signalCheckAtLimitCheck = control {name = "signal check at limit check",
+                                       default = true,
+                                       toString = Bool.toString}
+val signalCheckExpect = control {name = "signal check expect",
+                                 default = NONE,
+                                 toString = Option.toString Bool.toString}
+
 structure SplitTypesBool =
    struct
       datatype t =
@@ -1533,6 +1557,10 @@ datatype splitTypesBool = datatype SplitTypesBool.t
 val splitTypesBool = control {name = "bool type splitting method",
                               default = Smart,
                               toString = SplitTypesBool.toString}
+
+val stackCheckExpect = control {name = "stack check expect",
+                                default = NONE,
+                                toString = Option.toString Bool.toString}
 
 val stopPasses = control {name = "stop passes",
                           default = [],
