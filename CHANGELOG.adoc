@@ -9,8 +9,10 @@ Here are the changes from version 20210117 to YYYYMMDD.
 === Details
 
 * 2021-12-17
+  ** Fix bug in `ConstantPropagation` with vector literals.  Thanks to
+  Ram Raghunathan for the bug report.
   ** Fix mismatch in C and SML types for some `_import`-ed runtime
-     functions.
+  functions.
 
 * 2021-10-21
   ** Migrate website sources from http://asciidoc.org/[AsciiDoc] to
