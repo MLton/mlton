@@ -1,4 +1,4 @@
-/* Copyright (C) 2012,2014,2019-2020 Matthew Fluet.
+/* Copyright (C) 2012,2014,2019-2021 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -81,17 +81,17 @@ static void setGCStateCurrentHeap (GC_state s,
 
 #if (defined (MLTON_GC_INTERNAL_BASIS)) 
 
-PRIVATE bool GC_getAmOriginal (GC_state s);
-PRIVATE void GC_setAmOriginal (GC_state s, bool b);
-PRIVATE void GC_setControlsMessages (GC_state s, bool b);
-PRIVATE void GC_setControlsSummary (GC_state s, bool b);
-PRIVATE void GC_setControlsRusageMeasureGC (GC_state s, bool b);
+PRIVATE Bool_t GC_getAmOriginal (GC_state s);
+PRIVATE void GC_setAmOriginal (GC_state s, Bool_t b);
+PRIVATE void GC_setControlsMessages (GC_state s, Bool_t b);
+PRIVATE void GC_setControlsSummary (GC_state s, Bool_t b);
+PRIVATE void GC_setControlsRusageMeasureGC (GC_state s, Bool_t b);
 PRIVATE uintmax_t GC_getCumulativeStatisticsBytesAllocated (GC_state s);
 PRIVATE uintmax_t GC_getCumulativeStatisticsNumCopyingGCs (GC_state s);
 PRIVATE uintmax_t GC_getCumulativeStatisticsNumMarkCompactGCs (GC_state s);
 PRIVATE uintmax_t GC_getCumulativeStatisticsNumMinorGCs (GC_state s);
 PRIVATE size_t GC_getCumulativeStatisticsMaxBytesLive (GC_state s);
-PRIVATE void GC_setHashConsDuringGC (GC_state s, bool b);
+PRIVATE void GC_setHashConsDuringGC (GC_state s, Bool_t b);
 PRIVATE size_t GC_getLastMajorStatisticsBytesLive (GC_state s);
 
 PRIVATE pointer GC_getCallFromCHandlerThread (GC_state s);
@@ -109,8 +109,8 @@ PRIVATE struct rusage* GC_getRusageGCAddr (GC_state s);
 
 PRIVATE sigset_t* GC_getSignalsHandledAddr (GC_state s);
 PRIVATE sigset_t* GC_getSignalsPendingAddr (GC_state s);
-PRIVATE void GC_setGCSignalHandled (GC_state s, bool b);
-PRIVATE bool GC_getGCSignalPending (GC_state s);
-PRIVATE void GC_setGCSignalPending (GC_state s, bool b);
+PRIVATE void GC_setGCSignalHandled (GC_state s, Bool_t b);
+PRIVATE Bool_t GC_getGCSignalPending (GC_state s);
+PRIVATE void GC_setGCSignalPending (GC_state s, Bool_t b);
 
 PRIVATE GC_state MLton_gcState ();

@@ -1,4 +1,4 @@
-/* Copyright (C) 2009,2012,2019 Matthew Fluet.
+/* Copyright (C) 2009,2012,2019,2021 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -105,23 +105,23 @@ void setGCStateCurrentHeap (GC_state s,
   assert (hasHeapBytesFree (s, oldGenBytesRequested, nurseryBytesRequested));
 }
 
-bool GC_getAmOriginal (GC_state s) {
-  return s->amOriginal;
+Bool_t GC_getAmOriginal (GC_state s) {
+  return (Bool_t)(s->amOriginal);
 }
-void GC_setAmOriginal (GC_state s, bool b) {
-  s->amOriginal = b;
-}
-
-void GC_setControlsMessages (GC_state s, bool b) {
-  s->controls.messages = b;
+void GC_setAmOriginal (GC_state s, Bool_t b) {
+  s->amOriginal = (bool)b;
 }
 
-void GC_setControlsSummary (GC_state s, bool b) {
-  s->controls.summary = b;
+void GC_setControlsMessages (GC_state s, Bool_t b) {
+  s->controls.messages = (bool)b;
 }
 
-void GC_setControlsRusageMeasureGC (GC_state s, bool b) {
-  s->controls.rusageMeasureGC = b;
+void GC_setControlsSummary (GC_state s, Bool_t b) {
+  s->controls.summary = (bool)b;
+}
+
+void GC_setControlsRusageMeasureGC (GC_state s, Bool_t b) {
+  s->controls.rusageMeasureGC = (bool)b;
 }
 
 uintmax_t GC_getCumulativeStatisticsBytesAllocated (GC_state s) {
@@ -144,8 +144,8 @@ size_t GC_getCumulativeStatisticsMaxBytesLive (GC_state s) {
   return s->cumulativeStatistics.maxBytesLive;
 }
 
-void GC_setHashConsDuringGC (GC_state s, bool b) {
-  s->hashConsDuringGC = b;
+void GC_setHashConsDuringGC (GC_state s, Bool_t b) {
+  s->hashConsDuringGC = (bool)b;
 }
 
 size_t GC_getLastMajorStatisticsBytesLive (GC_state s) {
@@ -206,14 +206,14 @@ sigset_t* GC_getSignalsPendingAddr (GC_state s) {
   return &(s->signalsInfo.signalsPending);
 }
 
-void GC_setGCSignalHandled (GC_state s, bool b) {
-  s->signalsInfo.gcSignalHandled = b;
+void GC_setGCSignalHandled (GC_state s, Bool_t b) {
+  s->signalsInfo.gcSignalHandled = (bool)b;
 }
 
-bool GC_getGCSignalPending (GC_state s) {
-  return (s->signalsInfo.gcSignalPending);
+Bool_t GC_getGCSignalPending (GC_state s) {
+  return (bool)(s->signalsInfo.gcSignalPending);
 }
 
-void GC_setGCSignalPending (GC_state s, bool b) {
-  s->signalsInfo.gcSignalPending = b;
+void GC_setGCSignalPending (GC_state s, Bool_t b) {
+  s->signalsInfo.gcSignalPending = (bool)b;
 }
