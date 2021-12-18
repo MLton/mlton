@@ -1374,7 +1374,7 @@ fun transform (program: Program.t): Program.t =
                 | Prim.Vector_sub => sequenceSub vectorSequence
                 | Prim.Vector_vector =>
                      let
-                        val sequence = Sequence.make (args, Type.deArray resultType)
+                        val sequence = Sequence.make (args, Type.deVector resultType)
                      in
                         new (Vector {sequence = sequence}, resultType)
                      end
