@@ -1,4 +1,4 @@
-## Copyright (C) 2010,2013,2016,2018-2020 Matthew Fluet.
+## Copyright (C) 2010,2013,2016,2018-2021 Matthew Fluet.
  # Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -75,7 +75,7 @@ $(MLTON_OUTPUT): $(SOURCES)
 		-target $(TARGET) -output $(MLTON_OUTPUT)			\
 		$(MLTON_MLB)
 
-ifeq ($(shell (cat control/version_sml.src; echo '$(MLTON_NAME)' '$(MLTON_VERSION)'; if [ -e control/version.sml ]; then cat control/version.sml; fi) | $(SHA1DGST)),$(shell if [ -e control/version_sml.chk ]; then cat control/version_sml.chk; fi))
+ifeq ($(shell ($(CAT) control/version_sml.src; echo '$(MLTON_NAME)' '$(MLTON_VERSION)'; if [ -e control/version.sml ]; then $(CAT) control/version.sml; fi) | $(SHA1DGST)),$(shell if [ -e control/version_sml.chk ]; then $(CAT) control/version_sml.chk; fi))
 control/version.sml: control/version_sml.src
 	touch control/version.sml
 else
@@ -86,7 +86,7 @@ control/version.sml: control/version_sml.src
 		-e "s/MLTON_VERSION/$(MLTON_VERSION)/" \
 		< control/version_sml.src \
 		> control/version.sml
-	(cat control/version_sml.src; echo '$(MLTON_NAME)' '$(MLTON_VERSION)'; cat control/version.sml) | $(SHA1DGST) > control/version_sml.chk
+	($(CAT) control/version_sml.src; echo '$(MLTON_NAME)' '$(MLTON_VERSION)'; $(CAT) control/version.sml) | $(SHA1DGST) > control/version_sml.chk
 endif
 
 front-end/%.lex.sml: front-end/%.lex
@@ -189,7 +189,7 @@ smlnj-mlton: mlton-smlnj.cm control/version.sml $(FRONT_END_SOURCES)
 POLYML := poly
 
 .PHONY: polyml-mlton
-polyml-mlton: mlton-polyml.use $(shell [ -e mlton-polyml.use ] && cat mlton-polyml.use | $(SED) 's/use "\(.*\)";/\1/') control/version.sml $(FRONT_END_SOURCES)
+polyml-mlton: mlton-polyml.use $(shell [ -e mlton-polyml.use ] && $(CAT) mlton-polyml.use | $(SED) 's/use "\(.*\)";/\1/') control/version.sml $(FRONT_END_SOURCES)
 	(									\
 		echo 'use "mlton-polyml.use";';					\
 		echo 'PolyML.export("$(MLTON_OUTPUT)-polyml", Main.mainWrapped);'; \
@@ -199,10 +199,10 @@ polyml-mlton: mlton-polyml.use $(shell [ -e mlton-polyml.use ] && cat mlton-poly
 
 mlton-polyml.use: ../lib/stubs/basis-stubs-for-polyml/sources.use ../lib/stubs/mlton-stubs-for-polyml/sources.use $(shell "$(RUN_MLTON_DEPS)" -stop f ../lib/stubs/mlton-stubs/sources.mlb | $(GREP) 'mlb$$') $(shell "$(RUN_MLTON_DEPS)" -stop f mlton.mlb | $(GREP) 'mlb$$')
 	(									\
-		cat ../lib/stubs/basis-stubs-for-polyml/sources.use |		\
+		$(CAT) ../lib/stubs/basis-stubs-for-polyml/sources.use |		\
 			$(SED) 's|use "\(.*\)";|../lib/stubs/basis-stubs-for-polyml/\1|'; \
 		"$(RUN_MLTON)" -stop f mlton.mlb | $(GREP) -v 'mlb$$' | $(GREP) 'mlyacc'; \
-		cat ../lib/stubs/mlton-stubs-for-polyml/sources.use |		\
+		$(CAT) ../lib/stubs/mlton-stubs-for-polyml/sources.use |		\
 			$(SED) 's|use "\(.*\)";|../lib/stubs/mlton-stubs-for-polyml/\1|'; \
 		"$(RUN_MLTON)" -stop f ../lib/stubs/mlton-stubs/sources.mlb |	\
 			$(GREP) -v 'mlb$$' |					\

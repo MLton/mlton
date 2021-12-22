@@ -553,6 +553,7 @@ REMOTE_ROOT := $(REMOTE_TMP)/mlton-$(MLTON_VERSION)
 REMOTE_BASH := bash
 REMOTE_TAR := $(TAR)
 
+REMOTE_CAT := $(CAT)
 REMOTE_CP := $(CP)
 REMOTE_MKDIR := $(MKDIR)
 REMOTE_RM := $(RM)
@@ -561,7 +562,7 @@ REMOTE_MAKE := make
 REMOTE_MAKEFLAGS :=
 REMOTE_XMAKEFLAGS := CHECK_MLCMD=
 
-REMOTE_PLATFORM := $(shell cat bin/platform | $(SSH) $(REMOTE_MACHINE) "$(REMOTE_BASH) -s")
+REMOTE_PLATFORM := $(shell $(CAT) bin/platform | $(SSH) $(REMOTE_MACHINE) "$(REMOTE_BASH) -s")
 REMOTE_ARCH := $(patsubst HOST_ARCH=%,%,$(filter HOST_ARCH=%,$(REMOTE_PLATFORM)))
 REMOTE_OS := $(patsubst HOST_OS=%,%,$(filter HOST_OS=%,$(REMOTE_PLATFORM)))
 REMOTE_TARGET := $(REMOTE_ARCH)-$(REMOTE_OS)
@@ -626,21 +627,21 @@ remote--gen-bootstrap-compiler-files:
 .PHONY: remote--send-bootstrap-compiler-files
 remote--send-bootstrap-compiler-files:
 	$(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && $(REMOTE_RM) runtime/bootstrap && $(REMOTE_MKDIR) runtime/bootstrap"
-	cat mlton/mlton-bootstrap-$(REMOTE_TARGET).tgz | $(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT)/runtime/bootstrap && $(REMOTE_TAR) xzf -"
+	$(CAT) mlton/mlton-bootstrap-$(REMOTE_TARGET).tgz | $(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT)/runtime/bootstrap && $(REMOTE_TAR) xzf -"
 
 .PHONY: remote--recv-boot-files
 remote--recv-boot-files:
 	$(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && $(REMOTE_RM) boot && $(REMOTE_CP) build boot"
-	$(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && $(REMOTE_TAR) czf - boot" | cat - > "$(LIB)/targets/$(REMOTE_TARGET)/boot.tgz"
+	$(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && $(REMOTE_TAR) czf - boot" | $(CAT) - > "$(LIB)/targets/$(REMOTE_TARGET)/boot.tgz"
 
 .PHONY: remote--send-boot-files
 remote--send-boot-files:
 	$(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && $(REMOTE_RM) boot"
-	cat "$(LIB)/targets/$(REMOTE_TARGET)/boot.tgz" | $(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && $(REMOTE_TAR) xzf -"
+	$(CAT) "$(LIB)/targets/$(REMOTE_TARGET)/boot.tgz" | $(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && $(REMOTE_TAR) xzf -"
 
 .PHONY: remote--recv-binary-release
 remote--recv-binary-release:
-	$(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && cat mlton-$(MLTON_VERSION)-$(MLTON_BINARY_RELEASE).$(REMOTE_ARCH)-$(REMOTE_OS)$(MLTON_BINARY_RELEASE_SUFFIX).tgz" | cat - > mlton-$(MLTON_VERSION)-$(MLTON_BINARY_RELEASE).$(REMOTE_ARCH)-$(REMOTE_OS)$(MLTON_BINARY_RELEASE_SUFFIX).tgz
+	$(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && $(REMOTE_CAT) mlton-$(MLTON_VERSION)-$(MLTON_BINARY_RELEASE).$(REMOTE_ARCH)-$(REMOTE_OS)$(MLTON_BINARY_RELEASE_SUFFIX).tgz" | $(CAT) - > mlton-$(MLTON_VERSION)-$(MLTON_BINARY_RELEASE).$(REMOTE_ARCH)-$(REMOTE_OS)$(MLTON_BINARY_RELEASE_SUFFIX).tgz
 
 .PHONY: remote--rm-root
 remote--rm-root:

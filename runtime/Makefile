@@ -257,13 +257,13 @@ basis-ffi.h: gen/basis-ffi.h
 	$(CP) $< $@
 
 define BASIS_FFI_TEMPLATE
-ifeq ($(shell cat gen/gen-basis-ffi.sml gen/basis-ffi.def gen/$(1) | $(SHA1DGST)),$(shell cat gen/$(1).chk))
+ifeq ($(shell $(CAT) gen/gen-basis-ffi.sml gen/basis-ffi.def gen/$(1) | $(SHA1DGST)),$(shell $(CAT) gen/$(1).chk))
 gen/$(1): gen/gen-basis-ffi.sml gen/basis-ffi.def
 	touch gen/$(1)
 else
 gen/$(1): gen/gen-basis-ffi$(EXE) gen/basis-ffi.def
 	./gen/gen-basis-ffi$(EXE) $(1) < gen/basis-ffi.def > gen/$(1)
-	cat gen/gen-basis-ffi.sml gen/basis-ffi.def gen/$(1) | $(SHA1DGST) > gen/$(1).chk
+	$(CAT) gen/gen-basis-ffi.sml gen/basis-ffi.def gen/$(1) | $(SHA1DGST) > gen/$(1).chk
 endif
 endef
 
