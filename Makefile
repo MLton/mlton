@@ -263,7 +263,7 @@ traced:
 bootstrap-smlnj:
 	$(MAKE) smlnj-mlton
 	$(RM) "$(BIN)/$(MLTON)"
-	$(MAKE) BOOTSTRAP_MLTON=$(MLTON).smlnj all
+	$(MAKE) OLD_MLTON="$(BIN)/$(MLTON).smlnj" all
 	smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | sml 2>&1 1> /dev/null` && $(RM) "$(LIB)/$(MLTON_OUTPUT)-smlnj.$$smlnj_heap_suffix"
 	$(RM) "$(BIN)/$(MLTON).smlnj"
 
@@ -308,7 +308,7 @@ smlnj-mlton-x16:
 bootstrap-polyml:
 	$(MAKE) polyml-mlton
 	$(RM) "$(BIN)/$(MLTON)"
-	$(MAKE) BOOTSTRAP_MLTON=$(MLTON).polyml all
+	$(MAKE) OLD_MLTON="$(BIN)/$(MLTON).polyml" all
 	$(RM) "$(LIB)/$(MLTON)-polyml$(EXE)"
 	$(RM) "$(BIN)/$(MLTON).polyml"
 
