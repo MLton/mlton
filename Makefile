@@ -267,7 +267,7 @@ bootstrap-smlnj:
 	$(MAKE) smlnj-mlton
 	$(RM) "$(BIN)/$(MLTON)"
 	$(MAKE) OLD_MLTON="$(BIN)/$(MLTON).smlnj" all
-	smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | $(SMLNJ) 2>&1 1> /dev/null` && $(RM) "$(LIB)/$(MLTON_OUTPUT)-smlnj.$$smlnj_heap_suffix"
+	$(RM) "$(LIB)/$(MLTON_OUTPUT)-smlnj.$$($(SMLNJ) @SMLsuffix)"
 	$(RM) "$(BIN)/$(MLTON).smlnj"
 
 .PHONY: smlnj-mlton
@@ -275,7 +275,7 @@ smlnj-mlton:
 	$(MAKE) dirs
 	$(MAKE) runtime
 	$(MAKE) -C "$(SRC)/mlton" smlnj-mlton
-	smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | $(SMLNJ) 2>&1 1> /dev/null` && $(CP) "$(SRC)/mlton/$(MLTON_OUTPUT)-smlnj.$$smlnj_heap_suffix" "$(LIB)/"
+	$(CP) "$(SRC)/mlton/$(MLTON_OUTPUT)-smlnj.$$($(SMLNJ) @SMLsuffix)" "$(LIB)/"
 	$(MAKE) script
 	$(MAKE) basis-no-check
 	$(MAKE) libraries-no-check
