@@ -1,4 +1,4 @@
-## Copyright (C) 2009,2013,2018-2020 Matthew Fluet.
+## Copyright (C) 2009,2013,2018-2021 Matthew Fluet.
  # Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -34,7 +34,7 @@ mllex.pdf: doc/mllex.pdf
 	$(CP) doc/mllex.pdf mllex.pdf
 
 DOCS :=
-ifneq ($(shell which $(PDFLATEX) 2> /dev/null),)
+ifeq (true, $(call HAVE_CMD,$(PDFLATEX)))
 DOCS += mllex.pdf
 endif
 
