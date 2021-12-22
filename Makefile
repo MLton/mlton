@@ -167,6 +167,7 @@ script:
 		-e "s;^GMP_INC_DIR=.*;GMP_INC_DIR=\"$(WITH_GMP_INC_DIR)\";" \
 		-e "s;^GMP_LIB_DIR=.*;GMP_LIB_DIR=\"$(WITH_GMP_LIB_DIR)\";" \
 		-e 's/mlton-compile/$(MLTON_OUTPUT)/' \
+		-e "s;^    SMLNJ=.*;    SMLNJ=\"$(SMLNJ)\";" \
 		< "$(SRC)/bin/mlton-script" > "$(BIN)/$(MLTON)"
 	$(CHMOD) a+x "$(BIN)/$(MLTON)"
 	$(CP) "$(SRC)/bin/static-library" "$(LIB)"
@@ -259,12 +260,14 @@ traced:
 
 # smlnj targets
 
+SMLNJ := sml
+
 .PHONY: bootstrap-smlnj
 bootstrap-smlnj:
 	$(MAKE) smlnj-mlton
 	$(RM) "$(BIN)/$(MLTON)"
 	$(MAKE) OLD_MLTON="$(BIN)/$(MLTON).smlnj" all
-	smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | sml 2>&1 1> /dev/null` && $(RM) "$(LIB)/$(MLTON_OUTPUT)-smlnj.$$smlnj_heap_suffix"
+	smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | $(SMLNJ) 2>&1 1> /dev/null` && $(RM) "$(LIB)/$(MLTON_OUTPUT)-smlnj.$$smlnj_heap_suffix"
 	$(RM) "$(BIN)/$(MLTON).smlnj"
 
 .PHONY: smlnj-mlton
@@ -272,7 +275,7 @@ smlnj-mlton:
 	$(MAKE) dirs
 	$(MAKE) runtime
 	$(MAKE) -C "$(SRC)/mlton" smlnj-mlton
-	smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | sml 2>&1 1> /dev/null` && $(CP) "$(SRC)/mlton/$(MLTON_OUTPUT)-smlnj.$$smlnj_heap_suffix" "$(LIB)/"
+	smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | $(SMLNJ) 2>&1 1> /dev/null` && $(CP) "$(SRC)/mlton/$(MLTON_OUTPUT)-smlnj.$$smlnj_heap_suffix" "$(LIB)/"
 	$(MAKE) script
 	$(MAKE) basis-no-check
 	$(MAKE) libraries-no-check
