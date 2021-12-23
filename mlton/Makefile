@@ -159,16 +159,13 @@ endif
 #
 # The following rebuilds the heap file for the SML/NJ compiled version of MLton.
 #
-SMLNJ := sml
+.PHONY: smlnj-mlton
+smlnj-mlton: $(MLTON_OUTPUT_SMLNJ_HEAP)
+
 SMLNJ_CM_SERVERS_NUM := 0
 
-.PHONY: smlnj-mlton
-smlnj-mlton: mlton-smlnj.cm control/version.sml $(FRONT_END_SOURCES)
+$(MLTON_OUTPUT_SMLNJ_HEAP):
 	(									\
-		echo 'SMLofNJ.Internals.GC.messages false;';			\
-		echo '#set CM.Control.verbose false;';				\
-		echo '#set CM.Control.warn_obsolete true;';			\
-		echo 'Control.polyEqWarn := false;';				\
 		echo 'local';							\
 		echo 'fun loop 0 = () | loop n = (CM.Server.start {cmd = (CommandLine.name (), ["@CMslave"]), name = "server" ^ (Int.toString n), pathtrans = NONE, pref = 0}; loop (n - 1));'; \
 		echo 'in';							\
@@ -177,8 +174,16 @@ smlnj-mlton: mlton-smlnj.cm control/version.sml $(FRONT_END_SOURCES)
 		echo 'if (CM.make "mlton-smlnj.cm") handle _ => false';		\
 		echo '   then ()';						\
 		echo '   else OS.Process.exit OS.Process.failure;'; 		\
-		echo 'SMLofNJ.exportFn("$(MLTON_OUTPUT)-smlnj",Main.main);'	\
-	) | "$(SMLNJ)"
+		echo 'SMLofNJ.exportFn("$@",Main.main);'			\
+	) | CM_VERBOSE=false CONTROL_POLY_EQ_WARN=false "$(SMLNJ)"
+
+$(MLTON_OUTPUT_SMLNJ_HEAP).d: control/version.sml $(FRONT_END_SOURCES)
+	@touch $@
+	CM_VERBOSE=false $(SMLNJ_MAKEDEPEND) -n -f $@ mlton-smlnj.cm $(MLTON_OUTPUT_SMLNJ_HEAP) || ($(RM) $@ ; exit 1)
+	CM_VERBOSE=false $(SMLNJ_MAKEDEPEND) -n -f $@ mlton-smlnj.cm $@ || ($(RM) $@ ; exit 1)
+ifneq (,$(findstring smlnj,$(MAKECMDGOALS)))
+-include $(MLTON_OUTPUT_SMLNJ_HEAP).d
+endif
 
 ######################################################################
 

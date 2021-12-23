@@ -267,7 +267,7 @@ bootstrap-smlnj:
 	$(MAKE) smlnj-mlton
 	$(RM) "$(BIN)/$(MLTON)"
 	$(MAKE) OLD_MLTON="$(BIN)/$(MLTON).smlnj" all
-	$(RM) "$(LIB)/$(MLTON_OUTPUT)-smlnj.$$($(SMLNJ) @SMLsuffix)"
+	$(RM) "$(LIB)/$(MLTON_OUTPUT_SMLNJ_HEAP)"
 	$(RM) "$(BIN)/$(MLTON).smlnj"
 
 .PHONY: smlnj-mlton
@@ -275,7 +275,7 @@ smlnj-mlton:
 	$(MAKE) dirs
 	$(MAKE) runtime
 	$(MAKE) -C "$(SRC)/mlton" smlnj-mlton
-	$(CP) "$(SRC)/mlton/$(MLTON_OUTPUT)-smlnj.$$($(SMLNJ) @SMLsuffix)" "$(LIB)/"
+	$(CP) "$(SRC)/mlton/$(MLTON_OUTPUT_SMLNJ_HEAP)" "$(LIB)/"
 	$(MAKE) script
 	$(MAKE) basis-no-check
 	$(MAKE) libraries-no-check
