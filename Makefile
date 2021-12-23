@@ -16,11 +16,11 @@ include $(ROOT)/Makefile.config
 all:
 	$(MAKE) dirs
 	$(MAKE) runtime
-	$(MAKE) compiler CHECK_FIXPOINT=false                     # tools0 + mlton0 -> mlton1
+	$(MAKE) compiler CHECK_FIXPOINT=false                     # mlton0 -> mlton1
 	$(MAKE) script
 	$(MAKE) basis
 	$(MAKE) libraries
-	$(MAKE) tools    CHECK_FIXPOINT=false                     # tools0 + mlton1 -> tools1
+	$(MAKE) tools    CHECK_FIXPOINT=false                     # mlton1 -> tools1
 ifeq (2, $(firstword $(sort $(BOOTSTRAP_STYLE) 2)))
 	$(MAKE) compiler-clean
 	$(MAKE) compiler SELF_COMPILE=true  CHECK_FIXPOINT=false  # tools1 + mlton1 -> mlton2
@@ -581,8 +581,6 @@ remote-bootstrap:
 	$(MAKE) remote--make-script
 	$(MAKE) remote--make-basis
 	$(MAKE) remote--make-libraries
-	$(MAKE) remote--send-mlyacc-yacc-files
-	$(MAKE) remote--make-tools
 	$(MAKE) remote--recv-boot-files
 	$(MAKE) remote--make-clean
 	$(MAKE) remote--send-boot-files
@@ -608,12 +606,6 @@ endif
 remote--send-src:
 	$(SSH) $(REMOTE_MACHINE) "$(REMOTE_RM) $(REMOTE_ROOT) && $(REMOTE_MKDIR) $(REMOTE_ROOT)"
 	$(GIT) archive --format=tar HEAD | $(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && $(REMOTE_TAR) xf -"
-
-.PHONY: remote--send-mlyacc-yacc-files
-remote--send-mlyacc-yacc-files:
-	$(MAKE) -C mlyacc src/yacc.lex.sml src/yacc.grm.sig src/yacc.grm.sml
-	$(TAR) cf - mlyacc/src/yacc.lex.* mlyacc/src/yacc.grm.* | $(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && $(REMOTE_TAR) xf -"
-	$(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && touch mlyacc/src/yacc.lex.* mlyacc/src/yacc.grm.*"
 
 .PHONY: remote--recv-runtime
 remote--recv-runtime:
@@ -665,7 +657,6 @@ $(eval $(call MK_REMOTE_MAKE_TEMPLATE,script))
 $(eval $(call MK_REMOTE_MAKE_TEMPLATE,basis))
 $(eval $(call MK_REMOTE_MAKE_TEMPLATE,libraries))
 $(eval $(call MK_REMOTE_MAKE_TEMPLATE,check))
-$(eval $(call MK_REMOTE_MAKE_TEMPLATE,tools))
 all_REMOTE_XMAKEFLAGS := OLD_MLTON_DIR=$(REMOTE_ROOT)/boot/bin
 $(eval $(call MK_REMOTE_MAKE_TEMPLATE,all))
 binary-release_REMOTE_XMAKEFLAGS := MLTON_BINARY_RELEASE_WITH_DOCS=false

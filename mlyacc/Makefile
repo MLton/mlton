@@ -24,15 +24,36 @@ $(NAME): $(NAME).mlb $(shell "$(RUN_MLTON_DEPS)" -stop f $(NAME).mlb)
 clean:
 	$(SRC)/bin/clean
 
+ifeq (true,$(call HAVE_CMD,$(RUN_MLLEX)))
 src/%.lex.sml: src/%.lex
 	$(RM) $<.*
 	$(RUN_MLLEX) $<
 	$(CHMOD) -w $<.*
+	$(CP) $<.sml $<.sml.boot
+else
+src/%.lex.sml: src/%.lex.sml.boot
+	$(RM) $@
+	$(CP) $< $@
+	$(CHMOD) -w $@
+endif
 
+ifeq (true,$(call HAVE_CMD,$(RUN_MLYACC)))
 src/%.grm.sig src/%.grm.sml: src/%.grm
 	$(RM) $<.*
 	$(RUN_MLYACC) $<
 	$(CHMOD) -w $<.*
+	$(CP) $<.sig $<.sig.boot
+	$(CP) $<.sml $<.sml.boot
+else
+src/%.grm.sig: src/%.grm.sig.boot
+	$(RM) $@
+	$(CP) $< $@
+	$(CHMOD) -w $@
+src/%.grm.sml: src/%.grm.sml.boot
+	$(RM) $@
+	$(CP) $< $@
+	$(CHMOD) -w $@
+endif
 
 
 PDFLATEX := pdflatex

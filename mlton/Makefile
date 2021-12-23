@@ -89,6 +89,7 @@ control/version.sml: control/version_sml.src
 	($(CAT) control/version_sml.src; echo '$(MLTON_NAME)' '$(MLTON_VERSION)'; $(CAT) control/version.sml) | $(SHA1DGST) > control/version_sml.chk
 endif
 
+ifeq (true,$(call HAVE_CMD,$(RUN_MLLEX)))
 front-end/%.lex.sml: front-end/%.lex
 	$(RM) $<.*
 	$(RUN_MLLEX) $<
@@ -98,7 +99,15 @@ front-end/%.lex.sml: front-end/%.lex
 	$(SED) -e 's/in Vector.fromList(List.map g/in Vector.fromList(Pervasive.List.map g/' $<.sml.in > $<.sml
 	$(RM) $<.sml.in
 	$(CHMOD) -w $<.*
+	$(CP) $<.sml $<.sml.boot
+else
+front-end/%.lex.sml: front-end/%.lex.sml.boot
+	$(RM) $@
+	$(CP) $< $@
+	$(CHMOD) -w $@
+endif
 
+ifeq (true,$(call HAVE_CMD,$(RUN_MLYACC)))
 front-end/%.grm.sig front-end/%.grm.sml: front-end/%.grm
 	$(RM) $<.*
 	$(RUN_MLYACC) $<
@@ -108,6 +117,18 @@ front-end/%.grm.sig front-end/%.grm.sml: front-end/%.grm
 	$(SED) -e 's/in Array.fromList(List.map actionRowLookUp actionRowNumbers)/in Array.fromList(Pervasive.List.map actionRowLookUp actionRowNumbers)/' $<.sml.in > $<.sml
 	$(RM) $<.sml.in
 	$(CHMOD) -w $<.*
+	$(CP) $<.sig $<.sig.boot
+	$(CP) $<.sml $<.sml.boot
+else
+front-end/%.grm.sig: front-end/%.grm.sig.boot
+	$(RM) $@
+	$(CP) $< $@
+	$(CHMOD) -w $@
+front-end/%.grm.sml: front-end/%.grm.sml.boot
+	$(RM) $@
+	$(CP) $< $@
+	$(CHMOD) -w $@
+endif
 
 mlton-stubs.mlb: $(shell "$(RUN_MLTON_DEPS)" -stop f ../lib/stubs/mlton-stubs/sources.mlb | $(GREP) 'mlb$$') $(shell "$(RUN_MLTON_DEPS)" -stop f mlton.mlb | $(GREP) 'mlb$$')
 	(									\
