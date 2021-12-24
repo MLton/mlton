@@ -212,18 +212,13 @@ endif
 # The following rebuilds the executable file for the Poly/ML compiled version of
 # MLton.
 #
-POLYML := poly
-
 .PHONY: polyml-mlton
-polyml-mlton: mlton-polyml.use $(shell [ -e mlton-polyml.use ] && $(CAT) mlton-polyml.use | $(SED) 's/use "\(.*\)";/\1/') control/version.sml $(FRONT_END_SOURCES)
-	(									\
-		echo 'use "mlton-polyml.use";';					\
-		echo 'PolyML.export("$(MLTON_OUTPUT)-polyml", Main.mainWrapped);'; \
-	) | "$(POLYML)"
-	$(CC) -o $(MLTON_OUTPUT)-polyml $(MLTON_OUTPUT)-polyml.o -lpolymain -lpolyml
-	$(RM) $(MLTON_OUTPUT)-polyml.o
+polyml-mlton: $(MLTON_OUTPUT)-polyml
 
-mlton-polyml.use: ../lib/stubs/basis-stubs-for-polyml/sources.use ../lib/stubs/mlton-stubs-for-polyml/sources.use $(shell "$(RUN_MLTON_DEPS)" -stop f ../lib/stubs/mlton-stubs/sources.mlb | $(GREP) 'mlb$$') $(shell "$(RUN_MLTON_DEPS)" -stop f mlton.mlb | $(GREP) 'mlb$$')
+$(MLTON_OUTPUT)-polyml: mlton-polyml.sml $(shell [ -e mlton-polyml.sml ] && $(CAT) mlton-polyml.sml | $(GREP) 'use ".*";' | $(SED) 's/use "\(.*\)";/\1/') control/version.sml $(FRONT_END_SOURCES)
+	$(POLYML_POLYC) -o $@ mlton-polyml.sml
+
+mlton-polyml.sml: ../lib/stubs/basis-stubs-for-polyml/sources.use ../lib/stubs/mlton-stubs-for-polyml/sources.use $(shell "$(RUN_MLTON_DEPS)" -stop f ../lib/stubs/mlton-stubs/sources.mlb | $(GREP) 'mlb$$') $(shell "$(RUN_MLTON_DEPS)" -stop f mlton.mlb | $(GREP) 'mlb$$')
 	(									\
 		$(CAT) ../lib/stubs/basis-stubs-for-polyml/sources.use |		\
 			$(SED) 's|use "\(.*\)";|../lib/stubs/basis-stubs-for-polyml/\1|'; \
@@ -240,4 +235,5 @@ mlton-polyml.use: ../lib/stubs/basis-stubs-for-polyml/sources.use ../lib/stubs/m
 			$(GREP) -v 'mlton-stubs' |				\
 			$(GREP) -v 'mlyacc' |					\
 			$(GREP) -v 'call-main.sml';				\
-	) | $(SED) 's|\(.*\)|use "\1";|' > mlton-polyml.use
+	) | $(SED) 's|\(.*\)|use "\1";|' > $@
+	echo "val main = Main.mainWrapped;" >> $@

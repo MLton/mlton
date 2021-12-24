@@ -18,7 +18,7 @@
 /mlton*-compile.trace.exe
 /mlton*-compile-polyml
 /mlton*-compile-polyml.exe
-/mlton-polyml.use
+/mlton-polyml.sml
 /mlton*-compile-smlnj.*-*
 /mlton-stubs.mlb
 /mlton.def-use
