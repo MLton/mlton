@@ -19,7 +19,7 @@ all: 	$(NAME)
 
 RUN_MLTON_COMPILE_XARGS := -default-ann 'sequenceNonUnit warn' -default-ann 'warnUnused true'
 
-$(NAME): $(NAME).mlb $(shell "$(RUN_MLTON_DEPS)" -stop f $(NAME).mlb)
+$(NAME): $(NAME).mlb $(shell $(MLBDEPS) $(NAME).mlb)
 	@echo 'Compiling $(NAME)'
 	"$(RUN_MLTON)" @MLton $(RUN_MLTON_RUNTIME_ARGS) -- $(RUN_MLTON_COMPILE_ARGS) $(RUN_MLTON_COMPILE_XARGS) -target $(TARGET) $(NAME).mlb
 

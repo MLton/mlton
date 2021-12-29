@@ -1,4 +1,4 @@
-## Copyright (C) 2009,2018-2020 Matthew Fluet.
+## Copyright (C) 2009,2018-2021 Matthew Fluet.
  # Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -16,7 +16,7 @@ NAME := mlprof
 
 all:	$(NAME)
 
-$(NAME): $(NAME).mlb $(shell "$(RUN_MLTON_DEPS)" -stop f $(NAME).mlb)
+$(NAME): $(NAME).mlb $(shell $(MLBDEPS) $(NAME).mlb)
 	@echo 'Compiling $(NAME)'
 	"$(RUN_MLTON)" @MLton $(RUN_MLTON_RUNTIME_ARGS) -- $(RUN_MLTON_COMPILE_ARGS) -target $(TARGET) $(NAME).mlb
 

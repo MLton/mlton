@@ -53,7 +53,7 @@ SOURCES :=			\
 	$(MLTON_MLB)		\
 	$(FRONT_END_SOURCES)	\
 	control/version.sml	\
-	$(shell if [ -e $(MLTON_MLB) ]; then "$(RUN_MLTON_DEPS)" -stop f $(MLTON_MLB); fi)
+	$(shell $(MLBDEPS) $(MLTON_MLB))
 
 .PHONY: all
 all: $(MLTON_OUTPUT)
@@ -130,7 +130,7 @@ front-end/%.grm.sml: front-end/%.grm.sml.boot
 	$(CHMOD) -w $@
 endif
 
-mlton-stubs.mlb: $(shell "$(RUN_MLTON_DEPS)" -stop f ../lib/stubs/mlton-stubs/sources.mlb | $(GREP) 'mlb$$') $(shell "$(RUN_MLTON_DEPS)" -stop f mlton.mlb | $(GREP) 'mlb$$')
+mlton-stubs.mlb: $(shell $(MLBDEPS) ../lib/stubs/mlton-stubs/sources.mlb | $(GREP) 'mlb$$') $(shell $(MLBDEPS) mlton.mlb | $(GREP) 'mlb$$')
 	(									\
 		echo '$$(SML_LIB)/basis/unsafe.mlb';				\
 		echo '$$(SML_LIB)/basis/sml-nj.mlb';				\
