@@ -180,6 +180,7 @@ endif
 #
 # The following rebuilds the heap file for the SML/NJ compiled version of MLton.
 #
+ifneq (,$(findstring smlnj,$(MAKECMDGOALS)))
 .PHONY: smlnj-mlton
 smlnj-mlton: $(MLTON_OUTPUT_SMLNJ_HEAP)
 
@@ -202,7 +203,6 @@ $(MLTON_OUTPUT_SMLNJ_HEAP).d: control/version.sml $(FRONT_END_SOURCES)
 	@touch $@
 	CM_VERBOSE=false $(SMLNJ_MAKEDEPEND) -n -f $@ mlton-smlnj.cm $(MLTON_OUTPUT_SMLNJ_HEAP) || ($(RM) $@ ; exit 1)
 	CM_VERBOSE=false $(SMLNJ_MAKEDEPEND) -n -f $@ mlton-smlnj.cm $@ || ($(RM) $@ ; exit 1)
-ifneq (,$(findstring smlnj,$(MAKECMDGOALS)))
 -include $(MLTON_OUTPUT_SMLNJ_HEAP).d
 endif
 
@@ -212,6 +212,7 @@ endif
 # The following rebuilds the executable file for the Poly/ML compiled version of
 # MLton.
 #
+ifneq (,$(findstring polyml,$(MAKECMDGOALS)))
 .PHONY: polyml-mlton
 polyml-mlton: $(MLTON_OUTPUT)-polyml
 
@@ -237,3 +238,4 @@ mlton-polyml.sml: ../lib/stubs/basis-stubs-for-polyml/sources.use ../lib/stubs/m
 			$(GREP) -v 'call-main.sml';				\
 	) | $(SED) 's|\(.*\)|use "\1";|' > $@
 	echo "val main = Main.mainWrapped;" >> $@
+endif
