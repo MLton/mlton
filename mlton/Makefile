@@ -218,17 +218,17 @@ polyml-mlton: $(MLTON_OUTPUT)-polyml
 $(MLTON_OUTPUT)-polyml: mlton-polyml.sml $(shell [ -e mlton-polyml.sml ] && $(CAT) mlton-polyml.sml | $(SED) -n 's/use "\(.*\)";/\1/p') control/version.sml $(FRONT_END_SOURCES)
 	$(POLYML_POLYC) -o $@ mlton-polyml.sml
 
-mlton-polyml.sml: ../lib/stubs/basis-stubs-for-polyml/sources.use ../lib/stubs/mlton-stubs-for-polyml/sources.use $(shell "$(RUN_MLTON_DEPS)" -stop f ../lib/stubs/mlton-stubs/sources.mlb | $(GREP) 'mlb$$') $(shell "$(RUN_MLTON_DEPS)" -stop f mlton.mlb | $(GREP) 'mlb$$')
+mlton-polyml.sml: ../lib/stubs/basis-stubs-for-polyml/sources.use ../lib/stubs/mlton-stubs-for-polyml/sources.use $(shell $(MLBDEPS) ../lib/stubs/mlton-stubs/sources.mlb | $(GREP) 'mlb$$' | $(GREP) -v '$$(SML_LIB)') $(shell $(MLBDEPS) mlton.mlb | $(GREP) 'mlb$$' | $(GREP) -v '$$(SML_LIB)')
 	(									\
 		$(CAT) ../lib/stubs/basis-stubs-for-polyml/sources.use |		\
 			$(SED) 's|use "\(.*\)";|../lib/stubs/basis-stubs-for-polyml/\1|'; \
-		"$(RUN_MLTON)" -stop f mlton.mlb | $(GREP) -v 'mlb$$' | $(GREP) 'mlyacc'; \
+		$(MLBDEPS) mlton.mlb | $(GREP) -v 'mlb$$' | $(GREP) 'mlyacc'; 	\
 		$(CAT) ../lib/stubs/mlton-stubs-for-polyml/sources.use |		\
 			$(SED) 's|use "\(.*\)";|../lib/stubs/mlton-stubs-for-polyml/\1|'; \
-		"$(RUN_MLTON)" -stop f ../lib/stubs/mlton-stubs/sources.mlb |	\
+		$(MLBDEPS) ../lib/stubs/mlton-stubs/sources.mlb |		\
 			$(GREP) -v 'mlb$$' |					\
 			$(GREP) 'mlton-stubs';					\
-		"$(RUN_MLTON)" -stop f mlton.mlb |				\
+		$(MLBDEPS) mlton.mlb |						\
 			$(GREP) -v 'mlb$$' |					\
 			$(GREP) -v 'sml/basis' |				\
 			$(GREP) -v 'targets' |					\
