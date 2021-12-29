@@ -280,8 +280,8 @@ smlnj-mlton:
 	$(MAKE) basis-no-check
 	$(MAKE) libraries-no-check
 	$(SED) \
-		-e 's;doitMLton "$$@";# doitMLton "$$@";' \
-		-e 's;doitPolyML "$$@";# doitPolyML "$$@";' \
+		-e 's;\(doit.* "$$@"\);# \1;' \
+		-e 's;# \(doitSMLNJ "$$@"\);\1;' \
 		< "$(BIN)/$(MLTON)" \
 		> "$(BIN)/$(MLTON).smlnj"
 	$(CHMOD) u+x "$(BIN)/$(MLTON).smlnj"
@@ -325,8 +325,8 @@ polyml-mlton:
 	$(MAKE) basis-no-check
 	$(MAKE) libraries-no-check
 	$(SED) \
-		-e 's;doitMLton "$$@";# doitMLton "$$@";' \
-		-e 's;doitSMLNJ "$$@";# doitSMLNJ "$$@";' \
+		-e 's;\(doit.* "$$@"\);# \1;' \
+		-e 's;# \(doitPolyML "$$@"\);\1;' \
 		< "$(BIN)/$(MLTON)" \
 		> "$(BIN)/$(MLTON).polyml"
 	$(CHMOD) u+x "$(BIN)/$(MLTON).polyml"
