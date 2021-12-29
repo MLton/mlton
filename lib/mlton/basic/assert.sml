@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2021 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a HPND-style license.
@@ -7,7 +8,7 @@
 
 structure Assert: ASSERT =
    struct
-      val debug = MLton.debug orelse (not MLton.isMLton)
+      val debug = MLton.debug (* orelse (not MLton.isMLton) *)
 
       fun fail msg = Error.bug (concat ["assertion failure: ", msg])
 
