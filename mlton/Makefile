@@ -130,19 +130,19 @@ front-end/%.grm.sml: front-end/%.grm.sml.boot
 	$(CHMOD) -w $@
 endif
 
-mlton-stubs.mlb: $(shell $(MLBDEPS) ../lib/stubs/mlton-stubs/sources.mlb | $(GREP) 'mlb$$') $(shell $(MLBDEPS) mlton.mlb | $(GREP) 'mlb$$')
+mlton-stubs.mlb: $(shell $(MLBDEPS) ../lib/stubs/mlton-stubs/sources.mlb | $(GREP) 'mlb$$' | $(GREP) -v '$$(SML_LIB)') $(shell $(MLBDEPS) mlton.mlb | $(GREP) 'mlb$$' | $(GREP) -v '$$(SML_LIB)')
 	(									\
 		echo '$$(SML_LIB)/basis/unsafe.mlb';				\
 		echo '$$(SML_LIB)/basis/sml-nj.mlb';				\
 		echo '$$(SML_LIB)/basis/mlton.mlb';				\
 		echo '$$(SML_LIB)/basis/basis.mlb';				\
-		$(RUN_MLTON) -stop f mlton.mlb |				\
+		$(MLBDEPS) mlton.mlb |						\
 			$(GREP) -v 'mlb$$' |					\
 			$(GREP) 'mlyacc';					\
-		$(RUN_MLTON) -stop f ../lib/stubs/mlton-stubs/sources.mlb |	\
+		$(MLBDEPS) ../lib/stubs/mlton-stubs/sources.mlb |		\
 			$(GREP) -v 'mlb$$' |					\
 			$(GREP) 'mlton-stubs';					\
-		$(RUN_MLTON) -stop f mlton.mlb |				\
+		$(MLBDEPS) mlton.mlb |						\
 			$(GREP) -v 'mlb$$' |					\
 			$(GREP) -v 'sml/basis' |				\
 			$(GREP) -v 'targets' |					\
