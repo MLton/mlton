@@ -16,8 +16,8 @@ MLton is running on and the _target_ as the machine that MLton is
 compiling for.
 
 To build the MLton runtime system for the target, use the
-`remote-add-cross-target` goal of the root `Makefile`; see comments in
-the root `Makefile`.  The `remote-add-cross-target` goal uses `ssh` to
+`remote-add-cross` goal of the root `Makefile`; see comments in
+the root `Makefile`.  The `remote-add-cross` goal uses `ssh` to
 build the runtime system on a remote machine.  Building the runtime
 system requires compiling and executing programs that determine
 characteristics of the platform, which is why it isn't currently
@@ -27,7 +27,7 @@ cross-compiler toolchain.
 Here is an example adding a `sparc-sun-solaris` cross-compile target
 using the remote machine `blade`:
 ----
-% make CROSS_TARGET=sparc-sun-solaris REMOTE_MACHINE=blade remote-add-cross-target
+% make CROSS_TARGET=sparc-sun-solaris REMOTE_MACHINE=blade remote-add-cross
 ----
 
 Once you have both the MLton runtime system and a cross-compiler

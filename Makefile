@@ -478,7 +478,7 @@ endif
 
 ######################################################################
 
-# remote-bootstrap and remote-add-cross-target
+# remote-bootstrap and remote-add-cross
 
 # The `remote-bootstrap` goal automates the process of bootstraping MLton on a
 # remote machine that doesn't have a suitable pre-compiled `mlton` binary.  It
@@ -496,7 +496,7 @@ endif
 #  * build MLton on the remote machine from clean sources using the boot package
 #  * receive the built binary release from the remote machine
 #
-# The `remote-add-cross-target` goal automates the process of adding a cross
+# The `remote-add-cross` goal automates the process of adding a cross
 # compiler target.  It works as follows:
 #  * send the current sources to a remote machine (using ssh)
 #  * build the MLton runtime system on the remote machine
