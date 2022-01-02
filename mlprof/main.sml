@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2022 Matthew Fluet
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -117,7 +118,7 @@ structure AFile =
          else if not (File.canRun afile) then
             userBug "does not run"
          else
-            Process.callWithIn
+            Process.executeWithIn
             (OS.Path.mkAbsolute {path = afile,
                                  relativeTo = OS.FileSys.getDir ()},
              ["@MLton", "show-sources"],
@@ -1020,7 +1021,7 @@ val {parse, usage} =
 
 val die = Process.fail
 
-fun commandLine args =
+fun commandLine (_, args) =
    let
       val rest = parse args
     in
@@ -1068,6 +1069,6 @@ fun commandLine args =
         | Result.Yes _ => usage "wrong number of args"
    end
 
-val main = Process.makeMain commandLine
+val main = CommandLine.make commandLine
 
 end

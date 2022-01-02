@@ -1,4 +1,4 @@
-(* Copyright (C) 2013,2014,2019 Matthew Fluet.
+(* Copyright (C) 2013,2014,2019,2022 Matthew Fluet.
  * Copyright (C) 2009 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
@@ -14,8 +14,8 @@ struct
 type int = Int.t
 
 fun usage msg =
-   Process.usage {usage = "[-mlkit] [-mlton </path/to/mlton>] [-mosml] [-poly] [-smlnj] bench1 bench2 ...",
-                  msg = msg}
+   CommandLine.usage {usage = "[-mlkit] [-mlton </path/to/mlton>] [-mosml] [-poly] [-smlnj] bench1 bench2 ...",
+                      msg = msg}
 
 val doOnce = ref false
 val doWiki = ref false
@@ -62,7 +62,7 @@ fun timeIt ca =
    (fn () =>
     case ca of
        Explicit {args, com} =>
-          Process.wait (Process.spawnp {file = com, args = com :: args})
+          Process.waitChildPid (Process.spawnp {file = com, args = com :: args})
      | Shell ss => List.foreach (ss, Process.system))
    
 local
@@ -146,6 +146,37 @@ val benchCount =
 
 val default_main = (fn bench => concat ["val _ = Main.doit ", benchCount bench, "\n"])
 
+local
+(*
+ * text    data     bss     dec     hex filename
+ * 3272995       818052   24120 4115167  3ecadf mlton
+ *)
+fun size (f: File.t): {text: int, data: int, bss: int}  =
+   let
+      val fail = fn () => Process.fail (concat ["size failed on ", f])
+   in
+      File.withTemp
+      (fn sizeRes =>
+       let
+          val _ = Process.system (concat ["size ", f, ">", sizeRes])
+       in
+          File.withIn
+          (sizeRes, fn ins =>
+           case In.lines ins of
+              [_, nums] =>
+                 (case String.tokens (nums, Char.isSpace) of
+                     text :: data :: bss :: _ =>
+                        (case (Int.fromString text,
+                               Int.fromString data,
+                               Int.fromString bss) of
+                            (SOME text, SOME data, SOME bss) =>
+                               {text = text, data = data, bss = bss}
+                          | _ => fail ())
+                   | _ => fail ())
+            | _ => fail ())
+       end)
+   end
+in
 fun compileSizeRun {command, exe, doTextPlusData: bool} =
    Escape.new
    (fn e =>
@@ -160,7 +191,7 @@ fun compileSizeRun {command, exe, doTextPlusData: bool} =
           if doTextPlusData
              then
                 let 
-                   val {text, data, ...} = Process.size exe
+                   val {text, data, ...} = size exe
                 in SOME (Position.fromInt (text + data))
                 end
           else SOME (File.size exe)
@@ -173,6 +204,7 @@ fun compileSizeRun {command, exe, doTextPlusData: bool} =
         run = SOME run,
         size = size}
     end)
+end
 
 fun batch_ {abbrv, bench} =
    let
@@ -261,7 +293,7 @@ val njSuffix =
               fn input =>
               withInput
               (input, fn () =>
-               Process.wait (Process.spawnp {file = sml, args = [sml]})))
+               Process.waitChildPid (Process.spawnp {file = sml, args = [sml]})))
              ; In.withClose (In.openIn tmp, In.inputAll)))
     in
        suffix
@@ -328,7 +360,7 @@ type 'a data = {bench: string,
                 compiler: string,
                 value: 'a} list
 
-fun main args =
+fun main (_, args) =
    let
       val compilers: {name: string,
                       abbrv: string,
@@ -693,6 +725,6 @@ fun main args =
             end
    end
 
-val main = Process.makeMain main
+val main = CommandLine.make main
 
 end

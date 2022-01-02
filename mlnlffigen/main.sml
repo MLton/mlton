@@ -1,4 +1,4 @@
-(* Copyright (C) 2020 Matthew Fluet.
+(* Copyright (C) 2020,2022 Matthew Fluet.
  * Copyright (C) 2005-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -121,9 +121,7 @@ val {parse, usage} =
                    makeOptions = makeOptions,
                    showExpert = fn () => !Control.debug}
 
-val die = Process.fail
-
-fun commandLine args =
+fun commandLine (_, args) =
    let
       val rest = parse args
       val () = if Option.isNone (!Control.target)
@@ -136,6 +134,6 @@ fun commandLine args =
         | Result.Yes cfiles => Gen.gen {cfiles = cfiles}
    end
 
-val main = Process.makeMain commandLine
+val main = CommandLine.make commandLine
 
 end

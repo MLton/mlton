@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2022 Matthew Fluet.
+ * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a HPND-style license.
@@ -19,7 +20,5 @@ fun seq(f, g) x = g(f(x))
 fun seq3(f, g, h) x = h(g(f(x)))
 
 fun layout _ = Layout.str "<function>"
-
-fun output(_, out) = Out.output(out, "<function>")
 
 end

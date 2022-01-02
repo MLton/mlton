@@ -1,4 +1,5 @@
-(* Copyright (C) 2005-2009 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2022 Matthew Fluet.
+ * Copyright (C) 2005-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a HPND-style license.
@@ -10,14 +11,15 @@ local
    basis mlton_lib = bas local
       ../lib/mlton/sources.mlb
    in
+      structure CommandLine
       structure File
       structure List
       structure HashSet
       structure MLton
       structure Out
       structure Option
-      structure Process
       structure Popt
+      structure Process
       structure Promise
       structure Result
       structure String

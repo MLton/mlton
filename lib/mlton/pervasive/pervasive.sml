@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2021-2022 Matthew Fluet.
  * Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -13,48 +13,48 @@ structure Pervasive =
       structure Array = Array
       structure Array2 = Array2
       structure Bool = Bool
-      structure Byte = Byte
+      (* structure Byte = Byte *)
       structure Char = Char
-      structure CharArray = CharArray
+      (* structure CharArray = CharArray *)
       structure CharVector = CharVector
-      structure CommandLine = CommandLine
+      (* structure CommandLine = CommandLine *)
       structure Date = Date
       structure General = General
       structure IEEEReal = IEEEReal
       structure Int = Int
       structure IntInf = IntInf
       structure LargeInt = LargeInt
-      structure LargeReal = LargeReal
+      (* structure LargeReal = LargeReal *)
       structure LargeWord = LargeWord
-      structure ListPair = ListPair
+      (* structure ListPair = ListPair *)
       structure List = List
-      structure Math = Math
+      (* structure Math = Math *)
       structure Option = Option
-      structure OS = OS
+      (* structure OS = OS *)
       structure PackReal32Little = PackReal32Little
       structure PackReal64Little = PackReal64Little
       structure PackWord32Little = PackWord32Little
       structure PackWord64Little = PackWord64Little
-      structure Position = Position
+      (* structure Position = Position *)
       structure Posix = Posix
       structure Real = Real
       structure Real32 = Real32
       structure Real64 = Real64
-      structure Socket = Socket
+      (* structure Socket = Socket *)
       structure String = String
-      structure StringCvt = StringCvt
+      (* structure StringCvt = StringCvt *)
       structure Substring = Substring
-      structure SysWord = SysWord
+      (* structure SysWord = SysWord *)
       structure TextIO = TextIO
       structure Time = Time
-      structure Unix = Unix
+      (* structure Unix = Unix *)
       structure Vector = Vector
       structure Word = Word
       structure Word8 = Word8
       structure Word8Array = Word8Array
       structure Word8Vector = Word8Vector
-      structure Word32 = Word32
-      structure Word64 = Word64
+      (* structure Word32 = Word32 *)
+      (* structure Word64 = Word64 *)
 
       type unit = General.unit
       type real = Real.real
