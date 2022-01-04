@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2022 Matthew Fluet.
  *
  * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
@@ -12,4 +12,5 @@ is
 
 $/basis.cm
 
+../../common/mlton-process-via-fork-exec.sml
 mlton.sml

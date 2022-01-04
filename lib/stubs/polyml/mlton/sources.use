@@ -1,1 +1,2 @@
+use "../../common/mlton-process-via-fork-exec.sml";
 use "mlton.sml";

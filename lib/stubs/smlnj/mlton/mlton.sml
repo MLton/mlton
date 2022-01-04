@@ -57,4 +57,5 @@ structure MLton =
                   end
             end
          end
+      structure Process = MLtonProcess
    end

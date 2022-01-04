@@ -28,7 +28,7 @@ functor MkIO (S : sig
    end
 
 (* This file is just a dummy provided in place of the structure that MLton
- * supplies so that we can compile under non-MLton SML compilers.
+ * supplies so that we can compile under old MLtons and non-MLton SML compilers.
  *)
 structure MLton: MLTON =
    struct
@@ -63,16 +63,9 @@ structure MLton: MLTON =
                end
          end
 
-      structure Exn =
-         struct
-            val history = MLton.Exn.history
-         end
+      structure Exn = MLton.Exn
 
-      structure GC =
-         struct
-            val collect = MLton.GC.collect
-            val pack = MLton.GC.pack
-         end
+      structure GC = MLton.GC
 
       structure Platform =
          struct
@@ -169,20 +162,7 @@ structure MLton: MLTON =
 
       structure Process =
          struct
-            type pid = Posix.Process.pid
-
-            fun spawne {path, args, env} =
-               case Posix.Process.fork () of
-                  NONE => Posix.Process.exece (path, args, env)
-                | SOME pid => pid
-
-            fun spawn {path, args} =
-               spawne {path = path, args = args, env = Posix.ProcEnv.environ ()}
-
-            fun spawnp {file, args} =
-               case Posix.Process.fork () of
-                  NONE => Posix.Process.execp (file, args)
-                | SOME pid => pid
+            open MLton.Process
          end
 
       structure Profile =

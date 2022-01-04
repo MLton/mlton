@@ -23,14 +23,8 @@ RUN_MLTON_COMPILE_XARGS += -default-ann 'warnUnused true'
 # We're self-compiling, so don't use any stubs.
 MLTON_MLB := mlton.mlb
 else
-ifneq (, $(findstring $(HOST_OS),cygwin mingw))
-# We're bootstrapping on Cygwin or MinGW; stubs define `spawn` in terms of
-# `fork` and `fork` doesn't work on Cygwin or MinGW, so don't use any stubs.
-MLTON_MLB := mlton.mlb
-else
 # We're bootstrapping, so use stubs.
 MLTON_MLB := mlton-stubs.mlb
-endif
 endif
 
 ## When self-compiling the current MLton sources with `Zone` enabled,
