@@ -750,7 +750,7 @@ ____
 == S
 
  * [[Sansom91]]
- http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.24.1020&rep=rep1&type=ps[Dual-Mode Garbage Collection].
+ http://citeseerx.ist.psu.edu/viewdoc/download?doi=10.1.1.24.1020&rep=rep1&type=pdf[Dual-Mode Garbage Collection].
  Patrick M. Sansom.
  Workshop on the Parallel Implementation of Functional Languages, 1991.
 
