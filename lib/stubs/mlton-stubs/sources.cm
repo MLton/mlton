@@ -13,8 +13,8 @@ structure MLton
 is
 
 #if (defined (SMLNJ_VERSION))
-../basis-stubs-for-smlnj/sources.cm
-../mlton-stubs-for-smlnj/sources.cm
+../smlnj/basis/sources.cm
+../smlnj/mlton/sources.cm
 #endif
 
 io.sig

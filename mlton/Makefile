@@ -1,4 +1,4 @@
-## Copyright (C) 2010,2013,2016,2018-2021 Matthew Fluet.
+## Copyright (C) 2010,2013,2016,2018-2022 Matthew Fluet.
  # Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -219,13 +219,13 @@ polyml-mlton: $(MLTON_OUTPUT)-polyml
 $(MLTON_OUTPUT)-polyml: mlton-polyml.sml $(shell [ -e mlton-polyml.sml ] && $(CAT) mlton-polyml.sml | $(SED) -n 's/use "\(.*\)";/\1/p') control/version.sml $(FRONT_END_SOURCES)
 	$(POLYML_POLYC) -o $@ mlton-polyml.sml
 
-mlton-polyml.sml: ../lib/stubs/basis-stubs-for-polyml/sources.use ../lib/stubs/mlton-stubs-for-polyml/sources.use $(shell $(MLBDEPS) ../lib/stubs/mlton-stubs/sources.mlb | $(GREP) 'mlb$$' | $(GREP) -v '$$(SML_LIB)') $(shell $(MLBDEPS) mlton.mlb | $(GREP) 'mlb$$' | $(GREP) -v '$$(SML_LIB)')
+mlton-polyml.sml: ../lib/stubs/polyml/basis/sources.use ../lib/stubs/polyml/mlton/sources.use $(shell $(MLBDEPS) ../lib/stubs/mlton-stubs/sources.mlb | $(GREP) 'mlb$$' | $(GREP) -v '$$(SML_LIB)') $(shell $(MLBDEPS) mlton.mlb | $(GREP) 'mlb$$' | $(GREP) -v '$$(SML_LIB)')
 	(									\
-		$(CAT) ../lib/stubs/basis-stubs-for-polyml/sources.use |		\
-			$(SED) 's|use "\(.*\)";|../lib/stubs/basis-stubs-for-polyml/\1|'; \
+		$(CAT) ../lib/stubs/polyml/basis/sources.use |			\
+			$(SED) 's|use "\(.*\)";|../lib/stubs/polyml/basis/\1|'; \
 		$(MLBDEPS) mlton.mlb | $(GREP) -v 'mlb$$' | $(GREP) 'mlyacc'; 	\
-		$(CAT) ../lib/stubs/mlton-stubs-for-polyml/sources.use |		\
-			$(SED) 's|use "\(.*\)";|../lib/stubs/mlton-stubs-for-polyml/\1|'; \
+		$(CAT) ../lib/stubs/polyml/mlton/sources.use |			\
+			$(SED) 's|use "\(.*\)";|../lib/stubs/polyml/mlton/\1|'; \
 		$(MLBDEPS) ../lib/stubs/mlton-stubs/sources.mlb |		\
 			$(GREP) -v 'mlb$$' |					\
 			$(GREP) 'mlton-stubs';					\

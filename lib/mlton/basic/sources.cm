@@ -146,7 +146,7 @@ functor UniqueSet
 
 is
 
-../../stubs/basis-stubs-for-smlnj/sources.cm
+../../stubs/smlnj/basis/sources.cm
 ../../stubs/mlton-stubs/sources.cm
 ../pervasive/sources.cm
 
