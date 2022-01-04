@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2022 Matthew Fluet.
+ * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
  * MLton is released under a HPND-style license.
@@ -18,19 +19,19 @@ val equals = fn (T r, T r') => Ref.equals (r, r')
 
 fun clear (T hs) = hs := []
 
-val numPeeks: Int64.int ref = ref 0
-val numLinks: Int64.int ref = ref 0
+val numPeeks: FixedInt.int ref = ref 0
+val numLinks: FixedInt.int ref = ref 0
 val maxLength: int ref = ref 0
 
 fun stats () =
    let open Layout
    in align
-      [seq [str "property list numPeeks = ", str (Int64.toString (!numPeeks))],
-       (* seq [str "property list numLinks = ", str (Int64.toString (!numLinks))], *)
+      [seq [str "property list numPeeks = ", str (FixedInt.toString (!numPeeks))],
+       (* seq [str "property list numLinks = ", str (FixedInt.toString (!numLinks))], *)
        seq [str "property list maxLength = ", Int.layout (!maxLength)],
        seq [str "property list average position = ",
             str let open Real
-                    val fromInt = fromIntInf o Int64.toLarge
+                    val fromInt = fromIntInf o FixedInt.toLarge
                 in format (fromInt (!numLinks) / fromInt (!numPeeks),
                            Format.fix (SOME 3))
                 end]]
@@ -44,7 +45,7 @@ fun 'a newProperty () =
             fun loop (l, n) =
                let
                   fun update () =
-                     ((numLinks := Int64.fromInt n + !numLinks
+                     ((numLinks := FixedInt.fromInt n + !numLinks
                        handle Overflow => Error.bug "PropertyList: numLinks overflow")
                       ; if n > !maxLength
                            then maxLength := n

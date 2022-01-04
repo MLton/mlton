@@ -1,5 +1,5 @@
-use "int.sml";
 use "real.sml";
+use "pack-real.sml";
+use "pack-word.sml";
 use "unsafe.sig";
 use "unsafe.sml";
-use "word.sml";

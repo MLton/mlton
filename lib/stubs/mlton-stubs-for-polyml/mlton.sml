@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019 Matthew Fluet.
+(* Copyright (C) 2009,2019,2022 Matthew Fluet.
  * Copyright (C) 2004-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -16,7 +16,6 @@ structure MLton =
       structure GC =
          struct
             fun collect () = PolyML.fullGC ()
-            fun setMessages (b : bool) = ()
             fun pack () = collect ()
          end
       structure Platform =
