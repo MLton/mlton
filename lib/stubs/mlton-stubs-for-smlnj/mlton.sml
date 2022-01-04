@@ -16,7 +16,6 @@ structure MLton =
       structure GC =
          struct
             fun collect () = SMLofNJ.Internals.GC.doGC 8
-            fun setMessages b = SMLofNJ.Internals.GC.messages b
             fun pack () = collect ()
          end
       structure Platform =

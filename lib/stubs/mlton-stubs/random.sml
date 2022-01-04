@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2022 Matthew Fluet.
  * Copyright (C) 2002-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -47,8 +47,8 @@ structure MLtonRandom: MLTON_RANDOM =
                    handle OS.SysErr _ => NONE)
             end
       in
-         val seed = make ("/dev/random", "Random.seed")
-         val useed = make ("/dev/urandom", "Random.useed")
+         val seed = make ("/dev/random", "MLton.Random.seed")
+         val useed = make ("/dev/urandom", "MLton.Random.useed")
       end
 
       local
