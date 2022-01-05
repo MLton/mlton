@@ -1,4 +1,4 @@
-(* Copyright (C) 2010-2011,2013-2014,2017,2019,2021 Matthew Fluet.
+(* Copyright (C) 2010-2011,2013-2014,2017,2019,2021-2022 Matthew Fluet.
  * Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -147,98 +147,20 @@ structure Platform =
    struct
       structure Arch =
          struct
-            datatype t =
-               Alpha
-             | AMD64
-             | ARM
-             | ARM64
-             | HPPA
-             | IA64
-             | m68k
-             | MIPS
-             | PowerPC
-             | PowerPC64
-             | RISCV
-             | S390
-             | Sparc
-             | X86
-
-            val host: t =
-               case _const "MLton_Platform_Arch_host": String8.string; of
-                  "alpha" => Alpha
-                | "amd64" => AMD64
-                | "arm" => ARM
-                | "arm64" => ARM64
-                | "hppa" => HPPA
-                | "ia64" => IA64
-                | "m68k" => m68k
-                | "mips" => MIPS
-                | "powerpc" => PowerPC
-                | "powerpc64" => PowerPC64
-                | "riscv" => RISCV
-                | "s390" => S390
-                | "sparc" => Sparc
-                | "x86" => X86
-                | _ => raise Primitive.Exn.Fail8 "strange MLton_Platform_Arch_host"
-
+            val host = _const "MLton_Platform_Arch_host": String8.string;
             val hostIsBigEndian = _const "MLton_Platform_Arch_bigendian": bool;
          end
 
       structure Format =
          struct
-            datatype t =
-               Archive
-             | Executable
-             | LibArchive
-             | Library
-
-            val host: t =
-               case _build_const "MLton_Platform_Format": String8.string; of
-                  "archive" => Archive
-                | "executable" => Executable
-                | "libarchive" => LibArchive
-                | "library" => Library
-                | _ => raise Primitive.Exn.Fail8 "strange MLton_Platform_Format"
+            val host = _build_const "MLton_Platform_Format": String8.string;
          end
 
       structure OS =
          struct
-            datatype t =
-               AIX
-             | Cygwin
-             | Darwin
-             | FreeBSD
-             | Hurd
-             | HPUX
-             | Linux
-             | MinGW
-             | NetBSD
-             | OpenBSD
-             | Solaris
-
-            val host: t =
-               case _const "MLton_Platform_OS_host": String8.string; of
-                  "aix" => AIX
-                | "cygwin" => Cygwin
-                | "darwin" => Darwin
-                | "freebsd" => FreeBSD
-                | "hurd" => Hurd
-                | "hpux" => HPUX
-                | "linux" => Linux
-                | "mingw" => MinGW
-                | "netbsd" => NetBSD
-                | "openbsd" => OpenBSD
-                | "solaris" => Solaris
-                | _ => raise Primitive.Exn.Fail8 "strange MLton_Platform_OS_host"
-
-            val forkIsEnabled =
-               case host of
-                  Cygwin =>
-                     #1 _symbol "MLton_Platform_CygwinUseMmap" private: bool GetSet.t; ()
-                | MinGW => false
-                | _ => true
-
-            val useWindowsProcess = not forkIsEnabled
+            val host = _const "MLton_Platform_OS_host": String8.string;
+            val cygwinUseMmap =
+               #1 _symbol "MLton_Platform_CygwinUseMmap" private: bool GetSet.t;
          end
    end
 

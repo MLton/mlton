@@ -1,4 +1,4 @@
-(* Copyright (C) 2013,2016-2017 Matthew Fluet.
+(* Copyright (C) 2013,2016-2017,2022 Matthew Fluet.
  * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -196,6 +196,10 @@ in
    ../util/CUtil.sig
    ../util/CUtil.sml
 
+   ../mlton/platform.sig
+   ../mlton/platform.sml
+   ../mlton/platform-extra.sml
+
    ../util/unique-id.sig
    ../util/unique-id.fun
    ../util/cleaner.sig
@@ -337,8 +341,6 @@ in
    ../net/unix-sock.sig
    ../net/unix-sock.sml
 
-   ../mlton/platform.sig
-   ../mlton/platform.sml
    ../mlton/array.sig
    ../mlton/cont.sig
    ../mlton/cont.sml
