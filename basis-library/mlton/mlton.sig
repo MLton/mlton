@@ -1,4 +1,4 @@
-(* Copyright (C) 2013,2019 Matthew Fluet.
+(* Copyright (C) 2013,2019,2022 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -9,28 +9,7 @@
 
 signature MLTON =
    sig
-(*      val cleanAtExit: unit -> unit *)
-      val debug: bool
-(*      val deserialize: Word8Vector.vector -> 'a *)
-      (* Pointer equality.  The usual caveats about lack of a well-defined
-       * semantics.
-       *)
-      val eq: 'a * 'a -> bool
-      (* Structural equality.  Equivalent to SML's polymorphic
-       * equality on equality types and a conservative approximation
-       * of equivalence other types.
-       *)
-      val equal: 'a * 'a -> bool
-      (* Structural hash. *)
-      val hash: 'a -> Word32.word
-(*      val errno: unit -> int *) (* the value of the C errno global *)
-      val isMLton: bool
-      val safe: bool
-(*      val serialize: 'a -> Word8Vector.vector *)
-      val share: 'a -> unit
-      val shareAll: unit -> unit
-      val size: 'a -> IntInf.int
-      val sizeAll: unit -> IntInf.int
+      include MLTON_ROOT
 
       structure Array: MLTON_ARRAY
       structure BinIO: MLTON_BIN_IO

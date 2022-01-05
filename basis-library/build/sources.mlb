@@ -380,6 +380,7 @@ in
    ../mlton/world.sml
    ../mlton/mono-array.sig
    ../mlton/mono-vector.sig
+   ../mlton/mlton-root.sig
    ../mlton/mlton.sig
    ../mlton/mlton.sml
 
