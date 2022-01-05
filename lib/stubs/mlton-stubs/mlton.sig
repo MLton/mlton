@@ -9,24 +9,7 @@
 
 signature MLTON =
    sig
-      val debug: bool
-      (* Pointer equality.  The usual caveats about lack of a well-defined
-       * semantics.
-       *)
-      val eq: 'a * 'a -> bool
-      (* Structural equality.  Equivalent to SML's polymorphic
-       * equality on equality types and a conservative approximation
-       * of equivalence other types.
-       *)
-      val equal: 'a * 'a -> bool
-      (* Structural hash. *)
-      val hash: 'a -> Word32.word
-      val isMLton: bool
-      val safe: bool
-      val share: 'a -> unit
-      val shareAll: unit -> unit
-      val size: 'a -> IntInf.int
-      val sizeAll: 'a -> IntInf.int
+      include MLTON_ROOT
 
       structure Array: MLTON_ARRAY
       structure Exn: MLTON_EXN

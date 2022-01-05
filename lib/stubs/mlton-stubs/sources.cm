@@ -25,12 +25,13 @@ gc.sig
 platform.sig
 process.sig
 profile.sig
-random.sig
 rusage.sig
 text-io.sig
 vector.sig
 
+random.sig
 random.sml
 
+mlton-root.sig
 mlton.sig
 mlton.sml
