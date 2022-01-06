@@ -15,11 +15,14 @@ include $(ROOT)/Makefile.config
 RUN_MLTON_RUNTIME_XARGS := ram-slop 0.7
 RUN_MLTON_COMPILE_XARGS :=
 
+MLTON_DEBUG := false
+
 ifeq (true, $(SELF_COMPILE))
 # Older versions of `mlton` may not support `sequenceNonUnit` or `warnUnused`.
 RUN_MLTON_COMPILE_XARGS += -default-ann 'sequenceNonUnit warn'
 RUN_MLTON_COMPILE_XARGS += -default-ann 'warnUnused true'
 # RUN_MLTON_COMPILE_XARGS += -type-check true
+RUN_MLTON_COMPILE_XARGS += -const 'MLton.debug $(MLTON_DEBUG)'
 # We're self-compiling, so don't use any stubs.
 MLTON_MLB := mlton.mlb
 else
@@ -35,19 +38,30 @@ else ifeq ($(RUN_MLTON_VERSION), $(firstword $(sort $(RUN_MLTON_VERSION) 2019100
 RUN_MLTON_COMPILE_XARGS += -disable-pass zone
 endif
 
-FRONT_END_SOURCES :=		\
-	front-end/ml.lex.sml	\
-	front-end/ml.grm.sig	\
-	front-end/ml.grm.sml	\
-	front-end/mlb.lex.sml	\
-	front-end/mlb.grm.sig	\
+MLTON_FRONT_END_GEN_SOURCES :=		\
+	front-end/ml.lex.sml 		\
+	front-end/ml.grm.sig 		\
+	front-end/ml.grm.sml 		\
+	front-end/mlb.lex.sml 		\
+	front-end/mlb.grm.sig 		\
 	front-end/mlb.grm.sml
 
-SOURCES :=			\
-	$(MLTON_MLB)		\
-	$(FRONT_END_SOURCES)	\
-	control/version.sml	\
-	$(shell $(MLBDEPS) $(MLTON_MLB))
+MLTON_GEN_SOURCES := 			\
+	$(MLTON_FRONT_END_GEN_SOURCES)	\
+	control/version.sml
+
+ifneq (,$(or						\
+	$(findstring mlton-stubs.mlb,$(MLTON_MLB)),	\
+	$(findstring smlnj-mlton,$(MAKECMDGOALS)),	\
+	$(findstring polyml-mlton,$(MAKECMDGOALS),	\
+	)))
+MLTON_GEN_SOURCES += 			\
+	../lib/stubs/mlton-stubs/pre-mlton.sml
+endif
+
+MLTON_SOURCES :=			\
+	$(shell $(MLBDEPS) $(MLTON_MLB))\
+	$(MLTON_GEN_SOURCES)
 
 .PHONY: all
 all: $(MLTON_OUTPUT)
@@ -61,7 +75,7 @@ $(eval $(MK_SHOW_CONFIG))
 
 ######################################################################
 
-$(MLTON_OUTPUT): $(SOURCES)
+$(MLTON_OUTPUT): $(MLTON_SOURCES)
 	@echo 'Compiling mlton'
 	"$(RUN_MLTON)" \
 		@MLton $(RUN_MLTON_RUNTIME_XARGS) $(RUN_MLTON_RUNTIME_ARGS) gc-summary -- \
@@ -69,19 +83,23 @@ $(MLTON_OUTPUT): $(SOURCES)
 		-target $(TARGET) -output $(MLTON_OUTPUT)			\
 		$(MLTON_MLB)
 
-ifeq ($(shell ($(CAT) control/version_sml.src; echo '$(MLTON_NAME)' '$(MLTON_VERSION)'; if [ -e control/version.sml ]; then $(CAT) control/version.sml; fi) | $(SHA1DGST)),$(shell if [ -e control/version_sml.chk ]; then $(CAT) control/version_sml.chk; fi))
-control/version.sml: control/version_sml.src
-	touch control/version.sml
+define GEN_TEMPLATE
+ifeq ($$(shell ($$(CAT) $$(subst .sml,_sml.src,$(1)) ; echo $$(foreach VAR,$(2),'$$($$(VAR))'); if [ -e $(1) ]; then $$(CAT) $(1); fi) | $$(SHA1DGST)),$$(shell if [ -e $$(subst .sml,_sml.chk,$(1)) ]; then $$(CAT) $$(subst .sml,_sml.chk,$(1)); fi))
+$(1): $$(subst .sml,_sml.src,$(1))
+	touch $$@
 else
-$(shell $(RM) control/version.sml)
-control/version.sml: control/version_sml.src
-	$(SED) \
-		-e "s/MLTON_NAME/$(MLTON_NAME)/" \
-		-e "s/MLTON_VERSION/$(MLTON_VERSION)/" \
-		< control/version_sml.src \
-		> control/version.sml
-	($(CAT) control/version_sml.src; echo '$(MLTON_NAME)' '$(MLTON_VERSION)'; $(CAT) control/version.sml) | $(SHA1DGST) > control/version_sml.chk
+$$(shell $$(RM) $(1))
+$(1): $$(subst .sml,_sml.src,$(1))
+	$$(SED) \
+		$$(foreach VAR,$(2),-e "s/$$(VAR)/$$($$(VAR))/") \
+		< $$< \
+		> $$@
+	($$(CAT) $$<; echo $$(foreach VAR,$(2),'$$($$(VAR))'); $$(CAT) $$@) | $$(SHA1DGST) > $$(subst .sml,_sml.chk,$(1))
 endif
+endef
+
+$(eval $(call GEN_TEMPLATE,control/version.sml,MLTON_NAME MLTON_VERSION))
+$(eval $(call GEN_TEMPLATE,../lib/stubs/mlton-stubs/pre-mlton.sml,MLTON_DEBUG HOST_ARCH HOST_OS))
 
 ifeq (true,$(call HAVE_CMD,$(RUN_MLLEX)))
 front-end/%.lex.sml: front-end/%.lex
@@ -148,7 +166,7 @@ mlton-stubs.mlb: $(shell $(MLBDEPS) ../lib/stubs/mlton-stubs/sources.mlb | $(GRE
 .PHONY: def-use
 def-use: mlton.def-use
 
-mlton.def-use: $(SOURCES)
+mlton.def-use: $(MLTON_SOURCES)
 	"$(RUN_MLTON)" \
 		@MLton $(RUN_MLTON_RUNTIME_XARGS) $(RUN_MLTON_RUNTIME_ARGS) --	\
 		$(RUN_MLTON_COMPILE_XARGS) -verbose 0 $(RUN_MLTON_COMPILE_ARGS)	\
@@ -158,7 +176,7 @@ mlton.def-use: $(SOURCES)
 ######################################################################
 
 ifneq (,$(REMOTE_TARGET))
-mlton-bootstrap-$(REMOTE_TARGET).tgz: $(SOURCES)
+mlton-bootstrap-$(REMOTE_TARGET).tgz: $(MLTON_SOURCES)
 	"$(RUN_MLTON)" \
 		@MLton $(RUN_MLTON_RUNTIME_XARGS) $(RUN_MLTON_RUNTIME_ARGS) gc-summary -- \
 		$(RUN_MLTON_COMPILE_XARGS) -verbose 2 $(RUN_MLTON_COMPILE_ARGS)	\
@@ -174,7 +192,7 @@ endif
 #
 # The following rebuilds the heap file for the SML/NJ compiled version of MLton.
 #
-ifneq (,$(findstring smlnj,$(MAKECMDGOALS)))
+ifneq (,$(findstring smlnj-mlton,$(MAKECMDGOALS)))
 .PHONY: smlnj-mlton
 smlnj-mlton: $(MLTON_OUTPUT_SMLNJ_HEAP)
 
@@ -193,7 +211,8 @@ $(MLTON_OUTPUT_SMLNJ_HEAP):
 		echo 'SMLofNJ.exportFn("$@",Main.main);'			\
 	) | CM_VERBOSE=false CONTROL_POLY_EQ_WARN=false "$(SMLNJ)"
 
-$(MLTON_OUTPUT_SMLNJ_HEAP).d: control/version.sml $(FRONT_END_SOURCES)
+$(MLTON_OUTPUT_SMLNJ_HEAP).d: $(MLTON_GEN_SOURCES)
+	@$(RM) $@
 	@touch $@
 	CM_VERBOSE=false $(SMLNJ_MAKEDEPEND) -n -f $@ mlton-smlnj.cm $(MLTON_OUTPUT_SMLNJ_HEAP) || ($(RM) $@ ; exit 1)
 	CM_VERBOSE=false $(SMLNJ_MAKEDEPEND) -n -f $@ mlton-smlnj.cm $@ || ($(RM) $@ ; exit 1)
@@ -206,11 +225,11 @@ endif
 # The following rebuilds the executable file for the Poly/ML compiled version of
 # MLton.
 #
-ifneq (,$(findstring polyml,$(MAKECMDGOALS)))
+ifneq (,$(findstring polyml-mlton,$(MAKECMDGOALS)))
 .PHONY: polyml-mlton
 polyml-mlton: $(MLTON_OUTPUT)-polyml
 
-$(MLTON_OUTPUT)-polyml: mlton-polyml.sml $(shell [ -e mlton-polyml.sml ] && $(CAT) mlton-polyml.sml | $(SED) -n 's/use "\(.*\)";/\1/p') control/version.sml $(FRONT_END_SOURCES)
+$(MLTON_OUTPUT)-polyml: mlton-polyml.sml $(shell [ -e mlton-polyml.sml ] && $(CAT) mlton-polyml.sml | $(SED) -n 's/use "\(.*\)";/\1/p') $(MLTON_GEN_SOURCES)
 	$(POLYML_POLYC) -o $@ mlton-polyml.sml
 
 mlton-polyml.sml: ../lib/stubs/polyml/basis/sources.use ../lib/stubs/polyml/mlton/sources.use $(shell $(MLBDEPS) ../lib/stubs/mlton-stubs/sources.mlb | $(GREP) 'mlb$$' | $(GREP) -v '$$(SML_LIB)') $(shell $(MLBDEPS) mlton.mlb | $(GREP) 'mlb$$' | $(GREP) -v '$$(SML_LIB)')

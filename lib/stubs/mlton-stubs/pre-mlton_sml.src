@@ -9,22 +9,21 @@ struct
 
    open MLton
 
+   val debug = MLTON_DEBUG
+
    structure Platform =
       struct
          structure Arch =
             struct
-               val host =
-                  MLton.Platform.Arch.toString MLton.Platform.Arch.host
+               val host = "HOST_ARCH"
             end
          structure Format =
             struct
-               val host =
-                  MLton.Platform.Format.toString MLton.Platform.Format.host
+               val host = "executable"
             end
          structure OS =
             struct
-               val host =
-                  MLton.Platform.OS.toString MLton.Platform.OS.host
+               val host = "HOST_OS"
             end
       end
 

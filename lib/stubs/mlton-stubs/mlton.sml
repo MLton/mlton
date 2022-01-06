@@ -34,7 +34,7 @@ structure MLton: MLTON =
    struct
       structure MLton = PreMLton
 
-      val debug = false
+      val debug = MLton.debug
       val eq = fn _ => raise Fail "MLton.eq"
       val equal = fn _ => raise Fail "MLton.equal"
       val hash = fn _ => raise Fail "MLton.hash"
