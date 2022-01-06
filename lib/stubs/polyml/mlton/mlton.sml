@@ -49,6 +49,12 @@ structure MLton =
                      val toString = fn s => s
                      val host = mkHost "host-arch"
                   end
+               structure Format =
+                  struct
+                     type t = string
+                     val toString = fn s => s
+                     val host = "executable"
+                  end
                structure OS =
                   struct
                      type t = string

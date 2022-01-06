@@ -12,22 +12,22 @@ structure MLton
 
 is
 
-#if (defined (SMLNJ_VERSION))
 ../smlnj/basis/sources.cm
-../smlnj/mlton/sources.cm
-#endif
+pre-sources.cm
 
 io.sig
 
 array.sig
 exn.sig
 gc.sig
-platform.sig
-process.sig
 profile.sig
+process.sig
 rusage.sig
 text-io.sig
 vector.sig
+
+platform.sig
+platform.sml
 
 random.sig
 random.sml

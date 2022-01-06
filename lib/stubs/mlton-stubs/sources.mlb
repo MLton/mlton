@@ -12,7 +12,7 @@ $(SML_LIB)/basis/basis.mlb
 local
 $(SML_LIB)/basis/mlton.mlb
 in
-structure MLton
+pre-mlton.sml
 end
 
 io.sig
@@ -20,12 +20,14 @@ io.sig
 array.sig
 exn.sig
 gc.sig
-platform.sig
 process.sig
 profile.sig
 rusage.sig
 text-io.sig
 vector.sig
+
+platform.sig
+platform.sml
 
 random.sig
 random.sml
@@ -36,7 +38,6 @@ mlton.sml
 
 in
 
-signature MLTON_THREAD
 structure MLton
 
 end

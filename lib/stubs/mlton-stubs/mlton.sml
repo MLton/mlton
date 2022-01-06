@@ -32,6 +32,8 @@ functor MkIO (S : sig
  *)
 structure MLton: MLTON =
    struct
+      structure MLton = PreMLton
+
       val debug = false
       val eq = fn _ => raise Fail "MLton.eq"
       val equal = fn _ => raise Fail "MLton.equal"
@@ -67,136 +69,9 @@ structure MLton: MLTON =
 
       structure GC = MLton.GC
 
-      structure Platform =
-         struct
+      structure Platform = MLtonPlatform
 
-            local
-               val toLower = CharVector.map Char.toLower
-               fun peek (l, f) = List.find f l
-               fun omap (opt, f) = Option.map f opt
-            in
-               fun fromString_toString all =
-                  let
-                     fun fromString s =
-                        let
-                           val s = toLower s
-                        in
-                           omap (peek (all, fn (_, s') => s = toLower s'), #1)
-                        end
-                     fun toString a = #2 (valOf (peek (all, fn (a', _) => a = a')))
-                  in
-                     (fromString, toString)
-                  end
-            end
-
-            structure Arch =
-               struct
-                  datatype t =
-                     Alpha
-                   | AMD64
-                   | ARM
-                   | ARM64
-                   | HPPA
-                   | IA64
-                   | m68k
-                   | MIPS
-                   | PowerPC
-                   | PowerPC64
-                   | RISCV
-                   | S390
-                   | Sparc
-                   | X86
-
-                  val all =
-                     (Alpha, "Alpha")::
-                     (AMD64, "AMD64")::
-                     (ARM, "ARM")::
-                     (ARM64, "ARM64")::
-                     (HPPA, "HPPA")::
-                     (IA64, "IA64")::
-                     (m68k, "m68k")::
-                     (MIPS, "MIPS")::
-                     (PowerPC, "PowerPC")::
-                     (PowerPC64, "PowerPC64")::
-                     (RISCV, "RISCV")::
-                     (S390, "S390")::
-                     (Sparc, "Sparc")::
-                     (X86, "X86")::
-                     nil
-
-                  val (fromString, toString) = fromString_toString all
-
-                  val host: t =
-                     case fromString (MLton.Platform.Arch.toString MLton.Platform.Arch.host) of
-                        NONE => raise Fail "strange MLton_Platform_Arch_host"
-                      | SOME host => host
-               end
-
-            structure Format =
-               struct
-                  datatype t =
-                     Archive
-                   | Executable
-                   | LibArchive
-                   | Library
-
-                  val all =
-                     (Archive, "Archive")::
-                     (Executable, "Executable")::
-                     (LibArchive, "LibArchive")::
-                     (Library, "Library")::
-                     nil
-
-                  val (fromString, toString) = fromString_toString all
-
-                  val host: t =
-                     case fromString (MLton.Platform.Format.toString MLton.Platform.Format.host) of
-                        NONE => raise Fail "strange MLton_Platform_Format_host"
-                      | SOME host => host
-               end
-
-            structure OS =
-               struct
-                  datatype t =
-                     AIX
-                   | Cygwin
-                   | Darwin
-                   | FreeBSD
-                   | Hurd
-                   | HPUX
-                   | Linux
-                   | MinGW
-                   | NetBSD
-                   | OpenBSD
-                   | Solaris
-
-                  val all =
-                     (AIX, "AIX")::
-                     (Cygwin, "Cygwin")::
-                     (Darwin, "Darwin")::
-                     (FreeBSD, "FreeBSD")::
-                     (HPUX, "HPUX")::
-                     (Hurd, "Hurd")::
-                     (Linux, "Linux")::
-                     (MinGW, "MinGW")::
-                     (NetBSD, "NetBSD")::
-                     (OpenBSD, "OpenBSD")::
-                     (Solaris, "Solaris")::
-                     nil
-
-                  val (fromString, toString) = fromString_toString all
-
-                  val host: t =
-                     case fromString (MLton.Platform.OS.toString MLton.Platform.OS.host) of
-                        NONE => raise Fail "strange MLton_Platform_OS_host"
-                      | SOME host => host
-               end
-         end
-
-      structure Process =
-         struct
-            open MLton.Process
-         end
+      structure Process = MLton.Process
 
       structure Profile =
          struct
