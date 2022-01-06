@@ -17,12 +17,15 @@ signature REAL =
       val >  : real * real -> bool
       val >= : real * real -> bool
       val ?= : real * real -> bool
+      val ~ : real -> real
       val abs: real -> real
+      val ceil: real -> Int.int
       val checkFloat: real -> real
       val class: real -> IEEEReal.float_class
       val compare: real * real -> order
       val compareReal: real * real -> IEEEReal.real_order
       val copySign: real * real -> real
+      val floor: real -> Int.int
       val fmt: StringCvt.realfmt -> real -> string
       val fromDecimal: IEEEReal.decimal_approx -> real option
       val fromInt: int -> real
@@ -61,9 +64,6 @@ signature REAL =
       val toLargeInt: IEEEReal.rounding_mode -> real -> LargeInt.int
       val toManExp: real -> {man: real, exp: int}
       val toString: real -> string
-      val unordered: real * real -> bool
-      val ~ : real -> real
-      val ceil: real -> Int.int
-      val floor: real -> Int.int
       val trunc: real -> Int.int
+      val unordered: real * real -> bool
    end
