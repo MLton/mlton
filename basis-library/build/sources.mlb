@@ -197,8 +197,12 @@ in
    ../util/CUtil.sml
 
    ../mlton/platform.sig
-   ../mlton/platform.sml
-   ../mlton/platform-extra.sml
+   local
+      ../mlton/platform-pre.sml
+   in
+      ../mlton/platform.sml
+      ../mlton/platform-post.sml
+   end
 
    ../util/unique-id.sig
    ../util/unique-id.fun

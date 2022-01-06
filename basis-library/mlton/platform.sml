@@ -66,7 +66,7 @@ structure MLtonPlatform: MLTON_PLATFORM =
 
             (* Can't use `fromString`, because won't constant fold. *)
             val host: t =
-               case Primitive.MLton.Platform.Arch.host of
+               case PreMLton.Platform.Arch.host of
                   "alpha" => Alpha
                 | "amd64" => AMD64
                 | "arm" => ARM
@@ -103,7 +103,7 @@ structure MLtonPlatform: MLTON_PLATFORM =
 
             (* Can't use `fromString`, because won't constant fold. *)
             val host: t =
-               case Primitive.MLton.Platform.Format.host of
+               case PreMLton.Platform.Format.host of
                   "archive" => Archive
                 | "executable" => Executable
                 | "libarchive" => LibArchive
@@ -144,7 +144,7 @@ structure MLtonPlatform: MLTON_PLATFORM =
 
             (* Can't use `fromString`, because won't constant fold. *)
             val host: t =
-               case Primitive.MLton.Platform.OS.host of
+               case PreMLton.Platform.OS.host of
                   "aix" => AIX
                 | "cygwin" => Cygwin
                 | "darwin" => Darwin
