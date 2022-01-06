@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019 Matthew Fluet.
+(* Copyright (C) 2009,2019,2022 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -170,7 +170,4 @@ functor FixReal(PReal: sig include PERVASIVE_REAL val zero : real end) : REAL =
           | _ => fromString s
    end
 
-structure LargeReal = FixReal(struct open Pervasive.LargeReal val zero : real = 0.0 end)
 structure Real = FixReal(struct open Pervasive.Real val zero : real = 0.0 end)
-structure Real64 = FixReal(struct open Pervasive.Real64 val zero : real = 0.0 end)
-structure Real32 = Real64

@@ -12,5 +12,5 @@ is
 
 $/basis.cm
 
-../../common/mlton-process-via-fork-exec.sml
+../../common/mlton/process-via-fork-exec.sml
 mlton.sml
