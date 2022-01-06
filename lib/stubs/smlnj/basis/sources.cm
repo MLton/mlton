@@ -70,7 +70,9 @@ string.sml
 
 int-inf.sml
 
-ieee-real.sml
+../../common/basis/IEEE-real.sig
+IEEE-real.sml
+../../common/basis/real.sig
 real.sml
 ../../common/basis/real64-via-real.sml
 ../../common/basis/real32-via-real.sml
