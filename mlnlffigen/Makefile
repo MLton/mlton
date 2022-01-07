@@ -1,4 +1,4 @@
-## Copyright (C) 2018-2021 Matthew Fluet
+## Copyright (C) 2018-2022 Matthew Fluet
  # Copyright (C) 2005-2009 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  #
@@ -15,14 +15,11 @@ NAME := mlnlffigen
 
 all:	$(NAME)
 
-$(NAME): $(NAME).mlb $(shell $(MLBDEPS) $(NAME).mlb)
+$(NAME): $(shell $(MLBDEPS) $(NAME).mlb)
 	@echo 'Compiling $(NAME)'
 	"$(RUN_MLTON)" @MLton $(RUN_MLTON_RUNTIME_ARGS) -- $(RUN_MLTON_COMPILE_ARGS) -target $(TARGET) $(NAME).mlb
 
-.PHONY: clean
-clean:
-	$(SRC)/bin/clean
-
+$(eval $(MK_COMMON_GOALS))
 
 cppcmd.sml : gen-cppcmd
 	./gen-cppcmd > $@

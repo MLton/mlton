@@ -1,4 +1,4 @@
-## Copyright (C) 2010,2021 Matthew Fluet.
+## Copyright (C) 2010,2021-2022 Matthew Fluet.
  #
  # MLton is released under a HPND-style license.
  # See the file MLton-LICENSE for details.
@@ -6,6 +6,8 @@
 
 ROOT := ../..
 include $(ROOT)/Makefile.config
+
+######################################################################
 
 #
 # cm2mlb root .cm
@@ -34,13 +36,11 @@ ifneq ($(MAKECMDGOALS),clean)
 -include $(CM2MLB_HEAP).d
 endif
 
-.PHONY: clean
-clean:
-	../../bin/clean
-
 SMLNJ_DIR := $(dir $(shell echo "$$(command -v $(SMLNJ))"))
 .PHONY: install
 install: $(CM2MLB_HEAP)
 	$(RM) $(SMLNJ_DIR).heap/$(CM2MLB_HEAP) $(SMLNJ_DIR)cm2mlb
 	$(CP) $(CM2MLB_HEAP) $(SMLNJ_DIR).heap
 	(cd $(SMLNJ_DIR) ; ln -s .run-sml cm2mlb)
+
+$(eval $(MK_COMMON_GOALS))

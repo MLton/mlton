@@ -1,4 +1,4 @@
-## Copyright (C) 2010,2013,2016-2017,2019 Matthew Fluet.
+## Copyright (C) 2010,2013,2016-2017,2019,2022 Matthew Fluet.
  # Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -14,9 +14,7 @@ include $(ROOT)/Makefile.config
 
 all:
 
-.PHONY: clean
-clean:
-	$(SRC)/bin/clean
+$(eval $(MK_COMMON_GOALS))
 
 
 RESOLVE_SCOPES = program topdec strdec dec

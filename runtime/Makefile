@@ -1,4 +1,4 @@
-## Copyright (C) 2010-2013,2018,2019-2021 Matthew Fluet.
+## Copyright (C) 2010-2013,2018,2019-2022 Matthew Fluet.
  # Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -378,9 +378,4 @@ SHOW_VARS += XCCFLAGS XMFLAGS XCPPFLAGS XCFLAGS OPTXCFLAGS DBGXCFLAGS DPIXCFLAGS
 SHOW_VARS += HAVE_NPI WITH_DEFAULT_NPI HAVE_PIE WITH_DEFAULT_PIE HAVE_PIC WITH_DEFAULT_PIC
 SHOW_VARS += LIBS
 
-$(eval $(MK_SHOW_CONFIG))
-
-
-.PHONY: clean
-clean:
-	../bin/clean
+$(eval $(MK_COMMON_GOALS))

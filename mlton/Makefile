@@ -67,12 +67,9 @@ MLTON_SOURCES :=			\
 .PHONY: all
 all: $(MLTON_OUTPUT)
 
-.PHONY: clean
-clean:
-	$(SRC)/bin/clean
-
 SHOW_VARS += MLTON_MLB
-$(eval $(MK_SHOW_CONFIG))
+
+$(eval $(MK_COMMON_GOALS))
 
 ######################################################################
 
