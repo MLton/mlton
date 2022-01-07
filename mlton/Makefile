@@ -54,6 +54,7 @@ ifneq (,$(or						\
 	$(findstring mlton-stubs.mlb,$(MLTON_MLB)),	\
 	$(findstring smlnj-mlton,$(MAKECMDGOALS)),	\
 	$(findstring polyml-mlton,$(MAKECMDGOALS),	\
+	$(findstring mlkit-mlton,$(MAKECMDGOALS)),	\
 	)))
 MLTON_GEN_SOURCES += 			\
 	../lib/stubs/mlton-stubs/pre-mlton.sml
@@ -251,4 +252,39 @@ mlton-polyml.sml: ../lib/stubs/polyml/basis/sources.use ../lib/stubs/polyml/mlto
 			$(GREP) -v 'call-main.sml';				\
 	) | $(SED) 's|\(.*\)|use "\1";|' > $@
 	echo "val main = Main.mainWrapped;" >> $@
+endif
+
+######################################################################
+
+#
+# The following rebuilds the executable file for the MLKit compiled version of
+# MLton.
+#
+ifneq (,$(findstring mlkit,$(MAKECMDGOALS)))
+.PHONY: mlkit-mlton
+mlkit-mlton: $(MLTON_OUTPUT)-mlkit
+
+$(MLTON_OUTPUT)-mlkit: $(shell $(MLBDEPS) mlton-mlkit.mlb | $(GREP) -v '$$(SML_LIB)') $(MLTON_GEN_SOURCES)
+	$(MLKIT) -o $@ mlton-mlkit.mlb
+
+mlton-mlkit.mlb: ../lib/stubs/mlkit/basis/sources.mlb ../lib/stubs/mlkit/mlton/sources.mlb $(shell $(MLBDEPS) ../lib/stubs/mlton-stubs/sources.mlb | $(GREP) 'mlb$$' | $(GREP) -v '$$(SML_LIB)') $(shell $(MLBDEPS) mlton.mlb | $(GREP) 'mlb$$' | $(GREP) -v '$$(SML_LIB)')
+	(									\
+		echo 'local';							\
+		echo '../lib/stubs/mlkit/basis/sources.mlb';			\
+		$(MLBDEPS) mlton.mlb | $(GREP) -v 'mlb$$' | $(GREP) 'mlyacc'; 	\
+		echo '../lib/stubs/mlkit/mlton/sources.mlb';			\
+		$(MLBDEPS) ../lib/stubs/mlton-stubs/sources.mlb |		\
+			$(GREP) -v 'mlb$$' | 					\
+			$(GREP) 'mlton-stubs';					\
+		$(MLBDEPS) mlton.mlb |						\
+			$(GREP) -v 'mlb$$' |					\
+			$(GREP) -v 'sml/basis' | 				\
+			$(GREP) -v 'targets' |					\
+			$(GREP) -v 'mlton-stubs' |				\
+			$(GREP) -v 'mlyacc' |					\
+			$(GREP) -v 'call-main.sml';				\
+		echo 'in';							\
+		echo 'call-main.sml';						\
+		echo 'end';							\
+	) > $@
 endif

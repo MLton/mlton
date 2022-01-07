@@ -1,0 +1,24 @@
+(* Copyright (C) 2022 Matthew Fluet.
+ *
+ * MLton is released under a BSD-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
+$(SML_LIB)/basis/basis.mlb
+
+../../common/basis/IEEE-real.sig
+../../common/basis/IEEE-real-dummy.sml
+
+../../common/basis/real.sig
+real.sml
+../../common/basis/real32-via-real.sml
+../../common/basis/real64-via-real.sml
+
+../../common/basis/pack-real32-dummy.sml
+../../common/basis/pack-real64-dummy.sml
+../../common/basis/pack-word64-dummy.sml
+
+timer.sml
+
+../../common/basis/unsafe.sig
+../../common/basis/unsafe.sml

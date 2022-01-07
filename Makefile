@@ -1,4 +1,4 @@
-## Copyright (C) 2009,2011,2013,2017-2021 Matthew Fluet.
+## Copyright (C) 2009,2011,2013,2017-2022 Matthew Fluet.
  # Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -331,6 +331,35 @@ polyml-mlton:
 		> "$(BIN)/$(MLTON).polyml"
 	$(CHMOD) u+x "$(BIN)/$(MLTON).polyml"
 	@echo 'Build of MLton (with Poly/ML) succeeded.'
+
+######################################################################
+
+# mlkit targets
+
+.PHONY: bootstrap-mlkit
+bootstrap-mlkit:
+	$(MAKE) mlkit-mlton
+	$(RM) "$(BIN)/$(MLTON)"
+	$(MAKE) OLD_MLTON="$(BIN)/$(MLTON).mlkit" all
+	$(RM) "$(LIB)/$(MLTON)-mlkit$(EXE)"
+	$(RM) "$(BIN)/$(MLTON).mlkit"
+
+.PHONY: mlkit-mlton
+mlkit-mlton:
+	$(MAKE) dirs
+	$(MAKE) runtime
+	$(MAKE) -C "$(SRC)/mlton" mlkit-mlton
+	$(CP) "$(SRC)/mlton/$(MLTON_OUTPUT)-mlkit$(EXE)" "$(LIB)/"
+	$(MAKE) script
+	$(MAKE) basis-no-check
+	$(MAKE) libraries-no-check
+	$(SED) \
+		-e 's;\(doit.* "$$@"\);# \1;' \
+		-e 's;# \(doitMLKit "$$@"\);\1;' \
+		< "$(BIN)/$(MLTON)" \
+		> "$(BIN)/$(MLTON).mlkit"
+	$(CHMOD) u+x "$(BIN)/$(MLTON).mlkit"
+	@echo 'Build of MLton (with MLKit) succeeded.'
 
 ######################################################################
 

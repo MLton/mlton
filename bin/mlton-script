@@ -58,11 +58,18 @@ doitPolyML () {
         exec "$mlton_polyml" "$@"
     fi
 }
+doitMLKit () {
+    mlton_mlkit="$lib/mlton-compile-mlkit$EXE"
+    if [ -x "$mlton_mlkit" ]; then
+        exec "$mlton_mlkit" "$@"
+    fi
+}
 
 doit () {
     doitMLton "$@"
     doitSMLNJ "$@"
     doitPolyML "$@"
+    doitMLKit "$@"
     echo 'Unable to run MLton.  Check that lib is set properly.' >&2
     exit 1
 }
