@@ -1,4 +1,5 @@
-## Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+## Copyright (C) 2022 Matthew Fluet
+ # Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
  #
@@ -6,18 +7,16 @@
  # See the file MLton-LICENSE for details.
  ##
 
-all: 
+ROOT := ..
+include $(ROOT)/Makefile.config
 
-.PHONY: clean
-clean:
-	../bin/clean
-	rm -f *.[csS]
-	for f in *; do 			\
-		if [ -x "$$f" -a ! -d "$$f" ]; then	\
-			rm -f "$$f";		\
-		fi;				\
-	done
+######################################################################
 
+all:
+
+CLEAN_EXES := true
+CLEAN_EXTS := c s S
+$(eval $(MK_COMMON_GOALS))
 
 .PHONY: abnormal
 abnormal:

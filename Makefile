@@ -33,9 +33,8 @@ endif
 endif
 	@echo 'Build of MLton succeeded.'
 
-.PHONY: clean
-clean:
-	$(SRC)/bin/clean --exclude package
+CLEAN_EXCLS := package
+$(eval $(MK_COMMON_GOALS))
 
 .PHONY: clean-git
 clean-git:
@@ -44,8 +43,6 @@ clean-git:
 .PHONY: check
 check:
 	./bin/regression $(CHECK_ARGS)
-
-$(eval $(MK_SHOW_CONFIG))
 
 ######################################################################
 
