@@ -7,17 +7,16 @@
  # See the file MLton-LICENSE for details.
  ##
 
-ROOT := ../..
+ROOT := ../../..
 include $(ROOT)/Makefile.config
 
 ######################################################################
 
-all:
+all: $(patsubst %.sml,%,$(wildcard *.sml))
 
 %: %.sml
 	mlton $<
 
 
 CLEAN_EXES := true
-CLEAN_EXTS := sml
 $(eval $(MK_COMMON_GOALS))
