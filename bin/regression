@@ -6,6 +6,8 @@
 # set -e
 
 name=`basename "$0"`
+MAKE=${MAKE:-make}
+
 
 usage () {
   echo >&2 "usage: $name [-fail] [-short] [-test-reg reg] [mlton flags ...]"
@@ -240,7 +242,7 @@ if $short || $testReg ; then
   fi
 fi
 
-"$src/bin/mmake" clean >/dev/null
+${MAKE} clean >/dev/null
 cd "$src/benchmark/tests"
 for f in *.sml; do
         f=`basename "$f" .sml`
@@ -266,13 +268,13 @@ for f in *.sml; do
         ;;
         esac
 done
-"$src/bin/mmake" clean >/dev/null
+${MAKE} clean >/dev/null
 cd "$src"
 for f in mllex mlyacc mlprof; do
     tmpf="/tmp/$f.$$"
     cd "$src/$f"
     echo "testing $f"
-    "$src/bin/mmake" -W "$f" >/dev/null
+    ${MAKE} -W "$f" >/dev/null
     "$mlton" "${flags[@]}" -output "$tmpf" "$f.mlb"
     if [ $? -ne 0 ]; then
         compFail "$f"
