@@ -2,7 +2,7 @@
 
 set -e
 
-# List ignored files of current directory by constructing a "find"
+# Find ignored files of current directory by constructing a "find"
 # expression that matches names of ignored files.
 #
 # This script supports a reasonable subset of "gitignore(5)"
@@ -98,4 +98,4 @@ while true; do
 done
 fargs+=(")")
 
-find . -mindepth 1 -maxdepth 1 "${fargs[@]}" -print
+${FIND} . -mindepth 1 -maxdepth 1 -depth "${fargs[@]}" "${@--print}"

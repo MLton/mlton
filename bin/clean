@@ -34,7 +34,7 @@ done
 
 doit () {
     # rm -rf '.#'* .*~ *~ *.a *.o .cm core mlmon.out svn-commit.*
-    "$bin/ls-ignore" | xargs rm -rf
+    "$bin/find-ignore" -exec rm -rf '{}' +
     for f in *; do
         if [ -d "$f" ]; then
             for ((i=0; i < ${#exclude[*]}; i++)); do
