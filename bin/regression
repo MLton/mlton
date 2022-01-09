@@ -5,9 +5,9 @@
 
 # set -e
 
-name=`basename "$0"`
 MAKE=${MAKE:-make}
 
+name=$(basename "$0")
 
 usage () {
   echo >&2 "usage: $name [-fail] [-short] [-test-reg reg] [mlton flags ...]"
@@ -50,8 +50,8 @@ while [ "$#" -gt 0 ]; do
 done
 
 
-dir=`dirname "$0"`
-src=`cd "$dir/.." && pwd`
+dir=$(dirname "$0")
+src=$(cd "$dir/.." && pwd)
 bin="$src/build/bin"
 lib="$src/build/lib/mlton"
 mlton="$bin/mlton"
@@ -88,12 +88,12 @@ compFail () {
 "$mlton" -verbose 1 || (echo 'no mlton present' && exitFail=true)
 echo "flags = ${flags[*]}"
 
-TARGET_ARCH=`"$mlton" -show path-map | sed -n 's/TARGET_ARCH \(.*\)/\1/p'`
-TARGET_OS=`"$mlton" -show path-map | sed -n 's/TARGET_OS \(.*\)/\1/p'`
-OBJPTR_REP=`"$mlton" -show path-map | sed -n 's/OBJPTR_REP \(.*\)/\1/p'`
-ALIGN=`echo "${flags[@]}" | sed -n 's/.*-align \(.\).*/\1/p'`
+TARGET_ARCH=$("$mlton" -show path-map | sed -n 's/TARGET_ARCH \(.*\)/\1/p')
+TARGET_OS=$("$mlton" -show path-map | sed -n 's/TARGET_OS \(.*\)/\1/p')
+OBJPTR_REP=$("$mlton" -show path-map | sed -n 's/OBJPTR_REP \(.*\)/\1/p')
+ALIGN=$(echo "${flags[@]}" | sed -n 's/.*-align \(.\).*/\1/p')
 if [ -z "$ALIGN" ]; then
-    ALIGN=`"$mlton" -z 2>&1 | sed -n 's/.*-align {\(.\).*/\1/p'`
+    ALIGN=$("$mlton" -z 2>&1 | sed -n 's/.*-align {\(.\).*/\1/p')
 fi
 
 cd "$src/regression"
@@ -119,7 +119,7 @@ if [ $TARGET_OS = mingw ]; then
 fi
 
 for f in *.sml; do
-        f=`basename "$f" .sml`
+        f=$(basename "$f" .sml)
         if ($testReg); then
                 skip='true'
                 for (( i = 0 ; $i < ${#testRegs[@]} ; i++ )); do
@@ -245,7 +245,7 @@ fi
 ${MAKE} clean >/dev/null
 cd "$src/benchmark/tests"
 for f in *.sml; do
-        f=`basename "$f" .sml`
+        f=$(basename "$f" .sml)
         tmpf="/tmp/$f.$$"
         case "$f" in
         fxp)
