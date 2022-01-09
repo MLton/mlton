@@ -1,10 +1,16 @@
-## Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+## Copyright (C) 2022 Matthew Fluet
+ # Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
  #
  # MLton is released under a HPND-style license.
  # See the file MLton-LICENSE for details.
  ##
+
+ROOT := ../..
+include $(ROOT)/Makefile.config
+
+######################################################################
 
 TEX_FILES := \
 	abstract.tex		\
@@ -32,10 +38,9 @@ main.ps: main.dvi
 %.ps: %.fig
 	fig2dev -Leps $< $@
 
-.PHONY: clean
-clean:
-	../../bin/clean
-
 .PHONY: tags
 tags:
 	etags *.tex
+
+
+$(eval $(MK_COMMON_GOALS))
