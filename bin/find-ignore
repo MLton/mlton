@@ -2,6 +2,8 @@
 
 set -e
 
+FIND=${FIND:-find}
+
 # Find ignored files of current directory by constructing a "find"
 # expression that matches names of ignored files.
 #
