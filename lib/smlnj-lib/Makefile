@@ -1,4 +1,4 @@
-## Copyright (C) 2009,2016,2018,2020 Matthew Fluet.
+## Copyright (C) 2009,2016,2018,2020,2022 Matthew Fluet.
  # Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -23,6 +23,4 @@ smlnj-lib/README.mlton: smlnj-lib.tgz smlnj-lib.patch
 	$(PATCH) -s -d smlnj-lib -p1 < smlnj-lib.patch
 	$(CP) smlnj-lib/LICENSE ../../doc/license/SMLNJ-LIB-LICENSE
 
-.PHONY: clean
-clean:
-	../../bin/clean
+$(eval $(MK_COMMON_GOALS))

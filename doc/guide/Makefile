@@ -131,9 +131,4 @@ upload_mlton.sourceforge.io: mlton.sourceforge.io
 SHOW_VARS += ASCIIDOCTOR_HTML5_FLAGS
 SHOW_VARS += GEN_PAGES GEN_ATTACHMENTS SRC_PAGES SRC_ATTACHMENTS
 
-$(eval $(MK_SHOW_CONFIG))
-
-
-.PHONY: clean
-clean:
-	../../bin/clean
+$(eval $(MK_COMMON_GOALS))

@@ -1,0 +1,15 @@
+(* Copyright (C) 2022 Matthew Fluet.
+ *
+ * MLton is released under a HPND-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
+Library
+
+structure PreMLton
+
+is
+
+../smlnj/mlton/sources.cm
+
+pre-mlton.sml

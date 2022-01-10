@@ -44,12 +44,11 @@ doitMLton () {
     fi
 }
 doitSMLNJ () {
-    smlnj='sml'
-    if $smlnj -h >/dev/null 2>&1; then
-        smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | $smlnj 2>&1 1> /dev/null`
-        mlton_smlnj_heap="$lib/mlton-compile-smlnj.$smlnj_heap_suffix"
+    SMLNJ="sml"
+    if [ -x "$(command -v "$SMLNJ")" ]; then
+        mlton_smlnj_heap="$lib/mlton-compile-smlnj.$("$SMLNJ" @SMLsuffix)"
         if [ -s "$mlton_smlnj_heap" ]; then
-            exec "$smlnj" @SMLload="$mlton_smlnj_heap" "$@"
+            exec "$SMLNJ" @SMLload="$mlton_smlnj_heap" "$@"
         fi
     fi
 }
@@ -59,11 +58,18 @@ doitPolyML () {
         exec "$mlton_polyml" "$@"
     fi
 }
+doitMLKit () {
+    mlton_mlkit="$lib/mlton-compile-mlkit$EXE"
+    if [ -x "$mlton_mlkit" ]; then
+        exec "$mlton_mlkit" "$@"
+    fi
+}
 
 doit () {
     doitMLton "$@"
     doitSMLNJ "$@"
     doitPolyML "$@"
+    doitMLKit "$@"
     echo 'Unable to run MLton.  Check that lib is set properly.' >&2
     exit 1
 }

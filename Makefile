@@ -1,4 +1,4 @@
-## Copyright (C) 2009,2011,2013,2017-2021 Matthew Fluet.
+## Copyright (C) 2009,2011,2013,2017-2022 Matthew Fluet.
  # Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -16,11 +16,11 @@ include $(ROOT)/Makefile.config
 all:
 	$(MAKE) dirs
 	$(MAKE) runtime
-	$(MAKE) compiler CHECK_FIXPOINT=false                     # tools0 + mlton0 -> mlton1
+	$(MAKE) compiler CHECK_FIXPOINT=false                     # mlton0 -> mlton1
 	$(MAKE) script
 	$(MAKE) basis
 	$(MAKE) libraries
-	$(MAKE) tools    CHECK_FIXPOINT=false                     # tools0 + mlton1 -> tools1
+	$(MAKE) tools    CHECK_FIXPOINT=false                     # mlton1 -> tools1
 ifeq (2, $(firstword $(sort $(BOOTSTRAP_STYLE) 2)))
 	$(MAKE) compiler-clean
 	$(MAKE) compiler SELF_COMPILE=true  CHECK_FIXPOINT=false  # tools1 + mlton1 -> mlton2
@@ -33,9 +33,8 @@ endif
 endif
 	@echo 'Build of MLton succeeded.'
 
-.PHONY: clean
-clean:
-	$(SRC)/bin/clean --exclude package
+CLEAN_EXCLS := package
+$(eval $(MK_COMMON_GOALS))
 
 .PHONY: clean-git
 clean-git:
@@ -44,8 +43,6 @@ clean-git:
 .PHONY: check
 check:
 	./bin/regression $(CHECK_ARGS)
-
-$(eval $(MK_SHOW_CONFIG))
 
 ######################################################################
 
@@ -167,6 +164,7 @@ script:
 		-e "s;^GMP_INC_DIR=.*;GMP_INC_DIR=\"$(WITH_GMP_INC_DIR)\";" \
 		-e "s;^GMP_LIB_DIR=.*;GMP_LIB_DIR=\"$(WITH_GMP_LIB_DIR)\";" \
 		-e 's/mlton-compile/$(MLTON_OUTPUT)/' \
+		-e "s;^    SMLNJ=.*;    SMLNJ=\"$(SMLNJ)\";" \
 		< "$(SRC)/bin/mlton-script" > "$(BIN)/$(MLTON)"
 	$(CHMOD) a+x "$(BIN)/$(MLTON)"
 	$(CP) "$(SRC)/bin/static-library" "$(LIB)"
@@ -259,12 +257,14 @@ traced:
 
 # smlnj targets
 
+SMLNJ := sml
+
 .PHONY: bootstrap-smlnj
 bootstrap-smlnj:
 	$(MAKE) smlnj-mlton
 	$(RM) "$(BIN)/$(MLTON)"
-	$(MAKE) BOOTSTRAP_MLTON=$(MLTON).smlnj all
-	smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | sml 2>&1 1> /dev/null` && $(RM) "$(LIB)/$(MLTON_OUTPUT)-smlnj.$$smlnj_heap_suffix"
+	$(MAKE) OLD_MLTON="$(BIN)/$(MLTON).smlnj" all
+	$(RM) "$(LIB)/$(MLTON_OUTPUT_SMLNJ_HEAP)"
 	$(RM) "$(BIN)/$(MLTON).smlnj"
 
 .PHONY: smlnj-mlton
@@ -272,13 +272,13 @@ smlnj-mlton:
 	$(MAKE) dirs
 	$(MAKE) runtime
 	$(MAKE) -C "$(SRC)/mlton" smlnj-mlton
-	smlnj_heap_suffix=`echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | sml 2>&1 1> /dev/null` && $(CP) "$(SRC)/mlton/$(MLTON_OUTPUT)-smlnj.$$smlnj_heap_suffix" "$(LIB)/"
+	$(CP) "$(SRC)/mlton/$(MLTON_OUTPUT_SMLNJ_HEAP)" "$(LIB)/"
 	$(MAKE) script
 	$(MAKE) basis-no-check
 	$(MAKE) libraries-no-check
 	$(SED) \
-		-e 's;doitMLton "$$@";# doitMLton "$$@";' \
-		-e 's;doitPolyML "$$@";# doitPolyML "$$@";' \
+		-e 's;\(doit.* "$$@"\);# \1;' \
+		-e 's;# \(doitSMLNJ "$$@"\);\1;' \
 		< "$(BIN)/$(MLTON)" \
 		> "$(BIN)/$(MLTON).smlnj"
 	$(CHMOD) u+x "$(BIN)/$(MLTON).smlnj"
@@ -308,7 +308,7 @@ smlnj-mlton-x16:
 bootstrap-polyml:
 	$(MAKE) polyml-mlton
 	$(RM) "$(BIN)/$(MLTON)"
-	$(MAKE) BOOTSTRAP_MLTON=$(MLTON).polyml all
+	$(MAKE) OLD_MLTON="$(BIN)/$(MLTON).polyml" all
 	$(RM) "$(LIB)/$(MLTON)-polyml$(EXE)"
 	$(RM) "$(BIN)/$(MLTON).polyml"
 
@@ -322,12 +322,41 @@ polyml-mlton:
 	$(MAKE) basis-no-check
 	$(MAKE) libraries-no-check
 	$(SED) \
-		-e 's;doitMLton "$$@";# doitMLton "$$@";' \
-		-e 's;doitSMLNJ "$$@";# doitSMLNJ "$$@";' \
+		-e 's;\(doit.* "$$@"\);# \1;' \
+		-e 's;# \(doitPolyML "$$@"\);\1;' \
 		< "$(BIN)/$(MLTON)" \
 		> "$(BIN)/$(MLTON).polyml"
 	$(CHMOD) u+x "$(BIN)/$(MLTON).polyml"
 	@echo 'Build of MLton (with Poly/ML) succeeded.'
+
+######################################################################
+
+# mlkit targets
+
+.PHONY: bootstrap-mlkit
+bootstrap-mlkit:
+	$(MAKE) mlkit-mlton
+	$(RM) "$(BIN)/$(MLTON)"
+	$(MAKE) OLD_MLTON="$(BIN)/$(MLTON).mlkit" all
+	$(RM) "$(LIB)/$(MLTON)-mlkit$(EXE)"
+	$(RM) "$(BIN)/$(MLTON).mlkit"
+
+.PHONY: mlkit-mlton
+mlkit-mlton:
+	$(MAKE) dirs
+	$(MAKE) runtime
+	$(MAKE) -C "$(SRC)/mlton" mlkit-mlton
+	$(CP) "$(SRC)/mlton/$(MLTON_OUTPUT)-mlkit$(EXE)" "$(LIB)/"
+	$(MAKE) script
+	$(MAKE) basis-no-check
+	$(MAKE) libraries-no-check
+	$(SED) \
+		-e 's;\(doit.* "$$@"\);# \1;' \
+		-e 's;# \(doitMLKit "$$@"\);\1;' \
+		< "$(BIN)/$(MLTON)" \
+		> "$(BIN)/$(MLTON).mlkit"
+	$(CHMOD) u+x "$(BIN)/$(MLTON).mlkit"
+	@echo 'Build of MLton (with MLKit) succeeded.'
 
 ######################################################################
 
@@ -550,6 +579,7 @@ REMOTE_ROOT := $(REMOTE_TMP)/mlton-$(MLTON_VERSION)
 REMOTE_BASH := bash
 REMOTE_TAR := $(TAR)
 
+REMOTE_CAT := $(CAT)
 REMOTE_CP := $(CP)
 REMOTE_MKDIR := $(MKDIR)
 REMOTE_RM := $(RM)
@@ -558,7 +588,7 @@ REMOTE_MAKE := make
 REMOTE_MAKEFLAGS :=
 REMOTE_XMAKEFLAGS := CHECK_MLCMD=
 
-REMOTE_PLATFORM := $(shell cat bin/platform | $(SSH) $(REMOTE_MACHINE) "$(REMOTE_BASH) -s")
+REMOTE_PLATFORM := $(shell $(CAT) bin/platform | $(SSH) $(REMOTE_MACHINE) "$(REMOTE_BASH) -s")
 REMOTE_ARCH := $(patsubst HOST_ARCH=%,%,$(filter HOST_ARCH=%,$(REMOTE_PLATFORM)))
 REMOTE_OS := $(patsubst HOST_OS=%,%,$(filter HOST_OS=%,$(REMOTE_PLATFORM)))
 REMOTE_TARGET := $(REMOTE_ARCH)-$(REMOTE_OS)
@@ -577,8 +607,6 @@ remote-bootstrap:
 	$(MAKE) remote--make-script
 	$(MAKE) remote--make-basis
 	$(MAKE) remote--make-libraries
-	$(MAKE) remote--send-mlyacc-yacc-files
-	$(MAKE) remote--make-tools
 	$(MAKE) remote--recv-boot-files
 	$(MAKE) remote--make-clean
 	$(MAKE) remote--send-boot-files
@@ -605,12 +633,6 @@ remote--send-src:
 	$(SSH) $(REMOTE_MACHINE) "$(REMOTE_RM) $(REMOTE_ROOT) && $(REMOTE_MKDIR) $(REMOTE_ROOT)"
 	$(GIT) archive --format=tar HEAD | $(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && $(REMOTE_TAR) xf -"
 
-.PHONY: remote--send-mlyacc-yacc-files
-remote--send-mlyacc-yacc-files:
-	$(MAKE) -C mlyacc src/yacc.lex.sml src/yacc.grm.sig src/yacc.grm.sml
-	$(TAR) cf - mlyacc/src/yacc.lex.* mlyacc/src/yacc.grm.* | $(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && $(REMOTE_TAR) xf -"
-	$(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && touch mlyacc/src/yacc.lex.* mlyacc/src/yacc.grm.*"
-
 .PHONY: remote--recv-runtime
 remote--recv-runtime:
 	$(RM) "$(LIB)/targets/$(REMOTE_TARGET)" && $(MKDIR) "$(LIB)/targets/$(REMOTE_TARGET)"
@@ -623,21 +645,21 @@ remote--gen-bootstrap-compiler-files:
 .PHONY: remote--send-bootstrap-compiler-files
 remote--send-bootstrap-compiler-files:
 	$(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && $(REMOTE_RM) runtime/bootstrap && $(REMOTE_MKDIR) runtime/bootstrap"
-	cat mlton/mlton-bootstrap-$(REMOTE_TARGET).tgz | $(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT)/runtime/bootstrap && $(REMOTE_TAR) xzf -"
+	$(CAT) mlton/mlton-bootstrap-$(REMOTE_TARGET).tgz | $(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT)/runtime/bootstrap && $(REMOTE_TAR) xzf -"
 
 .PHONY: remote--recv-boot-files
 remote--recv-boot-files:
 	$(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && $(REMOTE_RM) boot && $(REMOTE_CP) build boot"
-	$(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && $(REMOTE_TAR) czf - boot" | cat - > "$(LIB)/targets/$(REMOTE_TARGET)/boot.tgz"
+	$(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && $(REMOTE_TAR) czf - boot" | $(CAT) - > "$(LIB)/targets/$(REMOTE_TARGET)/boot.tgz"
 
 .PHONY: remote--send-boot-files
 remote--send-boot-files:
 	$(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && $(REMOTE_RM) boot"
-	cat "$(LIB)/targets/$(REMOTE_TARGET)/boot.tgz" | $(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && $(REMOTE_TAR) xzf -"
+	$(CAT) "$(LIB)/targets/$(REMOTE_TARGET)/boot.tgz" | $(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && $(REMOTE_TAR) xzf -"
 
 .PHONY: remote--recv-binary-release
 remote--recv-binary-release:
-	$(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && cat mlton-$(MLTON_VERSION)-$(MLTON_BINARY_RELEASE).$(REMOTE_ARCH)-$(REMOTE_OS)$(MLTON_BINARY_RELEASE_SUFFIX).tgz" | cat - > mlton-$(MLTON_VERSION)-$(MLTON_BINARY_RELEASE).$(REMOTE_ARCH)-$(REMOTE_OS)$(MLTON_BINARY_RELEASE_SUFFIX).tgz
+	$(SSH) $(REMOTE_MACHINE) "cd $(REMOTE_ROOT) && $(REMOTE_CAT) mlton-$(MLTON_VERSION)-$(MLTON_BINARY_RELEASE).$(REMOTE_ARCH)-$(REMOTE_OS)$(MLTON_BINARY_RELEASE_SUFFIX).tgz" | $(CAT) - > mlton-$(MLTON_VERSION)-$(MLTON_BINARY_RELEASE).$(REMOTE_ARCH)-$(REMOTE_OS)$(MLTON_BINARY_RELEASE_SUFFIX).tgz
 
 .PHONY: remote--rm-root
 remote--rm-root:
@@ -661,7 +683,6 @@ $(eval $(call MK_REMOTE_MAKE_TEMPLATE,script))
 $(eval $(call MK_REMOTE_MAKE_TEMPLATE,basis))
 $(eval $(call MK_REMOTE_MAKE_TEMPLATE,libraries))
 $(eval $(call MK_REMOTE_MAKE_TEMPLATE,check))
-$(eval $(call MK_REMOTE_MAKE_TEMPLATE,tools))
 all_REMOTE_XMAKEFLAGS := OLD_MLTON_DIR=$(REMOTE_ROOT)/boot/bin
 $(eval $(call MK_REMOTE_MAKE_TEMPLATE,all))
 binary-release_REMOTE_XMAKEFLAGS := MLTON_BINARY_RELEASE_WITH_DOCS=false

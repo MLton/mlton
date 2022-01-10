@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2022 Matthew Fluet.
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -62,7 +63,8 @@ structure System: SYSTEM =
                                       Layout.str)))
                end
          in
-            Process.wait (MLton.Process.spawnp {file = com, args = com :: args})
+            Process.waitChildPid
+            (Process.spawnp {file = com, args = com :: args})
             handle e => Error.bug (concat ["call to system failed with ",
                                            Exn.toString e, ":\n", s])
          end

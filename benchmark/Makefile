@@ -1,4 +1,4 @@
-## Copyright (C) 2013,2019 Matthew Fluet.
+## Copyright (C) 2013,2019,2021-2022 Matthew Fluet.
  # Copyright (C) 2009 Matthew Fluet.
  # Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
@@ -19,13 +19,11 @@ all: 	$(NAME)
 
 RUN_MLTON_COMPILE_XARGS := -default-ann 'sequenceNonUnit warn' -default-ann 'warnUnused true'
 
-$(NAME): $(NAME).mlb $(shell "$(RUN_MLTON)" -stop f $(NAME).mlb)
+$(NAME): $(NAME).mlb $(shell $(MLBDEPS) $(NAME).mlb)
 	@echo 'Compiling $(NAME)'
 	"$(RUN_MLTON)" @MLton $(RUN_MLTON_RUNTIME_ARGS) -- $(RUN_MLTON_COMPILE_ARGS) $(RUN_MLTON_COMPILE_XARGS) -target $(TARGET) $(NAME).mlb
 
-.PHONY: clean
-clean:
-	../bin/clean
+$(eval $(MK_COMMON_GOALS))
 
 BENCH := barnes-hut boyer checksum count-graphs DLXSimulator even-odd fft fib flat-array hamlet imp-for knuth-bendix lexgen life logic mandelbrot matrix-multiply md5 merge mlyacc model-elimination mpuz nucleic output1 peek psdes-random ratio-regions ray raytrace simple smith-normal-form string-concat tailfib tak tensor tsp tyan vector32-concat vector64-concat vector-rev vliw wc-input1 wc-scanStream zebra zern
 FPBENCH := barnes-hut fft hamlet mandelbrot matrix-multiply nucleic ray raytrace simple tensor tsp tyan vliw zern

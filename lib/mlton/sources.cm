@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2013,2019,2021 Matthew Fluet.
+(* Copyright (C) 2009,2013,2019,2021-2022 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -9,63 +9,80 @@
 
 Library
 
+signature APPEND_LIST
 signature ARRAY
+signature ARRAY2
+signature ASSERT
+signature BOOL
+signature BUFFER
+signature CLEARABLE_PROMISE
+signature COMMAND_LINE
+signature COUNTER
+signature DIR
 signature ENV
 signature ERROR
-signature EUCLIDEAN_RING
+signature ESCAPE
+(* signature EUCLIDEAN_RING *)
+signature EXN
+signature FILE
+signature FILE_DESC
+signature FIXED_POINT
+signature INSERTION_SORT
 signature INTEGER
 signature INT_INF
+signature JUSTIFY
+signature LAYOUT
 signature LIST
-(* signature MONO_CONTAINER *)
-signature MONO_ENV
 signature OPTION
 signature ORDER
-signature ORDERED_RING
-signature POLY_CACHE
+(* signature ORDERED_RING *)
 signature PARSE
+signature PARSE_SEXP
+signature PROCESS
 signature PROMISE
+signature QUEUE
+signature QUICK_SORT
 signature REAL
-signature RING
-signature RING_WITH_IDENTITY
-signature SET
+signature REF
+signature RELATION
+signature RESULT
+(* signature RING *)
+(* signature RING_WITH_IDENTITY *)
+signature SEXP
 signature STREAM
 signature STRING
-signature SUM
+signature SUBSTRING
 signature T
+signature TREE
 signature UNIQUE_ID
+signature UNIQUE_SET
+signature UNIT
+signature WORD
 signature VECTOR
 
 structure AppendList
 structure Array
 structure Array2
 structure Assert
-structure Base64
 structure BinarySearch
 structure Bool
 structure Buffer
-structure Byte
 structure Char
-(* structure CharArray *)
-(* structure CharBuffer *)
+structure CharArray
 structure CharVector
 structure ChoicePattern
 structure ClearablePromise
 structure CommandLine
 structure Computation
-structure Console
 structure Counter
 structure Date
 structure Dir
 structure DirectedGraph
-structure DirectedSubGraph
-structure DisjointSet
-structure DotColor
 structure Dot
-structure Engine
+structure DotColor
 structure Error
 structure Escape
 structure Exn
-structure Export
 structure File
 structure FileDesc
 structure FixedPoint
@@ -73,41 +90,23 @@ structure Function
 structure Hash
 structure HashSet
 structure HashTable
-structure Html
 structure In
-structure InitScript
 structure Int
-(* structure Int32 *)
 structure IntInf
 structure InsertionSort
-structure INetSock
-structure Iterate
-structure Itimer
 structure Justify
-structure LargeInt
-structure LargeWord
-structure Lines
-structure List
 structure Layout
 structure List
-(* structure MergeSortList *)
-(* structure MergeSortVector *)
 structure MLton
-structure Option
 structure OS
+structure Option
 structure Out
 structure Parse
 structure ParseSexp
 structure Pervasive
 structure Pid
-structure Pointer
-structure PolyCache
 structure Popt
-structure Port
 structure Position
-structure Posix
-structure Postscript
-structure Power
 structure Process
 structure Promise
 structure Property
@@ -115,83 +114,52 @@ structure PropertyList
 structure Queue
 structure QuickSort
 structure Random
-structure RDB
-structure Reader
 structure Real
-(* structure RealVector *)
 structure Real32
 structure Real64
 structure Ref
 structure Regexp
 structure Relation
-structure ResizableArray
 structure Result
 structure Sexp
-structure Signal
-structure SMLofNJ
-structure Socket
 structure Stream
 structure String
 structure StringCvt
 structure Substring
-structure SysWord
-structure Thread
 structure Time
-structure Timer
 structure Trace
 structure Tree
-structure TwoListQueue
-structure Unimplemented
 structure Unit
-structure Unsafe
-structure Url
 structure Vector
 structure Word
 structure Word8
-(* structure Word8Array *)
-(* structure Word8ArraySlice *)
-(* structure Word8Vector *)
-(* structure Word16 *)
-(* structure Word32 *)
 
-functor AlphaBeta
-(* functor BinaryHeap *)
-functor BitVectorSet
-functor Cache
 functor Control
 functor Env
-functor EuclideanRing
+functor IntUniqueId
+functor MonoArray
+functor MonoVector
+functor PolyEnv
+functor Tree
+functor UniqueId
+functor UniqueSet
+
+signature SET
+structure DisjointSet
+functor OrderedUniqueSet
+functor UnorderedSet
+
+functor MonoEnv
+
 functor FlatLatticeMono
 functor FlatLatticeParam
 functor FlatLatticePoly
 functor FlatLatticeRec
-functor HashedUniqueSet
-functor IntUniqueId
-functor MakeMonoEnv
-functor MonoArray
-functor MonoList
-functor MonoEnv
-functor MonoList
-functor MonoOption
-functor MonoVector
-functor MoveToFrontEnv
 functor NPointLattice
-functor OrderedField
-functor OrderedUniqueSet
-functor Pair
-functor PolyEnv
 functor PowerSetLattice_ListSet
 functor PowerSetLattice_UniqueSet
-functor Ring
-functor RingWithIdentity
-(* functor SplayMonoEnv *)
-functor Sum
 functor ThreePointLattice
-functor Tree
 functor TwoPointLattice
-functor UniqueId
-functor UniqueSet
-functor UnorderedSet
 
 is
 
@@ -199,7 +167,3 @@ basic/sources.cm
 set/sources.cm
 env/sources.cm
 lattice/sources.cm
-
-#if (defined (SMLNJ_VERSION))
-directed-graph/sources.cm
-#endif

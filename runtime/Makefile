@@ -1,4 +1,4 @@
-## Copyright (C) 2010-2013,2018,2019-2021 Matthew Fluet.
+## Copyright (C) 2010-2013,2018,2019-2022 Matthew Fluet.
  # Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -257,13 +257,13 @@ basis-ffi.h: gen/basis-ffi.h
 	$(CP) $< $@
 
 define BASIS_FFI_TEMPLATE
-ifeq ($(shell cat gen/gen-basis-ffi.sml gen/basis-ffi.def gen/$(1) | $(SHA1DGST)),$(shell cat gen/$(1).chk))
+ifeq ($(shell $(CAT) gen/gen-basis-ffi.sml gen/basis-ffi.def gen/$(1) | $(SHA1DGST)),$(shell $(CAT) gen/$(1).chk))
 gen/$(1): gen/gen-basis-ffi.sml gen/basis-ffi.def
 	touch gen/$(1)
 else
 gen/$(1): gen/gen-basis-ffi$(EXE) gen/basis-ffi.def
 	./gen/gen-basis-ffi$(EXE) $(1) < gen/basis-ffi.def > gen/$(1)
-	cat gen/gen-basis-ffi.sml gen/basis-ffi.def gen/$(1) | $(SHA1DGST) > gen/$(1).chk
+	$(CAT) gen/gen-basis-ffi.sml gen/basis-ffi.def gen/$(1) | $(SHA1DGST) > gen/$(1).chk
 endif
 endef
 
@@ -378,9 +378,4 @@ SHOW_VARS += XCCFLAGS XMFLAGS XCPPFLAGS XCFLAGS OPTXCFLAGS DBGXCFLAGS DPIXCFLAGS
 SHOW_VARS += HAVE_NPI WITH_DEFAULT_NPI HAVE_PIE WITH_DEFAULT_PIE HAVE_PIC WITH_DEFAULT_PIC
 SHOW_VARS += LIBS
 
-$(eval $(MK_SHOW_CONFIG))
-
-
-.PHONY: clean
-clean:
-	../bin/clean
+$(eval $(MK_COMMON_GOALS))

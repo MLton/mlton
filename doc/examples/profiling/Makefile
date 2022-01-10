@@ -1,10 +1,18 @@
-## Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
+## Copyright (C) 2022 Matthew Fluet
+ # Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
  #
  # MLton is released under a HPND-style license.
  # See the file MLton-LICENSE for details.
  ##
+
+ROOT := ../../..
+include $(ROOT)/Makefile.config
+
+######################################################################
+
+PATH  := $(BIN):$(shell echo $$PATH)
 
 mlton := mlton
 mlprof := mlprof
@@ -13,14 +21,8 @@ COUNT_EX := tak
 MULT_EX := fib-tak
 TIME_EX := tak
 
-PATH := ../../../build/bin:$(shell echo $$PATH)
-
 .PHONY: all
 all: profile-time profile-alloc profile-count profile-stack profile-multiple
-
-.PHONY: clean
-clean:
-	../../../bin/clean
 
 .PHONY: profile-alloc
 profile-alloc:
@@ -57,3 +59,6 @@ profile-time:
 	$(mlprof) $(TIME_EX) mlmon.out
 	$(mlprof) -raw true $(TIME_EX) mlmon.out
 	$(mlprof) -show-line true $(TIME_EX) mlmon.out
+
+
+$(eval $(MK_COMMON_GOALS))

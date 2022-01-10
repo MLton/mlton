@@ -1,4 +1,4 @@
-(* Copyright (C) 2009 Matthew Fluet.
+(* Copyright (C) 2009,2022 Matthew Fluet.
  * Copyright (C) 1999-2006, 2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -39,17 +39,17 @@ fun size (T {numItems, ...}) = !numItems
 fun index (w: word, mask: word): int =
    Word.toInt (Word.andb (w, mask))
 
-val numPeeks: Int64.int ref = ref 0
-val numLinks: Int64.int ref = ref 0
+val numPeeks: FixedInt.int ref = ref 0
+val numLinks: FixedInt.int ref = ref 0
 
 fun stats () =
    let open Layout
    in align
-      [seq [str "hash set numPeeks = ", str (Int64.toString (!numPeeks))],
-       (* seq [str "hash set numLinks = ", str (Int64.toString (!numLinks))], *)
+      [seq [str "hash set numPeeks = ", str (FixedInt.toString (!numPeeks))],
+       (* seq [str "hash set numLinks = ", str (FixedInt.toString (!numLinks))], *)
        seq [str "hash set average position = ",
             str let open Real
-                    val fromInt = fromIntInf o Int64.toLarge
+                    val fromInt = fromIntInf o FixedInt.toLarge
                 in format (fromInt (!numLinks) / fromInt (!numPeeks),
                            Format.fix (SOME 3))
                 end]]

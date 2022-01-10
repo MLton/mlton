@@ -19,6 +19,4 @@ memory/platform/rtld-flags.$(TARGET_OS).sml: gen-rtld-flags.c
 	./gen-rtld-flags > memory/platform/rtld-flags.$(TARGET_OS).sml
 	$(RM) gen-rtld-flags$(EXE)
 
-.PHONY: clean
-clean:
-	../../bin/clean
+$(eval $(MK_COMMON_GOALS))

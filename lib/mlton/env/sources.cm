@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2022 Matthew Fluet.
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -14,11 +15,8 @@ signature POLY_CACHE
 
 structure PolyCache
 
-functor Cache
 functor MakeMonoEnv
 functor MonoEnv
-functor MoveToFrontEnv
-(* functor SplayMonoEnv *)
 
 is
 
@@ -30,12 +28,3 @@ mono-env.fun
 finite-function.sig
 poly-cache.sig
 poly-cache.fun
-
-#if (defined (SMLNJ_VERSION))
-
-move-to-front.fun
-(* splay-env.fun *)
-cache.sig
-cache.fun
-
-#endif

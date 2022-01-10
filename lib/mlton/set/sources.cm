@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2022 Matthew Fluet.
+ * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -10,9 +11,7 @@ Library
 
 signature SET
 
-functor BitVectorSet
 structure DisjointSet
-functor HashedUniqueSet
 functor OrderedUniqueSet
 functor UnorderedSet
 
@@ -25,10 +24,3 @@ disjoint.fun
 set.sig
 unordered.fun
 ordered-unique-set.fun
-
-#if (defined (SMLNJ_VERSION))
-
-bit-vector-set.fun
-hashed-unique-set.fun
-
-#endif

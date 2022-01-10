@@ -1,0 +1,103 @@
+#!/usr/bin/env bash
+
+set -e
+
+FIND=${FIND:-find}
+
+# Find ignored files of current directory by constructing a "find"
+# expression that matches names of ignored files.
+#
+# This script supports a reasonable subset of "gitignore(5)"
+# semantics.  Notably, it does support:
+#  * Patterns read from .gitignore files in current and parent directories
+#  * Blank line separators
+#  * Leading "#" comments
+#  * Trailing "/" directory patterns
+#  * Leading "/" this-directory patterns
+# and it does not support:
+#  * Patterns read from $GIT_DIR/info/exclude
+#    (b/c inappropriate for a source release)
+#  * Patterns read from file specified by configuration variable core.excludesfile
+#    (b/c inappropriate for a source release)
+#  * Leading "!" negation patterns
+#    (b/c complex semantics)
+#  * Internal "/" FNM_PATHNAME patterns
+#    (b/c complex semantics incompatible with '-path' primary)
+
+name=$(basename "$0")
+dir=$(dirname "$0")
+root=$(cd "$dir/.." && pwd)
+
+ignore='.gitignore'
+
+declare -a fargs
+fargs+=("(")
+fargs+=("-exec")
+fargs+=("false")
+fargs+=(";")
+idir="."
+while true; do
+    if [ -r "$idir/$ignore" ]; then
+        while IFS= read -r opat; do
+            pat="$opat"
+            ## Blank line: Separator -- supported
+            if [ -z "$pat" ]; then
+                continue
+            fi
+            ## Leading "#": Comment -- supported
+            if [ "${pat:0:1}" = "#" ]; then
+                continue
+            fi
+            ## Leading "\#": Pattern beginning with "#" -- supported
+            if [ "${pat:0:2}" = "\#" ]; then
+                pat="#${pat:2}"
+            fi
+            ## Leading "!": Negated pattern -- unsupported
+            if [ "${pat:0:1}" = "!" ]; then
+                echo "$name:: unsupported pattern: $opat"
+                exit 1
+            fi
+            ## Leading "\!": Pattern beginning with "!" -- supported
+            if [ "${pat:0:2}" = "\!" ]; then
+                pat="!${pat:2}"
+            fi
+            ## Trailing "/": Directory pattern -- supported
+            if [ "${pat:$((${#pat}-1)):1}" = "/" ]; then
+                dirPat="yes"
+                pat="${pat:0:$((${#pat}-1))}"
+            else
+                dirPat="no"
+            fi
+            ## Leading "/": This-directory pattern -- supported
+            if [ "${pat:0:1}" = "/" ]; then
+                if [ "$idir" = "." ]; then
+                    pat="${pat:1}"
+                else
+                    continue
+                fi
+            fi
+            ## Internal "/": FNM_PATHNAME pattern -- unsupported
+            if [ -z "${pat##*/*}" ]; then
+                echo "$name:: unsupported pattern: $opat"
+                exit 1
+            fi
+            fargs+=("-o")
+            fargs+=("(")
+            if [ "$dirPat" = "yes" ]; then
+                fargs+=("-type")
+                fargs+=("d")
+            fi
+            fargs+=("-name")
+            fargs+=("$pat")
+            fargs+=(")")
+        done < "$idir/$ignore"
+    fi
+    if [ "$(cd "$idir" && pwd)" != "$root" ]; then
+        idir="../$idir"
+    else
+        break
+    fi
+done
+fargs+=(")")
+
+${FIND} . -mindepth 1 -maxdepth 1 -depth "${fargs[@]}" "${@--print}"

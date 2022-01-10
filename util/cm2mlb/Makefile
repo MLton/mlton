@@ -1,44 +1,46 @@
-## Copyright (C) 2010 Matthew Fluet.
+## Copyright (C) 2010,2021-2022 Matthew Fluet.
  #
  # MLton is released under a HPND-style license.
  # See the file MLton-LICENSE for details.
  ##
 
-#
-# SML/NJ tools and heap suffix
-#
-ML_BUILD             := ml-build
-ML_BUILD_FLAGS       := 
-ML_HEAP_SUFFIX       := $(shell echo 'TextIO.output (TextIO.stdErr, SMLofNJ.SysInfo.getHeapSuffix ());' | sml 2>&1 1> /dev/null)
+ROOT := ../..
+include $(ROOT)/Makefile.config
+
+######################################################################
 
 #
-# cm2mlb root .cm 
+# cm2mlb root .cm
 #
 CM2MLB_CM := cm2mlb.cm
 #
 # cm2mlb heap image
 #
-CM2MLB_HEAP := cm2mlb.$(ML_HEAP_SUFFIX)
+CM2MLB_HEAP := cm2mlb.$(SMLNJ_HEAP_SUFFIX)
 
 all: $(CM2MLB_HEAP)
 
-$(CM2MLB_HEAP): cm2mlb.cm cm2mlb.sml gen-mlb.sml cm2mlb-map
-	rm -f $(CM2MLB_HEAP)
-# 	$(ML_BUILD) $(ML_BUILD_FLAGS) $(CM2MLB_CM) CM2MLB.main $(CM2MLB_HEAP)
-	(									\
-		echo 'if (CM.make "cm2mlb.cm") handle _ => false';		\
-		echo '   then ()';						\
-		echo '   else OS.Process.exit OS.Process.failure;'; 		\
-		echo 'CM2MLB.export();'						\
-	) | sml
+$(CM2MLB_HEAP):
+	(								\
+		echo 'if (CM.make "$(CM2MLB_CM)") handle _ => false';	\
+		echo '   then ()';					\
+		echo '   else OS.Process.exit OS.Process.failure;'; 	\
+		echo 'CM2MLB.export();'				\
+	) | CM_VERBOSE=false CONTROL_POLY_EQ_WARN=false $(SMLNJ)
 
-.PHONY: clean
-clean:
-	../../bin/clean
+$(CM2MLB_HEAP).d:
+	@touch $@
+	CM_VERBOSE=false $(SMLNJ_MAKEDEPEND) -n -f $@ $(CM2MLB_CM) $(CM2MLB_HEAP) || ($(RM) $@ ; exit 1)
+	CM_VERBOSE=false $(SMLNJ_MAKEDEPEND) -n -f $@ $(CM2MLB_CM) $@ || ($(RM) $@ ; exit 1)
+ifneq ($(MAKECMDGOALS),clean)
+-include $(CM2MLB_HEAP).d
+endif
 
-SMLDIR := $(dir $(shell which sml))
+SMLNJ_DIR := $(dir $(shell echo "$$(command -v $(SMLNJ))"))
 .PHONY: install
 install: $(CM2MLB_HEAP)
-	rm -f $(SMLDIR).heap/$(CM2MLB_HEAP) $(SMLDIR)cm2mlb
-	cp $(CM2MLB_HEAP) $(SMLDIR).heap
-	(cd $(SMLDIR) ; ln -s .run-sml cm2mlb)
+	$(RM) $(SMLNJ_DIR).heap/$(CM2MLB_HEAP) $(SMLNJ_DIR)cm2mlb
+	$(CP) $(CM2MLB_HEAP) $(SMLNJ_DIR).heap
+	(cd $(SMLNJ_DIR) ; ln -s .run-sml cm2mlb)
+
+$(eval $(MK_COMMON_GOALS))

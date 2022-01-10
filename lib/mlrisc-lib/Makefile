@@ -1,4 +1,4 @@
-## Copyright (C) 2009,2016,2018,2020 Matthew Fluet.
+## Copyright (C) 2009,2016,2018,2020,2022 Matthew Fluet.
  # Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -22,6 +22,4 @@ MLRISC/README.mlton: MLRISC.tgz MLRISC.patch
 	$(CHMOD) -R g-s MLRISC
 	$(PATCH) -s -d MLRISC -p1 < MLRISC.patch
 
-.PHONY: clean
-clean:
-	../../bin/clean
+$(eval $(MK_COMMON_GOALS))

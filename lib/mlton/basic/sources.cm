@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2013 Matthew Fluet.
+(* Copyright (C) 2009,2013,2022 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -9,59 +9,80 @@
 
 Library
 
+signature APPEND_LIST
 signature ARRAY
-signature BOUNDED_ORDER
+signature ARRAY2
+signature ASSERT
+signature BOOL
+signature BUFFER
+signature CLEARABLE_PROMISE
+signature COMMAND_LINE
+signature COUNTER
+signature DIR
 signature ENV
 signature ERROR
-signature EUCLIDEAN_RING
+signature ESCAPE
+(* signature EUCLIDEAN_RING *)
+signature EXN
+signature FILE
+signature FILE_DESC
+signature FIXED_POINT
+signature INSERTION_SORT
 signature INTEGER
 signature INT_INF
+signature JUSTIFY
+signature LAYOUT
 signature LIST
 signature OPTION
 signature ORDER
-signature ORDERED_RING
+(* signature ORDERED_RING *)
 signature PARSE
+signature PARSE_SEXP
+signature PROCESS
 signature PROMISE
+signature QUEUE
+signature QUICK_SORT
 signature REAL
-signature RING
-signature RING_WITH_IDENTITY
+signature REF
+signature RELATION
+signature RESULT
+(* signature RING *)
+(* signature RING_WITH_IDENTITY *)
+signature SEXP
 signature STREAM
 signature STRING
-signature SUM
+signature SUBSTRING
 signature T
+signature TREE
 signature UNIQUE_ID
+signature UNIQUE_SET
+signature UNIT
+signature WORD
 signature VECTOR
 
 structure AppendList
 structure Array
 structure Array2
 structure Assert
-structure Base64
 structure BinarySearch
 structure Bool
 structure Buffer
-structure Byte
 structure Char
-(* structure CharArray *)
-(* structure CharBuffer *)
+structure CharArray
 structure CharVector
 structure ChoicePattern
 structure ClearablePromise
 structure CommandLine
 structure Computation
-structure Console
 structure Counter
 structure Date
 structure Dir
 structure DirectedGraph
-structure DirectedSubGraph
 structure Dot
 structure DotColor
-structure Engine
 structure Error
 structure Escape
 structure Exn
-structure Export
 structure File
 structure FileDesc
 structure FixedPoint
@@ -69,26 +90,14 @@ structure Function
 structure Hash
 structure HashSet
 structure HashTable
-structure Html
 structure In
-structure InitScript
 structure Int
-(* structure Int32 *)
 structure IntInf
 structure InsertionSort
-structure INetSock
-structure Iterate
-structure Itimer
 structure Justify
-structure LargeInt
-structure LargeWord
 structure Layout
-structure Lines
-structure List
 structure List
 structure MLton
-(* structure MergeSortList *)
-(* structure MergeSortVector *)
 structure OS
 structure Option
 structure Out
@@ -96,324 +105,254 @@ structure Parse
 structure ParseSexp
 structure Pervasive
 structure Pid
-structure Pointer
 structure Popt
-structure Port
 structure Position
-structure Posix
-structure Postscript
-structure Power
 structure Process
 structure Promise
 structure Property
 structure PropertyList
 structure Queue
 structure QuickSort
-structure RDB
 structure Random
-structure Reader
 structure Real
-(* structure RealVector *)
 structure Real32
 structure Real64
 structure Ref
 structure Regexp
 structure Relation
-structure ResizableArray
 structure Result
-structure SMLofNJ
 structure Sexp
-structure Signal
-structure Socket
 structure Stream
 structure String
 structure StringCvt
 structure Substring
-structure SysWord
-structure Thread
 structure Time
-structure Timer
 structure Trace
 structure Tree
-structure TwoListQueue
-structure Unimplemented
 structure Unit
-structure Unsafe
-structure Url
 structure Vector
 structure Word
 structure Word8
-(* structure Word8Array *)
-(* structure Word8ArraySlice *)
-(* structure Word8Vector *)
-(* structure Word16 *)
-(* structure Word32 *)
 
-functor AlphaBeta
 functor Control
 functor Env
-functor EuclideanRing
 functor IntUniqueId
 functor MonoArray
-functor MonoList
-functor MonoList
-functor MonoOption
 functor MonoVector
-functor OrderedField
-functor Pair
 functor PolyEnv
-functor Ring
-functor RingWithIdentity
-functor Sum
 functor Tree
 functor UniqueId
 functor UniqueSet
 
 is
 
-#if (defined (SMLNJ_VERSION))
-../../stubs/basis-stubs-for-smlnj/sources.cm
+../../stubs/smlnj/basis/sources.cm
 ../../stubs/mlton-stubs/sources.cm
-#endif
 ../pervasive/sources.cm
 
 error.sig
 error.sml
+assert.sig
+assert.sml
+escape.sig
+escape.sml
+fixed-point.sig
+fixed-point.sml
 exn0.sml
 outstream0.sml
-layout.sig
 relation0.sml
 char0.sig
 char0.sml
 string0.sml
+layout.sig
 layout.sml
-substring.sig
-assert.sig
-assert.sml
-list.sig
-fold.sig
-fold.fun
-list.sml
-word.sig
-word8.sml
-max-pow-2-that-divides.fun
-word.sml
-string1.sml
-substring.sml
-outstream.sig
-outstream.sml
+function.sig
+function.sml
+t.sig
 relation.sig
 relation.sml
 order0.sig
 order.sig
-time.sig
-time.sml
-instream.sig
-char.sig
-computation.sig
-trace.sig
-exn.sig
-exn.sml
-date.sig
-date.sml
-pid.sig
-option.sig
-option.sml
-pid.sml
-intermediate-computation.sig
-instream0.sml
-intermediate-computation.sml
-string-map.sig
-string-map.sml
-t.sig
 unit.sig
 unit.sml
-trace.sml
 bool.sig
 bool.sml
-char.sml
-string.sig
-stream.sig
+exn.sig
+exn.sml
+ref.sig
+ref.sml
+option.sig
+option.sml
+result.sig
+result.sml
 promise.sig
 promise.sml
+clearable-promise.sig
+clearable-promise.sml
+list.sig
+fold.sig
+fold.fun
+list.sml
+
+control.sig
+control.fun
+
+max-pow-2-that-divides.fun
+fix-word.fun
+word.sig
+word8.sml
+word.sml
+
+string1.sml
+substring.sig
+substring.sml
+
+outstream.sig
+outstream.sml
+
+time.sig
+time.sml
+date.sig
+date.sml
+
+instream0.sml
+
+computation.sig
+intermediate-computation.sig
+intermediate-computation.sml
+
+string-map.sig
+string-map.sml
+
+pid.sig
+pid.sml
+
+trace.sig
+trace.sml
+
+stream.sig
 stream.sml
 ring.sig
-ring-with-identity.sig
-euclidean-ring.sig
-integer.sig
-euclidean-ring.fun
 ring.fun
-ordered-ring.sig
-ordered-ring.fun
+ring-with-identity.sig
 power.sml
 ring-with-identity.fun
+euclidean-ring.sig
+euclidean-ring.fun
+ordered-ring.sig
+ordered-ring.fun
+integer.sig
 integer.fun
 int.sml
-real.sig
+int-inf.sig
+int-inf.sml
+
+counter.sig
+counter.sml
+
 field.sig
 field.fun
 ordered-field.sig
 ordered-field.fun
+real.sig
 real.sml
+
 random.sig
 random.sml
+
 vector.sig
 vector.fun
 vector.sml
+mono-vector.fun
 array.sig
 array.fun
 array.sml
+array2.sig
+array2.sml
+insertion-sort.sig
+insertion-sort.sml
+quick-sort.sig
+quick-sort.sml
 binary-search.sig
 binary-search.sml
+
+append-list.sig
+append-list.sml
+
+het-container.sig
+het-container.fun
+property-list.sig
+property-list.fun
+property.sig
+property.fun
+
 hash.sig
 hash.sml
 hash-set.sig
 hash-set.sml
 hash-table.sig
 hash-table.sml
+
+char.sig
+char.sml
+string.sig
 string.sml
+
+instream.sig
 instream.sml
+
+buffer.sig
+buffer.sml
+
+env.sig
+env.fun
+
+queue.sig
+two-list-queue.sml
+
+unique-id.sig
+unique-id.fun
+
+unique-set.sig
+unique-set.fun
+
 file.sig
 file.sml
-parse.sig
-parse.sml
-signal.sml
-process.sig
 dir.sig
 dir.sml
-function.sig
-function.sml
+
 file-desc.sig
 file-desc.sml
+
+process.sig
 process.sml
-append-list.sig
-append-list.sml
-property-list.sig
-ref.sig
-ref.sml
-het-container.sig
-property-list.fun
-het-container.fun
-property.sig
-property.fun
+
+command-line.sig
+command-line.sml
+
+justify.sig
+justify.sml
+popt.sig
+popt.sml
+
+choice-pattern.sig
+choice-pattern.sml
+
 dot-color.sml
 dot.sig
 dot.sml
 tree.sig
-counter.sig
-counter.sml
 tree.sml
-int-inf.sig
-int-inf.sml
-control.sig
-control.fun
-queue.sig
-two-list-queue.sml
-array2.sig
-array2.sml
-env.sig
-env.fun
-unique-id.sig
-unique-id.fun
-clearable-promise.sig
-clearable-promise.sml
-justify.sig
-justify.sml
 directed-graph.sig
 directed-graph.sml
-large-word.sml
-quick-sort.sig
-insertion-sort.sig
-insertion-sort.sml
-quick-sort.sml
-unique-set.sig
-unique-set.fun
-fixed-point.sig
-fixed-point.sml
-mono-vector.fun
-result.sig
-result.sml
-regexp.sig
-regexp.sml
-popt.sig
-popt.sml
+
 sexp.sig
 sexp.sml
-choice-pattern.sig
-choice-pattern.sml
-escape.sig
-escape.sml
-buffer.sig
-buffer.sml
-base64.sig
-base64.sml
-
-# if ( defined(SMLNJ_VERSION) )
-
-alpha-beta.fun
-alpha-beta.sig
-bounded-order.fun
-bounded-order.sig
-char-buffer.sig
-char-buffer.sml
-circular-list.fun
-circular-list.sig
-console.sig
-console.sml
-directed-sub-graph.sig
-directed-sub-graph.sml
-doubly-linked.fun
-doubly-linked.sig
-engine.sig
-engine.sml
-export.sig
-export.sml
-format.sig
-format.sml
-html.sig
-html.sml
-inet-sock.sml
-init-script.sig
-init-script.sml
-iterate.sig
-iterate.sml
-itimer.sml
-lines.sig
-lines.sml
-linked-list.sig
-linked-list.sml
-mark.sig
-mark.sml
-mono-list.fun
-mono-option.fun
-pair.fun
-pair.sig
-parse-sexp.fun
 parse-sexp.sig
-pointer.sig
-pointer.sml
-port.sig
-port.sml
-postscript.sig
-postscript.sml
-rdb.sig
-rdb.sml
-reader.sig
-reader.sml
-resizable-array.fun
-resizable-array.sig
-socket.sml
-sum.fun
-sum.sig
-tab.sig
-tab.sml
-test.sml
-thread.sig
-thread.sml
-two-list-queue-mutable.sml
-unimplemented.sml
-url.sig
-url.sml
-word8-array-slice.sml
+parse-sexp.fun
 
-# endif
+regexp.sig
+regexp.sml
+
+parse.sig
+parse.sml

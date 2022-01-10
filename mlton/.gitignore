@@ -1,26 +1,30 @@
-## Ignore all .cm directories
-.cm/
-
-## Ignore all .basis files
-*.basis
-
 /mlton*-compile
 /mlton*-compile.exe
 /mlton*-compile.debug
 /mlton*-compile.debug.exe
+/mlton*-compile.trace
+/mlton*-compile.trace.exe
 /mlton*-compile.alloc
 /mlton*-compile.alloc.exe
 /mlton*-compile.count
 /mlton*-compile.count.exe
 /mlton*-compile.time
 /mlton*-compile.time.exe
-/mlton*-compile.trace
-/mlton*-compile.trace.exe
-/mlton*-compile-polyml
-/mlton*-compile-polyml.exe
-/mlton-polyml.use
-/mlton*-compile-smlnj.*-*
+
 /mlton-stubs.mlb
+
 /mlton.def-use
 
 /mlton-bootstrap-*.tgz
+
+/mlton*-compile-smlnj.*-*
+.cm/
+
+/mlton-polyml.sml
+/mlton*-compile-polyml.exe
+/mlton*-compile-polyml
+
+/mlton-mlkit.mlb
+/mlton*-compile-mlkit
+/mlton*-compile-mlkit.exe
+MLB/

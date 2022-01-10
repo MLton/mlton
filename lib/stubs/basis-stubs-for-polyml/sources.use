@@ -1,5 +1,0 @@
-use "int.sml";
-use "real.sml";
-use "unsafe.sig";
-use "unsafe.sml";
-use "word.sml";

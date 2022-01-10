@@ -1,32 +1,29 @@
-## Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh
+## Copyright (C) 2022 Matthew Fluet
+ # Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  #
  # MLton is released under a HPND-style license.
  # See the file MLton-LICENSE for details.
  ##
 
-TEX_FILES := \
-	bib.bib			\
+ROOT := ../..
+include $(ROOT)/Makefile.config
+
+######################################################################
+
+PDFLATEX := pdflatex
+BIBTEX := bibtex
+
+TEX_FILES := 		\
+	bib.bib		\
 	mlb-formal.tex
 
-all:	mlb-formal.ps mlb-formal.pdf
-
-mlb-formal.dvi: $(TEX_FILES)
-	latex mlb-formal; bibtex mlb-formal; latex mlb-formal; latex mlb-formal
+all: mlb-formal.pdf
 
 mlb-formal.pdf: $(TEX_FILES)
-	latex mlb-formal
-	bibtex mlb-formal
-	latex mlb-formal
-	pdflatex mlb-formal
+	$(PDFLATEX) mlb-formal.tex
+	$(BIBTEX) mlb-formal
+	$(PDFLATEX) mlb-formal.tex
+	$(PDFLATEX) mlb-formal.tex
 
-mlb-formal.ps: mlb-formal.dvi
-	dvips -o mlb-formal.ps mlb-formal
-
-.PHONY: clean
-clean:
-	../../bin/clean
-
-.PHONY: tags
-tags:
-	etags *.tex
+$(eval $(MK_COMMON_GOALS))

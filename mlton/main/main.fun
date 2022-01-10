@@ -1,4 +1,4 @@
-(* Copyright (C) 2010-2011,2013-2021 Matthew Fluet.
+(* Copyright (C) 2010-2011,2013-2022 Matthew Fluet.
  * Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1002,7 +1002,7 @@ val {parse, usage} =
 
 val usage = fn s => (usage s; raise Fail "unreachable")
 
-fun commandLine (args: string list): unit =
+fun commandLine (_: string, args: string list): unit =
    let
       open Control
       datatype z = datatype MLton.Platform.Arch.t
@@ -1323,7 +1323,7 @@ fun commandLine (args: string list): unit =
                                  MinGW => ("TEMP", "C:/WINDOWS/TEMP")
                                | _ => ("TMPDIR", "/tmp")
                         in
-                           case Process.getEnv tmpVar of
+                           case OS.Process.getEnv tmpVar of
                               NONE => default
                             | SOME d => d
                         end
@@ -1640,10 +1640,8 @@ fun commandLine (args: string list): unit =
          end
    end
 
-val commandLine = Process.makeCommandLine commandLine
+val main = CommandLine.makeMain commandLine
 
-val main = fn (_, args) => commandLine args
-
-val mainWrapped = fn () => OS.Process.exit (commandLine (CommandLine.arguments ()))
+fun mainWrapped () = CommandLine.wrapMain main ()
 
 end

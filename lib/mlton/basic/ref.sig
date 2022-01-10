@@ -1,4 +1,4 @@
-(* Copyright (C) 2021 Matthew Fluet.
+(* Copyright (C) 2021,2022 Matthew Fluet.
  * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -17,11 +17,9 @@ signature REF =
       val fluidLet: 'a t * 'a * (unit -> 'b) -> 'b
       val getAndSet: ('a -> 'b ref) -> ('a -> 'b) * ('a * 'b -> unit)
       val getSet: ('a -> Layout.t) -> {get: unit -> 'a,
-                                        set: 'a -> unit,
-                                        clear: unit -> unit,
-                                        layout: unit -> Layout.t,
-                                        output: Out.t -> unit,
-                                        print: unit -> unit}
+                                       set: 'a -> unit,
+                                       clear: unit -> unit,
+                                       layout: unit -> Layout.t}
       val layout: ('a -> Layout.t) -> 'a t -> Layout.t
       val memoize: 'a option t * (unit -> 'a) -> 'a
       val new: 'a -> 'a t

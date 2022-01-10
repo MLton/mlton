@@ -1,0 +1,30 @@
+(* Copyright (C) 2022 Matthew Fluet.
+ *
+ * MLton is released under a HPND-style license.
+ * See the file MLton-LICENSE for details.
+ *)
+
+structure PreMLton =
+struct
+
+   open MLton
+
+   val debug = MLTON_DEBUG
+
+   structure Platform =
+      struct
+         structure Arch =
+            struct
+               val host = "HOST_ARCH"
+            end
+         structure Format =
+            struct
+               val host = "executable"
+            end
+         structure OS =
+            struct
+               val host = "HOST_OS"
+            end
+      end
+
+end

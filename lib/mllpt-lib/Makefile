@@ -1,4 +1,4 @@
-## Copyright (C) 2011,2016,2018,2020 Matthew Fluet.
+## Copyright (C) 2011,2016,2018,2020,2022 Matthew Fluet.
  #
  # MLton is released under a HPND-style license.
  # See the file MLton-LICENSE for details.
@@ -21,6 +21,4 @@ ml-lpt/README: ml-lpt.tgz ml-lpt.patch
 	$(PATCH) -s -d ml-lpt -p1 < ml-lpt.patch
 	touch $@  # ml-lpt/README not created/updated by patch
 
-.PHONY: clean
-clean:
-	../../bin/clean
+$(eval $(MK_COMMON_GOALS))

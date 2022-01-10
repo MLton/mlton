@@ -177,7 +177,7 @@ let
    local
       val cpp_tmpl =
          Option.fold
-         (Process.getEnv "FFIGEN_CPP",
+         (OS.Process.getEnv "FFIGEN_CPP",
           defaultCppCmd,
           fn (cpp_tmpl,_) => cpp_tmpl)
       val cpp_tmpl =

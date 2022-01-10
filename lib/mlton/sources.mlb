@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019,2021 Matthew Fluet.
+(* Copyright (C) 2009,2019,2021-2022 Matthew Fluet.
  * Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -9,45 +9,65 @@
 ann "forceUsed" in
    local
       basic/sources.mlb
-      set/sources.mlb
-      env/sources.mlb
-      lattice/sources.mlb
    in
+      signature APPEND_LIST
       signature ARRAY
+      signature ARRAY2
+      signature ASSERT
+      signature BOOL
+      signature BUFFER
+      signature CLEARABLE_PROMISE
+      signature COMMAND_LINE
+      signature COUNTER
+      signature DIR
       signature ENV
       signature ERROR
-      signature EUCLIDEAN_RING
+      signature ESCAPE
+      (* signature EUCLIDEAN_RING *)
+      signature EXN
+      signature FIXED_POINT
+      signature INSERTION_SORT
       signature INTEGER
       signature INT_INF
+      signature JUSTIFY
+      signature LAYOUT
       signature LIST
-      (* signature MONO_CONTAINER *)
-      signature MONO_ENV
       signature OPTION
       signature ORDER
-      signature ORDERED_RING
-      signature POLY_CACHE
+      (* signature ORDERED_RING *)
       signature PARSE
+      signature PARSE_SEXP
+      signature PROCESS
       signature PROMISE
+      signature QUEUE
+      signature QUICK_SORT
       signature REAL
-      signature RING
-      signature RING_WITH_IDENTITY
-      signature SET
+      signature REF
+      signature RELATION
+      signature RESULT
+      (* signature RING *)
+      (* signature RING_WITH_IDENTITY *)
+      signature SEXP
       signature STREAM
       signature STRING
+      signature SUBSTRING
       signature T
+      signature TREE
       signature UNIQUE_ID
+      signature UNIQUE_SET
+      signature UNIT
+      signature WORD
       signature VECTOR
 
       structure AppendList
       structure Array
       structure Array2
       structure Assert
-      structure Base64
       structure BinarySearch
       structure Bool
       structure Buffer
       structure Char
-      (* structure CharArray *)
+      structure CharArray
       structure CharVector
       structure ChoicePattern
       structure ClearablePromise
@@ -57,9 +77,8 @@ ann "forceUsed" in
       structure Date
       structure Dir
       structure DirectedGraph
-      structure DisjointSet
-      structure DotColor
       structure Dot
+      structure DotColor
       structure Error
       structure Escape
       structure Exn
@@ -70,30 +89,23 @@ ann "forceUsed" in
       structure Hash
       structure HashSet
       structure HashTable
-      (* structure Http *)
       structure In
       structure Int
-      (* structure Int32 *)
       structure IntInf
       structure InsertionSort
       structure Justify
-      structure LargeInt
-      structure LargeWord
       structure Layout
       structure List
-      (* structure MergeSortList *)
-      (* structure MergeSortVector *)
       structure MLton
-      structure Option
       structure OS
+      structure Option
       structure Out
       structure Parse
+      structure ParseSexp
       structure Pervasive
       structure Pid
-      structure PolyCache
       structure Popt
       structure Position
-      structure Power
       structure Process
       structure Promise
       structure Property
@@ -102,7 +114,6 @@ ann "forceUsed" in
       structure QuickSort
       structure Random
       structure Real
-      (* structure RealVector *)
       structure Real32
       structure Real64
       structure Ref
@@ -110,53 +121,54 @@ ann "forceUsed" in
       structure Relation
       structure Result
       structure Sexp
-      structure Signal
-      structure SMLofNJ
       structure Stream
       structure String
       structure StringCvt
       structure Substring
-      structure SysWord
       structure Time
       structure Trace
       structure Tree
-      structure TwoListQueue
       structure Unit
       structure Vector
       structure Word
       structure Word8
-      (* structure Word8Array *)
-      (* structure Word8Vector *)
-      (* structure Word32 *)
 
-      (* functor BinaryHeap *)
       functor Control
       functor Env
-      functor EuclideanRing
+      functor IntUniqueId
+      functor MonoArray
+      functor MonoVector
+      functor PolyEnv
+      functor Tree
+      functor UniqueId
+      functor UniqueSet
+
+      $(SML_LIB)/basis/pervasive.mlb
+   end
+   local
+      set/sources.mlb
+   in
+      signature SET
+      structure DisjointSet
+      functor OrderedUniqueSet
+      functor UnorderedSet
+   end
+   local
+      env/sources.mlb
+   in
+      functor MonoEnv
+   end
+   local
+      lattice/sources.mlb
+   in
       functor FlatLatticeMono
       functor FlatLatticeParam
       functor FlatLatticePoly
       functor FlatLatticeRec
-      functor IntUniqueId
-      functor MakeMonoEnv
-      functor MonoArray
-      functor MonoEnv
-      functor MonoVector
       functor NPointLattice
-      functor OrderedField
-      functor OrderedUniqueSet
-      functor PolyEnv
       functor PowerSetLattice_ListSet
       functor PowerSetLattice_UniqueSet
-      functor Ring
-      functor RingWithIdentity
       functor ThreePointLattice
-      functor Tree
       functor TwoPointLattice
-      functor UniqueId
-      functor UniqueSet
-      functor UnorderedSet
-
-      $(SML_LIB)/basis/pervasive.mlb
    end
 end
