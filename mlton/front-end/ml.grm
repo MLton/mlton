@@ -8,7 +8,7 @@
  * See the file NJ-LICENSE for details.
  *)
 
-(* Copyright (C) 2008,2009,2014-2017,2019 Matthew Fluet.
+(* Copyright (C) 2008,2009,2014-2017,2019,2022 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -311,6 +311,7 @@ type 'a whereAndEqns = WhereEquation.t list * 'a list
        | exp_ps of Exp.t list
        | expnode of Exp.node
        | expsAndTopdecs of Topdec.t list list
+       | expsAndTopdecs' of Topdec.t list list
        | fctarg of FctArg.node
        | fctid of Fctid.t
        | field of Field.t
@@ -477,13 +478,16 @@ type 'a whereAndEqns = WhereEquation.t list * 'a list
 program: expsAndTopdecs (Program.T expsAndTopdecs)
 
 expsAndTopdecs:
-    exp SEMICOLON expsAndTopdecs ([Topdec.fromExp exp] :: expsAndTopdecs)
+    exp expsAndTopdecs' (consTopdec (Topdec.fromExp exp, expsAndTopdecs'))
   | topdecs (topdecs)
 
-topdecs:
+expsAndTopdecs':
       ([])
-  | topdec topdecs (consTopdec (topdec, topdecs))
   | SEMICOLON expsAndTopdecs ([] :: expsAndTopdecs)
+
+topdecs:
+    topdec topdecs (consTopdec (topdec, topdecs))
+  | expsAndTopdecs' (expsAndTopdecs')
 
 topdec : topdecnode (Topdec.makeRegion' (topdecnode,
                                          topdecnodeleft,

@@ -8,6 +8,11 @@ Here are the changes from version 20210117 to YYYYMMDD.
 
 === Details
 
+* 2022-01-11
+  ** Accept a non-semicolon terminated final expression in the syntax of
+  programs.  Thanks to Krzysztof Leśniak (serpent7776) for the discussion and
+  grammar patch.
+
 * 2021-12-17
   ** Fix bug in `ConstantPropagation` with vector literals.  Thanks to
   Ram Raghunathan for the bug report.
