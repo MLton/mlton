@@ -11,6 +11,11 @@ function normalize_path () {
     local opath=""
     while [ "$opath" != "$path" ]; do
         opath="$path"
+        path="$(echo "$path" | ${SED} -e 's;^\./;;')"
+    done
+    local opath=""
+    while [ "$opath" != "$path" ]; do
+        opath="$path"
         path="$(echo "$path" | ${SED} -e 's;/\./;/;')"
     done
     opath=""
