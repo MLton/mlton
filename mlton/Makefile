@@ -262,7 +262,7 @@ ifneq (,$(findstring mlkit,$(MAKECMDGOALS)))
 mlkit-mlton: $(MLTON_OUTPUT)-mlkit
 
 $(MLTON_OUTPUT)-mlkit: $(shell $(MLBDEPS) mlton-mlkit.mlb | $(GREP) -v '$$(SML_LIB)') $(MLTON_GEN_SOURCES)
-	$(MLKIT) -o $@ mlton-mlkit.mlb
+	$(MLKIT) $(MLKIT_FLAGS) -o $@ mlton-mlkit.mlb
 
 mlton-mlkit.mlb: ../lib/stubs/mlkit/basis/sources.mlb ../lib/stubs/mlkit/mlton/sources.mlb $(shell $(MLBDEPS) ../lib/stubs/mlton-stubs/sources.mlb | $(GREP) 'mlb$$' | $(GREP) -v '$$(SML_LIB)') $(shell $(MLBDEPS) mlton.mlb | $(GREP) 'mlb$$' | $(GREP) -v '$$(SML_LIB)')
 	(									\
