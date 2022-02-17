@@ -19,6 +19,3 @@ real.sml
 ../../common/basis/pack-word64-dummy.sml
 
 timer.sml
-
-../../common/basis/unsafe.sig
-../../common/basis/unsafe.sml

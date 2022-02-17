@@ -27,4 +27,6 @@
 /mlton-mlkit.mlb
 /mlton*-compile-mlkit
 /mlton*-compile-mlkit.exe
+*-mlkit.mlb
+*-mlkit-bind*.sml
 MLB/

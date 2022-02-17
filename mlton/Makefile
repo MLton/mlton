@@ -262,12 +262,13 @@ ifneq (,$(findstring mlkit,$(MAKECMDGOALS)))
 mlkit-mlton: $(MLTON_OUTPUT)-mlkit
 
 $(MLTON_OUTPUT)-mlkit: $(shell $(MLBDEPS) mlton-mlkit.mlb | $(GREP) -v '$$(SML_LIB)') $(MLTON_GEN_SOURCES)
-	$(MLKIT) -o $@ mlton-mlkit.mlb
+	$(MLKIT) $(MLKIT_FLAGS) -o $@ mlton-mlkit.mlb
 
 mlton-mlkit.mlb: ../lib/stubs/mlkit/basis/sources.mlb ../lib/stubs/mlkit/mlton/sources.mlb $(shell $(MLBDEPS) ../lib/stubs/mlton-stubs/sources.mlb | $(GREP) 'mlb$$' | $(GREP) -v '$$(SML_LIB)') $(shell $(MLBDEPS) mlton.mlb | $(GREP) 'mlb$$' | $(GREP) -v '$$(SML_LIB)')
 	(									\
 		echo 'local';							\
 		echo '../lib/stubs/mlkit/basis/sources.mlb';			\
+		echo '../lib/stubs/mlkit/basis/unsafe.mlb';			\
 		$(MLBDEPS) mlton.mlb | $(GREP) -v 'mlb$$' | $(GREP) 'mlyacc'; 	\
 		echo '../lib/stubs/mlkit/mlton/sources.mlb';			\
 		$(MLBDEPS) ../lib/stubs/mlton-stubs/sources.mlb |		\
@@ -284,4 +285,36 @@ mlton-mlkit.mlb: ../lib/stubs/mlkit/basis/sources.mlb ../lib/stubs/mlkit/mlton/s
 		echo 'call-main.sml';						\
 		echo 'end';							\
 	) > $@
+
+# %-mlkit.mlb: %.mlb Makefile
+# 	$(RM) $(notdir $*)-mlkit-bind*.sml
+# 	bindk=0; \
+# 	while IFS= read -r line; do \
+# 	    indent="$$(echo "$$line" | $(SED) -E 's/^([ ]*)(.*)[ ]*$$/\1/')"; \
+# 	    line="$$(echo "$$line" | $(SED) -E 's/^([ ]*)(.*)[ ]*$$/\2/')"; \
+# 	    if echo "$$line" | $(GREP) -q "^\(functor\|signature\|structure\)"; then \
+# 	        bind="$$line"; \
+# 	        xbind="$$(echo "$$bind" | $(SED) -E 's/^((structure|functor|signature)[ ]+([^ =]+))[ ]*$$/\1 = \3/')"; \
+# 	        echo "$$xbind" > $*-mlkit-bind$${bindk}.sml; \
+# 	        echo "$${indent}$(notdir $*)-mlkit-bind$${bindk}.sml (* $${bind} *)"; \
+# 	        bindk=$$((bindk + 1)); \
+# 	    elif echo "$$line" | $(GREP) -q "\.mlb$$"; then \
+# 	        case "$$line" in \
+# 	          '$$(SML_LIB)/basis/basis.mlb') echo "$${indent}$(SRC)/lib/stubs/mlkit/basis/sources.mlb" ;; \
+# 	          '$$(SML_LIB)/basis/mlton.mlb') \
+# 	              case "$<" in \
+# 	                */mlton-stubs/sources.mlb) \
+# 	                    echo "$${indent}$(SRC)/lib/stubs/mlkit/mlton/sources.mlb" ;; \
+# 	                *) \
+# 	                    echo "$${indent}$(SRC)/lib/stubs/mlton-stubs/sources-mlkit.mlb" ;; \
+# 	              esac ;; \
+# 	          '$$(SML_LIB)/basis/pervasive.mlb') echo "$${indent}$(SRC)/lib/stubs/mlkit/basis/pervasive.mlb" ;; \
+# 	          '$$(SML_LIB)/basis/unsafe.mlb') echo "$${indent}$(SRC)/lib/stubs/mlkit/basis/unsafe.mlb" ;; \
+# 	          *) echo "$${indent}$${line}" | $(SED) 's/\.mlb/-mlkit.mlb/' ;; \
+# 	        esac; \
+# 	    else \
+# 	        echo "$${indent}$${line}"; \
+# 	    fi; \
+# 	done < $< > $@
+
 endif
