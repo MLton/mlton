@@ -8,10 +8,15 @@ Here are the changes from version 20210117 to YYYYMMDD.
 
 === Details
 
+* 2022-02020
+  ** Fix bug with `-profile time` leading to a segmentation fault.
+  Thanks to Byron Zhong for the bug report.
+
+
 * 2022-01-11
-  ** Accept a non-semicolon terminated final expression in the syntax of
-  programs.  Thanks to Krzysztof Leśniak (serpent7776) for the discussion and
-  grammar patch.
+  ** Accept a non-semicolon terminated final expression in the syntax
+  of programs.  Thanks to Krzysztof Leśniak (serpent7776) for the
+  discussion and grammar patch.
 
 * 2021-12-17
   ** Fix bug in `ConstantPropagation` with vector literals.  Thanks to

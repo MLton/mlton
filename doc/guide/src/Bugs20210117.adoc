@@ -2,3 +2,10 @@
 
 Here are the known bugs in <<Release20210117#,MLton 20210117>>, listed
 in reverse chronological order of date reported.
+
+* [[bug01]]
+Bug with `-profile time` leading to a segmentation fault.
++
+Thanks to Byron Zhong for the bug report.
++
+Fixed by commit https://github.com/MLton/mlton/commit/737a4b6e0[`737a4b6e0`].
