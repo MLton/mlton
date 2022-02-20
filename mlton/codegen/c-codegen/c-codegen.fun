@@ -1318,7 +1318,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                             return = SOME {return, size = SOME size}, ...} =>
                         (push (return, size);
                          flushFrontier ();
-                         flushStackTop ();
+                         if not amTimeProfiling then flushStackTop () else ();
                          print "\treturn ";
                          print (C.call ("Thread_returnToC", [])))
                    | CCall {args, func, return} =>
@@ -1340,7 +1340,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                        res
                                     end
                            val _ = if CFunction.modifiesFrontier func then flushFrontier () else ()
-                           val _ = if CFunction.readsStackTop func then flushStackTop () else ()
+                           val _ = if CFunction.readsStackTop func andalso not amTimeProfiling then flushStackTop () else ()
                            val _ = print "\t"
                            val _ =
                               if Type.isUnit returnTy
