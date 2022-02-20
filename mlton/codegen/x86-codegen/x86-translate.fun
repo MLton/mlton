@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019-2021 Matthew Fluet.
+(* Copyright (C) 2009,2019-2022 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -333,7 +333,7 @@ struct
                in
                   fromSizes (sizes, origin)
                end
-          | StackOffset (StackOffset.T {offset, ty}) =>
+          | StackOffset (StackOffset.T {offset, ty, ...}) =>
                let
                   val offset = Bytes.toInt offset
                   val ty = Type.toCType ty

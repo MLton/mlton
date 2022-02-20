@@ -1,4 +1,4 @@
-(* Copyright (C) 2017,2019 Matthew Fluet.
+(* Copyright (C) 2017,2019,2022 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -89,7 +89,7 @@ structure Allocation:
           fun new (alloc): t =
              let
                 val a =
-                   Array.fromListMap (alloc, fn StackOffset.T {offset, ty} =>
+                   Array.fromListMap (alloc, fn StackOffset.T {offset, ty, ...} =>
                                       {offset = offset,
                                        size = Type.bytes ty})
                 val () =
@@ -374,7 +374,7 @@ fun allocate {function = f: Rssa.Function.t,
                                    val {offset} = Allocation.getStack (a, ty)
                                 in
                                    Operand.StackOffset
-                                   (StackOffset.T {offset = offset, ty = ty})
+                                   (StackOffset.T {offset = offset, ty = ty, volatile = false})
                                 end
                            | Temporary =>
                                 Operand.Temporary
@@ -473,7 +473,7 @@ fun allocate {function = f: Rssa.Function.t,
                      List.fold
                      (handlersArgs, Bytes.zero, fn (args, maxSize) =>
                       Vector.fold
-                      (paramOffsets args, maxSize, fn ({offset, ty}, maxSize) =>
+                      (paramOffsets args, maxSize, fn ({offset, ty, ...}, maxSize) =>
                        Bytes.max (maxSize, Bytes.+ (offset, Type.bytes ty))))
                   val handlerOffset = Bytes.- (handlerArgsOffset, Runtime.labelSize ())
                in
@@ -503,13 +503,15 @@ fun allocate {function = f: Rssa.Function.t,
                                NONE => extra
                              | SOME h => 
                                   Operand.stackOffset {offset = handlerOffset,
-                                                       ty = Type.label h}
+                                                       ty = Type.label h,
+                                                       volatile = false}
                                   :: extra
                          val extra =
                             if linkLive
                                then
                                   Operand.stackOffset {offset = linkOffset,
-                                                       ty = Type.exnStack ()}
+                                                       ty = Type.exnStack (),
+                                                       volatile = false}
                                   :: extra
                             else extra
                       in
@@ -528,12 +530,15 @@ fun allocate {function = f: Rssa.Function.t,
                    NONE => stackInit
                  | SOME {handlerArgsOffset, handlerArgsSize, handlerOffset, linkOffset, ...} =>
                       StackOffset.T {offset = linkOffset,
-                                     ty = Type.exnStack ()}
+                                     ty = Type.exnStack (),
+                                     volatile = false}
                       :: StackOffset.T {offset = handlerOffset,
-                                        ty = Type.label (Label.newNoname ())}
+                                        ty = Type.label (Label.newNoname ()),
+                                        volatile = false}
                       :: (if (Bytes.> (handlerArgsSize, Bytes.zero))
                              then StackOffset.T {offset = handlerArgsOffset,
-                                                 ty = Type.bits (Bytes.toBits handlerArgsSize)}
+                                                 ty = Type.bits (Bytes.toBits handlerArgsSize),
+                                                 volatile = false}
                                   :: stackInit
                              else stackInit)
              val a = Allocation.new (stackInit, temporariesInit)
