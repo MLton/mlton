@@ -1,4 +1,4 @@
-/* Copyright (C) 2011-2012,2019,2021 Matthew Fluet.
+/* Copyright (C) 2011-2012,2019,2021-2022 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -340,7 +340,9 @@ void GC_handleSigProf (__attribute__ ((unused)) int signum) {
     fprintf (stderr, "GC_handleSigProf ()\n");
   if (s->amInGC)
     sourceSeqIndex = GC_SOURCE_SEQ_INDEX;
-  else {
+  else if (s->stackTop == s->stackBottom) {
+    sourceSeqIndex = s->sourceMaps.curSourceSeqIndex;
+  } else {
     GC_frameIndex frameIndex = getCachedStackTopFrameIndex (s);
     if (C_FRAME == s->frameInfos[frameIndex].kind)
       sourceSeqIndex = s->frameInfos[frameIndex].sourceSeqIndex;
