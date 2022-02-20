@@ -90,7 +90,7 @@ struct
                 size = size}, size), offset + x86.Size.toBytes size))
       in
       val rec toX86Operand : t -> (x86.Operand.t * x86.Size.t) vector =
-         fn SequenceOffset {base, index, offset, scale, ty}
+         fn SequenceOffset {base, index, offset, scale, ty, volatile = _}
             => let
                   val base = toX86Operand base
                   val _ = Assert.assert("x86Translate.Operand.toX86Operand: SequenceOffset/base",
@@ -333,7 +333,7 @@ struct
                in
                   fromSizes (sizes, origin)
                end
-          | StackOffset (StackOffset.T {offset, ty, ...}) =>
+          | StackOffset (StackOffset.T {offset, ty, volatile = _}) =>
                let
                   val offset = Bytes.toInt offset
                   val ty = Type.toCType ty

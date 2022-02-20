@@ -86,7 +86,7 @@ struct
                 size = size}, size), offset + amd64.Size.toBytes size))
       in
       val rec toAMD64Operand : t -> (amd64.Operand.t * amd64.Size.t) vector =
-         fn SequenceOffset {base, index, offset, scale, ty}
+         fn SequenceOffset {base, index, offset, scale, ty, volatile = _}
             => let
                   val base = toAMD64Operand base
                   val _ = Assert.assert("amd64Translate.Operand.toAMD64Operand: SequenceOffset/base",
@@ -293,7 +293,7 @@ struct
                in
                   fromSizes (sizes, origin)
                end
-          | StackOffset (StackOffset.T {offset, ty, ...}) =>
+          | StackOffset (StackOffset.T {offset, ty, volatile = _}) =>
                let
                   val offset = Bytes.toInt offset
                   val ty = Type.toCType ty

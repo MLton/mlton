@@ -294,7 +294,8 @@ structure Operand =
                             index: t,
                             offset: Bytes.t,
                             scale: Scale.t,
-                            ty: Type.t}
+                            ty: Type.t,
+                            volatile: bool}
        | StackOffset of StackOffset.t
        | StackTop
        | StaticHeapRef of StaticHeap.Ref.t
@@ -338,8 +339,8 @@ structure Operand =
                   seq [str (concat ["O", if volatile then "V" else "", Type.name ty, " "]),
                        tuple [layout base, Bytes.layout offset],
                        constrain ty]
-             | SequenceOffset {base, index, offset, scale, ty} =>
-                  seq [str (concat ["X", Type.name ty, " "]),
+             | SequenceOffset {base, index, offset, scale, ty, volatile} =>
+                  seq [str (concat ["X", if volatile then "V" else "", Type.name ty, " "]),
                        tuple [layout base, layout index, Scale.layout scale,
                               Bytes.layout offset],
                        constrain ty]
@@ -1262,7 +1263,7 @@ structure Program =
                                                    doit frameInfo
                                               | Kind.Jump => true
                                           end)
-                      | SequenceOffset {base, index, offset, scale, ty} =>
+                      | SequenceOffset {base, index, offset, scale, ty, volatile = _} =>
                            (checkOperand (base, alloc)
                             ; checkOperand (index, alloc)
                             ; (Type.sequenceOffsetIsOk

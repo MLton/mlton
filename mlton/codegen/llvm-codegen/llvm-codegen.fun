@@ -1105,7 +1105,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                            in
                               (res, volatile)
                            end
-                      | Operand.SequenceOffset {base, index, offset, scale, ty} =>
+                      | Operand.SequenceOffset {base, index, offset, scale, ty, volatile} =>
                            let
                               val base = operandToRValue base
                               val index as (_, indexTy) = operandToRValue index
@@ -1121,7 +1121,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                               val _ = $(gep {dst = tmp3, src = tmp2, args = [offset]})
                               val _ = $(cast {dst = res, src = tmp3})
                            in
-                              (res, false)
+                              (res, volatile)
                            end
                       | Operand.StackOffset (StackOffset.T {offset, ty, volatile}) =>
                            let

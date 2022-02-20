@@ -610,7 +610,8 @@ fun toMachine (rssa: Rssa.Program.t) =
                                index = translateOperand index,
                                offset = offset,
                                scale = scale,
-                               ty = ty}
+                               ty = ty,
+                               volatile = false}
                   end
              | Var {var, ...} => varOperand var
          end
@@ -697,7 +698,8 @@ fun toMachine (rssa: Rssa.Program.t) =
                                  index = mkIndex index,
                                  offset = offset,
                                  scale = scale,
-                                 ty = ty}
+                                 ty = ty,
+                                 volatile = false}
                           in
                              mkInit (init, mkDst)
                           end))

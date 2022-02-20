@@ -115,7 +115,8 @@ signature MACHINE =
                                   index: t,
                                   offset: Bytes.t,
                                   scale: Scale.t,
-                                  ty: Type.t}
+                                  ty: Type.t,
+                                  volatile: bool}
              | StackOffset of StackOffset.t
              | StackTop
              | StaticHeapRef of StaticHeap.Ref.t

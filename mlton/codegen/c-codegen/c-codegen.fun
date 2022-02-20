@@ -1035,8 +1035,9 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                                Type.toC ty],
                                        toString base,
                                        C.bytes offset]]
-             | SequenceOffset {base, index, offset, scale, ty} =>
-                  concat ["X", C.args [Type.toC ty,
+             | SequenceOffset {base, index, offset, scale, ty, volatile} =>
+                  concat ["X", C.args [concat [if volatile then "volatile " else "",
+                                               Type.toC ty],
                                        toString base,
                                        toString index,
                                        Scale.toString scale,
