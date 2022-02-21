@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014,2016-2017,2019-2021 Matthew Fluet.
+(* Copyright (C) 2009,2014,2016-2017,2019-2022 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -59,7 +59,8 @@ structure Global =
 structure StackOffset =
    struct
       datatype t = T of {offset: Bytes.t,
-                         ty: Type.t}
+                         ty: Type.t,
+                         volatile: bool}
 
       local
          fun make f (T r) = f r
@@ -67,25 +68,25 @@ structure StackOffset =
          val ty = make #ty
       end
 
-      fun layout (T {offset, ty}): Layout.t =
+      fun layout (T {offset, ty, volatile}): Layout.t =
          let
             open Layout
          in
-            seq [str (concat ["S", Type.name ty]),
+            seq [str (concat ["S", if volatile then "V" else "", Type.name ty]),
                  paren (Bytes.layout offset),
                  str ": ", Type.layout ty]
          end
 
       val equals: t * t -> bool =
-         fn (T {offset = b, ty}, T {offset = b', ty = ty'}) =>
+         fn (T {offset = b, ty, ...}, T {offset = b', ty = ty', ...}) =>
          Bytes.equals (b, b') andalso Type.equals (ty, ty')
 
       val isSubtype: t * t -> bool =
-         fn (T {offset = b, ty = t}, T {offset = b', ty = t'}) =>
+         fn (T {offset = b, ty = t, ...}, T {offset = b', ty = t', ...}) =>
          Bytes.equals (b, b') andalso Type.isSubtype (t, t')
 
       val interfere: t * t -> bool =
-         fn (T {offset = b, ty = ty}, T {offset = b', ty = ty'}) =>
+         fn (T {offset = b, ty = ty, ...}, T {offset = b', ty = ty', ...}) =>
          let
             val max = Bytes.+ (b, Type.bytes ty)
             val max' = Bytes.+ (b', Type.bytes ty')
@@ -93,9 +94,10 @@ structure StackOffset =
             Bytes.> (max, b') andalso Bytes.> (max', b)
          end
 
-      fun shift (T {offset, ty}, size): t =
+      fun shift (T {offset, ty, volatile}, size): t =
          T {offset = Bytes.- (offset, size),
-            ty = ty}
+            ty = ty,
+            volatile = volatile}
    end
 
 structure StaticHeap =
@@ -292,7 +294,8 @@ structure Operand =
                             index: t,
                             offset: Bytes.t,
                             scale: Scale.t,
-                            ty: Type.t}
+                            ty: Type.t,
+                            volatile: bool}
        | StackOffset of StackOffset.t
        | StackTop
        | StaticHeapRef of StaticHeap.Ref.t
@@ -336,8 +339,8 @@ structure Operand =
                   seq [str (concat ["O", if volatile then "V" else "", Type.name ty, " "]),
                        tuple [layout base, Bytes.layout offset],
                        constrain ty]
-             | SequenceOffset {base, index, offset, scale, ty} =>
-                  seq [str (concat ["X", Type.name ty, " "]),
+             | SequenceOffset {base, index, offset, scale, ty, volatile} =>
+                  seq [str (concat ["X", if volatile then "V" else "", Type.name ty, " "]),
                        tuple [layout base, layout index, Scale.layout scale,
                               Bytes.layout offset],
                        constrain ty]
@@ -1228,7 +1231,7 @@ structure Program =
                                 offset = offset,
                                 tyconTy = tyconTy,
                                 result = ty}))
-                      | StackOffset (so as StackOffset.T {offset, ty, ...}) =>
+                      | StackOffset (so as StackOffset.T {offset, ty, volatile = _}) =>
                            Bytes.<= (Bytes.+ (offset, Type.bytes ty), maxFrameSize)
                            andalso Alloc.doesDefine (alloc, Live.StackOffset so)
                            andalso (case Type.deLabel ty of
@@ -1260,7 +1263,7 @@ structure Program =
                                                    doit frameInfo
                                               | Kind.Jump => true
                                           end)
-                      | SequenceOffset {base, index, offset, scale, ty} =>
+                      | SequenceOffset {base, index, offset, scale, ty, volatile = _} =>
                            (checkOperand (base, alloc)
                             ; checkOperand (index, alloc)
                             ; (Type.sequenceOffsetIsOk
@@ -1307,7 +1310,7 @@ structure Program =
                             List.fold
                             (zs, [], fn (z, liveOffsets) =>
                              case z of
-                                Live.StackOffset (StackOffset.T {offset, ty}) =>
+                                Live.StackOffset (StackOffset.T {offset, ty, ...}) =>
                                    if Type.isObjptr ty
                                       then offset :: liveOffsets
                                       else liveOffsets
@@ -1327,7 +1330,7 @@ structure Program =
                         Alloc.forall
                         (alloc, fn z =>
                          case z of
-                            Operand.StackOffset (StackOffset.T {offset, ty}) =>
+                            Operand.StackOffset (StackOffset.T {offset, ty, ...}) =>
                                Bytes.<= (Bytes.+ (offset, Type.bytes ty), size)
                           | _ => false)
                      end
@@ -1542,13 +1545,14 @@ structure Program =
                      (Vector.fold
                       (live, [], fn (z, ac) =>
                        case z of
-                          Live.StackOffset (StackOffset.T {offset, ty}) =>
+                          Live.StackOffset (StackOffset.T {offset, ty, volatile}) =>
                              if Bytes.< (offset, size)
                                 then ac
                              else (Live.StackOffset
                                    (StackOffset.T
                                     {offset = Bytes.- (offset, size),
-                                     ty = ty})) :: ac
+                                     ty = ty,
+                                     volatile = volatile})) :: ac
                         | _ => ac))
                in
                   goto (b, raises, returns, alloc)

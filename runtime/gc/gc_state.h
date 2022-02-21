@@ -1,4 +1,4 @@
-/* Copyright (C) 2012,2014,2019-2021 Matthew Fluet.
+/* Copyright (C) 2012,2014,2019-2022 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -16,12 +16,12 @@ struct GC_state {
    */
   pointer frontier; /* heap.start <= frontier < limit */
   volatile pointer limit; /* limit = heap.start + heap.size */
-  pointer stackTop; /* Top of stack in current thread. */
+  volatile pointer stackTop; /* Top of stack in current thread. */
   pointer stackLimit; /* stackBottom + stackSize - maxFrameSize */
   ptrdiff_t exnStack;
   /* Alphabetized fields follow. */
   size_t alignment; /* */
-  bool amInGC;
+  volatile bool amInGC;
   bool amOriginal;
   char **atMLtons; /* Initial @MLton args, processed before command line. */
   int atMLtonsLength;
@@ -59,7 +59,7 @@ struct GC_state {
   objptr signalHandlerThread; /* Handler for signals (in heap). */
   struct GC_signalsInfo signalsInfo;
   struct GC_sourceMaps sourceMaps;
-  pointer stackBottom; /* Bottom of stack in current thread. */
+  volatile pointer stackBottom; /* Bottom of stack in current thread. */
   struct GC_staticHeaps staticHeaps;
   struct GC_sysvals sysvals;
   GC_weak weaks; /* Linked list of (live) weak pointers */

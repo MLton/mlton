@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2016-2017,2019-2021 Matthew Fluet.
+(* Copyright (C) 2009,2016-2017,2019-2022 Matthew Fluet.
  * Copyright (C) 2002-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -67,8 +67,29 @@ structure GCField =
           | CurSourceSeqIndex => true
           | Limit => true
           | SignalIsPending => true
-          | _ => false
-   end
+          | StackTop => let
+                          (*
+                           * `stackTop` is marked `volatile` in
+                           * `struct GC_state` because it is read by
+                           * `GC_handleSigProf` for time profiling.
+                           *)
+                        in
+                           !Control.profile = Control.ProfileTime
+                        end
+          | StackBottom => let
+                             (*
+                              * `stackBottom` is marked `volatile` in
+                              * `struct GC_state` because it is read by
+                              * `GC_handleSigProf` for time profiling.  The
+                              * mutator does not need to treat `stackBottom` as
+                              * `volatile`, because it only reads `stackBottom`
+                              * and only the (synchronously executed) GC writes
+                              * `stackBottom`.
+                              *)
+                           in
+                              false
+                           end
+          | _ => false end
 
 structure RObjectType =
    struct

@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014-2017,2019-2021 Matthew Fluet.
+(* Copyright (C) 2009,2014-2017,2019-2022 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -813,8 +813,10 @@ structure StackOffset =
    struct
       open StackOffset
 
-      fun toString (T {offset, ty}): string =
-         concat ["S", C.args [Type.toC ty, C.bytes offset]]
+      fun toString (T {offset, ty, volatile}): string =
+         concat ["S", C.args [concat [if volatile then "volatile " else "",
+                                         Type.toC ty],
+                              C.bytes offset]]
    end
 
 fun declareFFI (chunks, print) =
@@ -1033,8 +1035,9 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                                Type.toC ty],
                                        toString base,
                                        C.bytes offset]]
-             | SequenceOffset {base, index, offset, scale, ty} =>
-                  concat ["X", C.args [Type.toC ty,
+             | SequenceOffset {base, index, offset, scale, ty, volatile} =>
+                  concat ["X", C.args [concat [if volatile then "volatile " else "",
+                                               Type.toC ty],
                                        toString base,
                                        toString index,
                                        Scale.toString scale,
@@ -1137,7 +1140,8 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                (outputStatement (Statement.Move
                                  {dst = Operand.stackOffset
                                         {offset = Bytes.- (size, Runtime.labelSize ()),
-                                         ty = Type.label return},
+                                         ty = Type.label return,
+                                         volatile = amTimeProfiling},
                                   src = Operand.Label return})
                 ; adjStackTop size)
             fun copyArgs (args: Operand.t vector): string list * (unit -> unit) =
@@ -1221,7 +1225,8 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                   val _ = print (operandToString
                                  (Operand.stackOffset
                                   {offset = Bytes.~ (Runtime.labelSize ()),
-                                   ty = Type.label (Label.newNoname ())}))
+                                   ty = Type.label (Label.newNoname ()),
+                                   volatile = false}))
                   val _ = print ";\n"
                in
                   if mustReturnToSelf
@@ -1313,7 +1318,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                             return = SOME {return, size = SOME size}, ...} =>
                         (push (return, size);
                          flushFrontier ();
-                         flushStackTop ();
+                         if not amTimeProfiling then flushStackTop () else ();
                          print "\treturn ";
                          print (C.call ("Thread_returnToC", [])))
                    | CCall {args, func, return} =>
@@ -1335,7 +1340,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                        res
                                     end
                            val _ = if CFunction.modifiesFrontier func then flushFrontier () else ()
-                           val _ = if CFunction.readsStackTop func then flushStackTop () else ()
+                           val _ = if CFunction.readsStackTop func andalso not amTimeProfiling then flushStackTop () else ()
                            val _ = print "\t"
                            val _ =
                               if Type.isUnit returnTy

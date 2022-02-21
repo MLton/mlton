@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2017,2019 Matthew Fluet.
+(* Copyright (C) 2009,2017,2019,2022 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -20,7 +20,7 @@ signature ALLOCATE_VARIABLES =
 
       val allocate:
          {function: Rssa.Function.t,
-          paramOffsets: (Rssa.Var.t * Rssa.Type.t) vector -> {offset: Bytes.t, ty: Rssa.Type.t} vector,
+          paramOffsets: (Rssa.Var.t * Rssa.Type.t) vector -> {offset: Bytes.t, ty: Rssa.Type.t, volatile: bool} vector,
           varInfo: Rssa.Var.t -> {
                                   (* If (isSome operand) then a stack slot or
                                    * temporary needs to be allocated for the

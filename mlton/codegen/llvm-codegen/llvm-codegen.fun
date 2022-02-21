@@ -1,4 +1,4 @@
-(* Copyright (C) 2019-2021 Matthew Fluet.
+(* Copyright (C) 2019-2022 Matthew Fluet.
  * Copyright (C) 2013-2014 Matthew Fluet, Brian Leibig.
  *
  * MLton is released under a HPND-style license.
@@ -1105,7 +1105,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                            in
                               (res, volatile)
                            end
-                      | Operand.SequenceOffset {base, index, offset, scale, ty} =>
+                      | Operand.SequenceOffset {base, index, offset, scale, ty, volatile} =>
                            let
                               val base = operandToRValue base
                               val index as (_, indexTy) = operandToRValue index
@@ -1121,9 +1121,9 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                               val _ = $(gep {dst = tmp3, src = tmp2, args = [offset]})
                               val _ = $(cast {dst = res, src = tmp3})
                            in
-                              (res, false)
+                              (res, volatile)
                            end
-                      | Operand.StackOffset (StackOffset.T {offset, ty}) =>
+                      | Operand.StackOffset (StackOffset.T {offset, ty, volatile}) =>
                            let
                               val stackTop = newTemp LLVM.Type.cpointer
                               val addr = newTemp LLVM.Type.cpointer
@@ -1135,7 +1135,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                                       (offset, WordSize.word32))]})
                               val _ = $(cast {dst = res, src = addr})
                            in
-                              (res, false)
+                              (res, volatile)
                            end
                       | Operand.StackTop => (stackTopVar, false)
                       | Operand.Temporary t => (temporaryVar (Temporary.ty t, Temporary.index t), false)
@@ -1279,7 +1279,8 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                (outputStatement (Statement.Move
                                  {dst = Operand.stackOffset
                                         {offset = Bytes.- (size, Runtime.labelSize ()),
-                                         ty = Type.label return},
+                                         ty = Type.label return,
+                                         volatile = amTimeProfiling},
                                   src = Operand.Label return})
                 ; adjStackTop size)
             (* LeaveChunk(nextChunk, nextBlock)
@@ -1334,7 +1335,8 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                      operandToRValue
                      (Operand.stackOffset
                       {offset = Bytes.~ (Runtime.labelSize ()),
-                       ty = Type.label (Label.newNoname ())})
+                       ty = Type.label (Label.newNoname ()),
+                       volatile = false})
                   val _ = $(store {dst = nextBlockVar, src = nextBlock})
                in
                   if mustReturnToSelf
