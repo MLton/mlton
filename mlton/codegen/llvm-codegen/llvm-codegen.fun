@@ -119,26 +119,85 @@ structure LLVM =
                   Pointer ty => ty
                 | _ => Error.bug ("LLVMCodegen.LLVM.Type.dePointer: " ^ toString ty)
 
+            val blockaddress = Pointer word8
+         end
+      structure ParamAttr =
+         struct
+            datatype t =
+               SignExt | ZeroExt
+            fun toString attr =
+               case attr of
+                  SignExt => "signext"
+                | ZeroExt => "zeroext"
+         end
+      structure ParamAttrs =
+         struct
+            datatype t = T of ParamAttr.t list
+            fun toString (T attrs) =
+               String.concatWith (List.map (attrs, ParamAttr.toString), " ")
+            val empty = T []
+            val signext = T [ParamAttr.SignExt]
+            val zeroext = T [ParamAttr.ZeroExt]
+            fun isEmpty (T attrs) = List.isEmpty attrs
+         end
+      structure Param =
+         struct
+            type t = Type.t * ParamAttrs.t
             fun fromCType ct =
                case ct of
-                  CType.CPointer => Pointer word8
-                | CType.Int8 => word8
-                | CType.Int16 => word16
-                | CType.Int32 => word32
-                | CType.Int64 => word64
-                | CType.Objptr => Pointer (Word WordSize.word8)
-                | CType.Real32 => Real RealSize.R32
-                | CType.Real64 => Real RealSize.R64
-                | CType.Word8 => word8
-                | CType.Word16 => word16
-                | CType.Word32 => word32
-                | CType.Word64 => word64
+                  CType.CPointer => (Type.Pointer Type.word8, ParamAttrs.empty)
+                | CType.Int8 => (Type.word8, ParamAttrs.signext)
+                | CType.Int16 => (Type.word16, ParamAttrs.signext)
+                | CType.Int32 => (Type.word32, ParamAttrs.signext)
+                | CType.Int64 => (Type.word64, ParamAttrs.signext)
+                | CType.Objptr => (Type.Pointer (Type.Word WordSize.word8), ParamAttrs.empty)
+                | CType.Real32 => (Type.Real RealSize.R32, ParamAttrs.empty)
+                | CType.Real64 => (Type.Real RealSize.R64, ParamAttrs.empty)
+                | CType.Word8 => (Type.word8, ParamAttrs.zeroext)
+                | CType.Word16 => (Type.word16, ParamAttrs.zeroext)
+                | CType.Word32 => (Type.word32, ParamAttrs.zeroext)
+                | CType.Word64 => (Type.word64, ParamAttrs.zeroext)
+            val cpointer = fromCType CType.CPointer
+            val void = (Type.Void, ParamAttrs.empty)
+
+            fun argToString (ty, attrs) =
+               if ParamAttrs.isEmpty attrs
+                  then Type.toString ty
+                  else concat [Type.toString ty, " ",
+                               ParamAttrs.toString attrs]
+            fun resToString (ty, attrs) =
+               if ParamAttrs.isEmpty attrs
+                  then Type.toString ty
+                  else concat [ParamAttrs.toString attrs, " ",
+                               Type.toString ty]
+         end
+      structure Type =
+         struct
+            open Type
+
+            val fromCType = #1 o Param.fromCType
 
             val cpointer = fromCType CType.CPointer
 
-            val blockaddress = Pointer word8
-
             val uintptr = Promise.lazy (Word o WordSize.cpointer)
+         end
+      structure Param =
+         struct
+            open Param
+            val uintptr = Promise.lazy (fn () => (Type.uintptr (), ParamAttrs.zeroext))
+         end
+      structure Formal =
+         struct
+            type t = string * Param.t
+            fun toString (name, param) =
+               concat [Param.argToString param, " ", name]
+         end
+      structure Actual =
+         struct
+            (* type t = string * Param.t *)
+            fun toString (x, param) =
+               concat [Param.argToString param, " ", x]
+            fun toValue (x, (ty, _)) = (x, ty)
          end
       structure Value =
          struct
@@ -300,17 +359,24 @@ structure LLVM =
                  | _ => bitcast) arg
 
             (* other *)
-            fun call {dst = (dst, dstTy), tail, cconv, fnptr = (fnptr, _), args} =
+            fun call {dst = (dst, (dstTy, dstAttrs)), tail, cconv, fnptr = (fnptr, _), args} =
                AList.appends
                [case dstTy of Type.Void => AList.empty | _ => AList.fromList [dst, " = "],
                 case tail of NONE => AList.empty | SOME tail => AList.fromList [tail, " "],
                 AList.single "call ",
                 case cconv of NONE => AList.empty | SOME cconv => AList.fromList [cconv, " "],
-                AList.fromList [Type.toString dstTy, " ", fnptr, "("],
+                AList.fromList [Param.resToString (dstTy, dstAttrs), " ", fnptr, "("],
                 (AList.appends o List.mapi)
-                (args, fn (i, (arg, argTy)) =>
-                 AList.fromList [if i > 0 then ", " else "", Type.toString argTy, " ", arg]),
+                (args, fn (i, arg) =>
+                 AList.fromList [if i > 0 then ", " else "", Actual.toString arg]),
                 AList.single ")"]
+            fun call' {dst = (dst, dstTy), tail, cconv, fnptr, args} =
+               call {dst = (dst, (dstTy, ParamAttrs.empty)),
+                     tail = tail,
+                     cconv = cconv,
+                     fnptr = fnptr,
+                     args = List.map (args, fn (arg, argTy) =>
+                                      (arg, (argTy, ParamAttrs.empty)))}
 
             fun addMetaData (i, md) =
                case md of
@@ -377,8 +443,8 @@ structure LLVM =
          end
       structure ModuleContext =
          struct
-            datatype t = T of {fnDecls: (string, {argTys: Type.t list,
-                                                  resTy: Type.t,
+            datatype t = T of {fnDecls: (string, {argParams: Param.t list,
+                                                  resParam: Param.t,
                                                   vis: string option}) HashTable.t,
                                fnDefns: (string, unit) HashTable.t,
                                globDecls: (string, {const: bool,
@@ -406,19 +472,20 @@ structure LLVM =
                   val empty = ref true
                   val _ =
                      HashTable.foreachi
-                     (fnDecls, fn (name, {argTys, resTy, vis}) =>
+                     (fnDecls, fn (name, {argParams, resParam, vis}) =>
                       case HashTable.peek (fnDefns, name) of
                          NONE =>
                             (empty := false
-                             ; print "declare "
-                             ; Option.app (vis, fn vis => (print vis; print " "))
-                             ; print (Type.toString resTy)
+                             ; print "declare"
+                             ; Option.app (vis, fn vis => (print " "; print vis))
+                             ; print " "
+                             ; print (Param.resToString resParam)
                              ; print " "
                              ; print name
                              ; print "("
-                             ; List.foreachi (argTys, fn (i, argTy) =>
+                             ; List.foreachi (argParams, fn (i, argParam) =>
                                               (if i > 0 then print ", " else ()
-                                                  ; print (Type.toString argTy)))
+                                               ; print (Param.argToString argParam)))
                              ; print ")\n")
                        | SOME _ => ())
                   val _ = if !empty then () else print "\n"
@@ -435,10 +502,10 @@ structure LLVM =
                in
                   ()
                end
-            fun addFnDecl (T {fnDecls, ...}, name, argTys_resTy_vis as {argTys, resTy, ...}) =
+            fun addFnDecl (T {fnDecls, ...}, name, argParams_resParam_vis as {argParams, resParam, ...}) =
                ((ignore o HashTable.insertIfNew)
-                (fnDecls, name, fn () => argTys_resTy_vis, ignore)
-                ; Value.fnptr (name, argTys, resTy))
+                (fnDecls, name, fn () => argParams_resParam_vis, ignore)
+                ; Value.fnptr (name, List.map (argParams, #1), #1 resParam))
             fun addFnDefn (T {fnDefns, ...}, name) =
                (ignore o HashTable.insertIfNew)
                (fnDefns, name, fn () => (), ignore)
@@ -450,7 +517,11 @@ structure LLVM =
                HashTable.lookupOrInsert
                (metaData, md, fn () => "!" ^ Int.toString (HashTable.size metaData))
             fun intrinsic (mc, name, {argTys, resTy}) =
-               addFnDecl (mc, "@llvm." ^ name, {argTys = argTys, resTy = resTy, vis = NONE})
+               addFnDecl
+               (mc, "@llvm." ^ name,
+                {argParams = List.map (argTys, fn argTy => (argTy, ParamAttrs.empty)),
+                 resParam = (resTy, ParamAttrs.empty),
+                 vis = NONE})
          end
    end
 
@@ -522,7 +593,7 @@ fun primApp (prim: 'a Prim.t): ({args: LLVM.Value.t list,
             val name = concat [oper, ".f", RealSize.toString rs]
             val fnptr = LLVM.ModuleContext.intrinsic (mc, name, {argTys = atys, resTy = rty})
             val res = newTemp rty
-            val _ = $(call {dst = res, tail = NONE, cconv = NONE, fnptr = fnptr, args = args})
+            val _ = $(call' {dst = res, tail = NONE, cconv = NONE, fnptr = fnptr, args = args})
          in
             res
          end
@@ -549,7 +620,7 @@ fun primApp (prim: 'a Prim.t): ({args: LLVM.Value.t list,
             val tmps = newTemp sty
             val tmpb = newTemp LLVM.Type.bool
             val res = newTemp (LLVM.Type.Word WordSize.bool)
-            val _ = $(call {dst = tmps, tail = NONE, cconv = NONE, fnptr = fnptr, args = args})
+            val _ = $(call' {dst = tmps, tail = NONE, cconv = NONE, fnptr = fnptr, args = args})
             val _ = $(xval {dst = tmpb, src = tmps, args = ["1"]})
             val _ = $(zext {dst = res, src = tmpb})
          in
@@ -576,7 +647,7 @@ fun primApp (prim: 'a Prim.t): ({args: LLVM.Value.t list,
             val arg1 = newTemp wty
             val res = newTemp wty
             val _ = $(resize {dst = arg1, src = nth (args, 1), signed = false})
-            val _ = $(call {dst = res, tail = NONE, cconv = NONE, fnptr = fnptr, args = [nth (args, 0), nth (args, 0), arg1]})
+            val _ = $(call' {dst = res, tail = NONE, cconv = NONE, fnptr = fnptr, args = [nth (args, 0), nth (args, 0), arg1]})
          in
             res
          end
@@ -713,7 +784,7 @@ fun primAppOpAndCheck {args: LLVM.Value.t list,
             val res1 = newTemp wty
             val tmpb = newTemp LLVM.Type.bool
             val res2 = newTemp (LLVM.Type.Word WordSize.bool)
-            val _ = $(call {dst = tmps, tail = NONE, cconv = NONE, fnptr = fnptr, args = args})
+            val _ = $(call' {dst = tmps, tail = NONE, cconv = NONE, fnptr = fnptr, args = args})
             val _ = $(xval {dst = res1, src = tmps, args = ["0"]})
             val _ = $(xval {dst = tmpb, src = tmps, args = ["1"]})
             val _ = $(zext {dst = res2, src = tmpb})
@@ -1021,24 +1092,42 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
             LLVM.ModuleContext.addGlobDecl (mc, name, {const = const, ty = ty, vis = SOME "hidden"})
          end
 
-      val gcState = ("%gcState", LLVM.Type.cpointer)
       local
-         fun mk (name, lty) =
-            ((name ^ "Arg", lty),
-             (name, LLVM.Type.Pointer lty))
+         fun formalToArg (formal: LLVM.Formal.t) = (#1 formal, #1 (#2 formal))
       in
-         val (stackTopArg, stackTopVar) = mk ("%stackTop", LLVM.Type.cpointer)
-         val (frontierArg, frontierVar) = mk ("%frontier", LLVM.Type.cpointer)
-         val (nextBlockArg, nextBlockVar) = mk ("%nextBlock", LLVM.Type.uintptr ())
+         val gcStateParam = LLVM.Param.cpointer
+         val gcStateFormal = ("%gcState", gcStateParam)
+         val gcStateArg = formalToArg gcStateFormal
+         local
+            fun mk (name, param as (ty, _)) =
+               let
+                  val formal = (name ^ "Arg", param)
+               in
+                  (param, formal, formalToArg formal, (name, LLVM.Type.Pointer ty))
+               end
+         in
+            val (stackTopParam, stackTopFormal, stackTopArg, stackTopVar) =
+               mk ("%stackTop", LLVM.Param.cpointer)
+            val (frontierParam, frontierFormal, frontierArg, frontierVar) =
+               mk ("%frontier", LLVM.Param.cpointer)
+            val (nextBlockParam, nextBlockFormal, nextBlockArg, nextBlockVar) =
+               mk ("%nextBlock", LLVM.Param.uintptr ())
+         end
       end
-      val chunkFnArgs = [gcState, stackTopArg, frontierArg, nextBlockArg]
-      val chunkFnArgTys = List.map (chunkFnArgs, #2)
-      val chunkFnResTy = LLVM.Type.uintptr ()
+      val chunkFnFormals = [gcStateFormal, stackTopFormal, frontierFormal, nextBlockFormal]
+      val chunkFnArgParams = List.map (chunkFnFormals, #2)
+      val chunkFnArgTys = List.map (chunkFnArgParams, #1)
+      val chunkFnResParam = LLVM.Param.uintptr ()
+      val chunkFnResTy = #1 chunkFnResParam
       val chunkFnTy = LLVM.Type.Function (chunkFnArgTys, chunkFnResTy)
       val chunkFnPtrTy = LLVM.Type.Pointer chunkFnTy
       local
          fun mk tos (cl: ChunkLabel.t, mc): LLVM.Value.t =
-            LLVM.ModuleContext.addFnDecl (mc, tos cl, {argTys = chunkFnArgTys, resTy = chunkFnResTy, vis = SOME "hidden"})
+            LLVM.ModuleContext.addFnDecl
+            (mc, tos cl,
+             {argParams = chunkFnArgParams,
+              resParam = chunkFnResParam,
+              vis = SOME "hidden"})
       in
          val chunkFnValX = mk ChunkLabel.toStringX
          val chunkFnVal' = mk ChunkLabel.toString'
@@ -1070,8 +1159,13 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
             local
                val next = Counter.generator 0
             in
-               fun newTemp ty =
-                  (concat ["%t", Int.toString (next ())], ty)
+               fun newTemp' (param as (ty, _)) =
+                  let
+                     val name = concat ["%t", Int.toString (next ())]
+                  in
+                     ((name, param), (name, ty))
+                  end
+               fun newTemp ty = #2 (newTemp' (ty, LLVM.ParamAttrs.empty))
             end
 
             open LLVM.Instr
@@ -1190,7 +1284,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                    | Operand.Const (Const.Word w) => LLVM.Value.word w
                    | Operand.Const _ => Error.bug "LLVMCodegen.operandToRValue: Const"
                    | Operand.Frontier => load ()
-                   | Operand.GCState => gcState
+                   | Operand.GCState => gcStateArg
                    | Operand.Global _ => load ()
                    | Operand.Label label => labelIndexValue label
                    | Operand.Offset _ => load ()
@@ -1295,19 +1389,28 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
             fun leaveChunk (nextChunk, nextBlock) =
                if !Control.chunkTailCall
                   then let
-                          val stackTop = newTemp LLVM.Type.cpointer
-                          val frontier = newTemp LLVM.Type.cpointer
-                          val res = newTemp chunkFnResTy
+                          val gcStateActual = gcStateFormal
+                          val (stackTopActual, stackTop) =
+                             newTemp' stackTopParam
+                          val (frontierActual, frontier) =
+                             newTemp' frontierParam
+                          val nextBlockActual =
+                             (#1 nextBlock, nextBlockParam)
+                          val (resParam, res) =
+                             newTemp' chunkFnResParam
                        in
                           $(load {dst = stackTop, src = stackTopVar})
                           ; $(load {dst = frontier, src = frontierVar})
-                          ; $(call {dst = res,
+                          ; $(call {dst = resParam,
                                     tail = SOME "musttail",
                                     cconv = if !Control.llvmCC10
                                                then SOME "cc10"
                                                else NONE,
                                     fnptr = nextChunk,
-                                    args = [gcState, stackTop, frontier, nextBlock]})
+                                    args = [gcStateActual,
+                                            stackTopActual,
+                                            frontierActual,
+                                            nextBlockActual]})
                           ; $(ret res)
                        end
                   else (flushFrontier ()
@@ -1444,14 +1547,14 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                            val _ = push (return, size)
                            val _ = flushFrontier ();
                            val _ = flushStackTop ();
-                           val tmp = newTemp (LLVM.Type.uintptr ())
+                           val (tmpParam, tmp) = newTemp' (LLVM.Param.uintptr ())
                            val fnptr =
                               LLVM.ModuleContext.addFnDecl
                               (mc, "@Thread_returnToC",
-                               {argTys = [],
-                                resTy = LLVM.Type.uintptr (),
+                               {argParams = [],
+                                resParam = #2 tmpParam,
                                 vis = SOME "hidden"})
-                           val _ = $(call {dst = tmp,
+                           val _ = $(call {dst = tmpParam,
                                            tail = NONE, cconv = NONE,
                                            fnptr = fnptr, args = []})
                            val _ = $(ret tmp)
@@ -1460,62 +1563,75 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                         end
                    | Transfer.CCall {args, func, return} =>
                         let
-                           val CFunction.T {return = returnTy, target, symbolScope, ...} = func
+                           val CFunction.T {return = returnTy, prototype = (argsProto, resProto), target, symbolScope, ...} = func
                            val args = operandsToRValues args
                            val _ = Option.app (return, fn {return, size} =>
                                                Option.app (size, fn size =>
                                                            push (return, size)))
                            val _ = if CFunction.modifiesFrontier func then flushFrontier () else ()
                            val _ = if CFunction.readsStackTop func then flushStackTop () else ()
-                           val resTy = if Type.isUnit returnTy
-                                          then LLVM.Type.Void
-                                          else Type.toLLVMType returnTy
-                           val res = newTemp resTy
-                           val (fnptr, args) =
+                           val resParam =
+                              case resProto of
+                                 NONE => LLVM.Param.void
+                               | SOME resCTy => LLVM.Param.fromCType resCTy
+                           val argParams =
+                              Vector.toListMap (argsProto, LLVM.Param.fromCType)
+                           val argActuals =
+                              List.map2
+                              (args, argParams, fn ((arg, _), argParam) =>
+                               (arg, argParam))
+                           val (fnptr, argActuals) =
                               case target of
                                  CFunction.Target.Direct name =>
                                     let
                                        val name = "@" ^ name
-                                       val argTys = List.map (args, #2)
                                        val vis =
                                           case symbolScope of
                                              CFunction.SymbolScope.External => "default"
                                            | CFunction.SymbolScope.Private => "hidden"
                                            | CFunction.SymbolScope.Public => "default"
-                                       val _ =
+                                       val fnptr =
                                           LLVM.ModuleContext.addFnDecl
-                                          (mc, name, {argTys = argTys, resTy = resTy, vis = SOME vis})
+                                          (mc, name,
+                                           {argParams = argParams,
+                                            resParam = resParam,
+                                            vis = SOME vis})
                                     in
-                                       (LLVM.Value.fnptr (name, argTys, resTy), args)
+                                       (fnptr, argActuals)
                                     end
                                | CFunction.Target.Indirect =>
                                     let
-                                       val (cptr, args) =
-                                          case args of
-                                             cptr::args => (cptr, args)
+                                       val (cptr, argActuals) =
+                                          case argActuals of
+                                             cptrActual::argActuals =>
+                                                (LLVM.Actual.toValue cptrActual,
+                                                 argActuals)
                                            | _ => Error.bug "LLVMCodegen.outputTransfer: CCall,Indirect"
-                                       val argTys = List.map (args, #2)
+                                       val argTys = List.map (argActuals, #1 o #2)
+                                       val resTy = #1 resParam
                                        val fnty = LLVM.Type.Function (argTys, resTy)
                                        val fnptr = newTemp (LLVM.Type.Pointer fnty)
                                        val _ = $(cast {dst = fnptr, src = cptr})
                                     in
-                                       (fnptr, args)
+                                       (fnptr, argActuals)
                                     end
-                           val _ = $(call {dst = res,
+                           val (resParam, res) = newTemp' resParam
+                           val _ = $(call {dst = resParam,
                                            tail = NONE, cconv = NONE,
-                                           fnptr = fnptr, args = args})
+                                           fnptr = fnptr, args = argActuals})
                            val _ =
                               case return of
                                  NONE =>
                                     let
-                                       val tmp = newTemp (LLVM.Type.uintptr ())
+                                       val (tmpParam, tmp) =
+                                          newTemp' (LLVM.Param.uintptr ())
                                        val fnptr =
                                           LLVM.ModuleContext.addFnDecl
                                           (mc, "@MLton_unreachable",
-                                           {argTys = [],
-                                            resTy = LLVM.Type.uintptr (),
+                                           {argParams = [],
+                                            resParam = #2 tmpParam,
                                             vis = SOME "hidden"})
-                                       val _ = $(call {dst = tmp,
+                                       val _ = $(call {dst = tmpParam,
                                                        tail = NONE, cconv = NONE,
                                                        fnptr = fnptr, args = []})
                                        val _ = $(ret tmp)
@@ -1568,7 +1684,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                           (mc, name, {argTys = [wty, wty], resTy = wty})
                                        val tmp = newTemp wty
                                        val args = [test, LLVM.Value.word w]
-                                       val _ = $(call {dst = tmp, tail = NONE, cconv = NONE, fnptr = fnptr, args = args})
+                                       val _ = $(call' {dst = tmp, tail = NONE, cconv = NONE, fnptr = fnptr, args = args})
                                     in
                                        tmp
                                     end
@@ -1782,31 +1898,27 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                          end
                     else ()
 
-            val chunkArgs =
+            val chunkFormals =
                concat ["(",
-                       String.concatWith
-                       (List.map
-                        (chunkFnArgs, fn (arg, argTy) =>
-                         concat [LLVM.Type.toString argTy, " ", arg]),
-                        ", "),
+                       String.concatWith (List.map (chunkFnFormals, LLVM.Formal.toString), ", "),
                        ")"]
             val _ = LLVM.ModuleContext.addFnDefn (mc, ChunkLabel.toString chunkLabel)
             val _ = printsln ["define hidden ",
-                              LLVM.Type.toString chunkFnResTy, " ", ChunkLabel.toString chunkLabel,
-                              chunkArgs, " {"]
+                              LLVM.Param.resToString chunkFnResParam, " ", ChunkLabel.toString chunkLabel,
+                              chunkFormals, " {"]
             val _ =
                if !Control.llvmCC10
                   then let
-                          val res = ("%res", chunkFnResTy)
+                          val res = ("%res", chunkFnResParam)
                           val _ = $(call {dst = res, tail = NONE, cconv = SOME "cc10",
                                           fnptr = chunkFnValX (chunkLabel, mc),
-                                          args = chunkFnArgs})
-                          val _ = $(ret res)
+                                          args = chunkFnFormals})
+                          val _ = $(ret (LLVM.Actual.toValue res))
                           val _ = println "}"
                           val _ = LLVM.ModuleContext.addFnDefn (mc, ChunkLabel.toStringX chunkLabel)
                           val _ = printsln ["define hidden cc10 ",
-                                            LLVM.Type.toString chunkFnResTy, " ", ChunkLabel.toStringX chunkLabel,
-                                            chunkArgs, " {"]
+                                            LLVM.Param.resToString chunkFnResParam, " ", ChunkLabel.toStringX chunkLabel,
+                                            chunkFormals, " {"]
                        in
                           ()
                        end

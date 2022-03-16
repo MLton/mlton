@@ -1,4 +1,4 @@
-(* Copyright (C) 2014,2019 Matthew Fluet.
+(* Copyright (C) 2014,2019,2022 Matthew Fluet.
  * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -38,6 +38,7 @@ signature C_TYPE =
       val csize: unit -> t
       val compareRes: t
       val equals: t * t -> bool
+      val isSignedInt: t -> bool
       val objptrHeader: unit -> t
       val memo: (t -> 'a) -> t -> 'a
       (* name: I{8,16,32,64} R{32,64} W{8,16,32,64} *)

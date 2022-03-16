@@ -1,4 +1,4 @@
-(* Copyright (C) 2014,2019-2020 Matthew Fluet.
+(* Copyright (C) 2014,2019-2020,2022 Matthew Fluet.
  * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -169,5 +169,13 @@ val objptrHeader =
 val bool = word (WordSize.bool, {signed = true})
 val compareRes = word (WordSize.compareRes, {signed = true})
 val shiftArg = word (WordSize.shiftArg, {signed = false})
+
+fun isSignedInt t =
+   case t of
+      Int8 => true
+    | Int16 => true
+    | Int32 => true
+    | Int64 => true
+    | _ => false
 
 end
