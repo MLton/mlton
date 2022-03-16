@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019-2021 Matthew Fluet.
+(* Copyright (C) 2009,2019-2022 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1119,7 +1119,8 @@ struct
                      datatype z = datatype CFunction.Convention.t
                      datatype z = datatype CFunction.SymbolScope.t
                      datatype z = datatype CFunction.Target.t
-                     val CFunction.T {convention=_,
+                     val CFunction.T {convention = _,
+                                      prototype = (protoArgs, _),
                                       return = returnTy,
                                       symbolScope,
                                       target, ...} = func
@@ -1159,28 +1160,29 @@ struct
                      val (setup_args,
                           (reg_args, xmmreg_args),
                           size_stack_args, _)
-                       = List.fold
-                         (args, (AppendList.empty,
-                                 ([],[]),0,
-                                 (if win64
-                                  then [Register.rcx,Register.rdx,
-                                        Register.r8,Register.r9]
-                                  else [Register.rdi,Register.rsi,Register.rdx,
-                                        Register.rcx,Register.r8,Register.r9],
-                                  if win64
-                                  then [(XmmRegister.xmm0D,XmmRegister.xmm0S),
-                                        (XmmRegister.xmm1D,XmmRegister.xmm1S),
-                                        (XmmRegister.xmm2D,XmmRegister.xmm2S),
-                                        (XmmRegister.xmm3D,XmmRegister.xmm3S)]
-                                  else [(XmmRegister.xmm0D,XmmRegister.xmm0S),
-                                        (XmmRegister.xmm1D,XmmRegister.xmm1S),
-                                        (XmmRegister.xmm2D,XmmRegister.xmm2S),
-                                        (XmmRegister.xmm3D,XmmRegister.xmm3S),
-                                        (XmmRegister.xmm4D,XmmRegister.xmm4S),
-                                        (XmmRegister.xmm5D,XmmRegister.xmm5S),
-                                        (XmmRegister.xmm6D,XmmRegister.xmm6S),
-                                        (XmmRegister.xmm7D,XmmRegister.xmm7S)])),
-                          fn ((arg, size), 
+                       = List.fold2
+                         (args, Vector.toList protoArgs,
+                          (AppendList.empty,
+                           ([],[]),0,
+                           (if win64
+                               then [Register.rcx,Register.rdx,
+                                     Register.r8,Register.r9]
+                               else [Register.rdi,Register.rsi,Register.rdx,
+                                     Register.rcx,Register.r8,Register.r9],
+                            if win64
+                               then [(XmmRegister.xmm0D,XmmRegister.xmm0S),
+                                     (XmmRegister.xmm1D,XmmRegister.xmm1S),
+                                     (XmmRegister.xmm2D,XmmRegister.xmm2S),
+                                     (XmmRegister.xmm3D,XmmRegister.xmm3S)]
+                               else [(XmmRegister.xmm0D,XmmRegister.xmm0S),
+                                     (XmmRegister.xmm1D,XmmRegister.xmm1S),
+                                     (XmmRegister.xmm2D,XmmRegister.xmm2S),
+                                     (XmmRegister.xmm3D,XmmRegister.xmm3S),
+                                     (XmmRegister.xmm4D,XmmRegister.xmm4S),
+                                     (XmmRegister.xmm5D,XmmRegister.xmm5S),
+                                     (XmmRegister.xmm6D,XmmRegister.xmm6S),
+                                     (XmmRegister.xmm7D,XmmRegister.xmm7S)])),
+                          fn ((arg, size), protoArg,
                               (setup_args,
                                (reg_args, xmmreg_args),
                                size_stack_args,
@@ -1247,7 +1249,9 @@ struct
                                                    (AppendList.fromList
                                                     [if Size.lt (size, Size.QUAD)
                                                         then Assembly.instruction_movx
-                                                             {oper = Instruction.MOVZX,
+                                                             {oper = if CType.isSignedInt protoArg
+                                                                        then Instruction.MOVSX
+                                                                        else Instruction.MOVZX,
                                                               src = arg,
                                                               dst = Operand.memloc mem,
                                                               srcsize = size,
@@ -1274,7 +1278,9 @@ struct
                                                    size = pointerSize},
                                                   if Size.lt (size, Size.QUAD)
                                                      then Assembly.instruction_movx
-                                                          {oper = Instruction.MOVZX,
+                                                          {oper = if CType.isSignedInt protoArg
+                                                                     then Instruction.MOVSX
+                                                                     else Instruction.MOVZX,
                                                            src = arg,
                                                            dst = c_stackPDerefWord,
                                                            srcsize = size,

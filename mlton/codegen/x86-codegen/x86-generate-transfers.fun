@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019-2021 Matthew Fluet.
+(* Copyright (C) 2009,2019-2022 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1099,6 +1099,7 @@ struct
                      datatype z = datatype CFunction.SymbolScope.t
                      datatype z = datatype CFunction.Target.t
                      val CFunction.T {convention,
+                                      prototype = (protoArgs, _),
                                       return = returnTy,
                                       symbolScope,
                                       target, ...} = func
@@ -1130,9 +1131,9 @@ struct
                                   args)
                               end
                      val (pushArgs, size_args)
-                       = List.fold
-                         (args, (AppendList.empty, 0),
-                          fn ((arg, size), (assembly_args, size_args)) =>
+                       = List.fold2
+                         (args, Vector.toList protoArgs, (AppendList.empty, 0),
+                          fn ((arg, size), protoArg, (assembly_args, size_args)) =>
                           let
                              val (assembly_arg, size_arg) =
                                 if Size.eq (size, Size.DBLE)
@@ -1163,7 +1164,9 @@ struct
                                         orelse Size.eq (size, Size.WORD)
                                    then (AppendList.fromList
                                          [Assembly.instruction_movx
-                                          {oper = Instruction.MOVZX,
+                                          {oper = if CType.isSignedInt protoArg
+                                                     then Instruction.MOVSX
+                                                     else Instruction.MOVZX,
                                            dst = applyFFTempArg,
                                            src = arg,
                                            dstsize = wordSize,
