@@ -3,6 +3,11 @@
 Here are the known bugs in <<Release20210117#,MLton 20210117>>, listed
 in reverse chronological order of date reported.
 
+* [[bug02]]
+Bug with amd64 and LLVM codegens calling C functions with signed 8-bit and 16-bit arguments.
++
+Fixed by commits https://github.com/MLton/mlton/commit/286a54cc0[`286a54cc0`] and https://github.com/MLton/mlton/commit/c4502bdfb[`c4502bdfb`].
+
 * [[bug01]]
 Bug with `-profile time` leading to a segmentation fault.
 +

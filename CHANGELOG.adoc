@@ -8,10 +8,13 @@ Here are the changes from version 20210117 to YYYYMMDD.
 
 === Details
 
-* 2022-02020
+* 2022-03-16
+  ** Fix (latent) bug with amd64 and LLVM codegens calling C functions with
+  signed 8-bit and 16-bit arguments.
+
+* 2022-02-20
   ** Fix bug with `-profile time` leading to a segmentation fault.
   Thanks to Byron Zhong for the bug report.
-
 
 * 2022-01-11
   ** Accept a non-semicolon terminated final expression in the syntax
