@@ -11,26 +11,40 @@ on:
 jobs:
   build-test:
     strategy:
+      fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest]
+        os: [ubuntu-latest, macos-latest, windows-latest]
         codegen: ["amd64", "c", "llvm"]
         cc: ["gcc", "clang"]
         exclude:
-          - os: ubuntu-latest
-            codegen: "amd64"
-            cc: "clang"
-          - os: macos-latest
-            cc: "gcc"
           - codegen: "llvm"
             cc: "gcc"
+          - os: macos-latest
+            cc: "gcc"
+          - os: windows-latest
+            codegen: "c"
+          - os: windows-latest
+            codegen: "llvm"
+          - os: windows-latest
+            cc: "clang"
 
     # The type of runner that the job will run on
     runs-on: ${{ matrix.os }}
 
+    defaults:
+      run:
+        shell: ${{ (startsWith(matrix.os, 'windows') && 'msys2 {0}') || 'bash' }}
+
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
+      - name: Configure git (windows)
+        if: ${{ startsWith(matrix.os, 'windows') }}
+        run: git config --global core.autocrlf false
+        shell: bash
+
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v3
 
       - name: Install dependencies (ubuntu)
         if: ${{ startsWith(matrix.os, 'ubuntu') }}
@@ -45,10 +59,27 @@ jobs:
           brew install mlton
           echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH
           echo "WITH_GMP_DIR=/usr/local" >> $GITHUB_ENV
+      - name: Install msys2 (windows)
+        if: ${{ startsWith(matrix.os, 'windows') }}
+        uses: msys2/setup-msys2@v2
+        with:
+          update: false
+          install: >-
+            base-devel
+            git
+            gmp-devel
+            mingw-w64-x86_64-gcc
+      - name: Install dependencies (windows)
+        if: ${{ startsWith(matrix.os, 'windows') }}
+        run: |
+          mkdir boot && cd boot
+          curl -O -L https://github.com/MLton/mlton/releases/download/on-20200817-release/mlton-20200817-amd64-mingw.tgz
+          tar xzf mlton-20200817-amd64-mingw.tgz
+          mv mlton-20200817-amd64-mingw/* .
 
       - name: Check versions
         run: |
-          mlton
+          PATH=$(pwd)/boot/bin:$PATH mlton
           echo
           make -version
           echo
@@ -58,6 +89,7 @@ jobs:
 
       - name: Build
         run: |
+          PATH=$(pwd)/boot/bin:$PATH \
           make \
             CC="${{ matrix.cc }}" \
             OLD_MLTON_RUNTIME_ARGS="ram-slop 0.90" \
@@ -70,29 +102,3 @@ jobs:
 
       - name: Test
         run: ./bin/regression -codegen ${{ matrix.codegen }}
-
-  build-test-windows:
-    runs-on: windows-latest
-    env:
-      MSYSTEM: MINGW64
-      MSYS2_PATH_TYPE: inherit
-    steps:
-      - name: Config git
-        run: |
-          git config --global core.autocrlf false
-      - uses: actions/checkout@v2
-      - name: Install dependencies (windows)
-        run: |
-          echo "PWD=$(c:\msys64\usr\bin\cygpath -u $(pwd))" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
-          echo "$(pwd)/old-mlton/mlton-20200817-amd64-mingw/bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          mkdir old-mlton && cd old-mlton
-          curl.exe -L https://github.com/MLton/mlton/releases/download/on-20200817-release/mlton-20200817-amd64-mingw.tgz --output old-mlton.tgz
-          7z x old-mlton.tgz
-          7z x old-mlton.tar
-      - name: Check versions (windows)
-        run: |
-          c:\msys64\usr\bin\bash -l -c "mlton"
-      - name: Build (windows)
-        run: c:\msys64\usr\bin\bash -l -c "cd $env:PWD && make OLD_MLTON_RUNTIME_ARGS='ram-slop 0.90' MLTON_RUNTIME_ARGS='ram-slop 0.90' MLTON_COMPILE_ARGS='-codegen amd64' WITH_DBG_RUNTIME=false all"
-      - name: Test (windows)
-        run: c:\msys64\usr\bin\bash -l -c "cd $env:PWD && ./bin/regression -codegen amd64"
