@@ -16,14 +16,7 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         codegen: ["amd64", "c", "llvm"]
         cc: ["gcc", "clang"]
-        shell: ["bash", "msys2 {0}"]
         exclude:
-          - os: ubuntu-latest
-            shell: "msys2 {0}"
-          - os: macos-latest
-            shell: "msys2 {0}"
-          - os: windows-latest
-            shell: "bash"
           - codegen: "llvm"
             cc: "gcc"
           - os: macos-latest
@@ -40,7 +33,7 @@ jobs:
 
     defaults:
       run:
-        shell: ${{ matrix.shell }}
+        shell: ${{ (startsWith(matrix.os, 'windows') && 'msys2 {0}') || 'bash' }}
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
