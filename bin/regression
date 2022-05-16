@@ -230,6 +230,9 @@ for f in *.sml; do
                                 echo "$f: difference with ${flags[*]} ${extraFlags[*]}"
                                 isWhitelisted $f || exitFail=true
                         fi
+                        if $forMinGW; then
+                            rm -f "$newcompare"
+                        fi
                 fi
         fi
 done
