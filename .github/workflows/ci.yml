@@ -101,8 +101,18 @@ jobs:
             MLTON_BINARY_RELEASE_SUFFIX=".${{ matrix.os }}_${{ matrix.codegen }}_${{ matrix.cc }}" \
             all
 
+      - name: Status & Diff
+        run: |
+          git status
+          git diff
+
       - name: Test
         run: ./bin/regression -codegen ${{ matrix.codegen }}
+
+      - name: Status & Diff
+        run: |
+          git status
+          git diff
 
       - name: Package
         run: |
