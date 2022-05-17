@@ -450,7 +450,7 @@ install-docs:
 	(								\
 		cd "$(SRC)/doc" &&					\
 		$(FIND) examples -type f '!' -name .gitignore		\
-			| $(TAR) -c -T - f -				\
+			| $(TAR) -c -T - -f -				\
 			| ( cd "$(TDOC)/" && $(TAR) -x -f - )		\
 	)
 	(								\
@@ -465,7 +465,7 @@ install-docs:
 	(								\
 		cd "$(SRC)/util" &&					\
 		$(FIND) cm2mlb -type f '!' -name .gitignore		\
-			| $(TAR) -c -T - f -				\
+			| $(TAR) -c -T - -f -				\
 			| ( cd "$(TDOC)/" && $(TAR) -x -f - )		\
 	)
 	(								\
