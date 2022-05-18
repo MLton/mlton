@@ -14,11 +14,11 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        codegen: ["amd64", "c", "llvm"]
         cc: ["gcc", "clang"]
+        codegen: ["amd64", "c", "llvm"]
         exclude:
-          - codegen: "llvm"
-            cc: "gcc"
+          - cc: "gcc"
+            codegen: "llvm"
           - os: macos-latest
             cc: "gcc"
           - os: windows-latest
@@ -98,7 +98,7 @@ jobs:
             $( if [[ -n "$WITH_GMP_DIR" ]]; then echo "WITH_GMP_DIR=$WITH_GMP_DIR"; fi ) \
             WITH_ALL_RUNTIME=true \
             WITH_DBG_RUNTIME=false \
-            MLTON_BINARY_RELEASE_SUFFIX=".${{ matrix.os }}_${{ matrix.codegen }}_${{ matrix.cc }}" \
+            MLTON_BINARY_RELEASE_SUFFIX=".${{ matrix.os }}_${{ matrix.cc }}_${{ matrix.codegen }}" \
             all
 
       - name: Test
@@ -118,11 +118,11 @@ jobs:
             $( if [[ -n "$WITH_GMP_DIR" ]]; then echo "WITH_GMP_DIR=$WITH_GMP_DIR"; fi ) \
             WITH_ALL_RUNTIME=true \
             WITH_DBG_RUNTIME=false \
-            MLTON_BINARY_RELEASE_SUFFIX=".${{ matrix.os }}_${{ matrix.codegen }}_${{ matrix.cc }}" \
+            MLTON_BINARY_RELEASE_SUFFIX=".${{ matrix.os }}_${{ matrix.cc }}_${{ matrix.codegen }}" \
             binary-release
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v3
         with:
-          name: mlton.${{ matrix.os }}_${{ matrix.codegen }}_${{ matrix.cc }}
+          name: mlton.${{ matrix.os }}_${{ matrix.cc }}_${{ matrix.codegen }}
           path: ./*.tgz
