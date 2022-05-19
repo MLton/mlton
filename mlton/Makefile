@@ -108,8 +108,8 @@ front-end/%.lex.sml: front-end/%.lex
 	$(MV) $<.sml $<.sml.in
 	$(SED) -e 's/in Vector.fromList(List.map g/in Vector.fromList(Pervasive.List.map g/' $<.sml.in > $<.sml
 	$(RM) $<.sml.in
-	$(CHMOD) -w $<.*
 	$(CP) $<.sml $<.sml.boot
+	$(CHMOD) -w $<.*
 else
 front-end/%.lex.sml: front-end/%.lex.sml.boot
 	$(RM) $@
@@ -121,14 +121,17 @@ ifeq (true,$(call HAVE_CMD,$(RUN_MLYACC)))
 front-end/%.grm.sig front-end/%.grm.sml: front-end/%.grm
 	$(RM) $<.*
 	$(RUN_MLYACC) $<
+	$(MV) $<.sig $<.sig.in
+	$(SED) -e '' $<.sig.in > $<.sig
+	$(RM) $<.sig.in
+	$(CP) $<.sig $<.sig.boot
 	$(MV) $<.sml $<.sml.in
 	$(SED) -e 's/in f 0 handle General.Subscript => ()/in f 0 handle Pervasive.General.Subscript => ()/' $<.sml.in > $<.sml
 	$(MV) $<.sml $<.sml.in
 	$(SED) -e 's/in Array.fromList(List.map actionRowLookUp actionRowNumbers)/in Array.fromList(Pervasive.List.map actionRowLookUp actionRowNumbers)/' $<.sml.in > $<.sml
 	$(RM) $<.sml.in
-	$(CHMOD) -w $<.*
-	$(CP) $<.sig $<.sig.boot
 	$(CP) $<.sml $<.sml.boot
+	$(CHMOD) -w $<.*
 else
 front-end/%.grm.sig: front-end/%.grm.sig.boot
 	$(RM) $@

@@ -14,11 +14,11 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        codegen: ["amd64", "c", "llvm"]
         cc: ["gcc", "clang"]
+        codegen: ["amd64", "c", "llvm"]
         exclude:
-          - codegen: "llvm"
-            cc: "gcc"
+          - cc: "gcc"
+            codegen: "llvm"
           - os: macos-latest
             cc: "gcc"
           - os: windows-latest
@@ -91,14 +91,38 @@ jobs:
         run: |
           PATH=$(pwd)/boot/bin:$PATH \
           make \
-            CC="${{ matrix.cc }}" \
+            CC=${{ matrix.cc }} \
             OLD_MLTON_RUNTIME_ARGS="ram-slop 0.90" \
             MLTON_RUNTIME_ARGS="ram-slop 0.90" \
             MLTON_COMPILE_ARGS="-codegen ${{ matrix.codegen }}" \
             $( if [[ -n "$WITH_GMP_DIR" ]]; then echo "WITH_GMP_DIR=$WITH_GMP_DIR"; fi ) \
             WITH_ALL_RUNTIME=true \
             WITH_DBG_RUNTIME=false \
+            MLTON_BINARY_RELEASE_SUFFIX=".${{ matrix.os }}_${{ matrix.cc }}_${{ matrix.codegen }}" \
             all
 
       - name: Test
         run: ./bin/regression -codegen ${{ matrix.codegen }}
+
+      - name: Status
+        run: |
+          git status
+
+      - name: Package
+        run: |
+          make \
+            CC=${{ matrix.cc }} \
+            OLD_MLTON_RUNTIME_ARGS="ram-slop 0.90" \
+            MLTON_RUNTIME_ARGS="ram-slop 0.90" \
+            MLTON_COMPILE_ARGS="-codegen ${{ matrix.codegen }}" \
+            $( if [[ -n "$WITH_GMP_DIR" ]]; then echo "WITH_GMP_DIR=$WITH_GMP_DIR"; fi ) \
+            WITH_ALL_RUNTIME=true \
+            WITH_DBG_RUNTIME=false \
+            MLTON_BINARY_RELEASE_SUFFIX=".${{ matrix.os }}_${{ matrix.cc }}_${{ matrix.codegen }}" \
+            binary-release
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: mlton.${{ matrix.os }}_${{ matrix.cc }}_${{ matrix.codegen }}
+          path: ./*.tgz

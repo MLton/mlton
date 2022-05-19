@@ -26,8 +26,11 @@ ifeq (true,$(call HAVE_CMD,$(RUN_MLLEX)))
 src/%.lex.sml: src/%.lex
 	$(RM) $<.*
 	$(RUN_MLLEX) $<
-	$(CHMOD) -w $<.*
+	$(MV) $<.sml $<.sml.in
+	$(SED) -e '' $<.sml.in > $<.sml
+	$(RM) $<.sml.in
 	$(CP) $<.sml $<.sml.boot
+	$(CHMOD) -w $<.*
 else
 src/%.lex.sml: src/%.lex.sml.boot
 	$(RM) $@
@@ -39,9 +42,15 @@ ifeq (true,$(call HAVE_CMD,$(RUN_MLYACC)))
 src/%.grm.sig src/%.grm.sml: src/%.grm
 	$(RM) $<.*
 	$(RUN_MLYACC) $<
-	$(CHMOD) -w $<.*
+	$(MV) $<.sig $<.sig.in
+	$(SED) -e '' $<.sig.in > $<.sig
+	$(RM) $<.sig.in
 	$(CP) $<.sig $<.sig.boot
+	$(MV) $<.sml $<.sml.in
+	$(SED) -e '' $<.sml.in > $<.sml
+	$(RM) $<.sml.in
 	$(CP) $<.sml $<.sml.boot
+	$(CHMOD) -w $<.*
 else
 src/%.grm.sig: src/%.grm.sig.boot
 	$(RM) $@
