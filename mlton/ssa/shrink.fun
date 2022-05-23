@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2011,2017,2019 Matthew Fluet.
+(* Copyright (C) 2009,2011,2017,2019,2022 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -33,7 +33,6 @@ structure Array =
       open Array
 
       fun inc (a: int t, i: int): unit = update (a, i, 1 + sub (a, i))
-      fun dec (a: int t, i: int): unit = update (a, i, sub (a, i) - 1)
    end
 
 datatype z = datatype Exp.t
@@ -249,7 +248,6 @@ fun shrinkFunction {globals: Statement.t vector} =
          val inDegree = Array.array (numBlocks, 0)
          fun addLabelIndex i = Array.inc (inDegree, i)
          val isHeader = Array.array (numBlocks, false)
-         val numHandlerUses = Array.array (numBlocks, 0)
          fun layoutLabel (l: Label.t): Layout.t =
             let
                val i = labelIndex l
@@ -377,10 +375,6 @@ fun shrinkFunction {globals: Statement.t vector} =
                 | Call {args, return, ...} =>
                      let
                         val _ = incVars args
-                        val _ =
-                           Return.foreachHandler
-                           (return, fn l =>
-                            Array.inc (numHandlerUses, labelIndex l))
                         val _ = Return.foreachLabel (return, incLabel)
                      in
                         normal ()
@@ -626,21 +620,9 @@ fun shrinkFunction {globals: Statement.t vector} =
                      in
                         case LabelMeaning.aux m of
                            Block =>
-                              let
-                                 val t = Block.transfer (Vector.sub (blocks, i))
-                                 val _ = Transfer.foreachLabel (t, deleteLabel)
-                                 val _ =
-                                    case t of
-                                       Transfer.Call {return, ...} =>
-                                          Return.foreachHandler
-                                          (return, fn l =>
-                                           Array.dec (numHandlerUses,
-                                                      (LabelMeaning.blockIndex
-                                                       (labelMeaning l))))
-                                     | _ => ()
-                              in
-                                 ()
-                              end
+                              Transfer.foreachLabel
+                              (Block.transfer (Vector.sub (blocks, i)),
+                               deleteLabel)
                          | Bug => ()
                          | Case {cases, default, ...} =>
                               (Cases.foreach (cases, deleteLabel)
