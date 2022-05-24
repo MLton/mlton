@@ -1,3 +1,4 @@
+;;; bg-build-mode.el --- bg-build-mode.el  -*- lexical-binding: t; -*-
 ;; Copyright (C) 2007-2008 Vesa Karvonen
 ;;
 ;; MLton is released under a HPND-style license.
@@ -144,7 +145,7 @@ user."
                ((stringp shell)
                 (bg-build-const (split-string shell "[ \n\t]+")))
                (t
-                (compat-error "Shell command required!"))))
+                (error "Shell command required!"))))
    (cons 'attr
          (file-attributes file))))
 
@@ -189,14 +190,14 @@ The expression should evaluate to a bg-build project object."
   (cond
    ((not file)
     (bg-build-add-project
-     (compat-read-file-name
-      "Specify bg-build -file: " nil nil t nil 'bg-build-add-project-history)
+     (read-file-name
+      "Specify bg-build -file: " nil nil t nil)
      dont-save))
    ((not (and (file-readable-p file)
               (file-regular-p file)))
-    (compat-error "Specified file is not a regular readable file"))
+    (error "Specified file is not a regular readable file"))
    (t
-    (let* ((file (compat-abbreviate-file-name (file-truename file)))
+    (let* ((file (abbreviate-file-name (file-truename file)))
            (directory (file-name-directory file))
            (data (with-temp-buffer
                    (buffer-disable-undo)
@@ -224,7 +225,8 @@ The expression should evaluate to a bg-build project object."
   (let* ((file (car project))
          (proc (bg-build-assoc-cdr file bg-build-live-builds)))
     (cond
-     ((and proc (compat-process-live-p proc))
+     ((and proc (case (process-status proc)
+                      ((run stop) t)))
       ;; Ok.  We interrupt the build.
       (interrupt-process proc))
      (proc
@@ -250,7 +252,7 @@ The expression should evaluate to a bg-build project object."
                (unless (eq label 'progress)
                  (apply original-display-message label args))))))
     (unwind-protect
-        (compat-compilation-parse-errors)
+        (compilation-parse-errors (point-max))
       (when (fboundp 'display-message)
         (fset 'display-message original-display-message)))))
 
@@ -343,7 +345,7 @@ The expression should evaluate to a bg-build project object."
                     bg-build-highlighting-overlays)))))
 
 (defun bg-build-process-sentinel (project)
-  (lexical-let ((project project))
+  (let ((project project))
     (lambda (process event)
       (let ((event (upcase event))
             (file (car project))
@@ -351,9 +353,10 @@ The expression should evaluate to a bg-build project object."
         (when (buffer-live-p buffer)
           (with-current-buffer buffer
             (compilation-mode)
-            (compat-add-local-hook
+            (add-hook
              'kill-buffer-hook
-             (bg-build-kill-buffer-hook project))
+             (bg-build-kill-buffer-hook project)
+             nil t)
             (setq buffer-read-only nil)
             (let ((point (point)))
               (goto-char (point-max))
@@ -432,7 +435,7 @@ The expression should evaluate to a bg-build project object."
           (message "SUCCEEDED: %s" (bg-build-prj-name project))))))))
 
 (defun bg-build-kill-buffer-hook (project)
-  (lexical-let ((project project))
+  (let ((project project))
     (lambda ()
       (let ((file (car project)))
         (setq bg-build-finished-builds
@@ -454,9 +457,10 @@ The expression should evaluate to a bg-build project object."
       (let* ((buffer (generate-new-buffer name))
              (process (with-current-buffer buffer
                         (buffer-disable-undo)
-                        (compat-add-local-hook
+                        (add-hook
                          'kill-buffer-hook
-                         (bg-build-kill-buffer-hook project))
+                         (bg-build-kill-buffer-hook project)
+                         nil t)
                         (insert "Compiling \"" file "\":\n\n")
                         (setq buffer-read-only t)
                         (setq default-directory directory)
@@ -554,7 +558,7 @@ The expression should evaluate to a bg-build project object."
 
 (defun bg-build-delete-timer ()
   (when bg-build-timer
-    (compat-delete-timer bg-build-timer)
+    (cancel-timer bg-build-timer)
     (setq bg-build-timer nil)))
 
 (defun bg-build-create-timer ()
@@ -567,7 +571,7 @@ The expression should evaluate to a bg-build project object."
 (defun bg-build-after-save-hook ()
   (setq bg-build-saved-files
         (bg-build-cons-once
-         (compat-abbreviate-file-name (file-truename (buffer-file-name)))
+         (abbreviate-file-name (file-truename (buffer-file-name)))
          bg-build-saved-files))
   (bg-build-create-timer))
 

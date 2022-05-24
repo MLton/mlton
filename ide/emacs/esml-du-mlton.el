@@ -1,3 +1,4 @@
+;;; esml-du-mlton.el --- esml-du-mlton.el  -*- lexical-binding: t; -*-
 ;; Copyright (C) 2007-2008 Vesa Karvonen
 ;;
 ;; MLton is released under a HPND-style license.
@@ -41,18 +42,20 @@ by the user."
 
 (defvar esml-du-mlton-history nil)
 
+(defvar esml-du-live-dufs nil)
+
 (defun esml-du-mlton (&optional duf dont-save)
   "Gets def-use information from a def-use file produced by MLton."
   (interactive)
   (cond
    ((not duf)
     (esml-du-mlton
-     (compat-read-file-name
-      "Specify def-use -file: " nil nil t nil 'esml-du-mlton-history)
+     (read-file-name
+      "Specify def-use -file: " nil nil t nil)
      dont-save))
    ((not (and (file-readable-p duf)
               (file-regular-p duf)))
-    (compat-error "Specified file is not a regular readable file"))
+    (error "Specified file is not a regular readable file"))
    ((run-with-idle-timer
      0.5 nil
      (function
@@ -76,11 +79,11 @@ by the user."
 
 (defun esml-du-character-class (c)
   (cond
-   ((find c esml-sml-symbolic-chars)
+   ((cl-find c esml-sml-symbolic-chars)
     'symbolic)
    ((and c (<= ?0 c) (<= c ?9))
     'numeric)
-   ((find c esml-sml-alphanumeric-chars)
+   ((cl-find c esml-sml-alphanumeric-chars)
     'alpha)))
 
 (defun esml-du-extract-following-symbol (chars)
@@ -99,17 +102,17 @@ change surprisingly after a jump."
           (aft (esml-du-character-class (char-after))))
       (cond
        ((and (or (eq bef 'alpha) (eq bef 'numeric)) (eq aft 'symbolic)
-             (find (esml-du-extract-following-symbol esml-sml-symbolic-chars)
-                   esml-sml-symbolic-keywords
-                   :test 'equal))
+             (cl-find (esml-du-extract-following-symbol esml-sml-symbolic-chars)
+                      esml-sml-symbolic-keywords
+                      :test 'equal))
         (skip-chars-backward esml-sml-alphanumeric-chars))
        ((and (eq bef 'symbolic)
              (or (eq aft 'numeric)
                  (and (eq aft 'alpha)
-                      (find (esml-du-extract-following-symbol
-                             esml-sml-alphanumeric-chars)
-                            esml-sml-alphanumeric-keywords
-                            :test 'equal))))
+                      (cl-find (esml-du-extract-following-symbol
+                                esml-sml-alphanumeric-chars)
+                               esml-sml-alphanumeric-keywords
+                               :test 'equal))))
         (skip-chars-backward esml-sml-symbolic-chars))
        ((and (eq bef 'symbolic) (not (eq aft 'alpha)))
         (skip-chars-backward esml-sml-symbolic-chars))
@@ -118,7 +121,7 @@ change surprisingly after a jump."
     (when (let ((c (char-after))) (and c (<= ?0 c) (<= c ?9)))
       (search-forward-regexp esml-sml-numeric-literal-regexp point t))))
 
-(loop for mode in esml-sml-modes do
+(cl-loop for mode in esml-sml-modes do
   (add-to-list 'def-use-mode-to-move-to-symbol-start-alist
                (cons mode (function esml-du-move-to-symbol-start))))
 
@@ -129,7 +132,7 @@ beginning of the symbol."
     (when (zerop (skip-chars-forward esml-sml-alphanumeric-chars limit))
       (skip-chars-forward esml-sml-symbolic-chars limit))))
 
-(loop for mode in esml-sml-modes do
+(cl-loop for mode in esml-sml-modes do
   (add-to-list 'def-use-mode-to-move-to-symbol-end-alist
                (cons mode (function esml-du-move-to-symbol-end))))
 
@@ -187,30 +190,28 @@ beginning of the symbol."
     (when buffer
       (kill-buffer buffer))))
 
-(defvar esml-du-live-dufs nil)
-
 (defun esml-du-set-live-dufs (dufs &optional dont-save)
   (setq esml-du-live-dufs dufs)
   (when (and (not dont-save)
              esml-du-dufs-auto-load)
     (customize-save-variable
      'esml-du-dufs-recent
-     (copy-list dufs))))
+     (cl-copy-list dufs))))
 
 (defun esml-du-finalize (ctx)
   (esml-du-stop-parsing ctx)
   (let ((timer (esml-du-ctx-poll-timer ctx)))
     (when timer
-      (compat-delete-timer timer)
+      (cancel-timer timer)
       (esml-du-ctx-set-poll-timer nil ctx)))
   (let ((timer (esml-du-ctx-reload-timer ctx)))
     (when timer
-      (compat-delete-timer timer)
+      (cancel-timer timer)
       (esml-du-ctx-set-reload-timer nil ctx)))
   (esml-du-set-live-dufs
-   (remove* (esml-du-ctx-duf ctx)
-            esml-du-live-dufs
-            :test (function equal))))
+   (cl-remove (esml-du-ctx-duf ctx)
+              esml-du-live-dufs
+              :test (function equal))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Context
@@ -267,7 +268,7 @@ beginning of the symbol."
             attrs
             (esml-du-ctx-attr ctx))
       (when (esml-du-ctx-reload-timer ctx)
-        (compat-delete-timer (esml-du-ctx-reload-timer ctx)))
+        (cancel-timer (esml-du-ctx-reload-timer ctx)))
       (esml-du-ctx-set-reload-timer
        (run-with-idle-timer
         0.5
@@ -341,7 +342,7 @@ non-nil if something was actually read."
 
 (defun esml-du-highlight-type (string)
   (when string
-    (loop for pat-face in esml-du-highlight-type-map do
+    (cl-loop for pat-face in esml-du-highlight-type-map do
           (let ((pat (car pat-face))
                 (prop `(face ,(cdr pat-face)))
                 (start 0))
@@ -397,7 +398,7 @@ Returns the symbol read and deletes the read symbol from the buffer."
         (push ref uses)))
     (puthash sym uses sym-to-uses)
     (setq buffer-read-only nil)
-    (delete-backward-char (- (point) start))
+    (delete-char (- start (point)))
     (setq buffer-read-only t)
     sym))
 
@@ -413,12 +414,13 @@ Returns the symbol read and deletes the read symbol from the buffer."
      (generate-new-buffer (concat "** " (esml-du-ctx-duf ctx) " **")) ctx)
     (with-current-buffer (esml-du-ctx-buf ctx)
       (buffer-disable-undo)
-      (compat-add-local-hook
+      (add-hook
        'kill-buffer-hook
-       (lexical-let ((ctx ctx))
+       (let ((ctx ctx))
          (function
           (lambda ()
-            (esml-du-ctx-set-buf nil ctx)))))))
+            (esml-du-ctx-set-buf nil ctx))))
+       nil t)))
   (bury-buffer (esml-du-ctx-buf ctx))
   (with-current-buffer (esml-du-ctx-buf ctx)
     (insert-file-contents (esml-du-ctx-duf ctx))

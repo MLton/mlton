@@ -1,10 +1,8 @@
+;;; esml-util.el --- esml-util.el  -*- lexical-binding: t; -*-
 ;; Copyright (C) 2005 Vesa Karvonen
 ;;
 ;; MLton is released under a HPND-style license.
 ;; See the file MLton-LICENSE for details.
-
-(require 'cl)
-(require 'compat)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; SML metadata
@@ -66,7 +64,7 @@ point is moved to the end of the string."
     (insert str)))
 
 (defun esml-split-string (string separator)
-  (remove* "" (split-string string separator) :test 'equal))
+  (cl-remove "" (split-string string separator) :test 'equal))
 
 (defun esml-string-matches-p (regexp str)
   "Non-nil iff the entire string matches the regexp."
