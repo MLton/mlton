@@ -1,3 +1,4 @@
+;;; def-use-mode.el --- def-use-mode.el  -*- lexical-binding: t; -*-
 ;; Copyright (C) 2007 Vesa Karvonen
 ;;
 ;; MLton is released under a HPND-style license.
@@ -147,11 +148,11 @@ available commands."
 \\[def-use-jump-to-prev] was last invoked."
   (interactive)
   (if (ring-empty-p def-use-marker-ring)
-      (compat-error "No previous jump locations for invocation"))
+      (error "No previous jump locations for invocation"))
   (let ((marker (ring-remove def-use-marker-ring 0)))
     (switch-to-buffer
      (or (marker-buffer marker)
-         (compat-error "The marked buffer has been deleted")))
+         (error "The marked buffer has been deleted")))
     (goto-char (marker-position marker))
     (set-marker marker nil nil)))
 
@@ -186,7 +187,7 @@ available commands."
 position."
   (cond
    ((not (file-readable-p (def-use-ref-src ref)))
-    (compat-error "Referenced file %s can not be read" (def-use-ref-src ref)))
+    (error "Referenced file %s can not be read" (def-use-ref-src ref)))
    (other-window
     (def-use-find-file (def-use-ref-src ref) t))
    ((not (equal (def-use-buffer-file-truename) (def-use-ref-src ref)))
@@ -201,7 +202,7 @@ position."
   "Returns a sorted list of all references (including definition) to
 the symbol."
   (sort (cons (def-use-sym-ref sym)
-              (copy-list (def-use-sym-to-uses sym)))
+              (cl-copy-list (def-use-sym-to-uses sym)))
         (function def-use-ref<)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -244,8 +245,8 @@ the symbol."
           (switch-to-buffer-other-window buffer)
           (buffer-disable-undo)
           (def-use-list-mode)
-          (compat-add-local-hook
-            'kill-buffer-hook (function def-use-list-view-unmark-all))
+          (add-hook
+            'kill-buffer-hook (function def-use-list-view-unmark-all) nil t)
           (set (make-local-variable 'def-use-list-sym)
                sym)
           (insert (def-use-format-sym sym) "\n"
@@ -258,7 +259,8 @@ the symbol."
                    (lambda (ref)
                      (insert (def-use-format-ref ref) "\n")))
                   refs))
-          (goto-line 3)
+          (goto-char (point-min))
+          (forward-line 2)
           (setq buffer-read-only t))))))
 
 (defun def-use-list-view-ref ()
@@ -437,7 +439,7 @@ argument the message is also inserted to the `kill-ring'."
 
 (defun def-use-delete-highlight-timer ()
   (when def-use-highlight-timer
-    (compat-delete-timer def-use-highlight-timer)
+    (cancel-timer def-use-highlight-timer)
     (setq def-use-highlight-timer nil)))
 
 (defun def-use-create-highlight-timer ()
@@ -452,10 +454,10 @@ argument the message is also inserted to the `kill-ring'."
 ;; Mode
 
 (defun def-use-mode-enabled-in-some-buffer ()
-  (loop for buffer in (buffer-list) do
+  (cl-loop for buffer in (buffer-list) do
     (if (with-current-buffer buffer
           def-use-mode)
-        (return t))))
+        (cl-return t))))
 
 (defvar def-use-mode-map (make-sparse-keymap)
   "Keymap for Def-Use mode.  This variable is updated by

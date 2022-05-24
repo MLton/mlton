@@ -1,10 +1,8 @@
+;;; bg-build-util.el --- bg-build-util.el  -*- lexical-binding: t; -*-
 ;; Copyright (C) 2007 Vesa Karvonen
 ;;
 ;; MLton is released under a HPND-style license.
 ;; See the file MLton-LICENSE for details.
-
-(require 'cl)
-(require 'compat)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Utils
@@ -35,7 +33,7 @@ on nil."
 
 (defun bg-build-const (value)
   "Returns a function that returns the given value."
-  (lexical-let ((value value))
+  (let ((value value))
     (lambda (&rest _)
       value)))
 

@@ -1,10 +1,8 @@
+;;; bg-job.el --- bg-job.el  -*- lexical-binding: t; -*-
 ;; Copyright (C) 2007 Vesa Karvonen
 ;;
 ;; MLton is released under a HPND-style license.
 ;; See the file MLton-LICENSE for details.
-
-(require 'cl)
-(require 'compat)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Customization
@@ -72,7 +70,7 @@ jobs may be active simultaneously."
 
 (defun bg-job-timer-stop ()
   (when bg-job-timer
-    (compat-delete-timer bg-job-timer)
+    (cancel-timer bg-job-timer)
     (setq bg-job-timer nil)))
 
 (defun bg-job-quantum ()

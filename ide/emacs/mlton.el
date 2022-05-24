@@ -1,3 +1,4 @@
+;;; mlton.el --- mlton.el  -*- lexical-binding: t; -*-
 ;; This code defines a few functions for invoking MLton's type checker and
 ;; visiting the resulting errors.  The intended use is:
 ;;

@@ -1,10 +1,8 @@
+;;; def-use-util.el --- def-use-util.el  -*- lexical-binding: t; -*-
 ;; Copyright (C) 2007 Vesa Karvonen
 ;;
 ;; MLton is released under a HPND-style license.
 ;; See the file MLton-LICENSE for details.
-
-(require 'cl)
-(require 'compat)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Utilities
@@ -29,16 +27,16 @@
      (lambda ()
        (def-use-intern
          (def-use-add-face 'font-lock-keyword-face
-           (compat-abbreviate-file-name (file-truename file))))))
+           (abbreviate-file-name (file-truename file))))))
     def-use-file-truename-table))
 
 (defun def-use-find-buffer-visiting-file (file)
   "Tries to find a buffer visiting the specified file."
   (let ((truename (def-use-file-truename file)))
-    (loop for buffer in (buffer-list) do
+    (cl-loop for buffer in (buffer-list) do
       (if (with-current-buffer buffer
             (string= (def-use-buffer-file-truename) truename))
-          (return buffer)))))
+          (cl-return buffer)))))
 
 (defun def-use-find-file (file &optional other-window)
   "Roughly as `find-file' or `find-file-other-window' except that will not

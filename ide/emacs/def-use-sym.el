@@ -1,3 +1,4 @@
+;;; def-use-sym.el --- def-use-sym.el  -*- lexical-binding: t; -*-
 ;; Copyright (C) 2007 Vesa Karvonen
 ;;
 ;; MLton is released under a HPND-style license.

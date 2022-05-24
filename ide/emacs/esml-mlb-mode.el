@@ -1,3 +1,4 @@
+;;; esml-mlb-mode.el --- esml-mlb-mode.el  -*- lexical-binding: t; -*-
 ;; Copyright (C) 2005-2007 Vesa Karvonen
 ;;
 ;; MLton is released under a HPND-style license.
@@ -159,7 +160,7 @@ the name of the MLB file."
 
 (defun esml-mlb-parse-annotations ()
   (setq esml-mlb-annotations
-        (remove-duplicates
+        (cl-remove-duplicates
          (sort (append
                 esml-mlb-additional-annotations
                 (when (not (string= "" esml-mlb-show-annotations-command))
@@ -195,7 +196,7 @@ by `esml-mlb-update'.")
 
 (defun esml-mlb-parse-path-variables ()
   (setq esml-mlb-path-variables
-        (remove-duplicates
+        (cl-remove-duplicates
          (sort (append
                 esml-mlb-additional-path-variables
                 (esml-mlb-parse-path-variables-from-string
@@ -205,7 +206,7 @@ by `esml-mlb-update'.")
                       esml-mlb-show-path-map-command
                       (current-buffer))
                      (buffer-string))))
-                (loop for file in esml-mlb-mlb-path-map-files
+                (cl-loop for file in esml-mlb-mlb-path-map-files
                   append (when (file-readable-p file)
                            (esml-mlb-parse-path-variables-from-string
                             (with-temp-buffer
@@ -229,7 +230,7 @@ by `esml-mlb-update'.")
             (let* ((name (match-string 1))
                    (name-value (assoc name esml-mlb-path-variables)))
               (unless name-value
-                (compat-error "Unknown path variable: %s" name))
+                (error "Unknown path variable: %s" name))
               (delete-char (length (match-string 0)))
               (insert (cdr name-value)))
           (forward-char 1)
@@ -313,7 +314,7 @@ by a space.")
           (,(apply
              (function concat)
              "\"[ \t]*" esml-mlb-compiler-ann-prefix "?\\("
-             (reduce
+             (cl-reduce
               (function
                (lambda (regexps name-values)
                  (if (cdr regexps)
@@ -321,7 +322,7 @@ by a space.")
                  (cons (if (cdr name-values)
                            (concat
                             (car name-values) "[ \t]+\\("
-                            (reduce
+                            (cl-reduce
                              (function
                               (lambda (r s)
                                 (concat r "\\|\\("
@@ -413,39 +414,39 @@ by a space.")
       (beginning-of-line)
       (skip-chars-forward " \t")
       (cond ((looking-at ";")
-             (case evidence
+             (cl-case evidence
                ((in bas)
                 (indent-line-to
                  (max 0 (+ indent -2 esml-mlb-indentation-offset))))
                (t
                 (indent-line-to (max 0 (- indent 2))))))
             ((looking-at "end[ \t\n]")
-             (case evidence
+             (cl-case evidence
                ((ann bas in let local)
                 (indent-line-to indent))
                (t
                 (indent-line-to
                  (max 0 (- indent esml-mlb-indentation-offset))))))
             ((looking-at "in[ \t\n]")
-             (case evidence
+             (cl-case evidence
                ((ann let local)
                 (indent-line-to indent))
                (t
                 (indent-line-to (- indent esml-mlb-indentation-offset)))))
             ((looking-at "and[ \t\n]")
-             (case evidence
+             (cl-case evidence
                ((basis functor signature structure)
                 (indent-line-to (+ indent -3 (length (symbol-name evidence)))))
                (t
                 (indent-line-to indent))))
             ((looking-at "\\*")
-             (case evidence
+             (cl-case evidence
                ((*)
                 (indent-line-to (+ indent 1)))
                (t
                 (indent-line-to indent))))
             (t
-             (case evidence
+             (cl-case evidence
                ((ann bas in let local)
                 (indent-line-to (+ indent esml-mlb-indentation-offset)))
                (t
@@ -464,7 +465,7 @@ name completions."
          (concat "^\\(" esml-mlb-completion-ignored-files-regexp "\\)$"))
         (valid-suffices-regexp
          (concat "^\\(" esml-mlb-path-suffix-regexp "\\)$")))
-    (remove*
+    (cl-remove
      nil
      completions
      :test (function
@@ -492,11 +493,11 @@ name completions."
              "\\)[ \t\n]+\\(" esml-mlb-string-char-regexp "*\\)"))
     (let* ((annot (assoc (match-string 1) esml-mlb-annotations))
            (all-values (cdr annot))
-           (values (remove* nil all-values
-                            :test (function
-                                   (lambda (_ s)
-                                     (and (< 0 (length s))
-                                          (= ?< (aref s 0)))))))
+           (values (cl-remove nil all-values
+                              :test (function
+                                     (lambda (_ s)
+                                       (and (< 0 (length s))
+                                            (= ?< (aref s 0)))))))
            (value-prefix (match-string 2))
            (value-completion
             (try-completion value-prefix (mapcar 'list values)))
@@ -655,39 +656,39 @@ perform context sensitive completion. This command is not idempotent."
   (interactive)
   ;; TBD: find-error / error output mode
   (unless (eq major-mode 'esml-mlb-mode)
-    (compat-error "show-basis is only meaningful on MLB files"))
+    (error "show-basis is only meaningful on MLB files"))
   (when (get-process esml-mlb-show-basis-process-name)
-    (compat-error "show-basis already running"))
+    (error "show-basis already running"))
   (save-some-buffers)
-  (lexical-let ((tmp-file (concat
-                           (file-name-directory (buffer-file-name))
-                           "." (file-name-nondirectory (buffer-file-name))
-                           ".basis"))
-                (buffer (get-buffer-create esml-mlb-show-basis-process-name)))
+  (let ((tmp-file (concat
+                   (file-name-directory (buffer-file-name))
+                   "." (file-name-nondirectory (buffer-file-name))
+                   ".basis"))
+        (buffer (get-buffer-create esml-mlb-show-basis-process-name)))
     (when (file-exists-p tmp-file)
-      (compat-error "Temporary basis file already exists: %s" tmp-file))
-    (save-excursion
-      (set-buffer buffer)
+      (error "Temporary basis file already exists: %s" tmp-file))
+    (with-current-buffer buffer
       (delete-region (point-min) (point-max)))
     (let ((process (start-process-shell-command
                     esml-mlb-show-basis-process-name
                     buffer
-                    (compat-replace-regexp-in-string
-                     (compat-replace-regexp-in-string
-                      esml-mlb-show-basis-command
-                      "%t"
-                      tmp-file)
+                    (replace-regexp-in-string
                      "%f"
-                     (buffer-file-name)))))
+                     (buffer-file-name)
+                     (replace-regexp-in-string
+                      "%t"
+                      tmp-file
+                      esml-mlb-show-basis-command
+                      t t)
+                     t t))))
       (set-process-sentinel
        process
        (function
         (lambda (process event)
           (if (and (esml-string-matches-p "finished\n" event)
                    (file-readable-p tmp-file))
-              (save-excursion
-                (set-buffer (find-file-other-window tmp-file))
-                (toggle-read-only)
+              (with-current-buffer (find-file-other-window tmp-file)
+                (read-only-mode 'toggle)
                 (delete-file tmp-file))
             (switch-to-buffer buffer))
           (message "%S" event)))))

@@ -1,3 +1,4 @@
+;;; esml-gen.el --- esml-gen.el  -*- lexical-binding: t; -*-
 ;; Copyright (C) 2005 Vesa Karvonen
 ;;
 ;; MLton is released under a HPND-style license.
@@ -35,7 +36,7 @@
       (skip-chars-forward " \t\n{},")
       (while (not (eobp))
         (let ((start (point)))
-          (if (find (char-after) esml-sml-symbolic-chars)
+          (if (cl-find (char-after) esml-sml-symbolic-chars)
               (skip-chars-forward esml-sml-symbolic-chars)
             (skip-chars-forward esml-sml-alphanumeric-chars))
           (push (buffer-substring start (point)) fields))
@@ -84,7 +85,7 @@ the format `[{]id[: ty][,] ...[,] id[}]' where `[]' marks optional parts."
   (let* ((fields (esml-extract-field-names pattern-or-type))
          (n (length fields)))
     (if (< n 2)
-        (compat-error "%s" "Record must have at least two fields")
+        (error "%s" "Record must have at least two fields")
       (let ((fields (sort fields 'string-lessp))
             (start (point)))
         (cl-labels ((format-fields
@@ -95,25 +96,25 @@ the format `[{]id[: ty][,] ...[,] id[}]' where `[]' marks optional parts."
                          for i from 1 to n
                          do (insert
                              (let* ((result fmt)
-                                    (result (compat-replace-regexp-in-string
-                                             result "\\%f" f))
-                                    (result (compat-replace-regexp-in-string
-                                             result "\\%i" (int-to-string i))))
+                                    (result (replace-regexp-in-string
+                                             "\\%f" f result t t))
+                                    (result (replace-regexp-in-string
+                                             "\\%i" (int-to-string i) result t t)))
                                result)))
                        (delete-char -2) ;; TBD
                        (buffer-string))))
           (insert
            (let* ((result (nth 0 esml-gen-fru-setter-template))
-                  (result (compat-replace-regexp-in-string
-                           result "%1" (format-fields (nth 1 esml-gen-fru-setter-template))))
-                  (result (compat-replace-regexp-in-string
-                           result "%2" (format-fields (nth 2 esml-gen-fru-setter-template))))
-                  (result (compat-replace-regexp-in-string
-                           result "%3" (format-fields (nth 3 esml-gen-fru-setter-template))))
-                  (result (compat-replace-regexp-in-string
-                           result "%4" (format-fields (nth 4 esml-gen-fru-setter-template))))
-                  (result (compat-replace-regexp-in-string
-                           result "%n" (int-to-string n))))
+                  (result (replace-regexp-in-string
+                           "%1" (format-fields (nth 1 esml-gen-fru-setter-template)) result t t))
+                  (result (replace-regexp-in-string
+                           "%2" (format-fields (nth 2 esml-gen-fru-setter-template)) result t t))
+                  (result (replace-regexp-in-string
+                           "%3" (format-fields (nth 3 esml-gen-fru-setter-template)) result t t))
+                  (result (replace-regexp-in-string
+                           "%4" (format-fields (nth 4 esml-gen-fru-setter-template)) result t t))
+                  (result (replace-regexp-in-string
+                           "%n" (int-to-string n) t t)))
              result))
           (indent-region start (point) nil))))))
 
@@ -144,15 +145,15 @@ two characters of a pattern are deleted at the end."
   (interactive "nMaximum number of fields [2-100]: ")
   (if (not (and (<= 2 n)
                 (<= n 100)))
-      (compat-error "%s" "Number of fields must be between 2 and 100")
+      (error "%s" "Number of fields must be between 2 and 100")
     (cl-labels ((format-fields
                  (fmt n)
                  (with-temp-buffer
                    (loop for i from 1 to n
                      do (insert
                          (let* ((result fmt)
-                                (result (compat-replace-regexp-in-string
-                                         result "%i" (int-to-string i))))
+                                (result (replace-regexp-in-string
+                                         "%i" (int-to-string i) result t t)))
                            result)))
                    (delete-char -2) ;; TBD
                    (buffer-string))))
@@ -162,18 +163,18 @@ two characters of a pattern are deleted at the end."
             (insert "\n"))
           (insert
            (let* ((result (nth 0 esml-gen-ftu-setters-template))
-                  (result (compat-replace-regexp-in-string
-                           result "%1" (format-fields (nth 1 esml-gen-ftu-setters-template) i)))
-                  (result (compat-replace-regexp-in-string
-                           result "%2" (format-fields (nth 2 esml-gen-ftu-setters-template) i)))
-                  (result (compat-replace-regexp-in-string
-                           result "%3" (format-fields (nth 3 esml-gen-ftu-setters-template) i)))
-                  (result (compat-replace-regexp-in-string
-                           result "%4" (format-fields (nth 4 esml-gen-ftu-setters-template) i)))
-                  (result (compat-replace-regexp-in-string
-                           result "%5" (format-fields (nth 5 esml-gen-ftu-setters-template) i)))
-                  (result (compat-replace-regexp-in-string
-                           result "%n" (int-to-string i))))
+                  (result (replace-regexp-in-string
+                           "%1" (format-fields (nth 1 esml-gen-ftu-setters-template) i) result t t))
+                  (result (replace-regexp-in-string
+                           "%2" (format-fields (nth 2 esml-gen-ftu-setters-template) i) result t t))
+                  (result (replace-regexp-in-string
+                           "%3" (format-fields (nth 3 esml-gen-ftu-setters-template) i) result t t))
+                  (result (replace-regexp-in-string
+                           "%4" (format-fields (nth 4 esml-gen-ftu-setters-template) i) result t t))
+                  (result (replace-regexp-in-string
+                           "%5" (format-fields (nth 5 esml-gen-ftu-setters-template) i) result t t))
+                  (result (replace-regexp-in-string
+                           "%n" (int-to-string i) result t t)))
              result)))
         (indent-region start (point) nil)))))
 
