@@ -1,4 +1,4 @@
-(* Copyright (C) 2011,2017,2019 Matthew Fluet.
+(* Copyright (C) 2011,2017,2019,2022 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -121,7 +121,7 @@ fun 'a analyze
                   fun ensureSize (w, s) =
                      if WordSize.equals (s, WordX.size w)
                         then ()
-                     else Error.bug (concat ["Analyze.loopTransfer (case ",
+                     else Error.bug (concat ["Analyze2.loopTransfer (case ",
                                              WordX.toString (w, {suffix = true}),
                                              " must be size ",
                                              WordSize.toString s,
@@ -312,6 +312,11 @@ fun 'a analyze
                          Transfer.foreachLabel (transfer, visit)
                       end
                 end
+
+             val _ =
+                if Vector.isEmpty (labelValues start)
+                   then ()
+                   else Error.bug (concat ["Analyze2.analyze (start ", Label.toString start, " must be nullary)"])
              val _ = visit start
           in
              ()

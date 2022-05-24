@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2016-2017,2019-2021 Matthew Fluet.
+(* Copyright (C) 2009,2016-2017,2019-2022 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -638,7 +638,7 @@ fun typeCheck (p as Program.T {functions, main, objectTypes, profileInfo, static
                  ; Vector.foreach (statements, fn s =>
                                    Statement.foreachDef
                                    (s, setVarType))))
-            val _ = labelIsNullaryJump start
+            val _ = check' (start, "start", labelIsNullaryJump, Label.layout)
             fun transferOk (t: Transfer.t): bool =
                let
                   datatype z = datatype Transfer.t

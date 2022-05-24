@@ -1,4 +1,4 @@
-(* Copyright (C) 2011,2017,2019 Matthew Fluet.
+(* Copyright (C) 2011,2017,2019,2022 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -260,6 +260,10 @@ fun 'a analyze
                       end
                 end
 
+             val _ =
+                if Vector.isEmpty (labelValues start)
+                   then ()
+                   else Error.bug (concat ["Analyze.analyze (start ", Label.toString start, " must be nullary)"])
              val _ = visit start
           in
              ()
