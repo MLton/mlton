@@ -355,12 +355,12 @@ following.
 [source,sml]
 ----
 val n = fn z => Fold.fold (0, fn i => i) z
-val I = fn z => Fold.step0 (fn i => i * 2) z
-val O = fn z => Fold.step0 (fn i => i * 2 + 1) z
+val O = fn z => Fold.step0 (fn i => i * 2) z
+val I = fn z => Fold.step0 (fn i => i * 2 + 1) z
 ----
 
 Here we have one folder, `n`, that can be used with two different
-steppers, `I` and `O`.  By using the fold equation, one can
+steppers, `O` and `I`.  By using the fold equation, one can
 verify the following equations.
 
 [source,sml]
