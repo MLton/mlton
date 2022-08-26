@@ -21,7 +21,7 @@ The general form of an `_import` expression is:
 ----
 _import "C function name" attr... : cFuncTy;
 ----
-The type and the semicolon are not optional.
+The type and the colon (`:`) are not optional.
 
 The function name is followed by a (possibly empty) sequence of
 attributes, analogous to C `__attribute__` specifiers.
