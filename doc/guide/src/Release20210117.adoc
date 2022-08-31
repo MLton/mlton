@@ -25,24 +25,17 @@ https://github.com/MLton/mlton/blob/on-20210117-release/CHANGELOG.adoc[`CHANGELO
 ** https://sourceforge.net/projects/mlton/files/mlton/20210117/mlton-20210117-1.amd64-darwin-19.6.gmp-static.tgz[Darwin (.tgz)] 19.6 (Mac OS X Catalina), statically linked against <<GMP#>> (but requires <<GMP#>> for generated executables)
 ** https://sourceforge.net/projects/mlton/files/mlton/20210117/mlton-20210117-1.amd64-linux-glibc2.23.tgz[Linux (.tgz)], glibc 2.23 (Ubuntu 16.04)
 ** https://sourceforge.net/projects/mlton/files/mlton/20210117/mlton-20210117-1.amd64-linux-glibc2.31.tgz[Linux (.tgz)], glibc 2.31 (Ubuntu 20.04)
-// ** https://sourceforge.net/projects/mlton/files/mlton/20210117/mlton-20210117-amd64-mingw.tgz[MinGW (.tgz)], gcc 10.1.0, statically linked against <<GMP#>>; contributed by Bernard Berthomieu; see http://projects.laas.fr/tina/software.php for details and installation instructions
-// ** https://sourceforge.net/projects/mlton/files/mlton/20210117/mlton-20210117-amd64-mingw-gmp-dynamic.tgz[MinGW (.tgz)], gcc 10.1.0, dynamically linked against <<GMP#>>; contributed by Bernard Berthomieu; see http://projects.laas.fr/tina/software.php for details and installation instructions
-// ** https://sourceforge.net/projects/mlton/files/mlton/20210117/mlton-20210117-amd64-solaris-gmp-dynamic.tgz[Solaris (.tgz)] 11.4, dynamically linked against <<GMP#>>; contributed by Bernard Berthomieu
-// * x86
-// ** https://sourceforge.net/projects/mlton/files/mlton/20210117/mlton-20210117-x86-mingw.tgz[MinGW (.tgz)], gcc 10.1.0, statically linked against <<GMP#>>; contributed by Bernard Berthomieu; see http://projects.laas.fr/tina/software.php for details and installation instructions
-// ** https://sourceforge.net/projects/mlton/files/mlton/20210117/mlton-20210117-x86-mingw-gmp-dynamic.tgz[MinGW (.tgz)], gcc 10.1.0, dynamically linked against <<GMP#>>; contributed by Bernard Berthomieu; see http://projects.laas.fr/tina/software.php for details and installation instructions
-// ** https://sourceforge.net/projects/mlton/files/mlton/20210117/mlton-20210117-x86-solaris-gmp-dynamic.tgz[Solaris (.tgz)] 11.4, dynamically linked against <<GMP#>>; contributed by Bernard Berthomieu
 
-// === Binary packages available at other sites
+=== Binary packages available at other sites
 
-// * http://projects.laas.fr/tina/software.php[TINA toolbox]: Includes binary
-//   releases for: amd64-darwin Mac OS X Sierra (both statically and dynamically
-//   linked against <<GMP#>>), amd64-linux Ubuntu 14 (both statically and
-//   dynamically linked against <<GMP#>>), amd64-mingw and x86-mingw MSys2 (both
-//   statically and dynamically linked against <<GMP#>>), amd64-solaris and
-//   x86-solaris Solaris 11.4 (both statically and dynamically linked against
-//   <<GMP#>>), and x86-linux Ubuntu 16 (both statically and dynamically linked
-//   against <<GMP#>>).
+* http://projects.laas.fr/tina/software.php[TINA toolbox]: Includes binary
+  releases for: amd64-darwin macOS Sierra 10.12 (both statically and dynamically
+  linked against <<GMP#>>), amd64-linux Ubuntu 14 (both statically and
+  dynamically linked against <<GMP#>>), amd64-mingw MSys2 (both statically and
+  dynamically linked against <<GMP#>>), amd64-solaris Solaris 11.4 (both
+  statically and dynamically linked against <<GMP#>>), and arm64-darwin macOS
+  Monterey 12.4 (Apple Silicon) (both statically and dynamically linked against
+  <<GMP#>>).
 
 == 20210117 source packages
 
