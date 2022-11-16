@@ -1,4 +1,4 @@
-/* Copyright (C) 2012 Matthew Fluet.
+/* Copyright (C) 2012,2022 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -84,6 +84,10 @@ void GC_sequenceCopy (GC_state s, pointer ad, size_t ds, pointer as, size_t ss, 
   header = getHeader (ad);
   splitHeader(s, header, &tag, NULL, &bytesNonObjptrs, &numObjptrs);
   assert (tag == SEQUENCE_TAG);
+
+  if (numObjptrs > 0 and l > 0) {
+    markCard (s, ad);
+  }
 
   eltSize = bytesNonObjptrs + (numObjptrs * OBJPTR_SIZE);
   GC_memmove (as + eltSize * ss, ad + eltSize * ds, eltSize * l);

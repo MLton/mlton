@@ -8,9 +8,14 @@ Here are the changes from version 20210117 to YYYYMMDD.
 
 === Details
 
+* 2022-11-16
+  ** Fix bug in `GC_sequenceCopy` failing to update card map when
+  copying object pointers.  Thanks to Chris Cannam for the bug report
+  and debugging.
+
 * 2022-03-16
-  ** Fix (latent) bug with amd64 and LLVM codegens calling C functions with
-  signed 8-bit and 16-bit arguments.
+  ** Fix (latent) bug with amd64 and LLVM codegens calling C functions
+  with signed 8-bit and 16-bit arguments.
 
 * 2022-02-20
   ** Fix bug with `-profile time` leading to a segmentation fault.
