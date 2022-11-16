@@ -1,4 +1,4 @@
-/* Copyright (C) 2011-2012,2017,2019-2020 Matthew Fluet.
+/* Copyright (C) 2011-2012,2017,2019-2020,2022 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -22,8 +22,8 @@ void assertIsObjptrInFromSpaceOrImmutableMutableOrRootStaticHeap (GC_state s, ob
   }
   /* The following checks that intergenerational pointers have the
    * appropriate card marked.  Unfortunately, it doesn't work because
-   * for stacks, the card containing the beginning of the stack is
-   * marked, but any remaining cards aren't.
+   * for stacks and sequences, the card containing the beginning of
+   * the stack or sequence is marked, but any remaining cards aren't.
    */
   if (FALSE and s->mutatorMarksCards 
       and isPointerInOldGen (s, (pointer)opp) 
