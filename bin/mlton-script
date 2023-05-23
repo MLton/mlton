@@ -81,6 +81,11 @@ if [ -n "$GMP_LIB_DIR" ]; then
 gmpLinkOpts="-link-opt -L$GMP_LIB_DIR -target-link-opt netbsd -Wl,-R$GMP_LIB_DIR"
 fi
 
+# "Legacy" Pass Manager; LLVM < 13.0
+llvmOptOpt="-mem2reg -O2"
+# "New" Pass Manager; LLVM >= 13.0
+llvmOptOpt="--passes=function(mem2reg),default<O2>"
+
 doit "$lib" \
         -ar-script "$lib/static-library"                         \
         -cc "$CC"                                                \
@@ -91,7 +96,7 @@ doit "$lib" \
         -cc-opt-quote "-I$lib/include"                           \
         $gmpCCOpts $gmpLinkOpts                                  \
         -llvm-llc-opt '-O2'                                      \
-        -llvm-opt-opt '-mem2reg -O2'                             \
+        -llvm-opt-opt "$llvmOptOpt"                              \
         -mlb-path-var 'SML_LIB $(LIB_MLTON_DIR)/sml'             \
         -target-as-opt amd64 '-m64'                              \
         -target-as-opt x86 '-m32'                                \
