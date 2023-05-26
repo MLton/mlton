@@ -1,3 +1,297 @@
+diff --git a/Compat/mono-buffer/mono-buffer.fun b/Compat/mono-buffer/mono-buffer.fun
+new file mode 100644
+index 0000000..208e159
+--- /dev/null
++++ b/Compat/mono-buffer/mono-buffer.fun
+@@ -0,0 +1,139 @@
++(* mono-buffer.fun
++ *
++ * ============================================================================
++ * Copyright (c) 2018 John Reppy (http://cs.uchicago.edu/~jhr)
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ * ============================================================================
++ *
++ * Reference code for SML Basis Library Proposal 2018-001.
++ *
++ * This proposal supersedes 2015-004.
++ *)
++
++functor MonoBufferFn (
++
++    structure V : MONO_VECTOR
++    structure VS : MONO_VECTOR_SLICE
++      where type elem = V.elem and type vector = V.vector
++    structure A : MONO_ARRAY
++      where type elem = V.elem and type vector = V.vector
++    structure AS : MONO_ARRAY_SLICE
++      where type elem = V.elem and type array = A.array
++        and type vector = V.vector and type vector_slice = VS.slice
++    val defaultElem : V.elem
++
++  ) : MONO_BUFFER = struct
++
++    type elem = V.elem
++    type vector = V.vector
++    type slice = VS.slice
++    type array = A.array
++    type array_slice = AS.slice
++
++    datatype buf = BUF of {
++        content : array ref,    (* array for holding content *)
++        len : int ref,          (* current length of content *)
++        initLen : int           (* initial size *)
++      }
++
++  (* default initial size *)
++    val defaultInitLen = 4096
++
++    val maxLen = Int.min(V.maxLen, A.maxLen)
++
++    fun new hint = let
++          val n = if (hint < 0) orelse (V.maxLen < hint)
++                then raise Size
++                else if (hint = 0) then defaultInitLen
++                else hint
++          in
++            BUF{
++                content = ref(A.array(n, defaultElem)),
++                len = ref 0,
++                initLen = n
++              }
++          end
++
++    fun contents (BUF{content=ref arr, len=ref n, ...}) =
++          AS.vector (AS.slice (arr, 0, SOME n))
++
++    fun copy {src=BUF{content=ref arr, len=ref n, ...}, dst, di} =
++          AS.copy {src = AS.slice (arr, 0, SOME n), dst = dst, di = di}
++
++    fun length (BUF{len=ref n, ...}) = n
++
++    fun sub (BUF{content=ref arr, len=ref n, ...}, i) =
++          if (i < 0) orelse (n <= i)
++            then raise Subscript
++            else A.sub(arr, i)
++
++    fun clear (BUF{len, ...}) = (len := 0)
++
++    fun reset (BUF{content, len, initLen}) = (
++          len := 0;
++          if (A.length(!content) <> initLen)
++            then content := A.array(initLen, defaultElem)
++            else ())
++
++  (* ensure that the content array has space for amt elements *)
++    fun ensureCapacity (content, len, amt) = let
++          val capacity = (len + amt) handle Overflow => maxLen
++          in
++            if (A.length(!content) < capacity)
++              then let
++                val newArr = A.array(capacity, defaultElem)
++                in
++                  AS.copy{dst = newArr, di = 0, src = AS.slice(!content, 0, SOME len)};
++                  content := newArr
++                end
++              else ()
++          end
++
++    fun reserve (_, 0) = ()
++      | reserve (BUF{content, len=ref len, ...}, n) =
++          if (n < 0) then raise Size
++          else ensureCapacity (content, len, n)
++
++    fun add1 (BUF{content, len, ...}, elem) = (
++          ensureCapacity(content, !len, 1);
++          A.update(!content, !len, elem);
++          len := !len + 1)
++
++    fun addVec (BUF{content, len, ...}, vec) = (
++          ensureCapacity(content, !len, V.length vec);
++          A.copyVec{dst = !content, di = !len, src = vec};
++          len := !len + V.length vec)
++
++    fun addSlice (BUF{content, len, ...}, slice) = (
++          ensureCapacity(content, !len, VS.length slice);
++          AS.copyVec{dst = !content, di = !len, src = slice};
++          len := !len + VS.length slice)
++
++    fun addArr (BUF{content, len, ...}, arr) = (
++          ensureCapacity(content, !len, A.length arr);
++          A.copy{dst = !content, di = !len, src = arr};
++          len := !len + A.length arr)
++
++    fun addArrSlice (BUF{content, len, ...}, slice) = (
++          ensureCapacity(content, !len, AS.length slice);
++          AS.copy{dst = !content, di = !len, src = slice};
++          len := !len + AS.length slice)
++
++  end
+diff --git a/Compat/mono-buffer/mono-buffer.mlb b/Compat/mono-buffer/mono-buffer.mlb
+new file mode 100644
+index 0000000..9096dd7
+--- /dev/null
++++ b/Compat/mono-buffer/mono-buffer.mlb
+@@ -0,0 +1,10 @@
++local
++   $(SML_LIB)/basis/basis.mlb
++   mono-buffer.sig
++   mono-buffer.fun
++   mono-buffer.sml
++in
++   signature MONO_BUFFER
++   structure Word8Buffer
++   structure CharBuffer
++end
+diff --git a/Compat/mono-buffer/mono-buffer.sig b/Compat/mono-buffer/mono-buffer.sig
+new file mode 100644
+index 0000000..dce7b83
+--- /dev/null
++++ b/Compat/mono-buffer/mono-buffer.sig
+@@ -0,0 +1,65 @@
++(* mono-buffer.sig
++ *
++ * ============================================================================
++ * Copyright (c) 2018 John Reppy (http://cs.uchicago.edu/~jhr)
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ * ============================================================================
++ *
++ * Reference code for SML Basis Library Proposal 2018-001.
++ *
++ * This proposal supersedes 2015-004.
++ *)
++
++signature MONO_BUFFER =
++  sig
++
++    type buf
++
++    type elem
++    type vector
++    type slice
++    type array
++    type array_slice
++
++    val maxLen : int
++
++    val new : int -> buf
++
++    val contents : buf -> vector
++
++    val copy : {src : buf, dst : array, di : int} -> unit
++
++    val length : buf -> int
++
++    val sub : buf * int -> elem
++
++    val clear : buf -> unit
++
++    val reset : buf -> unit
++
++    val reserve : buf * int -> unit
++
++    val add1 : buf * elem -> unit
++    val addVec : buf * vector -> unit
++    val addSlice : buf * slice -> unit
++    val addArr : buf * array -> unit
++    val addArrSlice : buf * array_slice -> unit
++
++  end
+diff --git a/Compat/mono-buffer/mono-buffer.sml b/Compat/mono-buffer/mono-buffer.sml
+new file mode 100644
+index 0000000..5468e29
+--- /dev/null
++++ b/Compat/mono-buffer/mono-buffer.sml
+@@ -0,0 +1,56 @@
++(* mono-buffer.sml
++ *
++ * ============================================================================
++ * Copyright (c) 2018 John Reppy (http://cs.uchicago.edu/~jhr)
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ * ============================================================================
++ *
++ * Reference code for SML Basis Library Proposal 2018-001.
++ *
++ * This proposal supersedes 2015-004.
++ *)
++
++structure Word8Buffer :> MONO_BUFFER
++                          where type elem = Word8.word
++                            and type vector = Word8Vector.vector
++                            and type slice = Word8VectorSlice.slice
++                            and type array = Word8Array.array
++                            and type array_slice = Word8ArraySlice.slice
++  = MonoBufferFn (
++      structure V = Word8Vector
++      structure VS = Word8VectorSlice
++      structure A = Word8Array
++      structure AS = Word8ArraySlice
++      val defaultElem : Word8.word = 0w0
++    );
++
++structure CharBuffer :> MONO_BUFFER
++                          where type elem = Char.char
++                            and type vector = CharVector.vector
++                            and type slice = CharVectorSlice.slice
++                            and type array = CharArray.array
++                            and type array_slice = CharArraySlice.slice
++  = MonoBufferFn (
++      structure V = CharVector
++      structure VS = CharVectorSlice
++      structure A = CharArray
++      structure AS = CharArraySlice
++      val defaultElem : Char.char = #"\000"
++    );
 diff --git a/Controls/controls-lib.mlb b/Controls/controls-lib.mlb
 new file mode 100644
 index 0000000..3a452a1
@@ -1942,19 +2236,16 @@ index 0000000..cffb30e
 +
 +end
 diff --git a/JSON/json-lib.mlb b/JSON/json-lib.mlb
-index ff960d3..d497783 100644
+index 82323c0..3db1c06 100644
 --- a/JSON/json-lib.mlb
 +++ b/JSON/json-lib.mlb
-@@ -1,47 +1,369 @@
+@@ -1,54 +1,431 @@
 -(* json-lib.mlb
 - *
-- * COPYRIGHT (c) 2008 The Fellowship of SML/NJ (http://www.smlnj.org)
+- * COPYRIGHT (c) 2021 The Fellowship of SML/NJ (http://www.smlnj.org)
 - * All rights reserved.
 - *
 - * An MLB file for the JSON library, so that it can be used by MLton programs.
-- *
-- * TODO:
-- *	This is not complete, since MLton does not have the ml-lpt-lib yet.
 - *)
 -
 -local
@@ -1972,8 +2263,14 @@ index ff960d3..d497783 100644
 -    json-tokens.sml
 -    json.lex.sml
 -    json.sml
+-    json-source.sml
 -    json-stream-parser.sml
 -    json-parser.sml
+-    json-stream-output.sig
+-    json-stream-output.fun
+-(* NOTE: MLton does not support the CharBuffer Basis Library extension
+-    json-buffer-printer.sml
+-*)
 -    json-stream-printer.sml
 -    json-printer.sml
 -    json-util.sml
@@ -1994,18 +2291,22 @@ index ff960d3..d497783 100644
 -  structure JSONUtil
 -
 -(* SAX-style API (event based) *)
+-  signature JSON_STREAM_OUTPUT
 -  structure JSONStreamParser
+-(* NOTE: MLton does not support the CharBuffer Basis Library extension
+-  structure JSONBufferPrinter
+-*)
 -  structure JSONStreamPrinter
 +local
-+  basis l33 =
++  basis l4 =
 +    bas
-+      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/sml-nj.mlb
++      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/sml-nj.mlb $(SML_LIB)/smlnj-lib/Compat/mono-buffer/mono-buffer.mlb
 +    end
-+  basis l75 =
++  basis l48 =
 +    bas
 +      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
 +    end
-+  basis l44 =
++  basis l55 =
 +    bas
 +      (* $/ml-lpt-lib.cm ====> *) $(SML_LIB)/mllpt-lib/mllpt-lib.mlb
 +    end
@@ -2013,647 +2314,415 @@ index ff960d3..d497783 100644
 +local
 +   $(SML_LIB)/basis/pervasive.mlb
 +   local
-+      open l33
++      open l4
 +   in
-+      structure gs_0 = Char
-+      structure gs_1 = CharArray
-+      structure gs_2 = CharVector
-+      structure gs_3 = FixedInt
-+      structure gs_4 = General
-+      structure gs_5 = Int
-+      structure gs_6 = Int32
-+      structure gs_7 = Int64
-+      structure gs_8 = IntInf
-+      structure gs_9 = LargeInt
-+      structure gs_10 = LargeReal
-+      structure gs_11 = LargeWord
-+      structure gs_12 = OS
-+      structure gs_13 = Position
-+      structure gs_14 = Real
-+      structure gs_15 = Real64
-+      structure gs_16 = RealArray
-+      structure gs_17 = RealArraySlice
-+      structure gs_18 = RealVector
-+      structure gs_19 = RealVectorSlice
-+      structure gs_20 = SMLofNJ
-+      structure gs_21 = Socket
-+      structure gs_22 = String
-+      structure gs_23 = Substring
-+      structure gs_24 = SysWord
-+      structure gs_25 = Time
-+      structure gs_26 = Word
-+      structure gs_27 = Word32
-+      structure gs_28 = Word64
-+      structure gs_29 = Word8
++      structure gs_0 = CharBuffer
 +   end
 +   local
-+      open l33
++      open l4
 +   in
-+      structure gs_30 = TextIO
++      structure gs_1 = Char
++      structure gs_2 = CharArray
++      structure gs_3 = CharVector
++      structure gs_4 = FixedInt
++      structure gs_5 = General
++      structure gs_6 = Int
++      structure gs_7 = Int32
++      structure gs_8 = Int64
++      structure gs_9 = IntInf
++      structure gs_10 = LargeInt
++      structure gs_11 = LargeReal
++      structure gs_12 = LargeWord
++      structure gs_13 = OS
++      structure gs_14 = Position
++      structure gs_15 = Real
++      structure gs_16 = Real64
++      structure gs_17 = RealArray
++      structure gs_18 = RealArraySlice
++      structure gs_19 = RealVector
++      structure gs_20 = RealVectorSlice
++      structure gs_21 = SMLofNJ
++      structure gs_22 = Socket
++      structure gs_23 = String
++      structure gs_24 = Substring
++      structure gs_25 = SysWord
++      structure gs_26 = Time
++      structure gs_27 = Word
++      structure gs_28 = Word32
++      structure gs_29 = Word64
++      structure gs_30 = Word8
 +   end
 +   local
-+      open l33
-+   in
-+      structure gs_31 = List
-+   end
-+   local
-+      open l44
-+   in
-+      structure gs_32 = UTF8
-+   end
-+   local
-+      structure Char = gs_0
-+      structure CharArray = gs_1
-+      structure CharVector = gs_2
-+      structure FixedInt = gs_3
-+      structure General = gs_4
-+      structure Int = gs_5
-+      structure Int32 = gs_6
-+      structure Int64 = gs_7
-+      structure IntInf = gs_8
-+      structure LargeInt = gs_9
-+      structure LargeReal = gs_10
-+      structure LargeWord = gs_11
-+      structure List = gs_31
-+      structure OS = gs_12
-+      structure Position = gs_13
-+      structure Real = gs_14
-+      structure Real64 = gs_15
-+      structure RealArray = gs_16
-+      structure RealArraySlice = gs_17
-+      structure RealVector = gs_18
-+      structure RealVectorSlice = gs_19
-+      structure SMLofNJ = gs_20
-+      structure Socket = gs_21
-+      structure String = gs_22
-+      structure Substring = gs_23
-+      structure SysWord = gs_24
-+      structure Time = gs_25
-+      structure UTF8 = gs_32
-+      structure Word = gs_26
-+      structure Word32 = gs_27
-+      structure Word64 = gs_28
-+      structure Word8 = gs_29
-+      json-tokens.sml
-+   in
-+      structure gs_33 = JSONTokens
-+   end
-+   local
-+      open l33
-+   in
-+      structure gs_34 = Vector
-+   end
-+   local
-+      open l44
-+   in
-+      structure gs_35 = AntlrStreamPos
-+   end
-+   local
-+      open l33
-+   in
-+      structure gs_36 = StringCvt
-+   end
-+   local
-+      open l44
-+   in
-+      structure gs_37 = ULexBuffer
-+   end
-+   local
-+      structure AntlrStreamPos = gs_35
-+      structure Char = gs_0
-+      structure CharArray = gs_1
-+      structure CharVector = gs_2
-+      structure FixedInt = gs_3
-+      structure General = gs_4
-+      structure Int = gs_5
-+      structure Int32 = gs_6
-+      structure Int64 = gs_7
-+      structure IntInf = gs_8
-+      structure JSONTokens = gs_33
-+      structure LargeInt = gs_9
-+      structure LargeReal = gs_10
-+      structure LargeWord = gs_11
-+      structure List = gs_31
-+      structure OS = gs_12
-+      structure Position = gs_13
-+      structure Real = gs_14
-+      structure Real64 = gs_15
-+      structure RealArray = gs_16
-+      structure RealArraySlice = gs_17
-+      structure RealVector = gs_18
-+      structure RealVectorSlice = gs_19
-+      structure SMLofNJ = gs_20
-+      structure Socket = gs_21
-+      structure String = gs_22
-+      structure StringCvt = gs_36
-+      structure Substring = gs_23
-+      structure SysWord = gs_24
-+      structure TextIO = gs_30
-+      structure Time = gs_25
-+      structure ULexBuffer = gs_37
-+      structure UTF8 = gs_32
-+      structure Vector = gs_34
-+      structure Word = gs_26
-+      structure Word32 = gs_27
-+      structure Word64 = gs_28
-+      structure Word8 = gs_29
-+      json.lex.sml
-+   in
-+      structure gs_38 = JSONLexer
-+   end
-+   local
-+      structure AntlrStreamPos = gs_35
-+      structure JSONLexer = gs_38
-+      structure JSONTokens = gs_33
-+      structure TextIO = gs_30
-+      json-source.sml
-+   in
-+      structure gs_39 = JSONSource
-+   end
-+   local
-+      structure Char = gs_0
-+      structure CharArray = gs_1
-+      structure CharVector = gs_2
-+      structure FixedInt = gs_3
-+      structure General = gs_4
-+      structure Int = gs_5
-+      structure Int32 = gs_6
-+      structure Int64 = gs_7
-+      structure IntInf = gs_8
-+      structure JSONLexer = gs_38
-+      structure JSONSource = gs_39
-+      structure JSONTokens = gs_33
-+      structure LargeInt = gs_9
-+      structure LargeReal = gs_10
-+      structure LargeWord = gs_11
-+      structure OS = gs_12
-+      structure Position = gs_13
-+      structure Real = gs_14
-+      structure Real64 = gs_15
-+      structure RealArray = gs_16
-+      structure RealArraySlice = gs_17
-+      structure RealVector = gs_18
-+      structure RealVectorSlice = gs_19
-+      structure SMLofNJ = gs_20
-+      structure Socket = gs_21
-+      structure String = gs_22
-+      structure Substring = gs_23
-+      structure SysWord = gs_24
-+      structure TextIO = gs_30
-+      structure Time = gs_25
-+      structure Word = gs_26
-+      structure Word32 = gs_27
-+      structure Word64 = gs_28
-+      structure Word8 = gs_29
-+      json-stream-parser.sml
-+   in
-+      structure gs_40 = JSONStreamParser
-+   end
-+   local
-+      open l75
-+   in
-+      structure gs_41 = Format
-+   end
-+   local
-+      structure Char = gs_0
-+      structure CharArray = gs_1
-+      structure CharVector = gs_2
-+      structure FixedInt = gs_3
-+      structure Format = gs_41
-+      structure General = gs_4
-+      structure Int = gs_5
-+      structure Int32 = gs_6
-+      structure Int64 = gs_7
-+      structure IntInf = gs_8
-+      structure LargeInt = gs_9
-+      structure LargeReal = gs_10
-+      structure LargeWord = gs_11
-+      structure List = gs_31
-+      structure OS = gs_12
-+      structure Position = gs_13
-+      structure Real = gs_14
-+      structure Real64 = gs_15
-+      structure RealArray = gs_16
-+      structure RealArraySlice = gs_17
-+      structure RealVector = gs_18
-+      structure RealVectorSlice = gs_19
-+      structure SMLofNJ = gs_20
-+      structure Socket = gs_21
-+      structure String = gs_22
-+      structure Substring = gs_23
-+      structure SysWord = gs_24
-+      structure TextIO = gs_30
-+      structure Time = gs_25
-+      structure UTF8 = gs_32
-+      structure Word = gs_26
-+      structure Word32 = gs_27
-+      structure Word64 = gs_28
-+      structure Word8 = gs_29
-+      json-stream-printer.sml
-+   in
-+      structure gs_42 = JSONStreamPrinter
-+   end
-+   local
-+      structure Char = gs_0
-+      structure CharArray = gs_1
-+      structure CharVector = gs_2
-+      structure FixedInt = gs_3
-+      structure General = gs_4
-+      structure Int = gs_5
-+      structure Int32 = gs_6
-+      structure Int64 = gs_7
-+      structure IntInf = gs_8
-+      structure LargeInt = gs_9
-+      structure LargeReal = gs_10
-+      structure LargeWord = gs_11
-+      structure OS = gs_12
-+      structure Position = gs_13
-+      structure Real = gs_14
-+      structure Real64 = gs_15
-+      structure RealArray = gs_16
-+      structure RealArraySlice = gs_17
-+      structure RealVector = gs_18
-+      structure RealVectorSlice = gs_19
-+      structure SMLofNJ = gs_20
-+      structure Socket = gs_21
-+      structure String = gs_22
-+      structure Substring = gs_23
-+      structure SysWord = gs_24
-+      structure Time = gs_25
-+      structure Word = gs_26
-+      structure Word32 = gs_27
-+      structure Word64 = gs_28
-+      structure Word8 = gs_29
++      structure Char = gs_1
++      structure CharArray = gs_2
++      structure CharVector = gs_3
++      structure FixedInt = gs_4
++      structure General = gs_5
++      structure Int = gs_6
++      structure Int32 = gs_7
++      structure Int64 = gs_8
++      structure IntInf = gs_9
++      structure LargeInt = gs_10
++      structure LargeReal = gs_11
++      structure LargeWord = gs_12
++      structure OS = gs_13
++      structure Position = gs_14
++      structure Real = gs_15
++      structure Real64 = gs_16
++      structure RealArray = gs_17
++      structure RealArraySlice = gs_18
++      structure RealVector = gs_19
++      structure RealVectorSlice = gs_20
++      structure SMLofNJ = gs_21
++      structure Socket = gs_22
++      structure String = gs_23
++      structure Substring = gs_24
++      structure SysWord = gs_25
++      structure Time = gs_26
++      structure Word = gs_27
++      structure Word32 = gs_28
++      structure Word64 = gs_29
++      structure Word8 = gs_30
 +      json.sml
 +   in
-+      structure gs_43 = JSON
++      structure gs_31 = JSON
 +   end
 +   local
-+      structure Char = gs_0
-+      structure CharArray = gs_1
-+      structure CharVector = gs_2
-+      structure FixedInt = gs_3
-+      structure General = gs_4
-+      structure Int = gs_5
-+      structure Int32 = gs_6
-+      structure Int64 = gs_7
-+      structure IntInf = gs_8
-+      structure JSON = gs_43
-+      structure LargeInt = gs_9
-+      structure LargeReal = gs_10
-+      structure LargeWord = gs_11
-+      structure List = gs_31
-+      structure OS = gs_12
-+      structure Position = gs_13
-+      structure Real = gs_14
-+      structure Real64 = gs_15
-+      structure RealArray = gs_16
-+      structure RealArraySlice = gs_17
-+      structure RealVector = gs_18
-+      structure RealVectorSlice = gs_19
-+      structure SMLofNJ = gs_20
-+      structure Socket = gs_21
-+      structure String = gs_22
-+      structure Substring = gs_23
-+      structure SysWord = gs_24
-+      structure Time = gs_25
-+      structure Vector = gs_34
-+      structure Word = gs_26
-+      structure Word32 = gs_27
-+      structure Word64 = gs_28
-+      structure Word8 = gs_29
++      structure Char = gs_1
++      structure CharArray = gs_2
++      structure CharVector = gs_3
++      structure FixedInt = gs_4
++      structure General = gs_5
++      structure Int = gs_6
++      structure Int32 = gs_7
++      structure Int64 = gs_8
++      structure IntInf = gs_9
++      structure JSON = gs_31
++      structure LargeInt = gs_10
++      structure LargeReal = gs_11
++      structure LargeWord = gs_12
++      structure OS = gs_13
++      structure Position = gs_14
++      structure Real = gs_15
++      structure Real64 = gs_16
++      structure RealArray = gs_17
++      structure RealArraySlice = gs_18
++      structure RealVector = gs_19
++      structure RealVectorSlice = gs_20
++      structure SMLofNJ = gs_21
++      structure Socket = gs_22
++      structure String = gs_23
++      structure Substring = gs_24
++      structure SysWord = gs_25
++      structure Time = gs_26
++      structure Word = gs_27
++      structure Word32 = gs_28
++      structure Word64 = gs_29
++      structure Word8 = gs_30
++      json-stream-output.sig
++   in
++      signature gs_32 = JSON_STREAM_OUTPUT
++   end
++   local
++      open l48
++   in
++      structure gs_33 = Format
++   end
++   local
++      open l4
++   in
++      structure gs_34 = List
++   end
++   local
++      open l55
++   in
++      structure gs_35 = UTF8
++   end
++   local
++      structure Char = gs_1
++      structure CharArray = gs_2
++      structure CharVector = gs_3
++      structure FixedInt = gs_4
++      structure Format = gs_33
++      structure General = gs_5
++      structure Int = gs_6
++      structure Int32 = gs_7
++      structure Int64 = gs_8
++      structure IntInf = gs_9
++      structure JSON = gs_31
++      signature JSON_STREAM_OUTPUT = gs_32
++      structure LargeInt = gs_10
++      structure LargeReal = gs_11
++      structure LargeWord = gs_12
++      structure List = gs_34
++      structure OS = gs_13
++      structure Position = gs_14
++      structure Real = gs_15
++      structure Real64 = gs_16
++      structure RealArray = gs_17
++      structure RealArraySlice = gs_18
++      structure RealVector = gs_19
++      structure RealVectorSlice = gs_20
++      structure SMLofNJ = gs_21
++      structure Socket = gs_22
++      structure String = gs_23
++      structure Substring = gs_24
++      structure SysWord = gs_25
++      structure Time = gs_26
++      structure UTF8 = gs_35
++      structure Word = gs_27
++      structure Word32 = gs_28
++      structure Word64 = gs_29
++      structure Word8 = gs_30
++      json-stream-output.fun
++   in
++      functor gs_36 = JSONStreamOutputFn
++      signature gs_37 = TEXT_OUTPUT_STREAM
++   end
++   local
++      structure CharBuffer = gs_0
++      functor JSONStreamOutputFn = gs_36
++      signature JSON_STREAM_OUTPUT = gs_32
++      signature TEXT_OUTPUT_STREAM = gs_37
++      json-buffer-printer.sml
++   in
++      structure gs_38 = JSONBufferPrinter
++   end
++   local
++      open l4
++   in
++      structure gs_39 = TextIO
++   end
++   local
++      structure Char = gs_1
++      structure CharArray = gs_2
++      structure CharVector = gs_3
++      structure FixedInt = gs_4
++      structure General = gs_5
++      structure Int = gs_6
++      structure Int32 = gs_7
++      structure Int64 = gs_8
++      structure IntInf = gs_9
++      structure LargeInt = gs_10
++      structure LargeReal = gs_11
++      structure LargeWord = gs_12
++      structure List = gs_34
++      structure OS = gs_13
++      structure Position = gs_14
++      structure Real = gs_15
++      structure Real64 = gs_16
++      structure RealArray = gs_17
++      structure RealArraySlice = gs_18
++      structure RealVector = gs_19
++      structure RealVectorSlice = gs_20
++      structure SMLofNJ = gs_21
++      structure Socket = gs_22
++      structure String = gs_23
++      structure Substring = gs_24
++      structure SysWord = gs_25
++      structure Time = gs_26
++      structure UTF8 = gs_35
++      structure Word = gs_27
++      structure Word32 = gs_28
++      structure Word64 = gs_29
++      structure Word8 = gs_30
++      json-tokens.sml
++   in
++      structure gs_40 = JSONTokens
++   end
++   local
++      open l4
++   in
++      structure gs_41 = Vector
++   end
++   local
++      open l55
++   in
++      structure gs_42 = AntlrStreamPos
++   end
++   local
++      open l4
++   in
++      structure gs_43 = StringCvt
++   end
++   local
++      open l55
++   in
++      structure gs_44 = ULexBuffer
++   end
++   local
++      structure AntlrStreamPos = gs_42
++      structure Char = gs_1
++      structure CharArray = gs_2
++      structure CharVector = gs_3
++      structure FixedInt = gs_4
++      structure General = gs_5
++      structure Int = gs_6
++      structure Int32 = gs_7
++      structure Int64 = gs_8
++      structure IntInf = gs_9
++      structure JSONTokens = gs_40
++      structure LargeInt = gs_10
++      structure LargeReal = gs_11
++      structure LargeWord = gs_12
++      structure List = gs_34
++      structure OS = gs_13
++      structure Position = gs_14
++      structure Real = gs_15
++      structure Real64 = gs_16
++      structure RealArray = gs_17
++      structure RealArraySlice = gs_18
++      structure RealVector = gs_19
++      structure RealVectorSlice = gs_20
++      structure SMLofNJ = gs_21
++      structure Socket = gs_22
++      structure String = gs_23
++      structure StringCvt = gs_43
++      structure Substring = gs_24
++      structure SysWord = gs_25
++      structure TextIO = gs_39
++      structure Time = gs_26
++      structure ULexBuffer = gs_44
++      structure UTF8 = gs_35
++      structure Vector = gs_41
++      structure Word = gs_27
++      structure Word32 = gs_28
++      structure Word64 = gs_29
++      structure Word8 = gs_30
++      json.lex.sml
++   in
++      structure gs_45 = JSONLexer
++   end
++   local
++      structure AntlrStreamPos = gs_42
++      structure JSONLexer = gs_45
++      structure JSONTokens = gs_40
++      structure TextIO = gs_39
++      json-source.sml
++   in
++      structure gs_46 = JSONSource
++   end
++   local
++      structure Char = gs_1
++      structure CharArray = gs_2
++      structure CharVector = gs_3
++      structure FixedInt = gs_4
++      structure General = gs_5
++      structure Int = gs_6
++      structure Int32 = gs_7
++      structure Int64 = gs_8
++      structure IntInf = gs_9
++      structure JSONLexer = gs_45
++      structure JSONSource = gs_46
++      structure JSONTokens = gs_40
++      structure LargeInt = gs_10
++      structure LargeReal = gs_11
++      structure LargeWord = gs_12
++      structure OS = gs_13
++      structure Position = gs_14
++      structure Real = gs_15
++      structure Real64 = gs_16
++      structure RealArray = gs_17
++      structure RealArraySlice = gs_18
++      structure RealVector = gs_19
++      structure RealVectorSlice = gs_20
++      structure SMLofNJ = gs_21
++      structure Socket = gs_22
++      structure String = gs_23
++      structure Substring = gs_24
++      structure SysWord = gs_25
++      structure TextIO = gs_39
++      structure Time = gs_26
++      structure Word = gs_27
++      structure Word32 = gs_28
++      structure Word64 = gs_29
++      structure Word8 = gs_30
++      json-stream-parser.sml
++   in
++      structure gs_47 = JSONStreamParser
++   end
++   local
++      functor JSONStreamOutputFn = gs_36
++      signature JSON_STREAM_OUTPUT = gs_32
++      signature TEXT_OUTPUT_STREAM = gs_37
++      structure TextIO = gs_39
++      json-stream-printer.sml
++   in
++      structure gs_48 = JSONStreamPrinter
++   end
++   local
++      structure Char = gs_1
++      structure CharArray = gs_2
++      structure CharVector = gs_3
++      structure FixedInt = gs_4
++      structure General = gs_5
++      structure Int = gs_6
++      structure Int32 = gs_7
++      structure Int64 = gs_8
++      structure IntInf = gs_9
++      structure JSON = gs_31
++      structure LargeInt = gs_10
++      structure LargeReal = gs_11
++      structure LargeWord = gs_12
++      structure List = gs_34
++      structure OS = gs_13
++      structure Position = gs_14
++      structure Real = gs_15
++      structure Real64 = gs_16
++      structure RealArray = gs_17
++      structure RealArraySlice = gs_18
++      structure RealVector = gs_19
++      structure RealVectorSlice = gs_20
++      structure SMLofNJ = gs_21
++      structure Socket = gs_22
++      structure String = gs_23
++      structure Substring = gs_24
++      structure SysWord = gs_25
++      structure Time = gs_26
++      structure Vector = gs_41
++      structure Word = gs_27
++      structure Word32 = gs_28
++      structure Word64 = gs_29
++      structure Word8 = gs_30
 +      json-util.sml
 +   in
-+      structure gs_44 = JSONUtil
++      structure gs_49 = JSONUtil
 +   end
 +   local
-+      structure JSON = gs_43
-+      structure JSONLexer = gs_38
-+      structure JSONSource = gs_39
-+      structure JSONTokens = gs_33
-+      structure List = gs_31
-+      structure TextIO = gs_30
++      structure JSON = gs_31
++      structure JSONLexer = gs_45
++      structure JSONSource = gs_46
++      structure JSONTokens = gs_40
++      structure List = gs_34
++      structure TextIO = gs_39
 +      json-parser.sml
 +   in
-+      structure gs_45 = JSONParser
++      structure gs_50 = JSONParser
 +   end
 +   local
-+      structure JSON = gs_43
-+      structure JSONStreamPrinter = gs_42
-+      structure List = gs_31
-+      structure TextIO = gs_30
++      structure JSON = gs_31
++      structure JSONStreamPrinter = gs_48
++      structure TextIO = gs_39
 +      json-printer.sml
 +   in
-+      structure gs_46 = JSONPrinter
++      structure gs_51 = JSONPrinter
 +   end
 +in
-+   structure JSON = gs_43
-+   structure JSONParser = gs_45
-+   structure JSONPrinter = gs_46
-+   structure JSONStreamParser = gs_40
-+   structure JSONStreamPrinter = gs_42
-+   structure JSONUtil = gs_44
++   structure JSON = gs_31
++   structure JSONBufferPrinter = gs_38
++   structure JSONParser = gs_50
++   structure JSONPrinter = gs_51
++   structure JSONStreamParser = gs_47
++   structure JSONStreamPrinter = gs_48
++   structure JSONUtil = gs_49
++   signature JSON_STREAM_OUTPUT = gs_32
 +end
 +end
  
  end
-diff --git a/PP/mono-buffer/mono-buffer.fun b/PP/mono-buffer/mono-buffer.fun
-new file mode 100644
-index 0000000..208e159
---- /dev/null
-+++ b/PP/mono-buffer/mono-buffer.fun
-@@ -0,0 +1,139 @@
-+(* mono-buffer.fun
-+ *
-+ * ============================================================================
-+ * Copyright (c) 2018 John Reppy (http://cs.uchicago.edu/~jhr)
-+ *
-+ * Permission is hereby granted, free of charge, to any person obtaining a copy
-+ * of this software and associated documentation files (the "Software"), to deal
-+ * in the Software without restriction, including without limitation the rights
-+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-+ * copies of the Software, and to permit persons to whom the Software is
-+ * furnished to do so, subject to the following conditions:
-+ *
-+ * The above copyright notice and this permission notice shall be included in
-+ * all copies or substantial portions of the Software.
-+ *
-+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-+ * THE SOFTWARE.
-+ * ============================================================================
-+ *
-+ * Reference code for SML Basis Library Proposal 2018-001.
-+ *
-+ * This proposal supersedes 2015-004.
-+ *)
-+
-+functor MonoBufferFn (
-+
-+    structure V : MONO_VECTOR
-+    structure VS : MONO_VECTOR_SLICE
-+      where type elem = V.elem and type vector = V.vector
-+    structure A : MONO_ARRAY
-+      where type elem = V.elem and type vector = V.vector
-+    structure AS : MONO_ARRAY_SLICE
-+      where type elem = V.elem and type array = A.array
-+        and type vector = V.vector and type vector_slice = VS.slice
-+    val defaultElem : V.elem
-+
-+  ) : MONO_BUFFER = struct
-+
-+    type elem = V.elem
-+    type vector = V.vector
-+    type slice = VS.slice
-+    type array = A.array
-+    type array_slice = AS.slice
-+
-+    datatype buf = BUF of {
-+        content : array ref,    (* array for holding content *)
-+        len : int ref,          (* current length of content *)
-+        initLen : int           (* initial size *)
-+      }
-+
-+  (* default initial size *)
-+    val defaultInitLen = 4096
-+
-+    val maxLen = Int.min(V.maxLen, A.maxLen)
-+
-+    fun new hint = let
-+          val n = if (hint < 0) orelse (V.maxLen < hint)
-+                then raise Size
-+                else if (hint = 0) then defaultInitLen
-+                else hint
-+          in
-+            BUF{
-+                content = ref(A.array(n, defaultElem)),
-+                len = ref 0,
-+                initLen = n
-+              }
-+          end
-+
-+    fun contents (BUF{content=ref arr, len=ref n, ...}) =
-+          AS.vector (AS.slice (arr, 0, SOME n))
-+
-+    fun copy {src=BUF{content=ref arr, len=ref n, ...}, dst, di} =
-+          AS.copy {src = AS.slice (arr, 0, SOME n), dst = dst, di = di}
-+
-+    fun length (BUF{len=ref n, ...}) = n
-+
-+    fun sub (BUF{content=ref arr, len=ref n, ...}, i) =
-+          if (i < 0) orelse (n <= i)
-+            then raise Subscript
-+            else A.sub(arr, i)
-+
-+    fun clear (BUF{len, ...}) = (len := 0)
-+
-+    fun reset (BUF{content, len, initLen}) = (
-+          len := 0;
-+          if (A.length(!content) <> initLen)
-+            then content := A.array(initLen, defaultElem)
-+            else ())
-+
-+  (* ensure that the content array has space for amt elements *)
-+    fun ensureCapacity (content, len, amt) = let
-+          val capacity = (len + amt) handle Overflow => maxLen
-+          in
-+            if (A.length(!content) < capacity)
-+              then let
-+                val newArr = A.array(capacity, defaultElem)
-+                in
-+                  AS.copy{dst = newArr, di = 0, src = AS.slice(!content, 0, SOME len)};
-+                  content := newArr
-+                end
-+              else ()
-+          end
-+
-+    fun reserve (_, 0) = ()
-+      | reserve (BUF{content, len=ref len, ...}, n) =
-+          if (n < 0) then raise Size
-+          else ensureCapacity (content, len, n)
-+
-+    fun add1 (BUF{content, len, ...}, elem) = (
-+          ensureCapacity(content, !len, 1);
-+          A.update(!content, !len, elem);
-+          len := !len + 1)
-+
-+    fun addVec (BUF{content, len, ...}, vec) = (
-+          ensureCapacity(content, !len, V.length vec);
-+          A.copyVec{dst = !content, di = !len, src = vec};
-+          len := !len + V.length vec)
-+
-+    fun addSlice (BUF{content, len, ...}, slice) = (
-+          ensureCapacity(content, !len, VS.length slice);
-+          AS.copyVec{dst = !content, di = !len, src = slice};
-+          len := !len + VS.length slice)
-+
-+    fun addArr (BUF{content, len, ...}, arr) = (
-+          ensureCapacity(content, !len, A.length arr);
-+          A.copy{dst = !content, di = !len, src = arr};
-+          len := !len + A.length arr)
-+
-+    fun addArrSlice (BUF{content, len, ...}, slice) = (
-+          ensureCapacity(content, !len, AS.length slice);
-+          AS.copy{dst = !content, di = !len, src = slice};
-+          len := !len + AS.length slice)
-+
-+  end
-diff --git a/PP/mono-buffer/mono-buffer.mlb b/PP/mono-buffer/mono-buffer.mlb
-new file mode 100644
-index 0000000..9096dd7
---- /dev/null
-+++ b/PP/mono-buffer/mono-buffer.mlb
-@@ -0,0 +1,10 @@
-+local
-+   $(SML_LIB)/basis/basis.mlb
-+   mono-buffer.sig
-+   mono-buffer.fun
-+   mono-buffer.sml
-+in
-+   signature MONO_BUFFER
-+   structure Word8Buffer
-+   structure CharBuffer
-+end
-diff --git a/PP/mono-buffer/mono-buffer.sig b/PP/mono-buffer/mono-buffer.sig
-new file mode 100644
-index 0000000..dce7b83
---- /dev/null
-+++ b/PP/mono-buffer/mono-buffer.sig
-@@ -0,0 +1,65 @@
-+(* mono-buffer.sig
-+ *
-+ * ============================================================================
-+ * Copyright (c) 2018 John Reppy (http://cs.uchicago.edu/~jhr)
-+ *
-+ * Permission is hereby granted, free of charge, to any person obtaining a copy
-+ * of this software and associated documentation files (the "Software"), to deal
-+ * in the Software without restriction, including without limitation the rights
-+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-+ * copies of the Software, and to permit persons to whom the Software is
-+ * furnished to do so, subject to the following conditions:
-+ *
-+ * The above copyright notice and this permission notice shall be included in
-+ * all copies or substantial portions of the Software.
-+ *
-+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-+ * THE SOFTWARE.
-+ * ============================================================================
-+ *
-+ * Reference code for SML Basis Library Proposal 2018-001.
-+ *
-+ * This proposal supersedes 2015-004.
-+ *)
-+
-+signature MONO_BUFFER =
-+  sig
-+
-+    type buf
-+
-+    type elem
-+    type vector
-+    type slice
-+    type array
-+    type array_slice
-+
-+    val maxLen : int
-+
-+    val new : int -> buf
-+
-+    val contents : buf -> vector
-+
-+    val copy : {src : buf, dst : array, di : int} -> unit
-+
-+    val length : buf -> int
-+
-+    val sub : buf * int -> elem
-+
-+    val clear : buf -> unit
-+
-+    val reset : buf -> unit
-+
-+    val reserve : buf * int -> unit
-+
-+    val add1 : buf * elem -> unit
-+    val addVec : buf * vector -> unit
-+    val addSlice : buf * slice -> unit
-+    val addArr : buf * array -> unit
-+    val addArrSlice : buf * array_slice -> unit
-+
-+  end
-diff --git a/PP/mono-buffer/mono-buffer.sml b/PP/mono-buffer/mono-buffer.sml
-new file mode 100644
-index 0000000..5468e29
---- /dev/null
-+++ b/PP/mono-buffer/mono-buffer.sml
-@@ -0,0 +1,56 @@
-+(* mono-buffer.sml
-+ *
-+ * ============================================================================
-+ * Copyright (c) 2018 John Reppy (http://cs.uchicago.edu/~jhr)
-+ *
-+ * Permission is hereby granted, free of charge, to any person obtaining a copy
-+ * of this software and associated documentation files (the "Software"), to deal
-+ * in the Software without restriction, including without limitation the rights
-+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-+ * copies of the Software, and to permit persons to whom the Software is
-+ * furnished to do so, subject to the following conditions:
-+ *
-+ * The above copyright notice and this permission notice shall be included in
-+ * all copies or substantial portions of the Software.
-+ *
-+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-+ * THE SOFTWARE.
-+ * ============================================================================
-+ *
-+ * Reference code for SML Basis Library Proposal 2018-001.
-+ *
-+ * This proposal supersedes 2015-004.
-+ *)
-+
-+structure Word8Buffer :> MONO_BUFFER
-+                          where type elem = Word8.word
-+                            and type vector = Word8Vector.vector
-+                            and type slice = Word8VectorSlice.slice
-+                            and type array = Word8Array.array
-+                            and type array_slice = Word8ArraySlice.slice
-+  = MonoBufferFn (
-+      structure V = Word8Vector
-+      structure VS = Word8VectorSlice
-+      structure A = Word8Array
-+      structure AS = Word8ArraySlice
-+      val defaultElem : Word8.word = 0w0
-+    );
-+
-+structure CharBuffer :> MONO_BUFFER
-+                          where type elem = Char.char
-+                            and type vector = CharVector.vector
-+                            and type slice = CharVectorSlice.slice
-+                            and type array = CharArray.array
-+                            and type array_slice = CharArraySlice.slice
-+  = MonoBufferFn (
-+      structure V = CharVector
-+      structure VS = CharVectorSlice
-+      structure A = CharArray
-+      structure AS = CharArraySlice
-+      val defaultElem : Char.char = #"\000"
-+    );
 diff --git a/PP/pp-lib.mlb b/PP/pp-lib.mlb
 new file mode 100644
-index 0000000..9a681c6
+index 0000000..c93f13c
 --- /dev/null
 +++ b/PP/pp-lib.mlb
 @@ -0,0 +1,409 @@
@@ -2669,7 +2738,7 @@ index 0000000..9a681c6
 +local
 +  basis l37 =
 +    bas
-+      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/sml-nj.mlb mono-buffer/mono-buffer.mlb
++      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/sml-nj.mlb $(SML_LIB)/smlnj-lib/Compat/mono-buffer/mono-buffer.mlb
 +    end
 +  basis l55 =
 +    bas
@@ -3068,24 +3137,21 @@ index 0000000..9a681c6
 +end
 diff --git a/README.mlton b/README.mlton
 new file mode 100644
-index 0000000..ac78fd8
+index 0000000..8e3582e
 --- /dev/null
 +++ b/README.mlton
-@@ -0,0 +1,17 @@
+@@ -0,0 +1,14 @@
 +The following changes were made to the SML/NJ Library, in addition to
 +deriving the `.mlb` files from the `.cm` files:
 +
++* `Compat/mono-buffer` (added): Implements `signature MONO_BUFFER` and `structure CharBuffer: MONO_BUFFER` (see https://github.com/SMLFamily/BasisLibrary/wiki/2018-001-Addition-of-monomorphic-buffers); used by JSON and PP Libraries.
 +* `HTML4/pp-init.sml` (added): Implements `structure PrettyPrint` using the SML/NJ PP Library.  This implementation is taken from the SML/NJ compiler source, since the SML/NJ HTML4 Library used the `structure PrettyPrint` provided by the SML/NJ compiler itself.
-+* `PP/mono-buffer` (added): Implements `signature MONO_BUFFER` and `structure CharBuffer: MONO_BUFFER` (see https://github.com/SMLFamily/BasisLibrary/wiki/2018-001-Addition-of-monomorphic-buffers).
 +* `RegExp/Glue/match-tree.sml` (modified): Rewrote use of `Either.either` (see https://github.com/SMLFamily/BasisLibrary/wiki/2015-002-Addition-of-Either-module).
-+* `SExp/sexp.sml` (modified): Fixed non-exhaustive match warning (and latent bug) in `compare` function.
-+* `Util/dynamic-array.sml` (modified): Rewrote use of `Array.fromVector`.
 +* `Util/base64.sml` (modified): Rewrote use of `Unsafe.CharVector.create` and `Unsafe.CharVector.update`; MLton assumes that vectors are immutable.
++* `Util/dynamic-array.sml` (modified): Rewrote use of `Array.fromVector`.
 +* `Util/engine.mlton.sml` (added, not exported): Implements `structure Engine`, providing time-limited, resumable computations using <:MLtonThread:>, <:MLtonSignal:>, and <:MLtonItimer:>.
 +* `Util/graph-scc-fn.sml` (modified): Rewrote use of `where` structure specification.
-+* `Util/hash-table-rep.sml` (modified): The computation of the `maxSize` computes succesive powers of two less than or equal to `Array.maxLen`, which overflows under MLton.  Add a `handle Overflow => i` to properly find the correct maximum size.
-+* `Util/redblack-map-fn.sml` (modified): Rewrote use of `where` structure specification.
-+* `Util/redblack-set-fn.sml` (modified): Rewrote use of `where` structure specification.
++* `Util/hash-set-fn.sml` and `Util/hash-table-rep.sml` (modified): The computation of the `maxSize` computes succesive powers of two less than or equal to `Array.maxLen`, which overflows under MLton.  Add a `handle Overflow => i` to properly find the correct maximum size.
 +* `Util/time-limit.mlb` (added): Exports `structure TimeLimit`, which is _not_ exported by `smlnj-lib.mlb`.  Since MLton is very conservative in the presence of threads and signals, program performance may be adversely affected by unnecessarily including `structure TimeLimit`.
 +* `Util/time-limit.mlton.sml` (added): Implements `structure TimeLimit` using `structure Engine`.  The SML/NJ implementation of `structure TimeLimit` uses SML/NJ's first-class continuations, signals, and interval timer.
 +* `Util/utf8.sml` (modified): Rewrote use of `String.implodeRev` (see https://github.com/SMLFamily/BasisLibrary/wiki/2015-003d-STRING).
@@ -3553,21 +3619,18 @@ index 0000000..44d1765
 +
 +end
 diff --git a/SExp/sexp-lib.mlb b/SExp/sexp-lib.mlb
-index ca3d2f5..c0627c6 100644
+index dcf8e53..b574dc8 100644
 --- a/SExp/sexp-lib.mlb
 +++ b/SExp/sexp-lib.mlb
-@@ -1,52 +1,336 @@
+@@ -1,50 +1,314 @@
 -(* sexp-lib.mlb
 - *
-- * COPYRIGHT (c) 2011 The Fellowship of SML/NJ (http://www.smlnj.org)
+- * COPYRIGHT (c) 2022 The Fellowship of SML/NJ (http://www.smlnj.org)
 - * All rights reserved.
 - *
 - * Author: Damon Wang (with modifications by John Reppy)
 - *
 - * An MLB file for the JSON library, so that it can be used by MLton programs.
-- *
-- * TODO:
-- *	This is not complete, since MLton does not have the ml-lpt-lib yet.
 - *)
 -
 -local
@@ -3588,6 +3651,7 @@ index ca3d2f5..c0627c6 100644
 -    sexp.sml
 -(*    sexp-stream-parser.sml *)
 -    sexp-parser.sml
+-    sexp-string-util.sml
 -(*    sexp-stream-printer.sml *)
 -    sexp-pp.sml
 -    sexp-printer.sml
@@ -3621,7 +3685,7 @@ index ca3d2f5..c0627c6 100644
 +    bas
 +      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
 +    end
-+  basis l89 =
++  basis l93 =
 +    bas
 +      (* $/pp-lib.cm ====> *) $(SML_LIB)/smlnj-lib/PP/pp-lib.mlb
 +    end
@@ -3847,12 +3911,10 @@ index ca3d2f5..c0627c6 100644
 +      structure gs_43 = Format
 +   end
 +   local
-+      structure Atom = gs_1
 +      structure Char = gs_4
 +      structure CharArray = gs_5
 +      structure CharVector = gs_6
 +      structure FixedInt = gs_7
-+      structure Format = gs_43
 +      structure General = gs_8
 +      structure Int = gs_9
 +      structure Int32 = gs_10
@@ -3861,7 +3923,6 @@ index ca3d2f5..c0627c6 100644
 +      structure LargeInt = gs_13
 +      structure LargeReal = gs_14
 +      structure LargeWord = gs_15
-+      structure List = gs_2
 +      structure OS = gs_16
 +      structure Position = gs_17
 +      structure Real = gs_18
@@ -3870,89 +3931,57 @@ index ca3d2f5..c0627c6 100644
 +      structure RealArraySlice = gs_21
 +      structure RealVector = gs_22
 +      structure RealVectorSlice = gs_23
-+      structure SExp = gs_41
 +      structure SMLofNJ = gs_24
 +      structure Socket = gs_25
 +      structure String = gs_26
++      structure StringCvt = gs_37
 +      structure Substring = gs_27
 +      structure SysWord = gs_28
-+      structure TextIO = gs_0
 +      structure Time = gs_29
 +      structure Word = gs_30
 +      structure Word32 = gs_31
 +      structure Word64 = gs_32
 +      structure Word8 = gs_33
++      sexp-string-util.sml
++   in
++      structure gs_44 = SExpStringUtil
++   end
++   local
++      structure Atom = gs_1
++      structure Format = gs_43
++      structure List = gs_2
++      structure SExp = gs_41
++      structure SExpStringUtil = gs_44
++      structure TextIO = gs_0
 +      sexp-printer.sml
 +   in
-+      structure gs_44 = SExpPrinter
++      structure gs_45 = SExpPrinter
 +   end
 +   local
-+      open l89
++      open l93
 +   in
-+      structure gs_45 = TextIOPP
++      structure gs_46 = TextIOPP
 +   end
 +   local
 +      structure Atom = gs_1
-+      structure Char = gs_4
-+      structure CharArray = gs_5
-+      structure CharVector = gs_6
-+      structure FixedInt = gs_7
 +      structure Format = gs_43
-+      structure General = gs_8
-+      structure Int = gs_9
-+      structure Int32 = gs_10
-+      structure Int64 = gs_11
-+      structure IntInf = gs_12
-+      structure LargeInt = gs_13
-+      structure LargeReal = gs_14
-+      structure LargeWord = gs_15
 +      structure List = gs_2
-+      structure OS = gs_16
-+      structure Position = gs_17
-+      structure Real = gs_18
-+      structure Real64 = gs_19
-+      structure RealArray = gs_20
-+      structure RealArraySlice = gs_21
-+      structure RealVector = gs_22
-+      structure RealVectorSlice = gs_23
 +      structure SExp = gs_41
-+      structure SMLofNJ = gs_24
-+      structure Socket = gs_25
-+      structure String = gs_26
-+      structure Substring = gs_27
-+      structure SysWord = gs_28
-+      structure TextIOPP = gs_45
-+      structure Time = gs_29
-+      structure Word = gs_30
-+      structure Word32 = gs_31
-+      structure Word64 = gs_32
-+      structure Word8 = gs_33
++      structure SExpStringUtil = gs_44
++      structure TextIOPP = gs_46
 +      sexp-pp.sml
 +   in
-+      structure gs_46 = SExpPP
++      structure gs_47 = SExpPP
 +   end
 +in
 +   structure SExp = gs_41
-+   structure SExpPP = gs_46
++   structure SExpPP = gs_47
 +   structure SExpParser = gs_42
-+   structure SExpPrinter = gs_44
++   structure SExpPrinter = gs_45
 +end
 +end
  
  end
-diff --git a/SExp/sexp.sml b/SExp/sexp.sml
-index f58c44f..aade6d2 100644
---- a/SExp/sexp.sml
-+++ b/SExp/sexp.sml
-@@ -38,6 +38,8 @@ structure SExp =
- 		if (a = b) then EQUAL
- 		else if a then LESS
- 		else GREATER
-+            | (BOOL _, _) => LESS
-+            | (_, BOOL _) => GREATER
- 	    | (INT a, INT b) => IntInf.compare (a, b)
- 	    | (INT _, _) => LESS
- 	    | (_, INT _) => GREATER
 diff --git a/UUID/uuid-lib.mlb b/UUID/uuid-lib.mlb
 new file mode 100644
 index 0000000..88c21b3
@@ -4379,7 +4408,7 @@ index 64401cd..27f166e 100644
  	  end
 diff --git a/Util/engine.mlton.sml b/Util/engine.mlton.sml
 new file mode 100644
-index 0000000..deb0c42
+index 0000000..696a2d0
 --- /dev/null
 +++ b/Util/engine.mlton.sml
 @@ -0,0 +1,99 @@
@@ -4395,14 +4424,14 @@ index 0000000..deb0c42
 +      type 'a t
 +
 +      datatype 'a res =
-+	 Done of 'a
++         Done of 'a
 +       | Raise of exn
 +       | TimeOut of 'a t
 +
 +      val new: (unit -> 'a) -> 'a t
 +      val repeat: {thunk: unit -> 'a,
-+		   limit: Time.time,
-+		   tries: int} -> 'a option
++                   limit: Time.time,
++                   tries: int} -> 'a option
 +      val run: 'a t * Time.time -> 'a res
 +      val timeLimit: Time.time * (unit -> 'a) -> 'a option
 +   end
@@ -4413,7 +4442,7 @@ index 0000000..deb0c42
 +open MLton
 +
 +datatype 'a t = T of {return: 'a res Thread.t option ref,
-+		      thread: Thread.Runnable.t}
++                      thread: Thread.Runnable.t}
 +and 'a res =
 +   Done of 'a
 + | Raise of exn
@@ -4425,22 +4454,22 @@ index 0000000..deb0c42
 +fun done (return): unit =
 +   (return := NONE
 +    ; Itimer.set (which, {value = Time.zeroTime,
-+			  interval = Time.zeroTime})
++                          interval = Time.zeroTime})
 +    ; Signal.setHandler (signal, Signal.Handler.default))
 +
 +fun new (f: unit -> 'a): 'a t =
 +   let
 +      val return = ref NONE
 +      val thread =
-+	 Thread.new
-+	 (fn () =>
-+	  let
-+	     val res = Done (f ()) handle e => Raise e
-+	     val ret = valOf (!return)
-+	     val _ = done return
-+	  in
-+	     Thread.switch (fn _ => Thread.prepare (ret, res))
-+	  end)
++         Thread.new
++         (fn () =>
++          let
++             val res = Done (f ()) handle e => Raise e
++             val ret = valOf (!return)
++             val _ = done return
++          in
++             Thread.switch (fn _ => Thread.prepare (ret, res))
++          end)
 +      val thread = Thread.prepare (thread, ())
 +   in
 +      T {return = return, thread = thread}
@@ -4452,14 +4481,14 @@ index 0000000..deb0c42
 +    let
 +       val _ = return := SOME cur
 +       fun handler (me: Thread.Runnable.t): Thread.Runnable.t =
-+	  Thread.prepare
-+	  (Thread.prepend (cur, fn () => (done return
-+					  ; TimeOut (T {return = return,
-+							thread = me}))),
-+	   ())
++          Thread.prepare
++          (Thread.prepend (cur, fn () => (done return
++                                          ; TimeOut (T {return = return,
++                                                        thread = me}))),
++           ())
 +       val _ = Signal.setHandler (signal, Signal.Handler.handler handler)
 +       val _ = Itimer.set (which, {value = time,
-+				   interval = Time.zeroTime})
++                                   interval = Time.zeroTime})
 +    in
 +       thread
 +    end)
@@ -4473,11 +4502,11 @@ index 0000000..deb0c42
 +fun repeat {thunk, limit, tries} =
 +   let
 +      fun loop (n: int) =
-+	 if n <= 0
-+	    then NONE
-+	 else (case timeLimit (limit, thunk) of
-+		  NONE => loop (n - 1)
-+		| SOME a => SOME a)
++         if n <= 0
++            then NONE
++         else (case timeLimit (limit, thunk) of
++                  NONE => loop (n - 1)
++                | SOME a => SOME a)
 +   in loop tries
 +   end
 +
@@ -4495,6 +4524,19 @@ index da4c441..0e5e4eb 100644
    struct
      structure Nd = Nd
  
+diff --git a/Util/hash-set-fn.sml b/Util/hash-set-fn.sml
+index 4f6e1bd..07b94d2 100644
+--- a/Util/hash-set-fn.sml
++++ b/Util/hash-set-fn.sml
+@@ -39,7 +39,7 @@ functor HashSetFn (Key : HASH_KEY) : MONO_HASH_SET =
+ 		  val i' = i+i
+ 		  in
+ 		    if i' < Array.maxLen then f i' else i
+-		  end
++		  end handle Overflow => i
+ 	  in
+ 	    f 0x10000
+ 	  end
 diff --git a/Util/hash-table-rep.sml b/Util/hash-table-rep.sml
 index 781a7fa..6b5560d 100644
 --- a/Util/hash-table-rep.sml

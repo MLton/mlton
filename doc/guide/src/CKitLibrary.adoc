@@ -6,8 +6,8 @@ into abstract syntax represented as a set of SML datatypes.  The ckit
 Library is distributed with SML/NJ.  Due to differences between SML/NJ
 and MLton, this library will not work out-of-the box with MLton.
 
-As of 20210117, MLton includes a port of the ckit Library synchronized
-with SML/NJ version 110.99.
+As of 20230526, MLton includes a port of the ckit Library synchronized
+with SML/NJ version 110.99.3.
 
 == Usage
 
