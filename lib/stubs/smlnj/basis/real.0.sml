@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019,2022 Matthew Fluet.
+(* Copyright (C) 2009,2019,2022-2023 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -12,6 +12,7 @@ functor FixReal(PReal: sig include PERVASIVE_REAL val zero : real end) : REAL =
       open PReal
 
       (* SML/NJ uses an old version of datatype IEEEReal.float_class. *)
+      (* Fixed in SML/NJ 110.99.3. *)
       local
          val toGoodFC = IEEERealExtra.toGoodFC
          val toGoodDA = IEEERealExtra.toGoodDA
@@ -65,6 +66,7 @@ functor FixReal(PReal: sig include PERVASIVE_REAL val zero : real end) : REAL =
                 end
            | SOME ro => ro)
       (* SML/NJ doesn't handle "[+~-]?(inf|infinity|nan)". *)
+      (* Fixed in SML/NJ 110.99.3. *)
       val fromString = fn s =>
          case s of
             "inf" => SOME posInf

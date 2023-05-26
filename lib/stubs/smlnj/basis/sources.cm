@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019,2022 Matthew Fluet.
+(* Copyright (C) 2009,2019,2022-2023 Matthew Fluet.
  * Copyright (C) 2002-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -10,16 +10,19 @@
 Library
 
 library($/basis.cm) - (
+#if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 99) orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION = 99 andalso SMLNJ_PATCH_VERSION < 3)
                        signature IEEE_REAL
                        signature REAL
+#endif
 
 #if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 83)
                        structure Char
 #endif
+#if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 99) orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION = 99 andalso SMLNJ_PATCH_VERSION < 3)
                        structure IEEEReal
+#endif
                        structure IntInf
                        structure LargeInt
-                       structure LargeReal
                        structure PackReal32Little
 #if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 79)
                        structure PackReal64Little
@@ -35,18 +38,21 @@ library($/basis.cm) - (
 #endif
                       )
 
+#if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 99) orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION = 99 andalso SMLNJ_PATCH_VERSION < 3)
 signature IEEE_REAL
 signature REAL
+#endif
 
 #if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 83)
 structure Char
 structure String
 #endif
 
+#if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 99) orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION = 99 andalso SMLNJ_PATCH_VERSION < 3)
 structure IEEEReal
+#endif
 structure IntInf
 structure LargeInt
-structure LargeReal
 structure PackReal32Little
 #if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 79)
 structure PackReal64Little
@@ -70,12 +76,18 @@ string.sml
 
 int-inf.sml
 
+#if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 99) orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION = 99 andalso SMLNJ_PATCH_VERSION < 3)
 ../../common/basis/IEEE-real.sig
 IEEE-real.sml
 ../../common/basis/real.sig
-real.sml
-../../common/basis/real64-via-real.sml
+real.0.sml
+#else
+real.1.sml
+#endif
 ../../common/basis/real32-via-real.sml
+#if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 99) orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION = 99 andalso SMLNJ_PATCH_VERSION < 3)
+../../common/basis/real64-via-real.sml
+#endif
 
 #if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 91)
 ../../common/basis/pack-word64-dummy.sml
