@@ -1,4 +1,4 @@
-## Copyright (C) 2010,2013,2016,2018-2022 Matthew Fluet.
+## Copyright (C) 2010,2013,2016,2018-2023 Matthew Fluet.
  # Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -197,6 +197,9 @@ ifneq (,$(findstring smlnj-mlton,$(MAKECMDGOALS)))
 .PHONY: smlnj-mlton
 smlnj-mlton: $(MLTON_OUTPUT_SMLNJ_HEAP)
 
+SMLNJ_VERSION := $(shell "$(SMLNJ)" @SMLversion | $(SED) -n "s/sml \(.*\)/\1/p")
+SMLNJ_PATCH_VERSION := $(or $(shell echo $(SMLNJ_VERSION) | $(SED) -n 's/\([0-9][0-9]*\)\.\([0-9][0-9]*\)\.\([0-9][0-9]*\)/\3/p'),0)
+
 SMLNJ_CM_SERVERS_NUM := 0
 
 $(MLTON_OUTPUT_SMLNJ_HEAP):
@@ -210,13 +213,12 @@ $(MLTON_OUTPUT_SMLNJ_HEAP):
 		echo '   then ()';						\
 		echo '   else OS.Process.exit OS.Process.failure;'; 		\
 		echo 'SMLofNJ.exportFn("$@",Main.main);'			\
-	) | CM_VERBOSE=false CONTROL_POLY_EQ_WARN=false "$(SMLNJ)"
+	) | CM_VERBOSE=false CONTROL_POLY_EQ_WARN=false "$(SMLNJ)" -DSMLNJ_PATCH_VERSION=$(SMLNJ_PATCH_VERSION)
 
-$(MLTON_OUTPUT_SMLNJ_HEAP).d: $(MLTON_GEN_SOURCES)
+$(MLTON_OUTPUT_SMLNJ_HEAP).d: $(shell $(FIND) ../lib/stubs -type f -name '*.cm') $(shell $(FIND) ../lib/mlyacc-lib -type f -name '*.cm') $(shell $(FIND) ../lib/mlton -type f -name '*.cm') $(shell $(FIND) . -type f -name '*.cm')
 	@$(RM) $@
 	@touch $@
-	CM_VERBOSE=false $(SMLNJ_MAKEDEPEND) -n -f $@ mlton-smlnj.cm $(MLTON_OUTPUT_SMLNJ_HEAP) || ($(RM) $@ ; exit 1)
-	CM_VERBOSE=false $(SMLNJ_MAKEDEPEND) -n -f $@ mlton-smlnj.cm $@ || ($(RM) $@ ; exit 1)
+	CM_VERBOSE=false $(SMLNJ_MAKEDEPEND) -DSMLNJ_PATCH_VERSION=$(SMLNJ_PATCH_VERSION) -n -f $@ mlton-smlnj.cm $@ || ($(RM) $@ ; exit 1)
 -include $(MLTON_OUTPUT_SMLNJ_HEAP).d
 endif
 

@@ -8,6 +8,9 @@ Here are the changes from version 20210117 to YYYYMMDD.
 
 === Details
 
+* 2023-05-26
+  ** Update SML/NJ libraries to SML/NJ 110.99.3.
+
 * 2022-11-16
   ** Fix bug in `GC_sequenceCopy` failing to update card map when
   copying object pointers.  Thanks to Chris Cannam for the bug report
