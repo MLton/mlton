@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014,2017-2020 Matthew Fluet.
+(* Copyright (C) 2009,2014,2017-2020,2023 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1635,7 +1635,7 @@ structure Function =
                          name = SOME (concat [name, ".", s]),
                          toFile = {display = Control.Layout (fn () => g),
                                    style = Control.Dot,
-                                   suffix = ".dot"},
+                                   suffix = "dot"},
                          verb = Control.Detail}
                      val _ = doit ("cfg", controlFlowGraph)
                         handle _ => Error.warning "SsaTree2.layouts: couldn't layout cfg"
