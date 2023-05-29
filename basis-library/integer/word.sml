@@ -1,4 +1,4 @@
-(* Copyright (C) 2013 Matthew Fluet.
+(* Copyright (C) 2013,2023 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -145,7 +145,7 @@ val toString = fmt StringCvt.HEX
 
 fun scan radix reader state =
    let
-      val state = StringCvt.skipWS reader state
+      val state0 = StringCvt.skipWS reader state
       val charToDigit = StringCvt.charToDigit radix
       val radixWord = fromInt (StringCvt.radixToInt radix)
       fun finishNum (state, n) =
@@ -155,55 +155,81 @@ fun scan radix reader state =
                case charToDigit c of
                   NONE => SOME (n, state)
                 | SOME n' =>
-                     let val n'' = n * radixWord
-                     in if n'' div radixWord = n
-                           then let val n' = fromInt n'
+                     let
+                        val n'' = n * radixWord
+                     in
+                        if n'' div radixWord = n
+                           then let
+                                   val n' = fromInt n'
                                    val n''' = n'' + n'
-                                in if n''' >= n''
+                                in
+                                   if n''' >= n''
                                       then finishNum (state', n''')
-                                   else raise Overflow
+                                      else raise Overflow
                                 end
-                        else raise Overflow
+                           else raise Overflow
                      end
+      fun startNum state =
+         case reader state of
+            NONE => NONE
+          | SOME (c, state') =>
+               case charToDigit c of
+                  NONE => NONE
+                | SOME n => finishNum (state', fromInt n)
+      fun startNumOr (state, res) =
+         case startNum state of
+            NONE => res
+          | SOME (w, s) => SOME (w, s)
+      fun startNumWith (c, state) =
+         case charToDigit c of
+            NONE => NONE
+          | SOME n => finishNum (state, fromInt n)
+      fun startNumWithOr ((c, state), res) =
+         case startNumWith (c, state) of
+            NONE => res
+          | SOME (w, s) => SOME (w, s)
+
       fun num state = finishNum (state, zero)
    in
-      case reader state of
+      case reader state0 of
          NONE => NONE
-       | SOME (c, state) =>
+       | SOME (c, state1) =>
             case c of
                #"0" =>
-               (case reader state of
-                   NONE => SOME (zero, state)
-                 | SOME (c, state') =>
-                      case c of
-                         #"w" => (case radix of
-                                     StringCvt.HEX =>
-                                        (case reader state' of
-                                            NONE =>
-                                               (* the #"w" was not followed by
-                                                * an #"X" or #"x", therefore we
-                                                * return 0 *)
-                                               SOME (zero, state)
-                                          | SOME (c, state) =>
-                                               (case c of
-                                                   #"x" => num state
-                                                 | #"X" => num state
-                                                 | _ =>
-                                                 (* the #"w" was not followed by
-                                                  * an #"X" or #"x", therefore we
-                                                  * return 0 *)
-                                                      SOME (zero, state)))
-                                   | _ => num state')
-                       | #"x" => (case radix of
-                                     StringCvt.HEX => num state'
-                                   | _ => NONE)
-                       | #"X" => (case radix of
-                                     StringCvt.HEX => num state'
-                                   | _ => NONE)
-                       | _ => num state)
-             | _ => (case charToDigit c of
-                        NONE => NONE
-                      | SOME n => finishNum (state, fromInt n))
+                  let
+                     val zero = SOME (zero, state1)
+                  in
+                     case reader state1 of
+                        NONE => zero
+                      | SOME (c, state2) =>
+                           (case c of
+                               #"w" => (case radix of
+                                           StringCvt.HEX =>
+                                              (case reader state2 of
+                                                  NONE =>
+                                                     (* the #"w" was not followed by
+                                                      * an #"X" or #"x", therefore we
+                                                      * return 0 *)
+                                                     zero
+                                                | SOME (c, state3) =>
+                                                     (case c of
+                                                         #"x" => startNumOr (state3, zero)
+                                                       | #"X" => startNumOr (state3, zero)
+                                                       | _ =>
+                                                         (* the #"w" was not followed by
+                                                          * an #"X" or #"x", therefore we
+                                                          * return 0 *)
+                                                         zero))
+                                         | _ => startNumOr (state2, zero))
+                             | #"x" => (case radix of
+                                           StringCvt.HEX => startNumOr (state2, zero)
+                                         | _ => zero)
+                             | #"X" => (case radix of
+                                           StringCvt.HEX => startNumOr (state2, zero)
+                                         | _ => zero)
+                             | _ => startNumWithOr ((c, state2), zero))
+                  end
+             | _ => startNumWith (c, state1)
    end
 
 val fromString = StringCvt.scanString (scan StringCvt.HEX)
