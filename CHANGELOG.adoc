@@ -8,6 +8,11 @@ Here are the changes from version 20210117 to YYYYMMDD.
 
 === Details
 
+* 2023-05-29
+  ** Fix bugs in `WORD.scan` when `0` is followed by `w` or `x` or
+  `wx` but not by more digits.  Thanks to Arata Mizuki (minoki) for
+  the bug report.
+
 * 2023-05-26
   ** Update SML/NJ libraries to SML/NJ 110.99.3.
 
