@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2013-2014,2017,2019-2022 Matthew Fluet.
+(* Copyright (C) 2009,2013-2014,2017,2019-2023 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -962,11 +962,11 @@ fun toMachine (rssa: Rssa.Program.t) =
                                []
                          val (entry, kind) =
                             case kind of
-                               R.Kind.Cont _=> (true, M.FrameInfo.Kind.ML_FRAME)
+                               R.Kind.Cont _=> (true, M.FrameInfo.Kind.CONT_FRAME)
                              | R.Kind.CReturn {func} => (CFunction.maySwitchThreadsTo func,
-                                                         M.FrameInfo.Kind.C_FRAME)
-                             | R.Kind.Handler => (true, M.FrameInfo.Kind.ML_FRAME)
-                             | R.Kind.Jump => (false, M.FrameInfo.Kind.ML_FRAME)
+                                                         M.FrameInfo.Kind.CRETURN_FRAME)
+                             | R.Kind.Handler => (true, M.FrameInfo.Kind.HANDLER_FRAME)
+                             | R.Kind.Jump => Error.bug "Backend.genFunc.setFrameInfo: Jump"
                          val frameInfo =
                             getFrameInfo {entry = entry,
                                           kind = kind,
@@ -1184,7 +1184,7 @@ fun toMachine (rssa: Rssa.Program.t) =
                let
                   val frameInfo =
                      getFrameInfo {entry = true,
-                                   kind = M.FrameInfo.Kind.ML_FRAME,
+                                   kind = M.FrameInfo.Kind.FUNC_FRAME,
                                    offsets = [],
                                    size = Bytes.zero,
                                    sourceSeqIndex = NONE}
