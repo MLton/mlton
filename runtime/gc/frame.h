@@ -1,4 +1,4 @@
-/* Copyright (C) 2019 Matthew Fluet.
+/* Copyright (C) 2019,2023 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -34,8 +34,10 @@
 typedef const uint16_t *GC_frameOffsets;
 
 typedef enum {
-  C_FRAME,
-  ML_FRAME
+  CONT_FRAME,
+  CRETURN_FRAME,
+  FUNC_FRAME,
+  HANDLER_FRAME
 } GC_frameKind;
 
 typedef const struct GC_frameInfo {

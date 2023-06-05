@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014,2019-2022 Matthew Fluet.
+(* Copyright (C) 2009,2014,2019-2023 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -208,7 +208,11 @@ signature MACHINE =
          sig
             structure Kind:
                sig
-                  datatype t = C_FRAME | ML_FRAME
+                  datatype t =
+                     CONT_FRAME
+                   | CRETURN_FRAME
+                   | FUNC_FRAME
+                   | HANDLER_FRAME
                   val equals: t * t -> bool
                   val hash: t -> word
                   val layout: t -> Layout.t
