@@ -106,6 +106,8 @@ doit "$lib" \
         -target-cc-opt amd64 '-m64'                              \
         -target-cc-opt amd64-darwin '-arch x86_64'               \
         -target-cc-opt arm64-darwin '-arch arm64'                \
+        -target-cc-opt powerpc-darwin '-arch ppc'                \
+        -target-cc-opt powerpc64-darwin '-arch ppc64'            \
         -target-cc-opt ia64-hpux "-mlp64"                        \
         -target-cc-opt ia64 "-mtune=itanium2"                    \
         -target-cc-opt sparc '-m32 -mcpu=v8 -Wa,-xarch=v8plusa'  \
@@ -116,6 +118,8 @@ doit "$lib" \
         -target-link-opt amd64 '-m64'                            \
         -target-link-opt amd64-darwin '-arch x86_64'             \
         -target-link-opt arm64-darwin '-arch arm64'              \
+        -target-link-opt powerpc-darwin '-arch ppc'              \
+        -target-link-opt powerpc64-darwin '-arch ppc64'          \
         -target-link-opt ia64-hpux "-mlp64"                      \
         -target-link-opt linux '-Wl,-znoexecstack'               \
         -target-link-opt mingw                                   \
