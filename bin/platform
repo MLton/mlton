@@ -117,7 +117,7 @@ mips*)
         HOST_ARCH=mips
 ;;
 powerpc64*)
-	HOST_ARCH=powerpc64
+        HOST_ARCH=powerpc64
 ;;
 ppc64*)
         HOST_ARCH=powerpc64
