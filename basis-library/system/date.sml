@@ -300,7 +300,7 @@ structure Date :> DATE =
             else Time.fromSeconds clock
         end
 
-    fun localOffset () = Time.fromSeconds (localoffset () mod 86400)
+    fun localOffset () = Time.fromSeconds (Int.rem (localoffset (), 86400))
 
     local
        val isFormatChar =
