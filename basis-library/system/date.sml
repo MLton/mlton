@@ -102,7 +102,7 @@ structure Date :> DATE =
     fun mktime_ (t: tmoz): C_Time.t = C_Errno.check (setTmBuf t; Prim.mkTime ())
 
     (* The offset to add to local time to get UTC: positive West of UTC *)
-    val localoffset: int = C_Double.round (Prim.localOffset ())
+    fun localoffset () : int = C_Double.round (Prim.localOffset ())
 
     val toweekday: int -> weekday =
        fn 0 => Sun | 1 => Mon | 2 => Tue | 3 => Wed
@@ -293,14 +293,14 @@ structure Date :> DATE =
            val secoffset = 
               case offset of
                  NONE      => 0
-               | SOME secs => localoffset + secs
+               | SOME secs => localoffset () + secs
             val clock = C_Time.toInt (mktime_ (dateToTmoz date)) - secoffset
         in
             if clock < 0 then raise Date
             else Time.fromSeconds clock
         end
 
-    fun localOffset () = Time.fromSeconds (localoffset mod 86400)
+    fun localOffset () = Time.fromSeconds (Int.rem (localoffset (), 86400))
 
     local
        val isFormatChar =

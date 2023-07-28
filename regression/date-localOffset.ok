@@ -1,0 +1,3 @@
+TZ = UTC+4 :: Date.localOffset () = 14400.000
+TZ = UTC+0 :: Date.localOffset () = 0.000
+TZ = UTC-4 :: Date.localOffset () = ~14400.000
