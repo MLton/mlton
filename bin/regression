@@ -149,7 +149,7 @@ for f in *.sml; do
         ;;
         mingw)
                 case "$f" in
-                cmdline|command-line|echo|filesys|posix-exit|signals|signals2|signals3|signals4|socket|suspend|textio.2|unixpath|world*)
+                cmdline|command-line|date-localOffset|echo|filesys|posix-exit|signals|signals2|signals3|signals4|socket|suspend|textio.2|unixpath|world*)
                         continue
                 ;;
                 esac
