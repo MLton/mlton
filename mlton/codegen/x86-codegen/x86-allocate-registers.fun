@@ -1,4 +1,4 @@
-(* Copyright (C) 2010,2020 Matthew Fluet.
+(* Copyright (C) 2010,2020,2023 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -3501,6 +3501,8 @@ struct
                              Immediate.labelPlusWord (mungeLabel l1, w2)
                         | (Immediate.LabelPlusWord (l1, w1), Immediate.Word w2) => 
                              Immediate.labelPlusWord (mungeLabel l1, WordX.add (w1, w2))
+                        | (Immediate.Word w1, Immediate.Word w2) =>
+                             Immediate.word (WordX.add (w1, w2))
                         | _ => Error.bug "x86AllocateRegisters.RegisterAllocation.toAddressMemLoc:disp")
 
               val {register = register_base,
