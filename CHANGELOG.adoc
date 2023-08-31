@@ -8,9 +8,16 @@ Here are the changes from version 20210117 to YYYYMMDD.
 
 === Details
 
-* 2023-0-728
-  ** Fix bug in `Date.localOffset` for time zones east of prime meridian.
-  Thanks to Arata Mizuki (minoki) for the bug report and suggested fix.
+* 2023-08-31
+  ** Fix bug in x86 and amd64 native codegens leading to an internal
+  compiler error
+  (`Fail: amd64AllocateRegisters.RegisterAllocation.toAddressMemLoc:disp`).
+  Thanks to Darin Minamoto (DarinM223) for the bug report.
+
+* 2023-07-28
+  ** Fix bug in `Date.localOffset` for time zones east of prime
+  meridian.  Thanks to Arata Mizuki (minoki) for the bug report and
+  suggested fix.
 
 * 2023-05-29
   ** Fix bugs in `WORD.scan` when `0` is followed by `w` or `x` or
