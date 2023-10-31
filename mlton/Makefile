@@ -215,7 +215,7 @@ $(MLTON_OUTPUT_SMLNJ_HEAP):
 		echo 'SMLofNJ.exportFn("$@",Main.main);'			\
 	) | CM_VERBOSE=false CONTROL_POLY_EQ_WARN=false "$(SMLNJ)" -DSMLNJ_PATCH_VERSION=$(SMLNJ_PATCH_VERSION)
 
-$(MLTON_OUTPUT_SMLNJ_HEAP).d: $(shell $(FIND) ../lib/stubs -type f -name '*.cm') $(shell $(FIND) ../lib/mlyacc-lib -type f -name '*.cm') $(shell $(FIND) ../lib/mlton -type f -name '*.cm') $(shell $(FIND) . -type f -name '*.cm')
+$(MLTON_OUTPUT_SMLNJ_HEAP).d: $(shell $(FIND) ../lib/stubs -type f -name '*.cm') $(shell $(FIND) ../lib/mlyacc-lib -type f -name '*.cm') $(shell $(FIND) ../lib/mlton -type f -name '*.cm') $(shell $(FIND) . -type f -name '*.cm') $(MLTON_GEN_SOURCES)
 	@$(RM) $@
 	@touch $@
 	CM_VERBOSE=false $(SMLNJ_MAKEDEPEND) -DSMLNJ_PATCH_VERSION=$(SMLNJ_PATCH_VERSION) -n -f $@ mlton-smlnj.cm $@ || ($(RM) $@ ; exit 1)
