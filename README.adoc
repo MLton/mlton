@@ -78,6 +78,8 @@ a lexer generator, a parser generator, and a profiler.
  * Standard{nbsp}ML compiler to bootstrap:
    - http://mlton.org[MLton] (`mlton`) recommended.  Pre-built binary packages for MLton can be installed via an OS package manager or (for select platforms) obtained from `http://mlton.org`.
    - http://www.smlnj.org[SML/NJ] (`sml`) supported, but not recommended.
+   - https://polyml.org[Poly/ML] (`polyc`) supported, but not recommended.
+   - https://elsman.com/mlkit[MLKit] (`mlkit`) supported, but not recommended.
  * (optional, for documentation only) https://ctan.org/tex/[TeX], http://asciidoctor.org/[AsciiDoctor], http://rouge.jneen.net/[Rouge], http://www.graphicsmagick.org/[GraphicsMagick] or https://www.imagemagick.org/[ImageMagick], ...
 
 ==== Hardware
