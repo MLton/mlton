@@ -74,10 +74,12 @@ a lexer generator, a parser generator, and a profiler.
  * http://savannah.gnu.org/projects/make[GNU Make]
  * http://www.gnu.org/software/bash/[GNU Bash]
  * binutils (`ar`, `ranlib`, `strip`, ...)
- * miscellaneous Unix utilities (`diff`, `find`, `grep`, `gzip`, `patch`, `sed`, `tar`, `xargs`, ...)
- * Standard{nbsp}ML compiler and tools to bootstrap:
-   - http://mlton.org[MLton] (`mlton`, `mllex`, and `mlyacc`) recommended.  Pre-built binary packages for MLton can be installed via an OS package manager or (for select platforms) obtained from `http://mlton.org`.
-   - http://www.smlnj.org[SML/NJ] (`sml`, `ml-lex`, `ml-yacc`) supported, but not recommended.
+ * miscellaneous Unix utilities (`diff`, `find`, `grep`, `gzip`, `patch`, `sed`, `tar`, ...)
+ * Standard{nbsp}ML compiler to bootstrap:
+   - http://mlton.org[MLton] (`mlton`) recommended.  Pre-built binary packages for MLton can be installed via an OS package manager or (for select platforms) obtained from `http://mlton.org`.
+   - http://www.smlnj.org[SML/NJ] (`sml`) supported, but not recommended.
+   - https://polyml.org[Poly/ML] (`polyc`) supported, but not recommended.
+   - https://elsman.com/mlkit[MLKit] (`mlkit`) supported, but not recommended.
  * (optional, for documentation only) https://ctan.org/tex/[TeX], http://asciidoctor.org/[AsciiDoctor], http://rouge.jneen.net/[Rouge], http://www.graphicsmagick.org/[GraphicsMagick] or https://www.imagemagick.org/[ImageMagick], ...
 
 ==== Hardware

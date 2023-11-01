@@ -233,7 +233,7 @@ ifneq (,$(findstring polyml-mlton,$(MAKECMDGOALS)))
 polyml-mlton: $(MLTON_OUTPUT)-polyml
 
 $(MLTON_OUTPUT)-polyml: mlton-polyml.sml $(shell [ -e mlton-polyml.sml ] && $(CAT) mlton-polyml.sml | $(SED) -n 's/use "\(.*\)";/\1/p') $(MLTON_GEN_SOURCES)
-	$(POLYML_POLYC) -o $@ mlton-polyml.sml
+	$(POLYC) -o $@ mlton-polyml.sml
 
 mlton-polyml.sml: ../lib/stubs/polyml/basis/sources.use ../lib/stubs/polyml/mlton/sources.use $(shell $(MLBDEPS) ../lib/stubs/mlton-stubs/sources.mlb | $(GREP) 'mlb$$' | $(GREP) -v '$$(SML_LIB)') $(shell $(MLBDEPS) mlton.mlb | $(GREP) 'mlb$$' | $(GREP) -v '$$(SML_LIB)')
 	(									\
