@@ -74,7 +74,7 @@ a lexer generator, a parser generator, and a profiler.
  * http://savannah.gnu.org/projects/make[GNU Make]
  * http://www.gnu.org/software/bash/[GNU Bash]
  * binutils (`ar`, `ranlib`, `strip`, ...)
- * miscellaneous Unix utilities (`diff`, `find`, `grep`, `gzip`, `patch`, `sed`, `tar`, `xargs`, ...)
+ * miscellaneous Unix utilities (`diff`, `find`, `grep`, `gzip`, `patch`, `sed`, `tar`, ...)
  * Standard{nbsp}ML compiler to bootstrap:
    - http://mlton.org[MLton] (`mlton`) recommended.  Pre-built binary packages for MLton can be installed via an OS package manager or (for select platforms) obtained from `http://mlton.org`.
    - http://www.smlnj.org[SML/NJ] (`sml`) supported, but not recommended.
