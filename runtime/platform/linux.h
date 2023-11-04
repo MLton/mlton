@@ -57,13 +57,13 @@ extern char **environ; /* for Posix_ProcEnv_environ */
 /* The following is compatibility code with older glibc and kernel
    versions. */
 
+#ifdef __GLIBC__
 #ifndef __suseconds_t_defined
 #include <linux/types.h>
 typedef __kernel_suseconds_t suseconds_t;
 #define __suseconds_t_defined
 #endif
 
-#ifdef __GLIBC__
 #if __GLIBC__ == 2 && __GLIBC_MINOR__ <= 1
 typedef unsigned long int nfds_t;
 #endif
