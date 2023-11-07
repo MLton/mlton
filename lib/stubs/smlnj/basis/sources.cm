@@ -85,9 +85,7 @@ real.0.sml
 real.1.sml
 #endif
 ../../common/basis/real32-via-real.sml
-#if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 99) orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION = 99 andalso SMLNJ_PATCH_VERSION < 3)
 ../../common/basis/real64-via-real.sml
-#endif
 
 #if SMLNJ_VERSION < 110 orelse (SMLNJ_VERSION = 110 andalso SMLNJ_MINOR_VERSION < 91)
 ../../common/basis/pack-word64-dummy.sml
