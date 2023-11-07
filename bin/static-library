@@ -1,4 +1,4 @@
-#! /usr/bin/env bash
+#!/bin/sh
 
 # This script creates a static library (archive).
 # It is invoked as: static-library TARGET OS OUTPUT objects* libraries*
@@ -39,7 +39,7 @@ if "$partialLink"; then
   if [ "$os" = "darwin" ]; then
     "${target}ld" -r -o "$output.o" "$@"
     # The osx linker already makes hidden symbols local
-  elif [ "$os" = "mingw" -o "$os" = "cygwin" ]; then
+  elif [ "$os" = "mingw" ] || [ "$os" = "cygwin" ]; then
     # Link allowing _address of stdcall function fixups
     # Preserve the export list (.drectve section)
     "${target}ld" -r --unique=.drectve --enable-stdcall-fixup -o "$output.o" "$@"
