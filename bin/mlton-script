@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/sh
 
 # This script calls MLton.
 
@@ -17,30 +17,14 @@ GMP_LIB_DIR=
 
 set -e
 
-dir=`dirname "$0"`
-lib=`cd "$dir/$LIB_REL_BIN" && pwd`
+dir=$(dirname "$0")
+lib=$(cd "$dir/$LIB_REL_BIN" && pwd)
 
-declare -a rargs
-case "$1" in
-@MLton)
-        shift
-        while [ "$#" -gt 0 -a "$1" != "--" ]; do
-                rargs[${#rargs[@]}]="$1"
-                shift
-        done
-        if [ "$#" -gt 0 -a "$1" == "--" ]; then
-                shift
-        else
-                echo '@MLton missing --'
-                exit 1
-        fi
-        ;;
-esac
 
 doitMLton () {
     mlton_mlton="$lib/mlton-compile$EXE"
     if [ -x "$mlton_mlton" ]; then
-        exec "$mlton_mlton" @MLton ram-slop 0.5 "${rargs[@]}" -- "$@"
+        exec "$mlton_mlton" "$@"
     fi
 }
 doitSMLNJ () {
@@ -65,20 +49,12 @@ doitMLKit () {
     fi
 }
 
-doit () {
-    doitMLton "$@"
-    doitSMLNJ "$@"
-    doitPolyML "$@"
-    doitMLKit "$@"
-    echo 'Unable to run MLton.  Check that lib is set properly.' >&2
-    exit 1
-}
 
 if [ -n "$GMP_INC_DIR" ]; then
-gmpCCOpts="-cc-opt -I$GMP_INC_DIR"
+    gmpCCOpts="-cc-opt -I$GMP_INC_DIR"
 fi
 if [ -n "$GMP_LIB_DIR" ]; then
-gmpLinkOpts="-link-opt -L$GMP_LIB_DIR -target-link-opt netbsd -Wl,-R$GMP_LIB_DIR"
+    gmpLinkOpts="-link-opt -L$GMP_LIB_DIR -target-link-opt netbsd -Wl,-R$GMP_LIB_DIR"
 fi
 
 # "Legacy" Pass Manager; LLVM < 13.0
@@ -86,46 +62,87 @@ llvmOptOpt="-mem2reg -O2"
 # "New" Pass Manager; LLVM >= 13.0
 llvmOptOpt="--passes=function(mem2reg),default<O2>"
 
-doit "$lib" \
-        -ar-script "$lib/static-library"                         \
-        -cc "$CC"                                                \
-        -cc-opt '-std=gnu11 -fno-common'                         \
-        -cc-opt '-O1 -fno-strict-aliasing'                       \
-        -cc-opt '-foptimize-sibling-calls'                       \
-        -cc-opt '-w'                                             \
-        -cc-opt-quote "-I$lib/include"                           \
-        $gmpCCOpts $gmpLinkOpts                                  \
-        -llvm-llc-opt '-O2'                                      \
-        -llvm-opt-opt "$llvmOptOpt"                              \
-        -mlb-path-var 'SML_LIB $(LIB_MLTON_DIR)/sml'             \
-        -target-as-opt amd64 '-m64'                              \
-        -target-as-opt x86 '-m32'                                \
-        -target-cc-opt aix '-maix64'                             \
-        -target-cc-opt alpha                                     \
-                '-mieee -mbwx -mtune=ev6 -mfp-rounding-mode=d'   \
-        -target-cc-opt amd64 '-m64'                              \
-        -target-cc-opt amd64-darwin '-arch x86_64'               \
-        -target-cc-opt arm64-darwin '-arch arm64'                \
-        -target-cc-opt powerpc-darwin '-arch ppc'                \
-        -target-cc-opt powerpc64-darwin '-arch ppc64'            \
-        -target-cc-opt ia64-hpux "-mlp64"                        \
-        -target-cc-opt ia64 "-mtune=itanium2"                    \
-        -target-cc-opt sparc '-m32 -mcpu=v8 -Wa,-xarch=v8plusa'  \
-        -target-cc-opt x86 '-m32'                                \
-        -target-link-opt aix '-maix64'                           \
-        -target-link-opt alpha                                   \
-                '-mieee -mbwx -mtune=ev6 -mfp-rounding-mode=d'   \
-        -target-link-opt amd64 '-m64'                            \
-        -target-link-opt amd64-darwin '-arch x86_64'             \
-        -target-link-opt arm64-darwin '-arch arm64'              \
-        -target-link-opt powerpc-darwin '-arch ppc'              \
-        -target-link-opt powerpc64-darwin '-arch ppc64'          \
-        -target-link-opt ia64-hpux "-mlp64"                      \
-        -target-link-opt linux '-Wl,-znoexecstack'               \
-        -target-link-opt mingw                                   \
-                '-lws2_32 -lkernel32 -lpsapi -lnetapi32 -lwinmm' \
-        -target-link-opt mingw '-Wl,--enable-stdcall-fixup'      \
-        -target-link-opt solaris '-lnsl -lsocket -lrt'           \
-        -target-link-opt x86 '-m32'                              \
-        -profile-exclude '\$\(SML_LIB\)'                         \
-        "$@"
+
+# insert @MLton runtime arguments
+case "$1" in
+@MLton)
+    shift
+    ;;
+*)
+    set -- -- "$@"
+    ;;
+esac
+set -- @MLton \
+       ram-slop 0.5 \
+       "$@"
+
+# insert compile arguments
+looking='yes'
+for arg in "$@"; do
+    set -- "$@" "$arg"
+    if [ "$arg" = '--' ] && [ "$looking" = 'yes' ]; then
+        looking='no'
+        set -- "$@" "$lib" \
+               -ar-script "$lib/static-library"                         \
+               -cc "$CC"                                                \
+               -cc-opt '-std=gnu11 -fno-common'                         \
+               -cc-opt '-O1 -fno-strict-aliasing'                       \
+               -cc-opt '-foptimize-sibling-calls'                       \
+               -cc-opt '-w'                                             \
+               -cc-opt-quote "-I$lib/include"                           \
+               $gmpCCOpts $gmpLinkOpts                                  \
+               -llvm-llc-opt '-O2'                                      \
+               -llvm-opt-opt "$llvmOptOpt"                              \
+               -mlb-path-var 'SML_LIB $(LIB_MLTON_DIR)/sml'             \
+               -target-as-opt amd64 '-m64'                              \
+               -target-as-opt x86 '-m32'                                \
+               -target-cc-opt aix '-maix64'                             \
+               -target-cc-opt alpha                                     \
+                       '-mieee -mbwx -mtune=ev6 -mfp-rounding-mode=d'   \
+               -target-cc-opt amd64 '-m64'                              \
+               -target-cc-opt amd64-darwin '-arch x86_64'               \
+               -target-cc-opt arm64-darwin '-arch arm64'                \
+               -target-cc-opt powerpc-darwin '-arch ppc'                \
+               -target-cc-opt powerpc64-darwin '-arch ppc64'            \
+               -target-cc-opt ia64-hpux "-mlp64"                        \
+               -target-cc-opt ia64 "-mtune=itanium2"                    \
+               -target-cc-opt sparc '-m32 -mcpu=v8 -Wa,-xarch=v8plusa'  \
+               -target-cc-opt x86 '-m32'                                \
+               -target-link-opt aix '-maix64'                           \
+               -target-link-opt alpha                                   \
+                       '-mieee -mbwx -mtune=ev6 -mfp-rounding-mode=d'   \
+               -target-link-opt amd64 '-m64'                            \
+               -target-link-opt amd64-darwin '-arch x86_64'             \
+               -target-link-opt arm64-darwin '-arch arm64'              \
+               -target-link-opt powerpc-darwin '-arch ppc'              \
+               -target-link-opt powerpc64-darwin '-arch ppc64'          \
+               -target-link-opt ia64-hpux "-mlp64"                      \
+               -target-link-opt linux '-Wl,-znoexecstack'               \
+               -target-link-opt mingw                                   \
+                       '-lws2_32 -lkernel32 -lpsapi -lnetapi32 -lwinmm' \
+               -target-link-opt mingw '-Wl,--enable-stdcall-fixup'      \
+               -target-link-opt solaris '-lnsl -lsocket -lrt'           \
+               -target-link-opt x86 '-m32'                              \
+               -profile-exclude '\$\(SML_LIB\)'
+    fi
+    shift
+done
+if [ "$looking" = 'yes' ]; then
+    echo '@MLton missing --'
+    exit 1
+fi
+
+doitMLton "$@"
+
+# drop @MLton runtime arguments
+while [ "$1" != "--" ]; do
+    shift
+done
+shift
+
+doitSMLNJ "$@"
+doitPolyML "$@"
+doitMLKit "$@"
+
+echo 'Unable to run MLton.  Check that lib is set properly.' >&2
+exit 1

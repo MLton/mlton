@@ -161,7 +161,6 @@ $ make PREFIX=/opt/mlton install
  * http://gcc.gnu.org/[GCC] or http://clang.llvm.org[Clang] (The C compiler must support `-std=gnu11`.)
  * http://gmplib.org[GMP] (GNU Multiple Precision arithmetic library)
  * http://savannah.gnu.org/projects/make[GNU Make]
- * http://www.gnu.org/software/bash/[GNU Bash]
  * miscellaneous Unix utilities (`bzip2`, `gzip`, `sed`, `tar`, ...)
 
 === Binary Package
