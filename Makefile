@@ -309,7 +309,7 @@ bootstrap-polyml:
 	$(MAKE) polyml-mlton
 	$(RM) "$(BIN)/$(MLTON)"
 	$(MAKE) OLD_MLTON="$(BIN)/$(MLTON).polyml" all
-	$(RM) "$(LIB)/$(MLTON)-polyml$(EXE)"
+	$(RM) "$(LIB)/$(MLTON_OUTPUT)-polyml$(EXE)"
 	$(RM) "$(BIN)/$(MLTON).polyml"
 
 .PHONY: polyml-mlton
@@ -338,7 +338,7 @@ bootstrap-mlkit:
 	$(MAKE) mlkit-mlton
 	$(RM) "$(BIN)/$(MLTON)"
 	$(MAKE) OLD_MLTON="$(BIN)/$(MLTON).mlkit" all
-	$(RM) "$(LIB)/$(MLTON)-mlkit$(EXE)"
+	$(RM) "$(LIB)/$(MLTON_OUTPUT)-mlkit$(EXE)"
 	$(RM) "$(BIN)/$(MLTON).mlkit"
 
 .PHONY: mlkit-mlton
