@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019-2022 Matthew Fluet.
+(* Copyright (C) 2009,2019-2023 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1130,9 +1130,16 @@ struct
                                     size = #2 fptrArg}),
                                   args)
                               end
+                     val protoArgs =
+                        Vector.foldr
+                        (protoArgs, [], fn (protoArg, protoArgs) =>
+                         case protoArg of
+                            CType.Int64 => CType.Word32 :: CType.Word32 :: protoArgs
+                          | CType.Word64 => CType.Word32 :: CType.Word32 :: protoArgs
+                          | _ => protoArg :: protoArgs)
                      val (pushArgs, size_args)
                        = List.fold2
-                         (args, Vector.toList protoArgs, (AppendList.empty, 0),
+                         (args, protoArgs, (AppendList.empty, 0),
                           fn ((arg, size), protoArg, (assembly_args, size_args)) =>
                           let
                              val (assembly_arg, size_arg) =
