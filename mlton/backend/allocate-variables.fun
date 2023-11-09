@@ -463,8 +463,8 @@ fun allocate {function = f: Rssa.Function.t,
                    *)
                   val (stack, {offset = linkOffset, ...}) =
                      Allocation.Stack.get (stack, Type.exnStack ())
-                  val (_, {offset = handlerOffset, ...}) =
-                     Allocation.Stack.get (stack, Type.label (Label.newNoname ()))
+                  val handlerTy = Type.label (Label.newNoname ())
+                  val handlerOffset = Type.align (handlerTy, Allocation.Stack.size stack)
                   val handlerArgsOffset =
                      Bytes.align
                      (Bytes.+ (handlerOffset, Runtime.labelSize ()),
