@@ -478,6 +478,17 @@ fun allocate {function = f: Rssa.Function.t,
                       (paramOffsets args, maxSize, fn ({offset, ty, ...}, maxSize) =>
                        Bytes.max (maxSize, Bytes.+ (offset, Type.bytes ty))))
                   val handlerOffset = Bytes.- (handlerArgsOffset, Runtime.labelSize ())
+                  val () =
+                     Control.diagnostic
+                     (fn () =>
+                      let open Layout
+                      in
+                         record
+                         [("handlerArgsOffset", Bytes.layout handlerArgsOffset),
+                          ("handlerArgsSize", Bytes.layout handlerArgsSize),
+                          ("handlerOffset", Bytes.layout handlerOffset),
+                          ("linkOffset", Bytes.layout linkOffset)]
+                      end)
                in
                   SOME {handlerArgsOffset = handlerArgsOffset,
                         handlerArgsSize = handlerArgsSize,
