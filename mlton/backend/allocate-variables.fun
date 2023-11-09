@@ -1,4 +1,4 @@
-(* Copyright (C) 2017,2019,2022 Matthew Fluet.
+(* Copyright (C) 2017,2019,2022-2023 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -102,7 +102,9 @@ structure Allocation:
                     | (a1 as {offset = offset1, size = size1})::(a2 as {offset = offset2, size = size2})::alloc =>
                          if Bytes.equals (Bytes.+ (offset1, size1), offset2)
                             then loop ({offset = offset1, size = Bytes.+ (size1, size2)}::alloc, ac)
-                            else loop (a2::alloc, a1::ac)
+                            else if Bytes.> (Bytes.+ (offset1, size1), offset2)
+                                    then Error.bug "AllocateVariables.Stack.new"
+                                    else loop (a2::alloc, a1::ac)
              in
                 T (loop (Array.toList a, []))
              end
