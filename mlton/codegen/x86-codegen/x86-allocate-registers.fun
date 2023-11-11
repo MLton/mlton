@@ -6599,18 +6599,18 @@ struct
                  registerAllocation,
                  src, dst, srcsize, dstsize} =
          let
+            val {uses,defs,kills}
+               = Instruction.uses_defs_kills instruction
+            val {assembly = assembly_pre,
+                 registerAllocation}
+               = RA.pre {uses = uses,
+                         defs = defs,
+                         kills = kills,
+                         info = info,
+                         registerAllocation = registerAllocation}
+
             fun default ()
                = let
-                    val {uses,defs,kills} 
-                       = Instruction.uses_defs_kills instruction
-                    val {assembly = assembly_pre,
-                         registerAllocation}
-                       = RA.pre {uses = uses,
-                                 defs = defs,
-                                 kills = kills,
-                                 info = info,
-                                 registerAllocation = registerAllocation}
-
                     val {operand = final_src,
                          assembly = assembly_src,
                          registerAllocation,
@@ -6680,16 +6680,6 @@ struct
 
             fun default' ()
                = let
-                    val {uses,defs,kills} 
-                       = Instruction.uses_defs_kills instruction
-                    val {assembly = assembly_pre,
-                         registerAllocation}
-                       = RA.pre {uses = uses,
-                                 defs = defs,
-                                 kills = kills,
-                                 info = info,
-                                 registerAllocation = registerAllocation}
-
                     val {operand = final_src,
                          assembly = assembly_src,
                          registerAllocation,
@@ -6796,19 +6786,6 @@ struct
                                                                  sync = false,
                                                                  commit 
                                                                  = commit_src},
-                                                        registerAllocation 
-                                                        = registerAllocation}
-
-                                                  val {uses,defs,kills} 
-                                                     = Instruction.uses_defs_kills
-                                                       instruction
-                                                  val {assembly = assembly_pre,
-                                                       registerAllocation}
-                                                     = RA.pre 
-                                                       {uses = uses,
-                                                        defs = defs,
-                                                        kills = kills,
-                                                        info = info,
                                                         registerAllocation 
                                                         = registerAllocation}
 
