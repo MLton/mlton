@@ -1,4 +1,4 @@
-/* Copyright (C) 2010,2012,2016,2019 Matthew Fluet.
+/* Copyright (C) 2010,2012,2016,2019,2023 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -102,24 +102,30 @@ void updateForwardPointersForMarkCompact (GC_state s, GC_stack currentStack) {
   pointer p;
   size_t size, skipFront, skipGap;
 
-  if (DEBUG_MARK_COMPACT)
-    fprintf (stderr, "Update forward pointers.\n");
   front = alignFrontier (s, s->heap.start);
   back = s->heap.start + s->heap.oldGenSize;
+  if (DEBUG_MARK_COMPACT)
+    fprintf (stderr, "Update forward pointers  front = "FMTPTR"  back = "FMTPTR"\n",
+             (uintptr_t)front, (uintptr_t)back);
   gap = 0;
   endOfLastMarked = front;
 updateObject:
   if (DEBUG_MARK_COMPACT)
-    fprintf (stderr, "updateObject  front = "FMTPTR"  back = "FMTPTR"\n",
-             (uintptr_t)front, (uintptr_t)back);
+    fprintf (stderr, "updateObject  front = "FMTPTR,
+             (uintptr_t)front);
   if (front == back)
     goto done;
   p = advanceToObjectData (s, front);
   headerp = getHeaderp (p);
   header = *headerp;
+  if (DEBUG_MARK_COMPACT)
+    fprintf (stderr, "  p = "FMTPTR"  headerp = "FMTPTR"  header = "FMTHDR,
+             (uintptr_t)p, (uintptr_t)headerp, header);
   if (GC_VALID_HEADER_MASK & header) {
     /* It's a header */
     if (MARK_MASK & header) {
+      if (DEBUG_MARK_COMPACT)
+        fprintf (stderr, "  GC_VALID_HEADER_MASK & MARK_MASK\n");
       /* It is marked, but has no forward pointers.
        * Thread internal pointers.
        */
@@ -191,6 +197,8 @@ thread:
       foreachObjptrInObject (s, p, &threadInternalObjptrClosure, FALSE);
       goto updateObject;
     } else {
+      if (DEBUG_MARK_COMPACT)
+        fprintf (stderr, "  GC_VALID_HEADER_MASK & !MARK_MASK\n");
       /* It's not marked. */
       size = sizeofObject (s, p);
       gap += size;
@@ -201,6 +209,8 @@ thread:
     pointer new;
     objptr newObjptr;
 
+    if (DEBUG_MARK_COMPACT)
+      fprintf (stderr, "  !GC_VALID_HEADER_MASK\n");
     assert (not (GC_VALID_HEADER_MASK & header));
     assert (isPointerInHeap (s, (pointer)headerp));
     /* It's a pointer.  This object must be live.  Fix all the forward
@@ -209,6 +219,9 @@ thread:
      */
     new = p - gap;
     newObjptr = pointerToObjptr (new, s->heap.start);
+    assert (isObjptrInHeap (s, newObjptr));
+    if (DEBUG_MARK_COMPACT)
+      fprintf (stderr, "fix forward pointers\n  new = "FMTPTR"\n", (uintptr_t)new);
     do {
       pointer cur;
       objptr curObjptr;
@@ -220,7 +233,9 @@ thread:
       *((objptr*)cur) = newObjptr;
 
       header = *headerp;
-    } while (0 == (1 & header));
+      if (DEBUG_MARK_COMPACT)
+        fprintf (stderr, "  header = "FMTHDR"\n", header);
+    } while (!(GC_VALID_HEADER_MASK & header));
     goto thread;
   }
   assert (FALSE);
