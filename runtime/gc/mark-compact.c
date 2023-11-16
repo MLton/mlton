@@ -212,7 +212,6 @@ thread:
     if (DEBUG_MARK_COMPACT)
       fprintf (stderr, "  !GC_VALID_HEADER_MASK\n");
     assert (not (GC_VALID_HEADER_MASK & header));
-    assert (isPointerInHeap (s, (pointer)headerp));
     /* It's a pointer.  This object must be live.  Fix all the forward
      * pointers to it, store its header, then thread its internal
      * pointers.
@@ -228,6 +227,18 @@ thread:
 
       copyForThreadInternal ((pointer)(&curObjptr), (pointer)headerp);
       cur = objptrToPointer (curObjptr, s->heap.start);
+
+      /* The following checks that the threaded pointers are all into the heap.
+       * Unfortunately, it doesn't work, because
+       * `foreachGlobalObjptr (s, &threadInternalObjptrClosure);` in
+       * `majorMarkCompactGC` just before
+       * `updateForwardPointersForMarkCompact * (s, currentStack);` installs the
+       * addresses of globals (e.g., * `s->currentThread`) as threaded pointers.
+       */
+      if (FALSE) {
+        assert (isObjptrInHeap (s, curObjptr));
+        assert (isPointerInHeap (s, cur));
+      }
 
       copyForThreadInternal ((pointer)headerp, cur);
       *((objptr*)cur) = newObjptr;
