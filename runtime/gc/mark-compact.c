@@ -137,6 +137,24 @@ thread:
       GC_objectTypeTag tag;
       uint16_t bytesNonObjptrs, numObjptrs;
 
+      if ((size_t)(front - endOfLastMarked) >= GC_SEQUENCE_METADATA_SIZE) {
+        pointer newSequence = endOfLastMarked;
+        /* Compress all of the unmarked into one sequence.  We require
+         * GC_SEQUENCE_METADATA_SIZE space to be available because that is
+         * the smallest possible sequence.
+         */
+        if (DEBUG_MARK_COMPACT)
+          fprintf (stderr, "compressing from "FMTPTR" to "FMTPTR" (length = %"PRIuMAX")\n",
+                   (uintptr_t)endOfLastMarked, (uintptr_t)front,
+                   (uintmax_t)(front - endOfLastMarked));
+        *((GC_sequenceCounter*)(newSequence)) = 0;
+        newSequence += GC_SEQUENCE_COUNTER_SIZE;
+        *((GC_sequenceLength*)(newSequence)) =
+          ((size_t)(front - endOfLastMarked)) - GC_SEQUENCE_METADATA_SIZE;
+        newSequence += GC_SEQUENCE_LENGTH_SIZE;
+        *((GC_header*)(newSequence)) = GC_WORD8_VECTOR_HEADER;
+      }
+
       assert (header == getHeader (p));
       splitHeader(s, header, &tag, NULL, &bytesNonObjptrs, &numObjptrs);
 
@@ -172,23 +190,6 @@ thread:
       if (DEBUG_MARK_COMPACT)
         fprintf (stderr, "threading "FMTPTR" of size %"PRIuMAX"\n",
                  (uintptr_t)p, (uintmax_t)size);
-      if ((size_t)(front - endOfLastMarked) >= GC_SEQUENCE_METADATA_SIZE) {
-        pointer newSequence = endOfLastMarked;
-        /* Compress all of the unmarked into one sequence.  We require
-         * GC_SEQUENCE_METADATA_SIZE space to be available because that is
-         * the smallest possible sequence.
-         */
-        if (DEBUG_MARK_COMPACT)
-          fprintf (stderr, "compressing from "FMTPTR" to "FMTPTR" (length = %"PRIuMAX")\n",
-                   (uintptr_t)endOfLastMarked, (uintptr_t)front,
-                   (uintmax_t)(front - endOfLastMarked));
-        *((GC_sequenceCounter*)(newSequence)) = 0;
-        newSequence += GC_SEQUENCE_COUNTER_SIZE;
-        *((GC_sequenceLength*)(newSequence)) =
-          ((size_t)(front - endOfLastMarked)) - GC_SEQUENCE_METADATA_SIZE;
-        newSequence += GC_SEQUENCE_LENGTH_SIZE;
-        *((GC_header*)(newSequence)) = GC_WORD8_VECTOR_HEADER;
-      }
       gap += skipGap;
       front += size + skipFront;
       endOfLastMarked = front;
