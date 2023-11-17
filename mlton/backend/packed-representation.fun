@@ -1,4 +1,4 @@
-(* Copyright (C) 2016-2017,2019-2020 Matthew Fluet.
+(* Copyright (C) 2016-2017,2019-2020,2023 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -27,7 +27,6 @@ in
    structure Operand = Operand
    structure ObjptrTycon = ObjptrTycon
    structure Prim = Prim
-   structure RealSize = RealSize
    structure Runtime = Runtime
    structure Scale = Scale
    structure Statement = Statement
@@ -808,27 +807,18 @@ structure ObjptrRep =
             val padBytes: Bytes.t =
                if isSequence
                   then let
-                          val alignWidth =
+                          val maxComponentSize =
+                             Vector.fold
+                             (components, Bytes.zero, fn ({component = c, ...}, ac) =>
+                              Bytes.max (ac, Component.size c))
+                          val objAlign =
                              case !Control.align of
-                                Control.Align4 => width
-                              | Control.Align8 =>
-                                   if (Vector.exists
-                                       (components, fn {component = c, ...} =>
-                                        (case Type.deReal (Component.ty c) of
-                                            NONE => false
-                                          | SOME s =>
-                                               RealSize.equals (s, RealSize.R64))
-                                        orelse
-                                        (case Type.deWord (Component.ty c) of
-                                            NONE => false
-                                          | SOME s =>
-                                               WordSize.equals (s, WordSize.word64))
-                                        orelse
-                                        (Type.isObjptr (Component.ty c)
-                                         andalso WordSize.equals (WordSize.objptr (),
-                                                                  WordSize.word64))))
-                                      then Bytes.alignWord64 width
-                                   else width
+                                Control.Align4 => Bytes.inWord32
+                              | Control.Align8 => Bytes.inWord64
+                          val alignWidth =
+                             if Bytes.isZero maxComponentSize
+                                then width
+                                else Bytes.align (width, {alignment = Bytes.min (maxComponentSize, objAlign)})
                        in
                           Bytes.- (alignWidth, width)
                        end
