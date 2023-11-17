@@ -1,4 +1,4 @@
-(* Copyright (C) 2011,2014-2015,2017,2019-2021 Matthew Fluet.
+(* Copyright (C) 2011,2014-2015,2017,2019-2021,2023 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -557,8 +557,7 @@ fun mkCompile {outputC, outputLL, outputS} =
                 srcToFile = SOME Ssa2.Program.toFile,
                 tgtStats = SOME Rssa.Program.layoutStats,
                 tgtToFile = SOME Rssa.Program.toFile,
-                (* RSSA type check is too slow to run by default. *)
-                tgtTypeCheck = SOME (Rssa.typeCheck, SOME false)}
+                tgtTypeCheck = SOME (Rssa.typeCheck, SOME true)}
          in
             rssa
          end
@@ -567,8 +566,7 @@ fun mkCompile {outputC, outputLL, outputS} =
          {arg = rssa,
           doit = Rssa.simplify,
           execute = true,
-          (* RSSA type check is too slow to run by default. *)
-          forceTypeCheck = SOME false,
+          forceTypeCheck = SOME true,
           keepIL = !Control.keepRSSA,
           name = "rssaSimplify",
           stats = Rssa.Program.layoutStats,
