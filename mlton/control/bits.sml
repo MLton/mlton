@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2019-2020 Matthew Fluet.
+(* Copyright (C) 2009,2019-2020,2023 Matthew Fluet.
  * Copyright (C) 2004-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -42,8 +42,6 @@ local
                val isPrim: t -> bool
                val isWord8Aligned: t -> bool
                val isWord16Aligned: t -> bool
-               val isWord32Aligned: t -> bool
-               val isWord64Aligned: t -> bool
                val isZero: t -> bool
                val layout: t -> Layout.t
                val max: t * t -> t
@@ -139,8 +137,6 @@ local
                fun isByteAligned b = isAligned (b, {alignment = inByte})
                fun isWord8Aligned b = isAligned (b, {alignment = inWord8})
                fun isWord16Aligned b = isAligned (b, {alignment = inWord16})
-               fun isWord32Aligned b = isAligned (b, {alignment = inWord32})
-               fun isWord64Aligned b = isAligned (b, {alignment = inWord64})
 
                fun toBytes b =
                   if isByteAligned b
