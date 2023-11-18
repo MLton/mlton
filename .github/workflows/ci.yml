@@ -61,7 +61,7 @@ jobs:
       - name: Install dependencies (macos)
         if: ${{ startsWith(matrix.os, 'macos') }}
         run: |
-          brew update
+          # brew update
           brew install gmp
           echo "WITH_GMP_DIR=/usr/local" >> $GITHUB_ENV
           if [[ "${{ matrix.codegen }}" == "llvm" ]]; then brew install llvm; echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH; fi
