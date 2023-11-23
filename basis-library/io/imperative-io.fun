@@ -1,4 +1,4 @@
-(* Copyright (C) 2013,2017 Matthew Fluet.
+(* Copyright (C) 2013,2017,2023 Matthew Fluet.
  * Copyright (C) 2002-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -681,7 +681,7 @@ fun getInstream (ib as In {state, ...}) =
                                        AS.vector (AS.slice (buf, f, 
                                                             SOME (l - f)))))
                         else doit (false, NONE)
-                  val () = state := Stream s
+                  val () = setInstream (ib, s)
                in
                   s
                end
