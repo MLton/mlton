@@ -109,6 +109,9 @@ parisc*)
 ia64*)
         HOST_ARCH=ia64
 ;;
+loongarch64*)
+        HOST_ARCH=loongarch64
+;;
 m68k*)
         HOST_ARCH=m68k
 ;;

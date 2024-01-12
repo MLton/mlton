@@ -36,6 +36,7 @@ structure MLtonPlatform: MLTON_PLATFORM =
              | ARM64
              | HPPA
              | IA64
+             | LoongArch64
              | m68k
              | MIPS
              | PowerPC
@@ -52,6 +53,7 @@ structure MLtonPlatform: MLTON_PLATFORM =
                (ARM64, "ARM64")::
                (HPPA, "HPPA")::
                (IA64, "IA64")::
+               (LoongArch64,"LoongArch64")::
                (m68k, "m68k")::
                (MIPS, "MIPS")::
                (PowerPC, "PowerPC")::
@@ -73,6 +75,7 @@ structure MLtonPlatform: MLTON_PLATFORM =
                 | "arm64" => ARM64
                 | "hppa" => HPPA
                 | "ia64" => IA64
+                | "loongarch64" => LoongArch64
                 | "m68k" => m68k
                 | "mips" => MIPS
                 | "powerpc" => PowerPC

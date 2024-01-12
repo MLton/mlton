@@ -9,7 +9,7 @@ signature MLTON_PLATFORM =
    sig
       structure Arch:
          sig
-            datatype t = Alpha | AMD64 | ARM | ARM64 | HPPA | IA64 | m68k |
+            datatype t = Alpha | AMD64 | ARM | ARM64 | HPPA | IA64 | LoongArch64 | m68k |
                          MIPS | PowerPC | PowerPC64 | RISCV | S390 | Sparc | X86
 
             val fromString: string -> t option

@@ -115,6 +115,8 @@ COMPILE_TIME_ASSERT(sizeof_double__is_eight, sizeof(double) == 8);
 #include "platform/sparc.h"
 #elif (defined (__i386__))
 #include "platform/x86.h"
+#elif (defined (__loongarch64))
+#include "platform/loongarch64.h"
 #else
 #error unknown platform arch
 #endif
