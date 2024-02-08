@@ -107,7 +107,7 @@ PRIVATE GC_profileData profileMalloc (GC_state s);
 PRIVATE void profileWrite (GC_state s, GC_profileData p, const char* fileName);
 PRIVATE void profileFree (GC_state s, GC_profileData p);
 
-static void GC_handleSigProf ();
+static void GC_handleSigProf (int signum);
 static void setProfTimer (suseconds_t usec);
 static void initProfilingTime (GC_state s);
 static void atexitForProfiling (void);
