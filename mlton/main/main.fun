@@ -1239,7 +1239,8 @@ fun commandLine (_: string, args: string list): unit =
                       | MinGW => true
                       | NetBSD => true
                       | OpenBSD => true
-                      | Solaris => true)
+                      | Solaris => true
+                      | WASI => false)
                     then ()
                     else usage (concat ["can't use -profile time on ",
                                         MLton.Platform.OS.toString targetOS])
