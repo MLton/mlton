@@ -5,20 +5,31 @@
 
 LIB_REL_BIN="../lib/mlton"
 
-EXE=
-
-CC="cc"
-
-# You may need to set 'GMP_INC_DIR' so the C compiler can find gmp.h.
-GMP_INC_DIR=
-# You may need to set 'GMP_LIB_DIR' so the C compiler can find libgmp.
-GMP_LIB_DIR=
-
-
 set -e
 
 dir=$(dirname "$0")
 lib=$(cd "$dir/$LIB_REL_BIN" && pwd)
+
+# Find if "-target" is set, to read cross-specific variables.
+# Default to "self".
+TARGET=self
+prev_arg=
+for arg in "$@"
+do
+    if [ "$prev_arg" = "-target" ]; then
+        TARGET="$arg"
+    fi
+    prev_arg="$arg"
+done
+
+TARGET_VARS="$lib/targets/$TARGET/vars"
+if [ ! -f "$TARGET_VARS" ]; then
+        echo "Unable to read $TARGET_VARS." >&2
+        exit 1
+fi
+. "$TARGET_VARS"
+
+
 
 
 doitMLton () {
