@@ -65,14 +65,13 @@ install:
 
 .PHONY: update
 update:
-	$(CP) "$(SBIN)/mlton" "$(SBIN)/mlton.bak"
+	$(CP) "$(SLIB)/targets/self/vars" "$(SLIB)/targets/self/vars.bak"
 	$(SED) \
 		-e "s;^CC=.*;CC=\"$(CC)\";" \
 		-e "s;^GMP_INC_DIR=.*;GMP_INC_DIR=$(if $(WITH_GMP_INC_DIR),\"$(WITH_GMP_INC_DIR)\");" \
 		-e "s;^GMP_LIB_DIR=.*;GMP_LIB_DIR=$(if $(WITH_GMP_LIB_DIR),\"$(WITH_GMP_LIB_DIR)\");" \
-		< "$(SBIN)/mlton.bak" > "$(SBIN)/mlton"
-	chmod a+x "$(SBIN)/mlton"
-	$(RM) "$(SBIN)/mlton.bak"
+		< "$(SLIB)/targets/self/vars.bak" > "$(SLIB)/targets/self/vars"
+	$(RM) "$(SLIB)/targets/self/vars.bak"
 	$(CP) "$(SLIB)/targets/self/constants" "$(SLIB)/targets/self/constants.bak"
 	$(SED) \
 		-e "s;^default::pie=.*;default::pie=$(subst __pie__,0,$(shell echo "__pie__" | $(CC) -P -E -));" \
