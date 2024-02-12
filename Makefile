@@ -159,6 +159,11 @@ runtime:
 	echo "GMP_INC_DIR=\"$(WITH_GMP_INC_DIR)\"" >> "$(LIB)/targets/$(TARGET)/vars"
 	echo "GMP_LIB_DIR=\"$(WITH_GMP_LIB_DIR)\"" >> "$(LIB)/targets/$(TARGET)/vars"
 
+.PHONY: install-runtime
+install-runtime:
+	$(MKDIR) "$(TLIB)/targets/$(TARGET)"
+	$(CP) "$(LIB)/targets/$(TARGET)" "$(TLIB)/targets/"
+
 .PHONY: script
 script:
 	$(SED) \
