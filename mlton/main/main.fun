@@ -59,6 +59,8 @@ structure Show =
    end
 
 val cc: string list ref = ref ["cc"]
+datatype ccCrossStyle = Prefixed | Flag
+val ccCrossStyle: ccCrossStyle ref = ref Prefixed
 val arScript: string ref = ref "<unset>"
 val asOpts: {opt: string, pred: OptPred.t} list ref = ref []
 val ccOpts: {opt: string, pred: OptPred.t} list ref = ref []
@@ -274,6 +276,13 @@ fun makeOptions {usage} =
        (Expert, "cc-opt-quote", " <opt>", "pass (quoted) option to C compiler",
         SpaceString
         (fn s => List.push (ccOpts, {opt = s, pred = OptPred.Yes}))),
+       (Expert, "cc-cross-style", " {prefixed|flag}",
+        "set C compiler cross style (clang needs 'flag' cross style)",
+        SpaceString
+        (fn s => (case s of
+                     "prefixed" => ccCrossStyle := Prefixed
+                   | "flag" => ccCrossStyle := Flag
+                   | _ => usage (concat ["invalid -cc-cross-style flag: ", s])))),
        (Expert, "chunkify", " {coalesce<n>|func|one|simple}", "set chunkify stategy",
         SpaceString
         (fn s =>
@@ -1126,23 +1135,27 @@ fun commandLine (_: string, args: string list): unit =
       fun tokenize l =
          String.tokens (concat (List.separate (l, " ")), Char.isSpace)
 
-      (* When cross-compiling, use the named cross compiler.
+      (* When cross-compiling, use the correct style. gcc uses a prefixed
+       * binary, clang requires a -target flag.
        * Older gcc versions used -b for multiple targets.
        * If this is still needed, a shell script wrapper can hide this.
        *)
       val cc =
          case target of
             Cross s =>
-               let
-                  val {dir = ccDir, file = ccFile} =
-                     OS.Path.splitDirFile (hd (!cc))
-               in
-                  OS.Path.joinDirFile
-                  {dir = ccDir,
-                   file = s ^ "-" ^ ccFile}
-                  ::
-                  tl (!cc)
-               end
+               (case !ccCrossStyle of
+                   Prefixed =>
+                      let
+                         val {dir = ccDir, file = ccFile} =
+                            OS.Path.splitDirFile (hd (!cc))
+                      in
+                         OS.Path.joinDirFile
+                         {dir = ccDir,
+                          file = s ^ "-" ^ ccFile}
+                         ::
+                         tl (!cc)
+                      end
+                 | Flag => !cc @ ["-target", s])
           | Self => !cc
       val arScript = !arScript
 

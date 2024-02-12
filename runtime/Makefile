@@ -12,10 +12,15 @@ include $(ROOT)/Makefile.config
 
 ######################################################################
 
-ifeq ($(TARGET), self)
 CROSS_PREFIX :=
-else
+CROSS_TARGET :=
+
+ifneq ($(TARGET), self)
+ifeq (,$(findstring clang version,$(shell $(CC) -v 2>&1)))
 CROSS_PREFIX := $(TARGET)-
+else
+CROSS_TARGET := -target $(TARGET)
+endif
 endif
 
 EXE :=
@@ -140,9 +145,9 @@ endef
 
 ### Position-independent (or not) ###
 
-ifeq ($(shell echo "__pie__" | $(CROSS_PREFIX)$(CC) $(call MK_FLAGS,-,C,PIE) -P -E -),2)
+ifeq ($(shell echo "__pie__" | $(CROSS_PREFIX)$(CC) $(CROSS_TARGET) $(call MK_FLAGS,-,C,PIE) -P -E -),2)
 HAVE_PIE := true
-ifeq ($(shell echo "__pie__" | $(CROSS_PREFIX)$(CC) $(call MK_FLAGS,-,C) -P -E -),2)
+ifeq ($(shell echo "__pie__" | $(CROSS_PREFIX)$(CC) $(CROSS_TARGET) $(call MK_FLAGS,-,C) -P -E -),2)
 WITH_DEFAULT_PIE := true
 else
 WITH_DEFAULT_PIE := false
@@ -153,11 +158,11 @@ WITH_PIE_RUNTIME := false
 WITH_DEFAULT_PIE := false
 endif
 
-ifeq ($(shell echo "__pic__" | $(CROSS_PREFIX)$(CC) $(call MK_FLAGS,-,C,PIC) -P -E -),2)
+ifeq ($(shell echo "__pic__" | $(CROSS_PREFIX)$(CC) $(CROSS_TARGET) $(call MK_FLAGS,-,C,PIC) -P -E -),2)
 HAVE_PIC := true
 ifeq ($(WITH_DEFAULT_PIE),true)
 WITH_DEFAULT_PIC := false
-else ifeq ($(shell echo "__pic__" | $(CROSS_PREFIX)$(CC) $(call MK_FLAGS,-,C) -P -E -),2)
+else ifeq ($(shell echo "__pic__" | $(CROSS_PREFIX)$(CC) $(CROSS_TARGET) $(call MK_FLAGS,-,C) -P -E -),2)
 WITH_DEFAULT_PIC := true
 else
 WITH_DEFAULT_PIC := false
@@ -168,9 +173,9 @@ WITH_PIC_RUNTIME := false
 WITH_DEFAULT_PIC := false
 endif
 
-ifeq ($(shell echo "__pic__" | $(CROSS_PREFIX)$(CC) $(call MK_FLAGS,-,C,NPI) -P -E -),__pic__)
+ifeq ($(shell echo "__pic__" | $(CROSS_PREFIX)$(CC) $(CROSS_TARGET) $(call MK_FLAGS,-,C,NPI) -P -E -),__pic__)
 HAVE_NPI := true
-ifeq ($(shell echo "__pic__" | $(CROSS_PREFIX)$(CC) $(call MK_FLAGS,-,C) -P -E -),__pic__)
+ifeq ($(shell echo "__pic__" | $(CROSS_PREFIX)$(CC) $(CROSS_TARGET) $(call MK_FLAGS,-,C) -P -E -),__pic__)
 WITH_DEFAULT_NPI := true
 else
 WITH_DEFAULT_NPI := false
@@ -184,19 +189,19 @@ endif
 ### pattern rules ###
 
 %.d: %.c
-	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,CPP) -MM -MG $(foreach MD,$(MDVARIANTS),$(foreach PI,$(PIVARIANTS),-MT $(subst .d,$($(MD)SUFFIX)$($(PI)SUFFIX).o,$@))) -MT $@ -MM -MG -MF $@ $<
+	$(CROSS_PREFIX)$(CC) $(CROSS_TARGET) $(call MK_FLAGS,$<,CPP) -MM -MG $(foreach MD,$(MDVARIANTS),$(foreach PI,$(PIVARIANTS),-MT $(subst .d,$($(MD)SUFFIX)$($(PI)SUFFIX).o,$@))) -MT $@ -MM -MG -MF $@ $<
 
 ## O_C_TEMPLATE (MD,PI)
 define O_C_TEMPLATE
 %$($(1)SUFFIX)$($(2)SUFFIX).o: %.c
-	$$(CROSS_PREFIX)$$(CC) $$(call MK_FLAGS,$$<,C,$(1) $(2)) -c -o $$@ $$<
+	$$(CROSS_PREFIX)$$(CC) $(CROSS_TARGET) $$(call MK_FLAGS,$$<,C,$(1) $(2)) -c -o $$@ $$<
 endef
 
 $(foreach MD,$(MDVARIANTS),$(foreach PI,$(PIVARIANTS), \
 $(eval $(call O_C_TEMPLATE,$(MD),$(PI)))))
 
 %$(EXE): %.o
-	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,LD) -o $@ $^
+	$(CROSS_PREFIX)$(CC) $(CROSS_TARGET) $(call MK_FLAGS,$<,LD) -o $@ $^
 
 %.a:
 	$(RM) $@

@@ -30,6 +30,15 @@ fi
 . "$TARGET_VARS"
 
 
+# Determine if CC is clang, set the cross style appropriately.
+case $("$CC" -v 2>&1) in
+*"clang version"*)
+    CC_CROSS_STYLE=flag
+    ;;
+*)
+    CC_CROSS_STYLE=prefixed
+    ;;
+esac
 
 
 doitMLton () {
@@ -96,6 +105,7 @@ for arg in "$@"; do
         set -- "$@" "$lib" \
                -ar-script "$lib/static-library"                         \
                -cc "$CC"                                                \
+               -cc-cross-style "$CC_CROSS_STYLE"                        \
                -cc-opt '-std=gnu11 -fno-common'                         \
                -cc-opt '-O1 -fno-strict-aliasing'                       \
                -cc-opt '-foptimize-sibling-calls'                       \
