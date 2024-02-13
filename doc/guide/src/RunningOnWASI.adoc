@@ -16,12 +16,15 @@ command line (using something like https://wasmtime.dev[Wasmtime]).
    in https://github.com/WebAssembly/wasi-sdk[wasi-sdk]. Follow the
    directions to download and unpack a copy.
 
-** The <<GMP#>> library is required. It must be compiled for WASI. An
-   example configuration command is below (substitute your own wasi-sdk paths):
+** The <<GMP#>> library is required. It must be compiled for
+   WASI. Download it from https://gmplib.org, build it and install it
+   to a local prefix. An example configuration command is below
+   (substitute your own wasi-sdk paths):
 +
 [,shell]
 ----
 ./configure --host=wasm32-unknown-wasi \
+            --prefix=$HOME/gmp-wasi-INSTALL \
             CC=$HOME/wasi-sdk-21.0/bin/clang \
             RANLIB=$HOME/wasi-sdk-21.0/bin/ranlib \
             CFLAGS=-D_WASI_EMULATED_SIGNAL LDFLAGS=-lwasi-emulated-signal
