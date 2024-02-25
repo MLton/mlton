@@ -8,7 +8,6 @@
 #include <netinet/tcp.h>
 #include <poll.h>
 #include <sys/ioctl.h>
-#include <sys/mman.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -20,7 +19,7 @@
 
 #define HAS_FEROUND TRUE
 #define HAS_MSG_DONTWAIT TRUE
-#define HAS_REMAP TRUE
+#define HAS_REMAP FALSE
 #define HAS_SIGALTSTACK FALSE
 #define NEEDS_SIGALTSTACK_EXEC FALSE
 #define HAS_SPAWN FALSE

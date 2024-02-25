@@ -1,8 +1,5 @@
 #include "platform.h"
 
-#include "platform/mremap.c"
-#include "platform/use-mmap.c"
-
 /* WASI only implements a subset of POSIX, and given how it works it doesn't
  * make too much sense to try too hard to emulate missing functionality.
  *
@@ -18,13 +15,7 @@
  */
 
 size_t GC_pageSize (void) {
-        long int pageSize;
-
-        pageSize = sysconf (_SC_PAGESIZE);
-        if (pageSize < 0)
-                diee ("GC_pageSize error: sysconf (_SC_PAGESIZE) failed");
-
-        return (size_t)pageSize;
+        return PAGESIZE;
 }
 
 uintmax_t GC_physMem (void) {
@@ -34,12 +25,22 @@ uintmax_t GC_physMem (void) {
         return 1 << 30;  /* 1 GiB */
 }
 
-void* GC_extendHead (void *base, size_t length) {
-        return mmapAnon (base, length);
+void *GC_mmapAnon (__attribute__ ((unused)) void *start, size_t length) {
+        void *mem;
+        int err = posix_memalign (&mem, PAGESIZE, length);
+        if (err) {
+                return (void *) -1;
+        }
+        return memset (mem, 0, length);
 }
 
-void* GC_extendTail (void *base, size_t length) {
-        return mmapAnon (base, length);
+void *GC_mmapAnonFlags (void *start, size_t length,
+                        __attribute__ ((unused)) int flags) {
+        return GC_mmapAnon (start, length);
+}
+
+void GC_release (void *base, __attribute__ ((unused)) size_t length) {
+        free (base);
 }
 
 void GC_displayMem (void) {

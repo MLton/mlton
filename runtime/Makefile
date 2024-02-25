@@ -121,12 +121,10 @@ ifeq ($(TARGET_OS), wasi)
 WASMTIME := wasmtime
 XCPPFLAGS += -D_WASI_EMULATED_SIGNAL \
              -D_WASI_EMULATED_PROCESS_CLOCKS \
-             -D_WASI_EMULATED_GETPID \
-             -D_WASI_EMULATED_MMAN
+             -D_WASI_EMULATED_GETPID
 XLDFLAGS += -lwasi-emulated-signal \
             -lwasi-emulated-process-clocks \
-            -lwasi-emulated-getpid \
-            -lwasi-emulated-mman
+            -lwasi-emulated-getpid
 endif
 
 ifeq ($(TARGET_OS), mingw)
