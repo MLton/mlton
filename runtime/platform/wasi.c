@@ -44,7 +44,10 @@ void GC_release (void *base, __attribute__ ((unused)) size_t length) {
 }
 
 void GC_displayMem (void) {
-        printf ("GC_displayMem() not implemented on WASI\n");
+        size_t memory_size = (size_t) sbrk(0);
+        size_t pages = memory_size / PAGESIZE;
+        printf ("memory.size: pages=%zu, pagesize=%d, total=%zu\n",
+                pages, PAGESIZE, memory_size);
 }
 
 void GC_diskBack_close (__attribute__ ((unused)) void *data) {
