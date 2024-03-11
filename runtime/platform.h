@@ -35,6 +35,10 @@
 #error HAS_REMAP not defined
 #endif
 
+#ifndef HAS_SHRINK_HEAP
+#error HAS_SHRINK_HEAP not defined
+#endif
+
 #ifndef HAS_SIGALTSTACK
 #error HAS_SIGALTSTACK not defined
 #else
