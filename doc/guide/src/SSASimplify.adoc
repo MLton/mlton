@@ -21,7 +21,7 @@ The following optimization passes are implemented:
 * <<LocalFlatten#>>
 * <<LocalRef#>>
 * <<LoopInvariant#>>
-* <<LoopUnfoll#>>
+* <<LoopUnroll#>>
 * <<LoopUnswitch#>>
 * <<Redundant#>>
 * <<RedundantTests#>>
