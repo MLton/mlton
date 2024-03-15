@@ -28,6 +28,12 @@ The default varies depending on architecture.
 Pass _option_ to `cc` when compiling assembler code.  If you wish to
 pass an option to the assembler, you must use `cc`&rsquo;s `-Wa,` syntax.
 
+* ``-cc __cc__``
++
+Specify the executable for the C compiler.  The C compiler is also invoked to
+compile assembly (`.s` files) to object code (`.o` files) and to link object
+code into an executable.
+
 * ``-cc-opt __option__``
 +
 Pass _option_ to `cc` when compiling C code.
@@ -119,13 +125,28 @@ e.g. `-link-opt '-Lpath -lfoo'`.  If you wish to pass an option to the
 linker, you must use `cc`&rsquo;s `-Wl,` syntax, e.g.,
 `-link-opt '-Wl,--export-dynamic'`.
 
+* ``-llvm-as __llvm-as__``
++
+Specify the executable for the LLVM `.ll` to `.bc` assembler;
+can be used to select a specific version of the tool (e.g., `-llvm-as llvm-as-14`).
+
 * ``-llvm-as-opt __option__``
 +
 Pass _option_ to `llvm-as` when assembling (`.ll` to `.bc`) LLVM code.
 
+* ``-llvm-llc __llc__``
++
+Specify the executable for the LLVM `.bc` to `.o` system compiler;
+can be used to select a specific version of the tool (e.g., `-llvm-as llc-14`).
+
 * ``-llvm-llc-opt __option__``
 +
 Pass _option_ to `llc` when compiling (`.bc` to `.o`) LLVM code.
+
+* ``-llvm-opt __opt__``
++
+Specify the executable for the LLVM `.bc` to `.bc` optimizer;
+can be used to select a specific version of the tool (e.g., `-llvm-opt opt-14`).
 
 * ``-llvm-opt-opt __option__``
 +

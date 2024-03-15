@@ -57,7 +57,7 @@ if [ -n "$GMP_LIB_DIR" ]; then
     gmpLinkOpts="-link-opt -L$GMP_LIB_DIR -target-link-opt netbsd -Wl,-R$GMP_LIB_DIR"
 fi
 
-# "Legacy" Pass Manager; LLVM < 13.0
+# "Legacy" Pass Manager; LLVM <= 14.0
 llvmOptOpt="-mem2reg -O2"
 # "New" Pass Manager; LLVM >= 13.0
 llvmOptOpt="--passes=function(mem2reg),default<O2>"

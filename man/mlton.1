@@ -50,6 +50,12 @@ wish to pass an option to the assembler, you must use \fBgcc\fP's
 \fB\-Wa,\fP syntax.
 
 .TP
+\fB\-cc \fIcc\fP\fR
+Specify the executable for the C compiler.  The C compiler is also invoked to
+compile assembly (\fB.s\fP files) to object code (\fB.o\fP files) and to link
+object code into an executable.
+
+.TP
 \fB\-cc\-opt \fIoption\fP\fR
 Pass \fIoption\fP to \fBgcc\fP when compiling C code.
 
@@ -136,12 +142,27 @@ pass an option to the linker, you must use \fBgcc\fP's \fB\-Wl,\fP
 syntax, e.g., \fB\-link\-opt '\-Wl,\-\-export\-dynamic'\fP.
 
 .TP
+\fB\-llvm\-as \fIllvm\-as\fP\R
+Specify the executable for the LLVM \fB.ll\fP to \fB.bc\fP assembler;
+can be used to select a specific version of the tool (e.g., \fB\-llvm\-as llvm\-as\-14\fP).
+
+.TP
 \fB\-llvm\-as\-opt \fIoption\fP\fR
 Pass \fIoption\fP to \fBllvm-as\fP when assembling (\fB.ll\fP to \fB.bc\fP) LLVM code.
 
 .TP
+\fB\-llvm\-llc \fIllc\fP\R
+Specify the executable for the LLVM \fB.bc\fP to \fB.o\fP system compiler;
+can be used to select a specific version of the tool (e.g., \fB\-llvm\-llc llc\-14\fP).
+
+.TP
 \fB\-llvm\-llc\-opt \fIoption\fP\fR
 Pass \fIoption\fP to \fBllc\fP when compiling (\fB.bc\fP to \fB.o\fP) LLVM code.
+
+.TP
+\fB\-llvm\-opt \fIopt\fP\R
+Specify the executable for the LLVM \fB.bc\fP to \fB.bc\fP optimizer;
+can be used to select a specific version of the tool (e.g., \fB\-llvm\-opt opt\-14\fP).
 
 .TP
 \fB\-llvm\-opt\-opt \fIoption\fP\fR

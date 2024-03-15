@@ -5,14 +5,31 @@ The <<LLVMCodegen#>> is a <<Codegen#,code generator>> that translates the
 further optimized and compiled to native object code by the <<LLVM#>>
 toolchain.
 
-It requires <<LLVM#>> version 13.0 or greater to be installed.
-
 In benchmarks performed on the <<RunningOnAMD64#,AMD64>> architecture,
 code size with this generator is usually slightly smaller than either
 the <<AMD64Codegen#,native>> or the <<CCodegen#,C>> code generators. Compile
 time is worse than <<AMD64Codegen#,native>>, but slightly better than
 <<CCodegen#,C>>. Run time is often better than either <<AMD64Codegen#,native>>
 or <<CCodegen#,C>>.
+
+The <<LLVMCodegen#>> works by generating text LLVM IR (`.ll` files) and
+compiling it to object code (`.o` files) using the LLVM command-line tools:
+`llvm-as` (`.ll` to `.bc` assembler), `opt` (`.bc` to `.bc` optimizer), and
+`llc` (`.bc` to `.o` system compiler).  The `-llvm-as <llvm-as>`,
+`-llvm-opt <opt>`, and `-llvm-llc <llc>`
+<<CompileTimeOptions#,compile-time options>> can be used to specify the
+executables to be used when invoking the LLVM command-line tools, which can be
+used to select a specific version of the LLVM command-line tools (e.g.,
+`-llvm-as llvm-as-14 -llvm-opt opt-14 -llvm-llc llc-14`).
+
+<<Release20210117#,MLton 20210117>> requires LLVM 13 or 14, as it invokes `opt`
+using the
+https://releases.llvm.org/14.0.0/docs/ReleaseNotes.html#changes-to-the-llvm-ir:["legacy
+pass manager"].
+
+As of 20230522, MLton requires LLVM 14, as it invokes `opt` using the
+https://releases.llvm.org/14.0.0/docs/ReleaseNotes.html#changes-to-the-llvm-ir:["new
+pass manager"].
 
 == Implementation
 
