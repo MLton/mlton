@@ -44,7 +44,7 @@ jobs:
 
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Install dependencies (ubuntu)
         if: ${{ startsWith(matrix.os, 'ubuntu') }}
@@ -135,7 +135,7 @@ jobs:
             binary-release
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: mlton.${{ matrix.os }}_${{ matrix.cc }}_${{ matrix.codegen }}
           path: ./*.tgz
