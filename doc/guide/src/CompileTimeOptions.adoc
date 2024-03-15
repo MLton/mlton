@@ -28,6 +28,12 @@ The default varies depending on architecture.
 Pass _option_ to `cc` when compiling assembler code.  If you wish to
 pass an option to the assembler, you must use `cc`&rsquo;s `-Wa,` syntax.
 
+* ``-cc __cc__``
++
+Specify the executable for the C compiler.  The C compiler is also invoked to
+compile assembly (`.s` files) to object code (`.o` files) and to link object
+code into an executable.
+
 * ``-cc-opt __option__``
 +
 Pass _option_ to `cc` when compiling C code.
