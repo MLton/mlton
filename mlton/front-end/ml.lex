@@ -8,7 +8,7 @@
  * See the file NJ-LICENSE for details.
  *)
 
-(* Copyright (C) 2009,2016-2017 Matthew Fluet.
+(* Copyright (C) 2009,2016-2017,2024 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -148,57 +148,79 @@ fun doit (source, yypos, yytext, drop, {extended: string option}, mkTok) =
 in
 fun real (source, yypos, yytext) =
    doit (source, yypos, yytext, 0, {extended = NONE}, fn (digits, {extended: bool}, l, r) =>
-         Tokens.REAL (digits, l, r))
+         Tokens.REAL ({real = digits,
+                       yytext = yytext},
+                      l, r))
 fun int (source, yypos, yytext, drop, {extended: string option}, {negate: bool}, radix) =
    doit (source, yypos, yytext, drop, {extended = extended}, fn (digits, {extended: bool}, l, r) =>
          Tokens.INT ({digits = digits,
                       extended = extended,
                       negate = negate,
-                      radix = radix},
+                      radix = radix,
+                      yytext = yytext},
                      l, r))
 fun word (source, yypos, yytext, drop, {extended: string option}, radix) =
    doit (source, yypos, yytext, drop, {extended = extended}, fn (digits, {extended: bool}, l, r) =>
          Tokens.WORD ({digits = digits,
-                       radix = radix},
+                       radix = radix,
+                       yytext = yytext},
                       l, r))
 end
 
 
 (* Text Constants *)
 local
-   val chars: IntInf.t list ref = ref []
+   val chars: {char: IntInf.t, yytext: string} list ref = ref []
+   val yytexts: string list ref = ref []
    val inText = ref false
    val textLeft = ref SourcePos.bogus
-   val textFinishFn: (IntInf.t vector * SourcePos.t * SourcePos.t -> lexresult) ref = ref (fn _ => raise Fail "textFinish")
+   val textFinishFn: ({char: IntInf.t, yytext: string} vector * string * SourcePos.t * SourcePos.t -> lexresult) ref = ref (fn _ => raise Fail "textFinish")
 in
-   fun startText (tl, tf) =
+   fun startText (yytext, tl, tf) =
       let
          val _ = chars := []
+         val _ = yytexts := [yytext]
          val _ = inText := true
          val _ = textLeft := tl
          val _ = textFinishFn := tf
       in
          ()
       end
-   fun finishText textRight =
+   fun finishText (yytext, textRight) =
       let
          val cs = Vector.fromListRev (!chars)
+         val yytext = String.concatV (Vector.fromListRev (yytext :: !yytexts))
          val tl = !textLeft
          val tr = textRight
          val tf = !textFinishFn
          val _ = chars := []
+         val _ = yytexts := []
          val _ = inText := false
          val _ = textLeft := SourcePos.bogus
          val _ = textFinishFn := (fn _ => raise Fail "textFinish")
       in
-         tf (cs, tl, tr)
+         tf (cs, yytext, tl, tr)
       end
    val inText = fn () => !inText
-   fun addTextString (s: string) =
-      chars := String.fold (s, !chars, fn (c, ac) => Int.toIntInf (Char.ord c) :: ac)
-   fun addTextCharCode (i: IntInf.int) = List.push (chars, i)
+   fun addTextCharCode (i: IntInf.int, yytext) =
+      (List.push (chars, {char = i, yytext = yytext})
+       ; List.push (yytexts, yytext))
+   fun addTextUTF8 (source, yypos, yytext): unit =
+      let
+         val left = yypos
+         val right = lastPos (yypos, yytext)
+         val _ =
+            if not (allowExtendedTextConsts ())
+               then error (source, left, right,
+                           "Extended text constants (using UTF-8 byte sequences) disallowed, compile with -default-ann 'allowExtendedTextConsts true'")
+               else ()
+      in
+        (String.foreach (yytext, fn c => List.push (chars, {char = Int.toIntInf (Char.ord c), yytext = Char.escapeSML c}))
+         ; List.push (yytexts, yytext))
+      end
 end
-fun addTextChar (c: char) = addTextString (String.fromChar c)
+fun addTextChar (c: char, yytext) =
+   addTextCharCode (Int.toIntInf (Char.ord c), yytext)
 fun addTextNumEsc (source, yypos, yytext, drop, {extended: string option}, radix): unit =
    let
       val left = yypos
@@ -215,17 +237,7 @@ fun addTextNumEsc (source, yypos, yytext, drop, {extended: string option}, radix
    in
       case StringCvt.scanString (fn r => IntInf.scan (radix, r)) (String.dropPrefix (yytext, drop)) of
          NONE => error (source, left, right, "Illegal numeric escape in text constant")
-       | SOME i => addTextCharCode i
-   end
-fun addTextUTF8 (source, yypos, yytext): unit =
-   let
-      val left = yypos
-      val right = lastPos (yypos, yytext)
-   in
-      if not (allowExtendedTextConsts ())
-         then error (source, left, right,
-                     "Extended text constants (using UTF-8 byte sequences) disallowed, compile with -default-ann 'allowExtendedTextConsts true'")
-         else addTextString yytext
+       | SOME i => addTextCharCode (i, yytext)
    end
 
 
@@ -389,45 +401,45 @@ real=(~?)(({decnum}{frac}?{exp})|({decnum}{frac}{exp}?));
    (word (source, yypos, yytext, 3, {extended = SOME "binary notation"}, StringCvt.BIN));
 
 <INITIAL>"\"" =>
-   (startText (Source.getPos (source, yypos), fn (cs, l, r) =>
+   (startText (yytext, Source.getPos (source, yypos), fn (cs, yytext, l, r) =>
                (YYBEGIN INITIAL;
-                Tokens.STRING (cs, l, r)))
+                Tokens.STRING ({string = cs, yytext = yytext}, l, r)))
     ; YYBEGIN TEXT
     ; continue ());
 <INITIAL>"#\"" =>
-   (startText (Source.getPos (source, yypos), fn (cs, l, r) =>
+   (startText (yytext, Source.getPos (source, yypos), fn (cs, yytext, l, r) =>
                let
                   fun err () =
                      error' (l, r, "character constant not of size 1")
                   val c =
                      case Int.compare (Vector.length cs, 1) of
                         LESS => (err (); 0)
-                      | EQUAL => Vector.sub (cs, 0)
-                      | GREATER => (err (); Vector.sub (cs, 0))
+                      | EQUAL => #char (Vector.sub (cs, 0))
+                      | GREATER => (err (); #char (Vector.sub (cs, 0)))
                in
                   YYBEGIN INITIAL;
-                  Tokens.CHAR (c, l, r)
+                  Tokens.CHAR ({char = c, yytext = yytext}, l, r)
                end)
     ; YYBEGIN TEXT
     ; continue ());
 
-<TEXT>"\""       => (finishText (Source.getPos (source, lastPos (yypos, yytext))));
+<TEXT>"\""       => (finishText (yytext, Source.getPos (source, lastPos (yypos, yytext))));
 <TEXT>" "|!|[\035-\091]|[\093-\126] =>
-                    (addTextString yytext; continue ());
+                    (addTextChar (String.sub(yytext, 0), yytext); continue ());
 <TEXT>[\192-\223][\128-\191] =>
                     (addTextUTF8 (source, yypos, yytext); continue());
 <TEXT>[\224-\239][\128-\191][\128-\191] =>
                     (addTextUTF8 (source, yypos, yytext); continue());
 <TEXT>[\240-\247][\128-\191][\128-\191][\128-\191] =>
                     (addTextUTF8 (source, yypos, yytext); continue());
-<TEXT>\\a        => (addTextChar #"\a"; continue ());
-<TEXT>\\b        => (addTextChar #"\b"; continue ());
-<TEXT>\\t        => (addTextChar #"\t"; continue ());
-<TEXT>\\n        => (addTextChar #"\n"; continue ());
-<TEXT>\\v        => (addTextChar #"\v"; continue ());
-<TEXT>\\f        => (addTextChar #"\f"; continue ());
-<TEXT>\\r        => (addTextChar #"\r"; continue ());
-<TEXT>\\\^[@-_]  => (addTextChar (Char.chr(Char.ord(String.sub(yytext, 2)) - Char.ord #"@"));
+<TEXT>\\a        => (addTextChar (#"\a", yytext); continue ());
+<TEXT>\\b        => (addTextChar (#"\b", yytext); continue ());
+<TEXT>\\t        => (addTextChar (#"\t", yytext); continue ());
+<TEXT>\\n        => (addTextChar (#"\n", yytext); continue ());
+<TEXT>\\v        => (addTextChar (#"\v", yytext); continue ());
+<TEXT>\\f        => (addTextChar (#"\f", yytext); continue ());
+<TEXT>\\r        => (addTextChar (#"\r", yytext); continue ());
+<TEXT>\\\^[@-_]  => (addTextChar (Char.chr(Char.ord(String.sub(yytext, 2)) - Char.ord #"@"), yytext);
                      continue ());
 <TEXT>\\\^.      => (error (source, yypos, yypos + 2, "Illegal control escape in text constant; must be one of @ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_");
                      continue ());
@@ -443,8 +455,8 @@ real=(~?)(({decnum}{frac}?{exp})|({decnum}{frac}{exp}?));
                                     {extended = SOME "\\Uxxxxxxxx numeric escapes"},
                                     StringCvt.HEX)
                      ; continue ());
-<TEXT>"\\\""     => (addTextString "\""; continue ());
-<TEXT>\\\\       => (addTextString "\\"; continue ());
+<TEXT>"\\\""     => (addTextChar (#"\"", yytext); continue ());
+<TEXT>\\\\       => (addTextChar (#"\\", yytext); continue ());
 <TEXT>\\{ws}+    => (YYBEGIN TEXT_FMT; continue ());
 <TEXT>\\{eol}    => (Source.newline (source, lastPos (yypos, yytext)); YYBEGIN TEXT_FMT; continue ());
 <TEXT>\\         => (error (source, yypos, yypos + 1, "Illegal escape in text constant")

@@ -73,16 +73,16 @@ val ARROW:  'a * 'a -> (svalue,'a) token
 val ANDALSO:  'a * 'a -> (svalue,'a) token
 val AND:  'a * 'a -> (svalue,'a) token
 val ABSTYPE:  'a * 'a -> (svalue,'a) token
-val WORD: ({ digits:string,radix:StringCvt.radix } ) *  'a * 'a -> (svalue,'a) token
+val WORD: ({ digits:string,radix:StringCvt.radix,yytext:string } ) *  'a * 'a -> (svalue,'a) token
 val TYVAR: (string) *  'a * 'a -> (svalue,'a) token
-val STRING: (IntInf.t vector) *  'a * 'a -> (svalue,'a) token
-val REAL: (string) *  'a * 'a -> (svalue,'a) token
+val STRING: ({ string:{ char:IntInf.t,yytext:string }  vector,yytext:string } ) *  'a * 'a -> (svalue,'a) token
+val REAL: ({ real:string,yytext:string } ) *  'a * 'a -> (svalue,'a) token
 val LONGSYMID: (string) *  'a * 'a -> (svalue,'a) token
 val LONGALPHANUMID: (string) *  'a * 'a -> (svalue,'a) token
 val SHORTSYMID: (string) *  'a * 'a -> (svalue,'a) token
 val SHORTALPHANUMID: (string) *  'a * 'a -> (svalue,'a) token
-val INT: ({ digits:string,extended:bool,negate:bool,radix:StringCvt.radix } ) *  'a * 'a -> (svalue,'a) token
-val CHAR: (IntInf.t) *  'a * 'a -> (svalue,'a) token
+val INT: ({ digits:string,extended:bool,negate:bool,radix:StringCvt.radix,yytext:string } ) *  'a * 'a -> (svalue,'a) token
+val CHAR: ({ char:IntInf.t,yytext:string } ) *  'a * 'a -> (svalue,'a) token
 end
 signature ML_LRVALS=
 sig

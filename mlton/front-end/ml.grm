@@ -8,7 +8,7 @@
  * See the file NJ-LICENSE for details.
  *)
 
-(* Copyright (C) 2008,2009,2014-2017,2019,2022 Matthew Fluet.
+(* Copyright (C) 2008,2009,2014-2017,2019,2022,2024 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -235,20 +235,25 @@ type 'a whereAndEqns = WhereEquation.t list * 'a list
 
   %%
   %term
-      CHAR of IntInf.t
+      CHAR of {char: IntInf.t,
+               yytext: string}
     | INT of {digits: string,
               extended: bool,
               negate: bool,
-              radix: StringCvt.radix}
+              radix: StringCvt.radix,
+              yytext: string}
     | SHORTALPHANUMID of string
     | SHORTSYMID of string
     | LONGALPHANUMID of string
     | LONGSYMID of string
-    | REAL of string
-    | STRING of IntInf.t vector
+    | REAL of {real: string,
+               yytext: string}
+    | STRING of {string: {char: IntInf.t, yytext: string} vector,
+                 yytext: string}
     | TYVAR of string
     | WORD of {digits: string,
-               radix: StringCvt.radix}
+               radix: StringCvt.radix,
+               yytext: string}
     | ABSTYPE | AND | ANDALSO | ARROW | AS | ASTERISK | BAR | CASE | COLON
     | COLONGT | COMMA | DATATYPE | DOTDOTDOT | ELSE | END | EOF | EQUALOP
     | EQTYPE | EXCEPTION | DO | DARROW | FN | FUN | FUNCTOR | HANDLE | HASH
@@ -323,7 +328,7 @@ type 'a whereAndEqns = WhereEquation.t list * 'a list
        | funbinds'2 of funbind list
        | funs of clauses list
        | idField of Symbol.t * Region.t
-       | int of IntInf.t
+       | int of IntInf.t * string
        | longcon of Longcon.t
        | longAlphanumId of Symbol.t list * Region.t
        | longSymId of Symbol.t list * Region.t
@@ -428,7 +433,7 @@ type 'a whereAndEqns = WhereEquation.t list * 'a list
        | whereeqns of WhereEquation.t vector
        | whereeqns' of WhereEquation.t list
        | withtypes of TypBind.t
-       | word of IntInf.t
+       | word of IntInf.t * string
 
 %verbose
 %pos SourcePos.t
@@ -465,13 +470,13 @@ type 'a whereAndEqns = WhereEquation.t list * 'a list
         SEMICOLON -> COMMA | COMMA -> SEMICOLON |
         -> IN SHORTALPHANUMID END | -> ELSE SHORTALPHANUMID
 
-%value CHAR (IntInf.fromInt (Char.ord #"a"))
-%value INT ({digits = "0", extended = false, negate = false, radix = StringCvt.DEC})
+%value CHAR ({char = IntInf.fromInt (Char.ord #"a"), yytext = "#\"a\""})
+%value INT ({digits = "0", extended = false, negate = false, radix = StringCvt.DEC, yytext = "0"})
 %value SHORTALPHANUMID ("bogus")
-%value REAL ("13.0")
-%value STRING (Vector.fromList [])
+%value REAL ({real = "0.0", yytext = "0.0"})
+%value STRING ({string = Vector.fromList [], yytext = "\"\""})
 %value TYVAR ("'a")
-%value WORD ({digits = "0", radix = StringCvt.DEC})
+%value WORD ({digits = "0", radix = StringCvt.DEC, yytext = ""})
 
 %%
 
@@ -865,25 +870,25 @@ priority :                      (Priority.T NONE)
 
 int : INT
    (let
-       val {digits, negate, radix, ...} = INT
+       val {digits, negate, radix, yytext, ...} = INT
     in
        case StringCvt.scanString (fn r => IntInf.scan (radix, r)) digits of
           NONE => Error.bug "parser saw invalid int"
-        | SOME i => if negate then ~ i else i
+        | SOME i => (if negate then ~ i else i, yytext)
     end)
 
 word : WORD
    (let
-       val {digits, radix} = WORD
+       val {digits, radix, yytext} = WORD
     in
        case StringCvt.scanString (fn r => IntInf.scan (radix, r)) digits of
           NONE => Error.bug "parser saw invalid word"
-        | SOME i => i
+        | SOME i => (i, yytext)
     end)
 
 digit : INT
    (let
-       val {digits, extended, negate, radix} = INT
+       val {digits, extended, negate, radix, ...} = INT
     in
        if 1 = String.size digits andalso not extended andalso not negate andalso radix = StringCvt.DEC
           then valOf (Int.fromString digits)
@@ -900,7 +905,7 @@ digit : INT
 
 numericField : INT
    (let
-       val {digits, extended, negate, radix} = INT
+       val {digits, extended, negate, radix, ...} = INT
        fun err () =
           let
              open Layout
@@ -1152,7 +1157,7 @@ apatnode
   | const
       (let
           val _ =
-             case Const.node const of
+             case Const.value const of
                 Const.Real r =>
                    let
                       open Layout
@@ -1264,27 +1269,41 @@ constOrBool
    : const (const)
    | shortAlphanumId
         (let
-            fun ok b = Const.makeRegion (Const.Bool b, #2 shortAlphanumId)
-         in            
+            fun ok (b,s) =
+               Const.makeRegion (Const.Node {value = Const.Bool b, yytext = s}, #2 shortAlphanumId)
+         in
             case Symbol.toString (#1 shortAlphanumId) of
-               "false" => ok false
-             | "true" => ok true
+               "false" => ok (false, "false")
+             | "true" => ok (true, "true")
              | s => (error (#2 shortAlphanumId, concat ["unknown boolean constant: ", s])
-                     ; ok false)
+                     ; ok (false, "false"))
          end)
 
-const   : const'                (Const.makeRegion
-                                 (const', reg (const'left, const'right)))
+const   : const'   (Const.makeRegion (const', reg (const'left, const'right)))
 
-const'  : int                   (Const.Int int)
-        | word                  (Const.Word word)
-        | REAL                  (Const.Real REAL)
-        | STRING                (Const.String STRING)
-        | CHAR                  (Const.Char CHAR)
+const'  : int      (let val (int, yytext) = int
+                    in Const.Node {value = Const.Int int, yytext = yytext}
+                    end)
+        | word     (let val (word, yytext) = word
+                    in Const.Node {value = Const.Word word, yytext = yytext}
+                    end)
+        | REAL     (let val {real, yytext} = REAL
+                    in Const.Node {value = Const.Real real, yytext = yytext}
+                    end)
+        | STRING   (let val {string, yytext} = STRING
+                    in Const.Node {value = Const.String string, yytext = yytext}
+                    end)
+        | CHAR     (let val {char, yytext} = CHAR
+                    in Const.Node {value = Const.Char char, yytext = yytext}
+                    end)
 
-string : STRING  (CharVector.tabulate
-                  (Vector.length STRING, fn i =>
-                   Char.fromInt (Int.fromIntInf (Vector.sub (STRING, i)))))
+string : STRING    (let
+                       val {string, ...} = STRING
+                    in
+                       CharVector.tabulate
+                       (Vector.length string, fn i =>
+                        Char.fromInt (Int.fromIntInf (#char (Vector.sub (string, i)))))
+                    end)
 
 
 shortAlphanumId
