@@ -713,7 +713,7 @@ val elaboratePat:
                    Cpat.wild (Type.new ())
              in
                 case Apat.node p of
-                   Apat.App (c, p) =>
+                   Apat.App {con = c, arg = p, ...} =>
                       (case Env.lookupLongcon (E, c) of
                           NONE => dontCare ()
                         | SOME (con, s) =>
@@ -3098,7 +3098,7 @@ fun elaborateDec (d, {env = E, nest}) =
                    in
                       Cexp.make (Cexp.node e, Type.bool)
                    end
-              | Aexp.App (ef, ea) =>
+              | Aexp.App {func = ef, arg = ea, ...} =>
                    let
                       val cef = elab ef
                       val cea = elab ea

@@ -1,4 +1,4 @@
-(* Copyright (C) 2017 Matthew Fluet.
+(* Copyright (C) 2017,2024 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -87,7 +87,7 @@ structure Program =
                in
                   case Exp.node e of
                      Andalso (e1, e2) => (exp e1; exp e2)
-                   | App (e, e') => (exp e; exp e')
+                   | App {func, arg, ...} => (exp func; exp arg)
                    | Case (e, m) => (exp e; match m)
                    | Constraint (e, _) => exp e
                    | FlatApp es => exps es
