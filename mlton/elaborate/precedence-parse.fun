@@ -25,7 +25,7 @@ struct
       let
          val arg = Exp.tuple (Vector.new2 (argl, argr))
       in
-         Exp.makeRegion (Exp.App (func, arg),
+         Exp.makeRegion (Exp.App {func = func, arg = arg, wasInfix = true},
                          Exp.region arg)
       end
 end
@@ -34,10 +34,12 @@ structure Pat =
 struct
    open Pat
    local
-      fun finishApply {func, arg, region, ctxt} =
+      fun finishApply {func, arg, region, ctxt, wasInfix} =
          case Pat.node func of
             Pat.Var {name, ...} =>
-               Pat.makeRegion (Pat.App (Longvid.toLongcon name, arg),
+               Pat.makeRegion (Pat.App {con = Longvid.toLongcon name,
+                                        arg = arg,
+                                        wasInfix = wasInfix},
                                region)
           | _ =>
                let
@@ -53,14 +55,16 @@ struct
       fun apply ctxt {func, arg} =
          finishApply {func = func, arg = arg,
                       region = Region.append (Pat.region func, Pat.region arg),
-                      ctxt = ctxt}
+                      ctxt = ctxt,
+                      wasInfix = false}
       fun applyInfix ctxt {func, argl, argr} =
          let
             val arg = Pat.tuple (Vector.new2 (argl, argr))
          in
             finishApply {func = func, arg = arg,
                          region = Pat.region arg,
-                         ctxt = ctxt}
+                         ctxt = ctxt,
+                         wasInfix = true}
          end
    end
 end
@@ -133,7 +137,7 @@ fun 'a parse {apply: {func: 'a, arg: 'a} -> 'a,
          end
       fun start token = ensureNONf (token, NILf, true)
       (* parse an expression *)
-      fun parse (stack: 'a precStack, (item: 'a, fixval: Fixval.t)) =
+      fun parse (stack: 'a precStack, (item: 'a, fixval: Fixval.t)) : 'a precStack =
          case (stack, (item, fixval)) of
             (NONf (e, r), (e', Fixval.Nonfix)) => NONf (apply {func = e, arg = e'}, r)
           | (p as INf _, token) => ensureNONf (token, p, false)
@@ -150,7 +154,7 @@ fun 'a parse {apply: {func: 'a, arg: 'a} -> 'a,
            | (p as NONf _, (e', Fixval.Infix (_, rbp))) => INf (rbp, e', p)
            | _ => Error.bug "PrecedenceParse.parse.parse"
       (* clean up the stack *)
-      fun finish stack =
+      fun finish (stack: 'a precStack) : 'a =
          case stack of
             NONf (e1, INf (_, e2, NONf (e3, r))) =>
                finish (NONf (applyInfix {func = e2, argl = e3, argr = e1},

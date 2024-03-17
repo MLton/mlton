@@ -1,4 +1,4 @@
-(*#line 256.10 "ml.lex"*)functor MLLexFun (structure Tokens : ML_TOKENS)(*#line 1.1 "ml.lex.sml"*)
+(*#line 268.10 "ml.lex"*)functor MLLexFun (structure Tokens : ML_TOKENS)(*#line 1.1 "ml.lex.sml"*)
 =
    struct
     structure UserDeclarations =
@@ -13,7 +13,7 @@
  * See the file NJ-LICENSE for details.
  *)
 
-(* Copyright (C) 2009,2016-2017 Matthew Fluet.
+(* Copyright (C) 2009,2016-2017,2024 Matthew Fluet.
  * Copyright (C) 1999-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -153,57 +153,79 @@ fun doit (source, yypos, yytext, drop, {extended: string option}, mkTok) =
 in
 fun real (source, yypos, yytext) =
    doit (source, yypos, yytext, 0, {extended = NONE}, fn (digits, {extended: bool}, l, r) =>
-         Tokens.REAL (digits, l, r))
+         Tokens.REAL ({real = digits,
+                       yytext = yytext},
+                      l, r))
 fun int (source, yypos, yytext, drop, {extended: string option}, {negate: bool}, radix) =
    doit (source, yypos, yytext, drop, {extended = extended}, fn (digits, {extended: bool}, l, r) =>
          Tokens.INT ({digits = digits,
                       extended = extended,
                       negate = negate,
-                      radix = radix},
+                      radix = radix,
+                      yytext = yytext},
                      l, r))
 fun word (source, yypos, yytext, drop, {extended: string option}, radix) =
    doit (source, yypos, yytext, drop, {extended = extended}, fn (digits, {extended: bool}, l, r) =>
          Tokens.WORD ({digits = digits,
-                       radix = radix},
+                       radix = radix,
+                       yytext = yytext},
                       l, r))
 end
 
 
 (* Text Constants *)
 local
-   val chars: IntInf.t list ref = ref []
+   val chars: {char: IntInf.t, yytext: string} list ref = ref []
+   val yytexts: string list ref = ref []
    val inText = ref false
    val textLeft = ref SourcePos.bogus
-   val textFinishFn: (IntInf.t vector * SourcePos.t * SourcePos.t -> lexresult) ref = ref (fn _ => raise Fail "textFinish")
+   val textFinishFn: ({char: IntInf.t, yytext: string} vector * string * SourcePos.t * SourcePos.t -> lexresult) ref = ref (fn _ => raise Fail "textFinish")
 in
-   fun startText (tl, tf) =
+   fun startText (yytext, tl, tf) =
       let
          val _ = chars := []
+         val _ = yytexts := [yytext]
          val _ = inText := true
          val _ = textLeft := tl
          val _ = textFinishFn := tf
       in
          ()
       end
-   fun finishText textRight =
+   fun finishText (yytext, textRight) =
       let
          val cs = Vector.fromListRev (!chars)
+         val yytext = String.concatV (Vector.fromListRev (yytext :: !yytexts))
          val tl = !textLeft
          val tr = textRight
          val tf = !textFinishFn
          val _ = chars := []
+         val _ = yytexts := []
          val _ = inText := false
          val _ = textLeft := SourcePos.bogus
          val _ = textFinishFn := (fn _ => raise Fail "textFinish")
       in
-         tf (cs, tl, tr)
+         tf (cs, yytext, tl, tr)
       end
    val inText = fn () => !inText
-   fun addTextString (s: string) =
-      chars := String.fold (s, !chars, fn (c, ac) => Int.toIntInf (Char.ord c) :: ac)
-   fun addTextCharCode (i: IntInf.int) = List.push (chars, i)
+   fun addTextCharCode (i: IntInf.int, yytext) =
+      (List.push (chars, {char = i, yytext = yytext})
+       ; List.push (yytexts, yytext))
+   fun addTextUTF8 (source, yypos, yytext): unit =
+      let
+         val left = yypos
+         val right = lastPos (yypos, yytext)
+         val _ =
+            if not (allowExtendedTextConsts ())
+               then error (source, left, right,
+                           "Extended text constants (using UTF-8 byte sequences) disallowed, compile with -default-ann 'allowExtendedTextConsts true'")
+               else ()
+      in
+        (String.foreach (yytext, fn c => List.push (chars, {char = Int.toIntInf (Char.ord c), yytext = Char.escapeSML c}))
+         ; List.push (yytexts, yytext))
+      end
 end
-fun addTextChar (c: char) = addTextString (String.fromChar c)
+fun addTextChar (c: char, yytext) =
+   addTextCharCode (Int.toIntInf (Char.ord c), yytext)
 fun addTextNumEsc (source, yypos, yytext, drop, {extended: string option}, radix): unit =
    let
       val left = yypos
@@ -220,17 +242,7 @@ fun addTextNumEsc (source, yypos, yytext, drop, {extended: string option}, radix
    in
       case StringCvt.scanString (fn r => IntInf.scan (radix, r)) (String.dropPrefix (yytext, drop)) of
          NONE => error (source, left, right, "Illegal numeric escape in text constant")
-       | SOME i => addTextCharCode i
-   end
-fun addTextUTF8 (source, yypos, yytext): unit =
-   let
-      val left = yypos
-      val right = lastPos (yypos, yytext)
-   in
-      if not (allowExtendedTextConsts ())
-         then error (source, left, right,
-                     "Extended text constants (using UTF-8 byte sequences) disallowed, compile with -default-ann 'allowExtendedTextConsts true'")
-         else addTextString yytext
+       | SOME i => addTextCharCode (i, yytext)
    end
 
 
@@ -253,7 +265,7 @@ val eof: lexarg -> lexresult =
    end
 
 
-(*#line 256.1 "ml.lex.sml"*)
+(*#line 268.1 "ml.lex.sml"*)
 end (* end of user routines *)
 exception LexError (* raised if illegal leaf action tried *)
 structure Internal =
@@ -10590,7 +10602,7 @@ let	val yygone0= YYPosInt.fromInt ~1
 	val YYBEGIN = fn (Internal.StartStates.STARTSTATE x) =>
 		 yybegin := x
 
-fun lex (yyarg as ((*#line 257.7 "ml.lex"*){source}(*#line 10593.1 "ml.lex.sml"*)
+fun lex (yyarg as ((*#line 269.7 "ml.lex"*){source}(*#line 10605.1 "ml.lex.sml"*)
 )) =
 let fun continue() : Internal.result = 
   let fun scan (s,AcceptingLeaves : Internal.yyfinstate list list,l,i0) =
@@ -10606,310 +10618,310 @@ let fun continue() : Internal.result =
 
 			(* Application actions *)
 
-  102 => let val yytext=yymktext() in (*#line 296.24 "ml.lex"*)tok (Tokens.SYMBOL, yytext, source, yypos)(*#line 10609.1 "ml.lex.sml"*)
+  102 => let val yytext=yymktext() in (*#line 308.24 "ml.lex"*)tok (Tokens.SYMBOL, yytext, source, yypos)(*#line 10621.1 "ml.lex.sml"*)
  end
-| 104 => let val yytext=yymktext() in (*#line 298.18 "ml.lex"*)tok (Tokens.HASH, yytext, source, yypos)(*#line 10611.1 "ml.lex.sml"*)
+| 104 => let val yytext=yymktext() in (*#line 310.18 "ml.lex"*)tok (Tokens.HASH, yytext, source, yypos)(*#line 10623.1 "ml.lex.sml"*)
  end
-| 107 => let val yytext=yymktext() in (*#line 299.19 "ml.lex"*)tok (Tokens.HASHLBRACKET, yytext, source, yypos)(*#line 10613.1 "ml.lex.sml"*)
+| 107 => let val yytext=yymktext() in (*#line 311.19 "ml.lex"*)tok (Tokens.HASHLBRACKET, yytext, source, yypos)(*#line 10625.1 "ml.lex.sml"*)
  end
-| 109 => let val yytext=yymktext() in (*#line 300.18 "ml.lex"*)tok (Tokens.LPAREN, yytext, source, yypos)(*#line 10615.1 "ml.lex.sml"*)
+| 109 => let val yytext=yymktext() in (*#line 312.18 "ml.lex"*)tok (Tokens.LPAREN, yytext, source, yypos)(*#line 10627.1 "ml.lex.sml"*)
  end
-| 111 => let val yytext=yymktext() in (*#line 301.18 "ml.lex"*)tok (Tokens.RPAREN, yytext, source, yypos)(*#line 10617.1 "ml.lex.sml"*)
+| 111 => let val yytext=yymktext() in (*#line 313.18 "ml.lex"*)tok (Tokens.RPAREN, yytext, source, yypos)(*#line 10629.1 "ml.lex.sml"*)
  end
-| 113 => let val yytext=yymktext() in (*#line 302.18 "ml.lex"*)tok (Tokens.COMMA, yytext, source, yypos)(*#line 10619.1 "ml.lex.sml"*)
+| 113 => let val yytext=yymktext() in (*#line 314.18 "ml.lex"*)tok (Tokens.COMMA, yytext, source, yypos)(*#line 10631.1 "ml.lex.sml"*)
  end
-| 116 => let val yytext=yymktext() in (*#line 303.19 "ml.lex"*)tok (Tokens.ARROW, yytext, source, yypos)(*#line 10621.1 "ml.lex.sml"*)
+| 116 => let val yytext=yymktext() in (*#line 315.19 "ml.lex"*)tok (Tokens.ARROW, yytext, source, yypos)(*#line 10633.1 "ml.lex.sml"*)
  end
-| 120 => let val yytext=yymktext() in (*#line 304.20 "ml.lex"*)tok (Tokens.DOTDOTDOT, yytext, source, yypos)(*#line 10623.1 "ml.lex.sml"*)
+| 120 => let val yytext=yymktext() in (*#line 316.20 "ml.lex"*)tok (Tokens.DOTDOTDOT, yytext, source, yypos)(*#line 10635.1 "ml.lex.sml"*)
  end
-| 122 => let val yytext=yymktext() in (*#line 305.18 "ml.lex"*)tok (Tokens.COLON, yytext, source, yypos)(*#line 10625.1 "ml.lex.sml"*)
+| 122 => let val yytext=yymktext() in (*#line 317.18 "ml.lex"*)tok (Tokens.COLON, yytext, source, yypos)(*#line 10637.1 "ml.lex.sml"*)
  end
-| 125 => let val yytext=yymktext() in (*#line 306.19 "ml.lex"*)tok (Tokens.COLONGT, yytext, source, yypos)(*#line 10627.1 "ml.lex.sml"*)
+| 125 => let val yytext=yymktext() in (*#line 318.19 "ml.lex"*)tok (Tokens.COLONGT, yytext, source, yypos)(*#line 10639.1 "ml.lex.sml"*)
  end
-| 127 => let val yytext=yymktext() in (*#line 307.18 "ml.lex"*)tok (Tokens.SEMICOLON, yytext, source, yypos)(*#line 10629.1 "ml.lex.sml"*)
+| 127 => let val yytext=yymktext() in (*#line 319.18 "ml.lex"*)tok (Tokens.SEMICOLON, yytext, source, yypos)(*#line 10641.1 "ml.lex.sml"*)
  end
-| 129 => let val yytext=yymktext() in (*#line 308.18 "ml.lex"*)tok (Tokens.EQUALOP, yytext, source, yypos)(*#line 10631.1 "ml.lex.sml"*)
+| 129 => let val yytext=yymktext() in (*#line 320.18 "ml.lex"*)tok (Tokens.EQUALOP, yytext, source, yypos)(*#line 10643.1 "ml.lex.sml"*)
  end
-| 13 => let val yytext=yymktext() in (*#line 285.21 "ml.lex"*)Source.newline (source, lastPos (yypos, yytext)); continue ()(*#line 10633.1 "ml.lex.sml"*)
+| 13 => let val yytext=yymktext() in (*#line 297.21 "ml.lex"*)Source.newline (source, lastPos (yypos, yytext)); continue ()(*#line 10645.1 "ml.lex.sml"*)
  end
-| 132 => let val yytext=yymktext() in (*#line 309.19 "ml.lex"*)tok (Tokens.DARROW, yytext, source, yypos)(*#line 10635.1 "ml.lex.sml"*)
+| 132 => let val yytext=yymktext() in (*#line 321.19 "ml.lex"*)tok (Tokens.DARROW, yytext, source, yypos)(*#line 10647.1 "ml.lex.sml"*)
  end
-| 134 => let val yytext=yymktext() in (*#line 310.18 "ml.lex"*)tok (Tokens.LBRACKET, yytext, source, yypos)(*#line 10637.1 "ml.lex.sml"*)
+| 134 => let val yytext=yymktext() in (*#line 322.18 "ml.lex"*)tok (Tokens.LBRACKET, yytext, source, yypos)(*#line 10649.1 "ml.lex.sml"*)
  end
-| 136 => let val yytext=yymktext() in (*#line 311.18 "ml.lex"*)tok (Tokens.RBRACKET, yytext, source, yypos)(*#line 10639.1 "ml.lex.sml"*)
+| 136 => let val yytext=yymktext() in (*#line 323.18 "ml.lex"*)tok (Tokens.RBRACKET, yytext, source, yypos)(*#line 10651.1 "ml.lex.sml"*)
  end
-| 138 => let val yytext=yymktext() in (*#line 312.18 "ml.lex"*)tok (Tokens.WILD, yytext, source, yypos)(*#line 10641.1 "ml.lex.sml"*)
+| 138 => let val yytext=yymktext() in (*#line 324.18 "ml.lex"*)tok (Tokens.WILD, yytext, source, yypos)(*#line 10653.1 "ml.lex.sml"*)
  end
-| 140 => let val yytext=yymktext() in (*#line 313.18 "ml.lex"*)tok (Tokens.LBRACE, yytext, source, yypos)(*#line 10643.1 "ml.lex.sml"*)
+| 140 => let val yytext=yymktext() in (*#line 325.18 "ml.lex"*)tok (Tokens.LBRACE, yytext, source, yypos)(*#line 10655.1 "ml.lex.sml"*)
  end
-| 142 => let val yytext=yymktext() in (*#line 314.18 "ml.lex"*)tok (Tokens.BAR, yytext, source, yypos)(*#line 10645.1 "ml.lex.sml"*)
+| 142 => let val yytext=yymktext() in (*#line 326.18 "ml.lex"*)tok (Tokens.BAR, yytext, source, yypos)(*#line 10657.1 "ml.lex.sml"*)
  end
-| 144 => let val yytext=yymktext() in (*#line 315.18 "ml.lex"*)tok (Tokens.RBRACE, yytext, source, yypos)(*#line 10647.1 "ml.lex.sml"*)
+| 144 => let val yytext=yymktext() in (*#line 327.18 "ml.lex"*)tok (Tokens.RBRACE, yytext, source, yypos)(*#line 10659.1 "ml.lex.sml"*)
  end
-| 152 => let val yytext=yymktext() in (*#line 317.24 "ml.lex"*)tok (Tokens.ABSTYPE, yytext, source, yypos)(*#line 10649.1 "ml.lex.sml"*)
+| 152 => let val yytext=yymktext() in (*#line 329.24 "ml.lex"*)tok (Tokens.ABSTYPE, yytext, source, yypos)(*#line 10661.1 "ml.lex.sml"*)
  end
-| 156 => let val yytext=yymktext() in (*#line 318.20 "ml.lex"*)tok (Tokens.AND, yytext, source, yypos)(*#line 10651.1 "ml.lex.sml"*)
+| 156 => let val yytext=yymktext() in (*#line 330.20 "ml.lex"*)tok (Tokens.AND, yytext, source, yypos)(*#line 10663.1 "ml.lex.sml"*)
  end
-| 164 => let val yytext=yymktext() in (*#line 319.24 "ml.lex"*)tok (Tokens.ANDALSO, yytext, source, yypos)(*#line 10653.1 "ml.lex.sml"*)
+| 164 => let val yytext=yymktext() in (*#line 331.24 "ml.lex"*)tok (Tokens.ANDALSO, yytext, source, yypos)(*#line 10665.1 "ml.lex.sml"*)
  end
-| 167 => let val yytext=yymktext() in (*#line 320.19 "ml.lex"*)tok (Tokens.AS, yytext, source, yypos)(*#line 10655.1 "ml.lex.sml"*)
+| 167 => let val yytext=yymktext() in (*#line 332.19 "ml.lex"*)tok (Tokens.AS, yytext, source, yypos)(*#line 10667.1 "ml.lex.sml"*)
  end
-| 172 => let val yytext=yymktext() in (*#line 321.21 "ml.lex"*)tok (Tokens.CASE, yytext, source, yypos)(*#line 10657.1 "ml.lex.sml"*)
+| 172 => let val yytext=yymktext() in (*#line 333.21 "ml.lex"*)tok (Tokens.CASE, yytext, source, yypos)(*#line 10669.1 "ml.lex.sml"*)
  end
-| 181 => let val yytext=yymktext() in (*#line 322.25 "ml.lex"*)tok (Tokens.DATATYPE, yytext, source, yypos)(*#line 10659.1 "ml.lex.sml"*)
+| 181 => let val yytext=yymktext() in (*#line 334.25 "ml.lex"*)tok (Tokens.DATATYPE, yytext, source, yypos)(*#line 10671.1 "ml.lex.sml"*)
  end
-| 184 => let val yytext=yymktext() in (*#line 323.19 "ml.lex"*)tok (Tokens.DO, yytext, source, yypos)(*#line 10661.1 "ml.lex.sml"*)
+| 184 => let val yytext=yymktext() in (*#line 335.19 "ml.lex"*)tok (Tokens.DO, yytext, source, yypos)(*#line 10673.1 "ml.lex.sml"*)
  end
-| 189 => let val yytext=yymktext() in (*#line 324.21 "ml.lex"*)tok (Tokens.ELSE, yytext, source, yypos)(*#line 10663.1 "ml.lex.sml"*)
+| 189 => let val yytext=yymktext() in (*#line 336.21 "ml.lex"*)tok (Tokens.ELSE, yytext, source, yypos)(*#line 10675.1 "ml.lex.sml"*)
  end
-| 193 => let val yytext=yymktext() in (*#line 325.20 "ml.lex"*)tok (Tokens.END, yytext, source, yypos)(*#line 10665.1 "ml.lex.sml"*)
+| 193 => let val yytext=yymktext() in (*#line 337.20 "ml.lex"*)tok (Tokens.END, yytext, source, yypos)(*#line 10677.1 "ml.lex.sml"*)
  end
-| 200 => let val yytext=yymktext() in (*#line 326.23 "ml.lex"*)tok (Tokens.EQTYPE, yytext, source, yypos)(*#line 10667.1 "ml.lex.sml"*)
+| 200 => let val yytext=yymktext() in (*#line 338.23 "ml.lex"*)tok (Tokens.EQTYPE, yytext, source, yypos)(*#line 10679.1 "ml.lex.sml"*)
  end
-| 210 => let val yytext=yymktext() in (*#line 327.26 "ml.lex"*)tok (Tokens.EXCEPTION, yytext, source, yypos)(*#line 10669.1 "ml.lex.sml"*)
+| 210 => let val yytext=yymktext() in (*#line 339.26 "ml.lex"*)tok (Tokens.EXCEPTION, yytext, source, yypos)(*#line 10681.1 "ml.lex.sml"*)
  end
-| 213 => let val yytext=yymktext() in (*#line 328.19 "ml.lex"*)tok (Tokens.FN, yytext, source, yypos)(*#line 10671.1 "ml.lex.sml"*)
+| 213 => let val yytext=yymktext() in (*#line 340.19 "ml.lex"*)tok (Tokens.FN, yytext, source, yypos)(*#line 10683.1 "ml.lex.sml"*)
  end
-| 217 => let val yytext=yymktext() in (*#line 329.20 "ml.lex"*)tok (Tokens.FUN, yytext, source, yypos)(*#line 10673.1 "ml.lex.sml"*)
+| 217 => let val yytext=yymktext() in (*#line 341.20 "ml.lex"*)tok (Tokens.FUN, yytext, source, yypos)(*#line 10685.1 "ml.lex.sml"*)
  end
-| 22 => let val yytext=yymktext() in (*#line 288.25 "ml.lex"*)tok (Tokens.ADDRESS, yytext, source, yypos)(*#line 10675.1 "ml.lex.sml"*)
+| 22 => let val yytext=yymktext() in (*#line 300.25 "ml.lex"*)tok (Tokens.ADDRESS, yytext, source, yypos)(*#line 10687.1 "ml.lex.sml"*)
  end
-| 225 => let val yytext=yymktext() in (*#line 330.24 "ml.lex"*)tok (Tokens.FUNCTOR, yytext, source, yypos)(*#line 10677.1 "ml.lex.sml"*)
+| 225 => let val yytext=yymktext() in (*#line 342.24 "ml.lex"*)tok (Tokens.FUNCTOR, yytext, source, yypos)(*#line 10689.1 "ml.lex.sml"*)
  end
-| 232 => let val yytext=yymktext() in (*#line 331.23 "ml.lex"*)tok (Tokens.HANDLE, yytext, source, yypos)(*#line 10679.1 "ml.lex.sml"*)
+| 232 => let val yytext=yymktext() in (*#line 343.23 "ml.lex"*)tok (Tokens.HANDLE, yytext, source, yypos)(*#line 10691.1 "ml.lex.sml"*)
  end
-| 235 => let val yytext=yymktext() in (*#line 332.19 "ml.lex"*)tok (Tokens.IF, yytext, source, yypos)(*#line 10681.1 "ml.lex.sml"*)
+| 235 => let val yytext=yymktext() in (*#line 344.19 "ml.lex"*)tok (Tokens.IF, yytext, source, yypos)(*#line 10693.1 "ml.lex.sml"*)
  end
-| 238 => let val yytext=yymktext() in (*#line 333.19 "ml.lex"*)tok (Tokens.IN, yytext, source, yypos)(*#line 10683.1 "ml.lex.sml"*)
+| 238 => let val yytext=yymktext() in (*#line 345.19 "ml.lex"*)tok (Tokens.IN, yytext, source, yypos)(*#line 10695.1 "ml.lex.sml"*)
  end
-| 246 => let val yytext=yymktext() in (*#line 334.24 "ml.lex"*)tok (Tokens.INCLUDE, yytext, source, yypos)(*#line 10685.1 "ml.lex.sml"*)
+| 246 => let val yytext=yymktext() in (*#line 346.24 "ml.lex"*)tok (Tokens.INCLUDE, yytext, source, yypos)(*#line 10697.1 "ml.lex.sml"*)
  end
-| 252 => let val yytext=yymktext() in (*#line 335.22 "ml.lex"*)tok (Tokens.INFIX, yytext, source, yypos)(*#line 10687.1 "ml.lex.sml"*)
+| 252 => let val yytext=yymktext() in (*#line 347.22 "ml.lex"*)tok (Tokens.INFIX, yytext, source, yypos)(*#line 10699.1 "ml.lex.sml"*)
  end
-| 259 => let val yytext=yymktext() in (*#line 336.23 "ml.lex"*)tok (Tokens.INFIXR, yytext, source, yypos)(*#line 10689.1 "ml.lex.sml"*)
+| 259 => let val yytext=yymktext() in (*#line 348.23 "ml.lex"*)tok (Tokens.INFIXR, yytext, source, yypos)(*#line 10701.1 "ml.lex.sml"*)
  end
-| 263 => let val yytext=yymktext() in (*#line 337.20 "ml.lex"*)tok (Tokens.LET, yytext, source, yypos)(*#line 10691.1 "ml.lex.sml"*)
+| 263 => let val yytext=yymktext() in (*#line 349.20 "ml.lex"*)tok (Tokens.LET, yytext, source, yypos)(*#line 10703.1 "ml.lex.sml"*)
  end
-| 269 => let val yytext=yymktext() in (*#line 338.22 "ml.lex"*)tok (Tokens.LOCAL, yytext, source, yypos)(*#line 10693.1 "ml.lex.sml"*)
+| 269 => let val yytext=yymktext() in (*#line 350.22 "ml.lex"*)tok (Tokens.LOCAL, yytext, source, yypos)(*#line 10705.1 "ml.lex.sml"*)
  end
-| 276 => let val yytext=yymktext() in (*#line 339.23 "ml.lex"*)tok (Tokens.NONFIX, yytext, source, yypos)(*#line 10695.1 "ml.lex.sml"*)
+| 276 => let val yytext=yymktext() in (*#line 351.23 "ml.lex"*)tok (Tokens.NONFIX, yytext, source, yypos)(*#line 10707.1 "ml.lex.sml"*)
  end
-| 279 => let val yytext=yymktext() in (*#line 340.19 "ml.lex"*)tok (Tokens.OF, yytext, source, yypos)(*#line 10697.1 "ml.lex.sml"*)
+| 279 => let val yytext=yymktext() in (*#line 352.19 "ml.lex"*)tok (Tokens.OF, yytext, source, yypos)(*#line 10709.1 "ml.lex.sml"*)
  end
-| 282 => let val yytext=yymktext() in (*#line 341.19 "ml.lex"*)tok (Tokens.OP, yytext, source, yypos)(*#line 10699.1 "ml.lex.sml"*)
+| 282 => let val yytext=yymktext() in (*#line 353.19 "ml.lex"*)tok (Tokens.OP, yytext, source, yypos)(*#line 10711.1 "ml.lex.sml"*)
  end
-| 287 => let val yytext=yymktext() in (*#line 342.21 "ml.lex"*)tok (Tokens.OPEN, yytext, source, yypos)(*#line 10701.1 "ml.lex.sml"*)
+| 287 => let val yytext=yymktext() in (*#line 354.21 "ml.lex"*)tok (Tokens.OPEN, yytext, source, yypos)(*#line 10713.1 "ml.lex.sml"*)
  end
-| 294 => let val yytext=yymktext() in (*#line 343.23 "ml.lex"*)tok (Tokens.ORELSE, yytext, source, yypos)(*#line 10703.1 "ml.lex.sml"*)
+| 294 => let val yytext=yymktext() in (*#line 355.23 "ml.lex"*)tok (Tokens.ORELSE, yytext, source, yypos)(*#line 10715.1 "ml.lex.sml"*)
  end
-| 300 => let val yytext=yymktext() in (*#line 344.22 "ml.lex"*)tok (Tokens.RAISE, yytext, source, yypos)(*#line 10705.1 "ml.lex.sml"*)
+| 300 => let val yytext=yymktext() in (*#line 356.22 "ml.lex"*)tok (Tokens.RAISE, yytext, source, yypos)(*#line 10717.1 "ml.lex.sml"*)
  end
-| 304 => let val yytext=yymktext() in (*#line 345.20 "ml.lex"*)tok (Tokens.REC, yytext, source, yypos)(*#line 10707.1 "ml.lex.sml"*)
+| 304 => let val yytext=yymktext() in (*#line 357.20 "ml.lex"*)tok (Tokens.REC, yytext, source, yypos)(*#line 10719.1 "ml.lex.sml"*)
  end
-| 312 => let val yytext=yymktext() in (*#line 346.24 "ml.lex"*)tok (Tokens.SHARING, yytext, source, yypos)(*#line 10709.1 "ml.lex.sml"*)
+| 312 => let val yytext=yymktext() in (*#line 358.24 "ml.lex"*)tok (Tokens.SHARING, yytext, source, yypos)(*#line 10721.1 "ml.lex.sml"*)
  end
-| 316 => let val yytext=yymktext() in (*#line 347.20 "ml.lex"*)tok (Tokens.SIG, yytext, source, yypos)(*#line 10711.1 "ml.lex.sml"*)
+| 316 => let val yytext=yymktext() in (*#line 359.20 "ml.lex"*)tok (Tokens.SIG, yytext, source, yypos)(*#line 10723.1 "ml.lex.sml"*)
  end
-| 326 => let val yytext=yymktext() in (*#line 348.26 "ml.lex"*)tok (Tokens.SIGNATURE, yytext, source, yypos)(*#line 10713.1 "ml.lex.sml"*)
+| 326 => let val yytext=yymktext() in (*#line 360.26 "ml.lex"*)tok (Tokens.SIGNATURE, yytext, source, yypos)(*#line 10725.1 "ml.lex.sml"*)
  end
-| 333 => let val yytext=yymktext() in (*#line 349.23 "ml.lex"*)tok (Tokens.STRUCT, yytext, source, yypos)(*#line 10715.1 "ml.lex.sml"*)
+| 333 => let val yytext=yymktext() in (*#line 361.23 "ml.lex"*)tok (Tokens.STRUCT, yytext, source, yypos)(*#line 10727.1 "ml.lex.sml"*)
  end
-| 343 => let val yytext=yymktext() in (*#line 350.26 "ml.lex"*)tok (Tokens.STRUCTURE, yytext, source, yypos)(*#line 10717.1 "ml.lex.sml"*)
+| 343 => let val yytext=yymktext() in (*#line 362.26 "ml.lex"*)tok (Tokens.STRUCTURE, yytext, source, yypos)(*#line 10729.1 "ml.lex.sml"*)
  end
-| 348 => let val yytext=yymktext() in (*#line 351.21 "ml.lex"*)tok (Tokens.THEN, yytext, source, yypos)(*#line 10719.1 "ml.lex.sml"*)
+| 348 => let val yytext=yymktext() in (*#line 363.21 "ml.lex"*)tok (Tokens.THEN, yytext, source, yypos)(*#line 10731.1 "ml.lex.sml"*)
  end
-| 35 => let val yytext=yymktext() in (*#line 289.29 "ml.lex"*)tok (Tokens.BUILD_CONST, yytext, source, yypos)(*#line 10721.1 "ml.lex.sml"*)
+| 35 => let val yytext=yymktext() in (*#line 301.29 "ml.lex"*)tok (Tokens.BUILD_CONST, yytext, source, yypos)(*#line 10733.1 "ml.lex.sml"*)
  end
-| 353 => let val yytext=yymktext() in (*#line 352.21 "ml.lex"*)tok (Tokens.TYPE, yytext, source, yypos)(*#line 10723.1 "ml.lex.sml"*)
+| 353 => let val yytext=yymktext() in (*#line 364.21 "ml.lex"*)tok (Tokens.TYPE, yytext, source, yypos)(*#line 10735.1 "ml.lex.sml"*)
  end
-| 357 => let val yytext=yymktext() in (*#line 353.20 "ml.lex"*)tok (Tokens.VAL, yytext, source, yypos)(*#line 10725.1 "ml.lex.sml"*)
+| 357 => let val yytext=yymktext() in (*#line 365.20 "ml.lex"*)tok (Tokens.VAL, yytext, source, yypos)(*#line 10737.1 "ml.lex.sml"*)
  end
-| 363 => let val yytext=yymktext() in (*#line 354.22 "ml.lex"*)tok (Tokens.WHERE, yytext, source, yypos)(*#line 10727.1 "ml.lex.sml"*)
+| 363 => let val yytext=yymktext() in (*#line 366.22 "ml.lex"*)tok (Tokens.WHERE, yytext, source, yypos)(*#line 10739.1 "ml.lex.sml"*)
  end
-| 369 => let val yytext=yymktext() in (*#line 355.22 "ml.lex"*)tok (Tokens.WHILE, yytext, source, yypos)(*#line 10729.1 "ml.lex.sml"*)
+| 369 => let val yytext=yymktext() in (*#line 367.22 "ml.lex"*)tok (Tokens.WHILE, yytext, source, yypos)(*#line 10741.1 "ml.lex.sml"*)
  end
-| 374 => let val yytext=yymktext() in (*#line 356.21 "ml.lex"*)tok (Tokens.WITH, yytext, source, yypos)(*#line 10731.1 "ml.lex.sml"*)
+| 374 => let val yytext=yymktext() in (*#line 368.21 "ml.lex"*)tok (Tokens.WITH, yytext, source, yypos)(*#line 10743.1 "ml.lex.sml"*)
  end
-| 383 => let val yytext=yymktext() in (*#line 357.25 "ml.lex"*)tok (Tokens.WITHTYPE, yytext, source, yypos)(*#line 10733.1 "ml.lex.sml"*)
+| 383 => let val yytext=yymktext() in (*#line 369.25 "ml.lex"*)tok (Tokens.WITHTYPE, yytext, source, yypos)(*#line 10745.1 "ml.lex.sml"*)
  end
-| 386 => let val yytext=yymktext() in (*#line 360.27 "ml.lex"*)tok' (Tokens.SHORTALPHANUMID, yytext, source, yypos)(*#line 10735.1 "ml.lex.sml"*)
+| 386 => let val yytext=yymktext() in (*#line 372.27 "ml.lex"*)tok' (Tokens.SHORTALPHANUMID, yytext, source, yypos)(*#line 10747.1 "ml.lex.sml"*)
  end
-| 427 => let val yytext=yymktext() in (*#line 362.5 "ml.lex"*)case yytext of
+| 427 => let val yytext=yymktext() in (*#line 374.5 "ml.lex"*)case yytext of
        "*" => tok (Tokens.ASTERISK, yytext, source, yypos)
-     | _ => tok' (Tokens.SHORTSYMID, yytext, source, yypos)(*#line 10739.1 "ml.lex.sml"*)
+     | _ => tok' (Tokens.SHORTSYMID, yytext, source, yypos)(*#line 10751.1 "ml.lex.sml"*)
  end
-| 430 => let val yytext=yymktext() in (*#line 365.24 "ml.lex"*)tok' (Tokens.TYVAR, yytext, source, yypos)(*#line 10741.1 "ml.lex.sml"*)
+| 430 => let val yytext=yymktext() in (*#line 377.24 "ml.lex"*)tok' (Tokens.TYVAR, yytext, source, yypos)(*#line 10753.1 "ml.lex.sml"*)
  end
-| 439 => let val yytext=yymktext() in (*#line 366.31 "ml.lex"*)tok' (Tokens.LONGALPHANUMID, yytext, source, yypos)(*#line 10743.1 "ml.lex.sml"*)
+| 439 => let val yytext=yymktext() in (*#line 378.31 "ml.lex"*)tok' (Tokens.LONGALPHANUMID, yytext, source, yypos)(*#line 10755.1 "ml.lex.sml"*)
  end
-| 486 => let val yytext=yymktext() in (*#line 367.26 "ml.lex"*)tok' (Tokens.LONGSYMID, yytext, source, yypos)(*#line 10745.1 "ml.lex.sml"*)
+| 486 => let val yytext=yymktext() in (*#line 379.26 "ml.lex"*)tok' (Tokens.LONGSYMID, yytext, source, yypos)(*#line 10757.1 "ml.lex.sml"*)
  end
-| 512 => let val yytext=yymktext() in (*#line 371.5 "ml.lex"*)real (source, yypos, yytext)(*#line 10747.1 "ml.lex.sml"*)
+| 512 => let val yytext=yymktext() in (*#line 383.5 "ml.lex"*)real (source, yypos, yytext)(*#line 10759.1 "ml.lex.sml"*)
  end
-| 516 => let val yytext=yymktext() in (*#line 373.5 "ml.lex"*)int (source, yypos, yytext, 0, {extended = NONE}, {negate = false}, StringCvt.DEC)(*#line 10749.1 "ml.lex.sml"*)
+| 516 => let val yytext=yymktext() in (*#line 385.5 "ml.lex"*)int (source, yypos, yytext, 0, {extended = NONE}, {negate = false}, StringCvt.DEC)(*#line 10761.1 "ml.lex.sml"*)
  end
-| 521 => let val yytext=yymktext() in (*#line 375.5 "ml.lex"*)int (source, yypos, yytext, 1, {extended = NONE}, {negate = true}, StringCvt.DEC)(*#line 10751.1 "ml.lex.sml"*)
+| 521 => let val yytext=yymktext() in (*#line 387.5 "ml.lex"*)int (source, yypos, yytext, 1, {extended = NONE}, {negate = true}, StringCvt.DEC)(*#line 10763.1 "ml.lex.sml"*)
  end
-| 527 => let val yytext=yymktext() in (*#line 377.5 "ml.lex"*)int (source, yypos, yytext, 2, {extended = NONE}, {negate = false}, StringCvt.HEX)(*#line 10753.1 "ml.lex.sml"*)
+| 527 => let val yytext=yymktext() in (*#line 389.5 "ml.lex"*)int (source, yypos, yytext, 2, {extended = NONE}, {negate = false}, StringCvt.HEX)(*#line 10765.1 "ml.lex.sml"*)
  end
-| 534 => let val yytext=yymktext() in (*#line 379.5 "ml.lex"*)int (source, yypos, yytext, 3, {extended = NONE}, {negate = true}, StringCvt.HEX)(*#line 10755.1 "ml.lex.sml"*)
+| 534 => let val yytext=yymktext() in (*#line 391.5 "ml.lex"*)int (source, yypos, yytext, 3, {extended = NONE}, {negate = true}, StringCvt.HEX)(*#line 10767.1 "ml.lex.sml"*)
  end
-| 540 => let val yytext=yymktext() in (*#line 381.5 "ml.lex"*)int (source, yypos, yytext, 2, {extended = SOME "binary notation"}, {negate = false}, StringCvt.BIN)(*#line 10757.1 "ml.lex.sml"*)
+| 540 => let val yytext=yymktext() in (*#line 393.5 "ml.lex"*)int (source, yypos, yytext, 2, {extended = SOME "binary notation"}, {negate = false}, StringCvt.BIN)(*#line 10769.1 "ml.lex.sml"*)
  end
-| 547 => let val yytext=yymktext() in (*#line 383.5 "ml.lex"*)int (source, yypos, yytext, 3, {extended = SOME "binary notation"}, {negate = true}, StringCvt.BIN)(*#line 10759.1 "ml.lex.sml"*)
+| 547 => let val yytext=yymktext() in (*#line 395.5 "ml.lex"*)int (source, yypos, yytext, 3, {extended = SOME "binary notation"}, {negate = true}, StringCvt.BIN)(*#line 10771.1 "ml.lex.sml"*)
  end
-| 55 => let val yytext=yymktext() in (*#line 290.36 "ml.lex"*)tok (Tokens.COMMAND_LINE_CONST, yytext, source, yypos)(*#line 10761.1 "ml.lex.sml"*)
+| 55 => let val yytext=yymktext() in (*#line 302.36 "ml.lex"*)tok (Tokens.COMMAND_LINE_CONST, yytext, source, yypos)(*#line 10773.1 "ml.lex.sml"*)
  end
-| 553 => let val yytext=yymktext() in (*#line 385.5 "ml.lex"*)word (source, yypos, yytext, 2, {extended = NONE}, StringCvt.DEC)(*#line 10763.1 "ml.lex.sml"*)
+| 553 => let val yytext=yymktext() in (*#line 397.5 "ml.lex"*)word (source, yypos, yytext, 2, {extended = NONE}, StringCvt.DEC)(*#line 10775.1 "ml.lex.sml"*)
  end
-| 560 => let val yytext=yymktext() in (*#line 387.5 "ml.lex"*)word (source, yypos, yytext, 3, {extended = NONE}, StringCvt.HEX)(*#line 10765.1 "ml.lex.sml"*)
+| 560 => let val yytext=yymktext() in (*#line 399.5 "ml.lex"*)word (source, yypos, yytext, 3, {extended = NONE}, StringCvt.HEX)(*#line 10777.1 "ml.lex.sml"*)
  end
-| 567 => let val yytext=yymktext() in (*#line 389.5 "ml.lex"*)word (source, yypos, yytext, 3, {extended = SOME "binary notation"}, StringCvt.BIN)(*#line 10767.1 "ml.lex.sml"*)
+| 567 => let val yytext=yymktext() in (*#line 401.5 "ml.lex"*)word (source, yypos, yytext, 3, {extended = SOME "binary notation"}, StringCvt.BIN)(*#line 10779.1 "ml.lex.sml"*)
  end
-| 569 => ((*#line 392.5 "ml.lex"*)startText (Source.getPos (source, yypos), fn (cs, l, r) =>
+| 569 => let val yytext=yymktext() in (*#line 404.5 "ml.lex"*)startText (yytext, Source.getPos (source, yypos), fn (cs, yytext, l, r) =>
                (YYBEGIN INITIAL;
-                Tokens.STRING (cs, l, r)))
+                Tokens.STRING ({string = cs, yytext = yytext}, l, r)))
     ; YYBEGIN TEXT
-    ; continue ()(*#line 10773.1 "ml.lex.sml"*)
-)
-| 572 => ((*#line 398.5 "ml.lex"*)startText (Source.getPos (source, yypos), fn (cs, l, r) =>
+    ; continue ()(*#line 10785.1 "ml.lex.sml"*)
+ end
+| 572 => let val yytext=yymktext() in (*#line 410.5 "ml.lex"*)startText (yytext, Source.getPos (source, yypos), fn (cs, yytext, l, r) =>
                let
                   fun err () =
                      error' (l, r, "character constant not of size 1")
                   val c =
                      case Int.compare (Vector.length cs, 1) of
                         LESS => (err (); 0)
-                      | EQUAL => Vector.sub (cs, 0)
-                      | GREATER => (err (); Vector.sub (cs, 0))
+                      | EQUAL => #char (Vector.sub (cs, 0))
+                      | GREATER => (err (); #char (Vector.sub (cs, 0)))
                in
                   YYBEGIN INITIAL;
-                  Tokens.CHAR (c, l, r)
+                  Tokens.CHAR ({char = c, yytext = yytext}, l, r)
                end)
     ; YYBEGIN TEXT
-    ; continue ()(*#line 10789.1 "ml.lex.sml"*)
-)
-| 574 => let val yytext=yymktext() in (*#line 414.22 "ml.lex"*)finishText (Source.getPos (source, lastPos (yypos, yytext)))(*#line 10791.1 "ml.lex.sml"*)
+    ; continue ()(*#line 10801.1 "ml.lex.sml"*)
  end
-| 579 => let val yytext=yymktext() in (*#line 416.22 "ml.lex"*)addTextString yytext; continue ()(*#line 10793.1 "ml.lex.sml"*)
+| 574 => let val yytext=yymktext() in (*#line 426.22 "ml.lex"*)finishText (yytext, Source.getPos (source, lastPos (yypos, yytext)))(*#line 10803.1 "ml.lex.sml"*)
  end
-| 582 => let val yytext=yymktext() in (*#line 418.22 "ml.lex"*)addTextUTF8 (source, yypos, yytext); continue()(*#line 10795.1 "ml.lex.sml"*)
+| 579 => let val yytext=yymktext() in (*#line 428.22 "ml.lex"*)addTextChar (String.sub(yytext, 0), yytext); continue ()(*#line 10805.1 "ml.lex.sml"*)
  end
-| 586 => let val yytext=yymktext() in (*#line 420.22 "ml.lex"*)addTextUTF8 (source, yypos, yytext); continue()(*#line 10797.1 "ml.lex.sml"*)
+| 582 => let val yytext=yymktext() in (*#line 430.22 "ml.lex"*)addTextUTF8 (source, yypos, yytext); continue()(*#line 10807.1 "ml.lex.sml"*)
  end
-| 591 => let val yytext=yymktext() in (*#line 422.22 "ml.lex"*)addTextUTF8 (source, yypos, yytext); continue()(*#line 10799.1 "ml.lex.sml"*)
+| 586 => let val yytext=yymktext() in (*#line 432.22 "ml.lex"*)addTextUTF8 (source, yypos, yytext); continue()(*#line 10809.1 "ml.lex.sml"*)
  end
-| 594 => ((*#line 423.22 "ml.lex"*)addTextChar #"\a"; continue ()(*#line 10801.1 "ml.lex.sml"*)
-)
-| 597 => ((*#line 424.22 "ml.lex"*)addTextChar #"\b"; continue ()(*#line 10803.1 "ml.lex.sml"*)
-)
-| 600 => ((*#line 425.22 "ml.lex"*)addTextChar #"\t"; continue ()(*#line 10805.1 "ml.lex.sml"*)
-)
-| 603 => ((*#line 426.22 "ml.lex"*)addTextChar #"\n"; continue ()(*#line 10807.1 "ml.lex.sml"*)
-)
-| 606 => ((*#line 427.22 "ml.lex"*)addTextChar #"\v"; continue ()(*#line 10809.1 "ml.lex.sml"*)
-)
-| 609 => ((*#line 428.22 "ml.lex"*)addTextChar #"\f"; continue ()(*#line 10811.1 "ml.lex.sml"*)
-)
-| 612 => ((*#line 429.22 "ml.lex"*)addTextChar #"\r"; continue ()(*#line 10813.1 "ml.lex.sml"*)
-)
-| 616 => let val yytext=yymktext() in (*#line 430.22 "ml.lex"*)addTextChar (Char.chr(Char.ord(String.sub(yytext, 2)) - Char.ord #"@"));
-                     continue ()(*#line 10816.1 "ml.lex.sml"*)
+| 591 => let val yytext=yymktext() in (*#line 434.22 "ml.lex"*)addTextUTF8 (source, yypos, yytext); continue()(*#line 10811.1 "ml.lex.sml"*)
  end
-| 62 => let val yytext=yymktext() in (*#line 291.23 "ml.lex"*)tok (Tokens.CONST, yytext, source, yypos)(*#line 10818.1 "ml.lex.sml"*)
+| 594 => let val yytext=yymktext() in (*#line 435.22 "ml.lex"*)addTextChar (#"\a", yytext); continue ()(*#line 10813.1 "ml.lex.sml"*)
  end
-| 620 => ((*#line 432.22 "ml.lex"*)error (source, yypos, yypos + 2, "Illegal control escape in text constant; must be one of @ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_");
-                     continue ()(*#line 10821.1 "ml.lex.sml"*)
+| 597 => let val yytext=yymktext() in (*#line 436.22 "ml.lex"*)addTextChar (#"\b", yytext); continue ()(*#line 10815.1 "ml.lex.sml"*)
+ end
+| 600 => let val yytext=yymktext() in (*#line 437.22 "ml.lex"*)addTextChar (#"\t", yytext); continue ()(*#line 10817.1 "ml.lex.sml"*)
+ end
+| 603 => let val yytext=yymktext() in (*#line 438.22 "ml.lex"*)addTextChar (#"\n", yytext); continue ()(*#line 10819.1 "ml.lex.sml"*)
+ end
+| 606 => let val yytext=yymktext() in (*#line 439.22 "ml.lex"*)addTextChar (#"\v", yytext); continue ()(*#line 10821.1 "ml.lex.sml"*)
+ end
+| 609 => let val yytext=yymktext() in (*#line 440.22 "ml.lex"*)addTextChar (#"\f", yytext); continue ()(*#line 10823.1 "ml.lex.sml"*)
+ end
+| 612 => let val yytext=yymktext() in (*#line 441.22 "ml.lex"*)addTextChar (#"\r", yytext); continue ()(*#line 10825.1 "ml.lex.sml"*)
+ end
+| 616 => let val yytext=yymktext() in (*#line 442.22 "ml.lex"*)addTextChar (Char.chr(Char.ord(String.sub(yytext, 2)) - Char.ord #"@"), yytext);
+                     continue ()(*#line 10828.1 "ml.lex.sml"*)
+ end
+| 62 => let val yytext=yymktext() in (*#line 303.23 "ml.lex"*)tok (Tokens.CONST, yytext, source, yypos)(*#line 10830.1 "ml.lex.sml"*)
+ end
+| 620 => ((*#line 444.22 "ml.lex"*)error (source, yypos, yypos + 2, "Illegal control escape in text constant; must be one of @ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_");
+                     continue ()(*#line 10833.1 "ml.lex.sml"*)
 )
-| 625 => let val yytext=yymktext() in (*#line 434.22 "ml.lex"*)addTextNumEsc (source, yypos, yytext, 1,
+| 625 => let val yytext=yymktext() in (*#line 446.22 "ml.lex"*)addTextNumEsc (source, yypos, yytext, 1,
                                     {extended = NONE}, StringCvt.DEC)
-                     ; continue ()(*#line 10825.1 "ml.lex.sml"*)
+                     ; continue ()(*#line 10837.1 "ml.lex.sml"*)
  end
-| 632 => let val yytext=yymktext() in (*#line 438.22 "ml.lex"*)addTextNumEsc (source, yypos, yytext, 2,
+| 632 => let val yytext=yymktext() in (*#line 450.22 "ml.lex"*)addTextNumEsc (source, yypos, yytext, 2,
                                     {extended = NONE}, StringCvt.HEX)
-                     ; continue ()(*#line 10829.1 "ml.lex.sml"*)
+                     ; continue ()(*#line 10841.1 "ml.lex.sml"*)
  end
-| 643 => let val yytext=yymktext() in (*#line 442.22 "ml.lex"*)addTextNumEsc (source, yypos, yytext, 2,
+| 643 => let val yytext=yymktext() in (*#line 454.22 "ml.lex"*)addTextNumEsc (source, yypos, yytext, 2,
                                     {extended = SOME "\\Uxxxxxxxx numeric escapes"},
                                     StringCvt.HEX)
-                     ; continue ()(*#line 10834.1 "ml.lex.sml"*)
+                     ; continue ()(*#line 10846.1 "ml.lex.sml"*)
  end
-| 646 => ((*#line 446.22 "ml.lex"*)addTextString "\""; continue ()(*#line 10836.1 "ml.lex.sml"*)
-)
-| 649 => ((*#line 447.22 "ml.lex"*)addTextString "\\"; continue ()(*#line 10838.1 "ml.lex.sml"*)
-)
-| 659 => ((*#line 448.22 "ml.lex"*)YYBEGIN TEXT_FMT; continue ()(*#line 10840.1 "ml.lex.sml"*)
-)
-| 665 => let val yytext=yymktext() in (*#line 449.22 "ml.lex"*)Source.newline (source, lastPos (yypos, yytext)); YYBEGIN TEXT_FMT; continue ()(*#line 10842.1 "ml.lex.sml"*)
+| 646 => let val yytext=yymktext() in (*#line 458.22 "ml.lex"*)addTextChar (#"\"", yytext); continue ()(*#line 10848.1 "ml.lex.sml"*)
  end
-| 667 => ((*#line 450.22 "ml.lex"*)error (source, yypos, yypos + 1, "Illegal escape in text constant")
-                     ; continue ()(*#line 10845.1 "ml.lex.sml"*)
+| 649 => let val yytext=yymktext() in (*#line 459.22 "ml.lex"*)addTextChar (#"\\", yytext); continue ()(*#line 10850.1 "ml.lex.sml"*)
+ end
+| 659 => ((*#line 460.22 "ml.lex"*)YYBEGIN TEXT_FMT; continue ()(*#line 10852.1 "ml.lex.sml"*)
 )
-| 672 => let val yytext=yymktext() in (*#line 452.22 "ml.lex"*)error (source, yypos, lastPos (yypos, yytext), "Unclosed text constant at end of line")
+| 665 => let val yytext=yymktext() in (*#line 461.22 "ml.lex"*)Source.newline (source, lastPos (yypos, yytext)); YYBEGIN TEXT_FMT; continue ()(*#line 10854.1 "ml.lex.sml"*)
+ end
+| 667 => ((*#line 462.22 "ml.lex"*)error (source, yypos, yypos + 1, "Illegal escape in text constant")
+                     ; continue ()(*#line 10857.1 "ml.lex.sml"*)
+)
+| 672 => let val yytext=yymktext() in (*#line 464.22 "ml.lex"*)error (source, yypos, lastPos (yypos, yytext), "Unclosed text constant at end of line")
                      ; Source.newline (source, lastPos (yypos, yytext))
-                     ; continue ()(*#line 10849.1 "ml.lex.sml"*)
- end
-| 674 => ((*#line 455.22 "ml.lex"*)error (source, yypos, yypos, "Illegal character in text constant")
-                     ; continue ()(*#line 10852.1 "ml.lex.sml"*)
-)
-| 683 => ((*#line 458.22 "ml.lex"*)continue ()(*#line 10854.1 "ml.lex.sml"*)
-)
-| 688 => let val yytext=yymktext() in (*#line 459.22 "ml.lex"*)Source.newline (source, lastPos (yypos, yytext)); continue ()(*#line 10856.1 "ml.lex.sml"*)
- end
-| 690 => ((*#line 460.22 "ml.lex"*)YYBEGIN TEXT; continue ()(*#line 10858.1 "ml.lex.sml"*)
-)
-| 692 => ((*#line 461.22 "ml.lex"*)error (source, yypos, yypos, "Illegal formatting character in text continuation")
                      ; continue ()(*#line 10861.1 "ml.lex.sml"*)
+ end
+| 674 => ((*#line 467.22 "ml.lex"*)error (source, yypos, yypos, "Illegal character in text constant")
+                     ; continue ()(*#line 10864.1 "ml.lex.sml"*)
 )
-| 696 => let val yytext=yymktext() in (*#line 466.5 "ml.lex"*)if allowLineComments ()
+| 683 => ((*#line 470.22 "ml.lex"*)continue ()(*#line 10866.1 "ml.lex.sml"*)
+)
+| 688 => let val yytext=yymktext() in (*#line 471.22 "ml.lex"*)Source.newline (source, lastPos (yypos, yytext)); continue ()(*#line 10868.1 "ml.lex.sml"*)
+ end
+| 690 => ((*#line 472.22 "ml.lex"*)YYBEGIN TEXT; continue ()(*#line 10870.1 "ml.lex.sml"*)
+)
+| 692 => ((*#line 473.22 "ml.lex"*)error (source, yypos, yypos, "Illegal formatting character in text continuation")
+                     ; continue ()(*#line 10873.1 "ml.lex.sml"*)
+)
+| 696 => let val yytext=yymktext() in (*#line 478.5 "ml.lex"*)if allowLineComments ()
        then ()
        else error (source, yypos, lastPos (yypos, yytext),
                    "Line comments disallowed, compile with -default-ann 'allowLineComments true'")
     ; startComment (source, yypos, fn () =>
                     YYBEGIN INITIAL)
     ; YYBEGIN LINE_COMMENT
-    ; continue ()(*#line 10870.1 "ml.lex.sml"*)
+    ; continue ()(*#line 10882.1 "ml.lex.sml"*)
  end
-| 699 => ((*#line 475.5 "ml.lex"*)startComment (source, yypos, fn () =>
+| 699 => ((*#line 487.5 "ml.lex"*)startComment (source, yypos, fn () =>
                   YYBEGIN INITIAL)
     ; YYBEGIN BLOCK_COMMENT
-    ; continue ()(*#line 10875.1 "ml.lex.sml"*)
+    ; continue ()(*#line 10887.1 "ml.lex.sml"*)
 )
-| 70 => let val yytext=yymktext() in (*#line 292.24 "ml.lex"*)tok (Tokens.EXPORT, yytext, source, yypos)(*#line 10877.1 "ml.lex.sml"*)
+| 70 => let val yytext=yymktext() in (*#line 304.24 "ml.lex"*)tok (Tokens.EXPORT, yytext, source, yypos)(*#line 10889.1 "ml.lex.sml"*)
  end
-| 704 => let val yytext=yymktext() in (*#line 481.5 "ml.lex"*)finishComment (lastPos (yypos, yytext))
+| 704 => let val yytext=yymktext() in (*#line 493.5 "ml.lex"*)finishComment (lastPos (yypos, yytext))
     ; Source.newline (source, lastPos (yypos, yytext))
-    ; continue ()(*#line 10881.1 "ml.lex.sml"*)
+    ; continue ()(*#line 10893.1 "ml.lex.sml"*)
  end
-| 706 => ((*#line 485.5 "ml.lex"*)continue ()(*#line 10883.1 "ml.lex.sml"*)
+| 706 => ((*#line 497.5 "ml.lex"*)continue ()(*#line 10895.1 "ml.lex.sml"*)
 )
-| 710 => let val yytext=yymktext() in (*#line 488.5 "ml.lex"*)if allowLineComments ()
+| 710 => let val yytext=yymktext() in (*#line 500.5 "ml.lex"*)if allowLineComments ()
        then ()
        else error (source, yypos, lastPos (yypos, yytext),
                    "Line comments disallowed, compile with -default-ann 'allowLineComments true'")
     ; startComment (source, yypos, fn () =>
                     YYBEGIN BLOCK_COMMENT)
     ; YYBEGIN LINE_COMMENT
-    ; continue ()(*#line 10892.1 "ml.lex.sml"*)
+    ; continue ()(*#line 10904.1 "ml.lex.sml"*)
  end
-| 713 => ((*#line 497.5 "ml.lex"*)startComment (source, yypos, fn () =>
+| 713 => ((*#line 509.5 "ml.lex"*)startComment (source, yypos, fn () =>
                   YYBEGIN BLOCK_COMMENT)
     ; YYBEGIN BLOCK_COMMENT
-    ; continue ()(*#line 10897.1 "ml.lex.sml"*)
+    ; continue ()(*#line 10909.1 "ml.lex.sml"*)
 )
-| 716 => let val yytext=yymktext() in (*#line 502.5 "ml.lex"*)finishComment (lastPos (yypos,yytext))
-    ; continue ()(*#line 10900.1 "ml.lex.sml"*)
+| 716 => let val yytext=yymktext() in (*#line 514.5 "ml.lex"*)finishComment (lastPos (yypos,yytext))
+    ; continue ()(*#line 10912.1 "ml.lex.sml"*)
  end
-| 721 => let val yytext=yymktext() in (*#line 505.5 "ml.lex"*)Source.newline (source, lastPos (yypos, yytext))
-    ; continue ()(*#line 10903.1 "ml.lex.sml"*)
+| 721 => let val yytext=yymktext() in (*#line 517.5 "ml.lex"*)Source.newline (source, lastPos (yypos, yytext))
+    ; continue ()(*#line 10915.1 "ml.lex.sml"*)
  end
-| 723 => ((*#line 508.5 "ml.lex"*)continue ()(*#line 10905.1 "ml.lex.sml"*)
+| 723 => ((*#line 520.5 "ml.lex"*)continue ()(*#line 10917.1 "ml.lex.sml"*)
 )
-| 739 => ((*#line 512.5 "ml.lex"*)startLineDir (source, yypos, fn () =>
+| 739 => ((*#line 524.5 "ml.lex"*)startLineDir (source, yypos, fn () =>
                   YYBEGIN INITIAL)
     ; YYBEGIN LINE_DIR1
-    ; continue ()(*#line 10910.1 "ml.lex.sml"*)
+    ; continue ()(*#line 10922.1 "ml.lex.sml"*)
 )
-| 745 => let val yytext=yymktext() in (*#line 518.5 "ml.lex"*)let
+| 745 => let val yytext=yymktext() in (*#line 530.5 "ml.lex"*)let
        fun err () =
           (addCommentError "Illegal line directive"
            ; YYBEGIN BLOCK_COMMENT)
@@ -10921,25 +10933,25 @@ let fun continue() : Internal.result =
                  handle Overflow => err () | Option => err ()
                ; continue ())
          | _ => (err (); continue ())
-     end(*#line 10924.1 "ml.lex.sml"*)
+     end(*#line 10936.1 "ml.lex.sml"*)
  end
-| 755 => ((*#line 532.5 "ml.lex"*)YYBEGIN LINE_DIR3
-    ; continue ()(*#line 10927.1 "ml.lex.sml"*)
+| 755 => ((*#line 544.5 "ml.lex"*)YYBEGIN LINE_DIR3
+    ; continue ()(*#line 10939.1 "ml.lex.sml"*)
 )
-| 758 => let val yytext=yymktext() in (*#line 535.5 "ml.lex"*)addLineDirFile (String.dropLast yytext)
+| 758 => let val yytext=yymktext() in (*#line 547.5 "ml.lex"*)addLineDirFile (String.dropLast yytext)
     ; YYBEGIN LINE_DIR4
-    ; continue ()(*#line 10931.1 "ml.lex.sml"*)
+    ; continue ()(*#line 10943.1 "ml.lex.sml"*)
  end
-| 765 => let val yytext=yymktext() in (*#line 539.5 "ml.lex"*)finishLineDir (source, lastPos (yypos, yytext))
-    ; continue ()(*#line 10934.1 "ml.lex.sml"*)
+| 765 => let val yytext=yymktext() in (*#line 551.5 "ml.lex"*)finishLineDir (source, lastPos (yypos, yytext))
+    ; continue ()(*#line 10946.1 "ml.lex.sml"*)
  end
-| 767 => ((*#line 542.5 "ml.lex"*)addCommentError "Illegal line directive"
+| 767 => ((*#line 554.5 "ml.lex"*)addCommentError "Illegal line directive"
     ; YYBEGIN BLOCK_COMMENT
-    ; continue ()(*#line 10938.1 "ml.lex.sml"*)
+    ; continue ()(*#line 10950.1 "ml.lex.sml"*)
 )
-| 78 => let val yytext=yymktext() in (*#line 293.24 "ml.lex"*)tok (Tokens.IMPORT, yytext, source, yypos)(*#line 10940.1 "ml.lex.sml"*)
+| 78 => let val yytext=yymktext() in (*#line 305.24 "ml.lex"*)tok (Tokens.IMPORT, yytext, source, yypos)(*#line 10952.1 "ml.lex.sml"*)
  end
-| 797 => let val yytext=yymktext() in (*#line 548.5 "ml.lex"*)let
+| 797 => let val yytext=yymktext() in (*#line 560.5 "ml.lex"*)let
        val file = List.nth (String.split (yytext, #"\""), 1)
        val file =
          if OS.Path.isAbsolute file
@@ -10947,16 +10959,16 @@ let fun continue() : Internal.result =
             else OS.Path.mkCanonical (OS.Path.concat (OS.Path.dir (Source.name source), file))
    in
        tok' (fn (_, l, r) => Tokens.SHOW_BASIS (file, l, r), yytext, source, yypos)
-   end(*#line 10950.1 "ml.lex.sml"*)
+   end(*#line 10962.1 "ml.lex.sml"*)
  end
-| 799 => ((*#line 560.5 "ml.lex"*)error (source, yypos, yypos, "Illegal token")
-    ; continue ()(*#line 10953.1 "ml.lex.sml"*)
+| 799 => ((*#line 572.5 "ml.lex"*)error (source, yypos, yypos, "Illegal token")
+    ; continue ()(*#line 10965.1 "ml.lex.sml"*)
 )
-| 8 => ((*#line 284.21 "ml.lex"*)continue ()(*#line 10955.1 "ml.lex.sml"*)
+| 8 => ((*#line 296.21 "ml.lex"*)continue ()(*#line 10967.1 "ml.lex.sml"*)
 )
-| 88 => let val yytext=yymktext() in (*#line 294.26 "ml.lex"*)tok (Tokens.OVERLOAD, yytext, source, yypos)(*#line 10957.1 "ml.lex.sml"*)
+| 88 => let val yytext=yymktext() in (*#line 306.26 "ml.lex"*)tok (Tokens.OVERLOAD, yytext, source, yypos)(*#line 10969.1 "ml.lex.sml"*)
  end
-| 94 => let val yytext=yymktext() in (*#line 295.22 "ml.lex"*)tok (Tokens.PRIM, yytext, source, yypos)(*#line 10959.1 "ml.lex.sml"*)
+| 94 => let val yytext=yymktext() in (*#line 307.22 "ml.lex"*)tok (Tokens.PRIM, yytext, source, yypos)(*#line 10971.1 "ml.lex.sml"*)
  end
 | _ => raise Internal.LexerError
 

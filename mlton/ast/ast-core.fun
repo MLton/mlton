@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2012,2015,2017,2019 Matthew Fluet.
+(* Copyright (C) 2009,2012,2015,2017,2019,2024 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -68,7 +68,7 @@ structure Pat =
    struct
       open Wrap
       datatype node =
-         App of Longcon.t * t
+         App of {con: Longcon.t, arg: t, wasInfix: bool}
        | Const of Const.t
        | Constraint of t * Type.t
        | FlatApp of t vector
@@ -120,8 +120,22 @@ structure Pat =
             fun delimit t = if isDelimited then t else paren t
          in
             case node p of
-               App (c, p) => delimit (mayAlign [Longcon.layout c,
-                                                layoutF p])
+               App {con, arg, wasInfix} =>
+                  if wasInfix
+                     then let
+                             val (arg1, arg2) =
+                                case node arg of
+                                   Tuple args =>
+                                      if Vector.length args = 2
+                                         then (Vector.sub (args, 0), Vector.sub (args, 1))
+                                         else Error.bug "AstCore.Pat.layout: App, wasInfix"
+                                 | _ => Error.bug "AstCore.Pat.layout: App, wasInfix"
+                          in
+                             delimit (seq [layoutF arg1, str " ",
+                                           Longcon.layout con, str " ",
+                                           layoutF arg2])
+                          end
+                     else delimit (mayAlign [Longcon.layout con, layoutF arg])
              | Const c => Const.layout c
              | Constraint (p, t) => delimit (layoutConstraint (layoutF p, t))
              | FlatApp ps =>
@@ -176,7 +190,7 @@ structure Pat =
             val c = checkSyntax
          in
             case node p of
-               App (_, p) => c p
+               App {arg, ...} => c arg
              | Const _ => ()
              | Constraint (p, t) => (c p; Type.checkSyntax t)
              | FlatApp ps => Vector.foreach (ps, c)
@@ -324,7 +338,7 @@ structure Priority =
 
 datatype expNode =
     Andalso of exp * exp
-  | App of exp * exp
+  | App of {func: exp, arg: exp, wasInfix: bool}
   | Case of exp * match
   | Const of Const.t
   | Constraint of exp * Type.t
@@ -436,8 +450,26 @@ fun layoutExp arg =
          Andalso (e, e') =>
             delimit (mayAlign [layoutExpF e,
                                seq [str "andalso ", layoutExpF e']])
-       | App (function, argument) =>
-            delimit (mayAlign [layoutExpF function, layoutExpF argument])
+       | App {func, arg, wasInfix} =>
+            if wasInfix
+               then let
+                       val (arg1, arg2) =
+                          case node arg of
+                             Record rcd =>
+                                (case Record.detupleOpt rcd of
+                                    SOME args =>
+                                       if Vector.length args = 2
+                                          then (#2 (Vector.sub (args, 0)),
+                                                #2 (Vector.sub (args, 1)))
+                                          else Error.bug "AstCore.Exp.layout: App, wasInfix"
+                                  | NONE => Error.bug "AstCore.Exp.layout: App, wasInfix")
+                           | _ => Error.bug "AstCore.Exp.layout: App, wasInfix"
+                    in
+                       delimit (seq [layoutExpF arg1, str " ",
+                                     layoutExpF func, str " ",
+                                     layoutExpF arg2])
+                    end
+               else delimit (mayAlign [layoutExpF func, layoutExpF arg])
        | Case (expr, match) =>
             delimit (align [seq [str "case ", layoutExpT expr,
                                  str " of"],
@@ -576,7 +608,7 @@ fun checkSyntaxExp (e: exp): unit =
    in
       case node e of
          Andalso (e1, e2) => (c e1; c e2)
-       | App (e1, e2) => (c e1; c e2)
+       | App {func, arg, ...} => (c func; c arg)
        | Case (e, m) => (c e; checkSyntaxMatch m)
        | Const _ => ()
        | Constraint (e, t) => (c e; Type.checkSyntax t)
@@ -687,7 +719,7 @@ structure Exp =
       val var = longvid o Longvid.short o Vid.fromVar
 
       fun app (e1: t, e2: t): t =
-         makeRegion (App (e1, e2),
+         makeRegion (App {func = e1, arg = e2, wasInfix = false},
                      Region.append (region e1, region e2))
 
       fun lett (ds: dec vector, e: t, r: Region.t): t =

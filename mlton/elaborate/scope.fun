@@ -1,4 +1,4 @@
-(* Copyright (C) 2017 Matthew Fluet.
+(* Copyright (C) 2017,2024 Matthew Fluet.
  * Copyright (C) 1999-2005 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -98,7 +98,7 @@ fun ('down, 'up)
             datatype z = datatype Pat.node
             fun visit (p: Pat.t): 'up =
                (case Pat.node p of
-                   App (_, p) => visit p
+                   App {arg, ...} => visit arg
                  | Const _ => initUp
                  | Constraint (p, t) =>
                       combineUp (visit p, visitTy (t, d))
@@ -324,7 +324,9 @@ fun ('down, 'up)
                in
                   case Exp.node e of
                      Andalso (e1, e2) => do2 (loop e1, loop e2, Andalso)
-                   | App (e1, e2) => do2 (loop e1, loop e2, App)
+                   | App {func, arg, wasInfix} =>
+                        do2 (loop func, loop arg, fn (func, arg) =>
+                             App {func = func, arg = arg, wasInfix = wasInfix})
                    | Case (e, m) => do2 (loop e, loopMatch m, Case)
                    | Const _ => empty ()
                    | Constraint (e, t) =>

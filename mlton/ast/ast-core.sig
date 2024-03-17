@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2012,2015,2017,2019 Matthew Fluet.
+(* Copyright (C) 2009,2012,2015,2017,2019,2024 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -45,7 +45,7 @@ signature AST_CORE =
             sharing type Item.pat = t
 
             datatype node =
-               App of Longcon.t * t
+               App of {con: Longcon.t, arg: t, wasInfix: bool}
              | Const of Const.t
              | Constraint of t * Type.t
              | FlatApp of t vector
@@ -138,7 +138,7 @@ signature AST_CORE =
             type t
             datatype node =
                Andalso of t * t
-             | App of t * t
+             | App of {func: t, arg: t, wasInfix: bool}
              | Case of t * match
              | Const of Const.t
              | Constraint of t * Type.t
