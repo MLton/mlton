@@ -183,7 +183,9 @@ void shrinkHeap (GC_state s, GC_heap h, size_t keepSize) {
     }
     assert (isAligned (keepWithMapsSize, s->sysvals.pageSize));
     assert (keepWithMapsSize <= h->withMapsSize);
+#if HAS_SHRINK_HEAP
     GC_release (h->start + keepWithMapsSize, h->withMapsSize - keepWithMapsSize);
+#endif
     h->size = keepSize;
     h->withMapsSize = keepWithMapsSize;
   }

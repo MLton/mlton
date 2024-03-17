@@ -5,20 +5,40 @@
 
 LIB_REL_BIN="../lib/mlton"
 
-EXE=
-
-CC="cc"
-
-# You may need to set 'GMP_INC_DIR' so the C compiler can find gmp.h.
-GMP_INC_DIR=
-# You may need to set 'GMP_LIB_DIR' so the C compiler can find libgmp.
-GMP_LIB_DIR=
-
-
 set -e
 
 dir=$(dirname "$0")
 lib=$(cd "$dir/$LIB_REL_BIN" && pwd)
+
+# Find if "-target" is set, to read cross-specific variables.
+# Default to "self".
+TARGET=self
+prev_arg=
+for arg in "$@"
+do
+    if [ "$prev_arg" = "-target" ]; then
+        TARGET="$arg"
+    fi
+    prev_arg="$arg"
+done
+
+TARGET_VARS="$lib/targets/$TARGET/vars"
+if [ ! -f "$TARGET_VARS" ]; then
+        echo "Unable to read $TARGET_VARS." >&2
+        exit 1
+fi
+. "$TARGET_VARS"
+
+
+# Determine if CC is clang, set the cross style appropriately.
+case $("$CC" -v 2>&1) in
+*"clang version"*)
+    CC_CROSS_STYLE=flag
+    ;;
+*)
+    CC_CROSS_STYLE=prefixed
+    ;;
+esac
 
 
 doitMLton () {
@@ -85,6 +105,7 @@ for arg in "$@"; do
         set -- "$@" "$lib" \
                -ar-script "$lib/static-library"                         \
                -cc "$CC"                                                \
+               -cc-cross-style "$CC_CROSS_STYLE"                        \
                -cc-opt '-std=gnu11 -fno-common'                         \
                -cc-opt '-O1 -fno-strict-aliasing'                       \
                -cc-opt '-foptimize-sibling-calls'                       \
@@ -107,6 +128,9 @@ for arg in "$@"; do
                -target-cc-opt ia64-hpux "-mlp64"                        \
                -target-cc-opt ia64 "-mtune=itanium2"                    \
                -target-cc-opt sparc '-m32 -mcpu=v8 -Wa,-xarch=v8plusa'  \
+               -target-cc-opt wasi '-D_WASI_EMULATED_SIGNAL'            \
+               -target-cc-opt wasi '-D_WASI_EMULATED_PROCESS_CLOCKS'    \
+               -target-cc-opt wasi '-D_WASI_EMULATED_GETPID'            \
                -target-cc-opt x86 '-m32'                                \
                -target-link-opt aix '-maix64'                           \
                -target-link-opt alpha                                   \
@@ -122,6 +146,9 @@ for arg in "$@"; do
                        '-lws2_32 -lkernel32 -lpsapi -lnetapi32 -lwinmm' \
                -target-link-opt mingw '-Wl,--enable-stdcall-fixup'      \
                -target-link-opt solaris '-lnsl -lsocket -lrt'           \
+               -target-link-opt wasi '-lwasi-emulated-signal'           \
+               -target-link-opt wasi '-lwasi-emulated-process-clocks'   \
+               -target-link-opt wasi '-lwasi-emulated-getpid'           \
                -target-link-opt x86 '-m32'                              \
                -profile-exclude '\$\(SML_LIB\)'
     fi

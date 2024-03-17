@@ -10,7 +10,7 @@ signature MLTON_PLATFORM =
       structure Arch:
          sig
             datatype t = Alpha | AMD64 | ARM | ARM64 | HPPA | IA64 | LoongArch64 | m68k |
-                         MIPS | PowerPC | PowerPC64 | RISCV | S390 | Sparc | X86
+                         MIPS | PowerPC | PowerPC64 | RISCV | S390 | Sparc | Wasm32 | X86
 
             val fromString: string -> t option
             val host: t
@@ -29,7 +29,7 @@ signature MLTON_PLATFORM =
       structure OS:
          sig
             datatype t = AIX | Cygwin | Darwin | FreeBSD | Hurd | HPUX
-                       | Linux | MinGW | NetBSD | OpenBSD | Solaris
+                       | Linux | MinGW | NetBSD | OpenBSD | Solaris | WASI
 
             val fromString: string -> t option
             val host: t

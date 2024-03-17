@@ -342,7 +342,7 @@ int GC_init (GC_state s, int argc, char **argv) {
   s->saveWorldStatus = true;
 
   initIntInf (s);
-  initSignalStack (s);
+  initSignalStack ();
   worldFile = NULL;
 
   unless (isAligned (s->sysvals.pageSize, CARD_SIZE))

@@ -38,6 +38,7 @@
 #endif
 #define HAS_MSG_DONTWAIT TRUE
 #define HAS_REMAP TRUE
+#define HAS_SHRINK_HEAP TRUE
 #define HAS_SIGALTSTACK TRUE
 #if (defined (__hppa__))
 #define NEEDS_SIGALTSTACK_EXEC TRUE

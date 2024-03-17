@@ -12,13 +12,20 @@ include $(ROOT)/Makefile.config
 
 ######################################################################
 
-ifeq ($(TARGET), self)
 CROSS_PREFIX :=
-else
+CROSS_TARGET :=
+
+ifneq ($(TARGET), self)
+ifeq (,$(findstring clang version,$(shell $(CC) -v 2>&1)))
 CROSS_PREFIX := $(TARGET)-
+else
+CROSS_TARGET := -target $(TARGET)
+endif
 endif
 
 EXE :=
+
+WASMTIME :=
 
 MDVARIANTS := OPT DBG
 PIVARIANTS := DPI NPI PIC PIE
@@ -110,6 +117,16 @@ ifeq ($(TARGET_OS), cygwin)
 EXE := .exe
 endif
 
+ifeq ($(TARGET_OS), wasi)
+WASMTIME := wasmtime
+XCPPFLAGS += -D_WASI_EMULATED_SIGNAL \
+             -D_WASI_EMULATED_PROCESS_CLOCKS \
+             -D_WASI_EMULATED_GETPID
+XLDFLAGS += -lwasi-emulated-signal \
+            -lwasi-emulated-process-clocks \
+            -lwasi-emulated-getpid
+endif
+
 ifeq ($(TARGET_OS), mingw)
 EXE := .exe
 # GCC doesn't recognize the %I64 format specifier which means %ll on windows
@@ -140,9 +157,9 @@ endef
 
 ### Position-independent (or not) ###
 
-ifeq ($(shell echo "__pie__" | $(CROSS_PREFIX)$(CC) $(call MK_FLAGS,-,C,PIE) -P -E -),2)
+ifeq ($(shell echo "__pie__" | $(CROSS_PREFIX)$(CC) $(CROSS_TARGET) $(call MK_FLAGS,-,C,PIE) -P -E -),2)
 HAVE_PIE := true
-ifeq ($(shell echo "__pie__" | $(CROSS_PREFIX)$(CC) $(call MK_FLAGS,-,C) -P -E -),2)
+ifeq ($(shell echo "__pie__" | $(CROSS_PREFIX)$(CC) $(CROSS_TARGET) $(call MK_FLAGS,-,C) -P -E -),2)
 WITH_DEFAULT_PIE := true
 else
 WITH_DEFAULT_PIE := false
@@ -153,11 +170,11 @@ WITH_PIE_RUNTIME := false
 WITH_DEFAULT_PIE := false
 endif
 
-ifeq ($(shell echo "__pic__" | $(CROSS_PREFIX)$(CC) $(call MK_FLAGS,-,C,PIC) -P -E -),2)
+ifeq ($(shell echo "__pic__" | $(CROSS_PREFIX)$(CC) $(CROSS_TARGET) $(call MK_FLAGS,-,C,PIC) -P -E -),2)
 HAVE_PIC := true
 ifeq ($(WITH_DEFAULT_PIE),true)
 WITH_DEFAULT_PIC := false
-else ifeq ($(shell echo "__pic__" | $(CROSS_PREFIX)$(CC) $(call MK_FLAGS,-,C) -P -E -),2)
+else ifeq ($(shell echo "__pic__" | $(CROSS_PREFIX)$(CC) $(CROSS_TARGET) $(call MK_FLAGS,-,C) -P -E -),2)
 WITH_DEFAULT_PIC := true
 else
 WITH_DEFAULT_PIC := false
@@ -168,9 +185,9 @@ WITH_PIC_RUNTIME := false
 WITH_DEFAULT_PIC := false
 endif
 
-ifeq ($(shell echo "__pic__" | $(CROSS_PREFIX)$(CC) $(call MK_FLAGS,-,C,NPI) -P -E -),__pic__)
+ifeq ($(shell echo "__pic__" | $(CROSS_PREFIX)$(CC) $(CROSS_TARGET) $(call MK_FLAGS,-,C,NPI) -P -E -),__pic__)
 HAVE_NPI := true
-ifeq ($(shell echo "__pic__" | $(CROSS_PREFIX)$(CC) $(call MK_FLAGS,-,C) -P -E -),__pic__)
+ifeq ($(shell echo "__pic__" | $(CROSS_PREFIX)$(CC) $(CROSS_TARGET) $(call MK_FLAGS,-,C) -P -E -),__pic__)
 WITH_DEFAULT_NPI := true
 else
 WITH_DEFAULT_NPI := false
@@ -184,19 +201,19 @@ endif
 ### pattern rules ###
 
 %.d: %.c
-	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,CPP) -MM -MG $(foreach MD,$(MDVARIANTS),$(foreach PI,$(PIVARIANTS),-MT $(subst .d,$($(MD)SUFFIX)$($(PI)SUFFIX).o,$@))) -MT $@ -MM -MG -MF $@ $<
+	$(CROSS_PREFIX)$(CC) $(CROSS_TARGET) $(call MK_FLAGS,$<,CPP) -MM -MG $(foreach MD,$(MDVARIANTS),$(foreach PI,$(PIVARIANTS),-MT $(subst .d,$($(MD)SUFFIX)$($(PI)SUFFIX).o,$@))) -MT $@ -MM -MG -MF $@ $<
 
 ## O_C_TEMPLATE (MD,PI)
 define O_C_TEMPLATE
 %$($(1)SUFFIX)$($(2)SUFFIX).o: %.c
-	$$(CROSS_PREFIX)$$(CC) $$(call MK_FLAGS,$$<,C,$(1) $(2)) -c -o $$@ $$<
+	$$(CROSS_PREFIX)$$(CC) $(CROSS_TARGET) $$(call MK_FLAGS,$$<,C,$(1) $(2)) -c -o $$@ $$<
 endef
 
 $(foreach MD,$(MDVARIANTS),$(foreach PI,$(PIVARIANTS), \
 $(eval $(call O_C_TEMPLATE,$(MD),$(PI)))))
 
 %$(EXE): %.o
-	$(CROSS_PREFIX)$(CC) $(call MK_FLAGS,$<,LD) -o $@ $^
+	$(CROSS_PREFIX)$(CC) $(CROSS_TARGET) $(call MK_FLAGS,$<,LD) -o $@ $^
 
 %.a:
 	$(RM) $@
@@ -239,11 +256,11 @@ ml-types.h: gen/ml-types.h
 	$(CP) $< $@
 
 gen/ml-types.h: gen/gen-types$(EXE)
-	./gen/gen-types$(EXE) ml-types.h > gen/ml-types.h
+	$(WASMTIME) ./gen/gen-types$(EXE) ml-types.h > gen/ml-types.h
 gen/c-types.h: gen/gen-types$(EXE)
-	./gen/gen-types$(EXE) c-types.h > gen/c-types.h
+	$(WASMTIME) ./gen/gen-types$(EXE) c-types.h > gen/c-types.h
 gen/c-types.sml: gen/gen-types$(EXE)
-	./gen/gen-types$(EXE) c-types.sml > gen/c-types.sml
+	$(WASMTIME) ./gen/gen-types$(EXE) c-types.sml > gen/c-types.sml
 
 ifneq ($(MAKECMDGOALS),clean)
 -include gen/gen-types.d
@@ -262,7 +279,7 @@ gen/$(1): gen/gen-basis-ffi.sml gen/basis-ffi.def
 	touch gen/$(1)
 else
 gen/$(1): gen/gen-basis-ffi$(EXE) gen/basis-ffi.def
-	./gen/gen-basis-ffi$(EXE) $(1) < gen/basis-ffi.def > gen/$(1)
+	$(WASMTIME) ./gen/gen-basis-ffi$(EXE) $(1) < gen/basis-ffi.def > gen/$(1)
 	$(CAT) gen/gen-basis-ffi.sml gen/basis-ffi.def gen/$(1) | $(SHA1DGST) > gen/$(1).chk
 endif
 endef
@@ -307,7 +324,7 @@ gdtoa/README: gdtoa.tgz gdtoa.may_alias-unions.patch gdtoa.rename-public-fns.pat
 	@touch $@
 
 gdtoa/arith.h: gdtoa/arithchk$(EXE)
-	./gdtoa/arithchk$(EXE) > gdtoa/arith.h
+	$(WASMTIME) ./gdtoa/arithchk$(EXE) > gdtoa/arith.h
 
 gdtoa/arithchk.c: gdtoa/README
 	@touch $@
@@ -319,7 +336,7 @@ ifneq ($(MAKECMDGOALS),clean)
 endif
 
 gdtoa/gd_qnan.h: gdtoa/qnan$(EXE)
-	./gdtoa/qnan$(EXE) > gdtoa/gd_qnan.h
+	$(WASMTIME) ./gdtoa/qnan$(EXE) > gdtoa/gd_qnan.h
 
 gdtoa/qnan.c: gdtoa/README
 	@touch $@
@@ -348,7 +365,7 @@ $(eval $(call A_TEMPLATE,mlton,MLTON))
 ### gen/constants ###
 
 gen/constants: gen/gen-constants$(EXE)
-	./gen/gen-constants > gen/constants
+	$(WASMTIME) ./gen/gen-constants > gen/constants
 
 ifneq ($(MAKECMDGOALS),clean)
 -include gen/gen-constants.d
