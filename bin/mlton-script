@@ -121,6 +121,7 @@ for arg in "$@"; do
                -target-link-opt mingw                                   \
                        '-lws2_32 -lkernel32 -lpsapi -lnetapi32 -lwinmm' \
                -target-link-opt mingw '-Wl,--enable-stdcall-fixup'      \
+               -target-link-opt openbsd '-Wl,--no-execute-only'         \
                -target-link-opt solaris '-lnsl -lsocket -lrt'           \
                -target-link-opt x86 '-m32'                              \
                -profile-exclude '\$\(SML_LIB\)'
