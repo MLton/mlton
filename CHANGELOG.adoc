@@ -8,6 +8,11 @@ Here are the changes from version 20210117 to YYYYMMDD.
 
 === Details
 
+* 2024-05-13
+  ** Fix bug in `#line` directives that fails to acceptable
+  `(*#line line *"file" )`, which should be accepted with a default
+  column of 1.  Thanks to Norman Ramsey for the bug report.
+
 * 2023-08-31
   ** Fix bug in x86 and amd64 native codegens leading to an internal
   compiler error
@@ -994,7 +999,7 @@ Here are the changes from version 20100608 to version 20130715.
 * Runtime.
   ** Bug fixes: see changelog
 * Language.
-  ** Interpret `(*#line line:col "file" *)` directives as relative
+  ** Interpret `(*#line line.col "file" *)` directives as relative
   file names.
   ** ML Basis annotations.
     *** Added: `resolveScope`
@@ -1011,10 +1016,10 @@ Here are the changes from version 20100608 to version 20130715.
     *** Added: MLLPT library
 * Tools.
   ** mllex
-    *** Generate `(*#line line:col "file.lex" *)` directives with simple
+    *** Generate `(*#line line.col "file.lex" *)` directives with simple
     (relative) file names, rather than absolute paths.
   ** mlyacc
-    *** Generate `(*#line line:col "file.grm" *)` directives with simple
+    *** Generate `(*#line line.col "file.grm" *)` directives with simple
     (relative) file names, rather than absolute paths.
     *** Fixed bug in comment-handling in lexer.
 
@@ -1182,7 +1187,7 @@ Here are the changes from version 20070826 to version 20100608.
 * Tools.
   ** `mllex`
     *** Eliminated top-level `type int = Int.int` in output.
-    *** Include `(*#line line:col "file.lex" *)` directives in output.
+    *** Include `(*#line line.col "file.lex" *)` directives in output.
     *** Added `%posint` command, to set the `yypos` type and allow the lexing of
     multi-gigabyte files.
    ** `mlnlffigen`
@@ -1191,7 +1196,7 @@ Here are the changes from version 20070826 to version 20100608.
     *** Added support for ia64 and hppa targets.
    ** `mlyacc`
     *** Eliminated top-level `type int = Int.int` in output.
-    *** Include `(*#line line:col "file.grm" *)` directives in output.
+    *** Include `(*#line line.col "file.grm" *)` directives in output.
 
 === Details
 

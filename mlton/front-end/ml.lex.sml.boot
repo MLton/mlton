@@ -10168,8 +10168,8 @@ in Vector.fromList(Pervasive.List.map g
 {fin = [], trans = 15},
 {fin = [], trans = 17},
 {fin = [], trans = 17},
-{fin = [(N 799)], trans = 0},
-{fin = [(N 427),(N 799)], trans = 20},
+{fin = [(N 802)], trans = 0},
+{fin = [(N 427),(N 802)], trans = 20},
 {fin = [(N 427)], trans = 21},
 {fin = [(N 521)], trans = 22},
 {fin = [], trans = 23},
@@ -10191,15 +10191,15 @@ in Vector.fromList(Pervasive.List.map g
 {fin = [], trans = 39},
 {fin = [(N 547)], trans = 40},
 {fin = [], trans = 40},
-{fin = [(N 144),(N 799)], trans = 0},
-{fin = [(N 142),(N 427),(N 799)], trans = 21},
-{fin = [(N 140),(N 799)], trans = 0},
-{fin = [(N 386),(N 799)], trans = 45},
+{fin = [(N 144),(N 802)], trans = 0},
+{fin = [(N 142),(N 427),(N 802)], trans = 21},
+{fin = [(N 140),(N 802)], trans = 0},
+{fin = [(N 386),(N 802)], trans = 45},
 {fin = [(N 386)], trans = 45},
 {fin = [], trans = 47},
 {fin = [(N 486)], trans = 48},
 {fin = [(N 439)], trans = 49},
-{fin = [(N 386),(N 799)], trans = 50},
+{fin = [(N 386),(N 802)], trans = 50},
 {fin = [(N 386)], trans = 51},
 {fin = [(N 386)], trans = 52},
 {fin = [(N 374),(N 386)], trans = 53},
@@ -10214,17 +10214,17 @@ in Vector.fromList(Pervasive.List.map g
 {fin = [(N 386)], trans = 62},
 {fin = [(N 386)], trans = 63},
 {fin = [(N 363),(N 386)], trans = 45},
-{fin = [(N 386),(N 799)], trans = 65},
+{fin = [(N 386),(N 802)], trans = 65},
 {fin = [(N 386)], trans = 66},
 {fin = [(N 357),(N 386)], trans = 45},
-{fin = [(N 386),(N 799)], trans = 68},
+{fin = [(N 386),(N 802)], trans = 68},
 {fin = [(N 386)], trans = 69},
 {fin = [(N 386)], trans = 70},
 {fin = [(N 353),(N 386)], trans = 45},
 {fin = [(N 386)], trans = 72},
 {fin = [(N 386)], trans = 73},
 {fin = [(N 348),(N 386)], trans = 45},
-{fin = [(N 386),(N 799)], trans = 75},
+{fin = [(N 386),(N 802)], trans = 75},
 {fin = [(N 386)], trans = 76},
 {fin = [(N 386)], trans = 77},
 {fin = [(N 386)], trans = 78},
@@ -10247,14 +10247,14 @@ in Vector.fromList(Pervasive.List.map g
 {fin = [(N 386)], trans = 95},
 {fin = [(N 386)], trans = 96},
 {fin = [(N 312),(N 386)], trans = 45},
-{fin = [(N 386),(N 799)], trans = 98},
+{fin = [(N 386),(N 802)], trans = 98},
 {fin = [(N 386)], trans = 99},
 {fin = [(N 304),(N 386)], trans = 45},
 {fin = [(N 386)], trans = 101},
 {fin = [(N 386)], trans = 102},
 {fin = [(N 386)], trans = 103},
 {fin = [(N 300),(N 386)], trans = 45},
-{fin = [(N 386),(N 799)], trans = 105},
+{fin = [(N 386),(N 802)], trans = 105},
 {fin = [(N 386)], trans = 106},
 {fin = [(N 386)], trans = 107},
 {fin = [(N 386)], trans = 108},
@@ -10264,20 +10264,20 @@ in Vector.fromList(Pervasive.List.map g
 {fin = [(N 386)], trans = 112},
 {fin = [(N 287),(N 386)], trans = 45},
 {fin = [(N 279),(N 386)], trans = 45},
-{fin = [(N 386),(N 799)], trans = 115},
+{fin = [(N 386),(N 802)], trans = 115},
 {fin = [(N 386)], trans = 116},
 {fin = [(N 386)], trans = 117},
 {fin = [(N 386)], trans = 118},
 {fin = [(N 386)], trans = 119},
 {fin = [(N 276),(N 386)], trans = 45},
-{fin = [(N 386),(N 799)], trans = 121},
+{fin = [(N 386),(N 802)], trans = 121},
 {fin = [(N 386)], trans = 122},
 {fin = [(N 386)], trans = 123},
 {fin = [(N 386)], trans = 124},
 {fin = [(N 269),(N 386)], trans = 45},
 {fin = [(N 386)], trans = 126},
 {fin = [(N 263),(N 386)], trans = 45},
-{fin = [(N 386),(N 799)], trans = 128},
+{fin = [(N 386),(N 802)], trans = 128},
 {fin = [(N 238),(N 386)], trans = 129},
 {fin = [(N 386)], trans = 130},
 {fin = [(N 386)], trans = 131},
@@ -10289,13 +10289,13 @@ in Vector.fromList(Pervasive.List.map g
 {fin = [(N 386)], trans = 137},
 {fin = [(N 246),(N 386)], trans = 45},
 {fin = [(N 235),(N 386)], trans = 45},
-{fin = [(N 386),(N 799)], trans = 140},
+{fin = [(N 386),(N 802)], trans = 140},
 {fin = [(N 386)], trans = 141},
 {fin = [(N 386)], trans = 142},
 {fin = [(N 386)], trans = 143},
 {fin = [(N 386)], trans = 144},
 {fin = [(N 232),(N 386)], trans = 45},
-{fin = [(N 386),(N 799)], trans = 146},
+{fin = [(N 386),(N 802)], trans = 146},
 {fin = [(N 386)], trans = 147},
 {fin = [(N 217),(N 386)], trans = 148},
 {fin = [(N 386)], trans = 149},
@@ -10303,7 +10303,7 @@ in Vector.fromList(Pervasive.List.map g
 {fin = [(N 386)], trans = 151},
 {fin = [(N 225),(N 386)], trans = 45},
 {fin = [(N 213),(N 386)], trans = 45},
-{fin = [(N 386),(N 799)], trans = 154},
+{fin = [(N 386),(N 802)], trans = 154},
 {fin = [(N 386)], trans = 155},
 {fin = [(N 386)], trans = 156},
 {fin = [(N 386)], trans = 157},
@@ -10322,7 +10322,7 @@ in Vector.fromList(Pervasive.List.map g
 {fin = [(N 386)], trans = 170},
 {fin = [(N 386)], trans = 171},
 {fin = [(N 189),(N 386)], trans = 45},
-{fin = [(N 386),(N 799)], trans = 173},
+{fin = [(N 386),(N 802)], trans = 173},
 {fin = [(N 184),(N 386)], trans = 45},
 {fin = [(N 386)], trans = 175},
 {fin = [(N 386)], trans = 176},
@@ -10331,11 +10331,11 @@ in Vector.fromList(Pervasive.List.map g
 {fin = [(N 386)], trans = 179},
 {fin = [(N 386)], trans = 180},
 {fin = [(N 181),(N 386)], trans = 45},
-{fin = [(N 386),(N 799)], trans = 182},
+{fin = [(N 386),(N 802)], trans = 182},
 {fin = [(N 386)], trans = 183},
 {fin = [(N 386)], trans = 184},
 {fin = [(N 172),(N 386)], trans = 45},
-{fin = [(N 386),(N 799)], trans = 186},
+{fin = [(N 386),(N 802)], trans = 186},
 {fin = [(N 167),(N 386)], trans = 45},
 {fin = [(N 386)], trans = 188},
 {fin = [(N 156),(N 386)], trans = 189},
@@ -10349,8 +10349,8 @@ in Vector.fromList(Pervasive.List.map g
 {fin = [(N 386)], trans = 197},
 {fin = [(N 386)], trans = 198},
 {fin = [(N 152),(N 386)], trans = 45},
-{fin = [(N 427),(N 799)], trans = 21},
-{fin = [(N 138),(N 799)], trans = 201},
+{fin = [(N 427),(N 802)], trans = 21},
+{fin = [(N 138),(N 802)], trans = 201},
 {fin = [], trans = 202},
 {fin = [], trans = 203},
 {fin = [], trans = 204},
@@ -10420,17 +10420,17 @@ in Vector.fromList(Pervasive.List.map g
 {fin = [], trans = 268},
 {fin = [], trans = 269},
 {fin = [(N 22)], trans = 0},
-{fin = [(N 136),(N 799)], trans = 0},
-{fin = [(N 134),(N 799)], trans = 0},
-{fin = [(N 129),(N 427),(N 799)], trans = 273},
+{fin = [(N 136),(N 802)], trans = 0},
+{fin = [(N 134),(N 802)], trans = 0},
+{fin = [(N 129),(N 427),(N 802)], trans = 273},
 {fin = [(N 132),(N 427)], trans = 21},
-{fin = [(N 127),(N 799)], trans = 0},
-{fin = [(N 122),(N 427),(N 799)], trans = 276},
+{fin = [(N 127),(N 802)], trans = 0},
+{fin = [(N 122),(N 427),(N 802)], trans = 276},
 {fin = [(N 125),(N 427)], trans = 21},
-{fin = [(N 516),(N 799)], trans = 278},
+{fin = [(N 516),(N 802)], trans = 278},
 {fin = [], trans = 279},
 {fin = [(N 516)], trans = 278},
-{fin = [(N 516),(N 799)], trans = 281},
+{fin = [(N 516),(N 802)], trans = 281},
 {fin = [], trans = 282},
 {fin = [(N 527)], trans = 283},
 {fin = [], trans = 283},
@@ -10446,14 +10446,14 @@ in Vector.fromList(Pervasive.List.map g
 {fin = [], trans = 294},
 {fin = [(N 540)], trans = 295},
 {fin = [], trans = 295},
-{fin = [(N 799)], trans = 297},
+{fin = [(N 802)], trans = 297},
 {fin = [], trans = 298},
 {fin = [(N 120)], trans = 0},
-{fin = [(N 427),(N 799)], trans = 300},
+{fin = [(N 427),(N 802)], trans = 300},
 {fin = [(N 116),(N 427)], trans = 21},
-{fin = [(N 113),(N 799)], trans = 0},
-{fin = [(N 111),(N 799)], trans = 0},
-{fin = [(N 109),(N 799)], trans = 304},
+{fin = [(N 113),(N 802)], trans = 0},
+{fin = [(N 111),(N 802)], trans = 0},
+{fin = [(N 109),(N 802)], trans = 304},
 {fin = [(N 699)], trans = 305},
 {fin = [(N 696)], trans = 0},
 {fin = [], trans = 307},
@@ -10470,21 +10470,21 @@ in Vector.fromList(Pervasive.List.map g
 {fin = [], trans = 318},
 {fin = [], trans = 319},
 {fin = [], trans = 320},
-{fin = [(N 797)], trans = 0},
+{fin = [(N 800)], trans = 0},
 {fin = [], trans = 322},
 {fin = [], trans = 323},
 {fin = [], trans = 324},
 {fin = [], trans = 325},
 {fin = [(N 739)], trans = 325},
-{fin = [(N 430),(N 799)], trans = 327},
+{fin = [(N 430),(N 802)], trans = 327},
 {fin = [(N 430)], trans = 327},
-{fin = [(N 104),(N 427),(N 799)], trans = 329},
+{fin = [(N 104),(N 427),(N 802)], trans = 329},
 {fin = [(N 107)], trans = 0},
 {fin = [(N 572)], trans = 0},
-{fin = [(N 569),(N 799)], trans = 0},
-{fin = [(N 8),(N 799)], trans = 333},
+{fin = [(N 569),(N 802)], trans = 0},
+{fin = [(N 8),(N 802)], trans = 333},
 {fin = [(N 8)], trans = 333},
-{fin = [(N 13),(N 799)], trans = 335},
+{fin = [(N 13),(N 802)], trans = 335},
 {fin = [(N 13)], trans = 0},
 {fin = [(N 674)], trans = 0},
 {fin = [(N 674)], trans = 338},
@@ -10550,22 +10550,22 @@ in Vector.fromList(Pervasive.List.map g
 {fin = [(N 706)], trans = 0},
 {fin = [(N 704),(N 706)], trans = 399},
 {fin = [(N 704)], trans = 0},
-{fin = [(N 767)], trans = 0},
-{fin = [(N 767)], trans = 402},
-{fin = [], trans = 402},
+{fin = [(N 770)], trans = 0},
+{fin = [(N 748),(N 770)], trans = 402},
+{fin = [(N 748)], trans = 402},
 {fin = [], trans = 404},
 {fin = [(N 745)], trans = 404},
-{fin = [(N 767)], trans = 406},
-{fin = [(N 765)], trans = 0},
-{fin = [(N 767)], trans = 408},
+{fin = [(N 770)], trans = 406},
+{fin = [(N 768)], trans = 0},
+{fin = [(N 770)], trans = 408},
 {fin = [], trans = 406},
-{fin = [(N 755)], trans = 0},
-{fin = [], trans = 408},
-{fin = [(N 767)], trans = 412},
-{fin = [], trans = 412},
 {fin = [(N 758)], trans = 0},
-{fin = [(N 758),(N 767)], trans = 0},
-{fin = [(N 767)], trans = 416},
+{fin = [], trans = 408},
+{fin = [(N 770)], trans = 412},
+{fin = [], trans = 412},
+{fin = [(N 761)], trans = 0},
+{fin = [(N 761),(N 770)], trans = 0},
+{fin = [(N 770)], trans = 416},
 {fin = [], trans = 416}])
 end
 structure StartStates =
@@ -10926,32 +10926,46 @@ let fun continue() : Internal.result =
           (addCommentError "Illegal line directive"
            ; YYBEGIN BLOCK_COMMENT)
      in
-        case String.split (yytext, #".") of
-           [line, col] =>
-              (YYBEGIN LINE_DIR2
-               ; addLineDirLineCol (valOf (Int.fromString line), valOf (Int.fromString col))
-                 handle Overflow => err () | Option => err ()
-               ; continue ())
-         | _ => (err (); continue ())
-     end(*#line 10936.1 "ml.lex.sml"*)
+       case String.split (yytext, #".") of
+          [line, col] => (YYBEGIN LINE_DIR2
+                          ; addLineDirLineCol (valOf (Int.fromString line), valOf (Int.fromString col))
+                            handle Overflow => err () | Option => err ()
+                          ; continue ())
+        | _ => (err (); continue ())
+     end(*#line 10935.1 "ml.lex.sml"*)
  end
-| 755 => ((*#line 544.5 "ml.lex"*)YYBEGIN LINE_DIR3
-    ; continue ()(*#line 10939.1 "ml.lex.sml"*)
+| 748 => let val yytext=yymktext() in (*#line 543.5 "ml.lex"*)let
+       fun err () =
+          (addCommentError "Illegal line directive"
+           ; YYBEGIN BLOCK_COMMENT)
+       val line = yytext
+       val col = 1
+     in
+       YYBEGIN LINE_DIR2
+       ; addLineDirLineCol (valOf (Int.fromString line), col)
+         handle Overflow => err () | Option => err ()
+       ; continue ()
+     end(*#line 10948.1 "ml.lex.sml"*)
+ end
+| 758 => ((*#line 556.5 "ml.lex"*)YYBEGIN LINE_DIR3
+    ; continue ()(*#line 10951.1 "ml.lex.sml"*)
 )
-| 758 => let val yytext=yymktext() in (*#line 547.5 "ml.lex"*)addLineDirFile (String.dropLast yytext)
+| 761 => let val yytext=yymktext() in (*#line 559.5 "ml.lex"*)addLineDirFile (String.dropLast yytext)
     ; YYBEGIN LINE_DIR4
-    ; continue ()(*#line 10943.1 "ml.lex.sml"*)
+    ; continue ()(*#line 10955.1 "ml.lex.sml"*)
  end
-| 765 => let val yytext=yymktext() in (*#line 551.5 "ml.lex"*)finishLineDir (source, lastPos (yypos, yytext))
-    ; continue ()(*#line 10946.1 "ml.lex.sml"*)
+| 768 => let val yytext=yymktext() in (*#line 563.5 "ml.lex"*)finishLineDir (source, lastPos (yypos, yytext))
+    ; continue ()(*#line 10958.1 "ml.lex.sml"*)
  end
-| 767 => ((*#line 554.5 "ml.lex"*)addCommentError "Illegal line directive"
+| 770 => ((*#line 566.5 "ml.lex"*)addCommentError "Illegal line directive"
     ; YYBEGIN BLOCK_COMMENT
-    ; continue ()(*#line 10950.1 "ml.lex.sml"*)
+    ; continue ()(*#line 10962.1 "ml.lex.sml"*)
 )
-| 78 => let val yytext=yymktext() in (*#line 305.24 "ml.lex"*)tok (Tokens.IMPORT, yytext, source, yypos)(*#line 10952.1 "ml.lex.sml"*)
+| 78 => let val yytext=yymktext() in (*#line 305.24 "ml.lex"*)tok (Tokens.IMPORT, yytext, source, yypos)(*#line 10964.1 "ml.lex.sml"*)
  end
-| 797 => let val yytext=yymktext() in (*#line 560.5 "ml.lex"*)let
+| 8 => ((*#line 296.21 "ml.lex"*)continue ()(*#line 10966.1 "ml.lex.sml"*)
+)
+| 800 => let val yytext=yymktext() in (*#line 572.5 "ml.lex"*)let
        val file = List.nth (String.split (yytext, #"\""), 1)
        val file =
          if OS.Path.isAbsolute file
@@ -10959,16 +10973,14 @@ let fun continue() : Internal.result =
             else OS.Path.mkCanonical (OS.Path.concat (OS.Path.dir (Source.name source), file))
    in
        tok' (fn (_, l, r) => Tokens.SHOW_BASIS (file, l, r), yytext, source, yypos)
-   end(*#line 10962.1 "ml.lex.sml"*)
+   end(*#line 10976.1 "ml.lex.sml"*)
  end
-| 799 => ((*#line 572.5 "ml.lex"*)error (source, yypos, yypos, "Illegal token")
-    ; continue ()(*#line 10965.1 "ml.lex.sml"*)
+| 802 => ((*#line 584.5 "ml.lex"*)error (source, yypos, yypos, "Illegal token")
+    ; continue ()(*#line 10979.1 "ml.lex.sml"*)
 )
-| 8 => ((*#line 296.21 "ml.lex"*)continue ()(*#line 10967.1 "ml.lex.sml"*)
-)
-| 88 => let val yytext=yymktext() in (*#line 306.26 "ml.lex"*)tok (Tokens.OVERLOAD, yytext, source, yypos)(*#line 10969.1 "ml.lex.sml"*)
+| 88 => let val yytext=yymktext() in (*#line 306.26 "ml.lex"*)tok (Tokens.OVERLOAD, yytext, source, yypos)(*#line 10981.1 "ml.lex.sml"*)
  end
-| 94 => let val yytext=yymktext() in (*#line 307.22 "ml.lex"*)tok (Tokens.PRIM, yytext, source, yypos)(*#line 10971.1 "ml.lex.sml"*)
+| 94 => let val yytext=yymktext() in (*#line 307.22 "ml.lex"*)tok (Tokens.PRIM, yytext, source, yypos)(*#line 10983.1 "ml.lex.sml"*)
  end
 | _ => raise Internal.LexerError
 
