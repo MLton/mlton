@@ -3,7 +3,7 @@
    struct
     structure UserDeclarations =
       struct
-(*#line 1.1 "mlb.lex"*)(* Copyright (C) 2009,2016,2017 Matthew Fluet.
+(*#line 1.1 "mlb.lex"*)(* Copyright (C) 2009,2016,2017,2024 Matthew Fluet.
  * Copyright (C) 2004-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -2319,8 +2319,8 @@ in Vector.fromList(Pervasive.List.map g
 {fin = [], trans = 15},
 {fin = [], trans = 17},
 {fin = [], trans = 17},
-{fin = [(N 351)], trans = 0},
-{fin = [(N 96),(N 152),(N 351)], trans = 20},
+{fin = [(N 354)], trans = 0},
+{fin = [(N 96),(N 152),(N 354)], trans = 20},
 {fin = [(N 96),(N 152)], trans = 20},
 {fin = [], trans = 22},
 {fin = [(N 152)], trans = 23},
@@ -2332,7 +2332,7 @@ in Vector.fromList(Pervasive.List.map g
 {fin = [], trans = 29},
 {fin = [], trans = 30},
 {fin = [(N 96)], trans = 31},
-{fin = [(N 96),(N 152),(N 351)], trans = 32},
+{fin = [(N 96),(N 152),(N 354)], trans = 32},
 {fin = [(N 96),(N 152)], trans = 33},
 {fin = [(N 96),(N 152)], trans = 34},
 {fin = [(N 96),(N 152)], trans = 35},
@@ -2349,47 +2349,47 @@ in Vector.fromList(Pervasive.List.map g
 {fin = [(N 96),(N 152)], trans = 46},
 {fin = [(N 96),(N 152)], trans = 47},
 {fin = [(N 83),(N 96),(N 152)], trans = 20},
-{fin = [(N 96),(N 152),(N 351)], trans = 49},
+{fin = [(N 96),(N 152),(N 354)], trans = 49},
 {fin = [(N 96),(N 152)], trans = 50},
 {fin = [(N 96),(N 152)], trans = 51},
 {fin = [(N 73),(N 96),(N 152)], trans = 20},
-{fin = [(N 96),(N 152),(N 351)], trans = 53},
+{fin = [(N 96),(N 152),(N 354)], trans = 53},
 {fin = [(N 96),(N 152)], trans = 54},
 {fin = [(N 96),(N 152)], trans = 55},
 {fin = [(N 96),(N 152)], trans = 56},
 {fin = [(N 68),(N 96),(N 152)], trans = 20},
 {fin = [(N 96),(N 152)], trans = 58},
 {fin = [(N 62),(N 96),(N 152)], trans = 20},
-{fin = [(N 96),(N 152),(N 351)], trans = 60},
+{fin = [(N 96),(N 152),(N 354)], trans = 60},
 {fin = [(N 58),(N 96),(N 152)], trans = 20},
-{fin = [(N 96),(N 152),(N 351)], trans = 62},
+{fin = [(N 96),(N 152),(N 354)], trans = 62},
 {fin = [(N 96),(N 152)], trans = 63},
 {fin = [(N 96),(N 152)], trans = 64},
 {fin = [(N 96),(N 152)], trans = 65},
 {fin = [(N 96),(N 152)], trans = 66},
 {fin = [(N 96),(N 152)], trans = 67},
 {fin = [(N 55),(N 96),(N 152)], trans = 20},
-{fin = [(N 96),(N 152),(N 351)], trans = 69},
+{fin = [(N 96),(N 152),(N 354)], trans = 69},
 {fin = [(N 96),(N 152)], trans = 70},
 {fin = [(N 47),(N 96),(N 152)], trans = 20},
-{fin = [(N 96),(N 152),(N 351)], trans = 72},
+{fin = [(N 96),(N 152),(N 354)], trans = 72},
 {fin = [(N 96),(N 152)], trans = 73},
 {fin = [(N 37),(N 96),(N 152)], trans = 74},
 {fin = [(N 96),(N 152)], trans = 75},
 {fin = [(N 43),(N 96),(N 152)], trans = 20},
-{fin = [(N 96),(N 152),(N 351)], trans = 77},
+{fin = [(N 96),(N 152),(N 354)], trans = 77},
 {fin = [(N 96),(N 152)], trans = 78},
 {fin = [(N 33),(N 96),(N 152)], trans = 20},
 {fin = [(N 29),(N 96),(N 152)], trans = 20},
-{fin = [(N 152),(N 351)], trans = 81},
+{fin = [(N 152),(N 354)], trans = 81},
 {fin = [(N 152)], trans = 82},
 {fin = [(N 152)], trans = 83},
 {fin = [(N 152)], trans = 84},
 {fin = [(N 19),(N 152)], trans = 23},
-{fin = [(N 25),(N 351)], trans = 0},
-{fin = [(N 23),(N 351)], trans = 0},
-{fin = [(N 152),(N 351)], trans = 23},
-{fin = [(N 351)], trans = 89},
+{fin = [(N 25),(N 354)], trans = 0},
+{fin = [(N 23),(N 354)], trans = 0},
+{fin = [(N 152),(N 354)], trans = 23},
+{fin = [(N 354)], trans = 89},
 {fin = [(N 152)], trans = 90},
 {fin = [], trans = 89},
 {fin = [(N 152)], trans = 90},
@@ -2399,9 +2399,9 @@ in Vector.fromList(Pervasive.List.map g
 {fin = [], trans = 96},
 {fin = [], trans = 97},
 {fin = [], trans = 98},
-{fin = [(N 152),(N 351)], trans = 23},
-{fin = [(N 21),(N 351)], trans = 0},
-{fin = [(N 351)], trans = 101},
+{fin = [(N 152),(N 354)], trans = 23},
+{fin = [(N 21),(N 354)], trans = 0},
+{fin = [(N 354)], trans = 101},
 {fin = [(N 281)], trans = 102},
 {fin = [(N 278)], trans = 0},
 {fin = [], trans = 104},
@@ -2410,11 +2410,11 @@ in Vector.fromList(Pervasive.List.map g
 {fin = [], trans = 107},
 {fin = [], trans = 108},
 {fin = [(N 321)], trans = 108},
-{fin = [(N 351)], trans = 28},
-{fin = [(N 154),(N 351)], trans = 0},
-{fin = [(N 8),(N 351)], trans = 112},
+{fin = [(N 354)], trans = 28},
+{fin = [(N 154),(N 354)], trans = 0},
+{fin = [(N 8),(N 354)], trans = 112},
 {fin = [(N 8)], trans = 112},
-{fin = [(N 13),(N 351)], trans = 114},
+{fin = [(N 13),(N 354)], trans = 114},
 {fin = [(N 13)], trans = 0},
 {fin = [(N 256)], trans = 0},
 {fin = [(N 256)], trans = 117},
@@ -2480,22 +2480,22 @@ in Vector.fromList(Pervasive.List.map g
 {fin = [(N 288)], trans = 0},
 {fin = [(N 286),(N 288)], trans = 178},
 {fin = [(N 286)], trans = 0},
-{fin = [(N 349)], trans = 0},
-{fin = [(N 349)], trans = 181},
-{fin = [], trans = 181},
+{fin = [(N 352)], trans = 0},
+{fin = [(N 330),(N 352)], trans = 181},
+{fin = [(N 330)], trans = 181},
 {fin = [], trans = 183},
 {fin = [(N 327)], trans = 183},
-{fin = [(N 349)], trans = 185},
-{fin = [(N 347)], trans = 0},
-{fin = [(N 349)], trans = 187},
+{fin = [(N 352)], trans = 185},
+{fin = [(N 350)], trans = 0},
+{fin = [(N 352)], trans = 187},
 {fin = [], trans = 185},
-{fin = [(N 337)], trans = 0},
-{fin = [], trans = 187},
-{fin = [(N 349)], trans = 191},
-{fin = [], trans = 191},
 {fin = [(N 340)], trans = 0},
-{fin = [(N 340),(N 349)], trans = 0},
-{fin = [(N 349)], trans = 195},
+{fin = [], trans = 187},
+{fin = [(N 352)], trans = 191},
+{fin = [], trans = 191},
+{fin = [(N 343)], trans = 0},
+{fin = [(N 343),(N 352)], trans = 0},
+{fin = [(N 352)], trans = 195},
 {fin = [], trans = 195}])
 end
 structure StartStates =
@@ -2681,57 +2681,69 @@ let fun continue() : Internal.result =
           (addCommentError "Illegal line directive"
            ; YYBEGIN BLOCK_COMMENT)
      in
-        case String.split (yytext, #".") of
-           [line, col] =>
-              (YYBEGIN LINE_DIR2
-               ; addLineDirLineCol (valOf (Int.fromString line), valOf (Int.fromString col))
-                 handle Overflow => err () | Option => err ()
-               ; continue ())
-         | _ => (err (); continue ())
-     end(*#line 2691.1 "mlb.lex.sml"*)
+       case String.split (yytext, #".") of
+          [line, col] => (YYBEGIN LINE_DIR2
+                          ; addLineDirLineCol (valOf (Int.fromString line), valOf (Int.fromString col))
+                            handle Overflow => err () | Option => err ()
+                          ; continue ())
+        | _ => (err (); continue ())
+     end(*#line 2690.1 "mlb.lex.sml"*)
  end
-| 33 => let val yytext=yymktext() in (*#line 212.20 "mlb.lex"*)tok (Tokens.ANN, yytext, source, yypos)(*#line 2693.1 "mlb.lex.sml"*)
+| 33 => let val yytext=yymktext() in (*#line 212.20 "mlb.lex"*)tok (Tokens.ANN, yytext, source, yypos)(*#line 2692.1 "mlb.lex.sml"*)
  end
-| 337 => ((*#line 343.5 "mlb.lex"*)YYBEGIN LINE_DIR3
-    ; continue ()(*#line 2696.1 "mlb.lex.sml"*)
+| 330 => let val yytext=yymktext() in (*#line 342.5 "mlb.lex"*)let
+       fun err () =
+          (addCommentError "Illegal line directive"
+           ; YYBEGIN BLOCK_COMMENT)
+       val line = yytext
+       val col = 1
+     in
+       YYBEGIN LINE_DIR2
+       ; addLineDirLineCol (valOf (Int.fromString line), col)
+         handle Overflow => err () | Option => err ()
+       ; continue ()
+     end(*#line 2705.1 "mlb.lex.sml"*)
+ end
+| 340 => ((*#line 355.5 "mlb.lex"*)YYBEGIN LINE_DIR3
+    ; continue ()(*#line 2708.1 "mlb.lex.sml"*)
 )
-| 340 => let val yytext=yymktext() in (*#line 346.5 "mlb.lex"*)addLineDirFile (String.dropLast yytext)
+| 343 => let val yytext=yymktext() in (*#line 358.5 "mlb.lex"*)addLineDirFile (String.dropLast yytext)
     ; YYBEGIN LINE_DIR4
-    ; continue ()(*#line 2700.1 "mlb.lex.sml"*)
+    ; continue ()(*#line 2712.1 "mlb.lex.sml"*)
  end
-| 347 => let val yytext=yymktext() in (*#line 350.5 "mlb.lex"*)finishLineDir (source, lastPos (yypos, yytext))
-    ; continue ()(*#line 2703.1 "mlb.lex.sml"*)
+| 350 => let val yytext=yymktext() in (*#line 362.5 "mlb.lex"*)finishLineDir (source, lastPos (yypos, yytext))
+    ; continue ()(*#line 2715.1 "mlb.lex.sml"*)
  end
-| 349 => ((*#line 353.5 "mlb.lex"*)addCommentError "Illegal line directive"
+| 352 => ((*#line 365.5 "mlb.lex"*)addCommentError "Illegal line directive"
     ; YYBEGIN BLOCK_COMMENT
-    ; continue ()(*#line 2707.1 "mlb.lex.sml"*)
+    ; continue ()(*#line 2719.1 "mlb.lex.sml"*)
 )
-| 351 => ((*#line 359.5 "mlb.lex"*)error (source, yypos, yypos, "Illegal character")
-    ; continue ()(*#line 2710.1 "mlb.lex.sml"*)
+| 354 => ((*#line 371.5 "mlb.lex"*)error (source, yypos, yypos, "Illegal character")
+    ; continue ()(*#line 2722.1 "mlb.lex.sml"*)
 )
-| 37 => let val yytext=yymktext() in (*#line 213.20 "mlb.lex"*)tok (Tokens.BAS, yytext, source, yypos)(*#line 2712.1 "mlb.lex.sml"*)
+| 37 => let val yytext=yymktext() in (*#line 213.20 "mlb.lex"*)tok (Tokens.BAS, yytext, source, yypos)(*#line 2724.1 "mlb.lex.sml"*)
  end
-| 43 => let val yytext=yymktext() in (*#line 214.22 "mlb.lex"*)tok (Tokens.BASIS, yytext, source, yypos)(*#line 2714.1 "mlb.lex.sml"*)
+| 43 => let val yytext=yymktext() in (*#line 214.22 "mlb.lex"*)tok (Tokens.BASIS, yytext, source, yypos)(*#line 2726.1 "mlb.lex.sml"*)
  end
-| 47 => let val yytext=yymktext() in (*#line 215.20 "mlb.lex"*)tok (Tokens.END, yytext, source, yypos)(*#line 2716.1 "mlb.lex.sml"*)
+| 47 => let val yytext=yymktext() in (*#line 215.20 "mlb.lex"*)tok (Tokens.END, yytext, source, yypos)(*#line 2728.1 "mlb.lex.sml"*)
  end
-| 55 => let val yytext=yymktext() in (*#line 216.24 "mlb.lex"*)tok (Tokens.FUNCTOR, yytext, source, yypos)(*#line 2718.1 "mlb.lex.sml"*)
+| 55 => let val yytext=yymktext() in (*#line 216.24 "mlb.lex"*)tok (Tokens.FUNCTOR, yytext, source, yypos)(*#line 2730.1 "mlb.lex.sml"*)
  end
-| 58 => let val yytext=yymktext() in (*#line 217.19 "mlb.lex"*)tok (Tokens.IN, yytext, source, yypos)(*#line 2720.1 "mlb.lex.sml"*)
+| 58 => let val yytext=yymktext() in (*#line 217.19 "mlb.lex"*)tok (Tokens.IN, yytext, source, yypos)(*#line 2732.1 "mlb.lex.sml"*)
  end
-| 62 => let val yytext=yymktext() in (*#line 218.20 "mlb.lex"*)tok (Tokens.LET, yytext, source, yypos)(*#line 2722.1 "mlb.lex.sml"*)
+| 62 => let val yytext=yymktext() in (*#line 218.20 "mlb.lex"*)tok (Tokens.LET, yytext, source, yypos)(*#line 2734.1 "mlb.lex.sml"*)
  end
-| 68 => let val yytext=yymktext() in (*#line 219.22 "mlb.lex"*)tok (Tokens.LOCAL, yytext, source, yypos)(*#line 2724.1 "mlb.lex.sml"*)
+| 68 => let val yytext=yymktext() in (*#line 219.22 "mlb.lex"*)tok (Tokens.LOCAL, yytext, source, yypos)(*#line 2736.1 "mlb.lex.sml"*)
  end
-| 73 => let val yytext=yymktext() in (*#line 220.21 "mlb.lex"*)tok (Tokens.OPEN, yytext, source, yypos)(*#line 2726.1 "mlb.lex.sml"*)
+| 73 => let val yytext=yymktext() in (*#line 220.21 "mlb.lex"*)tok (Tokens.OPEN, yytext, source, yypos)(*#line 2738.1 "mlb.lex.sml"*)
  end
-| 8 => ((*#line 202.21 "mlb.lex"*)continue ()(*#line 2728.1 "mlb.lex.sml"*)
+| 8 => ((*#line 202.21 "mlb.lex"*)continue ()(*#line 2740.1 "mlb.lex.sml"*)
 )
-| 83 => let val yytext=yymktext() in (*#line 221.26 "mlb.lex"*)tok (Tokens.SIGNATURE, yytext, source, yypos)(*#line 2730.1 "mlb.lex.sml"*)
+| 83 => let val yytext=yymktext() in (*#line 221.26 "mlb.lex"*)tok (Tokens.SIGNATURE, yytext, source, yypos)(*#line 2742.1 "mlb.lex.sml"*)
  end
-| 93 => let val yytext=yymktext() in (*#line 222.26 "mlb.lex"*)tok (Tokens.STRUCTURE, yytext, source, yypos)(*#line 2732.1 "mlb.lex.sml"*)
+| 93 => let val yytext=yymktext() in (*#line 222.26 "mlb.lex"*)tok (Tokens.STRUCTURE, yytext, source, yypos)(*#line 2744.1 "mlb.lex.sml"*)
  end
-| 96 => let val yytext=yymktext() in (*#line 224.19 "mlb.lex"*)tok' (Tokens.ID, yytext, source, yypos)(*#line 2734.1 "mlb.lex.sml"*)
+| 96 => let val yytext=yymktext() in (*#line 224.19 "mlb.lex"*)tok' (Tokens.ID, yytext, source, yypos)(*#line 2746.1 "mlb.lex.sml"*)
  end
 | _ => raise Internal.LexerError
 

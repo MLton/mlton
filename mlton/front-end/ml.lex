@@ -532,13 +532,25 @@ real=(~?)(({decnum}{frac}?{exp})|({decnum}{frac}{exp}?));
           (addCommentError "Illegal line directive"
            ; YYBEGIN BLOCK_COMMENT)
      in
-        case String.split (yytext, #".") of
-           [line, col] =>
-              (YYBEGIN LINE_DIR2
-               ; addLineDirLineCol (valOf (Int.fromString line), valOf (Int.fromString col))
-                 handle Overflow => err () | Option => err ()
-               ; continue ())
-         | _ => (err (); continue ())
+       case String.split (yytext, #".") of
+          [line, col] => (YYBEGIN LINE_DIR2
+                          ; addLineDirLineCol (valOf (Int.fromString line), valOf (Int.fromString col))
+                            handle Overflow => err () | Option => err ()
+                          ; continue ())
+        | _ => (err (); continue ())
+     end);
+<LINE_DIR1>{decDigit}+ =>
+   (let
+       fun err () =
+          (addCommentError "Illegal line directive"
+           ; YYBEGIN BLOCK_COMMENT)
+       val line = yytext
+       val col = 1
+     in
+       YYBEGIN LINE_DIR2
+       ; addLineDirLineCol (valOf (Int.fromString line), col)
+         handle Overflow => err () | Option => err ()
+       ; continue ()
      end);
 <LINE_DIR2>{ws}+"\"" =>
    (YYBEGIN LINE_DIR3
