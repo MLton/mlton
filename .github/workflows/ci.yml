@@ -17,16 +17,16 @@ jobs:
         cc: ["gcc", "clang"]
         codegen: ["amd64", "c", "llvm"]
         exclude:
-          - cc: "gcc"
-            codegen: "llvm"
           - os: macos-13
             cc: "gcc"
+          - os: windows-latest
+            cc: "clang"
           - os: windows-latest
             codegen: "c"
           - os: windows-latest
             codegen: "llvm"
-          - os: windows-latest
-            cc: "clang"
+          - cc: "gcc"
+            codegen: "llvm"
 
     # The type of runner that the job will run on
     runs-on: ${{ matrix.os }}
