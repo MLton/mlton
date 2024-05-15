@@ -132,20 +132,25 @@ structure Value =
             end
          and layoutValue value =
             case value of
-               Array {elt, length, ...} =>
-                  seq [str "array", tuple [layout length, layoutSlot elt]]
+               Array {elt, length, useful} =>
+                  seq [str "array ",
+                       record [("useful", Useful.layout useful),
+                               ("length", layout length),
+                               ("elt", layoutSlot elt)]]
              | Ground g => seq [str "ground ", Useful.layout g]
              | Ref {arg, useful, ...} =>
                   seq [str "ref ",
                        record [("useful", Useful.layout useful),
-                               ("slot", layoutSlot arg)]]
+                               ("arg", layoutSlot arg)]]
              | Tuple vs => Vector.layout layoutSlot vs
              | Vector {elt, length} =>
-                  seq [str "vector", tuple [layout length, layoutSlot elt]]
+                  seq [str "vector ",
+                       record [("length", layout length),
+                               ("elt", layoutSlot elt)]]
              | Weak {arg, useful} =>
                   seq [str "weak ",
                        record [("useful", Useful.layout useful),
-                               ("slot", layoutSlot arg)]]
+                               ("arg", layoutSlot arg)]]
          and layoutSlot (v, e) =
             tuple [Exists.layout e, layout v]
       end
