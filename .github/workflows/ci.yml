@@ -58,8 +58,8 @@ jobs:
           mv mlton-20210117-1.amd64-linux-glibc2.31/* .
           rmdir mlton-20210117-1.amd64-linux-glibc2.31
 
-      - name: Install dependencies (macos)
-        if: ${{ startsWith(matrix.os, 'macos') }}
+      - name: Install dependencies (macos (amd64))
+        if: ${{ matrix.os == 'macos-13' }}
         run: |
           # brew update
           brew install gmp
