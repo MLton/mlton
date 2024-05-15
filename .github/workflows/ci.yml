@@ -26,8 +26,6 @@ jobs:
           - runner: windows-latest
             cc: "clang"
           - runner: windows-latest
-            codegen: "c"
-          - runner: windows-latest
             codegen: "llvm"
           - cc: "gcc"
             codegen: "llvm"
