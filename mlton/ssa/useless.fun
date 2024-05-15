@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2017-2021 Matthew Fluet.
+(* Copyright (C) 2009,2017-2021,2024 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -128,22 +128,24 @@ structure Value =
             let
                val {value, ...} = Set.! s
             in
-               case value of
-                  Array {elt, length, ...} =>
-                     seq [str "array", tuple [layout length, layoutSlot elt]]
-                | Ground g => seq [str "ground ", Useful.layout g]
-                | Ref {arg, useful, ...} =>
-                     seq [str "ref ",
-                          record [("useful", Useful.layout useful),
-                                  ("slot", layoutSlot arg)]]
-                | Tuple vs => Vector.layout layoutSlot vs
-                | Vector {elt, length} =>
-                     seq [str "vector", tuple [layout length, layoutSlot elt]]
-                | Weak {arg, useful} =>
-                     seq [str "weak ", 
-                          record [("useful", Useful.layout useful),
-                                  ("slot", layoutSlot arg)]]
+               layoutValue value
             end
+         and layoutValue value =
+            case value of
+               Array {elt, length, ...} =>
+                  seq [str "array", tuple [layout length, layoutSlot elt]]
+             | Ground g => seq [str "ground ", Useful.layout g]
+             | Ref {arg, useful, ...} =>
+                  seq [str "ref ",
+                       record [("useful", Useful.layout useful),
+                               ("slot", layoutSlot arg)]]
+             | Tuple vs => Vector.layout layoutSlot vs
+             | Vector {elt, length} =>
+                  seq [str "vector", tuple [layout length, layoutSlot elt]]
+             | Weak {arg, useful} =>
+                  seq [str "weak ",
+                       record [("useful", Useful.layout useful),
+                               ("slot", layoutSlot arg)]]
          and layoutSlot (v, e) =
             tuple [Exists.layout e, layout v]
       end
