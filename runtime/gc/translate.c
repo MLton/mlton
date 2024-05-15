@@ -1,4 +1,4 @@
-/* Copyright (C) 2010,2019-2020 Matthew Fluet.
+/* Copyright (C) 2010,2019-2020,2024 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -26,7 +26,7 @@ void translateFun (__attribute__((unused)) GC_state s, objptr *opp, void *env) {
   to = translateState->to;
   p = objptrToPointer (*opp, from);
   if ((from <= p) and
-      (p < from + translateState->size)) {
+      (p <= from + translateState->size)) {
     p = (p - from) + to;
     *opp = pointerToObjptr (p, to);
   }
