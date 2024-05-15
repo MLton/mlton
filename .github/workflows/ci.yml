@@ -19,7 +19,7 @@ jobs:
         exclude:
           - cc: "gcc"
             codegen: "llvm"
-          - os: macos-latest
+          - os: macos-13
             cc: "gcc"
           - os: windows-latest
             codegen: "c"
