@@ -906,7 +906,7 @@ fun transform (program: Program.t): Program.t =
          in loop (0, n, 0)
          end
 
-      fun doitExp (e: Exp.t, resultType: Type.t, resultValue: Value.t option) =
+      fun doitExp (e: Exp.t, resultType: Type.t, resultValue: Value.t) =
          case e of
             ConApp {con, args} =>
                ConApp {con = con,
@@ -997,7 +997,7 @@ fun transform (program: Program.t): Program.t =
                end
           | Tuple xs =>
                let
-                  val slots = Value.detupleSlots (valOf resultValue)
+                  val slots = Value.detupleSlots resultValue
                   val xs =
                      Vector.keepAllMap2
                      (xs, slots, fn (x, (v, e)) =>
@@ -1014,24 +1014,24 @@ fun transform (program: Program.t): Program.t =
           | _ => e
       val doitExp =
          Trace.trace3 ("Useless.doitExp",
-                       Exp.layout, Layout.ignore, Layout.ignore,
+                       Exp.layout, Type.layout, Value.layout,
                        Exp.layout) 
          doitExp
       fun doitStatement (Statement.T {var, exp, ty}) =
          let
             val v = Option.map (var, value)
-            val (ty, b) =
+            val (v, (ty, b)) =
                case v of
-                  NONE => (ty, false)
-                | SOME v => Value.getNew v
-            fun yes ty =
+                  NONE => (Value.fromType ty, (ty, false))
+                | SOME v => (v, Value.getNew v)
+            fun yes () =
                SOME (Statement.T 
                      {var = var, 
                       ty = ty, 
                       exp = doitExp (exp, ty, v)})
          in
             if b
-               then yes ty
+               then yes ()
             else
                case exp of
                   PrimApp {prim, args, ...} =>
@@ -1053,9 +1053,9 @@ fun transform (program: Program.t): Program.t =
                                     | Prim.WordArray_updateWord _ => array ()
                                     | _ => true
                                 end
-                        then yes ty
+                        then yes ()
                      else NONE
-                | Profile _ => yes ty
+                | Profile _ => yes ()
                 | _ => NONE
          end
       val doitStatement =
