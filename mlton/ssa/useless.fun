@@ -308,17 +308,7 @@ structure Value =
             loop (t, [])
          end
 
-      fun const (c: Const.t): t =
-         let
-            val v = fromType (Type.ofConst c)
-            (* allOrNothing v because constants are not transformed and their
-             * type cannot change.  So they must either be completely eliminated
-             * or completely kept.
-             *)
-            val _ = allOrNothing v
-         in
-            v
-         end
+      fun const (c: Const.t): t = fromType (Type.ofConst c)
 
       fun detupleSlots (v: t): slot vector =
          case value v of
@@ -911,7 +901,16 @@ fun transform (program: Program.t): Program.t =
             ConApp {con, args} =>
                ConApp {con = con,
                        args = keepUseful (args, conArgs con)}
-          | Const _ => e
+          | Const c =>
+               (case c of
+                   Const.WordVector ws =>
+                      if Type.isUnit (Type.deVector resultType)
+                         then PrimApp
+                              {prim = Prim.Vector_vector,
+                               targs = Vector.new1 Type.unit,
+                               args = WordXVector.toVectorMap (ws, fn _ => unitVar)}
+                         else e
+                 | _ => e)
           | PrimApp {prim, args, ...} => 
                let
                   fun arg i = Vector.sub (args, i)
