@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2017-2021 Matthew Fluet.
+(* Copyright (C) 2009,2017-2021,2024 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -128,22 +128,29 @@ structure Value =
             let
                val {value, ...} = Set.! s
             in
-               case value of
-                  Array {elt, length, ...} =>
-                     seq [str "array", tuple [layout length, layoutSlot elt]]
-                | Ground g => seq [str "ground ", Useful.layout g]
-                | Ref {arg, useful, ...} =>
-                     seq [str "ref ",
-                          record [("useful", Useful.layout useful),
-                                  ("slot", layoutSlot arg)]]
-                | Tuple vs => Vector.layout layoutSlot vs
-                | Vector {elt, length} =>
-                     seq [str "vector", tuple [layout length, layoutSlot elt]]
-                | Weak {arg, useful} =>
-                     seq [str "weak ", 
-                          record [("useful", Useful.layout useful),
-                                  ("slot", layoutSlot arg)]]
+               layoutValue value
             end
+         and layoutValue value =
+            case value of
+               Array {elt, length, useful} =>
+                  seq [str "array ",
+                       record [("useful", Useful.layout useful),
+                               ("length", layout length),
+                               ("elt", layoutSlot elt)]]
+             | Ground g => seq [str "ground ", Useful.layout g]
+             | Ref {arg, useful, ...} =>
+                  seq [str "ref ",
+                       record [("useful", Useful.layout useful),
+                               ("arg", layoutSlot arg)]]
+             | Tuple vs => Vector.layout layoutSlot vs
+             | Vector {elt, length} =>
+                  seq [str "vector ",
+                       record [("length", layout length),
+                               ("elt", layoutSlot elt)]]
+             | Weak {arg, useful} =>
+                  seq [str "weak ",
+                       record [("useful", Useful.layout useful),
+                               ("arg", layoutSlot arg)]]
          and layoutSlot (v, e) =
             tuple [Exists.layout e, layout v]
       end
@@ -306,17 +313,7 @@ structure Value =
             loop (t, [])
          end
 
-      fun const (c: Const.t): t =
-         let
-            val v = fromType (Type.ofConst c)
-            (* allOrNothing v because constants are not transformed and their
-             * type cannot change.  So they must either be completely eliminated
-             * or completely kept.
-             *)
-            val _ = allOrNothing v
-         in
-            v
-         end
+      fun const (c: Const.t): t = fromType (Type.ofConst c)
 
       fun detupleSlots (v: t): slot vector =
          case value v of
@@ -904,12 +901,21 @@ fun transform (program: Program.t): Program.t =
          in loop (0, n, 0)
          end
 
-      fun doitExp (e: Exp.t, resultType: Type.t, resultValue: Value.t option) =
+      fun doitExp (e: Exp.t, resultType: Type.t, resultValue: Value.t) =
          case e of
             ConApp {con, args} =>
                ConApp {con = con,
                        args = keepUseful (args, conArgs con)}
-          | Const _ => e
+          | Const c =>
+               (case c of
+                   Const.WordVector ws =>
+                      if Type.isUnit (Type.deVector resultType)
+                         then PrimApp
+                              {prim = Prim.Vector_vector,
+                               targs = Vector.new1 Type.unit,
+                               args = WordXVector.toVectorMap (ws, fn _ => unitVar)}
+                         else e
+                 | _ => e)
           | PrimApp {prim, args, ...} => 
                let
                   fun arg i = Vector.sub (args, i)
@@ -995,7 +1001,7 @@ fun transform (program: Program.t): Program.t =
                end
           | Tuple xs =>
                let
-                  val slots = Value.detupleSlots (valOf resultValue)
+                  val slots = Value.detupleSlots resultValue
                   val xs =
                      Vector.keepAllMap2
                      (xs, slots, fn (x, (v, e)) =>
@@ -1012,24 +1018,24 @@ fun transform (program: Program.t): Program.t =
           | _ => e
       val doitExp =
          Trace.trace3 ("Useless.doitExp",
-                       Exp.layout, Layout.ignore, Layout.ignore,
+                       Exp.layout, Type.layout, Value.layout,
                        Exp.layout) 
          doitExp
       fun doitStatement (Statement.T {var, exp, ty}) =
          let
             val v = Option.map (var, value)
-            val (ty, b) =
+            val (v, (ty, b)) =
                case v of
-                  NONE => (ty, false)
-                | SOME v => Value.getNew v
-            fun yes ty =
+                  NONE => (Value.fromType ty, (ty, false))
+                | SOME v => (v, Value.getNew v)
+            fun yes () =
                SOME (Statement.T 
                      {var = var, 
                       ty = ty, 
                       exp = doitExp (exp, ty, v)})
          in
             if b
-               then yes ty
+               then yes ()
             else
                case exp of
                   PrimApp {prim, args, ...} =>
@@ -1051,9 +1057,9 @@ fun transform (program: Program.t): Program.t =
                                     | Prim.WordArray_updateWord _ => array ()
                                     | _ => true
                                 end
-                        then yes ty
+                        then yes ()
                      else NONE
-                | Profile _ => yes ty
+                | Profile _ => yes ()
                 | _ => NONE
          end
       val doitStatement =
