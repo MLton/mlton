@@ -13,32 +13,34 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-13, windows-latest]
+        runner: [ubuntu-latest, macos-13, macos-14, windows-latest]
         cc: ["gcc", "clang"]
         codegen: ["amd64", "c", "llvm"]
         exclude:
+          - runner: macos-13
+            cc: "gcc"
+          - runner: macos-14
+            cc: "gcc"
+          - runner: macos-14
+            codegen: "amd64"
+          - runner: windows-latest
+            cc: "clang"
+          - runner: windows-latest
+            codegen: "llvm"
           - cc: "gcc"
             codegen: "llvm"
-          - os: macos-latest
-            cc: "gcc"
-          - os: windows-latest
-            codegen: "c"
-          - os: windows-latest
-            codegen: "llvm"
-          - os: windows-latest
-            cc: "clang"
 
     # The type of runner that the job will run on
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.runner }}
 
     defaults:
       run:
-        shell: ${{ (startsWith(matrix.os, 'windows') && 'msys2 {0}') || 'bash' }}
+        shell: ${{ (startsWith(matrix.runner, 'windows') && 'msys2 {0}') || 'bash' }}
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       - name: Configure git (windows)
-        if: ${{ startsWith(matrix.os, 'windows') }}
+        if: ${{ startsWith(matrix.runner, 'windows') }}
         run: git config --global core.autocrlf false
         shell: bash
 
@@ -47,7 +49,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install dependencies (ubuntu)
-        if: ${{ startsWith(matrix.os, 'ubuntu') }}
+        if: ${{ startsWith(matrix.runner, 'ubuntu') }}
         run: |
           sudo apt-get update
           sudo apt-get install libgmp-dev
@@ -58,8 +60,8 @@ jobs:
           mv mlton-20210117-1.amd64-linux-glibc2.31/* .
           rmdir mlton-20210117-1.amd64-linux-glibc2.31
 
-      - name: Install dependencies (macos)
-        if: ${{ startsWith(matrix.os, 'macos') }}
+      - name: Install dependencies (macos (amd64))
+        if: ${{ matrix.runner == 'macos-13' }}
         run: |
           # brew update
           brew install gmp
@@ -71,8 +73,21 @@ jobs:
           mv mlton-20210117-1.amd64-darwin-19.6.gmp-homebrew/* .
           rmdir mlton-20210117-1.amd64-darwin-19.6.gmp-homebrew
 
+      - name: Install dependencies (macos (arm64))
+        if: ${{ matrix.runner == 'macos-14' }}
+        run: |
+          # brew update
+          brew install gmp
+          echo "WITH_GMP_DIR=/opt/homebrew" >> $GITHUB_ENV
+          if [[ "${{ matrix.codegen }}" == "llvm" ]]; then brew install llvm; echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH; fi
+          mkdir boot && cd boot
+          curl -O -L https://projects.laas.fr/tina/software/mlton-20210117-1.arm64-darwin-21.6-gmp-static.tgz
+          tar xzf mlton-20210117-1.arm64-darwin-21.6-gmp-static.tgz --exclude='*/share'
+          mv mlton-20210117-1.arm64-darwin-21.6-gmp-static/* .
+          rmdir mlton-20210117-1.arm64-darwin-21.6-gmp-static
+
       - name: Install msys2 (windows)
-        if: ${{ startsWith(matrix.os, 'windows') }}
+        if: ${{ startsWith(matrix.runner, 'windows') }}
         uses: msys2/setup-msys2@v2
         with:
           update: false
@@ -81,7 +96,7 @@ jobs:
             git
             pactoys
       - name: Install dependencies (windows)
-        if: ${{ startsWith(matrix.os, 'windows') }}
+        if: ${{ startsWith(matrix.runner, 'windows') }}
         run: |
           pacboy --noconfirm -S --needed gcc:p gmp-devel:
           mkdir boot && cd boot
@@ -111,7 +126,7 @@ jobs:
             $( if [[ -n "$WITH_GMP_DIR" ]]; then echo "WITH_GMP_DIR=$WITH_GMP_DIR"; fi ) \
             WITH_ALL_RUNTIME=true \
             WITH_DBG_RUNTIME=false \
-            MLTON_BINARY_RELEASE_SUFFIX=".${{ matrix.os }}_${{ matrix.cc }}_${{ matrix.codegen }}" \
+            MLTON_BINARY_RELEASE_SUFFIX=".${{ matrix.runner }}_${{ matrix.cc }}_${{ matrix.codegen }}" \
             all
 
       - name: Test
@@ -131,11 +146,11 @@ jobs:
             $( if [[ -n "$WITH_GMP_DIR" ]]; then echo "WITH_GMP_DIR=$WITH_GMP_DIR"; fi ) \
             WITH_ALL_RUNTIME=true \
             WITH_DBG_RUNTIME=false \
-            MLTON_BINARY_RELEASE_SUFFIX=".${{ matrix.os }}_${{ matrix.cc }}_${{ matrix.codegen }}" \
+            MLTON_BINARY_RELEASE_SUFFIX=".${{ matrix.runner }}_${{ matrix.cc }}_${{ matrix.codegen }}" \
             binary-release
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mlton.${{ matrix.os }}_${{ matrix.cc }}_${{ matrix.codegen }}
+          name: mlton.${{ matrix.runner }}_${{ matrix.cc }}_${{ matrix.codegen }}
           path: ./*.tgz

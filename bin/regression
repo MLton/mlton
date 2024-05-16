@@ -139,6 +139,13 @@ for f in *.sml; do
                 ;;
                 esac
         ;;
+        darwin)
+                case "$f" in
+                world*)
+                        continue
+                ;;
+                esac
+        ;;
         hurd)
                 # Work-around hurd bug (http://bugs.debian.org/551470)
                 case "$f" in
