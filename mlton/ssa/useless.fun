@@ -285,14 +285,9 @@ structure Value =
                   val value =
                      case Type.dest t of
                         Type.Array t =>
-                           let val elt as (_, e) = slot t
-                               val length = loop (Type.word (WordSize.seqIndex ()))
-                           in Exists.whenExists
-                              (e, fn () => Useful.makeUseful (deground length))
-                              ; Array {useful = useful (),
-                                       length = length,
-                                       elt = elt}
-                           end
+                           Array {useful = useful (),
+                                  length = loop (Type.word (WordSize.seqIndex ())),
+                                  elt = slot t}
                       | Type.Ref t => Ref {arg = slot t,
                                            useful = useful ()}
                       | Type.Tuple ts => Tuple (Vector.map (ts, slot))
@@ -622,7 +617,9 @@ fun transform (program: Program.t): Program.t =
                val _ =
                   case prim of
                      Prim.Array_alloc _ =>
-                        coerce {from = arg 0, to = arrayLength result}
+                        Exists.whenExists
+                        (#2 (dearraySlot result), fn () =>
+                         Useful.makeUseful (deground (arg 0)))
                    | Prim.Array_array =>
                         let
                            val l =
