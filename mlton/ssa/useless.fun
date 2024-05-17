@@ -339,6 +339,8 @@ structure Value =
          val devectorSlot = make ("Useless.devectorSlot", #elt)
          val devector: t -> t = #1 o devectorSlot
          val vectorLength = make ("Useless.vectorLength", #length)
+         val vectorLengthAndElt =
+            make ("Useless.vectorLengthAndElt", fn {length, elt, ...} => (length, elt))
       end
       local
          fun make (err, sel) v =
@@ -349,6 +351,8 @@ structure Value =
          val dearraySlot = make ("Useless.dearraySlot", #elt)
          val dearray: t -> t = #1 o dearraySlot
          val arrayLength = make ("Useless.arrayLength", #length)
+         val arrayLengthAndElt =
+            make ("Useless.arrayLengthAndElt", fn {length, elt, ...} => (length, elt))
          val arrayUseful = make ("Useless.arrayUseful", #useful)
       end
       local
@@ -605,9 +609,35 @@ fun transform (program: Program.t): Program.t =
                infix dependsOn
                fun v1 dependsOn v2 = deepCoerce (v2, deground v1)
                fun arg i = Vector.sub (args, i)
-               fun sub () =
+               fun copy deseqSlot =
+                  let
+                     val a = dearray (arg 0)
+                  in
+                     arg 1 dependsOn a
+                     ; arg 3 dependsOn a
+                     ; arg 4 dependsOn a
+                     ; coerceSlot {from = deseqSlot (arg 2), to = dearraySlot (arg 0)}
+                  end
+               fun length seqLength = return (seqLength (arg 0))
+               fun seq deseq =
+                  let
+                     val elt = deseq result
+                  in
+                     Vector.foreach
+                     (args, fn arg =>
+                      coerce {from = arg, to = elt})
+                  end
+               fun sub deseq =
                   (arg 1 dependsOn result
-                   ; return (dearray (arg 0)))
+                   ; return (deseq (arg 0)))
+               fun toSeq seqLengthAndElt =
+                  let
+                     val (l, e) = arrayLengthAndElt (arg 0)
+                     val (l', e') = seqLengthAndElt result
+                  in
+                     unify (l, l')
+                     ; unifySlot (e, e')
+                  end
                fun update () =
                   let
                      val a = dearray (arg 0)
@@ -620,56 +650,13 @@ fun transform (program: Program.t): Program.t =
                         Exists.whenExists
                         (#2 (dearraySlot result), fn () =>
                          Useful.makeUseful (deground (arg 0)))
-                   | Prim.Array_array =>
-                        let
-                           val l =
-                              (const o S.Const.word o WordX.fromInt)
-                              (Vector.length args,
-                               WordSize.seqIndex ())
-                        in
-                           (coerce {from = l, to = arrayLength result}
-                            ; Vector.foreach
-                              (args, fn arg =>
-                               coerce {from = arg, to = dearray result}))
-                        end
-                   | Prim.Array_copyArray =>
-                        let
-                           val a = dearray (arg 0)
-                        in
-                           arg 1 dependsOn a
-                           ; arg 3 dependsOn a
-                           ; arg 4 dependsOn a
-                           ; case (value (arg 0), value (arg 2)) of
-                                (Array {elt = e, ...}, Array {elt = e', ...}) =>
-                                   unifySlot (e, e')
-                              | _ => Error.bug "Useless.primApp: Array_copyArray"
-                         end
-                   | Prim.Array_copyVector =>
-                        let
-                           val a = dearray (arg 0)
-                        in
-                           arg 1 dependsOn a
-                           ; arg 3 dependsOn a
-                           ; arg 4 dependsOn a
-                           ; case (value (arg 0), value (arg 2)) of
-                                (Array {elt = e, ...}, Vector {elt = e', ...}) =>
-                                   unifySlot (e, e')
-                              | _ => Error.bug "Useless.primApp: Array_copyVector"
-                         end
-                   | Prim.Array_length => return (arrayLength (arg 0))
-                   | Prim.Array_sub => sub ()
-                   | Prim.Array_toArray =>
-                        (case (value (arg 0), value result) of
-                            (Array {length = l, elt = e, ...},
-                             Array {length = l', elt = e', ...}) =>
-                               (unify (l, l'); unifySlot (e, e'))
-                           | _ => Error.bug "Useless.primApp: Array_toArray")
-                   | Prim.Array_toVector =>
-                        (case (value (arg 0), value result) of
-                            (Array {length = l, elt = e, ...},
-                             Vector {length = l', elt = e', ...}) =>
-                               (unify (l, l'); unifySlot (e, e'))
-                           | _ => Error.bug "Useless.primApp: Array_toVector")
+                   | Prim.Array_array => seq dearray
+                   | Prim.Array_copyArray => copy dearraySlot
+                   | Prim.Array_copyVector => copy devectorSlot
+                   | Prim.Array_length => length arrayLength
+                   | Prim.Array_sub => sub dearray
+                   | Prim.Array_toArray => toSeq arrayLengthAndElt
+                   | Prim.Array_toVector => toSeq vectorLengthAndElt
                    | Prim.Array_uninit =>
                         let
                            val a = dearray (arg 0)
@@ -707,27 +694,16 @@ fun transform (program: Program.t): Program.t =
                    | Prim.Ref_assign => coerce {from = arg 1, to = deref (arg 0)}
                    | Prim.Ref_deref => return (deref (arg 0))
                    | Prim.Ref_ref => coerce {from = arg 0, to = deref result}
-                   | Prim.Vector_length => return (vectorLength (arg 0))
-                   | Prim.Vector_sub => (arg 1 dependsOn result
-                                         ; return (devector (arg 0)))
-                   | Prim.Vector_vector =>
-                        let
-                           val l =
-                              (const o S.Const.word o WordX.fromInt)
-                              (Vector.length args, WordSize.seqIndex ())
-                        in
-                           (coerce {from = l, to = vectorLength result}
-                            ; Vector.foreach
-                              (args, fn arg =>
-                               coerce {from = arg, to = devector result}))
-                        end
+                   | Prim.Vector_length => length vectorLength
+                   | Prim.Vector_sub => sub devector
+                   | Prim.Vector_vector => seq devector
                    | Prim.Weak_canGet =>
                         Useful.whenUseful
                         (deground result, fn () =>
                          Useful.makeUseful (weakUseful (arg 0)))
                    | Prim.Weak_get => return (deweak (arg 0))
                    | Prim.Weak_new => coerce {from = arg 0, to = deweak result}
-                   | Prim.WordArray_subWord _ => sub ()
+                   | Prim.WordArray_subWord _ => sub dearray
                    | Prim.WordArray_updateWord _ => update ()
                    | _ =>
                         let
