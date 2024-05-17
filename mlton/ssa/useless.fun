@@ -341,7 +341,8 @@ structure Value =
                Vector fs => sel fs
              | _ => Error.bug err
       in
-         val devector = make ("Useless.devector", #1 o #elt)
+         val devectorSlot = make ("Useless.devectorSlot", #elt)
+         val devector: t -> t = #1 o devectorSlot
          val vectorLength = make ("Useless.vectorLength", #length)
       end
       local
@@ -350,7 +351,8 @@ structure Value =
                Array fs => sel fs
              | _ => Error.bug err
       in
-         val dearray: t -> t = make ("Useless.dearray", #1 o #elt)
+         val dearraySlot = make ("Useless.dearraySlot", #elt)
+         val dearray: t -> t = #1 o dearraySlot
          val arrayLength = make ("Useless.arrayLength", #length)
          val arrayUseful = make ("Useless.arrayUseful", #useful)
       end
