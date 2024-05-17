@@ -142,7 +142,7 @@ structure Value =
                   seq [str "ref ",
                        record [("useful", Useful.layout useful),
                                ("arg", layoutSlot arg)]]
-             | Tuple vs => Vector.layout layoutSlot vs
+             | Tuple ss => Vector.layout layoutSlot ss
              | Vector {elt, length} =>
                   seq [str "vector ",
                        record [("length", layout length),
@@ -172,8 +172,8 @@ structure Value =
                 | (Ref {useful = u, arg = a},
                    Ref {useful = u', arg = a'}) =>
                      (Useful.== (u, u'); unifySlot (a, a'))
-                | (Tuple vs, Tuple vs') =>
-                     Vector.foreach2 (vs, vs', unifySlot)
+                | (Tuple ss, Tuple ss') =>
+                     Vector.foreach2 (ss, ss', unifySlot)
                 | (Vector {length = n, elt = e},
                    Vector {length = n', elt = e'}) =>
                      (unify (n, n'); unifySlot (e, e'))
@@ -197,8 +197,8 @@ structure Value =
                (Array _, Array _) => unify (from, to)
              | (Ground from, Ground to) => Useful.<= (to, from)
              | (Ref _, Ref _) => unify (from, to)
-             | (Tuple vs, Tuple vs') =>
-                  Vector.foreach2 (vs, vs', fn (s, s') =>
+             | (Tuple ss, Tuple ss') =>
+                  Vector.foreach2 (ss, ss', fn (s, s') =>
                                    coerceSlot {from = s, to = s'})
              | (Vector {length = n, elt = e},
                 Vector {length = n', elt = e'}) =>
@@ -230,7 +230,7 @@ structure Value =
                   Array {length, elt, useful} =>
                      (f useful; loop length; slot elt)
                 | Ground u => f u
-                | Tuple vs => Vector.foreach (vs, slot)
+                | Tuple ss => Vector.foreach (ss, slot)
                 | Ref {arg, useful} => (f useful; slot arg)
                 | Vector {length, elt} => (loop length; slot elt)
                 | Weak {arg, useful} => (f useful; slot arg)
@@ -257,7 +257,7 @@ structure Value =
             Array {useful = u, ...} => SOME u
           | Ground u => SOME u
           | Ref {useful = u, ...} => SOME u
-          | Tuple slots => Vector.peekMap (slots, someUseful o #1)
+          | Tuple ss => Vector.peekMap (ss, someUseful o #1)
           | Vector {length, ...} => SOME (deground length)
           | Weak {useful = u, ...} => SOME u
 
