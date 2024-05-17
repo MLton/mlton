@@ -193,24 +193,22 @@ structure Value =
          if Set.equals (sfrom, sto)
             then ()
          else
-            let
-               fun coerceSlot ((v, e), (v', e')) =
-                  (coerce {from = v, to = v'}
-                   ; Exists.== (e, e'))
-            in
-               case (value from, value to) of
-                  (Array _, Array _) => unify (from, to)
-                | (Ground from, Ground to) => Useful.<= (to, from)
-                | (Ref _, Ref _) => unify (from, to)
-                | (Tuple vs, Tuple vs') =>
-                     Vector.foreach2 (vs, vs', coerceSlot)
-                | (Vector {length = n, elt = e},
-                   Vector {length = n', elt = e'}) =>
-                     (coerce {from = n, to = n'}
-                      ; coerceSlot (e, e'))
-                | (Weak _, Weak _) => unify (from, to)
-                | _ => Error.bug "Useless.Value.coerce: strange"
-            end
+            case (value from, value to) of
+               (Array _, Array _) => unify (from, to)
+             | (Ground from, Ground to) => Useful.<= (to, from)
+             | (Ref _, Ref _) => unify (from, to)
+             | (Tuple vs, Tuple vs') =>
+                  Vector.foreach2 (vs, vs', fn (s, s') =>
+                                   coerceSlot {from = s, to = s'})
+             | (Vector {length = n, elt = e},
+                Vector {length = n', elt = e'}) =>
+                  (coerce {from = n, to = n'}
+                   ; coerceSlot {from = e, to = e'})
+              | (Weak _, Weak _) => unify (from, to)
+              | _ => Error.bug "Useless.Value.coerce: strange"
+      and coerceSlot {from = (vf, ef), to = (vt, et)} =
+         (coerce {from = vf, to = vt}
+          ; Exists.== (et, ef))
 
       val coerce =
          Trace.trace ("Useless.Value.coerce",
