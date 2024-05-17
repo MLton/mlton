@@ -381,44 +381,41 @@ structure Value =
          in
             Ref.memoize
             (new, fn () =>
-             let 
-                fun slot (arg: t, e: Exists.t) =
-                   let val (t, b) = getNew arg
-                   in (if Exists.doesExist e then t else Type.unit, b)
+             let
+                fun slot (v: t, e: Exists.t) =
+                   let val (t, b) = getNew v
+                   in (if Exists.doesExist e then SOME t else NONE, b)
                    end
-                fun wrap ((t, b), f) = (f t, b)
-                fun or ((t, b), b') = (t, b orelse b')
-                fun maybe (u: Useful.t, s: slot, make: Type.t -> Type.t) =
-                   wrap (or (slot s, Useful.isUseful u), make)
+                fun wrap (s, f) =
+                   let val (to, b) = slot s
+                   in (f (Option.fold (to, Type.unit, #1)), b)
+                   end
+                fun orB ((t, b), b') = (t, b orelse b')
+                fun orV (r, v) = orB (r, isUseful v)
+                fun orU (r, u) = orB (r, Useful.isUseful u)
              in
                 case value of
                    Array {useful, elt, length, ...} =>
-                      or (wrap (slot elt, Type.array),
-                          Useful.isUseful useful orelse isUseful length)
+                      orU (orV (wrap (elt, Type.array), length), useful)
                  | Ground u => (ty, Useful.isUseful u)
                  | Ref {arg, useful, ...} =>
-                      maybe (useful, arg, Type.reff)
-                 | Tuple vs =>
+                      orU (wrap (arg, Type.reff), useful)
+                 | Tuple ss =>
                       let
-                         val (v, b) =
+                         val (tos, b) =
                             Vector.mapAndFold
-                            (vs, false, fn ((v, e), useful) =>
-                             let
-                                val (t, u) = getNew v
-                                val t =
-                                   if Exists.doesExist e
-                                      then SOME t
-                                   else NONE
-                             in (t, u orelse useful)
+                            (ss, false, fn (s, useful) =>
+                             let val (to, u) = slot s
+                             in (to, u orelse useful)
                              end)
-                         val v = Vector.keepAllMap (v, fn t => t)
+                         val ts = Vector.keepAllSome tos
                       in
-                         (Type.tuple v, b)
+                         (Type.tuple ts, b)
                       end
                  | Vector {elt, length, ...} =>
-                      or (wrap (slot elt, Type.vector), isUseful length)
+                      orV (wrap (elt, Type.vector), length)
                  | Weak {arg, useful} =>
-                      maybe (useful, arg, Type.weak)
+                      orU (wrap (arg, Type.weak), useful)
              end)
          end
 
