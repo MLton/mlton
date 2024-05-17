@@ -635,8 +635,8 @@ fun transform (program: Program.t): Program.t =
                      val (l, e) = arrayLengthAndElt (arg 0)
                      val (l', e') = seqLengthAndElt result
                   in
-                     unify (l, l')
-                     ; unifySlot (e, e')
+                     coerce {from = l, to = l'}
+                     ; coerceSlot {from = e, to = e'}
                   end
                fun update () =
                   let
