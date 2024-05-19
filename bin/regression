@@ -88,12 +88,12 @@ compFail () {
 "$mlton" -verbose 1 || (echo 'no mlton present' && exitFail=true)
 echo "flags = ${flags[*]}"
 
-TARGET_ARCH=$("$mlton" -show path-map | sed -n 's/TARGET_ARCH \(.*\)/\1/p')
-TARGET_OS=$("$mlton" -show path-map | sed -n 's/TARGET_OS \(.*\)/\1/p')
-OBJPTR_REP=$("$mlton" -show path-map | sed -n 's/OBJPTR_REP \(.*\)/\1/p')
+TARGET_ARCH=$("$mlton" "${flags[@]}" -show path-map | sed -n 's/TARGET_ARCH \(.*\)/\1/p')
+TARGET_OS=$("$mlton" "${flags[@]}" -show path-map | sed -n 's/TARGET_OS \(.*\)/\1/p')
+OBJPTR_REP=$("$mlton" "${flags[@]}" -show path-map | sed -n 's/OBJPTR_REP \(.*\)/\1/p')
 ALIGN=$(echo "${flags[@]}" | sed -n 's/.*-align \(.\).*/\1/p')
 if [ -z "$ALIGN" ]; then
-    ALIGN=$("$mlton" -z 2>&1 | sed -n 's/.*-align {\(.\).*/\1/p')
+    ALIGN=$("$mlton" "${flags[@]}" -z 2>&1 | sed -n 's/.*-align {\(.\).*/\1/p')
 fi
 
 cd "$src/regression"

@@ -9,12 +9,12 @@
 
 #if not HAS_SIGALTSTACK
 
-void initSignalStack () {
+void initSignalStack (void) {
 }
 
 #else
 
-void initSignalStack () {
+void initSignalStack (void) {
   static stack_t altstack = { .ss_sp = NULL, .ss_size = 0, .ss_flags = 0 };
 
   if (! altstack.ss_sp) {
@@ -33,6 +33,6 @@ void initSignalStack () {
 
 #endif
 
-void GC_initSignalStack () {
+void GC_initSignalStack (void) {
   initSignalStack ();
 }

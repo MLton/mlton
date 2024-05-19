@@ -32,8 +32,8 @@ struct GC_signalsInfo {
 
 #if (defined (MLTON_GC_INTERNAL_FUNCS))
 
-static void initSignalStack ();
+static void initSignalStack (void);
 
 #endif /* (defined (MLTON_GC_INTERNAL_FUNCS)) */
 
-void GC_initSignalStack ();
+void GC_initSignalStack (void);
