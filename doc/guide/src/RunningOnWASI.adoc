@@ -1,0 +1,102 @@
+= RunningOnWASI
+
+https://wasi.dev[WASI] is a somewhat POSIX-compatible system interface
+for writing https://webassembly.org[WebAssembly] (Wasm) programs.
+
+MLton does not run on WASI directly (since it requires unimplemented
+functionality), but it can cross-compile to this target, resuling in
+binaries that can run in the browser (using a shim) and from the
+command line (using something like https://wasmtime.dev[Wasmtime]).
+
+== Notes
+
+* To compile MLton for WASI:
+
+** You will need a WASI compiler and sysroot. These are both included
+   in https://github.com/WebAssembly/wasi-sdk[wasi-sdk]. Follow the
+   directions to download and unpack a copy.
+
+** The <<GMP#>> library is required. It must be compiled for
+   WASI. Download it from https://gmplib.org, build it and install it
+   to a local prefix. An example configuration command is below
+   (substitute your own wasi-sdk paths):
++
+[,shell]
+----
+./configure --host=wasm32-wasi \
+            --prefix=$HOME/gmp-wasi-INSTALL \
+            CC=$HOME/wasi-sdk-22.0/bin/clang \
+            RANLIB=$HOME/wasi-sdk-22.0/bin/ranlib \
+            CFLAGS=-D_WASI_EMULATED_SIGNAL LDFLAGS=-lwasi-emulated-signal
+----
+
+** During compilation of MLton, some files are generated, compiled, and
+   ran. When compiling the MLton runtime for WASI, you will need a way
+   of executing these binaries. Install https://wasmtime.dev[Wasmtime]
+   to do this.
+
+** MLton must be compiled and installed, then the MLton WASI runtime
+   target must be compiled and installed. Build and install MLton normally,
+   then clean the source directory and build the WASI runtime. An example
+   to build and install the WASI runtime is:
++
+[,shell]
+----
+gmake CC=$HOME/wasi-sdk-22.0/bin/clang \
+      AR=$HOME/wasi-sdk-22.0/bin/ar \
+      RANLIB=$HOME/wasi-sdk-22.0/bin/ranlib \
+      TARGET_OS=wasi \
+      TARGET_ARCH=wasm32 \
+      TARGET=wasm32-wasi \
+      WITH_GMP_DIR=$HOME/gmp-wasi-INSTALL \
+      PREFIX=$HOME/mlton-INSTALL \
+      dirs runtime install-runtime
+----
++
+Once this is complete, you should have a functional MLton that can
+cross-compile to WASI.
+
+* Compiling WASI binaries with MLton:
+
+** Once installed, you can run MLton with the
+   ``-target wasm32-wasi`` flag, to build WASI binaries:
++
+[,shell]
+----
+mlton -target wasm32-wasi hello-world.sml
+----
+
+** Using Wasmtime, you can run your WASI binaries locally:
++
+[,shell]
+----
+wasmtime hello-world
+----
++
+----
+Hello, World!
+----
+
+== Known issues
+
+* Many functions are unimplemented and will cause link errors during
+  compilation, allowing for early detection of incompatibilities. See
+  https://github.com/WebAssembly/wasi-libc[wasi-libc] for what is
+  available. In general, anything listed in ``platform/wasi.h`` is
+  unavailable for use.
+
+* Disk-backed heap is not supported. Do not set ``may-page-heap`` to
+  ``true``.
+
+* The maximum amount of available memory is fixed. See
+  ``platform/wasi.c`` for the current value.
+
+* The WASI runtime is restrictive regarding file IO and other
+  operations. You will need to map directories for use by compiled
+  binaries. See the Wasmtime help for details on how to do this.
+
+* MLton currently only supports WASI, which requires a shim to run in
+  browsers. A few options are available:
+
+** https://github.com/bjorn3/browser_wasi_shim
+** https://runno.dev/wasi

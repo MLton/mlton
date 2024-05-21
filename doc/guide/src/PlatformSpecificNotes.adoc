@@ -14,6 +14,7 @@ Here are notes about using MLton on the following platforms.
 * <<RunningOnNetBSD#,NetBSD>>
 * <<RunningOnOpenBSD#,OpenBSD>>
 * <<RunningOnSolaris#,Solaris>>
+* <<RunningOnWASI#,WASI>>
 
 == Architectures
 
@@ -22,6 +23,7 @@ Here are notes about using MLton on the following platforms.
 * <<RunningOnPowerPC#,PowerPC>>
 * <<RunningOnPowerPC64#,PowerPC64>>
 * <<RunningOnSparc#,Sparc>>
+* <<RunningOnWASI#,WebAssembly>>
 * <<RunningOnX86#,X86>>
 
 == Also see

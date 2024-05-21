@@ -118,6 +118,9 @@ for arg in "$@"; do
                -target-cc-opt ia64-hpux "-mlp64"                        \
                -target-cc-opt ia64 "-mtune=itanium2"                    \
                -target-cc-opt sparc '-m32 -mcpu=v8 -Wa,-xarch=v8plusa'  \
+               -target-cc-opt wasi '-D_WASI_EMULATED_SIGNAL'            \
+               -target-cc-opt wasi '-D_WASI_EMULATED_PROCESS_CLOCKS'    \
+               -target-cc-opt wasi '-D_WASI_EMULATED_GETPID'            \
                -target-cc-opt x86 '-m32'                                \
                -target-link-opt aix '-maix64'                           \
                -target-link-opt alpha                                   \
@@ -134,6 +137,9 @@ for arg in "$@"; do
                -target-link-opt mingw '-Wl,--enable-stdcall-fixup'      \
                -target-link-opt openbsd '-Wl,--no-execute-only'         \
                -target-link-opt solaris '-lnsl -lsocket -lrt'           \
+               -target-link-opt wasi '-lwasi-emulated-signal'           \
+               -target-link-opt wasi '-lwasi-emulated-process-clocks'   \
+               -target-link-opt wasi '-lwasi-emulated-getpid'           \
                -target-link-opt x86 '-m32'                              \
                -profile-exclude '\$\(SML_LIB\)'
     fi
