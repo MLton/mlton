@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu-22.04, macos-13, macos-14, windows-2022]
+        runner: [ubuntu-24.04, ubuntu-22.04, macos-13, macos-14, windows-2022]
         cc: ["gcc", "clang"]
         codegen: ["amd64", "c", "llvm"]
         exclude:
