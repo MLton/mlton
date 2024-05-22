@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu-latest, macos-13, macos-14, windows-latest]
+        runner: [ubuntu-24.04, macos-13, macos-14, windows-2022]
         cc: ["gcc", "clang"]
         codegen: ["amd64", "c", "llvm"]
         exclude:
@@ -23,9 +23,9 @@ jobs:
             cc: "gcc"
           - runner: macos-14
             codegen: "amd64"
-          - runner: windows-latest
+          - runner: windows-2022
             cc: "clang"
-          - runner: windows-latest
+          - runner: windows-2022
             codegen: "llvm"
           - cc: "gcc"
             codegen: "llvm"
@@ -64,7 +64,7 @@ jobs:
         if: ${{ matrix.runner == 'macos-13' }}
         run: |
           # brew update
-          brew install gmp
+          brew install -q gmp
           echo "WITH_GMP_DIR=/usr/local" >> $GITHUB_ENV
           if [[ "${{ matrix.codegen }}" == "llvm" ]]; then brew install llvm; echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH; fi
           mkdir boot && cd boot
@@ -77,7 +77,7 @@ jobs:
         if: ${{ matrix.runner == 'macos-14' }}
         run: |
           # brew update
-          brew install gmp
+          brew install -q gmp
           echo "WITH_GMP_DIR=/opt/homebrew" >> $GITHUB_ENV
           if [[ "${{ matrix.codegen }}" == "llvm" ]]; then brew install llvm; echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH; fi
           mkdir boot && cd boot
