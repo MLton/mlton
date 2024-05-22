@@ -64,7 +64,7 @@ jobs:
         if: ${{ matrix.runner == 'macos-13' }}
         run: |
           # brew update
-          brew install gmp
+          brew install -q gmp
           echo "WITH_GMP_DIR=/usr/local" >> $GITHUB_ENV
           if [[ "${{ matrix.codegen }}" == "llvm" ]]; then brew install llvm; echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH; fi
           mkdir boot && cd boot
@@ -77,7 +77,7 @@ jobs:
         if: ${{ matrix.runner == 'macos-14' }}
         run: |
           # brew update
-          brew install gmp
+          brew install -q gmp
           echo "WITH_GMP_DIR=/opt/homebrew" >> $GITHUB_ENV
           if [[ "${{ matrix.codegen }}" == "llvm" ]]; then brew install llvm; echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH; fi
           mkdir boot && cd boot
