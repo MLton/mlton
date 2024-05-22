@@ -336,8 +336,9 @@ structure Value =
                Vector fs => sel fs
              | _ => Error.bug err
       in
-         val devectorSlot = make ("Useless.devectorSlot", #elt)
-         val devector: t -> t = #1 o devectorSlot
+         val vectorArg = make ("Useless.vectorArg", fn arg => arg)
+         val vectorEltSlot = make ("Useless.vectorEltSlot", #elt)
+         val vectorElt = make ("Useless.vectorElt", #1 o #elt)
          val vectorLength = make ("Useless.vectorLength", #length)
          val vectorLengthAndElt =
             make ("Useless.vectorLengthAndElt", fn {length, elt, ...} => (length, elt))
@@ -348,8 +349,9 @@ structure Value =
                Array fs => sel fs
              | _ => Error.bug err
       in
-         val dearraySlot = make ("Useless.dearraySlot", #elt)
-         val dearray: t -> t = #1 o dearraySlot
+         val arrayArg = make ("Useless.arrayArg", fn arg => arg)
+         val arrayEltSlot = make ("Useless.arrayEltSlot", #elt)
+         val arrayElt = make ("Useless.arrayElt", #1 o #elt)
          val arrayLength = make ("Useless.arrayLength", #length)
          val arrayLengthAndElt =
             make ("Useless.arrayLengthAndElt", fn {length, elt, ...} => (length, elt))
@@ -373,8 +375,52 @@ structure Value =
          val weakUseful = make ("Useless.weakUseful", #useful)
       end
 
+      structure ArrayRep =
+         struct
+            datatype t =
+               Array of (Type.t * bool)
+             | Length
+             | LengthRef
+             | UnitRef
+             | Unit
+         end
+      structure VectorRep =
+         struct
+            datatype t =
+               Vector of (Type.t * bool)
+             | Length
+             | Unit
+         end
+
       fun newType (v: t): Type.t = #1 (getNew v)
       and isUseful (v: t): bool = #2 (getNew v)
+      and getNewSlot (v: t, e: Exists.t) : Type.t option * bool =
+         let val (t, b) = getNew v
+         in (if Exists.doesExist e then SOME t else NONE, b)
+         end
+      and arrayRep {elt, length, useful}: ArrayRep.t =
+         (case (getNewSlot elt, isUseful length, Useful.isUseful useful) of
+             ((SOME ty, eltUseful), lengthUseful, useful) =>
+                ArrayRep.Array (ty, eltUseful orelse lengthUseful orelse useful)
+           | ((NONE, false), true, false) => ArrayRep.Length
+           | ((NONE, false), true, true) => ArrayRep.LengthRef
+           | ((NONE, false), false, true) => ArrayRep.UnitRef
+           | ((NONE, false), false, false) => ArrayRep.Unit
+           | _ => Error.bug (concat
+                             ["Value.arrayRep: ",
+                              "elt: ", Layout.toString (layoutSlot elt), "; ",
+                              "length: ", Layout.toString (layout length), "; ",
+                              "useful: ", Layout.toString (Useful.layout useful)]))
+      and vectorRep {elt, length}: VectorRep.t =
+         (case (getNewSlot elt, isUseful length) of
+             ((SOME ty, eltUseful), lengthUseful) =>
+                VectorRep.Vector (ty, eltUseful orelse lengthUseful)
+           | ((NONE, false), true) => VectorRep.Length
+           | ((NONE, false), false) => VectorRep.Unit
+           | _ => Error.bug (concat
+                             ["Value.vectorRep: ",
+                              "elt: ", Layout.toString (layoutSlot elt), "; ",
+                              "length: ", Layout.toString (layout length)]))
       and getNew (T s): Type.t * bool =
          let
             val {value, ty, new, ...} = Set.! s
@@ -382,21 +428,21 @@ structure Value =
             Ref.memoize
             (new, fn () =>
              let
-                fun slot (v: t, e: Exists.t) =
-                   let val (t, b) = getNew v
-                   in (if Exists.doesExist e then SOME t else NONE, b)
-                   end
                 fun wrap (s, f) =
-                   let val (to, b) = slot s
+                   let val (to, b) = getNewSlot s
                    in (f (Option.fold (to, Type.unit, #1)), b)
                    end
                 fun orB ((t, b), b') = (t, b orelse b')
-                fun orV (r, v) = orB (r, isUseful v)
                 fun orU (r, u) = orB (r, Useful.isUseful u)
              in
                 case value of
-                   Array {useful, elt, length, ...} =>
-                      orU (orV (wrap (elt, Type.array), length), useful)
+                   Array arg =>
+                      (case arrayRep arg of
+                          ArrayRep.Array (ty, u) => (Type.array ty, u)
+                        | ArrayRep.Length => (Type.word (WordSize.seqIndex ()), true)
+                        | ArrayRep.LengthRef => (Type.reff (Type.word (WordSize.seqIndex ())), true)
+                        | ArrayRep.UnitRef => (Type.reff Type.unit, true)
+                        | ArrayRep.Unit => (Type.unit, false))
                  | Ground u => (ty, Useful.isUseful u)
                  | Ref {arg, useful, ...} =>
                       orU (wrap (arg, Type.reff), useful)
@@ -405,15 +451,18 @@ structure Value =
                          val (tos, b) =
                             Vector.mapAndFold
                             (ss, false, fn (s, useful) =>
-                             let val (to, u) = slot s
+                             let val (to, u) = getNewSlot s
                              in (to, u orelse useful)
                              end)
                          val ts = Vector.keepAllSome tos
                       in
                          (Type.tuple ts, b)
                       end
-                 | Vector {elt, length, ...} =>
-                      orV (wrap (elt, Type.vector), length)
+                 | Vector arg =>
+                      (case vectorRep arg of
+                          VectorRep.Vector (ty, u) => (Type.vector ty, u)
+                        | VectorRep.Length => (Type.word (WordSize.seqIndex ()), true)
+                        | VectorRep.Unit => (Type.unit, false))
                  | Weak {arg, useful} =>
                       orU (wrap (arg, Type.weak), useful)
              end)
@@ -606,27 +655,27 @@ fun transform (program: Program.t): Program.t =
                infix dependsOn
                fun v1 dependsOn v2 = deepCoerce (v2, deground v1)
                fun arg i = Vector.sub (args, i)
-               fun copy deseqSlot =
+               fun copy seqEltSlot =
                   let
-                     val a = dearray (arg 0)
+                     val a = arrayElt (arg 0)
                   in
                      arg 1 dependsOn a
                      ; arg 3 dependsOn a
                      ; arg 4 dependsOn a
-                     ; coerceSlot {from = deseqSlot (arg 2), to = dearraySlot (arg 0)}
+                     ; coerceSlot {from = seqEltSlot (arg 2), to = arrayEltSlot (arg 0)}
                   end
                fun length seqLength = return (seqLength (arg 0))
-               fun seq deseq =
+               fun seq seqElt =
                   let
-                     val elt = deseq result
+                     val elt = seqElt result
                   in
                      Vector.foreach
                      (args, fn arg =>
                       coerce {from = arg, to = elt})
                   end
-               fun sub deseq =
+               fun sub seqElt =
                   (arg 1 dependsOn result
-                   ; return (deseq (arg 0)))
+                   ; return (seqElt (arg 0)))
                fun toSeq seqLengthAndElt =
                   let
                      val (l, e) = arrayLengthAndElt (arg 0)
@@ -637,7 +686,7 @@ fun transform (program: Program.t): Program.t =
                   end
                fun update () =
                   let
-                     val a = dearray (arg 0)
+                     val a = arrayElt (arg 0)
                   in arg 1 dependsOn a
                      ; coerce {from = arg 2, to = a}
                   end
@@ -645,18 +694,18 @@ fun transform (program: Program.t): Program.t =
                   case prim of
                      Prim.Array_alloc _ =>
                         Exists.whenExists
-                        (#2 (dearraySlot result), fn () =>
+                        (#2 (arrayEltSlot result), fn () =>
                          Useful.makeUseful (deground (arg 0)))
-                   | Prim.Array_array => seq dearray
-                   | Prim.Array_copyArray => copy dearraySlot
-                   | Prim.Array_copyVector => copy devectorSlot
+                   | Prim.Array_array => seq arrayElt
+                   | Prim.Array_copyArray => copy arrayEltSlot
+                   | Prim.Array_copyVector => copy vectorEltSlot
                    | Prim.Array_length => length arrayLength
-                   | Prim.Array_sub => sub dearray
+                   | Prim.Array_sub => sub arrayElt
                    | Prim.Array_toArray => toSeq arrayLengthAndElt
                    | Prim.Array_toVector => toSeq vectorLengthAndElt
                    | Prim.Array_uninit =>
                         let
-                           val a = dearray (arg 0)
+                           val a = arrayElt (arg 0)
                         in
                            arg 1 dependsOn a
                         end
@@ -692,15 +741,15 @@ fun transform (program: Program.t): Program.t =
                    | Prim.Ref_deref => return (deref (arg 0))
                    | Prim.Ref_ref => coerce {from = arg 0, to = deref result}
                    | Prim.Vector_length => length vectorLength
-                   | Prim.Vector_sub => sub devector
-                   | Prim.Vector_vector => seq devector
+                   | Prim.Vector_sub => sub vectorElt
+                   | Prim.Vector_vector => seq vectorElt
                    | Prim.Weak_canGet =>
                         Useful.whenUseful
                         (deground result, fn () =>
                          Useful.makeUseful (weakUseful (arg 0)))
                    | Prim.Weak_get => return (deweak (arg 0))
                    | Prim.Weak_new => coerce {from = arg 0, to = deweak result}
-                   | Prim.WordArray_subWord _ => sub dearray
+                   | Prim.WordArray_subWord _ => sub arrayElt
                    | Prim.WordArray_updateWord _ => update ()
                    | _ =>
                         let
@@ -795,20 +844,26 @@ fun transform (program: Program.t): Program.t =
           end)
       val varExists = Value.isUseful o value
       val unitVar = Var.newString "unit"
-      val bogusGlobals: Statement.t list ref = ref []
+      val extraGlobals: Statement.t list ref = ref []
+      fun newGlobal {var, ty, exp} =
+         List.push (extraGlobals,
+                    Statement.T
+                    {var = SOME var,
+                     ty = ty,
+                     exp = exp})
       val {get = bogus, destroy, ...} =
          Property.destGet
          (Type.plist,
           Property.initFun
           (fn ty =>
-           let val var = Var.newString "bogus"
-           in List.push (bogusGlobals,
-                         Statement.T
-                         {var = SOME var, 
-                          ty = ty,
-                          exp = PrimApp {prim = Prim.MLton_bogus,
-                                         targs = Vector.new1 ty,
-                                         args = Vector.new0 ()}})
+           let
+              val var = Var.newString "bogus"
+           in
+              newGlobal {var = var,
+                         ty = ty,
+                         exp = PrimApp {prim = Prim.MLton_bogus,
+                                        targs = Vector.new1 ty,
+                                        args = Vector.new0 ()}}
               ; var
            end))
       fun keepUseful (xs: Var.t vector, vs: Value.t vector): Var.t vector =
@@ -871,125 +926,317 @@ fun transform (program: Program.t): Program.t =
          in loop (0, n, 0)
          end
 
-      fun doitExp (e: Exp.t, resultType: Type.t, resultValue: Value.t) =
-         case e of
-            ConApp {con, args} =>
-               ConApp {con = con,
-                       args = keepUseful (args, conArgs con)}
-          | Const c =>
-               (case c of
-                   Const.WordVector ws =>
-                      if Type.isUnit (Type.deVector resultType)
-                         then PrimApp
-                              {prim = Prim.Vector_vector,
-                               targs = Vector.new1 Type.unit,
-                               args = WordXVector.toVectorMap (ws, fn _ => unitVar)}
-                         else e
-                 | _ => e)
-          | PrimApp {prim, args, ...} => 
+      fun doitPrim (prim, targs, args, resultVar, resultType, resultValue) =
+         let
+            fun simple e = Vector.new1 (Statement.T
+                                        {var = resultVar,
+                                         ty = resultType,
+                                         exp = e})
+            fun arg i = Vector.sub (args, i)
+            fun doit () =
                let
-                  fun arg i = Vector.sub (args, i)
-                  fun doit () =
-                     let
-                        val (args, argTypes) =
-                           Vector.unzip
-                           (Vector.map (args, fn x =>
-                                        let
-                                           val (t, b) = Value.getNew (value x)
-                                        in
-                                           if b
-                                              then (x, t)
-                                              else (unitVar, Type.unit)
-                                        end))
-                     in
-                        PrimApp
-                        {prim = prim,
-                         args = args,
-                         targs = (Prim.extractTargs
-                                  (prim,
-                                   {args = argTypes,
-                                    result = resultType,
-                                    typeOps = {deArray = Type.deArray,
-                                               deArrow = fn _ => Error.bug "Useless.doitExp: deArrow",
-                                               deRef = Type.deRef,
-                                               deVector = Type.deVector,
-                                               deWeak = Type.deWeak}}))}
-                     end
-                  fun makePtr dePtr =
-                     if Type.isUnit (dePtr resultType)
-                        then PrimApp {prim = prim,
-                                      targs = Vector.new1 Type.unit,
-                                      args = Vector.new1 unitVar}
-                        else doit ()
-                  fun makeSeq deSeq =
-                     if Type.isUnit (deSeq resultType)
-                        then PrimApp {prim = prim,
-                                      targs = Vector.new1 Type.unit,
-                                      args = Vector.map (args, fn _ => unitVar)}
-                        else doit ()
+                  val (args, argTypes) =
+                     Vector.unzip
+                     (Vector.map (args, fn x =>
+                                  let
+                                     val (t, b) = Value.getNew (value x)
+                                  in
+                                     if b
+                                        then (x, t)
+                                        else (unitVar, Type.unit)
+                                  end))
                in
-                  case prim of
-                     Prim.Array_uninitIsNop =>
-                        if varExists (Vector.sub (args, 0))
-                           then doit ()
-                           else ConApp {args = Vector.new0 (),
-                                        con = Con.truee}
-                   | Prim.Array_array => makeSeq Type.deArray
-                   | Prim.MLton_equal =>
-                        let
-                           val (t0, _) = Value.getNew (value (arg 0))
-                           val (t1, _) = Value.getNew (value (arg 1))
-                        in
-                           if Type.equals (t0, t1)
-                              then PrimApp {prim = prim,
-                                            targs = Vector.new1 t0,
-                                            args = args}
-                              else (* The arguments differ in the usefulness of
-                                    * contents of an Array, Ref, or Weak and
-                                    * the corresponding Array, Ref, or Weak
-                                    * objects must be distinct and, therefore,
-                                    * not equal.
-                                    *)
-                                   ConApp {args = Vector.new0 (),
-                                           con = Con.falsee}
-                        end
-                   | Prim.Ref_ref => makePtr Type.deRef
-                   | Prim.Vector_vector => makeSeq Type.deVector
-                   | Prim.Weak_new => makePtr Type.deWeak
-                   | _ => doit ()
+                  simple (PrimApp
+                          {prim = prim,
+                           args = args,
+                           targs = (Prim.extractTargs
+                                    (prim,
+                                     {args = argTypes,
+                                      result = resultType,
+                                      typeOps = {deArray = Type.deArray,
+                                                 deArrow = fn _ => Error.bug "Useless.doitPrim: deArrow",
+                                                 deRef = Type.deRef,
+                                                 deVector = Type.deVector,
+                                                 deWeak = Type.deWeak}}))})
                end
-          | Select {tuple, offset} =>
-               let
-                  val (offset, isOne) =
-                     newOffset (Vector.map (Value.detupleSlots (value tuple),
-                                            Exists.doesExist o #2),
-                                offset)
-               in if isOne
-                     then Var tuple
-                  else Select {tuple = tuple,
-                               offset = offset}
-               end
-          | Tuple xs =>
-               let
-                  val slots = Value.detupleSlots resultValue
-                  val xs =
-                     Vector.keepAllMap2
-                     (xs, slots, fn (x, (v, e)) =>
-                      if Exists.doesExist e
-                         then SOME (if varExists x then x
-                                    else bogus (Value.newType v))
-                      else NONE)
-               in
-                  if 1 = Vector.length xs
-                     then Var (Vector.first xs)
-                  else Tuple xs
-               end
-          | Var _ => e
-          | _ => e
+            fun makePtr dePtr =
+               if Type.isUnit (dePtr resultType)
+                  then simple (PrimApp {prim = prim,
+                                        targs = Vector.new1 Type.unit,
+                                        args = Vector.new1 unitVar})
+                  else doit ()
+            fun makeSeq eltTy =
+               if Type.isUnit eltTy
+                  then simple (PrimApp {prim = prim,
+                                        targs = Vector.new1 Type.unit,
+                                        args = Vector.map (args, fn _ => unitVar)})
+                  else doit ()
+         in
+            case prim of
+               Prim.Array_alloc _ =>
+                  (case Value.arrayRep (Value.arrayArg resultValue) of
+                      Value.ArrayRep.Array _ => doit ()
+                    | Value.ArrayRep.Length => simple (Var (arg 0))
+                    | Value.ArrayRep.LengthRef =>
+                         simple (PrimApp {prim = Prim.Ref_ref,
+                                          targs = Vector.new1 (Type.word (WordSize.seqIndex ())),
+                                          args = Vector.new1 (arg 0)})
+                    | Value.ArrayRep.UnitRef =>
+                         simple (PrimApp {prim = Prim.Ref_ref,
+                                          targs = Vector.new1 Type.unit,
+                                          args = Vector.new1 unitVar})
+                    | Value.ArrayRep.Unit => simple (Var unitVar))
+             | Prim.Array_array =>
+                  (case Value.arrayRep (Value.arrayArg resultValue) of
+                      Value.ArrayRep.Array (eltTy, _) => makeSeq eltTy
+                    | Value.ArrayRep.Length =>
+                         let
+                            val len_var = Var.newNoname ()
+                            val len_ty = Type.word (WordSize.seqIndex ())
+                            val len_exp =
+                               Const (Const.word
+                                      (WordX.fromInt
+                                       (Vector.length args,
+                                        WordSize.seqIndex ())))
+                         in
+                            newGlobal {var = len_var,
+                                       ty = len_ty,
+                                       exp = len_exp}
+                            ; simple (Var len_var)
+                         end
+                    | Value.ArrayRep.LengthRef =>
+                         let
+                            val len_var = Var.newNoname ()
+                            val len_ty = Type.word (WordSize.seqIndex ())
+                            val len_exp =
+                               Const (Const.word
+                                      (WordX.fromInt
+                                       (Vector.length args,
+                                        WordSize.seqIndex ())))
+                         in
+                            newGlobal {var = len_var,
+                                       ty = len_ty,
+                                       exp = len_exp}
+                            ; simple (PrimApp {prim = Prim.Ref_ref,
+                                               targs = Vector.new1 len_ty,
+                                               args = Vector.new1 len_var})
+                         end
+                    | Value.ArrayRep.UnitRef =>
+                         simple (PrimApp {prim = Prim.Ref_ref,
+                                          targs = Vector.new1 Type.unit,
+                                          args = Vector.new1 unitVar})
+                    | Value.ArrayRep.Unit => simple (Var unitVar))
+             | Prim.Array_length =>
+                  (case Value.arrayRep (Value.arrayArg (value (arg 0))) of
+                      Value.ArrayRep.Array _ => doit ()
+                    | Value.ArrayRep.Length => simple (Var (arg 0))
+                    | Value.ArrayRep.LengthRef =>
+                         simple (PrimApp {prim = Prim.Ref_deref,
+                                          targs = Vector.new1 (Type.word (WordSize.seqIndex ())),
+                                          args = args})
+                    | Value.ArrayRep.UnitRef =>
+                         Error.bug "Useless.doitPrim: Array_length/ArrayRep.UnitRef"
+                    | Value.ArrayRep.Unit =>
+                         Error.bug "Useless.doitPrim: Array_length/ArrayRep.Unit")
+             | Prim.Array_toArray =>
+                  (case (Value.arrayRep (Value.arrayArg (value (arg 0))),
+                         Value.arrayRep (Value.arrayArg resultValue)) of
+                      (_, Value.ArrayRep.Unit) => simple (Var unitVar)
+                    | (_, Value.ArrayRep.UnitRef) =>
+                         simple (PrimApp {prim = Prim.Ref_ref,
+                                          targs = Vector.new1 Type.unit,
+                                          args = Vector.new1 unitVar})
+                    | (Value.ArrayRep.Array _, Value.ArrayRep.LengthRef) =>
+                         let
+                            val len_var = Var.newNoname ()
+                            val len_ty = Type.word (WordSize.seqIndex ())
+                            val len_exp =
+                               Const (Const.word
+                                      (WordX.fromInt
+                                       (Vector.length args,
+                                        WordSize.seqIndex ())))
+                            val len_stmt =
+                               Statement.T {var = SOME len_var,
+                                            ty = len_ty,
+                                            exp = len_exp}
+                            val len_ref_exp =
+                               PrimApp {prim = Prim.Ref_ref,
+                                        targs = Vector.new1 len_ty,
+                                        args = Vector.new1 len_var}
+                            val len_ref_stmt =
+                               Statement.T {var = resultVar,
+                                            ty = resultType,
+                                            exp = len_ref_exp}
+
+                         in
+                            Vector.new2 (len_stmt, len_ref_stmt)
+                         end
+                    | (Value.ArrayRep.Length, Value.ArrayRep.LengthRef) =>
+                         simple (PrimApp {prim = Prim.Ref_ref,
+                                          targs = Vector.new1 (Type.word (WordSize.seqIndex ())),
+                                          args = Vector.new1 (arg 0)})
+                    | (Value.ArrayRep.LengthRef, Value.ArrayRep.LengthRef) =>
+                         simple (Var (arg 0))
+                    | (Value.ArrayRep.Array _, Value.ArrayRep.Length) =>
+                         simple (PrimApp {prim = Prim.Array_length,
+                                          targs = targs,
+                                          args = args})
+                    | (Value.ArrayRep.Length, Value.ArrayRep.Length) =>
+                         simple (Var (arg 0))
+                    | (Value.ArrayRep.LengthRef, Value.ArrayRep.Length) =>
+                         simple (PrimApp {prim = Prim.Ref_deref,
+                                          targs = Vector.new1 (Type.word (WordSize.seqIndex ())),
+                                          args = args})
+                    | (Value.ArrayRep.Array _, Value.ArrayRep.Array _) => doit ()
+                    | _ => Error.bug "Useless.doitPrim: Array_toArray")
+             | Prim.Array_toVector =>
+                  (case (Value.arrayRep (Value.arrayArg (value (arg 0))),
+                         Value.vectorRep (Value.vectorArg resultValue)) of
+                      (_, Value.VectorRep.Unit) => simple (Var unitVar)
+                    | (Value.ArrayRep.Array _, Value.VectorRep.Length) =>
+                         simple (PrimApp {prim = Prim.Array_length,
+                                          targs = targs,
+                                          args = args})
+                    | (Value.ArrayRep.Length, Value.VectorRep.Length) =>
+                         simple (Var (arg 0))
+                    | (Value.ArrayRep.LengthRef, Value.VectorRep.Length) =>
+                         simple (PrimApp {prim = Prim.Ref_deref,
+                                          targs = Vector.new1 (Type.word (WordSize.seqIndex ())),
+                                          args = args})
+                    | (Value.ArrayRep.Array _, Value.VectorRep.Vector _) => doit ()
+                    | _ => Error.bug "Useless.doitPrim: Array_toVector")
+             | Prim.Array_uninitIsNop =>
+                  if varExists (arg 0)
+                     then (case (Value.arrayRep (Value.arrayArg (value (arg 0)))) of
+                              Value.ArrayRep.Array _ => doit ()
+                            | _ => simple (ConApp {args = Vector.new0 (),
+                                                   con = Con.truee}))
+                     else simple (ConApp {args = Vector.new0 (),
+                                          con = Con.truee})
+             | Prim.MLton_equal =>
+                  let
+                     val t0 = Value.newType (value (arg 0))
+                     val t1 = Value.newType (value (arg 1))
+                  in
+                     if Type.equals (t0, t1)
+                        then simple (PrimApp {prim = prim,
+                                              targs = Vector.new1 t0,
+                                              args = args})
+                        else (* The arguments differ in the usefulness of
+                              * contents of an Array, Ref, or Weak and
+                              * the corresponding Array, Ref, or Weak
+                              * objects must be distinct and, therefore,
+                              * not equal.
+                              *)
+                             simple (ConApp {args = Vector.new0 (),
+                                             con = Con.falsee})
+                  end
+             | Prim.Ref_ref => makePtr Type.deRef
+             | Prim.Vector_length =>
+                  (case Value.vectorRep (Value.vectorArg (value (arg 0))) of
+                      Value.VectorRep.Vector _ => doit ()
+                    | Value.VectorRep.Length => simple (Var (arg 0))
+                    | Value.VectorRep.Unit =>
+                         Error.bug "Useless.doitPrim: Vector_length/VectorRep.Unit")
+             | Prim.Vector_vector =>
+                  (case Value.vectorRep (Value.vectorArg resultValue) of
+                      Value.VectorRep.Vector (eltTy, _) => makeSeq eltTy
+                    | Value.VectorRep.Length =>
+                         let
+                            val len_var = Var.newNoname ()
+                            val len_ty = Type.word (WordSize.seqIndex ())
+                            val len_exp =
+                               Const (Const.word
+                                      (WordX.fromInt
+                                       (Vector.length args,
+                                        WordSize.seqIndex ())))
+                         in
+                            newGlobal {var = len_var,
+                                       ty = len_ty,
+                                       exp = len_exp}
+                            ; simple (Var len_var)
+                         end
+                    | Value.VectorRep.Unit => simple (Var unitVar))
+             | Prim.Weak_new => makePtr Type.deWeak
+             | _ => doit ()
+         end
+      val doitPrim =
+         Trace.trace ("Useless.doitPrim",
+                      fn (prim, targs, args, resultVar, resultType, resultValue) =>
+                      Layout.tuple [Prim.layout prim,
+                                    Vector.layout Type.layout targs,
+                                    Vector.layout Var.layout args,
+                                    Option.layout Var.layout resultVar,
+                                    Type.layout resultType,
+                                    Value.layout resultValue],
+                      Vector.layout Statement.layout)
+         doitPrim
+      fun doitExp (e: Exp.t, resultVar: Var.t option, resultType: Type.t, resultValue: Value.t) =
+         let
+            fun simple e = Vector.new1 (Statement.T
+                                        {var = resultVar,
+                                         ty = resultType,
+                                         exp = e})
+         in
+            case e of
+               ConApp {con, args} =>
+                  simple (ConApp {con = con,
+                                  args = keepUseful (args, conArgs con)})
+             | Const c =>
+                  (case c of
+                      Const.WordVector ws =>
+                         (case Value.vectorRep (Value.vectorArg resultValue) of
+                             Value.VectorRep.Vector (ty, _) =>
+                                if Type.isUnit ty
+                                   then simple (PrimApp
+                                                {prim = Prim.Vector_vector,
+                                                 targs = Vector.new1 Type.unit,
+                                                 args = WordXVector.toVectorMap (ws, fn _ => unitVar)})
+                                   else simple e
+                           | Value.VectorRep.Length =>
+                                simple (Const (Const.word
+                                               (WordX.fromInt
+                                                (WordXVector.length ws,
+                                                 WordSize.seqIndex ()))))
+                           | Value.VectorRep.Unit =>
+                                simple (Var unitVar))
+                    | _ => simple e)
+             | PrimApp {prim, targs, args} =>
+                  doitPrim (prim, targs, args, resultVar, resultType, resultValue)
+             | Select {tuple, offset} =>
+                  let
+                     val (offset, isOne) =
+                        newOffset (Vector.map (Value.detupleSlots (value tuple),
+                                               Exists.doesExist o #2),
+                                   offset)
+                  in
+                     if isOne
+                        then simple (Var tuple)
+                        else simple (Select {tuple = tuple,
+                                             offset = offset})
+                  end
+             | Tuple xs =>
+                  let
+                     val slots = Value.detupleSlots resultValue
+                     val xs =
+                        Vector.keepAllMap2
+                        (xs, slots, fn (x, (v, e)) =>
+                         if Exists.doesExist e
+                            then SOME (if varExists x then x
+                                       else bogus (Value.newType v))
+                         else NONE)
+                  in
+                     if 1 = Vector.length xs
+                        then simple (Var (Vector.first xs))
+                        else simple (Tuple xs)
+                  end
+             | Var _ => simple e
+             | Profile _ => simple e
+         end
       val doitExp =
-         Trace.trace3 ("Useless.doitExp",
-                       Exp.layout, Type.layout, Value.layout,
-                       Exp.layout) 
+         Trace.trace4 ("Useless.doitExp",
+                       Exp.layout, Option.layout Var.layout, Type.layout, Value.layout,
+                       Vector.layout Statement.layout)
          doitExp
       fun doitStatement (Statement.T {var, exp, ty}) =
          let
@@ -998,11 +1245,8 @@ fun transform (program: Program.t): Program.t =
                case v of
                   NONE => (Value.fromType ty, (ty, false))
                 | SOME v => (v, Value.getNew v)
-            fun yes () =
-               SOME (Statement.T 
-                     {var = var, 
-                      ty = ty, 
-                      exp = doitExp (exp, ty, v)})
+            fun no () = Vector.new0 ()
+            fun yes () = doitExp (exp, var, ty, v)
          in
             if b
                then yes ()
@@ -1014,27 +1258,28 @@ fun transform (program: Program.t): Program.t =
                                    fun arg i = Vector.sub (args, i)
                                    fun array () =
                                       Value.isUseful
-                                      (Value.dearray (value (arg 0)))
+                                      (Value.arrayElt (value (arg 0)))
+                                   fun reff () =
+                                      Value.isUseful
+                                      (Value.deref (value (arg 0)))
                                 in
                                    case prim of
                                       Prim.Array_copyArray => array ()
                                     | Prim.Array_copyVector => array ()
                                     | Prim.Array_uninit => array ()
                                     | Prim.Array_update => array ()
-                                    | Prim.Ref_assign =>
-                                         Value.isUseful
-                                         (Value.deref (value (arg 0)))
+                                    | Prim.Ref_assign => reff ()
                                     | Prim.WordArray_updateWord _ => array ()
                                     | _ => true
                                 end
                         then yes ()
-                     else NONE
+                     else no ()
                 | Profile _ => yes ()
-                | _ => NONE
+                | _ => no ()
          end
       val doitStatement =
          Trace.trace ("Useless.doitStatement", 
-                      Statement.layout, Option.layout Statement.layout)
+                      Statement.layout, Vector.layout Statement.layout)
          doitStatement
       fun agree (v: Value.t, v': Value.t): bool =
          Value.isUseful v = Value.isUseful v'
@@ -1202,7 +1447,7 @@ fun transform (program: Program.t): Program.t =
          : Block.t list * Block.t =
          let
             val args = keepUsefulArgs args
-            val statements = Vector.keepAllMap (statements, doitStatement)
+            val statements = Vector.concatV (Vector.map (statements, doitStatement))
             val (blocks, transfer) = doitTransfer (transfer, returns, raises)
          in
            (blocks, Block.T {label = label,
@@ -1251,13 +1496,13 @@ fun transform (program: Program.t): Program.t =
                                           args = Value.newTypes (conArgs con)})})
       val globals =
          Vector.concat
-         [Vector.new1 (Statement.T {var = SOME unitVar,
+         (Vector.new1 (Statement.T {var = SOME unitVar,
                                     ty = Type.unit,
-                                    exp = Exp.unit}),
-          Vector.keepAllMap (globals, doitStatement)]
+                                    exp = Exp.unit})
+          :: Vector.toListMap (globals, doitStatement))
       val shrink = shrinkFunction {globals = globals}
-      val functions = List.map (functions, shrink o doitFunction)
-      val globals = Vector.concat [Vector.fromList (!bogusGlobals),
+      val functions = List.revMap (functions, shrink o doitFunction)
+      val globals = Vector.concat [Vector.fromList (!extraGlobals),
                                    globals]
       val program = Program.T {datatypes = datatypes,
                                globals = globals,
