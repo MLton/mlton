@@ -8,10 +8,56 @@ Here are the changes from version 20210117 to YYYYMMDD.
 
 === Details
 
+* 2024-05-22
+  ** Optimize representation of sequences in `Useless` SSA
+  optimization.
+
+* 2024-05-21
+  ** Add support for WebAssembly architecture (`wasm32`) and WASI
+  "operating system", available together as the `wasm32-wasi`
+  platform.  Thanks to Adam Goode for the pull request.
+
+* 2024-05-16
+  ** Fix bug in heap resizing that could lead to segmentation fault.
+  Thanks to Humza Shahid (hummy123) for the bug report.
+
+* 2024-05-15
+  ** Fix bug in handling of `WordXVector` constants in `Useless` SSA
+  optimization that could lead to internal compiler errors.  Thanks to
+  Humza Shahid (hummy123) for the bug report.
+
 * 2024-05-13
   ** Fix bug in `#line` directives that fails to acceptable
   `(*#line line *"file" )`, which should be accepted with a default
   column of 1.  Thanks to Norman Ramsey for the bug report.
+
+* 2024-03-17
+  ** Update elaboration error messages involving constants and infix
+  patterns and expressions.
+
+* 2024-01-19
+  ** Add support for LoongArch64 architecture.  Thanks to JiaLing
+  Zhang for the pull request.
+
+* 2023-11-22
+  ** Fix bug in `ImperativeIO.getInstream`.  Thanks to Murray Calavera
+  (ii8) for the bug report.
+
+* 2023-11-17
+  ** Fix bug with `-align 4` and mark-compact GC.
+
+* 2023-11-11
+  ** Fix bug/inefficiency in register allocation for x86
+  floating-point stack.
+
+* 2023-11-09
+  ** Fix bug in frame allocation of handler offset and args that
+  could, in rare circumstances, lead to a `Machine.typeCheck` internal
+  compiler error.
+
+* 2023-11-08
+  ** Eliminate ``bash``isms from `bin/mlton` script.  Thanks to Murray
+  Calavera (ii8) for the pull request.
 
 * 2023-08-31
   ** Fix bug in x86 and amd64 native codegens leading to an internal
@@ -24,6 +70,10 @@ Here are the changes from version 20210117 to YYYYMMDD.
   meridian.  Thanks to Arata Mizuki (minoki) for the bug report and
   suggested fix.
 
+* 2023-07-21
+  ** Update default `-cc-opt` and `-link-opt` options for
+  `powerpc-darwin` and `powerpc64-darwin` platforms.
+
 * 2023-05-29
   ** Fix bugs in `WORD.scan` when `0` is followed by `w` or `x` or
   `wx` but not by more digits.  Thanks to Arata Mizuki (minoki) for
@@ -31,6 +81,10 @@ Here are the changes from version 20210117 to YYYYMMDD.
 
 * 2023-05-26
   ** Update SML/NJ libraries to SML/NJ 110.99.3.
+
+* 2023-05-22
+  ** Adapt default `-llvm-opt-opt` options to LLVM's "New Pass
+  Manager"; using the LLVM codegen requires LLVM 14 (or higher).
 
 * 2022-11-16
   ** Fix bug in `GC_sequenceCopy` failing to update card map when
