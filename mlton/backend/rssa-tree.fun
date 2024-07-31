@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2016-2017,2019-2021 Matthew Fluet.
+(* Copyright (C) 2009,2016-2017,2019-2021,2024 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -568,12 +568,8 @@ structure Block =
          let
             open Layout
          in
-            align [seq [Label.layout label, str " ",
-                        Vector.layout (fn (x, t) =>
-                                       if !Control.showTypes
-                                          then seq [Var.layout x, str ": ",
-                                                    Type.layout t]
-                                       else Var.layout x) args,
+            align [seq [str "block ", Label.layout label, str " ",
+                        layoutFormals args,
                         str " ", Kind.layout kind, str " = "],
                    indent (align
                            [align
@@ -593,68 +589,56 @@ structure Block =
 
 structure Function =
    struct
-      datatype t = T of {args: (Var.t * Type.t) vector,
-                         blocks: Block.t vector,
-                         name: Func.t,
-                         raises: Type.t vector option,
-                         returns: Type.t vector option,
-                         start: Label.t}
+      structure CPromise = ClearablePromise
+
+      type dest = {args: (Var.t * Type.t) vector,
+                   blocks: Block.t vector,
+                   name: Func.t,
+                   raises: Type.t vector option,
+                   returns: Type.t vector option,
+                   start: Label.t}
+
+      (* There is a messy interaction between the laziness used in controlFlow
+       * and the property lists on labels because the former stores
+       * stuff on the property lists.  So, if you force the laziness, then
+       * clear the property lists, then try to use the lazy stuff, you will
+       * get screwed with undefined properties.  The right thing to do is reset
+       * the laziness when the properties are cleared.
+       *)
+      datatype t =
+         T of {controlFlow:
+               {dfsTree: unit -> Block.t Tree.t,
+                dominatorTree: unit -> Block.t Tree.t,
+                graph: unit DirectedGraph.t,
+                labelNode: Label.t -> unit DirectedGraph.Node.t,
+                nodeBlock: unit DirectedGraph.Node.t -> Block.t} CPromise.t,
+               dest: dest}
 
       local
-         fun make f (T r) = f r
+         fun make f (T {dest, ...}) = f dest
       in
          val blocks = make #blocks
+         val dest = make (fn d => d)
          val name = make #name
       end
 
-      fun dest (T r) = r
-      val new = T
-
-      fun clear (T {name, args, blocks, ...}) =
-         (Func.clear name
-          ; Vector.foreach (args, Var.clear o #1)
-          ; Vector.foreach (blocks, Block.clear))
-
-      fun layoutHeader (T {args, name, raises, returns, start, ...}): Layout.t =
+      fun controlFlow (T {controlFlow, ...}) =
          let
-            open Layout
+            val {graph, labelNode, nodeBlock, ...} = CPromise.force controlFlow
          in
-            seq [str "fun ", Func.layout name,
-                 str " ", layoutFormals args,
-                 if !Control.showTypes
-                    then seq [str ": ",
-                              record [("raises",
-                                       Option.layout
-                                       (Vector.layout Type.layout) raises),
-                                      ("returns",
-                                       Option.layout
-                                       (Vector.layout Type.layout) returns)]]
-                 else empty,
-                 str " = ", Label.layout start, str " ()"]
+            {graph = graph, labelNode = labelNode, nodeBlock = nodeBlock}
          end
 
-      fun layouts (f as T {blocks, ...}, output) =
-         (output (layoutHeader f)
-          ; Vector.foreach (blocks, fn b =>
-                            output (Layout.indent (Block.layout b, 2))))
+      local
+         fun make sel =
+            fn T {controlFlow, ...} => sel (CPromise.force controlFlow) ()
+      in
+         val dominatorTree = make #dominatorTree
+      end
 
-      fun layout (f as T {blocks, ...}) =
+      fun dfs (f, v) =
          let
-            open Layout
-         in
-            align [layoutHeader f,
-                   indent (align (Vector.toListMap (blocks, Block.layout)), 2)]
-         end
-
-      fun foreachDef (T {args, blocks, ...}, f) =
-         (Vector.foreach (args, f)
-          ; (Vector.foreach (blocks, fn b => Block.foreachDef (b, f))))
-
-      fun foreachUse (T {blocks, ...}, f) =
-         Vector.foreach (blocks, fn b => Block.foreachUse (b, f))
-
-      fun dfs (T {blocks, start, ...}, v) =
-         let
+            val {blocks, start, ...} = dest f
             val numBlocks = Vector.length blocks
             val {get = labelIndex, set = setLabelIndex, rem, ...} =
                Property.getSetOnce (Label.plist,
@@ -686,62 +670,390 @@ structure Function =
             ()
          end
 
-      structure Graph = DirectedGraph
-      structure Node = Graph.Node
+      local
+         structure Graph = DirectedGraph
+         structure Node = Graph.Node
+         structure Edge = Graph.Edge
+      in
+         fun determineControlFlow ({blocks, start, ...}: dest) =
+            let
+               open Dot
+               val g = Graph.new ()
+               fun newNode () = Graph.newNode g
+               val {get = labelNode, ...} =
+                  Property.get
+                  (Label.plist, Property.initFun (fn _ => newNode ()))
+               val {get = nodeInfo: unit Node.t -> {block: Block.t},
+                    set = setNodeInfo, ...} =
+                  Property.getSetOnce
+                  (Node.plist, Property.initRaise ("info", Node.layout))
+               val _ =
+                  Vector.foreach
+                  (blocks, fn b as Block.T {label, transfer, ...} =>
+                   let
+                      val from = labelNode label
+                      val _ = setNodeInfo (from, {block = b})
+                      val _ =
+                         Transfer.foreachLabel
+                         (transfer, fn to =>
+                          (ignore o Graph.addEdge)
+                          (g, {from = from, to = labelNode to}))
+                   in
+                      ()
+                   end)
+               val root = labelNode start
+               val dfsTree =
+                  Promise.lazy
+                  (fn () =>
+                   Graph.dfsTree (g, {root = root,
+                                      nodeValue = #block o nodeInfo}))
+               val dominatorTree =
+                  Promise.lazy
+                  (fn () =>
+                   Graph.dominatorTree (g, {root = root,
+                                            nodeValue = #block o nodeInfo}))
+            in
+               {dfsTree = dfsTree,
+                dominatorTree = dominatorTree,
+                graph = g,
+                labelNode = labelNode,
+                nodeBlock = #block o nodeInfo}
+            end
 
-      fun overlayGraph (T {blocks, ...}) =
+         fun layoutDot f =
+            let
+               fun toStringFormals args = Layout.toString (layoutFormals args)
+               fun toStringKind k =
+                  Layout.toString
+                  (case k of
+                      Kind.CReturn {func, ...} =>
+                         Layout.seq [Layout.str "CReturn ",
+                                     Layout.record [("func",
+                                                     CFunction.Target.layout
+                                                     (CFunction.target func))]]
+
+                    | _ => Kind.layout k)
+               fun toStringHeader (name, args) =
+                  concat [name, " ", toStringFormals args]
+               fun toStringBlockHeader (label, args, kind) =
+                  concat [toStringHeader (Label.toString label, args),
+                          " ", toStringKind kind]
+               fun toStringFunctionHeader (func, args) =
+                  concat ["fun ", toStringHeader (Func.toString func, args)]
+               fun toStringStatement s = Layout.toString (Statement.layout s)
+               fun toStringTransfer t =
+                  Layout.toString
+                  (case t of
+                      Transfer.Switch (Switch.T {test, ...}) =>
+                         Layout.seq [Layout.str "switch ", Operand.layout test]
+                    | _ => Transfer.layout t)
+               val {name, args, start, blocks, returns, raises, ...} = dest f
+               open Dot
+               val graph = Graph.new ()
+               val {get = nodeOptions, ...} =
+                  Property.get (Node.plist, Property.initFun (fn _ => ref []))
+               fun setNodeText (n: unit Node.t, l): unit =
+                  List.push (nodeOptions n, NodeOption.Label l)
+               fun newNode () = Graph.newNode graph
+               val {destroy, get = labelNode} =
+                  Property.destGet (Label.plist,
+                                    Property.initFun (fn _ => newNode ()))
+               val {get = edgeOptions, set = setEdgeOptions, ...} =
+                  Property.getSetOnce (Edge.plist, Property.initConst [])
+               fun edge (from, to, label: string, style: style): unit =
+                  let
+                     val e = Graph.addEdge (graph, {from = from,
+                                                    to = to})
+                     val _ = setEdgeOptions (e, [EdgeOption.label label,
+                                                 EdgeOption.Style style])
+                  in
+                     ()
+                  end
+               val _ =
+                  Vector.foreach
+                  (blocks, fn Block.T {label, kind, args, statements, transfer} =>
+                   let
+                      val from = labelNode label
+                      val edge = fn (to, label, style) =>
+                         edge (from, labelNode to, label, style)
+                      val () =
+                         case transfer of
+                            Transfer.CCall {return, ...} =>
+                               Option.app (return, fn return => edge (return, "", Dotted))
+                          | Transfer.Call {return, ...} =>
+                               let
+                                  val _ =
+                                     case return of
+                                        Return.Dead => ()
+                                      | Return.NonTail {cont, handler} =>
+                                           (edge (cont, "", Dotted)
+                                            ; (Handler.foreachLabel
+                                               (handler, fn l =>
+                                                edge (l, "Handle", Dashed))))
+                                      | Return.Tail => ()
+                               in
+                                  ()
+                               end
+                          | Transfer.Goto {dst, ...} => edge (dst, "", Solid)
+                          | Transfer.Raise _ => ()
+                          | Transfer.Return _ => ()
+                          | Transfer.Switch (Switch.T {cases, default, ...}) =>
+                               let
+                                  val _ =
+                                     Vector.foreach
+                                     (cases, fn (w, j) =>
+                                      edge (j, WordX.toString (w, {suffix = true}), Solid))
+                                  val _ =
+                                     case default of
+                                        NONE => ()
+                                      | SOME j =>
+                                           edge (j, "Default", Solid)
+                               in
+                                  ()
+                               end
+                      val lab =
+                         [(toStringTransfer transfer, Left)]
+                      val lab =
+                         Vector.foldr
+                         (statements, lab, fn (s, ac) =>
+                          (toStringStatement s, Left) :: ac)
+                      val lab = (toStringBlockHeader (label, args, kind), Left)::lab
+                      val _ = setNodeText (from, lab)
+                   in
+                      ()
+                   end)
+               val startNode = labelNode start
+               val funNode =
+                  let
+                     val funNode = newNode ()
+                     val _ = edge (funNode, startNode, "Start", Solid)
+                     val lab =
+                        [(toStringTransfer (Transfer.Goto {dst = start, args = Vector.new0 ()}), Left)]
+                     val lab =
+                        if !Control.showTypes
+                           then ((Layout.toString o Layout.seq)
+                                 [Layout.str ": ",
+                                  Layout.record [("returns",
+                                                  Option.layout
+                                                  (Vector.layout Type.layout)
+                                                  returns),
+                                                 ("raises",
+                                                  Option.layout
+                                                  (Vector.layout Type.layout)
+                                                  raises)]],
+                                 Left)::lab
+                           else lab
+                     val lab =
+                        (toStringFunctionHeader (name, args), Left)::
+                        lab
+                     val _ = setNodeText (funNode, lab)
+                  in
+                     funNode
+                  end
+               val controlFlowGraphLayout =
+                  Graph.layoutDot
+                  (graph, fn {nodeName} =>
+                   {title = concat [Func.toString name, " control-flow graph"],
+                    options = [GraphOption.Rank (Min, [{nodeName = nodeName funNode}])],
+                    edgeOptions = edgeOptions,
+                    nodeOptions =
+                    fn n => let
+                               val l = ! (nodeOptions n)
+                               open NodeOption
+                            in FontColor Black :: Shape Box :: l
+                            end})
+               val () = Graph.removeNode (graph, funNode)
+               fun dominatorTreeLayout () =
+                  let
+                     val {get = nodeOptions, set = setNodeOptions, ...} =
+                        Property.getSetOnce (Node.plist, Property.initConst [])
+                     val _ =
+                        Vector.foreach
+                        (blocks, fn Block.T {label, ...} =>
+                         setNodeOptions (labelNode label,
+                                         [NodeOption.label (Label.toString label)]))
+                     val dominatorTreeLayout =
+                        Tree.layoutDot
+                        (Graph.dominatorTree (graph,
+                                              {root = startNode,
+                                               nodeValue = fn n => n}),
+                         {title = concat [Func.toString name, " dominator tree"],
+                          options = [],
+                          nodeOptions = nodeOptions})
+                  in
+                     dominatorTreeLayout
+                  end
+               fun loopForestLayout () =
+                  let
+                     val {get = nodeName, set = setNodeName, ...} =
+                        Property.getSetOnce (Node.plist, Property.initConst "")
+                     val _ =
+                        Vector.foreach
+                        (blocks, fn Block.T {label, ...} =>
+                         setNodeName (labelNode label, Label.toString label))
+                     val loopForestLayout =
+                        Graph.LoopForest.layoutDot
+                        (Graph.loopForestSteensgaard (graph,
+                                                      {root = startNode,
+                                                       nodeValue = fn x => x}),
+                         {title = concat [Func.toString name, " loop forest"],
+                          options = [],
+                          name = nodeName})
+                  in
+                     loopForestLayout
+                  end
+            in
+               {destroy = destroy,
+                controlFlowGraph = controlFlowGraphLayout,
+                dominatorTree = dominatorTreeLayout,
+                loopForest = loopForestLayout}
+            end
+      end
+
+      fun new (dest: dest) =
          let
-            open Dot
-            val g = Graph.new ()
-            fun newNode () = Graph.newNode g
-            val {get = labelNode, rem = remLabelNode, ...} =
-               Property.get
-               (Label.plist, Property.initFun (fn _ => newNode ()))
-            val {get = nodeInfo: unit Node.t -> Block.t,
-                 set = setNodeInfo, ...} =
-               Property.getSetOnce
-               (Node.plist, Property.initRaise ("info", Node.layout))
-            val () =
-               Vector.foreach
-               (blocks, fn b as Block.T {label, ...}=>
-                setNodeInfo (labelNode label, b))
-            fun destroyLabelNode () =
-               Vector.foreach (blocks, remLabelNode o Block.label)
+            val controlFlow = CPromise.delay (fn () => determineControlFlow dest)
          in
-            (g, {labelNode = labelNode,
-                 destroyLabelNode = destroyLabelNode,
-                 nodeInfo = nodeInfo})
+            T {controlFlow = controlFlow,
+               dest = dest}
          end
 
-      fun dominatorTree (t as T {blocks, start, ...}): Block.t Tree.t =
+      fun clear (T {controlFlow, dest, ...}) =
          let
-            val (g, {labelNode, destroyLabelNode, nodeInfo}) = overlayGraph t
-            val _ =
-               Vector.foreach
-               (blocks, fn Block.T {transfer, label = from, ...} =>
-                Transfer.foreachLabel
-                (transfer, fn to =>
-                 ignore (Graph.addEdge (g, {from = labelNode from, to = labelNode to}))))
+            val {args, blocks, ...} = dest
+            val _ = (Vector.foreach (args, Var.clear o #1)
+                     ; Vector.foreach (blocks, Block.clear))
+            val _ = CPromise.clear controlFlow
          in
-            Graph.dominatorTree (g, {root = labelNode start, nodeValue = nodeInfo})
-            before destroyLabelNode ()
+            ()
          end
 
-      fun loopForest (t as T {blocks, start, ...}, predicate) =
+      fun layoutHeader (f: t): Layout.t =
          let
-            val (g, {labelNode, destroyLabelNode, nodeInfo}) = overlayGraph t
+            val {args, name, raises, returns, start, ...} = dest f
+            open Layout
+            val (sep, rty) =
+               if !Control.showTypes
+                  then (str ":",
+                        indent (seq [record [("returns",
+                                              Option.layout
+                                              (Vector.layout Type.layout)
+                                              returns),
+                                             ("raises",
+                                              Option.layout
+                                              (Vector.layout Type.layout)
+                                              raises)],
+                                     str " ="],
+                                2))
+                  else (str " =", empty)
+         in
+            mayAlign [mayAlign [seq [str "fun ",
+                                     Func.layout name,
+                                     str " ",
+                                     layoutFormals args,
+                                     sep],
+                                rty],
+                      seq [Label.layout start, str " ()"]]
+         end
+
+      fun layout (f: t) =
+         let
+            val {blocks, ...} = dest f
+            open Layout
+         in
+            align [layoutHeader f,
+                   indent (align (Vector.toListMap (blocks, Block.layout)), 2)]
+         end
+
+      fun layouts (f: t, output: Layout.t -> unit): unit =
+         let
+            val {blocks, name, ...} = dest f
+            val _ = output (layoutHeader f)
             val _ =
                Vector.foreach
-               (blocks, fn from as Block.T {transfer, label, ...} =>
-                Transfer.foreachLabel
-                (transfer, fn to =>
-                 if predicate (from, (nodeInfo o labelNode) to)
-                    then ignore (Graph.addEdge (g, {from = labelNode label, to = labelNode to}))
+               (blocks, fn b =>
+                output (Layout.indent (Block.layout b, 2)))
+            val _ =
+               if not (!Control.keepDot)
+                  then ()
+               else
+                  let
+                     val {destroy, controlFlowGraph, dominatorTree, loopForest} =
+                        layoutDot f
+                     val name = Func.toString name
+                     fun doit (s, g) =
+                        Control.saveToFile
+                        {arg = (),
+                         name = SOME (concat [name, ".", s]),
+                         toFile = {display = Control.Layout (fn () => g),
+                                   style = Control.Dot,
+                                   suffix = "dot"},
+                         verb = Control.Detail}
+                     val _ = doit ("cfg", controlFlowGraph)
+                        handle _ => Error.warning "RssaTree.layouts: couldn't layout cfg"
+                     val _ = doit ("dom", dominatorTree ())
+                        handle _ => Error.warning "RssaTree.layouts: couldn't layout dom"
+                     val _ = doit ("lf", loopForest ())
+                        handle _ => Error.warning "RssaTree.layouts: couldn't layout lf"
+                     val () = destroy ()
+                  in
+                     ()
+                  end
+         in
+            ()
+         end
+
+      fun foreachDef (T {dest = {args, blocks, ...}, ...}, f) =
+         (Vector.foreach (args, f)
+          ; (Vector.foreach (blocks, fn b => Block.foreachDef (b, f))))
+
+      fun foreachUse (T {dest = {blocks, ...}, ...}, f) =
+         Vector.foreach (blocks, fn b => Block.foreachUse (b, f))
+
+      local
+         structure Graph = DirectedGraph
+         structure Node = Graph.Node
+
+         fun overlayGraph (T {dest = {blocks, ...}, ...}) =
+            let
+               open Dot
+               val g = Graph.new ()
+               fun newNode () = Graph.newNode g
+               val {get = labelNode, rem = remLabelNode, ...} =
+                  Property.get
+                  (Label.plist, Property.initFun (fn _ => newNode ()))
+               val {get = nodeInfo: unit Node.t -> Block.t,
+                    set = setNodeInfo, ...} =
+                  Property.getSetOnce
+                  (Node.plist, Property.initRaise ("info", Node.layout))
+               val () =
+                  Vector.foreach
+                  (blocks, fn b as Block.T {label, ...}=>
+                   setNodeInfo (labelNode label, b))
+               fun destroyLabelNode () =
+                  Vector.foreach (blocks, remLabelNode o Block.label)
+            in
+               (g, {labelNode = labelNode,
+                    destroyLabelNode = destroyLabelNode,
+                    nodeInfo = nodeInfo})
+            end
+      in
+         fun loopForest (t as T {dest = {blocks, start, ...}, ...}, predicate) =
+            let
+               val (g, {labelNode, destroyLabelNode, nodeInfo}) = overlayGraph t
+               val _ =
+                  Vector.foreach
+                  (blocks, fn from as Block.T {transfer, label, ...} =>
+                   Transfer.foreachLabel
+                   (transfer, fn to =>
+                    if predicate (from, (nodeInfo o labelNode) to)
+                       then ignore (Graph.addEdge (g, {from = labelNode label, to = labelNode to}))
                     else ignore (Graph.addEdge (g, {from = labelNode start, to = labelNode to}))))
-         in
-            Graph.loopForestSteensgaard (g, {root = labelNode start, nodeValue = nodeInfo})
-            before destroyLabelNode ()
-         end
+            in
+               Graph.loopForestSteensgaard (g, {root = labelNode start, nodeValue = nodeInfo})
+               before destroyLabelNode ()
+            end
+      end
 
       fun dropProfile (f: t): t =
          let
@@ -793,9 +1105,12 @@ structure Program =
                statics: {dst: Var.t * Type.t, obj: Object.t} vector}
 
       fun clear (T {functions, main, statics, ...}) =
-         (List.foreach (functions, Function.clear)
+         (Vector.foreach (statics, Statement.clear o Statement.Object)
           ; Function.clear main
-          ; Vector.foreach (statics, Statement.clear o Statement.Object))
+          ; Func.clear (Function.name main)
+          ; List.foreach (functions, fn f =>
+                          (Function.clear f
+                           ; Func.clear (Function.name f))))
 
       fun layouts (T {functions, main, objectTypes, statics, ...},
                    output': Layout.t -> unit): unit =
