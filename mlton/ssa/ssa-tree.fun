@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014,2017-2020 Matthew Fluet.
+(* Copyright (C) 2009,2014,2017-2020,2024 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1882,8 +1882,9 @@ structure Program =
            *)
           Vector.foreach (datatypes, Datatype.clear)
           ; Vector.foreach (globals, Statement.clear)
-          ; List.foreach (functions, Function.clear))
-
+          ; List.foreach (functions, fn f =>
+                          (Function.clear f
+                           ; Func.clear (Function.name f))))
       fun clearGlobals (T {globals, ...}) =
          Vector.foreach (globals, Statement.clear)
 
