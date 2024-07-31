@@ -1120,6 +1120,12 @@ structure Function =
 
          fun layoutDot (f, layoutVar) =
             let
+               fun toStringFormals args = Layout.toString (layoutFormals args)
+               fun toStringHeader (name, args) = concat [name, " ", toStringFormals args]
+               fun toStringBlockHeader (label, args) =
+                  toStringHeader (Label.toString label, args)
+               fun toStringFunctionHeader (func, args) =
+                  toStringHeader ("fun " ^ Func.toString func, args)
                fun toStringStatement s = Layout.toString (Statement.layout' (s, layoutVar))
                fun toStringTransfer t =
                   Layout.toString
@@ -1127,8 +1133,6 @@ structure Function =
                       Case {test, ...} =>
                          Layout.seq [Layout.str "case ", layoutVar test]
                     | _ => Transfer.layout' (t, layoutVar))
-               fun toStringFormals args = Layout.toString (layoutFormals args)
-               fun toStringHeader (name, args) = concat [name, " ", toStringFormals args]
                val {name, args, start, blocks, returns, raises, ...} = dest f
                open Dot
                val graph = Graph.new ()
@@ -1206,7 +1210,7 @@ structure Function =
                          (statements, lab, fn (s, ac) =>
                           (toStringStatement s, Left) :: ac)
                       val lab =
-                         (toStringHeader (Label.toString label, args), Left)::lab
+                         (toStringBlockHeader (label, args), Left)::lab
                       val _ = setNodeText (from, lab)
                    in
                       ()
@@ -1233,7 +1237,7 @@ structure Function =
                                  Left)::lab
                            else lab
                      val lab =
-                        (toStringHeader ("fun " ^ Func.toString name, args), Left)::
+                        (toStringFunctionHeader (name, args), Left)::
                         lab
                      val _ = setNodeText (funNode, lab)
                   in
