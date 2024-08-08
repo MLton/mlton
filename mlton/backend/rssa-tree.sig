@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2017,2019-2021 Matthew Fluet.
+(* Copyright (C) 2009,2017,2019-2021,2024 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -169,6 +169,10 @@ signature RSSA_TREE =
 
             val blocks: t -> Block.t vector
             val clear: t -> unit
+            val controlFlow:
+               t -> {graph: unit DirectedGraph.t,
+                     labelNode: Label.t -> unit DirectedGraph.Node.t,
+                     nodeBlock: unit DirectedGraph.Node.t -> Block.t}
             val dest: t -> {args: (Var.t * Type.t) vector,
                             blocks: Block.t vector,
                             name: Func.t,
@@ -184,6 +188,11 @@ signature RSSA_TREE =
             val foreachDef: t * (Var.t * Type.t -> unit) -> unit
             val foreachUse: t * (Var.t -> unit) -> unit
             val layout: t -> Layout.t
+            val layoutDot:
+               t -> {destroy: unit -> unit,
+                     controlFlowGraph: Layout.t,
+                     dominatorTree: unit -> Layout.t,
+                     loopForest: unit -> Layout.t}
             val layoutHeader: t -> Layout.t
             (* Produce a loop forest, with an optional predicate;
              * the start node will be connected when
