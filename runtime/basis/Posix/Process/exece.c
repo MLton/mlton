@@ -21,8 +21,8 @@ C_Errno_t(C_Int_t) Posix_Process_exece (NullString8_t pNStr,
   eLen = GC_getSequenceLength((pointer)eStr);
   eSaved = env[eLen - 1];
   env[eLen - 1] = NULL;
-  res = EXECVE (path, 
-                (char * const *)args, 
+  res = execve (path,
+                (char * const *)args,
                 (char * const *)env);
   /* exece failed */
   args[aLen - 1] = aSaved;

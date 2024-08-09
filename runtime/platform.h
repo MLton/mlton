@@ -1,4 +1,4 @@
-/* Copyright (C) 2010,2012,2016,2019,2021 Matthew Fluet.
+/* Copyright (C) 2010,2012,2016,2019,2021,2024 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -53,14 +53,6 @@
 
 #ifndef HAS_TIME_PROFILING
 #error HAS_TIME_PROFILING not defined
-#endif
-
-#ifndef EXECVP
-#define EXECVP execvp
-#endif
-
-#ifndef EXECVE
-#define EXECVE execve
 #endif
 
 
