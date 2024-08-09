@@ -151,7 +151,7 @@ Socket_Ctl_getSockOptC_Int (C_Sock_t s, C_Int_t level, C_Int_t optname,
   int out;
   
   MLton_initSockets ();
-  out = getsockopt (s, level, optname, optval, &optlen);
+  out = getsockopt (s, level, optname, (void*)optval, &optlen);
   assert (optlen == sizeof(int));
   if (out == -1) MLton_fixSocketErrno ();
   
@@ -165,7 +165,7 @@ Socket_Ctl_setSockOptC_Int (C_Sock_t s, C_Int_t level, C_Int_t optname,
   int out;
   
   MLton_initSockets ();
-  out = setsockopt (s, level, optname, &optval, optlen);
+  out = setsockopt (s, level, optname, (void*)&optval, optlen);
   if (out == -1) MLton_fixSocketErrno ();
   
   return out;
@@ -179,7 +179,7 @@ Socket_Ctl_getSockOptC_Linger (C_Sock_t s, C_Int_t level, C_Int_t optname,
   int out;
 
   MLton_initSockets ();
-  out = getsockopt (s, level, optname, &optval, &optlen);
+  out = getsockopt (s, level, optname, (void*)&optval, &optlen);
   assert (optlen == sizeof(struct linger));
   *((int*)optval_l_onoff) = optval.l_onoff;
   *((int*)optval_l_linger) = optval.l_linger;
@@ -198,7 +198,7 @@ Socket_Ctl_setSockOptC_Linger (C_Sock_t s, C_Int_t level, C_Int_t optname,
   MLton_initSockets ();
   optval.l_onoff = optval_l_onoff;
   optval.l_linger = optval_l_linger;
-  out = setsockopt (s, level, optname, &optval, optlen);
+  out = setsockopt (s, level, optname, (void*)&optval, optlen);
   if (out == -1) MLton_fixSocketErrno ();
 
   return out;
