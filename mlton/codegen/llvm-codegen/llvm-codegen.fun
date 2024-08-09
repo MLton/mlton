@@ -1,4 +1,4 @@
-(* Copyright (C) 2019-2022 Matthew Fluet.
+(* Copyright (C) 2019-2022,2024 Matthew Fluet.
  * Copyright (C) 2013-2014 Matthew Fluet, Brian Leibig.
  *
  * MLton is released under a HPND-style license.
@@ -40,7 +40,7 @@ structure LLVM =
                Array of int * t
              | Function of t list * t
              | Label
-             | Pointer of t
+             | Pointer
              | Real of RealSize.t
              | Struct of bool * t list
              | Void
@@ -53,7 +53,7 @@ structure LLVM =
                 | (Function (atys1, rty1), Function (atys2, rty2)) =>
                      equalss (atys1, atys2) andalso equals (rty1, rty2)
                 | (Label, Label) => true
-                | (Pointer ty1, Pointer ty2) => equals (ty1, ty2)
+                | (Pointer, Pointer) => true
                 | (Real rs1, Real rs2) => RealSize.equals (rs1, rs2)
                 | (Struct (b1, tys1), Struct (b2, tys2)) =>
                      Bool.equals (b1, b2) andalso equalss (tys1, tys2)
@@ -77,7 +77,7 @@ structure LLVM =
                      Array (n, ty) => Hash.combine3 (array, Word.fromInt n, hash ty)
                    | Function (atys, rty) => Hash.combine3 (function, Hash.listMap (atys, hash), hash rty)
                    | Label => label
-                   | Pointer ty => Hash.combine (pointer, hash ty)
+                   | Pointer => pointer
                    | Real rs => Hash.combine (real, RealSize.hash rs)
                    | Struct (b, tys) => Hash.combine3 (str, Bool.hash b, Hash.listMap (tys, hash))
                    | Void => void
@@ -99,7 +99,7 @@ structure LLVM =
                              String.concatWith (List.map (args, toString), ","),
                              ")"]
                 | Label => "label"
-                | Pointer ty => concat [toString ty, "*"]
+                | Pointer => "ptr"
                 | Struct (packed, tys) =>
                      let
                         val (l,r) = if packed then ("<{", "}>") else ("{","}")
@@ -114,12 +114,7 @@ structure LLVM =
                 | Word ws => concat ["i", WordSize.toString ws]
                 | Void => "void"
 
-            fun dePointer ty =
-               case ty of
-                  Pointer ty => ty
-                | _ => Error.bug ("LLVMCodegen.LLVM.Type.dePointer: " ^ toString ty)
-
-            val blockaddress = Pointer word8
+            val blockaddress = Pointer
          end
       structure ParamAttr =
          struct
@@ -145,12 +140,12 @@ structure LLVM =
             type t = Type.t * ParamAttrs.t
             fun fromCType ct =
                case ct of
-                  CType.CPointer => (Type.Pointer Type.word8, ParamAttrs.empty)
+                  CType.CPointer => (Type.Pointer, ParamAttrs.empty)
                 | CType.Int8 => (Type.word8, ParamAttrs.signext)
                 | CType.Int16 => (Type.word16, ParamAttrs.signext)
                 | CType.Int32 => (Type.word32, ParamAttrs.signext)
                 | CType.Int64 => (Type.word64, ParamAttrs.signext)
-                | CType.Objptr => (Type.Pointer (Type.Word WordSize.word8), ParamAttrs.empty)
+                | CType.Objptr => (Type.Pointer, ParamAttrs.empty)
                 | CType.Real32 => (Type.Real RealSize.R32, ParamAttrs.empty)
                 | CType.Real64 => (Type.Real RealSize.R64, ParamAttrs.empty)
                 | CType.Word8 => (Type.word8, ParamAttrs.zeroext)
@@ -207,11 +202,11 @@ structure LLVM =
             fun hash (s, ty) = Hash.combine (String.hash s, Type.hash ty)
             fun toString (s, ty) = concat [Type.toString ty, " ", s]
 
-            fun fnptr (s, args, res) = (s, Type.Pointer (Type.Function (args, res)))
-            fun globptr (s, ty) = (s, Type.Pointer ty)
+            fun fnptr s = (s, Type.Pointer)
+            fun globptr s = (s, Type.Pointer)
             fun label' s = ("%" ^ s, Type.Label)
             fun label l = label' (Label.toString l)
-            val null = ("null", Type.Pointer Type.word8)
+            val null = ("null", Type.Pointer)
             fun real r =
                let
                   val s = RealX.toString (r, {suffix = false})
@@ -298,12 +293,12 @@ structure LLVM =
                 (args, fn arg => AList.fromList [", ", arg]))
 
             (* memory *)
-            fun alloca {dst = (dst, dstTy)} =
-               AList.fromList [dst, " = alloca ", Type.toString (Type.dePointer dstTy)]
-            fun gep {dst = (dst, _), src = (src, srcTy), args} =
+            fun alloca {dst = (dst, _), ty} =
+               AList.fromList [dst, " = alloca ", Type.toString ty]
+            fun gep {dst = (dst, _), ty, src = (src, srcTy), args} =
                AList.append
                (AList.fromList [dst, " = getelementptr inbounds ",
-                                Type.toString (Type.dePointer srcTy),
+                                Type.toString ty,
                                 ", ", Type.toString srcTy, " ", src],
                 (AList.appends o List.map)
                 (args, fn (arg, argTy) => AList.fromList [", ", Type.toString argTy, " ", arg]))
@@ -354,8 +349,8 @@ structure LLVM =
                 | _ => Error.bug "LLVMCodegen.LLVM.Instr.fpresize"
             fun cast (arg as {dst = (_, dstTy), src = (_, srcTy)}) =
                (case (srcTy, dstTy) of
-                   (Type.Pointer _, Type.Word _) => ptrtoint
-                 | (Type.Word _, Type.Pointer _) => inttoptr
+                   (Type.Pointer, Type.Word _) => ptrtoint
+                 | (Type.Word _, Type.Pointer) => inttoptr
                  | _ => bitcast) arg
 
             (* other *)
@@ -502,17 +497,17 @@ structure LLVM =
                in
                   ()
                end
-            fun addFnDecl (T {fnDecls, ...}, name, argParams_resParam_vis as {argParams, resParam, ...}) =
+            fun addFnDecl (T {fnDecls, ...}, name, argParams_resParam_vis) =
                ((ignore o HashTable.insertIfNew)
                 (fnDecls, name, fn () => argParams_resParam_vis, ignore)
-                ; Value.fnptr (name, List.map (argParams, #1), #1 resParam))
+                ; Value.fnptr name)
             fun addFnDefn (T {fnDefns, ...}, name) =
                (ignore o HashTable.insertIfNew)
                (fnDefns, name, fn () => (), ignore)
-            fun addGlobDecl (T {globDecls, ...}, name, const_ty_vis as {ty, ...}) =
+            fun addGlobDecl (T {globDecls, ...}, name, const_ty_vis) =
                ((ignore o HashTable.insertIfNew)
                 (globDecls, name, fn () => const_ty_vis, ignore)
-                ; Value.globptr (name, ty))
+                ; Value.globptr name)
             fun addMetaData (T {metaData, ...}, md) =
                HashTable.lookupOrInsert
                (metaData, md, fn () => "!" ^ Int.toString (HashTable.size metaData))
@@ -577,7 +572,9 @@ fun primApp (prim: 'a Prim.t): ({args: LLVM.Value.t list,
       fun cpointerAdd {args, mc = _, newTemp, $} =
          let
             val res = newTemp LLVM.Type.cpointer
-            val _ = $(gep {dst = res, src = nth (args, 0),
+            val _ = $(gep {dst = res,
+                           ty = LLVM.Type.word8,
+                           src = nth (args, 0),
                            args = [nth (args, 1)]})
          in
             res
@@ -1063,24 +1060,25 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
       fun creturnName (ct: CType.t): string =
          concat ["%CReturn", CType.name ct]
       fun creturnVarC (ct: CType.t): LLVM.Value.t =
-         (creturnName ct, LLVM.Type.Pointer (LLVM.Type.fromCType ct))
+         (creturnName ct, LLVM.Type.Pointer)
       fun creturnVar t = creturnVarC (Type.toCType t)
       fun globalName (ct: CType.t): string =
          concat ["@global", CType.toString ct]
-      fun globalValC (ct: CType.t, mc): LLVM.Value.t =
+      fun globalVarTyC (ct: CType.t, mc): LLVM.Value.t * LLVM.Type.t =
          let
             val name = globalName ct
             val ty = LLVM.Type.Array (Global.numberOfType ct, LLVM.Type.fromCType ct)
          in
-            LLVM.ModuleContext.addGlobDecl (mc, name, {const = false, ty = ty, vis = SOME "hidden"})
+            (LLVM.ModuleContext.addGlobDecl (mc, name, {const = false, ty = ty, vis = SOME "hidden"}),
+             ty)
          end
-      fun globalVal (c, mc) = globalValC (Type.toCType c, mc)
+      fun globalVarTy (c, mc) = globalVarTyC (Type.toCType c, mc)
       fun temporaryName (ct: CType.t, index: int): string =
          concat ["%T", CType.name ct, "_", Int.toString index]
       fun temporaryVarC (ct: CType.t, index: int): LLVM.Value.t =
-         (temporaryName (ct, index), LLVM.Type.Pointer (LLVM.Type.fromCType ct))
+         (temporaryName (ct, index), LLVM.Type.Pointer)
       fun temporaryVar (t, index) = temporaryVarC (Type.toCType t, index)
-      fun staticHeapVal (kind, mc): LLVM.Value.t =
+      fun staticHeapVarTy (kind, mc): LLVM.Value.t * LLVM.Type.t =
          let
             val name = concat ["@", Label.toString (StaticHeap.Kind.label kind)]
             val ty = LLVM.Type.word8
@@ -1089,7 +1087,8 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                   StaticHeap.Kind.Immutable => true
                 | _ => false
          in
-            LLVM.ModuleContext.addGlobDecl (mc, name, {const = const, ty = ty, vis = SOME "hidden"})
+            (LLVM.ModuleContext.addGlobDecl (mc, name, {const = const, ty = ty, vis = SOME "hidden"}),
+             ty)
          end
 
       local
@@ -1099,28 +1098,25 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
          val gcStateFormal = ("%gcState", gcStateParam)
          val gcStateArg = formalToArg gcStateFormal
          local
-            fun mk (name, param as (ty, _)) =
+            fun mk (name, param) =
                let
                   val formal = (name ^ "Arg", param)
                in
-                  (param, formal, formalToArg formal, (name, LLVM.Type.Pointer ty))
+                  (#1 param, param, formal, formalToArg formal, (name, LLVM.Type.Pointer))
                end
          in
-            val (stackTopParam, stackTopFormal, stackTopArg, stackTopVar) =
+            val (stackTopTy, stackTopParam, stackTopFormal, stackTopArg, stackTopVar) =
                mk ("%stackTop", LLVM.Param.cpointer)
-            val (frontierParam, frontierFormal, frontierArg, frontierVar) =
+            val (frontierTy, frontierParam, frontierFormal, frontierArg, frontierVar) =
                mk ("%frontier", LLVM.Param.cpointer)
-            val (nextBlockParam, nextBlockFormal, nextBlockArg, nextBlockVar) =
+            val (nextBlockTy, nextBlockParam, nextBlockFormal, nextBlockArg, nextBlockVar) =
                mk ("%nextBlock", LLVM.Param.uintptr ())
          end
       end
       val chunkFnFormals = [gcStateFormal, stackTopFormal, frontierFormal, nextBlockFormal]
       val chunkFnArgParams = List.map (chunkFnFormals, #2)
-      val chunkFnArgTys = List.map (chunkFnArgParams, #1)
-      val chunkFnResParam = LLVM.Param.uintptr ()
-      val chunkFnResTy = #1 chunkFnResParam
-      val chunkFnTy = LLVM.Type.Function (chunkFnArgTys, chunkFnResTy)
-      val chunkFnPtrTy = LLVM.Type.Pointer chunkFnTy
+      val chunkFnResParam = nextBlockParam
+      val chunkFnPtrTy = LLVM.Type.Pointer
       local
          fun mk tos (cl: ChunkLabel.t, mc): LLVM.Value.t =
             LLVM.ModuleContext.addFnDecl
@@ -1132,12 +1128,13 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
          val chunkFnValX = mk ChunkLabel.toStringX
          val chunkFnVal' = mk ChunkLabel.toString'
       end
-      fun nextChunksVar mc =
+      fun nextChunksVarTy mc =
          let
             val name = if !Control.llvmCC10 then "@nextXChunks" else "@nextChunks"
             val ty = LLVM.Type.Array (Vector.length nextChunks, chunkFnPtrTy)
          in
-            LLVM.ModuleContext.addGlobDecl (mc, name, {const = true, ty = ty, vis = SOME "hidden"})
+            (LLVM.ModuleContext.addGlobDecl (mc, name, {const = true, ty = ty, vis = SOME "hidden"}),
+             ty)
          end
 
       val doSwitchNextBlock = LLVM.Value.label' "doSwitchNextBlock"
@@ -1182,24 +1179,28 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                               val index =
                                  LLVM.Value.word
                                  (WordX.fromInt (Global.index g, WordSize.word32))
-                              val res = newTemp (LLVM.Type.Pointer (Type.toLLVMType ty))
-                              val _ = $(gep {dst = res, src = globalVal (ty, mc),
+                              val (src, ty) = globalVarTy (ty, mc)
+                              val res = newTemp LLVM.Type.Pointer
+                              val _ = $(gep {dst = res,
+                                             ty = ty,
+                                             src = src,
                                              args = [LLVM.Value.zero WordSize.word32, index]})
                            in
                               (res, false)
                            end
-                      | Operand.Offset {base, offset, ty, volatile} =>
+                      | Operand.Offset {base, offset, volatile, ...} =>
                            let
                               val base = operandToRValue base
                               val offset = LLVM.Value.word (WordX.fromBytes (offset, WordSize.word32))
-                              val tmp = newTemp LLVM.Type.cpointer
-                              val res = newTemp (LLVM.Type.Pointer (Type.toLLVMType ty))
-                              val _ = $(gep {dst = tmp, src = base, args = [offset]})
-                              val _ = $(cast {dst = res, src = tmp})
+                              val res = newTemp LLVM.Type.Pointer
+                              val _ = $(gep {dst = res,
+                                             ty = LLVM.Type.word8,
+                                             src = base,
+                                             args = [offset]})
                            in
                               (res, volatile)
                            end
-                      | Operand.SequenceOffset {base, index, offset, scale, ty, volatile} =>
+                      | Operand.SequenceOffset {base, index, offset, scale, volatile, ...} =>
                            let
                               val base = operandToRValue base
                               val index as (_, indexTy) = operandToRValue index
@@ -1207,27 +1208,31 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                               val offset = LLVM.Value.word (WordX.fromBytes (offset, WordSize.word32))
                               val tmp1 = newTemp indexTy
                               val tmp2 = newTemp LLVM.Type.cpointer
-                              val tmp3 = newTemp LLVM.Type.cpointer
-                              val res = newTemp (LLVM.Type.Pointer (Type.toLLVMType ty))
+                              val res = newTemp LLVM.Type.Pointer
                               val _ = $(naryop {dst = tmp1, oper = ("mul nsw", indexTy),
                                                 args = [index, scale]})
-                              val _ = $(gep {dst = tmp2, src = base, args = [tmp1]})
-                              val _ = $(gep {dst = tmp3, src = tmp2, args = [offset]})
-                              val _ = $(cast {dst = res, src = tmp3})
+                              val _ = $(gep {dst = tmp2,
+                                             ty = LLVM.Type.word8,
+                                             src = base,
+                                             args = [tmp1]})
+                              val _ = $(gep {dst = res,
+                                             ty = LLVM.Type.word8,
+                                             src = tmp2,
+                                             args = [offset]})
                            in
                               (res, volatile)
                            end
-                      | Operand.StackOffset (StackOffset.T {offset, ty, volatile}) =>
+                      | Operand.StackOffset (StackOffset.T {offset, volatile, ...}) =>
                            let
                               val stackTop = newTemp LLVM.Type.cpointer
-                              val addr = newTemp LLVM.Type.cpointer
-                              val res = newTemp (LLVM.Type.Pointer (Type.toLLVMType ty))
+                              val res = newTemp LLVM.Type.Pointer
                               val _ = $(load {dst = stackTop, src = stackTopVar})
-                              val _ = $(gep {dst = addr, src = stackTop,
+                              val _ = $(gep {dst = res,
+                                             ty = LLVM.Type.word8,
+                                             src = stackTop,
                                              args = [LLVM.Value.word
                                                      (WordX.fromBytes
                                                       (offset, WordSize.word32))]})
-                              val _ = $(cast {dst = res, src = addr})
                            in
                               (res, volatile)
                            end
@@ -1293,13 +1298,14 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                    | Operand.StackTop => load ()
                    | Operand.StaticHeapRef (StaticHeap.Ref.T {kind, offset, ty, ...}) =>
                         let
-                           val tmp = newTemp LLVM.Type.cpointer
                            val res = newTemp (Type.toLLVMType ty)
-                           val _ = $(gep {dst = tmp, src = staticHeapVal (kind, mc),
+                           val (src, ty) = staticHeapVarTy (kind, mc)
+                           val _ = $(gep {dst = res,
+                                          ty = ty,
+                                          src = src,
                                           args = [LLVM.Value.word
                                                   (WordX.fromBytes
                                                    (offset, WordSize.word32))]})
-                           val _ = $(cast {dst = res, src = tmp})
                         in
                            res
                         end
@@ -1445,14 +1451,20 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                   if mustReturnToSelf
                      then $(jmp doSwitchNextBlock)
                      else let
-                             val nextChunkAddr = newTemp (LLVM.Type.Pointer chunkFnPtrTy)
+                             val nextChunkAddr = newTemp LLVM.Type.Pointer
                              val nextChunk = newTemp chunkFnPtrTy
                              val doNextChunk =
                                 Promise.delay
                                 (fn () =>
-                                 ($(gep {dst = nextChunkAddr, src = nextChunksVar mc,
-                                         args = [LLVM.Value.zero WordSize.word32, nextBlock]})
-                                  ; $(load {dst = nextChunk, src = nextChunkAddr})))
+                                 let
+                                    val (src, ty) = nextChunksVarTy mc
+                                 in
+                                    $(gep {dst = nextChunkAddr,
+                                           ty = ty,
+                                           src = src,
+                                           args = [LLVM.Value.zero WordSize.word32, nextBlock]})
+                                    ; $(load {dst = nextChunk, src = nextChunkAddr})
+                                 end)
                              val _ =
                                 if mayReturnToSelf
                                    then let
@@ -1547,7 +1559,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                            val _ = push (return, size)
                            val _ = flushFrontier ();
                            val _ = flushStackTop ();
-                           val (tmpParam, tmp) = newTemp' (LLVM.Param.uintptr ())
+                           val (tmpParam, tmp) = newTemp' nextBlockParam
                            val fnptr =
                               LLVM.ModuleContext.addFnDecl
                               (mc, "@Thread_returnToC",
@@ -1607,10 +1619,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                                 (LLVM.Actual.toValue cptrActual,
                                                  argActuals)
                                            | _ => Error.bug "LLVMCodegen.outputTransfer: CCall,Indirect"
-                                       val argTys = List.map (argActuals, #1 o #2)
-                                       val resTy = #1 resParam
-                                       val fnty = LLVM.Type.Function (argTys, resTy)
-                                       val fnptr = newTemp (LLVM.Type.Pointer fnty)
+                                       val fnptr = newTemp LLVM.Type.Pointer
                                        val _ = $(cast {dst = fnptr, src = cptr})
                                     in
                                        (fnptr, argActuals)
@@ -1624,7 +1633,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                  NONE =>
                                     let
                                        val (tmpParam, tmp) =
-                                          newTemp' (LLVM.Param.uintptr ())
+                                          newTemp' nextBlockParam
                                        val fnptr =
                                           LLVM.ModuleContext.addFnDecl
                                           (mc, "@MLton_unreachable",
@@ -1877,14 +1886,15 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                   List.insertionSort (!entries, fn ((_, i1), (_, i2)) => i1 <= i2)
                end
             val numEntries = List.length entries
+            val nextLabelsTy = LLVM.Type.Array (numEntries, LLVM.Type.blockaddress)
             val nextLabels = (concat [ChunkLabel.toString' chunkLabel, ".nextLabels"],
-                              LLVM.Type.Pointer (LLVM.Type.Array (numEntries, LLVM.Type.blockaddress)))
+                              LLVM.Type.Pointer)
             val _ = if !Control.chunkJumpTable
                         then let
                                 val _ =
                                    prints [#1 nextLabels,
                                            " = internal constant ",
-                                           LLVM.Type.toString (LLVM.Type.dePointer (#2 nextLabels)),
+                                           LLVM.Type.toString nextLabelsTy,
                                            " ["]
                                 val _ =
                                    List.foreachi (entries, fn (i, (label, _)) =>
@@ -1926,34 +1936,38 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
 
             val _ = print "start:\n"
             val _ = List.foreach (CType.all, fn ct =>
-                                  $(alloca {dst = creturnVarC ct}))
+                                  $(alloca {dst = creturnVarC ct,
+                                            ty = LLVM.Type.fromCType ct}))
             val _ = List.foreach (CType.all, fn ct =>
                                   Int.for (0, 1 + tempsMax ct, fn i =>
-                                           $(alloca {dst = temporaryVarC (ct, i)})))
-            val _ = $(alloca {dst = stackTopVar})
+                                           $(alloca {dst = temporaryVarC (ct, i),
+                                                     ty = LLVM.Type.fromCType ct})))
+            val _ = $(alloca {dst = stackTopVar, ty = stackTopTy})
             val _ = $(store {dst = stackTopVar, src = stackTopArg})
-            val _ = $(alloca {dst = frontierVar})
+            val _ = $(alloca {dst = frontierVar, ty = frontierTy})
             val _ = $(store {dst = frontierVar, src = frontierArg})
-            val _ = $(alloca {dst = nextBlockVar})
+            val _ = $(alloca {dst = nextBlockVar, ty = nextBlockTy})
             val _ = $(store {dst = nextBlockVar, src = nextBlockArg})
             val _ = $(jmp doSwitchNextBlock)
             val _ = print "\n"
 
             val _ = print "doSwitchNextBlock:\n"
-            val nextBlock = newTemp (LLVM.Type.uintptr ())
+            val nextBlock = newTemp nextBlockTy
             val _ = $(load {dst = nextBlock, src = nextBlockVar})
             val _ =
                if !Control.chunkJumpTable
                   then let
-                          val index = newTemp (LLVM.Type.uintptr ())
-                          val nextLabelAddr = newTemp (LLVM.Type.Pointer LLVM.Type.blockaddress)
+                          val index = newTemp nextBlockTy
+                          val nextLabelAddr = newTemp LLVM.Type.Pointer
                           val nextLabel = newTemp LLVM.Type.blockaddress
                           val bias = LLVM.Value.word (WordX.fromInt (#2 (List.first entries),
                                                                      WordSize.cpointer ()))
 
-                          val _ = $(naryop {dst = index, oper = ("sub nuw nsw", LLVM.Type.uintptr ()),
+                          val _ = $(naryop {dst = index, oper = ("sub nuw nsw", nextBlockTy),
                                             args = [nextBlock, bias]})
-                          val _ = $(gep {dst = nextLabelAddr, src = nextLabels,
+                          val _ = $(gep {dst = nextLabelAddr,
+                                         ty = nextLabelsTy,
+                                         src = nextLabels,
                                          args = [LLVM.Value.zero WordSize.word32, index]})
                           val _ = $(load {dst = nextLabel, src = nextLabelAddr})
                           val _ = $(indirectbr {addr = nextLabel, labels = List.map (entries, LLVM.Value.label o #1)})

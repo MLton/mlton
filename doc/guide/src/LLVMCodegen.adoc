@@ -31,6 +31,10 @@ As of 20230522, MLton requires LLVM 14, as it invokes `opt` using the
 https://releases.llvm.org/14.0.0/docs/ReleaseNotes.html#changes-to-the-llvm-ir:["new
 pass manager"].
 
+As of 20240809, MLton requires LLVM 15, as it generates LLVM IR using
+https://releases.llvm.org/15.0.0/docs/ReleaseNotes.html#changes-to-the-llvm-ir:["opaque
+pointers"].
+
 == Implementation
 
 * https://github.com/MLton/mlton/blob/master/mlton/codegen/llvm-codegen/llvm-codegen.sig[`llvm-codegen.sig`]
