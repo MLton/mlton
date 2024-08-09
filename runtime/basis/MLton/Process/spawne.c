@@ -24,8 +24,8 @@ C_Errno_t(C_PId_t) MLton_Process_spawne (NullString8_t pNStr,
   eSaved = env[eLen - 1];
   env[eLen - 1] = NULL;
   res = spawnve (SPAWN_MODE, path, 
-                 (const char * const *)args,
-                 (const char * const *)env);
+                 (char * const *)args,
+                 (char * const *)env);
   /* spawnve failed */
   args[aLen - 1] = aSaved;
   env[eLen - 1] = eSaved;

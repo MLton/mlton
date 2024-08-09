@@ -16,7 +16,7 @@ C_Errno_t(C_PId_t) MLton_Process_spawnp (NullString8_t pNStr,
   aSaved = args[aLen - 1];
   args[aLen - 1] = NULL;
   res = spawnvp (SPAWN_MODE, path, 
-                 (const char * const *)args);
+                 (char * const *)args);
   /* spawnvp failed */
   args[aLen - 1] = aSaved;
   return (C_Errno_t(C_PId_t))res;
