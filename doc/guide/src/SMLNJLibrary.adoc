@@ -27,7 +27,7 @@ synchronized with SML/NJ version 110.99.3.
 |`$(SML_LIB)/smlnj-lib/RegExp/regexp-lib.mlb`|Regular expression library.
 |`$(SML_LIB)/smlnj-lib/SExp/sexp-lib.mlb`|S-expression library.
 |`$(SML_LIB)/smlnj-lib/Unix/unix-lib.mlb`|Utilities for Unix-based operating systems.
-|`$(SML_LIB)/smlnj-lib/UUID/uuid-lib.mlb`|Utilities for Unix-based operating systems.
+|`$(SML_LIB)/smlnj-lib/UUID/uuid-lib.mlb`|UUID generating library.
 |`$(SML_LIB)/smlnj-lib/XML/xml-lib.mlb`|XML library.
 |===
 
