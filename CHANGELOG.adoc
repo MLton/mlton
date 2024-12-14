@@ -8,6 +8,9 @@ Here are the changes from version 20210117 to YYYYMMDD.
 
 === Details
 
+* 2024-12-14
+  ** Update SML/NJ libraries to SML/NJ 110.99.6.1.
+
 * 2024-08-09
   ** Update the LLVM codegen to generate LLVM IR using opaque
   pointers; using the LLVM codegen requires LLVM 15 (or higher).
