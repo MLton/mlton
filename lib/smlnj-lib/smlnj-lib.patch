@@ -1,9 +1,297 @@
+diff --git a/Compat/either/either.sig b/Compat/either/either.sig
+new file mode 100644
+index 0000000..ac25cbc
+--- /dev/null
++++ b/Compat/either/either.sig
+@@ -0,0 +1,61 @@
++(* either.sig
++ *
++ * ============================================================================
++ * Copyright (c) 2015 John Reppy (http://cs.uchicago.edu/~jhr)
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ * ============================================================================
++ *
++ * Reference code for SML Basis Library Proposal 2015-002.
++ *)
++
++signature EITHER =
++  sig
++
++    datatype ('left, 'right) either = INL of 'left | INR of 'right
++
++    val isLeft : ('left, 'right) either -> bool
++    val isRight : ('left, 'right) either -> bool
++
++    val asLeft : ('left, 'right) either -> 'left option
++    val asRight : ('left, 'right) either -> 'right option
++
++    val map  : ('ldom -> 'lrng) * ('rdom -> 'rrng)
++                -> ('ldom, 'rdom) either
++                  -> ('lrng, 'rrng) either
++
++    val app  : ('left -> unit) * ('right -> unit)
++                -> ('left, 'right) either
++                  -> unit
++
++    val fold : ('left * 'b -> 'b) * ('right * 'b -> 'b)
++                -> 'b -> ('left, 'right) either -> 'b
++
++    val proj : ('a, 'a) either -> 'a
++
++    val partition : (('left, 'right) either) list -> ('left list * 'right list)
++
++  (* added 2016-08-10 *)
++    val mapLeft  : ('ldom -> 'lrng) -> ('ldom, 'rdom) either -> ('lrng, 'rdom) either
++    val mapRight : ('rdom -> 'rrng) -> ('ldom, 'rdom) either -> ('ldom, 'rrng) either
++
++    val appLeft  : ('left -> unit) -> ('left, 'right) either -> unit
++    val appRight : ('right -> unit) -> ('left, 'right) either -> unit
++
++  end
+diff --git a/Compat/either/either.sml b/Compat/either/either.sml
+new file mode 100644
+index 0000000..d17e71e
+--- /dev/null
++++ b/Compat/either/either.sml
+@@ -0,0 +1,75 @@
++(* either.sml
++ *
++ * ============================================================================
++ * Copyright (c) 2015 John Reppy (http://cs.uchicago.edu/~jhr)
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ * ============================================================================
++ *
++ * Reference code for SML Basis Library Proposal 2015-002.
++ *)
++
++structure Either : EITHER =
++  struct
++
++    datatype ('left, 'right) either = INL of 'left | INR of 'right
++
++    fun isLeft (INL _) = true
++      | isLeft (INR _) = false
++    fun isRight (INL _) = false
++      | isRight (INR _) = true
++
++    fun asLeft (INL x) = SOME x
++      | asLeft (INR _) = NONE
++    fun asRight (INL _) = NONE
++      | asRight (INR x) = SOME x
++
++    fun map (fl, fr) sum = (case sum
++           of INL x => INL(fl x)
++            | INR x => INR(fr x)
++          (* end case *))
++
++    fun mapLeft fl sum = map (fl, fn x => x) sum
++    fun mapRight fr sum = map (fn x => x, fr) sum
++
++    fun app (fl, fr) sum = (case sum
++           of INL x => fl x
++            | INR x => fr x
++          (* end case *))
++
++    fun appLeft fl sum = app (fl, fn x => ()) sum
++    fun appRight fr sum = app (fn x => (), fr) sum
++
++    fun fold (fl, fr) init sum = (case sum
++           of INL x => fl (x, init)
++            | INR x => fr (x, init)
++          (* end case *))
++
++    fun proj (INL x) = x
++      | proj (INR x) = x
++
++    fun partition sums = let
++          fun lp ([], ls, rs) = (List.rev ls, List.rev rs)
++            | lp ((INL x)::sums, ls, rs) = lp (sums, x::ls, rs)
++            | lp ((INR x)::sums, ls, rs) = lp (sums, ls, x::rs)
++          in
++            lp (sums, [], [])
++          end
++
++  end
+diff --git a/Compat/either/sources.mlb b/Compat/either/sources.mlb
+new file mode 100644
+index 0000000..fa5c94b
+--- /dev/null
++++ b/Compat/either/sources.mlb
+@@ -0,0 +1,8 @@
++local
++  $(SML_LIB)/basis/basis.mlb
++  either.sig
++  either.sml
++in
++  signature EITHER
++  structure Either
++end
+diff --git a/Compat/fn/fn.sig b/Compat/fn/fn.sig
+new file mode 100644
+index 0000000..203c2b5
+--- /dev/null
++++ b/Compat/fn/fn.sig
+@@ -0,0 +1,42 @@
++(* fn.sig
++ *
++ * ============================================================================
++ * Copyright (c) 2015 John Reppy (http://cs.uchicago.edu/~jhr)
++ * 
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ * 
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ * 
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ * ============================================================================
++ *
++ * Reference code for SML Basis Library Proposal 2015-005.
++ *)
++
++signature FN =
++  sig
++
++    val id       : 'a -> 'a
++    val const    : 'a -> 'b -> 'a
++    val apply    : ('a -> 'b) * 'a -> 'b
++    val o        : ('b -> 'c) * ('a -> 'b) -> ('a -> 'c)
++    val curry    : ('a * 'b -> 'c) -> ('a -> 'b -> 'c)
++    val uncurry  : ('a -> 'b -> 'c) -> ('a * 'b -> 'c)
++    val flip     : ('a * 'b -> 'c) -> ('b * 'a -> 'c)
++    val repeat   : int -> ('a -> 'a) -> ('a -> 'a)
++    val equal    : ''a -> ''a -> bool
++    val notEqual : ''a -> ''a -> bool
++
++  end
+diff --git a/Compat/fn/fn.sml b/Compat/fn/fn.sml
+new file mode 100644
+index 0000000..fed2d2c
+--- /dev/null
++++ b/Compat/fn/fn.sml
+@@ -0,0 +1,58 @@
++(* fn.sml
++ *
++ * ============================================================================
++ * Copyright (c) 2015 John Reppy (http://cs.uchicago.edu/~jhr)
++ * 
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ * 
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ * 
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ * ============================================================================
++ *
++ * Reference code for SML Basis Library Proposal 2015-005.
++ *)
++
++structure Fn : FN =
++  struct
++
++    fun id x = x
++
++    fun const x y = x
++
++    fun apply (f, x) = f x
++
++    val op o = General.o
++
++    fun curry f x y = f(x, y)
++
++    fun uncurry f (x, y) = f x y
++
++    fun flip f (x, y) = f (y, x)
++
++    fun repeat n = if (n < 0)
++	  then raise Domain
++	  else (fn f => let
++	    fun repeatF (0, x) = x
++	      | repeatF (n, x) = repeatF (n-1, f x)
++	    in
++	      fn x => repeatF (n, x)
++	    end)
++
++    fun equal a b = (a = b)
++
++    fun notEqual a b = (a <> b)
++
++  end
+diff --git a/Compat/fn/sources.mlb b/Compat/fn/sources.mlb
+new file mode 100644
+index 0000000..5caeac4
+--- /dev/null
++++ b/Compat/fn/sources.mlb
+@@ -0,0 +1,8 @@
++local
++  $(SML_LIB)/basis/basis.mlb
++  fn.sig
++  fn.sml
++in
++  signature FN
++  structure Fn
++end
 diff --git a/Compat/mono-buffer/mono-buffer.fun b/Compat/mono-buffer/mono-buffer.fun
 new file mode 100644
-index 0000000..208e159
+index 0000000..b349081
 --- /dev/null
 +++ b/Compat/mono-buffer/mono-buffer.fun
-@@ -0,0 +1,139 @@
+@@ -0,0 +1,141 @@
 +(* mono-buffer.fun
 + *
 + * ============================================================================
@@ -100,9 +388,11 @@ index 0000000..208e159
 +
 +  (* ensure that the content array has space for amt elements *)
 +    fun ensureCapacity (content, len, amt) = let
++          val curCap = A.length(!content)
++          val amt = Int.max(curCap - len + curCap, amt)
 +          val capacity = (len + amt) handle Overflow => maxLen
 +          in
-+            if (A.length(!content) < capacity)
++            if (curCap < capacity)
 +              then let
 +                val newArr = A.array(capacity, defaultElem)
 +                in
@@ -143,22 +433,6 @@ index 0000000..208e159
 +          len := !len + AS.length slice)
 +
 +  end
-diff --git a/Compat/mono-buffer/mono-buffer.mlb b/Compat/mono-buffer/mono-buffer.mlb
-new file mode 100644
-index 0000000..9096dd7
---- /dev/null
-+++ b/Compat/mono-buffer/mono-buffer.mlb
-@@ -0,0 +1,10 @@
-+local
-+   $(SML_LIB)/basis/basis.mlb
-+   mono-buffer.sig
-+   mono-buffer.fun
-+   mono-buffer.sml
-+in
-+   signature MONO_BUFFER
-+   structure Word8Buffer
-+   structure CharBuffer
-+end
 diff --git a/Compat/mono-buffer/mono-buffer.sig b/Compat/mono-buffer/mono-buffer.sig
 new file mode 100644
 index 0000000..dce7b83
@@ -292,6 +566,454 @@ index 0000000..5468e29
 +      structure AS = CharArraySlice
 +      val defaultElem : Char.char = #"\000"
 +    );
+diff --git a/Compat/mono-buffer/sources.mlb b/Compat/mono-buffer/sources.mlb
+new file mode 100644
+index 0000000..9096dd7
+--- /dev/null
++++ b/Compat/mono-buffer/sources.mlb
+@@ -0,0 +1,10 @@
++local
++   $(SML_LIB)/basis/basis.mlb
++   mono-buffer.sig
++   mono-buffer.fun
++   mono-buffer.sml
++in
++   signature MONO_BUFFER
++   structure Word8Buffer
++   structure CharBuffer
++end
+diff --git a/Compat/mono-sequence/mono-array-slice.fun b/Compat/mono-sequence/mono-array-slice.fun
+new file mode 100644
+index 0000000..20e4b4f
+--- /dev/null
++++ b/Compat/mono-sequence/mono-array-slice.fun
+@@ -0,0 +1,55 @@
++(* mono-array-slice.fun
++ *
++ * ============================================================================
++ * Copyright (c) 2018 John Reppy (http://cs.uchicago.edu/~jhr)
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ * ============================================================================
++ *
++ * Reference code for SML Basis Library Proposal 2018-002.
++ *)
++
++functor MonoArraySliceExtFn (MS : MONO_ARRAY_SLICE) : MONO_ARRAY_SLICE_EXT =
++  struct
++
++    open MS
++
++    fun toList v = List.tabulate(length v, fn i => sub(v, i))
++
++    val toVector = vector
++
++    fun triml n s = if (n < length s)
++	  then subslice(s, n, NONE)
++	  else subslice(s, length s, NONE)
++
++    fun trimr n s = if (n < length s)
++	  then subslice(s, 0, SOME(length s - n))
++	  else subslice(s, 0, SOME 0)
++
++    fun splitAt (s, i) = (subslice(s, 0, SOME i), subslice(s, i, NONE))
++
++    fun getVec (s, n) = if (n < length s)
++	  then let
++	    val (s1, s2) = splitAt (s, n)
++	    in
++	      SOME(vector s1, s2)
++	    end
++	  else NONE
++
++  end
+diff --git a/Compat/mono-sequence/mono-array-slice.sig b/Compat/mono-sequence/mono-array-slice.sig
+new file mode 100644
+index 0000000..5b88bc8
+--- /dev/null
++++ b/Compat/mono-sequence/mono-array-slice.sig
+@@ -0,0 +1,40 @@
++(* mono-array-slice.sig
++ *
++ * ============================================================================
++ * Copyright (c) 2018 John Reppy (http://cs.uchicago.edu/~jhr)
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ * ============================================================================
++ *
++ * Reference code for SML Basis Library Proposal 2018-002.
++ *)
++
++signature MONO_ARRAY_SLICE_EXT = sig
++
++    include MONO_ARRAY_SLICE
++
++    val toList : slice -> elem list
++    val toVector : slice -> vector
++
++    val triml : int -> slice -> slice
++    val trimr : int -> slice -> slice
++    val splitAt : slice * int -> slice * slice
++    val getVec : slice * int -> (vector * slice) option
++
++  end
+diff --git a/Compat/mono-sequence/mono-array.fun b/Compat/mono-sequence/mono-array.fun
+new file mode 100644
+index 0000000..d1c09c8
+--- /dev/null
++++ b/Compat/mono-sequence/mono-array.fun
+@@ -0,0 +1,44 @@
++(* mono-array.fun
++ *
++ * ============================================================================
++ * Copyright (c) 2015 John Reppy (http://cs.uchicago.edu/~jhr)
++ * 
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ * 
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ * 
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ * ============================================================================
++ *
++ * Reference code for SML Basis Library Proposal 2015-003.
++ *)
++
++functor MonoArrayExtFn (
++    structure A : MONO_ARRAY
++    structure V : MONO_VECTOR
++      sharing type A.elem = V.elem
++      sharing type A.vector = V.vector
++  ) : MONO_ARRAY_EXT =
++  struct
++
++    open A
++
++    fun toList arr = List.tabulate(length arr, fn i => sub(arr, i))
++
++    fun fromVector vec = tabulate (V.length vec, fn i => V.sub(vec, i))
++
++    val toVector = vector
++
++  end
+diff --git a/Compat/mono-sequence/mono-array.sig b/Compat/mono-sequence/mono-array.sig
+new file mode 100644
+index 0000000..03175e6
+--- /dev/null
++++ b/Compat/mono-sequence/mono-array.sig
+@@ -0,0 +1,38 @@
++(* mono-array.sig
++ *
++ * ============================================================================
++ * Copyright (c) 2015 John Reppy (http://cs.uchicago.edu/~jhr)
++ * 
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ * 
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ * 
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ * ============================================================================
++ *
++ * Reference code for SML Basis Library Proposal 2015-003.
++ *)
++
++signature MONO_ARRAY_EXT =
++  sig
++
++    include MONO_ARRAY
++
++    val toList : array -> elem list
++
++    val fromVector : vector -> array
++    val toVector   : array -> vector
++
++  end
+diff --git a/Compat/mono-sequence/mono-vector-slice.fun b/Compat/mono-sequence/mono-vector-slice.fun
+new file mode 100644
+index 0000000..c56ccf2
+--- /dev/null
++++ b/Compat/mono-sequence/mono-vector-slice.fun
+@@ -0,0 +1,55 @@
++(* mono-vector-slice.fun
++ *
++ * ============================================================================
++ * Copyright (c) 2018 John Reppy (http://cs.uchicago.edu/~jhr)
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ * ============================================================================
++ *
++ * Reference code for SML Basis Library Proposal 2018-002.
++ *)
++
++functor MonoVectorSliceExtFn (MS : MONO_VECTOR_SLICE) : MONO_VECTOR_SLICE_EXT =
++  struct
++
++    open MS
++
++    fun toList v = List.tabulate(length v, fn i => sub(v, i))
++
++    val toVector = vector
++
++    fun triml n s = if (n < length s)
++	  then subslice(s, n, NONE)
++	  else subslice(s, length s, NONE)
++
++    fun trimr n s = if (n < length s)
++	  then subslice(s, 0, SOME(length s - n))
++	  else subslice(s, 0, SOME 0)
++
++    fun splitAt (s, i) = (subslice(s, 0, SOME i), subslice(s, i, NONE))
++
++    fun getVec (s, n) = if (n < length s)
++	  then let
++	    val (s1, s2) = splitAt (s, n)
++	    in
++	      SOME(vector s1, s2)
++	    end
++	  else NONE
++
++  end
+diff --git a/Compat/mono-sequence/mono-vector-slice.sig b/Compat/mono-sequence/mono-vector-slice.sig
+new file mode 100644
+index 0000000..18bf03e
+--- /dev/null
++++ b/Compat/mono-sequence/mono-vector-slice.sig
+@@ -0,0 +1,38 @@
++(* mono-vector-slice.sig
++ *
++ * ============================================================================
++ * Copyright (c) 2018 John Reppy (http://cs.uchicago.edu/~jhr)
++ *
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ *
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ *
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ * ============================================================================
++ *)
++
++signature MONO_VECTOR_SLICE_EXT = sig
++
++    include MONO_VECTOR_SLICE
++
++    val toList : slice -> elem list
++    val toVector : slice -> vector
++
++    val triml : int -> slice -> slice
++    val trimr : int -> slice -> slice
++    val splitAt : slice * int -> slice * slice
++    val getVec : slice * int -> (vector * slice) option
++
++  end
+diff --git a/Compat/mono-sequence/mono-vector-slice.sml b/Compat/mono-sequence/mono-vector-slice.sml
+new file mode 100644
+index 0000000..fe16557
+--- /dev/null
++++ b/Compat/mono-sequence/mono-vector-slice.sml
+@@ -0,0 +1,2 @@
++structure Word8VectorSlice : MONO_VECTOR_SLICE_EXT
++  = MonoVectorSliceExtFn (Word8VectorSlice)
+diff --git a/Compat/mono-sequence/mono-vector.fun b/Compat/mono-sequence/mono-vector.fun
+new file mode 100644
+index 0000000..67623f6
+--- /dev/null
++++ b/Compat/mono-sequence/mono-vector.fun
+@@ -0,0 +1,39 @@
++(* mono-vector.fun
++ *
++ * ============================================================================
++ * Copyright (c) 2015 John Reppy (http://cs.uchicago.edu/~jhr)
++ * 
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ * 
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ * 
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ * ============================================================================
++ *
++ * Reference code for SML Basis Library Proposal 2015-003.
++ *)
++
++functor MonoVectorExtFn (V : MONO_VECTOR) : MONO_VECTOR_EXT =
++  struct
++
++    open V
++
++    fun toList v = List.tabulate(length v, fn i => sub(v, i))
++
++    fun append (v, x) = concat[v, fromList[x]]
++
++    fun prepend (x, v) = concat[fromList[x], v]
++
++  end
+diff --git a/Compat/mono-sequence/mono-vector.sig b/Compat/mono-sequence/mono-vector.sig
+new file mode 100644
+index 0000000..921ed80
+--- /dev/null
++++ b/Compat/mono-sequence/mono-vector.sig
+@@ -0,0 +1,38 @@
++(* mono-vector.sig
++ *
++ * ============================================================================
++ * Copyright (c) 2015 John Reppy (http://cs.uchicago.edu/~jhr)
++ * 
++ * Permission is hereby granted, free of charge, to any person obtaining a copy
++ * of this software and associated documentation files (the "Software"), to deal
++ * in the Software without restriction, including without limitation the rights
++ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
++ * copies of the Software, and to permit persons to whom the Software is
++ * furnished to do so, subject to the following conditions:
++ * 
++ * The above copyright notice and this permission notice shall be included in
++ * all copies or substantial portions of the Software.
++ * 
++ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
++ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
++ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
++ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
++ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
++ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
++ * THE SOFTWARE.
++ * ============================================================================
++ *
++ * Reference code for SML Basis Library Proposal 2015-003.
++ *)
++
++signature MONO_VECTOR_EXT =
++  sig
++
++    include MONO_VECTOR
++
++    val toList : vector -> elem list
++
++    val append  : vector * elem -> vector
++    val prepend : elem * vector -> vector
++
++  end
+diff --git a/Compat/mono-sequence/sources.mlb b/Compat/mono-sequence/sources.mlb
+new file mode 100644
+index 0000000..30dff8a
+--- /dev/null
++++ b/Compat/mono-sequence/sources.mlb
+@@ -0,0 +1,23 @@
++local
++  $(SML_LIB)/basis/basis.mlb
++  mono-vector.sig
++  mono-vector.fun
++  mono-vector-slice.sig
++  mono-vector-slice.fun
++  mono-array.sig
++  mono-array.fun
++  mono-array-slice.sig
++  mono-array-slice.fun
++
++  mono-vector-slice.sml
++in
++  signature MONO_VECTOR_EXT
++  functor MonoVectorExtFn
++  signature MONO_VECTOR_SLICE_EXT
++  functor MonoVectorSliceExtFn
++  functor MonoArrayExtFn
++  signature MONO_ARRAY_EXT
++  signature MONO_ARRAY_SLICE_EXT
++  functor MonoArraySliceExtFn
++  structure Word8VectorSlice
++end
 diff --git a/Controls/controls-lib.mlb b/Controls/controls-lib.mlb
 new file mode 100644
 index 0000000..3a452a1
@@ -1744,10 +2466,10 @@ index 0000000..ca97b62
 +end (* structure PrettyPrint *)
 diff --git a/HashCons/hash-cons-lib.mlb b/HashCons/hash-cons-lib.mlb
 new file mode 100644
-index 0000000..04c2529
+index 0000000..7a7540a
 --- /dev/null
 +++ b/HashCons/hash-cons-lib.mlb
-@@ -0,0 +1,238 @@
+@@ -0,0 +1,289 @@
 +
 +ann
 +  "nonexhaustiveBind ignore" "nonexhaustiveMatch warn"
@@ -1904,34 +2626,82 @@ index 0000000..04c2529
 +      structure gs_41 = HashConsAtom
 +   end
 +   local
++      structure Char = gs_5
++      structure CharArray = gs_6
++      structure CharVector = gs_7
++      structure FixedInt = gs_8
++      structure General = gs_9
++      structure HashCons = gs_36
++      structure Int = gs_10
++      structure Int32 = gs_11
++      structure Int64 = gs_12
++      structure IntInf = gs_13
++      structure LargeInt = gs_14
++      structure LargeReal = gs_15
++      structure LargeWord = gs_16
++      structure OS = gs_17
++      structure Position = gs_18
++      structure Real = gs_19
++      structure Real64 = gs_20
++      structure RealArray = gs_21
++      structure RealArraySlice = gs_22
++      structure RealVector = gs_23
++      structure RealVectorSlice = gs_24
++      structure SMLofNJ = gs_25
++      structure Socket = gs_26
++      structure String = gs_27
++      structure Substring = gs_28
++      structure SysWord = gs_29
++      structure Time = gs_30
++      structure Word = gs_31
++      structure Word32 = gs_32
++      structure Word64 = gs_33
++      structure Word8 = gs_34
++      hash-cons-int.sml
++   in
++      structure gs_42 = HashConsInt
++   end
++   local
++      structure HashCons = gs_36
++      hash-cons-word.sml
++   in
++      structure gs_43 = HashConsWord
++   end
++   local
 +      structure HashCons = gs_36
 +      hash-cons-map-sig.sml
 +   in
-+      signature gs_42 = HASH_CONS_MAP
++      signature gs_44 = HASH_CONS_MAP
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_43 = WordRedBlackMap
++      structure gs_45 = WordRedBlackMap
 +   end
 +   local
 +      open l13
 +   in
-+      structure gs_44 = Option
++      structure gs_46 = Option
 +   end
 +   local
-+      signature HASH_CONS_MAP = gs_42
++      signature HASH_CONS_MAP = gs_44
 +      structure HashCons = gs_36
-+      structure Option = gs_44
-+      structure WordRedBlackMap = gs_43
++      structure Option = gs_46
++      structure WordRedBlackMap = gs_45
 +      hash-cons-map.sml
 +   in
-+      structure gs_45 = HashConsMap
++      structure gs_47 = HashConsMap
++   end
++   local
++      structure HashCons = gs_36
++      hash-cons-bool.sml
++   in
++      structure gs_48 = HashConsBool
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_46 = LibBase
++      structure gs_49 = LibBase
 +   end
 +   local
 +      structure Char = gs_5
@@ -1948,7 +2718,7 @@ index 0000000..04c2529
 +      structure LargeInt = gs_14
 +      structure LargeReal = gs_15
 +      structure LargeWord = gs_16
-+      structure LibBase = gs_46
++      structure LibBase = gs_49
 +      structure List = gs_3
 +      structure OS = gs_17
 +      structure Position = gs_18
@@ -1970,18 +2740,21 @@ index 0000000..04c2529
 +      structure Word8 = gs_34
 +      hash-cons-set.sml
 +   in
-+      structure gs_47 = HashConsSet
++      structure gs_50 = HashConsSet
 +   end
 +in
 +   signature HASH_CONS = gs_35
-+   signature HASH_CONS_MAP = gs_42
++   signature HASH_CONS_MAP = gs_44
 +   signature HASH_CONS_SET = gs_39
 +   structure HashCons = gs_36
 +   structure HashConsAtom = gs_41
++   structure HashConsBool = gs_48
 +   functor HashConsGroundFn = gs_37
-+   structure HashConsMap = gs_45
-+   structure HashConsSet = gs_47
++   structure HashConsInt = gs_42
++   structure HashConsMap = gs_47
++   structure HashConsSet = gs_50
 +   structure HashConsString = gs_38
++   structure HashConsWord = gs_43
 +end
 +end
 +
@@ -2236,10 +3009,10 @@ index 0000000..cffb30e
 +
 +end
 diff --git a/JSON/json-lib.mlb b/JSON/json-lib.mlb
-index 82323c0..3db1c06 100644
+index afbd211..f7e7aac 100644
 --- a/JSON/json-lib.mlb
 +++ b/JSON/json-lib.mlb
-@@ -1,54 +1,431 @@
+@@ -1,57 +1,491 @@
 -(* json-lib.mlb
 - *
 - * COPYRIGHT (c) 2021 The Fellowship of SML/NJ (http://www.smlnj.org)
@@ -2273,7 +3046,9 @@ index 82323c0..3db1c06 100644
 -*)
 -    json-stream-printer.sml
 -    json-printer.sml
+-    errors.sml
 -    json-util.sml
+-    json-decode.sml
 -
 -  end
  
@@ -2288,6 +3063,7 @@ index 82323c0..3db1c06 100644
 -  structure JSON
 -  structure JSONParser
 -  structure JSONPrinter
+-  structure JSONDecode
 -  structure JSONUtil
 -
 -(* SAX-style API (event based) *)
@@ -2300,15 +3076,11 @@ index 82323c0..3db1c06 100644
 +local
 +  basis l4 =
 +    bas
-+      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/sml-nj.mlb $(SML_LIB)/smlnj-lib/Compat/mono-buffer/mono-buffer.mlb
++      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/sml-nj.mlb $(SML_LIB)/basis/unsafe.mlb $(SML_LIB)/smlnj-lib/Compat/fn/sources.mlb $(SML_LIB)/smlnj-lib/Compat/mono-buffer/sources.mlb
 +    end
 +  basis l48 =
 +    bas
 +      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
-+    end
-+  basis l55 =
-+    bas
-+      (* $/ml-lpt-lib.cm ====> *) $(SML_LIB)/mllpt-lib/mllpt-lib.mlb
 +    end
 +in
 +local
@@ -2434,9 +3206,14 @@ index 82323c0..3db1c06 100644
 +      structure gs_34 = List
 +   end
 +   local
-+      open l55
++      open l48
 +   in
 +      structure gs_35 = UTF8
++   end
++   local
++      open l4
++   in
++      structure gs_36 = StringCvt
 +   end
 +   local
 +      structure Char = gs_1
@@ -2466,6 +3243,7 @@ index 82323c0..3db1c06 100644
 +      structure SMLofNJ = gs_21
 +      structure Socket = gs_22
 +      structure String = gs_23
++      structure StringCvt = gs_36
 +      structure Substring = gs_24
 +      structure SysWord = gs_25
 +      structure Time = gs_26
@@ -2476,22 +3254,32 @@ index 82323c0..3db1c06 100644
 +      structure Word8 = gs_30
 +      json-stream-output.fun
 +   in
-+      functor gs_36 = JSONStreamOutputFn
-+      signature gs_37 = TEXT_OUTPUT_STREAM
++      functor gs_37 = JSONStreamOutputFn
++      signature gs_38 = TEXT_OUTPUT_STREAM
 +   end
 +   local
 +      structure CharBuffer = gs_0
-+      functor JSONStreamOutputFn = gs_36
++      functor JSONStreamOutputFn = gs_37
 +      signature JSON_STREAM_OUTPUT = gs_32
-+      signature TEXT_OUTPUT_STREAM = gs_37
++      signature TEXT_OUTPUT_STREAM = gs_38
 +      json-buffer-printer.sml
 +   in
-+      structure gs_38 = JSONBufferPrinter
++      structure gs_39 = JSONBufferPrinter
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_39 = TextIO
++      structure gs_40 = TextIO
++   end
++   local
++      open l4
++   in
++      structure gs_41 = IEEEReal
++   end
++   local
++      open l4
++   in
++      structure gs_42 = Unsafe
 +   end
 +   local
 +      structure Char = gs_1
@@ -2506,7 +3294,6 @@ index 82323c0..3db1c06 100644
 +      structure LargeInt = gs_10
 +      structure LargeReal = gs_11
 +      structure LargeWord = gs_12
-+      structure List = gs_34
 +      structure OS = gs_13
 +      structure Position = gs_14
 +      structure Real = gs_15
@@ -2520,87 +3307,15 @@ index 82323c0..3db1c06 100644
 +      structure String = gs_23
 +      structure Substring = gs_24
 +      structure SysWord = gs_25
++      structure TextIO = gs_40
 +      structure Time = gs_26
-+      structure UTF8 = gs_35
 +      structure Word = gs_27
 +      structure Word32 = gs_28
 +      structure Word64 = gs_29
 +      structure Word8 = gs_30
-+      json-tokens.sml
-+   in
-+      structure gs_40 = JSONTokens
-+   end
-+   local
-+      open l4
-+   in
-+      structure gs_41 = Vector
-+   end
-+   local
-+      open l55
-+   in
-+      structure gs_42 = AntlrStreamPos
-+   end
-+   local
-+      open l4
-+   in
-+      structure gs_43 = StringCvt
-+   end
-+   local
-+      open l55
-+   in
-+      structure gs_44 = ULexBuffer
-+   end
-+   local
-+      structure AntlrStreamPos = gs_42
-+      structure Char = gs_1
-+      structure CharArray = gs_2
-+      structure CharVector = gs_3
-+      structure FixedInt = gs_4
-+      structure General = gs_5
-+      structure Int = gs_6
-+      structure Int32 = gs_7
-+      structure Int64 = gs_8
-+      structure IntInf = gs_9
-+      structure JSONTokens = gs_40
-+      structure LargeInt = gs_10
-+      structure LargeReal = gs_11
-+      structure LargeWord = gs_12
-+      structure List = gs_34
-+      structure OS = gs_13
-+      structure Position = gs_14
-+      structure Real = gs_15
-+      structure Real64 = gs_16
-+      structure RealArray = gs_17
-+      structure RealArraySlice = gs_18
-+      structure RealVector = gs_19
-+      structure RealVectorSlice = gs_20
-+      structure SMLofNJ = gs_21
-+      structure Socket = gs_22
-+      structure String = gs_23
-+      structure StringCvt = gs_43
-+      structure Substring = gs_24
-+      structure SysWord = gs_25
-+      structure TextIO = gs_39
-+      structure Time = gs_26
-+      structure ULexBuffer = gs_44
-+      structure UTF8 = gs_35
-+      structure Vector = gs_41
-+      structure Word = gs_27
-+      structure Word32 = gs_28
-+      structure Word64 = gs_29
-+      structure Word8 = gs_30
-+      json.lex.sml
-+   in
-+      structure gs_45 = JSONLexer
-+   end
-+   local
-+      structure AntlrStreamPos = gs_42
-+      structure JSONLexer = gs_45
-+      structure JSONTokens = gs_40
-+      structure TextIO = gs_39
 +      json-source.sml
 +   in
-+      structure gs_46 = JSONSource
++      structure gs_43 = JSONSource
 +   end
 +   local
 +      structure Char = gs_1
@@ -2608,16 +3323,16 @@ index 82323c0..3db1c06 100644
 +      structure CharVector = gs_3
 +      structure FixedInt = gs_4
 +      structure General = gs_5
++      structure IEEEReal = gs_41
 +      structure Int = gs_6
 +      structure Int32 = gs_7
 +      structure Int64 = gs_8
 +      structure IntInf = gs_9
-+      structure JSONLexer = gs_45
-+      structure JSONSource = gs_46
-+      structure JSONTokens = gs_40
++      structure JSONSource = gs_43
 +      structure LargeInt = gs_10
 +      structure LargeReal = gs_11
 +      structure LargeWord = gs_12
++      structure List = gs_34
 +      structure OS = gs_13
 +      structure Position = gs_14
 +      structure Real = gs_15
@@ -2631,29 +3346,118 @@ index 82323c0..3db1c06 100644
 +      structure String = gs_23
 +      structure Substring = gs_24
 +      structure SysWord = gs_25
-+      structure TextIO = gs_39
++      structure TextIO = gs_40
 +      structure Time = gs_26
++      structure Unsafe = gs_42
 +      structure Word = gs_27
 +      structure Word32 = gs_28
 +      structure Word64 = gs_29
 +      structure Word8 = gs_30
 +      json-stream-parser.sml
 +   in
-+      structure gs_47 = JSONStreamParser
++      structure gs_44 = JSONStreamParser
 +   end
 +   local
-+      functor JSONStreamOutputFn = gs_36
++      functor JSONStreamOutputFn = gs_37
 +      signature JSON_STREAM_OUTPUT = gs_32
-+      signature TEXT_OUTPUT_STREAM = gs_37
-+      structure TextIO = gs_39
++      signature TEXT_OUTPUT_STREAM = gs_38
++      structure TextIO = gs_40
 +      json-stream-printer.sml
 +   in
-+      structure gs_48 = JSONStreamPrinter
++      structure gs_45 = JSONStreamPrinter
++   end
++   local
++      open l4
++   in
++      structure gs_46 = Vector
++   end
++   local
++      open l4
++   in
++      structure gs_47 = Fn
 +   end
 +   local
 +      structure Char = gs_1
 +      structure CharArray = gs_2
 +      structure CharVector = gs_3
++      structure FixedInt = gs_4
++      structure General = gs_5
++      structure IEEEReal = gs_41
++      structure Int = gs_6
++      structure Int32 = gs_7
++      structure Int64 = gs_8
++      structure IntInf = gs_9
++      structure JSON = gs_31
++      structure JSONSource = gs_43
++      structure LargeInt = gs_10
++      structure LargeReal = gs_11
++      structure LargeWord = gs_12
++      structure List = gs_34
++      structure OS = gs_13
++      structure Position = gs_14
++      structure Real = gs_15
++      structure Real64 = gs_16
++      structure RealArray = gs_17
++      structure RealArraySlice = gs_18
++      structure RealVector = gs_19
++      structure RealVectorSlice = gs_20
++      structure SMLofNJ = gs_21
++      structure Socket = gs_22
++      structure String = gs_23
++      structure Substring = gs_24
++      structure SysWord = gs_25
++      structure TextIO = gs_40
++      structure Time = gs_26
++      structure Unsafe = gs_42
++      structure Word = gs_27
++      structure Word32 = gs_28
++      structure Word64 = gs_29
++      structure Word8 = gs_30
++      json-parser.sml
++   in
++      structure gs_48 = JSONParser
++   end
++   local
++      structure Char = gs_1
++      structure CharArray = gs_2
++      structure CharVector = gs_3
++      structure FixedInt = gs_4
++      structure General = gs_5
++      structure Int = gs_6
++      structure Int32 = gs_7
++      structure Int64 = gs_8
++      structure IntInf = gs_9
++      structure JSON = gs_31
++      structure LargeInt = gs_10
++      structure LargeReal = gs_11
++      structure LargeWord = gs_12
++      structure OS = gs_13
++      structure Position = gs_14
++      structure Real = gs_15
++      structure Real64 = gs_16
++      structure RealArray = gs_17
++      structure RealArraySlice = gs_18
++      structure RealVector = gs_19
++      structure RealVectorSlice = gs_20
++      structure SMLofNJ = gs_21
++      structure Socket = gs_22
++      structure String = gs_23
++      structure Substring = gs_24
++      structure SysWord = gs_25
++      structure Time = gs_26
++      structure Word = gs_27
++      structure Word32 = gs_28
++      structure Word64 = gs_29
++      structure Word8 = gs_30
++      errors.sml
++   in
++      structure gs_49 = Errors
++   end
++   local
++      structure Char = gs_1
++      structure CharArray = gs_2
++      structure CharVector = gs_3
++      structure Errors = gs_49
 +      structure FixedInt = gs_4
 +      structure General = gs_5
 +      structure Int = gs_6
@@ -2679,50 +3483,118 @@ index 82323c0..3db1c06 100644
 +      structure Substring = gs_24
 +      structure SysWord = gs_25
 +      structure Time = gs_26
-+      structure Vector = gs_41
++      structure Vector = gs_46
 +      structure Word = gs_27
 +      structure Word32 = gs_28
 +      structure Word64 = gs_29
 +      structure Word8 = gs_30
 +      json-util.sml
 +   in
-+      structure gs_49 = JSONUtil
++      structure gs_50 = JSONUtil
 +   end
 +   local
++      structure Char = gs_1
++      structure CharArray = gs_2
++      structure CharVector = gs_3
++      structure Errors = gs_49
++      structure FixedInt = gs_4
++      structure Fn = gs_47
++      structure General = gs_5
++      structure Int = gs_6
++      structure Int32 = gs_7
++      structure Int64 = gs_8
++      structure IntInf = gs_9
 +      structure JSON = gs_31
-+      structure JSONLexer = gs_45
-+      structure JSONSource = gs_46
-+      structure JSONTokens = gs_40
++      structure JSONParser = gs_48
++      structure JSONUtil = gs_50
++      structure LargeInt = gs_10
++      structure LargeReal = gs_11
++      structure LargeWord = gs_12
 +      structure List = gs_34
-+      structure TextIO = gs_39
-+      json-parser.sml
++      structure OS = gs_13
++      structure Position = gs_14
++      structure Real = gs_15
++      structure Real64 = gs_16
++      structure RealArray = gs_17
++      structure RealArraySlice = gs_18
++      structure RealVector = gs_19
++      structure RealVectorSlice = gs_20
++      structure SMLofNJ = gs_21
++      structure Socket = gs_22
++      structure String = gs_23
++      structure Substring = gs_24
++      structure SysWord = gs_25
++      structure Time = gs_26
++      structure Vector = gs_46
++      structure Word = gs_27
++      structure Word32 = gs_28
++      structure Word64 = gs_29
++      structure Word8 = gs_30
++      json-decode.sml
 +   in
-+      structure gs_50 = JSONParser
++      structure gs_51 = JSONDecode
 +   end
 +   local
 +      structure JSON = gs_31
-+      structure JSONStreamPrinter = gs_48
-+      structure TextIO = gs_39
++      structure JSONStreamPrinter = gs_45
++      structure TextIO = gs_40
 +      json-printer.sml
 +   in
-+      structure gs_51 = JSONPrinter
++      structure gs_52 = JSONPrinter
 +   end
 +in
 +   structure JSON = gs_31
-+   structure JSONBufferPrinter = gs_38
-+   structure JSONParser = gs_50
-+   structure JSONPrinter = gs_51
-+   structure JSONStreamParser = gs_47
-+   structure JSONStreamPrinter = gs_48
-+   structure JSONUtil = gs_49
++   structure JSONBufferPrinter = gs_39
++   structure JSONDecode = gs_51
++   structure JSONParser = gs_48
++   structure JSONPrinter = gs_52
++   structure JSONStreamParser = gs_44
++   structure JSONStreamPrinter = gs_45
++   structure JSONUtil = gs_50
 +   signature JSON_STREAM_OUTPUT = gs_32
 +end
 +end
  
  end
+diff --git a/JSON/json-parser.sml b/JSON/json-parser.sml
+index 8494d5c..7bb7cf3 100644
+--- a/JSON/json-parser.sml
++++ b/JSON/json-parser.sml
+@@ -56,10 +56,10 @@ structure JSONParser :> sig
+      *)
+     fun mkString (_, []) = ""
+       | mkString (n, cs) = let
+-          val s = Unsafe.CharVector.create n
+-          fun init (_, []) = s
++          val s = Unsafe.CharArray.create n
++          fun init (_, []) = CharArray.vector s
+             | init (i, c::cs) = (
+-                Unsafe.CharVector.update(s, i, c);
++                Unsafe.CharArray.update(s, i, c);
+                 init (dec i, cs))
+           in
+             init (dec n, cs)
+diff --git a/JSON/json-stream-parser.sml b/JSON/json-stream-parser.sml
+index 1b11ea4..cb709d9 100644
+--- a/JSON/json-stream-parser.sml
++++ b/JSON/json-stream-parser.sml
+@@ -90,10 +90,10 @@ structure JSONStreamParser :> sig
+      *)
+     fun mkString (_, []) = ""
+       | mkString (n, cs) = let
+-          val s = Unsafe.CharVector.create n
+-          fun init (_, []) = s
++          val s = Unsafe.CharArray.create n
++          fun init (_, []) = CharArray.vector s
+             | init (i, c::cs) = (
+-                Unsafe.CharVector.update(s, i, c);
++                Unsafe.CharArray.update(s, i, c);
+                 init (dec i, cs))
+           in
+             init (dec n, cs)
 diff --git a/PP/pp-lib.mlb b/PP/pp-lib.mlb
 new file mode 100644
-index 0000000..c93f13c
+index 0000000..83017b9
 --- /dev/null
 +++ b/PP/pp-lib.mlb
 @@ -0,0 +1,409 @@
@@ -2738,7 +3610,7 @@ index 0000000..c93f13c
 +local
 +  basis l37 =
 +    bas
-+      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/sml-nj.mlb $(SML_LIB)/smlnj-lib/Compat/mono-buffer/mono-buffer.mlb
++      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/sml-nj.mlb $(SML_LIB)/smlnj-lib/Compat/mono-buffer/sources.mlb
 +    end
 +  basis l55 =
 +    bas
@@ -3137,21 +4009,24 @@ index 0000000..c93f13c
 +end
 diff --git a/README.mlton b/README.mlton
 new file mode 100644
-index 0000000..8e3582e
+index 0000000..12227d0
 --- /dev/null
 +++ b/README.mlton
-@@ -0,0 +1,14 @@
+@@ -0,0 +1,17 @@
 +The following changes were made to the SML/NJ Library, in addition to
 +deriving the `.mlb` files from the `.cm` files:
 +
++* `Compat/either` (added): Implements `signature EITHER` and `structure Either: EITHER` (see https://github.com/SMLFamily/BasisLibrary/wiki/2015-002-Addition-of-Either-module); used by RegExp Library.
++* `Compat/fn` (added): Implements `signature FN` and `structure Fn: FN` (see https://github.com/SMLFamily/BasisLibrary/wiki/2015-005-Addition-of-Fn-module); used by JSON Library.
 +* `Compat/mono-buffer` (added): Implements `signature MONO_BUFFER` and `structure CharBuffer: MONO_BUFFER` (see https://github.com/SMLFamily/BasisLibrary/wiki/2018-001-Addition-of-monomorphic-buffers); used by JSON and PP Libraries.
++* `Compat/mono-sequence` (added): Implements `signature MONO_{ARRAY,VECTOR}{,_SLICE}_EXT` and `structure Word8Slice: MONO_VECTOR_SLICE_EXT` (see https://github.com/SMLFamily/BasisLibrary/wiki/2015-003-Additional-operations-on-sequences and
++https://github.com/SMLFamily/BasisLibrary/wiki/2018-001-Addition-of-monomorphic-buffers); used by SML/NJ Library.
 +* `HTML4/pp-init.sml` (added): Implements `structure PrettyPrint` using the SML/NJ PP Library.  This implementation is taken from the SML/NJ compiler source, since the SML/NJ HTML4 Library used the `structure PrettyPrint` provided by the SML/NJ compiler itself.
-+* `RegExp/Glue/match-tree.sml` (modified): Rewrote use of `Either.either` (see https://github.com/SMLFamily/BasisLibrary/wiki/2015-002-Addition-of-Either-module).
++* `JSON/json-stream-parser.sml` and `JSON/json-parser.sml` (modified): Rewrote use of `Unsafe.CharVector.create` and `Unsafe.CharVector.update`; MLton assumes that vectors are immutable.
 +* `Util/base64.sml` (modified): Rewrote use of `Unsafe.CharVector.create` and `Unsafe.CharVector.update`; MLton assumes that vectors are immutable.
 +* `Util/dynamic-array.sml` (modified): Rewrote use of `Array.fromVector`.
 +* `Util/engine.mlton.sml` (added, not exported): Implements `structure Engine`, providing time-limited, resumable computations using <:MLtonThread:>, <:MLtonSignal:>, and <:MLtonItimer:>.
 +* `Util/graph-scc-fn.sml` (modified): Rewrote use of `where` structure specification.
-+* `Util/hash-set-fn.sml` and `Util/hash-table-rep.sml` (modified): The computation of the `maxSize` computes succesive powers of two less than or equal to `Array.maxLen`, which overflows under MLton.  Add a `handle Overflow => i` to properly find the correct maximum size.
 +* `Util/time-limit.mlb` (added): Exports `structure TimeLimit`, which is _not_ exported by `smlnj-lib.mlb`.  Since MLton is very conservative in the presence of threads and signals, program performance may be adversely affected by unnecessarily including `structure TimeLimit`.
 +* `Util/time-limit.mlton.sml` (added): Implements `structure TimeLimit` using `structure Engine`.  The SML/NJ implementation of `structure TimeLimit` uses SML/NJ's first-class continuations, signals, and interval timer.
 +* `Util/utf8.sml` (modified): Rewrote use of `String.implodeRev` (see https://github.com/SMLFamily/BasisLibrary/wiki/2015-003d-STRING).
@@ -3233,25 +4108,12 @@ index 0000000..b082ba7
 +end
 +
 +end
-diff --git a/RegExp/Glue/match-tree.sml b/RegExp/Glue/match-tree.sml
-index 080971c..b56aa9d 100644
---- a/RegExp/Glue/match-tree.sml
-+++ b/RegExp/Glue/match-tree.sml
-@@ -55,7 +55,7 @@ structure MatchTree :> MATCH_TREE =
-    * starting at 0.
-    *)
-     fun nth (t, n) = let
--	  datatype sum = datatype Either.either
-+	  datatype 'a sum = INL of int | INR of 'a
- 	  fun walk (0, Match (x, _)) = INR x
- 	    | walk (i, Match (_, children)) = let
- 		fun walkList (i, []) = INL i
 diff --git a/RegExp/regexp-lib.mlb b/RegExp/regexp-lib.mlb
 new file mode 100644
-index 0000000..44d1765
+index 0000000..aa152f9
 --- /dev/null
 +++ b/RegExp/regexp-lib.mlb
-@@ -0,0 +1,366 @@
+@@ -0,0 +1,342 @@
 +
 +ann
 +  "nonexhaustiveBind ignore" "nonexhaustiveMatch ignore"
@@ -3263,9 +4125,9 @@ index 0000000..44d1765
 +local
 +  basis l4 =
 +    bas
-+      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/sml-nj.mlb
++      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/sml-nj.mlb $(SML_LIB)/smlnj-lib/Compat/either/sources.mlb
 +    end
-+  basis l12 =
++  basis l16 =
 +    bas
 +      (* $/smlnj-lib.cm ====> *) $(SML_LIB)/smlnj-lib/Util/smlnj-lib.mlb
 +    end
@@ -3275,345 +4137,321 @@ index 0000000..44d1765
 +   local
 +      open l4
 +   in
-+      structure gs_0 = List
++      structure gs_0 = Either
 +   end
 +   local
-+      structure List = gs_0
++      open l4
++   in
++      structure gs_1 = List
++   end
++   local
++      structure Either = gs_0
++      structure List = gs_1
 +      Glue/match-tree.sml
 +   in
-+      signature gs_1 = MATCH_TREE
-+      structure gs_2 = MatchTree
++      signature gs_2 = MATCH_TREE
++      structure gs_3 = MatchTree
 +   end
 +   local
-+      open l12
++      open l16
 +   in
-+      signature gs_3 = ORD_SET
++      signature gs_4 = ORD_SET
 +   end
 +   local
-+      signature ORD_SET = gs_3
++      signature ORD_SET = gs_4
 +      FrontEnd/syntax-sig.sml
 +   in
-+      signature gs_4 = REGEXP_SYNTAX
++      signature gs_5 = REGEXP_SYNTAX
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_5 = Option
++      structure gs_6 = Option
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_6 = StringCvt
++      structure gs_7 = StringCvt
 +   end
 +   local
-+      open l12
++      open l16
 +   in
-+      functor gs_7 = ListSetFn
++      functor gs_8 = ListSetFn
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_8 = Char
-+      structure gs_9 = CharArray
-+      structure gs_10 = CharVector
-+      structure gs_11 = FixedInt
-+      structure gs_12 = General
-+      structure gs_13 = Int
-+      structure gs_14 = Int32
-+      structure gs_15 = Int64
-+      structure gs_16 = IntInf
-+      structure gs_17 = LargeInt
-+      structure gs_18 = LargeReal
-+      structure gs_19 = LargeWord
-+      structure gs_20 = OS
-+      structure gs_21 = Position
-+      structure gs_22 = Real
-+      structure gs_23 = Real64
-+      structure gs_24 = RealArray
-+      structure gs_25 = RealArraySlice
-+      structure gs_26 = RealVector
-+      structure gs_27 = RealVectorSlice
-+      structure gs_28 = SMLofNJ
-+      structure gs_29 = Socket
-+      structure gs_30 = String
-+      structure gs_31 = Substring
-+      structure gs_32 = SysWord
-+      structure gs_33 = Time
-+      structure gs_34 = Word
-+      structure gs_35 = Word32
-+      structure gs_36 = Word64
-+      structure gs_37 = Word8
++      structure gs_9 = Char
++      structure gs_10 = CharArray
++      structure gs_11 = CharVector
++      structure gs_12 = FixedInt
++      structure gs_13 = General
++      structure gs_14 = Int
++      structure gs_15 = Int32
++      structure gs_16 = Int64
++      structure gs_17 = IntInf
++      structure gs_18 = LargeInt
++      structure gs_19 = LargeReal
++      structure gs_20 = LargeWord
++      structure gs_21 = OS
++      structure gs_22 = Position
++      structure gs_23 = Real
++      structure gs_24 = Real64
++      structure gs_25 = RealArray
++      structure gs_26 = RealArraySlice
++      structure gs_27 = RealVector
++      structure gs_28 = RealVectorSlice
++      structure gs_29 = SMLofNJ
++      structure gs_30 = Socket
++      structure gs_31 = String
++      structure gs_32 = Substring
++      structure gs_33 = SysWord
++      structure gs_34 = Time
++      structure gs_35 = Word
++      structure gs_36 = Word32
++      structure gs_37 = Word64
++      structure gs_38 = Word8
 +   end
 +   local
-+      structure Char = gs_8
-+      structure CharArray = gs_9
-+      structure CharVector = gs_10
-+      structure FixedInt = gs_11
-+      structure General = gs_12
-+      structure Int = gs_13
-+      structure Int32 = gs_14
-+      structure Int64 = gs_15
-+      structure IntInf = gs_16
-+      structure LargeInt = gs_17
-+      structure LargeReal = gs_18
-+      structure LargeWord = gs_19
-+      structure List = gs_0
-+      functor ListSetFn = gs_7
-+      structure OS = gs_20
-+      structure Position = gs_21
-+      signature REGEXP_SYNTAX = gs_4
-+      structure Real = gs_22
-+      structure Real64 = gs_23
-+      structure RealArray = gs_24
-+      structure RealArraySlice = gs_25
-+      structure RealVector = gs_26
-+      structure RealVectorSlice = gs_27
-+      structure SMLofNJ = gs_28
-+      structure Socket = gs_29
-+      structure String = gs_30
-+      structure Substring = gs_31
-+      structure SysWord = gs_32
-+      structure Time = gs_33
-+      structure Word = gs_34
-+      structure Word32 = gs_35
-+      structure Word64 = gs_36
-+      structure Word8 = gs_37
++      structure Char = gs_9
++      structure CharArray = gs_10
++      structure CharVector = gs_11
++      structure FixedInt = gs_12
++      structure General = gs_13
++      structure Int = gs_14
++      structure Int32 = gs_15
++      structure Int64 = gs_16
++      structure IntInf = gs_17
++      structure LargeInt = gs_18
++      structure LargeReal = gs_19
++      structure LargeWord = gs_20
++      structure List = gs_1
++      functor ListSetFn = gs_8
++      structure OS = gs_21
++      structure Position = gs_22
++      signature REGEXP_SYNTAX = gs_5
++      structure Real = gs_23
++      structure Real64 = gs_24
++      structure RealArray = gs_25
++      structure RealArraySlice = gs_26
++      structure RealVector = gs_27
++      structure RealVectorSlice = gs_28
++      structure SMLofNJ = gs_29
++      structure Socket = gs_30
++      structure String = gs_31
++      structure Substring = gs_32
++      structure SysWord = gs_33
++      structure Time = gs_34
++      structure Word = gs_35
++      structure Word32 = gs_36
++      structure Word64 = gs_37
++      structure Word8 = gs_38
 +      FrontEnd/syntax.sml
 +   in
-+      structure gs_38 = RegExpSyntax
++      structure gs_39 = RegExpSyntax
 +   end
 +   local
-+      signature MATCH_TREE = gs_1
-+      structure MatchTree = gs_2
-+      structure RegExpSyntax = gs_38
-+      structure StringCvt = gs_6
++      signature MATCH_TREE = gs_2
++      structure MatchTree = gs_3
++      structure RegExpSyntax = gs_39
++      structure StringCvt = gs_7
 +      BackEnd/engine-sig.sml
 +   in
-+      signature gs_39 = REGEXP_ENGINE
++      signature gs_40 = REGEXP_ENGINE
 +   end
 +   local
-+      structure List = gs_0
-+      signature MATCH_TREE = gs_1
-+      structure MatchTree = gs_2
-+      structure Option = gs_5
-+      signature REGEXP_ENGINE = gs_39
-+      structure RegExpSyntax = gs_38
++      structure List = gs_1
++      signature MATCH_TREE = gs_2
++      structure MatchTree = gs_3
++      structure Option = gs_6
++      signature REGEXP_ENGINE = gs_40
++      structure RegExpSyntax = gs_39
 +      BackEnd/bt-engine.sml
 +   in
-+      structure gs_40 = BackTrackEngine
++      structure gs_41 = BackTrackEngine
 +   end
 +   local
-+      signature MATCH_TREE = gs_1
-+      structure MatchTree = gs_2
-+      structure StringCvt = gs_6
++      signature MATCH_TREE = gs_2
++      structure MatchTree = gs_3
++      structure StringCvt = gs_7
 +      Glue/regexp-sig.sml
 +   in
-+      signature gs_41 = REGEXP
++      signature gs_42 = REGEXP
 +   end
 +   local
-+      structure RegExpSyntax = gs_38
-+      structure StringCvt = gs_6
++      structure RegExpSyntax = gs_39
++      structure StringCvt = gs_7
 +      FrontEnd/parser-sig.sml
 +   in
-+      signature gs_42 = REGEXP_PARSER
++      signature gs_43 = REGEXP_PARSER
 +   end
 +   local
-+      signature MATCH_TREE = gs_1
-+      structure MatchTree = gs_2
-+      signature REGEXP = gs_41
-+      signature REGEXP_ENGINE = gs_39
-+      signature REGEXP_PARSER = gs_42
-+      structure StringCvt = gs_6
++      signature MATCH_TREE = gs_2
++      structure MatchTree = gs_3
++      signature REGEXP = gs_42
++      signature REGEXP_ENGINE = gs_40
++      signature REGEXP_PARSER = gs_43
++      structure StringCvt = gs_7
 +      Glue/regexp-fn.sml
 +   in
-+      functor gs_43 = RegExpFn
++      functor gs_44 = RegExpFn
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_44 = Vector
++      structure gs_45 = Vector
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_45 = Array
++      structure gs_46 = Array
 +   end
 +   local
-+      structure Array = gs_45
-+      structure Char = gs_8
-+      structure CharArray = gs_9
-+      structure CharVector = gs_10
-+      structure FixedInt = gs_11
-+      structure General = gs_12
-+      structure Int = gs_13
-+      structure Int32 = gs_14
-+      structure Int64 = gs_15
-+      structure IntInf = gs_16
-+      structure LargeInt = gs_17
-+      structure LargeReal = gs_18
-+      structure LargeWord = gs_19
-+      structure List = gs_0
-+      signature MATCH_TREE = gs_1
-+      structure MatchTree = gs_2
-+      structure OS = gs_20
-+      structure Position = gs_21
-+      signature REGEXP_ENGINE = gs_39
-+      structure Real = gs_22
-+      structure Real64 = gs_23
-+      structure RealArray = gs_24
-+      structure RealArraySlice = gs_25
-+      structure RealVector = gs_26
-+      structure RealVectorSlice = gs_27
-+      structure RegExpSyntax = gs_38
-+      structure SMLofNJ = gs_28
-+      structure Socket = gs_29
-+      structure String = gs_30
-+      structure StringCvt = gs_6
-+      structure Substring = gs_31
-+      structure SysWord = gs_32
-+      structure Time = gs_33
-+      structure Vector = gs_44
-+      structure Word = gs_34
-+      structure Word32 = gs_35
-+      structure Word64 = gs_36
-+      structure Word8 = gs_37
++      structure Array = gs_46
++      structure List = gs_1
++      signature MATCH_TREE = gs_2
++      structure MatchTree = gs_3
++      signature REGEXP_ENGINE = gs_40
++      structure RegExpSyntax = gs_39
++      structure StringCvt = gs_7
++      structure Vector = gs_45
 +      BackEnd/thompson-engine.sml
 +   in
-+      structure gs_46 = ThompsonEngine
++      structure gs_47 = ThompsonEngine
 +   end
 +   local
-+      open l12
++      open l16
 +   in
-+      functor gs_47 = ListMapFn
++      functor gs_48 = ListMapFn
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_48 = Array2
++      structure gs_49 = Array2
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_49 = TextIO
++      structure gs_50 = TextIO
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_50 = ListPair
++      structure gs_51 = ListPair
 +   end
 +   local
-+      structure Array = gs_45
-+      structure Array2 = gs_48
-+      structure Char = gs_8
-+      structure CharArray = gs_9
-+      structure CharVector = gs_10
-+      structure FixedInt = gs_11
-+      structure General = gs_12
-+      structure Int = gs_13
-+      structure Int32 = gs_14
-+      structure Int64 = gs_15
-+      structure IntInf = gs_16
-+      structure LargeInt = gs_17
-+      structure LargeReal = gs_18
-+      structure LargeWord = gs_19
-+      structure List = gs_0
-+      functor ListMapFn = gs_47
-+      structure ListPair = gs_50
-+      functor ListSetFn = gs_7
-+      signature ORD_SET = gs_3
-+      structure OS = gs_20
-+      structure Position = gs_21
-+      structure Real = gs_22
-+      structure Real64 = gs_23
-+      structure RealArray = gs_24
-+      structure RealArraySlice = gs_25
-+      structure RealVector = gs_26
-+      structure RealVectorSlice = gs_27
-+      structure RegExpSyntax = gs_38
-+      structure SMLofNJ = gs_28
-+      structure Socket = gs_29
-+      structure String = gs_30
-+      structure Substring = gs_31
-+      structure SysWord = gs_32
-+      structure TextIO = gs_49
-+      structure Time = gs_33
-+      structure Word = gs_34
-+      structure Word32 = gs_35
-+      structure Word64 = gs_36
-+      structure Word8 = gs_37
++      structure Array = gs_46
++      structure Array2 = gs_49
++      structure Char = gs_9
++      structure CharArray = gs_10
++      structure CharVector = gs_11
++      structure FixedInt = gs_12
++      structure General = gs_13
++      structure Int = gs_14
++      structure Int32 = gs_15
++      structure Int64 = gs_16
++      structure IntInf = gs_17
++      structure LargeInt = gs_18
++      structure LargeReal = gs_19
++      structure LargeWord = gs_20
++      structure List = gs_1
++      functor ListMapFn = gs_48
++      structure ListPair = gs_51
++      functor ListSetFn = gs_8
++      signature ORD_SET = gs_4
++      structure OS = gs_21
++      structure Position = gs_22
++      structure Real = gs_23
++      structure Real64 = gs_24
++      structure RealArray = gs_25
++      structure RealArraySlice = gs_26
++      structure RealVector = gs_27
++      structure RealVectorSlice = gs_28
++      structure RegExpSyntax = gs_39
++      structure SMLofNJ = gs_29
++      structure Socket = gs_30
++      structure String = gs_31
++      structure Substring = gs_32
++      structure SysWord = gs_33
++      structure TextIO = gs_50
++      structure Time = gs_34
++      structure Word = gs_35
++      structure Word32 = gs_36
++      structure Word64 = gs_37
++      structure Word8 = gs_38
 +      BackEnd/fsm.sml
 +   in
-+      signature gs_51 = DFA
-+      structure gs_52 = Dfa
-+      signature gs_53 = NFA
-+      structure gs_54 = Nfa
++      signature gs_52 = DFA
++      structure gs_53 = Dfa
++      signature gs_54 = NFA
++      structure gs_55 = Nfa
 +   end
 +   local
-+      signature DFA = gs_51
-+      structure Dfa = gs_52
-+      signature MATCH_TREE = gs_1
-+      structure MatchTree = gs_2
-+      signature NFA = gs_53
-+      structure Nfa = gs_54
-+      signature REGEXP_ENGINE = gs_39
-+      structure RegExpSyntax = gs_38
-+      structure Vector = gs_44
++      signature DFA = gs_52
++      structure Dfa = gs_53
++      signature MATCH_TREE = gs_2
++      structure MatchTree = gs_3
++      signature NFA = gs_54
++      structure Nfa = gs_55
++      signature REGEXP_ENGINE = gs_40
++      structure RegExpSyntax = gs_39
++      structure Vector = gs_45
 +      BackEnd/dfa-engine.sml
 +   in
-+      structure gs_55 = DfaEngine
++      structure gs_56 = DfaEngine
 +   end
 +   local
-+      structure Char = gs_8
-+      structure CharArray = gs_9
-+      structure CharVector = gs_10
-+      structure FixedInt = gs_11
-+      structure General = gs_12
-+      structure Int = gs_13
-+      structure Int32 = gs_14
-+      structure Int64 = gs_15
-+      structure IntInf = gs_16
-+      structure LargeInt = gs_17
-+      structure LargeReal = gs_18
-+      structure LargeWord = gs_19
-+      structure List = gs_0
-+      structure OS = gs_20
-+      structure Position = gs_21
-+      signature REGEXP_PARSER = gs_42
-+      structure Real = gs_22
-+      structure Real64 = gs_23
-+      structure RealArray = gs_24
-+      structure RealArraySlice = gs_25
-+      structure RealVector = gs_26
-+      structure RealVectorSlice = gs_27
-+      structure RegExpSyntax = gs_38
-+      structure SMLofNJ = gs_28
-+      structure Socket = gs_29
-+      structure String = gs_30
-+      structure StringCvt = gs_6
-+      structure Substring = gs_31
-+      structure SysWord = gs_32
-+      structure Time = gs_33
-+      structure Word = gs_34
-+      structure Word32 = gs_35
-+      structure Word64 = gs_36
-+      structure Word8 = gs_37
++      structure Char = gs_9
++      structure CharArray = gs_10
++      structure CharVector = gs_11
++      structure FixedInt = gs_12
++      structure General = gs_13
++      structure Int = gs_14
++      structure Int32 = gs_15
++      structure Int64 = gs_16
++      structure IntInf = gs_17
++      structure LargeInt = gs_18
++      structure LargeReal = gs_19
++      structure LargeWord = gs_20
++      structure List = gs_1
++      structure OS = gs_21
++      structure Position = gs_22
++      signature REGEXP_PARSER = gs_43
++      structure Real = gs_23
++      structure Real64 = gs_24
++      structure RealArray = gs_25
++      structure RealArraySlice = gs_26
++      structure RealVector = gs_27
++      structure RealVectorSlice = gs_28
++      structure RegExpSyntax = gs_39
++      structure SMLofNJ = gs_29
++      structure Socket = gs_30
++      structure String = gs_31
++      structure StringCvt = gs_7
++      structure Substring = gs_32
++      structure SysWord = gs_33
++      structure Time = gs_34
++      structure Word = gs_35
++      structure Word32 = gs_36
++      structure Word64 = gs_37
++      structure Word8 = gs_38
 +      FrontEnd/awk-syntax.sml
 +   in
-+      structure gs_56 = AwkSyntax
++      structure gs_57 = AwkSyntax
 +   end
 +in
-+   structure AwkSyntax = gs_56
-+   structure BackTrackEngine = gs_40
-+   structure DfaEngine = gs_55
-+   signature MATCH_TREE = gs_1
-+   structure MatchTree = gs_2
-+   signature REGEXP = gs_41
-+   signature REGEXP_ENGINE = gs_39
-+   signature REGEXP_PARSER = gs_42
-+   signature REGEXP_SYNTAX = gs_4
-+   functor RegExpFn = gs_43
-+   structure RegExpSyntax = gs_38
-+   structure ThompsonEngine = gs_46
++   structure AwkSyntax = gs_57
++   structure BackTrackEngine = gs_41
++   structure DfaEngine = gs_56
++   signature MATCH_TREE = gs_2
++   structure MatchTree = gs_3
++   signature REGEXP = gs_42
++   signature REGEXP_ENGINE = gs_40
++   signature REGEXP_PARSER = gs_43
++   signature REGEXP_SYNTAX = gs_5
++   functor RegExpFn = gs_44
++   structure RegExpSyntax = gs_39
++   structure ThompsonEngine = gs_47
 +end
 +end
 +
@@ -4394,10 +5232,10 @@ index 2432737..8e989c8 100644
      in
  
 diff --git a/Util/dynamic-array.sml b/Util/dynamic-array.sml
-index 64401cd..27f166e 100644
+index aea3e85..9601984 100644
 --- a/Util/dynamic-array.sml
 +++ b/Util/dynamic-array.sml
-@@ -39,7 +39,7 @@ structure DynamicArray :> DYNAMIC_ARRAY =
+@@ -40,7 +40,7 @@ structure DynamicArray :> DYNAMIC_ARRAY =
  	  end
  
      fun fromVector (vec, dflt) = let
@@ -4524,38 +5362,12 @@ index da4c441..0e5e4eb 100644
    struct
      structure Nd = Nd
  
-diff --git a/Util/hash-set-fn.sml b/Util/hash-set-fn.sml
-index 4f6e1bd..07b94d2 100644
---- a/Util/hash-set-fn.sml
-+++ b/Util/hash-set-fn.sml
-@@ -39,7 +39,7 @@ functor HashSetFn (Key : HASH_KEY) : MONO_HASH_SET =
- 		  val i' = i+i
- 		  in
- 		    if i' < Array.maxLen then f i' else i
--		  end
-+		  end handle Overflow => i
- 	  in
- 	    f 0x10000
- 	  end
-diff --git a/Util/hash-table-rep.sml b/Util/hash-table-rep.sml
-index 781a7fa..6b5560d 100644
---- a/Util/hash-table-rep.sml
-+++ b/Util/hash-table-rep.sml
-@@ -75,7 +75,7 @@ structure HashTableRep : sig
- 		  val i' = i+i
- 		  in
- 		    if i' < Array.maxLen then f i' else i
--		  end
-+		  end handle Overflow => i
- 	  in
- 	    f 0x10000
- 	  end
 diff --git a/Util/smlnj-lib.mlb b/Util/smlnj-lib.mlb
 new file mode 100644
-index 0000000..905ff0e
+index 0000000..ed2e22c
 --- /dev/null
 +++ b/Util/smlnj-lib.mlb
-@@ -0,0 +1,2258 @@
+@@ -0,0 +1,2378 @@
 +
 +ann
 +  "nonexhaustiveBind ignore" "nonexhaustiveMatch warn"
@@ -4567,7 +5379,7 @@ index 0000000..905ff0e
 +local
 +  basis l4 =
 +    bas
-+      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/sml-nj.mlb $(SML_LIB)/basis/unsafe.mlb
++      (* $/basis.cm ====> *) $(SML_LIB)/basis/basis.mlb $(SML_LIB)/basis/sml-nj.mlb $(SML_LIB)/basis/unsafe.mlb $(SML_LIB)/smlnj-lib/Compat/mono-buffer/sources.mlb $(SML_LIB)/smlnj-lib/Compat/mono-sequence/sources.mlb
 +    end
 +in
 +local
@@ -4586,12 +5398,12 @@ index 0000000..905ff0e
 +   local
 +      open l4
 +   in
-+      structure gs_2 = Vector
++      structure gs_2 = Array
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_3 = Array
++      structure gs_3 = Vector
 +   end
 +   local
 +      open l4
@@ -4638,13 +5450,13 @@ index 0000000..905ff0e
 +      structure gs_35 = ArraySlice
 +   end
 +   local
-+      structure Vector = gs_2
++      structure Vector = gs_3
 +      dynamic-array-sig.sml
 +   in
 +      signature gs_36 = DYNAMIC_ARRAY
 +   end
 +   local
-+      structure Array = gs_3
++      structure Array = gs_2
 +      structure ArraySlice = gs_35
 +      structure Char = gs_4
 +      structure CharArray = gs_5
@@ -4674,7 +5486,7 @@ index 0000000..905ff0e
 +      structure Substring = gs_27
 +      structure SysWord = gs_28
 +      structure Time = gs_29
-+      structure Vector = gs_2
++      structure Vector = gs_3
 +      structure Word = gs_30
 +      structure Word32 = gs_31
 +      structure Word64 = gs_32
@@ -4809,55 +5621,91 @@ index 0000000..905ff0e
 +      structure gs_48 = IntBinaryMap
 +   end
 +   local
-+      list-xprod-sig.sml
++      structure Char = gs_4
++      structure CharArray = gs_5
++      structure CharVector = gs_6
++      structure FixedInt = gs_7
++      structure General = gs_8
++      structure Int = gs_9
++      structure Int32 = gs_10
++      structure Int64 = gs_11
++      structure IntInf = gs_12
++      structure LargeInt = gs_13
++      structure LargeReal = gs_14
++      structure LargeWord = gs_15
++      structure OS = gs_16
++      structure Position = gs_17
++      structure Real = gs_18
++      structure Real64 = gs_19
++      structure RealArray = gs_20
++      structure RealArraySlice = gs_21
++      structure RealVector = gs_22
++      structure RealVectorSlice = gs_23
++      structure SMLofNJ = gs_24
++      structure Socket = gs_25
++      structure String = gs_26
++      structure Substring = gs_27
++      structure SysWord = gs_28
++      structure Time = gs_29
++      structure Word = gs_30
++      structure Word32 = gs_31
++      structure Word64 = gs_32
++      structure Word8 = gs_33
++      Target64Bit/native.sml
 +   in
-+      signature gs_49 = LIST_XPROD
++      structure gs_49 = NativeInt
++      structure gs_50 = NativeWord
 +   end
 +   local
-+      signature LIST_XPROD = gs_49
++      list-xprod-sig.sml
++   in
++      signature gs_51 = LIST_XPROD
++   end
++   local
++      signature LIST_XPROD = gs_51
 +      list-xprod.sml
 +   in
-+      structure gs_50 = ListXProd
++      structure gs_52 = ListXProd
 +   end
 +   local
 +      path-util-sig.sml
 +   in
-+      signature gs_51 = PATH_UTIL
++      signature gs_53 = PATH_UTIL
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_52 = Unsafe
++      structure gs_54 = Unsafe
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_53 = Word8Vector
++      structure gs_55 = Word8Vector
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_54 = Word8Array
++      structure gs_56 = Word8Array
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_55 = Byte
++      structure gs_57 = Byte
 +   end
 +   local
 +      open l4
 +   in
-+      signature gs_56 = MONO_ARRAY
++      signature gs_58 = MONO_ARRAY
 +   end
 +   local
-+      signature MONO_ARRAY = gs_56
++      signature MONO_ARRAY = gs_58
 +      bit-array-sig.sml
 +   in
-+      signature gs_57 = BIT_ARRAY
++      signature gs_59 = BIT_ARRAY
 +   end
 +   local
-+      signature BIT_ARRAY = gs_57
-+      structure Byte = gs_55
++      signature BIT_ARRAY = gs_59
++      structure Byte = gs_57
 +      structure Char = gs_4
 +      structure CharArray = gs_5
 +      structure CharVector = gs_6
@@ -4886,56 +5734,118 @@ index 0000000..905ff0e
 +      structure Substring = gs_27
 +      structure SysWord = gs_28
 +      structure Time = gs_29
-+      structure Unsafe = gs_52
++      structure Unsafe = gs_54
 +      structure Word = gs_30
 +      structure Word32 = gs_31
 +      structure Word64 = gs_32
 +      structure Word8 = gs_33
-+      structure Word8Array = gs_54
-+      structure Word8Vector = gs_53
++      structure Word8Array = gs_56
++      structure Word8Vector = gs_55
 +      bit-array.sml
 +   in
-+      structure gs_58 = BitArray
++      structure gs_60 = BitArray
 +   end
 +   local
 +      signature ORD_KEY = gs_41
 +      ord-set-sig.sml
 +   in
-+      signature gs_59 = ORD_SET
++      signature gs_61 = ORD_SET
 +   end
 +   local
 +      structure LibBase = gs_44
 +      structure List = gs_34
 +      signature ORD_KEY = gs_41
-+      signature ORD_SET = gs_59
++      signature ORD_SET = gs_61
 +      redblack-set-fn.sml
 +   in
-+      functor gs_60 = RedBlackSetFn
++      functor gs_62 = RedBlackSetFn
 +   end
 +   local
 +      mono-dynamic-array-sig.sml
 +   in
-+      signature gs_61 = MONO_DYNAMIC_ARRAY
++      signature gs_63 = MONO_DYNAMIC_ARRAY
 +   end
 +   local
-+      signature MONO_ARRAY = gs_56
++      signature MONO_ARRAY = gs_58
 +      bsearch-fn.sml
 +   in
-+      functor gs_62 = BSearchFn
++      functor gs_64 = BSearchFn
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_63 = PackWord32Big
++      structure gs_65 = Word8Buffer
 +   end
 +   local
++      open l4
++   in
++      structure gs_66 = Word8VectorSlice
++   end
++   local
++      structure NativeInt = gs_49
++      structure NativeWord = gs_50
++      structure Word8Vector = gs_55
 +      random-sig.sml
 +   in
-+      signature gs_64 = RANDOM
++      signature gs_67 = RANDOM
 +   end
 +   local
-+      structure Array = gs_3
-+      structure Byte = gs_55
++      open l4
++   in
++      structure gs_68 = Word8ArraySlice
++   end
++   local
++      structure Word8Vector = gs_55
++      structure Word8VectorSlice = gs_66
++      base64-sig.sml
++   in
++      signature gs_69 = BASE64
++   end
++   local
++      signature BASE64 = gs_69
++      structure Char = gs_4
++      structure CharArray = gs_5
++      structure CharVector = gs_6
++      structure FixedInt = gs_7
++      structure General = gs_8
++      structure Int = gs_9
++      structure Int32 = gs_10
++      structure Int64 = gs_11
++      structure IntInf = gs_12
++      structure LargeInt = gs_13
++      structure LargeReal = gs_14
++      structure LargeWord = gs_15
++      structure OS = gs_16
++      structure Position = gs_17
++      structure Real = gs_18
++      structure Real64 = gs_19
++      structure RealArray = gs_20
++      structure RealArraySlice = gs_21
++      structure RealVector = gs_22
++      structure RealVectorSlice = gs_23
++      structure SMLofNJ = gs_24
++      structure Socket = gs_25
++      structure String = gs_26
++      structure Substring = gs_27
++      structure SysWord = gs_28
++      structure Time = gs_29
++      structure Unsafe = gs_54
++      structure Word = gs_30
++      structure Word32 = gs_31
++      structure Word64 = gs_32
++      structure Word8 = gs_33
++      structure Word8Array = gs_56
++      structure Word8ArraySlice = gs_68
++      structure Word8Vector = gs_55
++      structure Word8VectorSlice = gs_66
++      base64.sml
++   in
++      structure gs_70 = Base64
++   end
++   local
++      structure Array = gs_2
++      structure Base64 = gs_70
++      structure Byte = gs_57
 +      structure Char = gs_4
 +      structure CharArray = gs_5
 +      structure CharVector = gs_6
@@ -4949,10 +5859,11 @@ index 0000000..905ff0e
 +      structure LargeReal = gs_14
 +      structure LargeWord = gs_15
 +      structure LibBase = gs_44
++      structure List = gs_34
++      signature MONO_ARRAY = gs_58
 +      structure OS = gs_16
-+      structure PackWord32Big = gs_63
 +      structure Position = gs_17
-+      signature RANDOM = gs_64
++      signature RANDOM = gs_67
 +      structure Real = gs_18
 +      structure Real64 = gs_19
 +      structure RealArray = gs_20
@@ -4969,14 +5880,15 @@ index 0000000..905ff0e
 +      structure Word32 = gs_31
 +      structure Word64 = gs_32
 +      structure Word8 = gs_33
-+      structure Word8Array = gs_54
-+      structure Word8Vector = gs_53
-+      random.sml
++      structure Word8Buffer = gs_65
++      structure Word8Vector = gs_55
++      structure Word8VectorSlice = gs_66
++      Target64Bit/random.sml
 +   in
-+      structure gs_65 = Random
++      structure gs_71 = Random
 +   end
 +   local
-+      structure Array = gs_3
++      structure Array = gs_2
 +      structure ArraySlice = gs_35
 +      structure Char = gs_4
 +      structure CharArray = gs_5
@@ -4992,7 +5904,7 @@ index 0000000..905ff0e
 +      structure LargeWord = gs_15
 +      structure OS = gs_16
 +      structure Position = gs_17
-+      structure Random = gs_65
++      structure Random = gs_71
 +      structure Real = gs_18
 +      structure Real64 = gs_19
 +      structure RealArray = gs_20
@@ -5005,56 +5917,17 @@ index 0000000..905ff0e
 +      structure Substring = gs_27
 +      structure SysWord = gs_28
 +      structure Time = gs_29
-+      structure Unsafe = gs_52
++      structure Unsafe = gs_54
 +      structure Word = gs_30
 +      structure Word32 = gs_31
 +      structure Word64 = gs_32
 +      structure Word8 = gs_33
 +      real-order-stats.sml
 +   in
-+      structure gs_66 = RealOrderStats
++      structure gs_72 = RealOrderStats
 +   end
 +   local
-+      atom-sig.sml
-+   in
-+      signature gs_67 = ATOM
-+   end
-+   local
-+      open l4
-+   in
-+      structure gs_68 = TextIO
-+   end
-+   local
-+      structure TextIO = gs_68
-+      io-util-sig.sml
-+   in
-+      signature gs_69 = IO_UTIL
-+   end
-+   local
-+      signature IO_UTIL = gs_69
-+      structure TextIO = gs_68
-+      io-util.sml
-+   in
-+      structure gs_70 = IOUtil
-+   end
-+   local
-+      fifo-sig.sml
-+   in
-+      signature gs_71 = FIFO
-+   end
-+   local
-+      hash-key-sig.sml
-+   in
-+      signature gs_72 = HASH_KEY
-+   end
-+   local
-+      signature HASH_KEY = gs_72
-+      mono-hash-table-sig.sml
-+   in
-+      signature gs_73 = MONO_HASH_TABLE
-+   end
-+   local
-+      structure Array = gs_3
++      structure Array = gs_2
 +      structure Char = gs_4
 +      structure CharArray = gs_5
 +      structure CharVector = gs_6
@@ -5067,6 +5940,119 @@ index 0000000..905ff0e
 +      structure LargeInt = gs_13
 +      structure LargeReal = gs_14
 +      structure LargeWord = gs_15
++      structure OS = gs_16
++      structure Position = gs_17
++      structure Real = gs_18
++      structure Real64 = gs_19
++      structure RealArray = gs_20
++      structure RealArraySlice = gs_21
++      structure RealVector = gs_22
++      structure RealVectorSlice = gs_23
++      structure SMLofNJ = gs_24
++      structure Socket = gs_25
++      structure String = gs_26
++      structure Substring = gs_27
++      structure SysWord = gs_28
++      structure Time = gs_29
++      structure Unsafe = gs_54
++      structure Word = gs_30
++      structure Word32 = gs_31
++      structure Word64 = gs_32
++      structure Word8 = gs_33
++      edit-distance.sml
++   in
++      structure gs_73 = EditDistance
++   end
++   local
++      atom-sig.sml
++   in
++      signature gs_74 = ATOM
++   end
++   local
++      open l4
++   in
++      structure gs_75 = TextIO
++   end
++   local
++      structure TextIO = gs_75
++      io-util-sig.sml
++   in
++      signature gs_76 = IO_UTIL
++   end
++   local
++      signature IO_UTIL = gs_76
++      structure TextIO = gs_75
++      io-util.sml
++   in
++      structure gs_77 = IOUtil
++   end
++   local
++      fifo-sig.sml
++   in
++      signature gs_78 = FIFO
++   end
++   local
++      hash-key-sig.sml
++   in
++      signature gs_79 = HASH_KEY
++   end
++   local
++      signature HASH_KEY = gs_79
++      mono-hash-table-sig.sml
++   in
++      signature gs_80 = MONO_HASH_TABLE
++   end
++   local
++      structure Array = gs_2
++      structure Char = gs_4
++      structure CharArray = gs_5
++      structure CharVector = gs_6
++      structure FixedInt = gs_7
++      structure General = gs_8
++      structure Int = gs_9
++      structure Int32 = gs_10
++      structure Int64 = gs_11
++      structure IntInf = gs_12
++      structure LargeInt = gs_13
++      structure LargeReal = gs_14
++      structure LargeWord = gs_15
++      structure OS = gs_16
++      structure Position = gs_17
++      structure Real = gs_18
++      structure Real64 = gs_19
++      structure RealArray = gs_20
++      structure RealArraySlice = gs_21
++      structure RealVector = gs_22
++      structure RealVectorSlice = gs_23
++      structure SMLofNJ = gs_24
++      structure Socket = gs_25
++      structure String = gs_26
++      structure Substring = gs_27
++      structure SysWord = gs_28
++      structure Time = gs_29
++      structure Word = gs_30
++      structure Word32 = gs_31
++      structure Word64 = gs_32
++      structure Word8 = gs_33
++      max-hash-table-size.sml
++   in
++      structure gs_81 = MaxHashTableSize
++   end
++   local
++      structure Array = gs_2
++      structure Char = gs_4
++      structure CharArray = gs_5
++      structure CharVector = gs_6
++      structure FixedInt = gs_7
++      structure General = gs_8
++      structure Int = gs_9
++      structure Int32 = gs_10
++      structure Int64 = gs_11
++      structure IntInf = gs_12
++      structure LargeInt = gs_13
++      structure LargeReal = gs_14
++      structure LargeWord = gs_15
++      structure MaxHashTableSize = gs_81
 +      structure OS = gs_16
 +      structure Position = gs_17
 +      structure Real = gs_18
@@ -5087,16 +6073,16 @@ index 0000000..905ff0e
 +      structure Word8 = gs_33
 +      hash-table-rep.sml
 +   in
-+      structure gs_74 = HashTableRep
++      structure gs_82 = HashTableRep
 +   end
 +   local
-+      structure Array = gs_3
++      structure Array = gs_2
 +      structure Char = gs_4
 +      structure CharArray = gs_5
 +      structure CharVector = gs_6
 +      structure FixedInt = gs_7
 +      structure General = gs_8
-+      structure HashTableRep = gs_74
++      structure HashTableRep = gs_82
 +      structure Int = gs_9
 +      structure Int32 = gs_10
 +      structure Int64 = gs_11
@@ -5104,7 +6090,7 @@ index 0000000..905ff0e
 +      structure LargeInt = gs_13
 +      structure LargeReal = gs_14
 +      structure LargeWord = gs_15
-+      signature MONO_HASH_TABLE = gs_73
++      signature MONO_HASH_TABLE = gs_80
 +      structure OS = gs_16
 +      structure Position = gs_17
 +      structure Real = gs_18
@@ -5125,33 +6111,33 @@ index 0000000..905ff0e
 +      structure Word8 = gs_33
 +      int-hash-table.sml
 +   in
-+      structure gs_75 = IntHashTable
++      structure gs_83 = IntHashTable
 +   end
 +   local
 +      structure LibBase = gs_44
 +      structure List = gs_34
 +      signature ORD_KEY = gs_41
-+      signature ORD_SET = gs_59
++      signature ORD_SET = gs_61
 +      list-set-fn.sml
 +   in
-+      functor gs_76 = ListSetFn
++      functor gs_84 = ListSetFn
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_77 = Option
++      structure gs_85 = Option
 +   end
 +   local
 +      getopt-sig.sml
 +   in
-+      signature gs_78 = GET_OPT
++      signature gs_86 = GET_OPT
 +   end
 +   local
 +      structure Char = gs_4
 +      structure CharArray = gs_5
 +      structure CharVector = gs_6
 +      structure FixedInt = gs_7
-+      signature GET_OPT = gs_78
++      signature GET_OPT = gs_86
 +      structure General = gs_8
 +      structure Int = gs_9
 +      structure Int32 = gs_10
@@ -5162,7 +6148,7 @@ index 0000000..905ff0e
 +      structure LargeWord = gs_15
 +      structure List = gs_34
 +      structure OS = gs_16
-+      structure Option = gs_77
++      structure Option = gs_85
 +      structure Position = gs_17
 +      structure Real = gs_18
 +      structure Real64 = gs_19
@@ -5183,7 +6169,7 @@ index 0000000..905ff0e
 +      structure Word8 = gs_33
 +      getopt.sml
 +   in
-+      structure gs_79 = GetOpt
++      structure gs_87 = GetOpt
 +   end
 +   local
 +      structure Char = gs_4
@@ -5200,7 +6186,7 @@ index 0000000..905ff0e
 +      structure LargeWord = gs_15
 +      structure LibBase = gs_44
 +      structure List = gs_34
-+      signature ORD_SET = gs_59
++      signature ORD_SET = gs_61
 +      structure OS = gs_16
 +      structure Position = gs_17
 +      structure Real = gs_18
@@ -5221,7 +6207,7 @@ index 0000000..905ff0e
 +      structure Word8 = gs_33
 +      int-redblack-set.sml
 +   in
-+      structure gs_80 = IntRedBlackSet
++      structure gs_88 = IntRedBlackSet
 +   end
 +   local
 +      structure Char = gs_4
@@ -5237,7 +6223,7 @@ index 0000000..905ff0e
 +      structure LargeReal = gs_14
 +      structure LargeWord = gs_15
 +      structure OS = gs_16
-+      signature PATH_UTIL = gs_51
++      signature PATH_UTIL = gs_53
 +      structure Position = gs_17
 +      structure Real = gs_18
 +      structure Real64 = gs_19
@@ -5257,7 +6243,7 @@ index 0000000..905ff0e
 +      structure Word8 = gs_33
 +      path-util.sml
 +   in
-+      structure gs_81 = PathUtil
++      structure gs_89 = PathUtil
 +   end
 +   local
 +      structure Char = gs_4
@@ -5274,7 +6260,7 @@ index 0000000..905ff0e
 +      structure LargeWord = gs_15
 +      structure LibBase = gs_44
 +      structure List = gs_34
-+      signature ORD_SET = gs_59
++      signature ORD_SET = gs_61
 +      structure OS = gs_16
 +      structure Position = gs_17
 +      structure Real = gs_18
@@ -5295,7 +6281,7 @@ index 0000000..905ff0e
 +      structure Word8 = gs_33
 +      int-list-set.sml
 +   in
-+      structure gs_82 = IntListSet
++      structure gs_90 = IntListSet
 +   end
 +   local
 +      structure LibBase = gs_44
@@ -5304,18 +6290,18 @@ index 0000000..905ff0e
 +      signature ORD_MAP = gs_42
 +      list-map-fn.sml
 +   in
-+      functor gs_83 = ListMapFn
++      functor gs_91 = ListMapFn
 +   end
 +   local
 +      splaytree-sig.sml
 +   in
-+      signature gs_84 = SPLAY_TREE
++      signature gs_92 = SPLAY_TREE
 +   end
 +   local
-+      signature MONO_ARRAY = gs_56
++      signature MONO_ARRAY = gs_58
 +      mono-array-sort-sig.sml
 +   in
-+      signature gs_85 = MONO_ARRAY_SORT
++      signature gs_93 = MONO_ARRAY_SORT
 +   end
 +   local
 +      structure Char = gs_4
@@ -5330,8 +6316,8 @@ index 0000000..905ff0e
 +      structure LargeInt = gs_13
 +      structure LargeReal = gs_14
 +      structure LargeWord = gs_15
-+      signature MONO_ARRAY = gs_56
-+      signature MONO_ARRAY_SORT = gs_85
++      signature MONO_ARRAY = gs_58
++      signature MONO_ARRAY_SORT = gs_93
 +      structure OS = gs_16
 +      structure Position = gs_17
 +      structure Real = gs_18
@@ -5352,22 +6338,22 @@ index 0000000..905ff0e
 +      structure Word8 = gs_33
 +      array-qsort-fn.sml
 +   in
-+      functor gs_86 = ArrayQSortFn
++      functor gs_94 = ArrayQSortFn
 +   end
 +   local
-+      signature HASH_KEY = gs_72
++      signature HASH_KEY = gs_79
 +      mono-hash-set-sig.sml
 +   in
-+      signature gs_87 = MONO_HASH_SET
++      signature gs_95 = MONO_HASH_SET
 +   end
 +   local
-+      structure Array = gs_3
++      structure Array = gs_2
 +      structure Char = gs_4
 +      structure CharArray = gs_5
 +      structure CharVector = gs_6
 +      structure FixedInt = gs_7
 +      structure General = gs_8
-+      signature HASH_KEY = gs_72
++      signature HASH_KEY = gs_79
 +      structure Int = gs_9
 +      structure Int32 = gs_10
 +      structure Int64 = gs_11
@@ -5376,7 +6362,8 @@ index 0000000..905ff0e
 +      structure LargeReal = gs_14
 +      structure LargeWord = gs_15
 +      structure List = gs_34
-+      signature MONO_HASH_SET = gs_87
++      signature MONO_HASH_SET = gs_95
++      structure MaxHashTableSize = gs_81
 +      structure OS = gs_16
 +      structure Position = gs_17
 +      structure Real = gs_18
@@ -5397,13 +6384,13 @@ index 0000000..905ff0e
 +      structure Word8 = gs_33
 +      hash-set-fn.sml
 +   in
-+      functor gs_88 = HashSetFn
++      functor gs_96 = HashSetFn
 +   end
 +   local
 +      signature ORD_KEY = gs_41
 +      graph-scc-sig.sml
 +   in
-+      signature gs_89 = GRAPH_SCC
++      signature gs_97 = GRAPH_SCC
 +   end
 +   local
 +      structure LibBase = gs_44
@@ -5411,63 +6398,51 @@ index 0000000..905ff0e
 +      signature ORD_MAP = gs_42
 +      redblack-map-fn.sml
 +   in
-+      functor gs_90 = RedBlackMapFn
++      functor gs_98 = RedBlackMapFn
 +   end
 +   local
-+      signature GRAPH_SCC = gs_89
++      signature GRAPH_SCC = gs_97
 +      structure List = gs_34
 +      signature ORD_KEY = gs_41
-+      functor RedBlackMapFn = gs_90
++      functor RedBlackMapFn = gs_98
 +      graph-scc-fn.sml
 +   in
-+      functor gs_91 = GraphSCCFn
-+   end
-+   local
-+      open l4
-+   in
-+      structure gs_92 = Word8VectorSlice
-+   end
-+   local
-+      structure Word8Vector = gs_53
-+      structure Word8VectorSlice = gs_92
-+      base64-sig.sml
-+   in
-+      signature gs_93 = BASE64
++      functor gs_99 = GraphSCCFn
 +   end
 +   local
 +      interval-domain-sig.sml
 +   in
-+      signature gs_94 = INTERVAL_DOMAIN
++      signature gs_100 = INTERVAL_DOMAIN
 +   end
 +   local
-+      signature INTERVAL_DOMAIN = gs_94
++      signature INTERVAL_DOMAIN = gs_100
 +      interval-set-sig.sml
 +   in
-+      signature gs_95 = INTERVAL_SET
++      signature gs_101 = INTERVAL_SET
 +   end
 +   local
-+      signature HASH_KEY = gs_72
++      signature HASH_KEY = gs_79
 +      mono-hash2-table-sig.sml
 +   in
-+      signature gs_96 = MONO_HASH2_TABLE
++      signature gs_102 = MONO_HASH2_TABLE
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_97 = Bool
++      structure gs_103 = Bool
 +   end
 +   local
 +      structure StringCvt = gs_0
 +      format-comb-sig.sml
 +   in
-+      signature gs_98 = FORMAT_COMB
++      signature gs_104 = FORMAT_COMB
 +   end
 +   local
-+      structure Bool = gs_97
++      structure Bool = gs_103
 +      structure Char = gs_4
 +      structure CharArray = gs_5
 +      structure CharVector = gs_6
-+      signature FORMAT_COMB = gs_98
++      signature FORMAT_COMB = gs_104
 +      structure FixedInt = gs_7
 +      structure General = gs_8
 +      structure Int = gs_9
@@ -5499,7 +6474,7 @@ index 0000000..905ff0e
 +      structure Word8 = gs_33
 +      format-comb.sml
 +   in
-+      structure gs_99 = FormatComb
++      structure gs_105 = FormatComb
 +   end
 +   local
 +      structure Char = gs_4
@@ -5534,15 +6509,15 @@ index 0000000..905ff0e
 +      structure Word8 = gs_33
 +      fnv-hash.sml
 +   in
-+      structure gs_100 = FNVHash
++      structure gs_106 = FNVHash
 +   end
 +   local
-+      signature ATOM = gs_67
-+      structure Array = gs_3
++      signature ATOM = gs_74
++      structure Array = gs_2
 +      structure Char = gs_4
 +      structure CharArray = gs_5
 +      structure CharVector = gs_6
-+      structure FNVHash = gs_100
++      structure FNVHash = gs_106
 +      structure FixedInt = gs_7
 +      structure General = gs_8
 +      structure Int = gs_9
@@ -5572,7 +6547,7 @@ index 0000000..905ff0e
 +      structure Word8 = gs_33
 +      atom.sml
 +   in
-+      structure gs_101 = Atom
++      structure gs_107 = Atom
 +   end
 +   local
 +      structure LibBase = gs_44
@@ -5580,20 +6555,20 @@ index 0000000..905ff0e
 +      signature ORD_MAP = gs_42
 +      binary-map-fn.sml
 +   in
-+      functor gs_102 = BinaryMapFn
++      functor gs_108 = BinaryMapFn
 +   end
 +   local
-+      signature FIFO = gs_71
++      signature FIFO = gs_78
 +      structure List = gs_34
 +      fifo.sml
 +   in
-+      structure gs_103 = Fifo
++      structure gs_109 = Fifo
 +   end
 +   local
 +      structure StringCvt = gs_0
 +      parser-comb-sig.sml
 +   in
-+      signature gs_104 = PARSER_COMB
++      signature gs_110 = PARSER_COMB
 +   end
 +   local
 +      structure Char = gs_4
@@ -5609,7 +6584,7 @@ index 0000000..905ff0e
 +      structure LargeReal = gs_14
 +      structure LargeWord = gs_15
 +      structure OS = gs_16
-+      signature PARSER_COMB = gs_104
++      signature PARSER_COMB = gs_110
 +      structure Position = gs_17
 +      structure Real = gs_18
 +      structure Real64 = gs_19
@@ -5630,7 +6605,7 @@ index 0000000..905ff0e
 +      structure Word8 = gs_33
 +      parser-comb.sml
 +   in
-+      structure gs_105 = ParserComb
++      structure gs_111 = ParserComb
 +   end
 +   local
 +      structure Char = gs_4
@@ -5647,7 +6622,7 @@ index 0000000..905ff0e
 +      structure LargeWord = gs_15
 +      structure LibBase = gs_44
 +      structure List = gs_34
-+      signature ORD_SET = gs_59
++      signature ORD_SET = gs_61
 +      structure OS = gs_16
 +      structure Position = gs_17
 +      structure Real = gs_18
@@ -5668,17 +6643,17 @@ index 0000000..905ff0e
 +      structure Word8 = gs_33
 +      int-binary-set.sml
 +   in
-+      structure gs_106 = IntBinarySet
++      structure gs_112 = IntBinarySet
 +   end
 +   local
-+      structure Array = gs_3
++      structure Array = gs_2
 +      structure Char = gs_4
 +      structure CharArray = gs_5
 +      structure CharVector = gs_6
 +      structure FixedInt = gs_7
 +      structure General = gs_8
-+      signature HASH_KEY = gs_72
-+      structure HashTableRep = gs_74
++      signature HASH_KEY = gs_79
++      structure HashTableRep = gs_82
 +      structure Int = gs_9
 +      structure Int32 = gs_10
 +      structure Int64 = gs_11
@@ -5686,7 +6661,7 @@ index 0000000..905ff0e
 +      structure LargeInt = gs_13
 +      structure LargeReal = gs_14
 +      structure LargeWord = gs_15
-+      signature MONO_HASH_TABLE = gs_73
++      signature MONO_HASH_TABLE = gs_80
 +      structure OS = gs_16
 +      structure Position = gs_17
 +      structure Real = gs_18
@@ -5707,16 +6682,16 @@ index 0000000..905ff0e
 +      structure Word8 = gs_33
 +      hash-table-fn.sml
 +   in
-+      functor gs_107 = HashTableFn
++      functor gs_113 = HashTableFn
 +   end
 +   local
 +      array-sort-sig.sml
 +   in
-+      signature gs_108 = ARRAY_SORT
++      signature gs_114 = ARRAY_SORT
 +   end
 +   local
-+      signature ARRAY_SORT = gs_108
-+      structure Array = gs_3
++      signature ARRAY_SORT = gs_114
++      structure Array = gs_2
 +      structure Char = gs_4
 +      structure CharArray = gs_5
 +      structure CharVector = gs_6
@@ -5743,17 +6718,17 @@ index 0000000..905ff0e
 +      structure Substring = gs_27
 +      structure SysWord = gs_28
 +      structure Time = gs_29
-+      structure Unsafe = gs_52
++      structure Unsafe = gs_54
 +      structure Word = gs_30
 +      structure Word32 = gs_31
 +      structure Word64 = gs_32
 +      structure Word8 = gs_33
 +      array-qsort.sml
 +   in
-+      structure gs_109 = ArrayQSort
++      structure gs_115 = ArrayQSort
 +   end
 +   local
-+      structure Atom = gs_101
++      structure Atom = gs_107
 +      structure Char = gs_4
 +      structure CharArray = gs_5
 +      structure CharVector = gs_6
@@ -5786,49 +6761,49 @@ index 0000000..905ff0e
 +      structure Word8 = gs_33
 +      format-sig.sml
 +   in
-+      signature gs_110 = FORMAT
++      signature gs_116 = FORMAT
 +   end
 +   local
 +      hash-table-sig.sml
 +   in
-+      signature gs_111 = HASH_TABLE
++      signature gs_117 = HASH_TABLE
 +   end
 +   local
-+      structure Atom = gs_101
-+      functor HashTableFn = gs_107
++      structure Atom = gs_107
++      functor HashTableFn = gs_113
 +      atom-table.sml
 +   in
-+      structure gs_112 = AtomTable
++      structure gs_118 = AtomTable
 +   end
 +   local
 +      char-map-sig.sml
 +   in
-+      signature gs_113 = CHAR_MAP
++      signature gs_119 = CHAR_MAP
 +   end
 +   local
-+      structure Atom = gs_101
-+      functor RedBlackSetFn = gs_60
++      structure Atom = gs_107
++      functor RedBlackSetFn = gs_62
 +      atom-redblack-set.sml
 +   in
-+      structure gs_114 = AtomRedBlackSet
++      structure gs_120 = AtomRedBlackSet
 +   end
 +   local
-+      structure AtomRedBlackSet = gs_114
++      structure AtomRedBlackSet = gs_120
 +      atom-set.sml
 +   in
-+      structure gs_115 = AtomSet
++      structure gs_121 = AtomSet
 +   end
 +   local
 +      queue-sig.sml
 +   in
-+      signature gs_116 = QUEUE
++      signature gs_122 = QUEUE
 +   end
 +   local
-+      structure Fifo = gs_103
-+      signature QUEUE = gs_116
++      structure Fifo = gs_109
++      signature QUEUE = gs_122
 +      queue.sml
 +   in
-+      structure gs_117 = Queue
++      structure gs_123 = Queue
 +   end
 +   local
 +      structure Char = gs_4
@@ -5865,17 +6840,17 @@ index 0000000..905ff0e
 +      structure Word8 = gs_33
 +      word-redblack-map.sml
 +   in
-+      structure gs_118 = WordRedBlackMap
++      structure gs_124 = WordRedBlackMap
 +   end
 +   local
-+      structure Array = gs_3
++      structure Array = gs_2
 +      structure Char = gs_4
 +      structure CharArray = gs_5
 +      structure CharVector = gs_6
 +      structure FixedInt = gs_7
 +      structure General = gs_8
-+      signature HASH_TABLE = gs_111
-+      structure HashTableRep = gs_74
++      signature HASH_TABLE = gs_117
++      structure HashTableRep = gs_82
 +      structure Int = gs_9
 +      structure Int32 = gs_10
 +      structure Int64 = gs_11
@@ -5903,7 +6878,7 @@ index 0000000..905ff0e
 +      structure Word8 = gs_33
 +      hash-table.sml
 +   in
-+      structure gs_119 = HashTable
++      structure gs_125 = HashTable
 +   end
 +   local
 +      structure Char = gs_4
@@ -5941,139 +6916,93 @@ index 0000000..905ff0e
 +      structure Word8 = gs_33
 +      int-list-map.sml
 +   in
-+      structure gs_120 = IntListMap
++      structure gs_126 = IntListMap
 +   end
 +   local
-+      signature SPLAY_TREE = gs_84
++      signature SPLAY_TREE = gs_92
 +      splaytree.sml
 +   in
-+      structure gs_121 = SplayTree
++      structure gs_127 = SplayTree
 +   end
 +   local
 +      structure LibBase = gs_44
 +      structure List = gs_34
 +      signature ORD_KEY = gs_41
-+      signature ORD_SET = gs_59
-+      structure SplayTree = gs_121
++      signature ORD_SET = gs_61
++      structure SplayTree = gs_127
 +      splay-set-fn.sml
 +   in
-+      functor gs_122 = SplaySetFn
-+   end
-+   local
-+      open l4
-+   in
-+      structure gs_123 = Word8ArraySlice
-+   end
-+   local
-+      signature BASE64 = gs_93
-+      structure Char = gs_4
-+      structure CharArray = gs_5
-+      structure CharVector = gs_6
-+      structure FixedInt = gs_7
-+      structure General = gs_8
-+      structure Int = gs_9
-+      structure Int32 = gs_10
-+      structure Int64 = gs_11
-+      structure IntInf = gs_12
-+      structure LargeInt = gs_13
-+      structure LargeReal = gs_14
-+      structure LargeWord = gs_15
-+      structure OS = gs_16
-+      structure Position = gs_17
-+      structure Real = gs_18
-+      structure Real64 = gs_19
-+      structure RealArray = gs_20
-+      structure RealArraySlice = gs_21
-+      structure RealVector = gs_22
-+      structure RealVectorSlice = gs_23
-+      structure SMLofNJ = gs_24
-+      structure Socket = gs_25
-+      structure String = gs_26
-+      structure Substring = gs_27
-+      structure SysWord = gs_28
-+      structure Time = gs_29
-+      structure Unsafe = gs_52
-+      structure Word = gs_30
-+      structure Word32 = gs_31
-+      structure Word64 = gs_32
-+      structure Word8 = gs_33
-+      structure Word8Array = gs_54
-+      structure Word8ArraySlice = gs_123
-+      structure Word8Vector = gs_53
-+      structure Word8VectorSlice = gs_92
-+      base64.sml
-+   in
-+      structure gs_124 = Base64
++      functor gs_128 = SplaySetFn
 +   end
 +   local
 +      plist-sig.sml
 +   in
-+      signature gs_125 = PROP_LIST
++      signature gs_129 = PROP_LIST
 +   end
 +   local
 +      structure List = gs_34
-+      signature PROP_LIST = gs_125
++      signature PROP_LIST = gs_129
 +      plist.sml
 +   in
-+      structure gs_126 = PropList
++      structure gs_130 = PropList
 +   end
 +   local
-+      structure Atom = gs_101
-+      structure AtomTable = gs_112
++      structure Atom = gs_107
++      structure AtomTable = gs_118
 +      structure List = gs_34
 +      keyword-fn.sml
 +   in
-+      functor gs_127 = KeywordFn
++      functor gs_131 = KeywordFn
 +   end
 +   local
 +      open l4
 +   in
-+      structure gs_128 = Math
++      structure gs_132 = Math
 +   end
 +   local
-+      structure Array = gs_3
++      structure Array = gs_2
 +      structure ArraySlice = gs_35
-+      structure Math = gs_128
-+      structure RealOrderStats = gs_66
-+      structure Unsafe = gs_52
++      structure Math = gs_132
++      structure RealOrderStats = gs_72
++      structure Unsafe = gs_54
 +      univariate-stats.sml
 +   in
-+      structure gs_129 = UnivariateStats
++      structure gs_133 = UnivariateStats
 +   end
 +   local
 +      structure LibBase = gs_44
 +      structure List = gs_34
 +      signature ORD_KEY = gs_41
-+      signature ORD_SET = gs_59
++      signature ORD_SET = gs_61
 +      binary-set-fn.sml
 +   in
-+      functor gs_130 = BinarySetFn
++      functor gs_134 = BinarySetFn
 +   end
 +   local
-+      structure Atom = gs_101
-+      functor BinarySetFn = gs_130
++      structure Atom = gs_107
++      functor BinarySetFn = gs_134
 +      atom-binary-set.sml
 +   in
-+      structure gs_131 = AtomBinarySet
++      structure gs_135 = AtomBinarySet
 +   end
 +   local
-+      structure Atom = gs_101
-+      functor BinaryMapFn = gs_102
++      structure Atom = gs_107
++      functor BinaryMapFn = gs_108
 +      atom-binary-map.sml
 +   in
-+      structure gs_132 = AtomBinaryMap
++      structure gs_136 = AtomBinaryMap
 +   end
 +   local
-+      target64-prime-sizes.sml
++      Target64Bit/prime-sizes.sml
 +   in
-+      structure gs_133 = PrimeSizes
++      structure gs_137 = PrimeSizes
 +   end
 +   local
-+      structure Atom = gs_101
-+      functor RedBlackMapFn = gs_90
++      structure Atom = gs_107
++      functor RedBlackMapFn = gs_98
 +      atom-redblack-map.sml
 +   in
-+      structure gs_134 = AtomRedBlackMap
++      structure gs_138 = AtomRedBlackMap
 +   end
 +   local
 +      structure Char = gs_4
@@ -6108,11 +7037,11 @@ index 0000000..905ff0e
 +      structure Word8 = gs_33
 +      rand-sig.sml
 +   in
-+      signature gs_135 = RAND
++      signature gs_139 = RAND
 +   end
 +   local
-+      structure Array = gs_3
-+      signature CHAR_MAP = gs_113
++      structure Array = gs_2
++      signature CHAR_MAP = gs_119
 +      structure Char = gs_4
 +      structure CharArray = gs_5
 +      structure CharVector = gs_6
@@ -6140,22 +7069,22 @@ index 0000000..905ff0e
 +      structure Substring = gs_27
 +      structure SysWord = gs_28
 +      structure Time = gs_29
-+      structure Unsafe = gs_52
++      structure Unsafe = gs_54
 +      structure Word = gs_30
 +      structure Word32 = gs_31
 +      structure Word64 = gs_32
 +      structure Word8 = gs_33
 +      char-map.sml
 +   in
-+      structure gs_136 = CharMap
++      structure gs_140 = CharMap
 +   end
 +   local
-+      structure Array = gs_3
-+      signature MONO_ARRAY = gs_56
-+      structure Vector = gs_2
++      structure Array = gs_2
++      signature MONO_ARRAY = gs_58
++      structure Vector = gs_3
 +      mono-array-fn.sml
 +   in
-+      functor gs_137 = MonoArrayFn
++      functor gs_141 = MonoArrayFn
 +   end
 +   local
 +      structure Char = gs_4
@@ -6191,10 +7120,10 @@ index 0000000..905ff0e
 +      structure Word8 = gs_33
 +      real-format.sml
 +   in
-+      structure gs_138 = RealFormat
++      structure gs_142 = RealFormat
 +   end
 +   local
-+      structure Atom = gs_101
++      structure Atom = gs_107
 +      structure Char = gs_4
 +      structure CharArray = gs_5
 +      structure CharVector = gs_6
@@ -6228,16 +7157,16 @@ index 0000000..905ff0e
 +      structure Word8 = gs_33
 +      fmt-fields.sml
 +   in
-+      structure gs_139 = FmtFields
++      structure gs_143 = FmtFields
 +   end
 +   local
-+      structure Atom = gs_101
++      structure Atom = gs_107
 +      structure Char = gs_4
 +      structure CharArray = gs_5
 +      structure CharVector = gs_6
-+      signature FORMAT = gs_110
++      signature FORMAT = gs_116
 +      structure FixedInt = gs_7
-+      structure FmtFields = gs_139
++      structure FmtFields = gs_143
 +      structure General = gs_8
 +      structure Int = gs_9
 +      structure Int32 = gs_10
@@ -6252,7 +7181,7 @@ index 0000000..905ff0e
 +      structure Real64 = gs_19
 +      structure RealArray = gs_20
 +      structure RealArraySlice = gs_21
-+      structure RealFormat = gs_138
++      structure RealFormat = gs_142
 +      structure RealVector = gs_22
 +      structure RealVectorSlice = gs_23
 +      structure SMLofNJ = gs_24
@@ -6268,10 +7197,10 @@ index 0000000..905ff0e
 +      structure Word8 = gs_33
 +      format.sml
 +   in
-+      structure gs_140 = Format
++      structure gs_144 = Format
 +   end
 +   local
-+      structure Atom = gs_101
++      structure Atom = gs_107
 +      structure Char = gs_4
 +      structure CharArray = gs_5
 +      structure CharVector = gs_6
@@ -6305,15 +7234,15 @@ index 0000000..905ff0e
 +      structure Word8 = gs_33
 +      scan-sig.sml
 +   in
-+      signature gs_141 = SCAN
++      signature gs_145 = SCAN
 +   end
 +   local
-+      structure Bool = gs_97
++      structure Bool = gs_103
 +      structure Char = gs_4
 +      structure CharArray = gs_5
 +      structure CharVector = gs_6
 +      structure FixedInt = gs_7
-+      structure FmtFields = gs_139
++      structure FmtFields = gs_143
 +      structure General = gs_8
 +      structure Int = gs_9
 +      structure Int32 = gs_10
@@ -6330,7 +7259,7 @@ index 0000000..905ff0e
 +      structure RealArraySlice = gs_21
 +      structure RealVector = gs_22
 +      structure RealVectorSlice = gs_23
-+      signature SCAN = gs_141
++      signature SCAN = gs_145
 +      structure SMLofNJ = gs_24
 +      structure Socket = gs_25
 +      structure String = gs_26
@@ -6342,34 +7271,34 @@ index 0000000..905ff0e
 +      structure Word32 = gs_31
 +      structure Word64 = gs_32
 +      structure Word8 = gs_33
-+      structure Word8Array = gs_54
++      structure Word8Array = gs_56
 +      scan.sml
 +   in
-+      structure gs_142 = Scan
++      structure gs_146 = Scan
 +   end
 +   local
-+      structure AtomRedBlackMap = gs_134
++      structure AtomRedBlackMap = gs_138
 +      atom-map.sml
 +   in
-+      structure gs_143 = AtomMap
++      structure gs_147 = AtomMap
 +   end
 +   local
-+      signature INTERVAL_DOMAIN = gs_94
-+      signature INTERVAL_SET = gs_95
++      signature INTERVAL_DOMAIN = gs_100
++      signature INTERVAL_SET = gs_101
 +      structure List = gs_34
 +      interval-set-fn.sml
 +   in
-+      functor gs_144 = IntervalSetFn
++      functor gs_148 = IntervalSetFn
 +   end
 +   local
-+      structure Array = gs_3
++      structure Array = gs_2
 +      structure Char = gs_4
 +      structure CharArray = gs_5
 +      structure CharVector = gs_6
 +      structure FixedInt = gs_7
 +      structure General = gs_8
-+      signature HASH_KEY = gs_72
-+      structure HashTableRep = gs_74
++      signature HASH_KEY = gs_79
++      structure HashTableRep = gs_82
 +      structure Int = gs_9
 +      structure Int32 = gs_10
 +      structure Int64 = gs_11
@@ -6377,7 +7306,7 @@ index 0000000..905ff0e
 +      structure LargeInt = gs_13
 +      structure LargeReal = gs_14
 +      structure LargeWord = gs_15
-+      signature MONO_HASH2_TABLE = gs_96
++      signature MONO_HASH2_TABLE = gs_102
 +      structure OS = gs_16
 +      structure Position = gs_17
 +      structure Real = gs_18
@@ -6398,25 +7327,25 @@ index 0000000..905ff0e
 +      structure Word8 = gs_33
 +      hash2-table-fn.sml
 +   in
-+      functor gs_145 = Hash2TableFn
++      functor gs_149 = Hash2TableFn
 +   end
 +   local
 +      structure LibBase = gs_44
 +      signature ORD_KEY = gs_41
 +      signature ORD_MAP = gs_42
-+      structure SplayTree = gs_121
++      structure SplayTree = gs_127
 +      splay-map-fn.sml
 +   in
-+      functor gs_146 = SplayMapFn
++      functor gs_150 = SplayMapFn
 +   end
 +   local
-+      structure Array = gs_3
++      structure Array = gs_2
 +      structure Char = gs_4
 +      structure CharArray = gs_5
 +      structure CharVector = gs_6
 +      structure FixedInt = gs_7
 +      structure General = gs_8
-+      structure HashTableRep = gs_74
++      structure HashTableRep = gs_82
 +      structure Int = gs_9
 +      structure Int32 = gs_10
 +      structure Int64 = gs_11
@@ -6424,7 +7353,7 @@ index 0000000..905ff0e
 +      structure LargeInt = gs_13
 +      structure LargeReal = gs_14
 +      structure LargeWord = gs_15
-+      signature MONO_HASH_TABLE = gs_73
++      signature MONO_HASH_TABLE = gs_80
 +      structure OS = gs_16
 +      structure Position = gs_17
 +      structure Real = gs_18
@@ -6445,13 +7374,13 @@ index 0000000..905ff0e
 +      structure Word8 = gs_33
 +      word-hash-table.sml
 +   in
-+      structure gs_147 = WordHashTable
++      structure gs_151 = WordHashTable
 +   end
 +   local
 +      structure StringCvt = gs_0
 +      utf8-sig.sml
 +   in
-+      signature gs_148 = UTF8
++      signature gs_152 = UTF8
 +   end
 +   local
 +      structure Char = gs_4
@@ -6482,14 +7411,14 @@ index 0000000..905ff0e
 +      structure Substring = gs_27
 +      structure SysWord = gs_28
 +      structure Time = gs_29
-+      signature UTF8 = gs_148
++      signature UTF8 = gs_152
 +      structure Word = gs_30
 +      structure Word32 = gs_31
 +      structure Word64 = gs_32
 +      structure Word8 = gs_33
 +      utf8.sml
 +   in
-+      structure gs_149 = UTF8
++      structure gs_153 = UTF8
 +   end
 +   local
 +      structure Char = gs_4
@@ -6507,7 +7436,7 @@ index 0000000..905ff0e
 +      structure LibBase = gs_44
 +      structure OS = gs_16
 +      structure Position = gs_17
-+      signature RAND = gs_135
++      signature RAND = gs_139
 +      structure Real = gs_18
 +      structure Real64 = gs_19
 +      structure RealArray = gs_20
@@ -6526,13 +7455,13 @@ index 0000000..905ff0e
 +      structure Word8 = gs_33
 +      rand.sml
 +   in
-+      structure gs_150 = Rand
++      structure gs_154 = Rand
 +   end
 +   local
-+      structure FNVHash = gs_100
++      structure FNVHash = gs_106
 +      hash-string.sml
 +   in
-+      structure gs_151 = HashString
++      structure gs_155 = HashString
 +   end
 +   local
 +      structure Char = gs_4
@@ -6569,7 +7498,7 @@ index 0000000..905ff0e
 +      structure Word8 = gs_33
 +      list-format.sml
 +   in
-+      structure gs_152 = ListFormat
++      structure gs_156 = ListFormat
 +   end
 +   local
 +      structure Char = gs_4
@@ -6585,8 +7514,8 @@ index 0000000..905ff0e
 +      structure LargeReal = gs_14
 +      structure LargeWord = gs_15
 +      structure List = gs_34
-+      signature MONO_ARRAY = gs_56
-+      signature MONO_DYNAMIC_ARRAY = gs_61
++      signature MONO_ARRAY = gs_58
++      signature MONO_DYNAMIC_ARRAY = gs_63
 +      structure OS = gs_16
 +      structure Position = gs_17
 +      structure Real = gs_18
@@ -6607,7 +7536,7 @@ index 0000000..905ff0e
 +      structure Word8 = gs_33
 +      dynamic-array-fn.sml
 +   in
-+      functor gs_153 = DynamicArrayFn
++      functor gs_157 = DynamicArrayFn
 +   end
 +   local
 +      structure Char = gs_4
@@ -6624,7 +7553,7 @@ index 0000000..905ff0e
 +      structure LargeWord = gs_15
 +      structure LibBase = gs_44
 +      structure List = gs_34
-+      signature ORD_SET = gs_59
++      signature ORD_SET = gs_61
 +      structure OS = gs_16
 +      structure Position = gs_17
 +      structure Real = gs_18
@@ -6645,24 +7574,24 @@ index 0000000..905ff0e
 +      structure Word8 = gs_33
 +      word-redblack-set.sml
 +   in
-+      structure gs_154 = WordRedBlackSet
++      structure gs_158 = WordRedBlackSet
 +   end
 +   local
 +      listsort-sig.sml
 +   in
-+      signature gs_155 = LIST_SORT
++      signature gs_159 = LIST_SORT
 +   end
 +   local
-+      signature LIST_SORT = gs_155
++      signature LIST_SORT = gs_159
 +      list-mergesort.sml
 +   in
-+      structure gs_156 = ListMergeSort
++      structure gs_160 = ListMergeSort
 +   end
 +   local
 +      signature UREF = gs_46
 +      uref.sml
 +   in
-+      structure gs_157 = URef
++      structure gs_161 = URef
 +   end
 +   local
 +      structure Char = gs_4
@@ -6691,7 +7620,7 @@ index 0000000..905ff0e
 +      structure String = gs_26
 +      structure Substring = gs_27
 +      structure SysWord = gs_28
-+      structure TextIO = gs_68
++      structure TextIO = gs_75
 +      structure Time = gs_29
 +      structure Word = gs_30
 +      structure Word32 = gs_31
@@ -6699,117 +7628,120 @@ index 0000000..905ff0e
 +      structure Word8 = gs_33
 +      ansi-term.sml
 +   in
-+      structure gs_158 = ANSITerm
++      structure gs_162 = ANSITerm
 +   end
 +in
-+   structure ANSITerm = gs_158
-+   signature ARRAY_SORT = gs_108
-+   signature ATOM = gs_67
-+   structure ArrayQSort = gs_109
-+   functor ArrayQSortFn = gs_86
-+   structure Atom = gs_101
-+   structure AtomBinaryMap = gs_132
-+   structure AtomBinarySet = gs_131
-+   structure AtomMap = gs_143
-+   structure AtomRedBlackMap = gs_134
-+   structure AtomRedBlackSet = gs_114
-+   structure AtomSet = gs_115
-+   structure AtomTable = gs_112
-+   signature BASE64 = gs_93
-+   signature BIT_ARRAY = gs_57
-+   functor BSearchFn = gs_62
-+   structure Base64 = gs_124
-+   functor BinaryMapFn = gs_102
-+   functor BinarySetFn = gs_130
-+   structure BitArray = gs_58
-+   signature CHAR_MAP = gs_113
-+   structure CharMap = gs_136
++   structure ANSITerm = gs_162
++   signature ARRAY_SORT = gs_114
++   signature ATOM = gs_74
++   structure ArrayQSort = gs_115
++   functor ArrayQSortFn = gs_94
++   structure Atom = gs_107
++   structure AtomBinaryMap = gs_136
++   structure AtomBinarySet = gs_135
++   structure AtomMap = gs_147
++   structure AtomRedBlackMap = gs_138
++   structure AtomRedBlackSet = gs_120
++   structure AtomSet = gs_121
++   structure AtomTable = gs_118
++   signature BASE64 = gs_69
++   signature BIT_ARRAY = gs_59
++   functor BSearchFn = gs_64
++   structure Base64 = gs_70
++   functor BinaryMapFn = gs_108
++   functor BinarySetFn = gs_134
++   structure BitArray = gs_60
++   signature CHAR_MAP = gs_119
++   structure CharMap = gs_140
 +   signature DYNAMIC_ARRAY = gs_36
 +   structure DynamicArray = gs_37
-+   functor DynamicArrayFn = gs_153
-+   signature FIFO = gs_71
-+   structure FNVHash = gs_100
-+   signature FORMAT = gs_110
-+   signature FORMAT_COMB = gs_98
-+   structure Fifo = gs_103
-+   structure Format = gs_140
-+   structure FormatComb = gs_99
-+   signature GET_OPT = gs_78
-+   signature GRAPH_SCC = gs_89
-+   structure GetOpt = gs_79
-+   functor GraphSCCFn = gs_91
-+   signature HASH_KEY = gs_72
-+   signature HASH_TABLE = gs_111
-+   functor Hash2TableFn = gs_145
-+   functor HashSetFn = gs_88
-+   structure HashString = gs_151
-+   structure HashTable = gs_119
-+   functor HashTableFn = gs_107
-+   signature INTERVAL_DOMAIN = gs_94
-+   signature INTERVAL_SET = gs_95
-+   structure IOUtil = gs_70
-+   signature IO_UTIL = gs_69
++   functor DynamicArrayFn = gs_157
++   structure EditDistance = gs_73
++   signature FIFO = gs_78
++   structure FNVHash = gs_106
++   signature FORMAT = gs_116
++   signature FORMAT_COMB = gs_104
++   structure Fifo = gs_109
++   structure Format = gs_144
++   structure FormatComb = gs_105
++   signature GET_OPT = gs_86
++   signature GRAPH_SCC = gs_97
++   structure GetOpt = gs_87
++   functor GraphSCCFn = gs_99
++   signature HASH_KEY = gs_79
++   signature HASH_TABLE = gs_117
++   functor Hash2TableFn = gs_149
++   functor HashSetFn = gs_96
++   structure HashString = gs_155
++   structure HashTable = gs_125
++   functor HashTableFn = gs_113
++   signature INTERVAL_DOMAIN = gs_100
++   signature INTERVAL_SET = gs_101
++   structure IOUtil = gs_77
++   signature IO_UTIL = gs_76
 +   structure IntBinaryMap = gs_48
-+   structure IntBinarySet = gs_106
-+   structure IntHashTable = gs_75
-+   structure IntListMap = gs_120
-+   structure IntListSet = gs_82
++   structure IntBinarySet = gs_112
++   structure IntHashTable = gs_83
++   structure IntListMap = gs_126
++   structure IntListSet = gs_90
 +   structure IntRedBlackMap = gs_45
-+   structure IntRedBlackSet = gs_80
-+   functor IntervalSetFn = gs_144
-+   functor KeywordFn = gs_127
++   structure IntRedBlackSet = gs_88
++   functor IntervalSetFn = gs_148
++   functor KeywordFn = gs_131
 +   signature LIB_BASE = gs_43
 +   signature LIST_FORMAT = gs_1
-+   signature LIST_SORT = gs_155
-+   signature LIST_XPROD = gs_49
++   signature LIST_SORT = gs_159
++   signature LIST_XPROD = gs_51
 +   functor LeftPriorityQFn = gs_40
 +   structure LibBase = gs_44
-+   structure ListFormat = gs_152
-+   functor ListMapFn = gs_83
-+   structure ListMergeSort = gs_156
-+   functor ListSetFn = gs_76
-+   structure ListXProd = gs_50
-+   signature MONO_ARRAY_SORT = gs_85
-+   signature MONO_DYNAMIC_ARRAY = gs_61
-+   signature MONO_HASH2_TABLE = gs_96
-+   signature MONO_HASH_SET = gs_87
-+   signature MONO_HASH_TABLE = gs_73
++   structure ListFormat = gs_156
++   functor ListMapFn = gs_91
++   structure ListMergeSort = gs_160
++   functor ListSetFn = gs_84
++   structure ListXProd = gs_52
++   signature MONO_ARRAY_SORT = gs_93
++   signature MONO_DYNAMIC_ARRAY = gs_63
++   signature MONO_HASH2_TABLE = gs_102
++   signature MONO_HASH_SET = gs_95
++   signature MONO_HASH_TABLE = gs_80
 +   signature MONO_PRIORITYQ = gs_38
-+   functor MonoArrayFn = gs_137
++   functor MonoArrayFn = gs_141
++   structure NativeInt = gs_49
++   structure NativeWord = gs_50
 +   signature ORD_KEY = gs_41
 +   signature ORD_MAP = gs_42
-+   signature ORD_SET = gs_59
-+   signature PARSER_COMB = gs_104
-+   signature PATH_UTIL = gs_51
++   signature ORD_SET = gs_61
++   signature PARSER_COMB = gs_110
++   signature PATH_UTIL = gs_53
 +   signature PRIORITY = gs_39
-+   signature PROP_LIST = gs_125
-+   structure ParserComb = gs_105
-+   structure PathUtil = gs_81
-+   structure PrimeSizes = gs_133
-+   structure PropList = gs_126
-+   signature QUEUE = gs_116
-+   structure Queue = gs_117
-+   signature RAND = gs_135
-+   signature RANDOM = gs_64
-+   structure Rand = gs_150
-+   structure Random = gs_65
-+   structure RealOrderStats = gs_66
-+   functor RedBlackMapFn = gs_90
-+   functor RedBlackSetFn = gs_60
-+   signature SCAN = gs_141
-+   signature SPLAY_TREE = gs_84
-+   structure Scan = gs_142
++   signature PROP_LIST = gs_129
++   structure ParserComb = gs_111
++   structure PathUtil = gs_89
++   structure PrimeSizes = gs_137
++   structure PropList = gs_130
++   signature QUEUE = gs_122
++   structure Queue = gs_123
++   signature RAND = gs_139
++   signature RANDOM = gs_67
++   structure Rand = gs_154
++   structure Random = gs_71
++   structure RealOrderStats = gs_72
++   functor RedBlackMapFn = gs_98
++   functor RedBlackSetFn = gs_62
++   signature SCAN = gs_145
++   signature SPLAY_TREE = gs_92
++   structure Scan = gs_146
 +   structure SimpleURef = gs_47
-+   functor SplayMapFn = gs_146
-+   functor SplaySetFn = gs_122
++   functor SplayMapFn = gs_150
++   functor SplaySetFn = gs_128
 +   signature UREF = gs_46
-+   structure URef = gs_157
-+   signature UTF8 = gs_148
-+   structure UTF8 = gs_149
-+   structure UnivariateStats = gs_129
-+   structure WordHashTable = gs_147
-+   structure WordRedBlackMap = gs_118
-+   structure WordRedBlackSet = gs_154
++   structure URef = gs_161
++   signature UTF8 = gs_152
++   structure UTF8 = gs_153
++   structure UnivariateStats = gs_133
++   structure WordHashTable = gs_151
++   structure WordRedBlackMap = gs_124
++   structure WordRedBlackSet = gs_158
 +end
 +end
 +
@@ -6867,18 +7799,18 @@ index 0000000..0f585b7
 +       | Engine.TimeOut _ => raise TimeOut
 +end
 diff --git a/Util/utf8.sml b/Util/utf8.sml
-index 71259a3..00b526c 100644
+index 3288434..120d22e 100644
 --- a/Util/utf8.sml
 +++ b/Util/utf8.sml
-@@ -143,7 +143,7 @@ structure UTF8 :> UTF8 =
+@@ -281,7 +281,7 @@ structure UTF8 :> UTF8 =
  
      fun map f s = let
- 	  fun mapf (ss, chrs) = (case SS.getc ss
+ 	  fun mapf (ss, chrs) = (case getWC ss
 -		 of NONE => String.implodeRev chrs
 +		 of NONE => String.implode (List.rev chrs)
- 		  | SOME arg => let
- 		      val (wc, ss) = getWC arg
- 		      in
+ 		  | SOME(wc, ss) => mapf (ss, List.revAppend(encode'(wc, []), chrs))
+ 		(* end case *))
+ 	  in
 diff --git a/XML/xml-lib.mlb b/XML/xml-lib.mlb
 new file mode 100644
 index 0000000..b722d6d

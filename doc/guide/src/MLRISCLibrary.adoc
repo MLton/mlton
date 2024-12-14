@@ -6,8 +6,8 @@ ends.  The MLRISC Library is distributed with SML/NJ.  Due to
 differences between SML/NJ and MLton, this library will not work
 out-of-the box with MLton.
 
-As of 20230526, MLton includes a port of the MLRISC Library
-synchronized with SML/NJ version 110.99.3.
+As of 20241214, MLton includes a port of the MLRISC Library
+synchronized with SML/NJ version 110.99.6.1.
 
 == Usage
 
