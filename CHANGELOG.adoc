@@ -8,6 +8,11 @@ Here are the changes from version 20210117 to YYYYMMDD.
 
 === Details
 
+* 2024-12-20
+  ** Fix bug in the optimization of representations of sequences in
+  `Useless` SSA optimization.  Thanks to Humza Shahid (hummy123) for
+  the bug report.
+
 * 2024-12-14
   ** Update SML/NJ libraries to SML/NJ 110.99.6.1.
 
