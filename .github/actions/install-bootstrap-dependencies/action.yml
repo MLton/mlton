@@ -1,0 +1,61 @@
+name: 'Install bootstrap dependencies'
+description: 'Install dependencies to bootstrap MLton'
+inputs:
+  runner:
+    required: true
+  install-llvm:
+    required: true
+runs:
+  using: "composite"
+  steps:
+    - name: Install bootstrap dependencies (ubuntu)
+      if: ${{ startsWith(inputs.runner, 'ubuntu') }}
+      shell: 'bash'
+      run: |
+        # Install dependencies (ubuntu)
+        sudo apt-get update
+        sudo apt-get install libgmp-dev
+        if [[ "${{ inputs.install-llvm }}" == "true" ]]; then sudo apt-get install llvm; fi
+        mkdir boot && cd boot
+        curl -O -L https://github.com/MLton/mlton/releases/download/on-20210117-release/mlton-20210117-1.amd64-linux-glibc2.31.tgz
+        tar xzf mlton-20210117-1.amd64-linux-glibc2.31.tgz --exclude='*/share' --strip-components=1
+        rm mlton-20210117-1.amd64-linux-glibc2.31.tgz
+
+    - name: Install bootstrap dependencies (macos (amd64))
+      if: ${{ inputs.runner == 'macos-13' }}
+      shell: 'bash'
+      run: |
+        # Install dependencies (macos (amd64))
+        # brew update
+        brew install -q gmp
+        echo "WITH_GMP_DIR=$(brew --prefix)" >> $GITHUB_ENV
+        if [[ "${{ inputs.install-llvm }}" == "true" ]]; then brew install llvm; echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH; fi
+        mkdir boot && cd boot
+        curl -O -L https://github.com/MLton/mlton/releases/download/on-20210117-release/mlton-20210117-1.amd64-darwin-19.6.gmp-homebrew.tgz
+        tar xzf mlton-20210117-1.amd64-darwin-19.6.gmp-homebrew.tgz --exclude='*/share' --strip-components=1
+        rm mlton-20210117-1.amd64-darwin-19.6.gmp-homebrew.tgz
+
+    - name: Install bootstrap dependencies (macos (arm64))
+      if: ${{ (inputs.runner == 'macos-14') || (inputs.runner == 'macos-15') }}
+      shell: 'bash'
+      run: |
+        # Install dependencies (macos (arm64))
+        # brew update
+        brew install -q gmp
+        echo "WITH_GMP_DIR=$(brew --prefix)" >> $GITHUB_ENV
+        if [[ "${{ inputs.install-llvm }}" == "true" ]]; then brew install llvm; echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH; fi
+        mkdir boot && cd boot
+        curl -O -L https://projects.laas.fr/tina/software/mlton-20210117-1.arm64-darwin-21.6-gmp-static.tgz
+        tar xzf mlton-20210117-1.arm64-darwin-21.6-gmp-static.tgz --exclude='*/share' --strip-components=1
+        rm mlton-20210117-1.arm64-darwin-21.6-gmp-static.tgz
+
+    - name: Install bootstrap dependencies (windows)
+      if: ${{ startsWith(inputs.runner, 'windows') }}
+      shell: 'msys2 {0}'
+      run: |
+        # Install dependencies (windows)
+        pacboy --noconfirm -S --needed gcc:p gmp-devel:
+        mkdir boot && cd boot
+        curl -O -L https://github.com/MLton/mlton/releases/download/on-20200817-release/mlton-20200817-amd64-mingw.tgz
+        tar xzf mlton-20200817-amd64-mingw.tgz --exclude='*/share' --strip-components=1
+        rm mlton-20200817-amd64-mingw.tgz

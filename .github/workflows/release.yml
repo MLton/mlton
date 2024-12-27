@@ -1,0 +1,32 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  mlton-version:
+    runs-on: ubuntu-24.04
+    outputs:
+      mlton-version: ${{ steps.mlton-version.outputs.mlton-version }}
+    steps:
+      - name: mlton-version
+        id: mlton-version
+        run: |
+          MLTON_VERSION=$( echo '${{ github.ref_name }}' | sed -En 's;on-([0-9]{8})-release;\1;p')
+          if [ -n "${MLTON_VERSION}" ]; then echo "mlton-version=${MLTON_VERSION}" >> "$GITHUB_OUTPUT"; else echo "Unable to determine MLTON_VERSION"; exit 1; fi
+
+  source-release:
+    needs: mlton-version
+    uses: ./.github/workflows/source-release.yml
+    with:
+      mlton-version: ${{ needs.mlton-version.outputs.mlton-version }}
+    secrets: inherit
+
+  binary-release:
+    needs: [mlton-version, source-release]
+    uses: ./.github/workflows/binary-release.yml
+    with:
+      mlton-version: ${{ needs.mlton-version.outputs.mlton-version }}
+    secrets: inherit

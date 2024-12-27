@@ -1,4 +1,4 @@
-## Copyright (C) 2009,2011,2013,2017-2022 Matthew Fluet.
+## Copyright (C) 2009,2011,2013,2017-2022,2024 Matthew Fluet.
  # Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -484,8 +484,8 @@ source-release:
 	$(MAKE) clean
 	$(MAKE) MLTON_VERSION=$(MLTON_VERSION) version
 	$(MAKE) -C doc/guide
-	$(TAR) cvzf ../mlton-$(MLTON_VERSION).src.tgz \
-		--exclude .git --exclude package \
+	$(TAR) cvzf ./mlton-$(MLTON_VERSION).src.tgz \
+		--exclude .git/ --exclude .github/ --exclude package/ --exclude mlton-*.tgz \
 		--transform "s@^@mlton-$(MLTON_VERSION)/@S" \
 		*
 

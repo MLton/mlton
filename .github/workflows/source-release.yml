@@ -1,0 +1,31 @@
+name: Source Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      mlton-version:
+        required: true
+        type: string
+  workflow_call:
+    inputs:
+      mlton-version:
+        required: true
+        type: string
+
+jobs:
+  source-release:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: on-${{ inputs.mlton-version }}-release
+          fetch-depth: 0
+      - name: Install guide dependencies
+        uses: ./.github/actions/install-guide-dependencies
+      - name: Make source release
+        run: make MLTON_VERSION="${{ inputs.mlton-version }}" source-release
+      - name: Upload source release
+        run: gh release upload on-${{ inputs.mlton-version }}-release mlton-${{ inputs.mlton-version }}.src.tgz --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

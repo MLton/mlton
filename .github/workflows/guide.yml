@@ -19,7 +19,8 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
 
@@ -31,10 +32,8 @@ jobs:
           SSH_CONFIG: ${{ secrets.MLTON_WEBMASTER_SSH_CONFIG }}
           SSH_KNOWN_HOSTS: ${{ secrets.MLTON_WEBMASTER_SSH_KNOWN_HOSTS }}
 
-      - name: Install AsciiDoctor
-        run: sudo gem install asciidoctor
-      - name: Install Rouge
-        run: sudo gem install rouge
+      - name: Install guide dependencies
+        uses: ./.github/actions/install-guide-dependencies
 
       - name: Build
         run: make -j 2 -C doc/guide mlton.sourceforge.io
