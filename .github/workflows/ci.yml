@@ -4,8 +4,6 @@ name: CI
 on:
   push:
   pull_request:
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 jobs:
@@ -30,80 +28,36 @@ jobs:
           - cc: "gcc"
             codegen: "llvm"
 
-    # The type of runner that the job will run on
     runs-on: ${{ matrix.runner }}
 
     defaults:
       run:
         shell: ${{ (startsWith(matrix.runner, 'windows') && 'msys2 {0}') || 'bash' }}
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      - name: Configure git (windows)
-        if: ${{ startsWith(matrix.runner, 'windows') }}
-        run: git config --global core.autocrlf false
+      - name: Configure git
         shell: bash
-
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Install dependencies (ubuntu)
-        if: ${{ startsWith(matrix.runner, 'ubuntu') }}
-        run: |
-          sudo apt-get update
-          sudo apt-get install libgmp-dev
-          if [[ "${{ matrix.codegen }}" == "llvm" ]]; then sudo apt-get install llvm; fi
-          mkdir boot && cd boot
-          curl -O -L https://github.com/MLton/mlton/releases/download/on-20210117-release/mlton-20210117-1.amd64-linux-glibc2.31.tgz
-          tar xzf mlton-20210117-1.amd64-linux-glibc2.31.tgz --exclude='*/share'
-          mv mlton-20210117-1.amd64-linux-glibc2.31/* .
-          rmdir mlton-20210117-1.amd64-linux-glibc2.31
-
-      - name: Install dependencies (macos (amd64))
-        if: ${{ matrix.runner == 'macos-13' }}
-        run: |
-          # brew update
-          brew install -q gmp
-          echo "WITH_GMP_DIR=/usr/local" >> $GITHUB_ENV
-          if [[ "${{ matrix.codegen }}" == "llvm" ]]; then brew install llvm; echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH; fi
-          mkdir boot && cd boot
-          curl -O -L https://github.com/MLton/mlton/releases/download/on-20210117-release/mlton-20210117-1.amd64-darwin-19.6.gmp-homebrew.tgz
-          tar xzf mlton-20210117-1.amd64-darwin-19.6.gmp-homebrew.tgz --exclude='*/share'
-          mv mlton-20210117-1.amd64-darwin-19.6.gmp-homebrew/* .
-          rmdir mlton-20210117-1.amd64-darwin-19.6.gmp-homebrew
-
-      - name: Install dependencies (macos (arm64))
-        if: ${{ matrix.runner == 'macos-14' }}
-        run: |
-          # brew update
-          brew install -q gmp
-          echo "WITH_GMP_DIR=/opt/homebrew" >> $GITHUB_ENV
-          if [[ "${{ matrix.codegen }}" == "llvm" ]]; then brew install llvm; echo "$(brew --prefix llvm)/bin" >> $GITHUB_PATH; fi
-          mkdir boot && cd boot
-          curl -O -L https://projects.laas.fr/tina/software/mlton-20210117-1.arm64-darwin-21.6-gmp-static.tgz
-          tar xzf mlton-20210117-1.arm64-darwin-21.6-gmp-static.tgz --exclude='*/share'
-          mv mlton-20210117-1.arm64-darwin-21.6-gmp-static/* .
-          rmdir mlton-20210117-1.arm64-darwin-21.6-gmp-static
+        run: git config --global core.autocrlf false
 
       - name: Install msys2 (windows)
         if: ${{ startsWith(matrix.runner, 'windows') }}
         uses: msys2/setup-msys2@v2
         with:
+          msystem: MINGW64
           update: false
           install: >-
             base-devel
             git
             pactoys
-      - name: Install dependencies (windows)
-        if: ${{ startsWith(matrix.runner, 'windows') }}
-        run: |
-          pacboy --noconfirm -S --needed gcc:p gmp-devel:
-          mkdir boot && cd boot
-          curl -O -L https://github.com/MLton/mlton/releases/download/on-20200817-release/mlton-20200817-amd64-mingw.tgz
-          tar xzf mlton-20200817-amd64-mingw.tgz --exclude='*/share'
-          mv mlton-20200817-amd64-mingw/* .
-          rmdir mlton-20200817-amd64-mingw
+
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install bootstrap dependencies
+        uses: ./.github/actions/install-bootstrap-dependencies
+        with:
+          runner: ${{ matrix.runner }}
+          install-llvm: ${{ matrix.codegen == 'llvm' }}
 
       - name: Check versions
         run: |
@@ -117,6 +71,7 @@ jobs:
 
       - name: Build
         run: |
+          # make all
           PATH=$(pwd)/boot/bin:$PATH \
           make \
             CC=${{ matrix.cc }} \
@@ -138,6 +93,7 @@ jobs:
 
       - name: Package
         run: |
+          # make binary-release
           make \
             CC=${{ matrix.cc }} \
             OLD_MLTON_RUNTIME_ARGS="ram-slop 0.90" \

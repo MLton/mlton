@@ -1,0 +1,120 @@
+name: Binary Release (single)
+
+on:
+  workflow_dispatch:
+    inputs:
+      mlton-version:
+        required: true
+        type: string
+      runner:
+        required: true
+        type: string
+      checkout-ref:
+        required: false
+        type: string
+      old-mlton-runtime-args:
+        required: false
+        type: string
+      old-mlton-compile-args:
+        required: false
+        type: string
+      mlton-runtime-args:
+        required: false
+        type: string
+      mlton-compile-args:
+        required: false
+        type: string
+      mlton-binary-release-suffix:
+        required: false
+        type: string
+  workflow_call:
+    inputs:
+      mlton-version:
+        required: true
+        type: string
+      runner:
+        required: true
+        type: string
+      checkout-ref:
+        required: false
+        type: string
+      old-mlton-runtime-args:
+        required: false
+        type: string
+      old-mlton-compile-args:
+        required: false
+        type: string
+      mlton-runtime-args:
+        required: false
+        type: string
+      mlton-compile-args:
+        required: false
+        type: string
+      mlton-binary-release-suffix:
+        required: false
+        type: string
+
+jobs:
+  binary-release-single:
+
+    runs-on: ${{ inputs.runner }}
+
+    defaults:
+      run:
+        shell: ${{ (startsWith(inputs.runner, 'windows') && 'msys2 {0}') || 'bash' }}
+
+    env:
+      MLTON_VERSION: ${{ inputs.mlton-version }}
+      RUNNER: ${{ inputs.runner }}
+
+    steps:
+      - name: Configure git
+        run: git config --global core.autocrlf false
+        shell: bash
+
+      - name: Install msys2 (windows)
+        if: ${{ startsWith(inputs.runner, 'windows') }}
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: false
+          install: >-
+            base-devel
+            git
+            pactoys
+          pacboy: >-
+            github-cli:p
+
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github
+          ref: ${{ inputs.checkout-ref || 'master' }}
+
+      - name: Install bootstrap dependencies
+        uses: ./.github/actions/install-bootstrap-dependencies
+        with:
+          runner: ${{ inputs.runner }}
+          install-llvm: false
+
+      - name: Download and unpack source release
+        run: |
+          curl --fail -L https://github.com/${{ github.repository }}/releases/download/on-${{ inputs.mlton-version }}-release/mlton-${{ inputs.mlton-version }}.src.tgz | tar xz --strip-components=1
+
+      - name: Make binary release
+        run: |
+          # make binary-release
+          PATH=$(pwd)/boot/bin:$PATH \
+          make \
+            OLD_MLTON_RUNTIME_ARGS="ram-slop 0.90 ${{ inputs.old-mlton-runtime-args }}" \
+            OLD_MLTON_COMPILE_ARGS="${{ inputs.old-mlton-compile-args }}" \
+            MLTON_RUNTIME_ARGS="ram-slop 0.90 ${{ inputs.mlton-runtime-args }}" \
+            MLTON_COMPILE_ARGS="${{ inputs.mlton-compile-args }}" \
+            $( if [[ -n "$WITH_GMP_DIR" ]]; then echo "WITH_GMP_DIR=$WITH_GMP_DIR"; fi ) \
+            MLTON_BINARY_RELEASE_SUFFIX="${{ inputs.mlton-binary-release-suffix }}" \
+            binary-release
+
+      - name: Upload binary release
+        run: gh release upload on-${{ inputs.mlton-version }}-release mlton-${{ inputs.mlton-version }}*.tgz --clobber
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

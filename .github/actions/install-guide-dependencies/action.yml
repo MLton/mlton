@@ -1,0 +1,11 @@
+name: 'Install guide dependencies'
+description: 'Install dependencies to build MLton guide'
+runs:
+  using: "composite"
+  steps:
+    - name: Install AsciiDoctor
+      shell: 'bash'
+      run: sudo gem install asciidoctor
+    - name: Install Rouge
+      shell: 'bash'
+      run: sudo gem install rouge
