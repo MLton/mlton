@@ -1,0 +1,49 @@
+= Release20241230
+
+Here you can download the latest public release of MLton, version 20241230.
+
+== Changes since <<Release20210117#,MLton 20210117>>
+
+* Compiler.
+  ** Enhance and fix bugs in `Useless` and `ConstantPropagation` SSA
+  optimization passes.
+  ** Update LLVM codegen; using the LLVM codegen requires LLVM 15 (or
+  higher).
+  ** Update elaboration error messages involving constants and infix
+  patterns and expressions.
+  ** Accept a non-semicolon terminated final expression in the syntax
+  of programs.
+  ** Eliminate (expert) `-profile time-label` compile-time option.
+  ** Fix `-pi-style pie` compile-time option.
+* Runtime.
+  ** Fix bug in heap resizing that could lead to a segmentation fault.
+  ** Fix bug with `-align 4` and mark-compact GC.
+  ** Fix bug in `GC_sequenceCopy` failing to update card map when
+  copying object pointers.
+* Libraries.
+  ** Basis Library.
+     *** Fix bug in `ImperativeIO.getInstream`.
+     *** Fix bug in `Date.localOffset` for time zones east of prime
+     meridian.
+     *** Fix bugs in `WORD.scan` when `0` is followed by `w` or `x` or
+    `wx` but not by more digits.
+  ** Other libraries.
+    *** Updated: ckit library, MLLPT library, MLRISC library, SML/NJ library
+* Other.
+  ** Add preliminary support for `wasm32-wasi`.
+  ** Add support for `loongarch64` architecture.
+  ** Update ``Makefile``s to simplify bootstrapping.
+
+== 20241230 binary packages
+
+ * See https://github.com/MLton/mlton/releases/tag/on-20241230-release[MLton 20241230] assets on https://github.com[GitHub].
+
+== 20241230 source packages
+
+ * https://github.com/MLton/mlton/releases/download/on-20241230-release/mlton-20241230.src.tgz[mlton-20241230.src.tgz]
+
+== Also see
+
+* http://www.mlton.org/guide/20241230/[MLton Guide (20241230)].
++
+A snapshot of the MLton website at the time of release.

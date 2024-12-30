@@ -1,6 +1,6 @@
 = Release20210117
 
-Here you can download the latest public release of MLton, version 20210117.
+This is an archived public release of MLton, version 20210117.
 
 == Changes since <<Release20201002#,MLton 20201002>>
 

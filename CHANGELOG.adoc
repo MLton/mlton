@@ -1,10 +1,40 @@
 = CHANGELOG
 
-== Version YYYYMMDD
+== Version 20241230
 
-Here are the changes from version 20210117 to YYYYMMDD.
+Here are the changes from version 20210117 to 20241230.
 
 === Summary
+
+* Compiler.
+  ** Enhance and fix bugs in `Useless` and `ConstantPropagation` SSA
+  optimization passes.
+  ** Update LLVM codegen; using the LLVM codegen requires LLVM 15 (or
+  higher).
+  ** Update elaboration error messages involving constants and infix
+  patterns and expressions.
+  ** Accept a non-semicolon terminated final expression in the syntax
+  of programs.
+  ** Eliminate (expert) `-profile time-label` compile-time option.
+  ** Fix `-pi-style pie` compile-time option.
+* Runtime.
+  ** Fix bug in heap resizing that could lead to a segmentation fault.
+  ** Fix bug with `-align 4` and mark-compact GC.
+  ** Fix bug in `GC_sequenceCopy` failing to update card map when
+  copying object pointers.
+* Libraries.
+  ** Basis Library.
+     *** Fix bug in `ImperativeIO.getInstream`.
+     *** Fix bug in `Date.localOffset` for time zones east of prime
+     meridian.
+     *** Fix bugs in `WORD.scan` when `0` is followed by `w` or `x` or
+    `wx` but not by more digits.
+  ** Other libraries.
+    *** Updated: ckit library, MLLPT library, MLRISC library, SML/NJ library
+* Other.
+  ** Add preliminary support for `wasm32-wasi`.
+  ** Add support for `loongarch64` architecture.
+  ** Update ``Makefile``s to simplify bootstrapping.
 
 === Details
 
@@ -42,6 +72,10 @@ Here are the changes from version 20210117 to YYYYMMDD.
   ** Fix bug in `#line` directives that fails to acceptable
   `(*#line line *"file" )`, which should be accepted with a default
   column of 1.  Thanks to Norman Ramsey for the bug report.
+
+* 2024-03-28
+  ** Update default `-link-opt` options for `*-openbsd` platforms.
+  Thanks to Dan Cross for the pull request.
 
 * 2024-03-17
   ** Update elaboration error messages involving constants and infix
@@ -116,9 +150,16 @@ Here are the changes from version 20210117 to YYYYMMDD.
   of programs.  Thanks to Krzysztof Leśniak (serpent7776) for the
   discussion and grammar patch.
 
+* 2022-01-10
+  ** Update ``Makefile``s to simplify bootstrapping.
+
 * 2021-12-17
   ** Fix bug in `ConstantPropagation` with vector literals.  Thanks to
   Ram Raghunathan for the bug report.
+  ** Update signal-handling infrastructure.  Properly mark data
+  accessed by a signal handler as `volatile`.  Merge `SignalCheck` and
+  `LimitCheck` passes into a single `InsertChecks` pass to avoid
+  insertion of redundant checks.
   ** Fix mismatch in C and SML types for some `_import`-ed runtime
   functions.
 
