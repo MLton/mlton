@@ -437,7 +437,7 @@ fun makeOptions {usage} =
         boolRef expert),
        (Normal, "export-header", " <file>", "write C header file for _export's",
         SpaceString (fn s => exportHeader := SOME s)),
-       (Normal, "force-handles-signals", " {false|true}", "force checks for signals",
+       (Expert, "force-handles-signals", " {false|true}", "force checks for signals",
         boolRef forceHandlesSignals),
        (Expert, "format",
         concat [" {",
