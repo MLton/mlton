@@ -2,6 +2,7 @@
 
 Public releases of MLton:
 
+* <<Release20241230#>>
 * <<Release20210117#>>
 * <<Release20201002#>>
 * <<Release20200817#>>

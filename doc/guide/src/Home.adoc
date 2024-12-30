@@ -16,7 +16,7 @@ a lexer generator, a parser generator, and a profiler.
 
 == What's new?
 
-* 20210117: Please try out our latest release, <<Release20210117#,MLton 20210117>>.
+* 20241230: Please try out our latest release, <<Release20241230#,MLton 20241230>>.
 
 == Next steps
 
@@ -24,7 +24,7 @@ a lexer generator, a parser generator, and a profiler.
 * Read about MLton's <<Features#>>.
 * Look at <<Documentation#>>.
 * See some <<Users#>> of MLton.
-* Download MLton from https://sourceforge.net/projects/mlton/files/mlton/20201002[SourceForge] or https://github.com/MLton/mlton/releases/tag/on-20201002-release[GitHub].
+* Download MLton from https://github.com/MLton/mlton/releases/latest[GitHub].
 * Meet the MLton <<Developers#>>.
 * Get involved with MLton <<Development#>>.
 * User-maintained <<FAQ#>>.
