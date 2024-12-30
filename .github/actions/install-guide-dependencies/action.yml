@@ -3,6 +3,9 @@ description: 'Install dependencies to build MLton guide'
 runs:
   using: "composite"
   steps:
+    - name: Install GraphicsMagick
+      shell: 'bash'
+      run: sudo apt-get install graphicsmagick
     - name: Install AsciiDoctor
       shell: 'bash'
       run: sudo gem install asciidoctor
