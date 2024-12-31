@@ -11,22 +11,48 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu-24.04, macos-13, macos-14, windows-2022]
-        cc: ["gcc", "clang"]
-        codegen: ["amd64", "c", "llvm"]
-        exclude:
-          - runner: macos-13
+        include:
+          - runner: "ubuntu-24.04"
             cc: "gcc"
-          - runner: macos-14
+            codegen: "amd64"
+          - runner: "ubuntu-24.04"
             cc: "gcc"
-          - runner: macos-14
+            codegen: "c"
+          - runner: "ubuntu-24.04"
+            cc: "clang"
+            codegen: "amd64"
+          - runner: "ubuntu-24.04"
+            cc: "clang"
+            codegen: "c"
+          - runner: "ubuntu-24.04"
+            cc: "clang"
+            codegen: "llvm"
+
+          - runner: "macos-13"
+            cc: "clang"
+            codegen: "amd64"
+          - runner: "macos-13"
+            cc: "clang"
+            codegen: "c"
+          - runner: "macos-13"
+            cc: "clang"
+            codegen: "llvm"
+
+          - runner: "macos-14"
+            cc: "clang"
+            codegen: "c"
+          - runner: "macos-14"
+            cc: "clang"
+            codegen: "llvm"
+
+          - runner: windows-2022
+            msystem: mingw64
+            cc: "gcc"
             codegen: "amd64"
           - runner: windows-2022
-            cc: "clang"
-          - runner: windows-2022
-            codegen: "llvm"
-          - cc: "gcc"
-            codegen: "llvm"
+            msystem: mingw64
+            cc: "gcc"
+            codegen: "c"
 
     runs-on: ${{ matrix.runner }}
 
@@ -43,7 +69,7 @@ jobs:
         if: ${{ startsWith(matrix.runner, 'windows') }}
         uses: msys2/setup-msys2@v2
         with:
-          msystem: MINGW64
+          msystem: ${{ matrix.msystem }}
           update: false
           install: >-
             base-devel
