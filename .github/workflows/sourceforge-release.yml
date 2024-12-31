@@ -42,4 +42,4 @@ jobs:
           mv localhost ${{ inputs.mlton-version }}
           tar czf guide-${{ inputs.mlton-version }}.tgz ${{ inputs.mlton-version }}
           rsync -azP --delete -e ssh ${{ inputs.mlton-version }} mlton-webmaster,mlton@web.sourceforge.net:/home/project-web/mlton/htdocs/guide/
-          rsync -azP --delete -e ssh guide-${{ inputs.mlton-version }} mlton-webmaster,mlton@web.sourceforge.net:/home/project-web/mlton/htdocs/guide/
+          rsync -azP --delete -e ssh guide-${{ inputs.mlton-version }}.tgz mlton-webmaster,mlton@web.sourceforge.net:/home/project-web/mlton/htdocs/guide/
