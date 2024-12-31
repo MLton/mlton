@@ -15,21 +15,22 @@ on:
 jobs:
   sourceforge-release:
     runs-on: ubuntu-24.04
-    env:
-      SSH_KEY_RSA: ${{ secrets.MLTON_WEBMASTER_SSH_KEY_RSA }}
-      SSH_KEY_ED25519: ${{ secrets.MLTON_WEBMASTER_SSH_KEY_ED25519 }}
-      SSH_CONFIG: ${{ secrets.MLTON_WEBMASTER_SSH_CONFIG }}
-      SSH_KNOWN_HOSTS: ${{ secrets.MLTON_WEBMASTER_SSH_KNOWN_HOSTS }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
         with:
           sparse-checkout: .github
-          ref: ${{ inputs.checkout-ref || 'master' }}
       - name: Download release assets
         run: gh release download on-${{ inputs.mlton-version }}-release --dir assets --pattern '*'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Setup SSH
+        run: ./.github/scripts/setup_ssh.sh
+        env:
+          SSH_KEY_RSA: ${{ secrets.MLTON_WEBMASTER_SSH_KEY_RSA }}
+          SSH_KEY_ED25519: ${{ secrets.MLTON_WEBMASTER_SSH_KEY_ED25519 }}
+          SSH_CONFIG: ${{ secrets.MLTON_WEBMASTER_SSH_CONFIG }}
+          SSH_KNOWN_HOSTS: ${{ secrets.MLTON_WEBMASTER_SSH_KNOWN_HOSTS }}
       - name: Create SourceForge release directory
         run: sftp -b <(echo "-mkdir ${{ inputs.mlton-version }}") mlton-webmaster,mlton@frs.sourceforge.net:/home/frs/project/mlton/mlton
       - name: Upload release assets to SourceForge
