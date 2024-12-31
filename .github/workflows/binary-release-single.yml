@@ -99,7 +99,10 @@ jobs:
 
       - name: Download and unpack source release
         run: |
-          curl --fail -L https://github.com/${{ github.repository }}/releases/download/on-${{ inputs.mlton-version }}-release/mlton-${{ inputs.mlton-version }}.src.tgz | tar xz --strip-components=1
+          curl --fail -s -O -L https://github.com/${{ github.repository }}/releases/download/on-${{ inputs.mlton-version }}-release/mlton-${{ inputs.mlton-version }}.src.tgz
+          tar xzf mlton-${{ inputs.mlton-version }}.src.tgz --strip-components=1 || true
+          tar xzf mlton-${{ inputs.mlton-version }}.src.tgz --strip-components=1
+          rm mlton-${{ inputs.mlton-version }}.src.tgz
 
       - name: Make binary release
         run: |
