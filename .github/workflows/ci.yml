@@ -11,21 +11,69 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        runner: [ubuntu-24.04, macos-13, macos-14, windows-2022]
-        cc: ["gcc", "clang"]
-        codegen: ["amd64", "c", "llvm"]
-        exclude:
-          - runner: macos-13
+        include:
+          - runner: "ubuntu-24.04"
             cc: "gcc"
-          - runner: macos-14
+            codegen: "amd64"
+          - runner: "ubuntu-24.04"
             cc: "gcc"
-          - runner: macos-14
+            codegen: "c"
+          - runner: "ubuntu-24.04"
+            cc: "clang"
+            codegen: "amd64"
+          - runner: "ubuntu-24.04"
+            cc: "clang"
+            codegen: "c"
+          - runner: "ubuntu-24.04"
+            cc: "clang"
+            codegen: "llvm"
+
+          - runner: "macos-13"
+            cc: "clang"
+            codegen: "amd64"
+          - runner: "macos-13"
+            cc: "clang"
+            codegen: "c"
+          - runner: "macos-13"
+            cc: "clang"
+            codegen: "llvm"
+
+          - runner: "macos-14"
+            cc: "clang"
+            codegen: "c"
+          - runner: "macos-14"
+            cc: "clang"
+            codegen: "llvm"
+
+          - runner: windows-2022
+            msystem: mingw64
+            cc: "gcc"
             codegen: "amd64"
           - runner: windows-2022
-            cc: "clang"
+            msystem: mingw64
+            cc: "gcc"
+            codegen: "c"
+
           - runner: windows-2022
-            codegen: "llvm"
-          - cc: "gcc"
+            msystem: ucrt64
+            cc: "gcc"
+            codegen: "amd64"
+          - runner: windows-2022
+            msystem: ucrt64
+            cc: "gcc"
+            codegen: "c"
+
+          - runner: windows-2022
+            msystem: clang64
+            cc: "clang"
+            codegen: "amd64"
+          - runner: windows-2022
+            msystem: clang64
+            cc: "clang"
+            codegen: "c"
+          - runner: windows-2022
+            msystem: clang64
+            cc: "clang"
             codegen: "llvm"
 
     runs-on: ${{ matrix.runner }}
@@ -43,7 +91,7 @@ jobs:
         if: ${{ startsWith(matrix.runner, 'windows') }}
         uses: msys2/setup-msys2@v2
         with:
-          msystem: MINGW64
+          msystem: ${{ matrix.msystem }}
           update: false
           install: >-
             base-devel
@@ -102,11 +150,11 @@ jobs:
             $( if [[ -n "$WITH_GMP_DIR" ]]; then echo "WITH_GMP_DIR=$WITH_GMP_DIR"; fi ) \
             WITH_ALL_RUNTIME=true \
             WITH_DBG_RUNTIME=false \
-            MLTON_BINARY_RELEASE_SUFFIX=".${{ matrix.runner }}_${{ matrix.cc }}_${{ matrix.codegen }}" \
+            MLTON_BINARY_RELEASE_SUFFIX=".${{ matrix.runner }}${{ matrix.msystem && format('_msys2_{0}', matrix.msystem) || '' }}_${{ matrix.cc }}_${{ matrix.codegen }}" \
             binary-release
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mlton.${{ matrix.runner }}_${{ matrix.cc }}_${{ matrix.codegen }}
+          name: mlton.${{ matrix.runner }}${{ matrix.msystem && format('_msys2_{0}', matrix.msystem) || '' }}_${{ matrix.cc }}_${{ matrix.codegen }}
           path: ./*.tgz

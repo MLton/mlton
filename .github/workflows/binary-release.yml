@@ -49,15 +49,32 @@ jobs:
             mlton-compile-args: "-gmp-link-opt $(brew --prefix)/lib/libgmp.a"
             mlton-binary-release-suffix: ".${RUNNER}_gmp-static"
           - runner: "windows-2022"
-            mlton-binary-release-suffix: ".${RUNNER}_${MSYSTEM}"
+            msystem: "mingw64"
+            mlton-binary-release-suffix: ".${RUNNER}_msys2_${MSYSTEM}"
           - runner: "windows-2022"
+            msystem: "mingw64"
             mlton-compile-args: "-link-opt -static"
-            mlton-binary-release-suffix: ".${RUNNER}_${MSYSTEM}_static"
+            mlton-binary-release-suffix: ".${RUNNER}_msys2_${MSYSTEM}_static"
+          - runner: "windows-2022"
+            msystem: "ucrt64"
+            mlton-binary-release-suffix: ".${RUNNER}_msys2_${MSYSTEM}"
+          - runner: "windows-2022"
+            msystem: "ucrt64"
+            mlton-compile-args: "-link-opt -static"
+            mlton-binary-release-suffix: ".${RUNNER}_msys2_${MSYSTEM}_static"
+          - runner: "windows-2022"
+            msystem: "clang64"
+            mlton-binary-release-suffix: ".${RUNNER}_msys2_${MSYSTEM}"
+          - runner: "windows-2022"
+            msystem: "clang64"
+            mlton-compile-args: "-link-opt -static"
+            mlton-binary-release-suffix: ".${RUNNER}_msys2_${MSYSTEM}_static"
 
     uses: ./.github/workflows/binary-release-single.yml
     with:
       mlton-version: ${{ inputs.mlton-version }}
       runner: ${{ matrix.runner }}
+      msystem: ${{ matrix.msystem }}
       old-mlton-runtime-args: ${{ matrix.old-mlton-runtime-args }}
       old-mlton-compile-args: ${{ matrix.old-mlton-compile-args }}
       mlton-runtime-args: ${{ matrix.mlton-runtime-args }}

@@ -9,7 +9,7 @@ on:
       runner:
         required: true
         type: string
-      checkout-ref:
+      msystem:
         required: false
         type: string
       old-mlton-runtime-args:
@@ -35,7 +35,7 @@ on:
       runner:
         required: true
         type: string
-      checkout-ref:
+      msystem:
         required: false
         type: string
       old-mlton-runtime-args:
@@ -76,7 +76,7 @@ jobs:
         if: ${{ startsWith(inputs.runner, 'windows') }}
         uses: msys2/setup-msys2@v2
         with:
-          msystem: MINGW64
+          msystem: ${{ inputs.msystem }}
           update: false
           install: >-
             base-devel
@@ -89,7 +89,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           sparse-checkout: .github
-          ref: ${{ inputs.checkout-ref || 'master' }}
 
       - name: Install bootstrap dependencies
         uses: ./.github/actions/install-bootstrap-dependencies
