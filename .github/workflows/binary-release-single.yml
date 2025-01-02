@@ -12,9 +12,6 @@ on:
       msystem:
         required: false
         type: string
-      checkout-ref:
-        required: false
-        type: string
       old-mlton-runtime-args:
         required: false
         type: string
@@ -39,9 +36,6 @@ on:
         required: true
         type: string
       msystem:
-        required: false
-        type: string
-      checkout-ref:
         required: false
         type: string
       old-mlton-runtime-args:
@@ -95,7 +89,6 @@ jobs:
         uses: actions/checkout@v4
         with:
           sparse-checkout: .github
-          ref: ${{ inputs.checkout-ref || 'master' }}
 
       - name: Install bootstrap dependencies
         uses: ./.github/actions/install-bootstrap-dependencies
