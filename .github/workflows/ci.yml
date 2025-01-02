@@ -54,6 +54,28 @@ jobs:
             cc: "gcc"
             codegen: "c"
 
+          - runner: windows-2022
+            msystem: ucrt64
+            cc: "gcc"
+            codegen: "amd64"
+          - runner: windows-2022
+            msystem: ucrt64
+            cc: "gcc"
+            codegen: "c"
+
+          - runner: windows-2022
+            msystem: clang64
+            cc: "clang"
+            codegen: "amd64"
+          - runner: windows-2022
+            msystem: clang64
+            cc: "clang"
+            codegen: "c"
+          - runner: windows-2022
+            msystem: clang64
+            cc: "clang"
+            codegen: "llvm"
+
     runs-on: ${{ matrix.runner }}
 
     defaults:
@@ -128,11 +150,11 @@ jobs:
             $( if [[ -n "$WITH_GMP_DIR" ]]; then echo "WITH_GMP_DIR=$WITH_GMP_DIR"; fi ) \
             WITH_ALL_RUNTIME=true \
             WITH_DBG_RUNTIME=false \
-            MLTON_BINARY_RELEASE_SUFFIX=".${{ matrix.runner }}_${{ matrix.cc }}_${{ matrix.codegen }}" \
+            MLTON_BINARY_RELEASE_SUFFIX=".${{ matrix.runner }}${{ matrix.msystem && format('_msys2_{0}', matrix.msystem) || '' }}_${{ matrix.cc }}_${{ matrix.codegen }}" \
             binary-release
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
         with:
-          name: mlton.${{ matrix.runner }}_${{ matrix.cc }}_${{ matrix.codegen }}
+          name: mlton.${{ matrix.runner }}${{ matrix.msystem && format('_msys2_{0}', matrix.msystem) || '' }}_${{ matrix.cc }}_${{ matrix.codegen }}
           path: ./*.tgz

@@ -54,7 +54,8 @@ runs:
       shell: 'msys2 {0}'
       run: |
         # Install dependencies (windows)
-        pacboy --noconfirm -S --needed gcc:p gmp-devel:
+        pacboy --noconfirm -S --needed $(if [ ${MSYSTEM} == "CLANG64" ]; then echo clang:p ; else echo gcc:p; fi) gmp:p gmp-devel:
+        if [[ "${{ inputs.install-llvm }}" == "true" ]]; then pacboy --noconfirm -S --needed llvm:p ; fi
         mkdir boot && cd boot
         curl -sOL https://github.com/MLton/mlton/releases/download/on-20241230-release/mlton-20241230-1.amd64-mingw.windows-2022_MINGW64.tgz
         tar xzf mlton-20241230-1.amd64-mingw.windows-2022_MINGW64.tgz --exclude='*/share' --strip-components=1
