@@ -9,6 +9,9 @@ on:
       runner:
         required: true
         type: string
+      msystem:
+        required: false
+        type: string
       checkout-ref:
         required: false
         type: string
@@ -34,6 +37,9 @@ on:
         type: string
       runner:
         required: true
+        type: string
+      msystem:
+        required: false
         type: string
       checkout-ref:
         required: false
@@ -76,7 +82,7 @@ jobs:
         if: ${{ startsWith(inputs.runner, 'windows') }}
         uses: msys2/setup-msys2@v2
         with:
-          msystem: MINGW64
+          msystem: ${{ inputs.msystem }}
           update: false
           install: >-
             base-devel
