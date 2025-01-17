@@ -12,7 +12,7 @@ runs:
       if: ${{ contains(fromJSON('["ubuntu-20.04", "ubuntu-22.04", "ubuntu-24.04"]'), inputs.runner) }}
       shell: 'bash'
       run: |
-        # Install dependencies (ubuntu)
+        # Install dependencies (ubuntu (amd64))
         sudo apt-get update
         sudo apt-get install libgmp-dev
         if [[ "${{ inputs.install-llvm }}" == "true" ]]; then sudo apt-get install llvm; fi
@@ -20,6 +20,19 @@ runs:
         curl -sOL https://github.com/MLton/mlton/releases/download/on-20241230-release/mlton-20241230-1.amd64-linux.ubuntu-20.04_glibc2.31.tgz
         tar xzf mlton-20241230-1.amd64-linux.ubuntu-20.04_glibc2.31.tgz --exclude='*/share' --strip-components=1
         rm mlton-20241230-1.amd64-linux.ubuntu-20.04_glibc2.31.tgz
+
+    - name: Install bootstrap dependencies (ubuntu (arm64))
+      if: ${{ contains(fromJSON('["ubuntu-22.04-arm", "ubuntu-24.04-arm"]'), inputs.runner) }}
+      shell: 'bash'
+      run: |
+        # Install dependencies (ubuntu (arm))
+        sudo apt-get update
+        sudo apt-get install libgmp-dev
+        if [[ "${{ inputs.install-llvm }}" == "true" ]]; then sudo apt-get install llvm; fi
+        mkdir boot && cd boot
+        curl -sOL https://github.com/ii8/mlton-builds/releases/download/20241230/mlton-20241230.aarch64-linux-gnu.tar.gz
+        tar xzf mlton-20241230.aarch64-linux-gnu.tar.gz --exclude='*/share' --strip-components=1
+        rm mlton-20241230.aarch64-linux-gnu.tar.gz
 
     - name: Install bootstrap dependencies (macos (amd64))
       if: ${{ contains(fromJSON('["macos-13"]'), inputs.runner) }}
