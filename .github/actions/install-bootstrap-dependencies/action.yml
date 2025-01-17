@@ -8,8 +8,8 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Install bootstrap dependencies (ubuntu)
-      if: ${{ startsWith(inputs.runner, 'ubuntu') }}
+    - name: Install bootstrap dependencies (ubuntu (amd64))
+      if: ${{ contains(fromJSON('["ubuntu-20.04", "ubuntu-22.04", "ubuntu-24.04"]'), inputs.runner) }}
       shell: 'bash'
       run: |
         # Install dependencies (ubuntu)
@@ -22,7 +22,7 @@ runs:
         rm mlton-20241230-1.amd64-linux.ubuntu-20.04_glibc2.31.tgz
 
     - name: Install bootstrap dependencies (macos (amd64))
-      if: ${{ inputs.runner == 'macos-13' }}
+      if: ${{ contains(fromJSON('["macos-13"]'), inputs.runner) }}
       shell: 'bash'
       run: |
         # Install dependencies (macos (amd64))
@@ -36,7 +36,7 @@ runs:
         rm mlton-20241230-1.amd64-darwin.macos-13_gmp-homebrew.tgz
 
     - name: Install bootstrap dependencies (macos (arm64))
-      if: ${{ (inputs.runner == 'macos-14') || (inputs.runner == 'macos-15') }}
+      if: ${{ contains(fromJSON('["macos-14", "macos-15"]'), inputs.runner) }}
       shell: 'bash'
       run: |
         # Install dependencies (macos (arm64))
@@ -50,7 +50,7 @@ runs:
         rm mlton-20241230-1.arm64-darwin.macos-14_gmp-homebrew.tgz
 
     - name: Install bootstrap dependencies (windows)
-      if: ${{ startsWith(inputs.runner, 'windows') }}
+      if: ${{ contains(fromJSON('["windows-2019", "windows-2022", "windows-2025"]'), inputs.runner) }}
       shell: 'msys2 {0}'
       run: |
         # Install dependencies (windows)
