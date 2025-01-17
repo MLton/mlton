@@ -8,11 +8,11 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Install bootstrap dependencies (ubuntu)
-      if: ${{ startsWith(inputs.runner, 'ubuntu') }}
+    - name: Install bootstrap dependencies (ubuntu (amd64))
+      if: ${{ contains(fromJSON('["ubuntu-20.04", "ubuntu-22.04", "ubuntu-24.04"]'), inputs.runner) }}
       shell: 'bash'
       run: |
-        # Install dependencies (ubuntu)
+        # Install dependencies (ubuntu (amd64))
         sudo apt-get update
         sudo apt-get install libgmp-dev
         if [[ "${{ inputs.install-llvm }}" == "true" ]]; then sudo apt-get install llvm; fi
@@ -21,8 +21,21 @@ runs:
         tar xzf mlton-20241230-1.amd64-linux.ubuntu-20.04_glibc2.31.tgz --exclude='*/share' --strip-components=1
         rm mlton-20241230-1.amd64-linux.ubuntu-20.04_glibc2.31.tgz
 
+    - name: Install bootstrap dependencies (ubuntu (arm64))
+      if: ${{ contains(fromJSON('["ubuntu-22.04-arm", "ubuntu-24.04-arm"]'), inputs.runner) }}
+      shell: 'bash'
+      run: |
+        # Install dependencies (ubuntu (arm))
+        sudo apt-get update
+        sudo apt-get install libgmp-dev
+        if [[ "${{ inputs.install-llvm }}" == "true" ]]; then sudo apt-get install llvm; fi
+        mkdir boot && cd boot
+        curl -sOL https://github.com/ii8/mlton-builds/releases/download/20241230/mlton-20241230.aarch64-linux-gnu.tar.gz
+        tar xzf mlton-20241230.aarch64-linux-gnu.tar.gz --exclude='*/share' --strip-components=1
+        rm mlton-20241230.aarch64-linux-gnu.tar.gz
+
     - name: Install bootstrap dependencies (macos (amd64))
-      if: ${{ inputs.runner == 'macos-13' }}
+      if: ${{ contains(fromJSON('["macos-13"]'), inputs.runner) }}
       shell: 'bash'
       run: |
         # Install dependencies (macos (amd64))
@@ -36,7 +49,7 @@ runs:
         rm mlton-20241230-1.amd64-darwin.macos-13_gmp-homebrew.tgz
 
     - name: Install bootstrap dependencies (macos (arm64))
-      if: ${{ (inputs.runner == 'macos-14') || (inputs.runner == 'macos-15') }}
+      if: ${{ contains(fromJSON('["macos-14", "macos-15"]'), inputs.runner) }}
       shell: 'bash'
       run: |
         # Install dependencies (macos (arm64))
@@ -50,13 +63,13 @@ runs:
         rm mlton-20241230-1.arm64-darwin.macos-14_gmp-homebrew.tgz
 
     - name: Install bootstrap dependencies (windows)
-      if: ${{ startsWith(inputs.runner, 'windows') }}
+      if: ${{ contains(fromJSON('["windows-2019", "windows-2022", "windows-2025"]'), inputs.runner) }}
       shell: 'msys2 {0}'
       run: |
         # Install dependencies (windows)
         pacboy --noconfirm -S --needed $(if [ ${MSYSTEM} == "CLANG64" ]; then echo clang:p ; else echo gcc:p; fi) gmp:p gmp-devel:
         if [[ "${{ inputs.install-llvm }}" == "true" ]]; then pacboy --noconfirm -S --needed llvm:p ; fi
         mkdir boot && cd boot
-        curl -sOL https://github.com/MLton/mlton/releases/download/on-20241230-release/mlton-20241230-1.amd64-mingw.windows-2022_MINGW64.tgz
-        tar xzf mlton-20241230-1.amd64-mingw.windows-2022_MINGW64.tgz --exclude='*/share' --strip-components=1
-        rm mlton-20241230-1.amd64-mingw.windows-2022_MINGW64.tgz
+        curl -sOL https://github.com/MLton/mlton/releases/download/on-20241230-release/mlton-20241230-1.amd64-mingw.windows-2022_msys2_${MSYSTEM}.tgz
+        tar xzf mlton-20241230-1.amd64-mingw.windows-2022_msys2_${MSYSTEM}.tgz --exclude='*/share' --strip-components=1
+        rm mlton-20241230-1.amd64-mingw.windows-2022_msys2_${MSYSTEM}.tgz

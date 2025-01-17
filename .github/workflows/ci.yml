@@ -28,6 +28,16 @@ jobs:
             cc: "clang"
             codegen: "llvm"
 
+          - runner: "ubuntu-24.04-arm"
+            cc: "gcc"
+            codegen: "c"
+          - runner: "ubuntu-24.04-arm"
+            cc: "clang"
+            codegen: "c"
+          - runner: "ubuntu-24.04-arm"
+            cc: "clang"
+            codegen: "llvm"
+
           - runner: "macos-13"
             cc: "clang"
             codegen: "amd64"
