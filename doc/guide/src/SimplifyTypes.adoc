@@ -64,6 +64,6 @@ we (arbitrarily) expand one of the datatypes first.  The result will
 be something like
 [source,sml]
 ----
-datatype u = U of u array array
+datatype u = U of u array vector
 ----
 where all uses of `t` are replaced by `u array`.
