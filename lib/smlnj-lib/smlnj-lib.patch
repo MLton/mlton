@@ -288,7 +288,7 @@ index 0000000..5caeac4
 +end
 diff --git a/Compat/mono-buffer/mono-buffer.fun b/Compat/mono-buffer/mono-buffer.fun
 new file mode 100644
-index 0000000..b349081
+index 0000000..604813c
 --- /dev/null
 +++ b/Compat/mono-buffer/mono-buffer.fun
 @@ -0,0 +1,141 @@
@@ -389,12 +389,12 @@ index 0000000..b349081
 +  (* ensure that the content array has space for amt elements *)
 +    fun ensureCapacity (content, len, amt) = let
 +          val curCap = A.length(!content)
-+          val amt = Int.max(curCap - len + curCap, amt)
-+          val capacity = (len + amt) handle Overflow => maxLen
++          val ensCap = (len + amt) handle Overflow => maxLen
 +          in
-+            if (curCap < capacity)
++            if (curCap < ensCap)
 +              then let
-+                val newArr = A.array(capacity, defaultElem)
++                val newCap = Int.max(2 * curCap handle Overflow => maxLen, ensCap)
++                val newArr = A.array(newCap, defaultElem)
 +                in
 +                  AS.copy{dst = newArr, di = 0, src = AS.slice(!content, 0, SOME len)};
 +                  content := newArr
@@ -7799,13 +7799,13 @@ index 0000000..0f585b7
 +       | Engine.TimeOut _ => raise TimeOut
 +end
 diff --git a/Util/utf8.sml b/Util/utf8.sml
-index 3288434..120d22e 100644
+index 61c318d..7d97639 100644
 --- a/Util/utf8.sml
 +++ b/Util/utf8.sml
-@@ -281,7 +281,7 @@ structure UTF8 :> UTF8 =
+@@ -277,7 +277,7 @@ structure UTF8 :> UTF8 =
  
      fun map f s = let
- 	  fun mapf (ss, chrs) = (case getWC ss
+ 	  fun mapf (ss, chrs) = (case getWCFromSubstring ss
 -		 of NONE => String.implodeRev chrs
 +		 of NONE => String.implode (List.rev chrs)
  		  | SOME(wc, ss) => mapf (ss, List.revAppend(encode'(wc, []), chrs))
