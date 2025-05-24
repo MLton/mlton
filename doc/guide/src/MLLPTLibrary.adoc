@@ -6,8 +6,8 @@ is a support library for the <<MLULex#>> scanner generator and the
 <<MLAntlr#>> parser generator.  The ML-LPT Library is distributed with
 SML/NJ.
 
-As of 20241214, MLton includes the ML-LPT Library synchronized with
-SML/NJ version 110.99.6.1.
+As of 20250523, MLton includes the ML-LPT Library synchronized with
+SML/NJ version 110.99.8.
 
 == Usage
 
