@@ -10,17 +10,24 @@ simply links to a web page that answers the question.
 
 <<Pronounce#>>
 
-== What SML software has been ported to MLton?
+== How do you cite MLton?
 
-<<Libraries#>>
+MLton can be cited in an academic paper as:
 
-== What graphical libraries are available for MLton?
-
-<<Libraries#>>
+* MLton n.d.. MLton web site. http://www.mlton.org.
+* Stephen Weeks. 2006. Whole-program compilation in MLton. In ML ’06: Proceedings of the 2006 workshop on ML (Portland, Oregon, USA). ACM, 1–1.
 
 == How does MLton's performance compare to other SML compilers and to other languages?
 
 MLton has <<Performance#,excellent performance>>.
+
+== How portable is SML code across SML compilers?
+
+<<StandardMLPortability#>>
+
+== What SML software has been ported to MLton?
+
+<<Libraries#>>
 
 == Does MLton treat monomorphic arrays and vectors specially?
 
@@ -49,7 +56,3 @@ that causes less code duplication.
 
 Also, please <<Contact#>> us to let us know the problem to help us
 better understand MLton's limitations.
-
-== How portable is SML code across SML compilers?
-
-<<StandardMLPortability#>>
