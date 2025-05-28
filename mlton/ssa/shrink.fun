@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2011,2017,2019,2022 Matthew Fluet.
+(* Copyright (C) 2009,2011,2017,2019,2022,2025 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -321,8 +321,10 @@ fun shrinkFunction {globals: Statement.t vector} =
                fun normal () = doit LabelMeaning.Block
                fun canMove () =
                   Vector.toListMap
-                  (statements, fn Statement.T {exp, ty, ...} =>
-                   Statement.T {exp = exp, ty = ty, var = NONE})
+                  (statements, fn Statement.T {exp, ...} =>
+                   if Exp.isProfile exp
+                      then Statement.T {exp = exp, ty = Type.unit, var = NONE}
+                   else Error.bug "Ssa.Shrink.computeMeaning.canMove: not Exp.isProfile")
                fun rr (xs: Var.t vector, make) =
                   let
                      val _ = incVars xs

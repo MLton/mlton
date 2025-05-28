@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2011,2017,2019,2022 Matthew Fluet.
+(* Copyright (C) 2009,2011,2017,2019,2022,2025 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -331,7 +331,11 @@ fun shrinkFunction {globals: Statement.t vector} =
                                   label = Block.label (Vector.sub (blocks, i))}
                fun normal () = doit LabelMeaning.Block
                fun canMove () =
-                  Vector.toList statements
+                  Vector.toListMap
+                  (statements, fn stmt =>
+                   if Statement.isProfile stmt
+                      then stmt
+                   else Error.bug "Ssa2.Shrink.computeMeaning.canMove: not Statement.isProfile")
                fun rr (xs: Var.t vector, make) =
                   let
                      val () = incVars xs
