@@ -1,4 +1,4 @@
-(* Copyright (C) 2010-2011,2013-2022,2024 Matthew Fluet.
+(* Copyright (C) 2010-2011,2013-2022,2024-2025 Matthew Fluet.
  * Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -807,6 +807,8 @@ fun makeOptions {usage} =
         boolRef profileRaise),
        (Normal, "profile-stack", " {false|true}", "profile the stack",
         boolRef profileStack),
+       (Expert, "profile-tail-call-opt", " {true|false}", "optimize tail calls when profiling",
+        boolRef profileTailCallOpt),
        (Normal, "profile-val", " {false|true}",
         "profile val bindings in addition to functions",
         boolRef profileVal),

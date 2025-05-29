@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2012,2014-2017,2019-2021 Matthew Fluet.
+(* Copyright (C) 2009-2012,2014-2017,2019-2021,2025 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1494,6 +1494,10 @@ val profileRaise = control {name = "profile raise",
 val profileStack = control {name = "profile stack",
                             default = false,
                             toString = Bool.toString}
+
+val profileTailCallOpt = control {name = "optimize tail calls when profiling",
+                                  default = true,
+                                  toString = Bool.toString}
 
 val profileVal = control {name = "profile val",
                           default = false,

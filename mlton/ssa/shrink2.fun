@@ -805,9 +805,15 @@ fun shrinkFunction {globals: Statement.t vector} =
                                        LabelMeaning.Bug =>
                                           (case handlerProfileStatements of
                                               NONE => nonTail handler
-                                            | SOME profileStmts => tail profileStmts)
+                                            | SOME profileStmts =>
+                                                 if List.isEmpty profileStmts
+                                                    orelse !Control.profileTailCallOpt
+                                                    then tail profileStmts
+                                                 else nonTail handler)
                                      | LabelMeaning.Return {args, profileStmts} =>
                                           if isEta (contMeaning, args)
+                                             andalso (List.isEmpty profileStmts
+                                                      orelse !Control.profileTailCallOpt)
                                              then tail profileStmts
                                           else nonTail handler
                                      | _ => nonTail handler
