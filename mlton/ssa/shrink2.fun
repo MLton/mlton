@@ -778,35 +778,35 @@ fun shrinkFunction {globals: Statement.t vector} =
                                     (ps,
                                      fn (i, Position.Formal i') => i = i'
                                       | _ => false)
-                                 val m = labelMeaning cont
+                                 val contMeaning = labelMeaning cont
                                  fun nonTail handler =
                                     let
-                                       val () = forceMeaningBlock m
+                                       val () = forceMeaningBlock contMeaning
                                        val handler =
                                           Handler.map
                                           (handler, fn l =>
                                            let
-                                              val m = labelMeaning l
-                                              val () = forceMeaningBlock m
+                                              val handlerMeaning = labelMeaning l
+                                              val () = forceMeaningBlock handlerMeaning
                                            in
-                                              meaningLabel m
+                                              meaningLabel handlerMeaning
                                            end)
                                     in
                                        ([],
-                                        Return.NonTail {cont = meaningLabel m,
+                                        Return.NonTail {cont = meaningLabel contMeaning,
                                                         handler = handler})
                                     end
-                                 fun tail statements =
-                                    (deleteLabelMeaning m
-                                     ; (statements, Return.Tail))
-                                 fun cont (handler, handlerEta) =
-                                    case LabelMeaning.aux m of
+                                 fun tail profileStatements =
+                                    (deleteLabelMeaning contMeaning
+                                     ; (profileStatements, Return.Tail))
+                                 fun cont (handler, handlerProfileStatements) =
+                                    case LabelMeaning.aux contMeaning of
                                        LabelMeaning.Bug =>
-                                          (case handlerEta of
+                                          (case handlerProfileStatements of
                                               NONE => nonTail handler
                                             | SOME profileStmts => tail profileStmts)
                                      | LabelMeaning.Return {args, profileStmts} =>
-                                          if isEta (m, args)
+                                          if isEta (contMeaning, args)
                                              then tail profileStmts
                                           else nonTail handler
                                      | _ => nonTail handler
@@ -816,12 +816,12 @@ fun shrinkFunction {globals: Statement.t vector} =
                                   | Handler.Dead => cont (handler, NONE)
                                   | Handler.Handle l =>
                                        let
-                                          val m = labelMeaning l
+                                          val handlerMeaning = labelMeaning l
                                        in
-                                          case LabelMeaning.aux m of
+                                          case LabelMeaning.aux handlerMeaning of
                                              LabelMeaning.Bug => cont (handler, NONE)
                                            | LabelMeaning.Raise {args, profileStmts} =>
-                                                if isEta (m, args)
+                                                if isEta (handlerMeaning, args)
                                                    then cont (if List.isEmpty profileStmts
                                                                  then Handler.Caller
                                                                  else handler,
