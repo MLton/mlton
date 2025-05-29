@@ -328,36 +328,10 @@ fun shrinkFunction {globals: Statement.t vector} =
                fun rr (xs: Var.t vector, make) =
                   let
                      val _ = incVars xs
-(*
-                     val n = Vector.length statements
-                     fun loop (i, ac) =
-                        if i = n
-                           then
-                              if 0 = Vector.length xs
-                                 orelse 0 < Vector.length args
-                                 then doit (make {args = extract xs,
-                                                  profileStmts = rev ac})
-                              else normal ()
-                        else
-                           let
-                              val Statement.T {exp, ty, ...} =
-                                 Vector.sub (statements, i)
-                           in
-                              if Exp.isProfile exp
-                                 then loop (i + 1,
-                                            Statement.T {exp = exp,
-                                                         ty = ty,
-                                                         var = NONE} :: ac)
-                              else normal ()
-                           end
-                  in
-                     loop (0, [])
-                  end
-*)
                   in
                      if Vector.forall (statements, Statement.isProfile)
-                        andalso (0 = Vector.length xs
-                                 orelse 0 < Vector.length args)
+                        (* andalso (Vector.isEmpty xs *)
+                        (*          orelse not (Vector.isEmpty args)) *)
                         then doit (make {args = extract xs,
                                          profileStmts = profileStmts ()})
                      else normal ()
