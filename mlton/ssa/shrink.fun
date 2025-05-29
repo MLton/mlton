@@ -787,6 +787,7 @@ fun shrinkFunction {globals: Statement.t vector} =
                                     end
                                  fun tail profileStatements =
                                     (deleteLabelMeaning contMeaning
+                                     ; Handler.foreachLabel (handler, deleteLabel)
                                      ; (profileStatements, Return.Tail))
                                  fun cont (handler, handlerProfileStatements) =
                                     case LabelMeaning.aux contMeaning of
