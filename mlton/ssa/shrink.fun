@@ -813,7 +813,8 @@ fun shrinkFunction {globals: Statement.t vector} =
                                            | LabelMeaning.Raise {args, profileStmts} =>
                                                 if isEta (handlerMeaning, args)
                                                    then cont (if List.isEmpty profileStmts
-                                                                 then Handler.Caller
+                                                                 then (deleteLabel l
+                                                                       ; Handler.Caller)
                                                                  else handler,
                                                               SOME profileStmts)
                                                 else nonTail handler
