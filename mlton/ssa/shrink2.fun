@@ -314,17 +314,25 @@ fun shrinkFunction {globals: Statement.t vector} =
                                         setVarInfo (x, VarInfo.new (x, SOME ty)))
                val () = Vector.foreach (statements, fn s =>
                                         Statement.foreachUse (s, incVar))
-               fun extract (actuals: Var.t vector): Positions.t =
-                  let
-                     val {get: Var.t -> Position.t, set, destroy} =
-                        Property.destGetSetOnce
-                        (Var.plist, Property.initFun Position.Free)
-                     val () = Vector.foreachi (args, fn (i, (x, _)) =>
-                                              set (x, Position.Formal i))
-                     val ps = Vector.map (actuals, get)
-                     val () = destroy ()
-                  in ps
-                  end
+               local
+                  fun mk (f: (Var.t -> Position.t) -> 'a) : 'a =
+                     let
+                        val {get: Var.t -> Position.t, set, destroy} =
+                           Property.destGetSetOnce
+                           (Var.plist, Property.initFun Position.Free)
+                        val _ = Vector.foreachi (args, fn (i, (x, _)) =>
+                                                 set (x, Position.Formal i))
+                        val res = f get
+                        val _ = destroy ()
+                     in
+                        res
+                     end
+               in
+                  fun extractOne (var: Var.t): Position.t =
+                     mk (fn get => get var)
+                  fun extract (vars: Var.t vector): Positions.t =
+                     mk (fn get => Vector.map (vars, get))
+               end
                fun doit aux =
                   LabelMeaning.T {aux = aux,
                                   blockIndex = i,
@@ -402,12 +410,12 @@ fun shrinkFunction {globals: Statement.t vector} =
                               then m (* It's an eta. *)
                            else
                            let
-                              val ps = extract actuals
+                              val actuals = extract actuals
                               val n =
                                  Vector.fold (args, 0, fn ((x, _), n) =>
                                               n + numVarOccurrences x)
                               val n' =
-                                 Vector.fold (ps, 0, fn (p, n) =>
+                                 Vector.fold (actuals, 0, fn (p, n) =>
                                               case p of
                                                  Position.Formal _ => n + 1
                                                | _ => n)
@@ -418,23 +426,18 @@ fun shrinkFunction {globals: Statement.t vector} =
                                        ; normal ())
                               else
                                  let
-                                    fun extract (ps': Positions.t)
-                                       : Positions.t =
-                                       Vector.map
-                                       (ps', fn p =>
-                                        let
-                                           datatype z = datatype Position.t
-                                        in
-                                           case p of
-                                              Free x => Free x
-                                            | Formal i => Vector.sub (ps, i)
-                                        end)
+                                    fun updateOne (p: Position.t) : Position.t =
+                                       case p of
+                                          Position.Free x => extractOne x
+                                        | Position.Formal i => Vector.sub (actuals, i)
+                                    fun update (ps: Positions.t) : Positions.t =
+                                       Vector.map (ps, updateOne)
                                     val profileStmts' = profileStmts ()
                                     val a =
                                        case LabelMeaning.aux m of
                                           Block =>
                                              Goto {dst = m,
-                                                   args = ps,
+                                                   args = actuals,
                                                    profileStmts = profileStmts'}
                                         | Bug =>
                                              if (case returns of
@@ -445,21 +448,21 @@ fun shrinkFunction {globals: Statement.t vector} =
                                                         Type.equals (t, t')))
                                                 then Bug
                                              else Goto {dst = m,
-                                                        args = ps,
+                                                        args = actuals,
                                                         profileStmts = profileStmts'}
                                        | Case _ =>
                                              Goto {dst = m,
-                                                   args = ps,
+                                                   args = actuals,
                                                    profileStmts = profileStmts'}
                                         | Goto {dst, args, profileStmts} =>
                                              Goto {profileStmts = profileStmts' @ profileStmts,
                                                    dst = dst,
-                                                   args = extract args}
+                                                   args = update args}
                                         | Raise {args, profileStmts} =>
-                                             Raise {args = extract args,
+                                             Raise {args = update args,
                                                     profileStmts = profileStmts' @ profileStmts}
                                         | Return {args, profileStmts} =>
-                                             Return {args = extract args,
+                                             Return {args = update args,
                                                      profileStmts = profileStmts' @ profileStmts}
                                  in
                                     doit a
