@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014,2017-2020,2024 Matthew Fluet.
+(* Copyright (C) 2009,2014,2017-2020,2024-2025 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -442,6 +442,10 @@ structure Exp =
       end
 
       val hash = Trace.trace ("SsaTree.Exp.hash", layout, Word.layout) hash
+
+      val isProfile =
+         fn Profile _ => true
+          | _ => false
    end
 datatype z = datatype Exp.t
 
@@ -543,6 +547,8 @@ structure Statement =
          in
             global
          end
+
+      fun isProfile (T {exp, ...}) = Exp.isProfile exp
    end
 
 structure Transfer =

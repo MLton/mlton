@@ -12,22 +12,6 @@ struct
 
 open S
 
-structure Exp =
-   struct
-      open Exp
-
-      val isProfile =
-         fn Profile _ => true
-          | _ => false
-   end
-
-structure Statement =
-   struct
-      open Statement
-
-      fun isProfile (T {exp, ...}) = Exp.isProfile exp
-   end
-
 structure Array =
    struct
       open Array

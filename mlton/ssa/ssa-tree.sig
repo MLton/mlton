@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2017,2019 Matthew Fluet.
+(* Copyright (C) 2009,2017,2019,2025 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -87,6 +87,7 @@ signature SSA_TREE =
             val equals: t * t -> bool
             val foreachVar: t * (Var.t -> unit) -> unit
             val hash: t -> Word.t
+            val isProfile: t -> bool
             val layout: t -> Layout.t
             val maySideEffect: t -> bool
             val replaceVar: t * (Var.t -> Var.t) -> t
@@ -102,6 +103,7 @@ signature SSA_TREE =
 
             val clear: t -> unit (* clear the var *)
             val exp: t -> Exp.t
+            val isProfile: t -> bool
             val layout: t -> Layout.t
             val profile: ProfileExp.t -> t
             val var: t -> Var.t option
