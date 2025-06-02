@@ -1,10 +1,6 @@
 = SMLSharp
 
-http://www.pllab.riec.tohoku.ac.jp/smlsharp/[SML#] is an
+https://smlsharp.github.io/[SML#] is an
 <<StandardMLImplementations#,implementation>> of an extension of SML.
 
-It includes some
-http://www.pllab.riec.tohoku.ac.jp/smlsharp/?Tools[generally useful SML tools]
-including a pretty printer generator, a document generator, and a
-regression testing framework, and
-http://www.pllab.riec.tohoku.ac.jp/smlsharp/?Library%2FScripting[scripting library].
+It includes some generally useful SML tools including a pretty printer generator, a document generator, and a regression testing framework, and scripting library.
