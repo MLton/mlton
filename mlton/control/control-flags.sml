@@ -1495,7 +1495,7 @@ val profileStack = control {name = "profile stack",
                             default = false,
                             toString = Bool.toString}
 
-val profileTailCallOpt = control {name = "optimize tail calls when profiling",
+val profileTailCallOpt = control {name = "perform tail call optimization when profiling",
                                   default = true,
                                   toString = Bool.toString}
 

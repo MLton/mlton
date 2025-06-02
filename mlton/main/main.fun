@@ -807,7 +807,7 @@ fun makeOptions {usage} =
         boolRef profileRaise),
        (Normal, "profile-stack", " {false|true}", "profile the stack",
         boolRef profileStack),
-       (Expert, "profile-tail-call-opt", " {true|false}", "optimize tail calls when profiling",
+       (Expert, "profile-tail-call-opt", " {true|false}", "perform tail call optimization when profiling",
         boolRef profileTailCallOpt),
        (Normal, "profile-val", " {false|true}",
         "profile val bindings in addition to functions",
