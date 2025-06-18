@@ -1,4 +1,4 @@
-(* Copyright (C) 2010-2011,2013-2022,2024 Matthew Fluet.
+(* Copyright (C) 2010-2011,2013-2022,2024-2025 Matthew Fluet.
  * Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -802,11 +802,15 @@ fun makeOptions {usage} =
                             in List.push (profileInclExcl, (re, true))
                             end
            | NONE => usage (concat ["invalid -profile-include flag: ", s])))),
+       (Expert, "profile-intro-loops-opt", " {true|false}", "perform intro loops optimization when profiling",
+        boolRef profileIntroLoopsOpt),
        (Expert, "profile-raise", " {false|true}",
         "profile raises in addition to functions",
         boolRef profileRaise),
        (Normal, "profile-stack", " {false|true}", "profile the stack",
         boolRef profileStack),
+       (Expert, "profile-tail-call-opt", " {true|false}", "perform tail call optimization when profiling",
+        boolRef profileTailCallOpt),
        (Normal, "profile-val", " {false|true}",
         "profile val bindings in addition to functions",
         boolRef profileVal),
