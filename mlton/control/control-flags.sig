@@ -444,7 +444,13 @@ signature CONTROL_FLAGS =
 
       val profileStack: bool ref
 
-      val profileTailCallOpt: bool ref
+      structure ProfileTailCallOpt:
+      sig
+         datatype t = Always | Never | SelfOnly
+         val fromString: string -> t option
+         val toString: t -> string
+      end
+      val profileTailCallOpt: ProfileTailCallOpt.t ref
 
       val profileVal: bool ref
 
