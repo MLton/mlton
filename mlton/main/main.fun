@@ -802,8 +802,6 @@ fun makeOptions {usage} =
                             in List.push (profileInclExcl, (re, true))
                             end
            | NONE => usage (concat ["invalid -profile-include flag: ", s])))),
-       (Expert, "profile-intro-loops-opt", " {true|false}", "perform intro loops optimization when profiling",
-        boolRef profileIntroLoopsOpt),
        (Expert, "profile-raise", " {false|true}",
         "profile raises in addition to functions",
         boolRef profileRaise),

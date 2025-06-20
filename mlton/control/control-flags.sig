@@ -440,8 +440,6 @@ signature CONTROL_FLAGS =
 
       val profileInclExcl: (Regexp.Compiled.t * bool) list ref
 
-      val profileIntroLoopsOpt: bool ref
-
       val profileRaise: bool ref
 
       val profileStack: bool ref

@@ -1487,10 +1487,6 @@ val profileInclExcl =
                         (Layout.tuple2 (Regexp.Compiled.layout, 
                                         Bool.layout)))}
 
-val profileIntroLoopsOpt = control {name = "perform intro loops optimization when profiling",
-                                    default = true,
-                                    toString = Bool.toString}
-
 val profileRaise = control {name = "profile raise",
                             default = false,
                             toString = Bool.toString}
