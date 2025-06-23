@@ -1,5 +1,14 @@
 = CHANGELOG
 
+* 2025-06-23
+  ** Add (expert) `-profile-tail-call-opt {always|self-only|never}`
+  compile-time option that controls how the `SSA{,2}Shrink`
+  optimization optimizes tail calls in the presence of profiling.
+
+* 2025-05-23
+  ** Update SML/NJ libraries to SML/NJ 110.99.8 and fix bug in
+  `MonoBufferFn`.
+
 == Version 20241230
 
 Here are the changes from version 20210117 to 20241230.
