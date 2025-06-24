@@ -1487,10 +1487,6 @@ val profileInclExcl =
                         (Layout.tuple2 (Regexp.Compiled.layout, 
                                         Bool.layout)))}
 
-val profileIntroLoopsOpt = control {name = "perform intro loops optimization when profiling",
-                                    default = true,
-                                    toString = Bool.toString}
-
 val profileRaise = control {name = "profile raise",
                             default = false,
                             toString = Bool.toString}
@@ -1499,9 +1495,25 @@ val profileStack = control {name = "profile stack",
                             default = false,
                             toString = Bool.toString}
 
+structure ProfileTailCallOpt =
+   struct
+      datatype t = Always | Never | SelfOnly
+      val toString =
+         fn Always => "always"
+          | Never => "never"
+          | SelfOnly => "self-only"
+      val fromString =
+         fn "always" => SOME Always
+          | "true" => SOME Always
+          | "never" => SOME Never
+          | "false" => SOME Never
+          | "self-only" => SOME SelfOnly
+          | "self" => SOME SelfOnly
+          | _ => NONE
+   end
 val profileTailCallOpt = control {name = "perform tail call optimization when profiling",
-                                  default = true,
-                                  toString = Bool.toString}
+                                  default = ProfileTailCallOpt.Always,
+                                  toString = ProfileTailCallOpt.toString}
 
 val profileVal = control {name = "profile val",
                           default = false,

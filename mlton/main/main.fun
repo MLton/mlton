@@ -802,15 +802,17 @@ fun makeOptions {usage} =
                             in List.push (profileInclExcl, (re, true))
                             end
            | NONE => usage (concat ["invalid -profile-include flag: ", s])))),
-       (Expert, "profile-intro-loops-opt", " {true|false}", "perform intro loops optimization when profiling",
-        boolRef profileIntroLoopsOpt),
        (Expert, "profile-raise", " {false|true}",
         "profile raises in addition to functions",
         boolRef profileRaise),
        (Normal, "profile-stack", " {false|true}", "profile the stack",
         boolRef profileStack),
-       (Expert, "profile-tail-call-opt", " {true|false}", "perform tail call optimization when profiling",
-        boolRef profileTailCallOpt),
+       (Expert, "profile-tail-call-opt", " {always|self-only|never}", "perform tail call optimization when profiling",
+        SpaceString
+        (fn s =>
+         (case ProfileTailCallOpt.fromString s of
+             SOME ptco => profileTailCallOpt := ptco
+           | NONE => usage (concat ["invalid -profile-tail-call-opt flag: ", s])))),
        (Normal, "profile-val", " {false|true}",
         "profile val bindings in addition to functions",
         boolRef profileVal),

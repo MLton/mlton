@@ -776,20 +776,29 @@ fun shrinkFunction {globals: Statement.t vector} =
                                     (deleteLabelMeaning contMeaning
                                      ; Handler.foreachLabel (handler, deleteLabel)
                                      ; (profileStatements, Return.Tail))
+                                 fun shouldTailCallOpt profileStmts =
+                                    let
+                                       datatype z = datatype Control.ProfileTailCallOpt.t
+                                    in
+                                       List.isEmpty profileStmts
+                                       orelse
+                                       (case !Control.profileTailCallOpt of
+                                           Always => true
+                                         | SelfOnly => Func.equals (func, name)
+                                         | Never => false)
+                                    end
                                  fun cont (handler, handlerProfileStatements) =
                                     case LabelMeaning.aux contMeaning of
                                        LabelMeaning.Bug =>
                                           (case handlerProfileStatements of
                                               NONE => nonTail handler
                                             | SOME profileStmts =>
-                                                 if List.isEmpty profileStmts
-                                                    orelse !Control.profileTailCallOpt
+                                                 if shouldTailCallOpt profileStmts
                                                     then tail profileStmts
                                                  else nonTail handler)
                                      | LabelMeaning.Return {args, profileStmts} =>
                                           if isEta (contMeaning, args)
-                                             andalso (List.isEmpty profileStmts
-                                                      orelse !Control.profileTailCallOpt)
+                                             andalso shouldTailCallOpt profileStmts
                                              then tail profileStmts
                                           else nonTail handler
                                      | _ => nonTail handler
