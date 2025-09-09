@@ -482,7 +482,7 @@ ____
 == M
 
  * [[MarlowEtAl01]]
- http://community.haskell.org/~simonmar/papers/async.pdf[Asynchronous Exceptions in Haskell].
+ https://simonmar.github.io/bib/papers/async.pdf[Asynchronous Exceptions in Haskell].
  Simon Marlow, Simon Peyton Jones, Andy Moran and John Reppy.
  <<#PLDI>> 2001.
 +
