@@ -38,8 +38,8 @@ structure RunCML : RUN_CML =
          fun prepareAlrmHandler tq =
             let
                val origAlrmHandler = getAlrmHandler ()
-               val tq = 
-                  case tq of 
+               val tq =
+                  case tq of
                      SOME tq => tq
                    | NONE => Time.fromMilliseconds 20
             in
@@ -61,13 +61,14 @@ structure RunCML : RUN_CML =
           ; TO.reset ())
 
       fun alrmHandler thrd =
-         let 
+         let
             val () = Assert.assertAtomic' ("RunCML.alrmHandler", NONE)
             val () = debug' "alrmHandler" (* Atomic 1 *)
             val () = Assert.assertAtomic' ("RunCML.alrmHandler", SOME 1)
             val () = S.preempt thrd
+            val () = IOManager.pollIO ()
             val () = ignore (TO.preempt ())
-         in 
+         in
             S.next ()
          end
 
@@ -84,16 +85,17 @@ structure RunCML : RUN_CML =
             val () = Assert.assertAtomic' ("RunCML.pauseHook", NONE)
             val () = debug' "pauseHook" (* Atomic 1 *)
             val () = Assert.assertAtomic' ("RunCML.pauseHook", SOME 1)
+            val () = IOManager.pollIO ()
             val to = TO.preempt ()
          in
             case to of
                NONE =>
-                  (* no waiting threads *) 
+                  (* no waiting threads *)
                   S.prepFn (!SH.shutdownHook, fn () => (true, OS.Process.failure))
              | SOME NONE =>
                   (* enqueued a waiting thread *)
                   S.next ()
-             | SOME (SOME t) => 
+             | SOME (SOME t) =>
                   (* a waiting thread will be ready in t time *)
                   (if Time.toSeconds t <= 0
                       then ()
@@ -111,9 +113,9 @@ structure RunCML : RUN_CML =
             val (installAlrmHandler, restoreAlrmHandler) = prepareAlrmHandler tq
             val ((*cleanUp*)_, status) =
                S.switchToNext
-               (fn thrd => 
+               (fn thrd =>
                 let
-                   val () = R.isRunning := true 
+                   val () = R.isRunning := true
                    val () = reset true
                    val () = SH.shutdownHook := S.prepend (thrd, fn arg => (S.atomicBegin (); debug' "shutdownHook"; arg))
                    val () = SH.pauseHook := pauseHook
