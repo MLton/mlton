@@ -12,17 +12,17 @@ struct
 
   fun echoOrTimeoutLoop () =
     let
-      val () = print "Start of loop:\n"
+      val () = TextIO.print "Start of loop:\n"
     in
       CML.select
         [ CML.wrap (readStdInEvt, fn (_: IOManager.poll_info) =>
-            ( print "Received stdin event\n"
+            ( TextIO.print "Received stdin event\n"
             ; case readVecNB 1000 of
-                SOME s => print ("Read string: " ^ s ^ "\n")
-              | NONE => print "Read will block\n"
+                SOME s => TextIO.print ("Read string: " ^ s ^ "\n")
+              | NONE => TextIO.print "Read will block\n"
             ))
         , CML.wrap (CML.timeOutEvt (Time.fromSeconds 3), fn () =>
-            print "Timed out\n")
+            TextIO.print "Timed out\n")
         ];
       echoOrTimeoutLoop ()
     end
@@ -30,16 +30,14 @@ struct
   fun cmlMain () =
     echoOrTimeoutLoop ()
     handle e =>
-      print
+      TextIO.print
         ("Exception name: " ^ exnName e ^ " message: " ^ exnMessage e ^ "\n")
 
   fun doit _ =
     let
       val status = RunCML.doit (cmlMain, NONE)
-      val () =
-        if OS.Process.isSuccess status then print "Exit success\n"
-        else print "Exit failure\n"
     in
-      ()
+      if OS.Process.isSuccess status then print "Exit success\n"
+      else print "Exit failure\n"
     end
 end

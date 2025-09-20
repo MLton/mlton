@@ -66,7 +66,7 @@ structure RunCML : RUN_CML =
             val () = debug' "alrmHandler" (* Atomic 1 *)
             val () = Assert.assertAtomic' ("RunCML.alrmHandler", SOME 1)
             val () = S.preempt thrd
-            val () = IOManager.pollIO ()
+            val () = ignore (IOManager.preempt ())
             val () = ignore (TO.preempt ())
          in
             S.next ()
@@ -85,22 +85,29 @@ structure RunCML : RUN_CML =
             val () = Assert.assertAtomic' ("RunCML.pauseHook", NONE)
             val () = debug' "pauseHook" (* Atomic 1 *)
             val () = Assert.assertAtomic' ("RunCML.pauseHook", SOME 1)
-            val () = IOManager.pollIO ()
+            val io = IOManager.preempt ()
             val to = TO.preempt ()
          in
-            case to of
-               NONE =>
+            case (io, to) of
+               (IOManager.EMPTYQUEUE, NONE) =>
                   (* no waiting threads *)
                   S.prepFn (!SH.shutdownHook, fn () => (true, OS.Process.failure))
-             | SOME NONE =>
-                  (* enqueued a waiting thread *)
+             | (_, SOME NONE) =>
+                  (* enqueued a waiting timeout thread *)
                   S.next ()
-             | SOME (SOME t) =>
-                  (* a waiting thread will be ready in t time *)
+             | (IOManager.READIED, _) =>
+                  (* enqueued a waiting IO manager thread *)
+                  S.next ()
+             | (_, SOME (SOME t)) =>
+                  (* a waiting timeout thread will be ready in t time *)
                   (if Time.toSeconds t <= 0
                       then ()
                       else S.doMasked (fn () => OS.Process.sleep t)
                    ; pauseHook ())
+             | (IOManager.INQUEUE, _) =>
+                  (* there is a waiting IO manager thread that is not ready,
+                     so sleep a second and retry *)
+                  (OS.Process.sleep (Time.fromSeconds 1); pauseHook ())
          end
 
       fun doit (initialProc: unit -> unit,

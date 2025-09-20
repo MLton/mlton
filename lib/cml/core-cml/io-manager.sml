@@ -4,10 +4,11 @@ sig
   type iodesc
   type poll_desc
   type poll_info
+  datatype preempt_type = READIED | INQUEUE | EMPTYQUEUE
 
   val ioEvt: poll_desc -> poll_info Event.event
 
-  val pollIO: unit -> unit
+  val preempt: unit -> preempt_type
 
   val anyWaiting: unit -> bool
 
@@ -20,6 +21,7 @@ struct
   type poll_desc = OS.IO.poll_desc
   type poll_info = OS.IO.poll_info
 
+  datatype preempt_type = READIED | INQUEUE | EMPTYQUEUE
   datatype trans_id = datatype TransID.trans_id
   datatype trans_id_state = datatype TransID.trans_id_state
 
@@ -72,34 +74,46 @@ struct
     end
 
   fun enqueue
-        ( {tid as TXID (ref TRANS), cleanUp, thrd, ...}: io_wait_item
+        ( readied
+        , {tid as TXID (ref TRANS), cleanUp, thrd, ...}: io_wait_item
         , pi: poll_info
         ) =
-        (TransID.force tid; cleanUp (); S.ready (S.prepVal (thrd, pi)))
-    | enqueue ({tid = TXID (ref CANCEL), ...}, _) = ()
-
-  fun pollIO () =
-    case clean (!waiting) of
-      ([], _) => waiting := []
-    | (pds, wq) =>
-        (case poll pds of
-           [] => waiting := List.rev wq
-         | l =>
-             let
-               fun filter ([], r, wq) =
-                     waiting := List.revAppend (r, wq)
-                 | filter (pi :: pis, (item: io_wait_item) :: r, wq) =
-                     if sameDesc (pi, #pd item) then
-                       (enqueue (item, pi); filter (pis, r, wq))
-                     else
-                       filter (pi :: pis, r, item :: wq)
-                 | filter _ = raise Fail "pollIO: unreachable case"
-             in
-               filter (l, wq, [])
-             end)
+        ( readied := true
+        ; TransID.force tid
+        ; cleanUp ()
+        ; S.ready (S.prepVal (thrd, pi))
+        )
+    | enqueue (_, {tid = TXID (ref CANCEL), ...}, _) = ()
 
   fun anyWaiting () =
     case !waiting of
       [] => false
     | _ => true
+
+  fun preempt () : preempt_type =
+    case clean (!waiting) of
+      ([], _) => (waiting := []; EMPTYQUEUE)
+    | (pds, wq) =>
+        (case poll pds of
+           [] =>
+             ( waiting := List.rev wq
+             ; if anyWaiting () then INQUEUE else EMPTYQUEUE
+             )
+         | l =>
+             let
+               val readied = ref false
+               fun filter ([], r, wq) =
+                     waiting := List.revAppend (r, wq)
+                 | filter (pi :: pis, (item: io_wait_item) :: r, wq) =
+                     if sameDesc (pi, #pd item) then
+                       (enqueue (readied, item, pi); filter (pis, r, wq))
+                     else
+                       filter (pi :: pis, r, item :: wq)
+                 | filter _ = raise Fail "pollIO: unreachable case"
+             in
+               filter (l, wq, []);
+               if !readied then READIED
+               else if anyWaiting () then INQUEUE
+               else EMPTYQUEUE
+             end)
 end
