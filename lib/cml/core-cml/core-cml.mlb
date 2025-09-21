@@ -1,14 +1,74 @@
-local
-   core-cml-internal.mlb
+ann
+   "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
+   "redundantBind warn" "redundantMatch warn"
+   "sequenceNonUnit warn"
+   "warnUnused true" "forceUsed"
 in
-   signature CML
-   structure CML
+   local
+      $(SML_LIB)/basis/basis.mlb
+      $(SML_LIB)/basis/mlton.mlb
+      ../util/util.mlb
+      rep-types.sml
+      running.sml
+      trans-id.sig
+      trans-id.sml
+      cvar.sig
+      cvar.sml
+      thread-id.sig
+      thread-id.sml
+      scheduler-hooks.sig
+      scheduler-hooks.sml
+      scheduler.sig
+      scheduler.sml
+      event.sig
+      event.sml
+      io-manager.sml
+      thread.sig
+      thread.sml
+      channel.sig
+      channel.sml
+      timeout.sig
+      timeout.sml
+      version.sig
+      version.sml
+      cml.sig
+      cml.sml
 
-   signature SYNC_VAR
-   structure SyncVar
+      mailbox.sig
+      mailbox.sml
+      sync-var.sig
+      sync-var.sml
 
-   signature MAILBOX
-   structure Mailbox
+      run-cml.sig
+      run-cml.sml
 
-   structure RunCML
+      rebind.sml
+   in
+      signature CML
+      structure CML
+
+      signature EVENT
+      signature EVENT_EXTRA
+      structure Event
+
+      signature THREAD
+      structure Thread
+
+      signature SCHEDULER
+      structure Scheduler
+
+      signature SYNC_VAR
+      structure SyncVar
+
+      signature MAILBOX
+      structure Mailbox
+
+      signature TIME_OUT
+      signature TIME_OUT_EXTRA
+      structure TimeOut
+
+      structure IOManager
+
+      structure RunCML
+   end
 end
