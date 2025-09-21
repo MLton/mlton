@@ -14,12 +14,20 @@ sig
 
 end =
 struct
+  structure Assert = LocalAssert(val assert = false)
+  structure Debug = LocalDebug(val debug = false)
+
   structure E = Event
   structure S = Scheduler
 
   type iodesc = OS.IO.iodesc
   type poll_desc = OS.IO.poll_desc
   type poll_info = OS.IO.poll_info
+
+  fun debug msg =
+    Debug.sayDebug ([S.atomicMsg, S.tidMsg], msg)
+  fun debug' msg =
+    debug (fn () => msg)
 
   datatype preempt_type = READIED | INQUEUE | EMPTYQUEUE
   datatype trans_id = datatype TransID.trans_id
@@ -42,6 +50,9 @@ struct
     let
       fun blockFn {transId, cleanUp, next} =
         let
+          val () = Assert.assertAtomic' ("IOManager.ioEvt.blockFn", NONE)
+          val () = debug' "ioEvt(1.1)" (* Atomic 1 *)
+          val () = Assert.assertAtomic' ("IOManager.ioEvt(1.1)", SOME 1)
           val pi = S.atomicSwitch (fn thrd =>
             let
               val item =
@@ -50,13 +61,22 @@ struct
               waiting := item :: !waiting;
               next ()
             end)
+          val () = debug' "ioEvt(1.2)" (* NonAtomic *)
+          val () = Assert.assertNonAtomic' "IOManager.ioEvt(1.2)"
         in
           pi
         end
       fun pollFn () =
-        case poll [pd] of
-          [pi] => E.enabled {prio = ~1, doitFn = fn () => (S.atomicEnd (); pi)}
-        | _ => E.blocked blockFn
+        let
+          val () = Assert.assertAtomic' ("IOManager.ioEvt.pollFn", NONE)
+          val () = debug' "IOManager.ioEvt(2)" (* Atomic 1 *)
+          val () = Assert.assertAtomic' ("IOManager.ioEvt(2)", SOME 1)
+        in
+          case poll [pd] of
+            [pi] =>
+              E.enabled {prio = ~1, doitFn = fn () => (S.atomicEnd (); pi)}
+          | _ => E.blocked blockFn
+        end
     in
       E.bevt pollFn
     end
@@ -91,29 +111,32 @@ struct
     | _ => true
 
   fun preempt () : preempt_type =
-    case clean (!waiting) of
-      ([], _) => (waiting := []; EMPTYQUEUE)
-    | (pds, wq) =>
-        (case poll pds of
-           [] =>
-             ( waiting := List.rev wq
-             ; if anyWaiting () then INQUEUE else EMPTYQUEUE
-             )
-         | l =>
-             let
-               val readied = ref false
-               fun filter ([], r, wq) =
-                     waiting := List.revAppend (r, wq)
-                 | filter (pi :: pis, (item: io_wait_item) :: r, wq) =
-                     if sameDesc (pi, #pd item) then
-                       (enqueue (readied, item, pi); filter (pis, r, wq))
-                     else
-                       filter (pi :: pis, r, item :: wq)
-                 | filter _ = raise Fail "pollIO: unreachable case"
-             in
-               filter (l, wq, []);
-               if !readied then READIED
-               else if anyWaiting () then INQUEUE
-               else EMPTYQUEUE
-             end)
+    let
+      val () = Assert.assertAtomic' ("IOManager.preempt", NONE)
+      val () = debug' "IOManager.preempt" (* Atomic 1 *)
+      val () = Assert.assertAtomic' ("IOManager.preempt", SOME 1)
+      val readied = ref false
+    in
+      case clean (!waiting) of
+        ([], _) => waiting := []
+      | (pds, wq) =>
+          (case poll pds of
+             [] => waiting := List.rev wq
+           | l =>
+               let
+                 fun filter ([], r, wq) =
+                       waiting := List.revAppend (r, wq)
+                   | filter (pi :: pis, (item: io_wait_item) :: r, wq) =
+                       if sameDesc (pi, #pd item) then
+                         (enqueue (readied, item, pi); filter (pis, r, wq))
+                       else
+                         filter (pi :: pis, r, item :: wq)
+                   | filter _ = raise Fail "preempt: unreachable case"
+               in
+                 filter (l, wq, [])
+               end);
+      if !readied then READIED
+      else if anyWaiting () then INQUEUE
+      else EMPTYQUEUE
+    end
 end
