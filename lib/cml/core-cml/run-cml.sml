@@ -98,16 +98,21 @@ structure RunCML : RUN_CML =
              | (IOManager.READIED, _) =>
                   (* enqueued a waiting IO manager thread *)
                   S.next ()
-             | (_, SOME (SOME t)) =>
+             | (IOManager.EMPTYQUEUE, SOME (SOME t)) =>
                   (* a waiting timeout thread will be ready in t time *)
                   (if Time.toSeconds t <= 0
                       then ()
                       else S.doMasked (fn () => OS.Process.sleep t)
                    ; pauseHook ())
-             | (IOManager.INQUEUE, _) =>
-                  (* there is a waiting IO manager thread that is not ready,
-                     so sleep a second and retry *)
-                  (OS.Process.sleep (Time.fromSeconds 1); pauseHook ())
+             | (IOManager.INQUEUE pds, SOME (SOME t)) =>
+                  (* poll descriptors for t time *)
+                  (if Time.toSeconds t <= 0
+                      then ()
+                      else S.doMasked (fn () => ignore (OS.IO.poll (pds, SOME t)))
+                   ; pauseHook ())
+             | (IOManager.INQUEUE pds, NONE) =>
+                  (* poll descriptors indefinitely *)
+                  (S.doMasked (fn () => ignore (OS.IO.poll (pds, NONE))); pauseHook ())
          end
 
       fun doit (initialProc: unit -> unit,

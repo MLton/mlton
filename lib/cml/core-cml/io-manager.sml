@@ -4,7 +4,7 @@ sig
   type iodesc
   type poll_desc
   type poll_info
-  datatype preempt_type = READIED | INQUEUE | EMPTYQUEUE
+  datatype preempt_type = READIED | INQUEUE of poll_desc list | EMPTYQUEUE
 
   val ioEvt: poll_desc -> poll_info Event.event
 
@@ -29,7 +29,7 @@ struct
   fun debug' msg =
     debug (fn () => msg)
 
-  datatype preempt_type = READIED | INQUEUE | EMPTYQUEUE
+  datatype preempt_type = READIED | INQUEUE of poll_desc list | EMPTYQUEUE
   datatype trans_id = datatype TransID.trans_id
   datatype trans_id_state = datatype TransID.trans_id_state
 
@@ -105,11 +105,6 @@ struct
         )
     | enqueue (_, {tid = TXID (ref CANCEL), ...}, _) = ()
 
-  fun anyWaiting () =
-    case !waiting of
-      [] => false
-    | _ => true
-
   fun preempt () : preempt_type =
     let
       val () = Assert.assertAtomic' ("IOManager.preempt", NONE)
@@ -135,8 +130,16 @@ struct
                in
                  filter (l, wq, [])
                end);
-      if !readied then READIED
-      else if anyWaiting () then INQUEUE
-      else EMPTYQUEUE
+      if !readied then
+        READIED
+      else
+        case !waiting of
+          [] => EMPTYQUEUE
+        | items => INQUEUE (List.map #pd items)
     end
+
+  fun anyWaiting () =
+    case !waiting of
+      [] => false
+    | _ => true
 end
