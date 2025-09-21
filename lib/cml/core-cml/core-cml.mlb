@@ -47,25 +47,11 @@ in
       signature CML
       structure CML
 
-      signature EVENT
-      signature EVENT_EXTRA
-      structure Event
-
-      signature THREAD
-      structure Thread
-
-      signature SCHEDULER
-      structure Scheduler
-
       signature SYNC_VAR
       structure SyncVar
 
       signature MAILBOX
       structure Mailbox
-
-      signature TIME_OUT
-      signature TIME_OUT_EXTRA
-      structure TimeOut
 
       structure IOManager
 
