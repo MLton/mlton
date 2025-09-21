@@ -1,18 +1,18 @@
-structure IOManager:
-sig
+(* io-manager.sml
+ *  Ported to MLton threads.
+ *)
 
-  type iodesc
-  type poll_desc
-  type poll_info
-  datatype preempt_type = READIED | INQUEUE of poll_desc list | EMPTYQUEUE
-
-  val ioEvt: poll_desc -> poll_info Event.event
-
-  val preempt: unit -> preempt_type
-
-  val anyWaiting: unit -> bool
-
-end =
+(* io-manager.sml
+ *
+ * COPYRIGHT (c) 1995 AT&T Bell Laboratories.
+ * COPYRIGHT (c) 1989-1991 John H. Reppy
+ *
+ * This is a generic I/O manager for CML.  It uses the OS.IO polling
+ * mechanism.
+ * NOTE: it currently does not work if more than one thread blocks on the same
+ * descriptor.
+ *)
+structure IOManager: IO_MANAGER =
 struct
   structure Assert = LocalAssert(val assert = false)
   structure Debug = LocalDebug(val debug = false)
@@ -137,9 +137,4 @@ struct
           [] => EMPTYQUEUE
         | items => INQUEUE (List.map #pd items)
     end
-
-  fun anyWaiting () =
-    case !waiting of
-      [] => false
-    | _ => true
 end

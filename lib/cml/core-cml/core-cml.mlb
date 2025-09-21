@@ -22,6 +22,7 @@ in
       scheduler.sml
       event.sig
       event.sml
+      io-manager.sig
       io-manager.sml
       thread.sig
       thread.sml
@@ -53,6 +54,7 @@ in
       signature MAILBOX
       structure Mailbox
 
+      signature IO_MANAGER
       structure IOManager
 
       structure RunCML
