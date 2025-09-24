@@ -1,0 +1,9 @@
+local
+  $(SML_LIB)/basis/basis.mlb
+  ../core-cml/core-cml.mlb
+  ../cml.mlb
+  print.mlb
+in
+  io-manager.sml
+  run-main.sml
+end

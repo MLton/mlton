@@ -38,8 +38,8 @@ structure RunCML : RUN_CML =
          fun prepareAlrmHandler tq =
             let
                val origAlrmHandler = getAlrmHandler ()
-               val tq = 
-                  case tq of 
+               val tq =
+                  case tq of
                      SOME tq => tq
                    | NONE => Time.fromMilliseconds 20
             in
@@ -61,13 +61,14 @@ structure RunCML : RUN_CML =
           ; TO.reset ())
 
       fun alrmHandler thrd =
-         let 
+         let
             val () = Assert.assertAtomic' ("RunCML.alrmHandler", NONE)
             val () = debug' "alrmHandler" (* Atomic 1 *)
             val () = Assert.assertAtomic' ("RunCML.alrmHandler", SOME 1)
             val () = S.preempt thrd
+            val () = ignore (IOManager.preempt ())
             val () = ignore (TO.preempt ())
-         in 
+         in
             S.next ()
          end
 
@@ -84,21 +85,34 @@ structure RunCML : RUN_CML =
             val () = Assert.assertAtomic' ("RunCML.pauseHook", NONE)
             val () = debug' "pauseHook" (* Atomic 1 *)
             val () = Assert.assertAtomic' ("RunCML.pauseHook", SOME 1)
+            val io = IOManager.preempt ()
             val to = TO.preempt ()
          in
-            case to of
-               NONE =>
-                  (* no waiting threads *) 
+            case (io, to) of
+               (IOManager.EMPTYQUEUE, NONE) =>
+                  (* no waiting threads *)
                   S.prepFn (!SH.shutdownHook, fn () => (true, OS.Process.failure))
-             | SOME NONE =>
-                  (* enqueued a waiting thread *)
+             | (_, SOME NONE) =>
+                  (* enqueued a waiting timeout thread *)
                   S.next ()
-             | SOME (SOME t) => 
-                  (* a waiting thread will be ready in t time *)
+             | (IOManager.READIED, _) =>
+                  (* enqueued a waiting IO manager thread *)
+                  S.next ()
+             | (IOManager.EMPTYQUEUE, SOME (SOME t)) =>
+                  (* a waiting timeout thread will be ready in t time *)
                   (if Time.toSeconds t <= 0
                       then ()
                       else S.doMasked (fn () => OS.Process.sleep t)
                    ; pauseHook ())
+             | (IOManager.INQUEUE pds, SOME (SOME t)) =>
+                  (* poll descriptors for t time *)
+                  (if Time.toSeconds t <= 0
+                      then ()
+                      else S.doMasked (fn () => ignore (OS.IO.poll (pds, SOME t)))
+                   ; pauseHook ())
+             | (IOManager.INQUEUE pds, NONE) =>
+                  (* poll descriptors indefinitely *)
+                  (S.doMasked (fn () => ignore (OS.IO.poll (pds, NONE))); pauseHook ())
          end
 
       fun doit (initialProc: unit -> unit,
@@ -111,9 +125,9 @@ structure RunCML : RUN_CML =
             val (installAlrmHandler, restoreAlrmHandler) = prepareAlrmHandler tq
             val ((*cleanUp*)_, status) =
                S.switchToNext
-               (fn thrd => 
+               (fn thrd =>
                 let
-                   val () = R.isRunning := true 
+                   val () = R.isRunning := true
                    val () = reset true
                    val () = SH.shutdownHook := S.prepend (thrd, fn arg => (S.atomicBegin (); debug' "shutdownHook"; arg))
                    val () = SH.pauseHook := pauseHook

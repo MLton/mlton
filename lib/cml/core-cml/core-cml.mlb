@@ -1,4 +1,4 @@
-ann 
+ann
    "nonexhaustiveBind warn" "nonexhaustiveMatch warn"
    "redundantBind warn" "redundantMatch warn"
    "sequenceNonUnit warn"
@@ -22,6 +22,8 @@ in
       scheduler.sml
       event.sig
       event.sml
+      io-manager.sig
+      io-manager.sml
       thread.sig
       thread.sml
       channel.sig
@@ -51,6 +53,9 @@ in
 
       signature MAILBOX
       structure Mailbox
+
+      signature IO_MANAGER
+      structure IOManager
 
       structure RunCML
    end
