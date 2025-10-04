@@ -1,5 +1,9 @@
 = CHANGELOG
 
+* 2025-10-04
+  ** Fix bug in `Useless` SSA optimization.  Thanks to Humza Shahid
+     (hummy123) for the bug report.
+
 * 2025-06-23
   ** Add (expert) `-profile-tail-call-opt {always|self-only|never}`
   compile-time option that controls how the `SSA{,2}Shrink`

@@ -704,9 +704,11 @@ fun transform (program: Program.t): Program.t =
                val _ =
                   case prim of
                      Prim.Array_alloc _ =>
-                        Exists.whenExists
-                        (#2 (arrayEltSlot result), fn () =>
-                         Useful.makeUseful (deground (arg 0)))
+                        (coerce {from = arg 0,
+                                 to = arrayLength result}
+                         ; Exists.whenExists
+                           (#2 (arrayEltSlot result), fn () =>
+                            Useful.makeUseful (deground (arg 0))))
                    | Prim.Array_array => seq arrayElt
                    | Prim.Array_copyArray => copy arrayEltSlot
                    | Prim.Array_copyVector => copy vectorEltSlot
