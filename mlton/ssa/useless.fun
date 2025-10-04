@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2017-2021,2024 Matthew Fluet.
+(* Copyright (C) 2009,2017-2021,2024-2025 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -350,9 +350,9 @@ structure Value =
          val vectorArg = make ("Useless.vectorArg", fn arg => arg)
          val vectorEltSlot = make ("Useless.vectorEltSlot", #elt)
          val vectorElt = make ("Useless.vectorElt", #1 o #elt)
-         val vectorLength = make ("Useless.vectorLength", #length)
-         val vectorLengthAndElt =
-            make ("Useless.vectorLengthAndElt", fn {length, elt, ...} => (length, elt))
+         val vectorLength = make ("Useless.vectorLength", #1 o #length)
+         val vectorLengthAndEltSlots =
+            make ("Useless.vectorLengthAndEltSlots", fn {length, elt, ...} => (length, elt))
       end
       local
          fun make (err, sel) v =
@@ -363,9 +363,9 @@ structure Value =
          val arrayArg = make ("Useless.arrayArg", fn arg => arg)
          val arrayEltSlot = make ("Useless.arrayEltSlot", #elt)
          val arrayElt = make ("Useless.arrayElt", #1 o #elt)
-         val arrayLength = make ("Useless.arrayLength", #length)
-         val arrayLengthAndElt =
-            make ("Useless.arrayLengthAndElt", fn {length, elt, ...} => (length, elt))
+         val arrayLength = make ("Useless.arrayLength", #1 o #length)
+         val arrayLengthAndEltSlots =
+            make ("Useless.arrayLengthAndEltSlots", fn {length, elt, ...} => (length, elt))
          val arrayUseful = make ("Useless.arrayUseful", #useful)
       end
       local
@@ -687,10 +687,10 @@ fun transform (program: Program.t): Program.t =
                fun sub seqElt =
                   (arg 1 dependsOn result
                    ; return (seqElt (arg 0)))
-               fun toSeq seqLengthAndElt =
+               fun toSeq seqLengthAndEltSlots =
                   let
-                     val (l, e) = arrayLengthAndElt (arg 0)
-                     val (l', e') = seqLengthAndElt result
+                     val (l, e) = arrayLengthAndEltSlots (arg 0)
+                     val (l', e') = seqLengthAndEltSlots result
                   in
                      coerceSlot {from = l, to = l'}
                      ; coerceSlot {from = e, to = e'}
@@ -704,16 +704,18 @@ fun transform (program: Program.t): Program.t =
                val _ =
                   case prim of
                      Prim.Array_alloc _ =>
-                        Exists.whenExists
-                        (#2 (arrayEltSlot result), fn () =>
-                         Useful.makeUseful (deground (arg 0)))
+                        (coerce {from = arg 0,
+                                 to = arrayLength result}
+                         ; Exists.whenExists
+                           (#2 (arrayEltSlot result), fn () =>
+                            Useful.makeUseful (deground (arg 0))))
                    | Prim.Array_array => seq arrayElt
                    | Prim.Array_copyArray => copy arrayEltSlot
                    | Prim.Array_copyVector => copy vectorEltSlot
-                   | Prim.Array_length => length (#1 o arrayLength)
+                   | Prim.Array_length => length arrayLength
                    | Prim.Array_sub => sub arrayElt
-                   | Prim.Array_toArray => toSeq arrayLengthAndElt
-                   | Prim.Array_toVector => toSeq vectorLengthAndElt
+                   | Prim.Array_toArray => toSeq arrayLengthAndEltSlots
+                   | Prim.Array_toVector => toSeq vectorLengthAndEltSlots
                    | Prim.Array_uninit =>
                         let
                            val a = arrayElt (arg 0)
@@ -751,7 +753,7 @@ fun transform (program: Program.t): Program.t =
                    | Prim.Ref_assign => coerce {from = arg 1, to = deref (arg 0)}
                    | Prim.Ref_deref => return (deref (arg 0))
                    | Prim.Ref_ref => coerce {from = arg 0, to = deref result}
-                   | Prim.Vector_length => length (#1 o vectorLength)
+                   | Prim.Vector_length => length vectorLength
                    | Prim.Vector_sub => sub vectorElt
                    | Prim.Vector_vector => seq vectorElt
                    | Prim.Weak_canGet =>
