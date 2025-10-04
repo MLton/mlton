@@ -83,7 +83,7 @@ Here are the changes from version 20210117 to 20241230.
 
 * 2024-05-13
   ** Fix bug in `#line` directives that fails to acceptable
-  `(*#line line *"file" )`, which should be accepted with a default
+  `(*#line line "file"*)`, which should be accepted with a default
   column of 1.  Thanks to Norman Ramsey for the bug report.
 
 * 2024-03-28
