@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2017,2019-2020 Matthew Fluet.
+(* Copyright (C) 2009,2017,2019-2020,2025 Matthew Fluet.
  * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -677,35 +677,40 @@ fun transform2 (program as Program.T {datatypes, functions, globals, main}) =
                (Value.unify (arg 0, arg 1)
                 ; Value.dontFlatten (arg 0)
                 ; result ())
+            fun unifySequences (v1, v2, prim) =
+               case (Value.deObject v1, Value.deObject v2) of
+                  (NONE, NONE) => ()
+                | (SOME {args = a, ...}, SOME {args = a', ...}) =>
+                     Vector.foreach2
+                     (Prod.dest a, Prod.dest a',
+                      fn ({elt = v, ...}, {elt = v', ...}) =>
+                      Value.unify (v, v'))
+                | _ => Error.bug ("DeepFlatten.primApp: " ^ prim)
          in
             case prim of
-               Prim.Array_toArray =>
+               Prim.Array_copyArray =>
+                  let
+                     val () = unifySequences (arg 0, arg 2, "Array_copyArray")
+                  in
+                     result ()
+                  end
+             | Prim.Array_copyVector =>
+                  let
+                     val () = unifySequences (arg 0, arg 2, "Array_copyVector")
+                  in
+                     result ()
+                  end
+             | Prim.Array_toArray =>
                   let
                      val res = result ()
-                     val () =
-                        case (Value.deObject (arg 0), Value.deObject res) of
-                           (NONE, NONE) => ()
-                         | (SOME {args = a, ...}, SOME {args = a', ...}) =>
-                              Vector.foreach2
-                              (Prod.dest a, Prod.dest a',
-                               fn ({elt = v, ...}, {elt = v', ...}) =>
-                               Value.unify (v, v'))
-                         | _ => Error.bug "DeepFlatten.primApp: Array_toArray"
+                     val () = unifySequences (arg 0, res, "Array_toArray")
                   in
                      res
                   end
              | Prim.Array_toVector =>
                   let
                      val res = result ()
-                     val () =
-                        case (Value.deObject (arg 0), Value.deObject res) of
-                           (NONE, NONE) => ()
-                         | (SOME {args = a, ...}, SOME {args = a', ...}) =>
-                              Vector.foreach2
-                              (Prod.dest a, Prod.dest a',
-                               fn ({elt = v, ...}, {elt = v', ...}) =>
-                               Value.unify (v, v'))
-                         | _ => Error.bug "DeepFlatten.primApp: Array_toVector"
+                     val () = unifySequences (arg 0, res, "Array_toVector")
                   in
                      res
                   end

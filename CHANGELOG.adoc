@@ -1,5 +1,9 @@
 = CHANGELOG
 
+* 2025-10-29
+  ** Fix bug in `DeepFlatten` SSA2 optimization.  Thanks to Tom
+     Schollenberger (tommyscholly) for the bug report.
+
 * 2025-10-04
   ** Fix bug in `Useless` SSA optimization.  Thanks to Humza Shahid
      (hummy123) for the bug report.
