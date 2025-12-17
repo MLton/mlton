@@ -1,4 +1,4 @@
-(* Copyright (C) 2018 Jason Carr
+(* Copyright (C) 2018 Jason Carr, 2025 Matthew Fluet.
  *
  * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
@@ -166,6 +166,12 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
                in
                   primBoolInfo
                end
+            fun copyPrim args =
+               let
+                  val _ = TypeInfo.coerce (Vector.sub (args, 2), Vector.sub (args, 0))
+               in
+                  TypeInfo.fromType Type.unit
+               end
             fun default () =
               if case Type.dest resultType of
                       Type.Datatype tycon => Tycon.equals (tycon, primBoolTycon)
@@ -182,6 +188,8 @@ fun transform (program as Program.T {datatypes, globals, functions, main}) =
                   in
                      (ty, TypeInfo.Array)
                   end
+               | Prim.Array_copyArray => copyPrim args
+               | Prim.Array_copyVector => copyPrim args
                | Prim.Array_sub => derefPrim args
                | Prim.Array_toArray => Vector.sub (args, 0)
                | Prim.Array_toVector => Vector.sub (args, 0)
