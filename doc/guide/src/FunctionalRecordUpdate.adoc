@@ -200,13 +200,13 @@ structure FunctionalRecordUpdate =
       local
          fun next g (f, z) x = g (f x, z)
          fun f1 (f, z) x = f (z x)
-         fun f2  z = next f1  z
-         fun f3  z = next f2  z
+         fun f2 z = next f1 z
+         fun f3 z = next f2 z
 
-         fun c0  from = from
-         fun c1  from = c0  from f1
-         fun c2  from = c1  from f2
-         fun c3  from = c2  from f3
+         fun c0 from = from
+         fun c1 from = c0 from f1
+         fun c2 from = c1 from f2
+         fun c3 from = c2 from f3
 
          fun makeUpdate cX (from, from', to) record =
             let
@@ -221,8 +221,8 @@ structure FunctionalRecordUpdate =
          fun makeUpdate2  z = makeUpdate c2  z
          fun makeUpdate3  z = makeUpdate c3  z
 
-         fun upd z = Fold.step2 (fn (s, f, (vars, ops)) => (fn out => vars (s (ops ()) (out, f)), ops)) z
-         fun set z = Fold.step2 (fn (s, v, (vars, ops)) => (fn out => vars (s (ops ()) (out, fn _ => v)), ops)) z
+         fun upd s f z = Fold.step0 (fn (vars, ops) => (fn out => vars (s (ops ()) (out, f)), ops)) z
+         fun set s v z = Fold.step0 (fn (vars, ops) => (fn out => vars (s (ops ()) (out, fn _ => v)), ops)) z
       end
    end
 ----
