@@ -38,50 +38,50 @@ jobs:
             cc: "clang"
             codegen: "llvm"
 
-          - runner: "macos-13"
+          - runner: "macos-15-intel"
             cc: "clang"
             codegen: "amd64"
-          - runner: "macos-13"
+          - runner: "macos-15-intel"
             cc: "clang"
             codegen: "c"
-          - runner: "macos-13"
+          - runner: "macos-15-intel"
             cc: "clang"
             codegen: "llvm"
 
-          - runner: "macos-14"
+          - runner: "macos-15"
             cc: "clang"
             codegen: "c"
-          - runner: "macos-14"
+          - runner: "macos-15"
             cc: "clang"
             codegen: "llvm"
 
-          - runner: windows-2022
+          - runner: windows-2025
             msystem: mingw64
             cc: "gcc"
             codegen: "amd64"
-          - runner: windows-2022
+          - runner: windows-2025
             msystem: mingw64
             cc: "gcc"
             codegen: "c"
 
-          - runner: windows-2022
+          - runner: windows-2025
             msystem: ucrt64
             cc: "gcc"
             codegen: "amd64"
-          - runner: windows-2022
+          - runner: windows-2025
             msystem: ucrt64
             cc: "gcc"
             codegen: "c"
 
-          - runner: windows-2022
+          - runner: windows-2025
             msystem: clang64
             cc: "clang"
             codegen: "amd64"
-          - runner: windows-2022
+          - runner: windows-2025
             msystem: clang64
             cc: "clang"
             codegen: "c"
-          - runner: windows-2022
+          - runner: windows-2025
             msystem: clang64
             cc: "clang"
             codegen: "llvm"
@@ -109,7 +109,7 @@ jobs:
             pactoys
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install bootstrap dependencies
         uses: ./.github/actions/install-bootstrap-dependencies
@@ -164,7 +164,7 @@ jobs:
             binary-release
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: mlton.${{ matrix.runner }}${{ matrix.msystem && format('_msys2_{0}', matrix.msystem) || '' }}_${{ matrix.cc }}_${{ matrix.codegen }}
           path: ./*.tgz
