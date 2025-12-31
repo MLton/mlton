@@ -48,10 +48,10 @@ jobs:
             cc: "clang"
             codegen: "llvm"
 
-          - runner: "macos-14"
+          - runner: "macos-15"
             cc: "clang"
             codegen: "c"
-          - runner: "macos-14"
+          - runner: "macos-15"
             cc: "clang"
             codegen: "llvm"
 
