@@ -35,7 +35,7 @@ runs:
         rm mlton-20241230.aarch64-linux-gnu.tar.gz
 
     - name: Install bootstrap dependencies (macos (amd64))
-      if: ${{ contains(fromJSON('["macos-13"]'), inputs.runner) }}
+      if: ${{ contains(fromJSON('["macos-15-intel"]'), inputs.runner) }}
       shell: 'bash'
       run: |
         # Install dependencies (macos (amd64))

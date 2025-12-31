@@ -38,13 +38,13 @@ jobs:
             cc: "clang"
             codegen: "llvm"
 
-          - runner: "macos-13"
+          - runner: "macos-15-intel"
             cc: "clang"
             codegen: "amd64"
-          - runner: "macos-13"
+          - runner: "macos-15-intel"
             cc: "clang"
             codegen: "c"
-          - runner: "macos-13"
+          - runner: "macos-15-intel"
             cc: "clang"
             codegen: "llvm"
 
