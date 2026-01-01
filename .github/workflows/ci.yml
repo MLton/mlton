@@ -156,7 +156,7 @@ jobs:
             OLD_MLTON_RUNTIME_ARGS="ram-slop 0.90" \
             MLTON_RUNTIME_ARGS="ram-slop 0.90" \
             MLTON_COMPILE_ARGS="-codegen ${{ matrix.codegen }}" \
-            $( if [[ -n "$WITH_GMP_DIR" ]]; then echo "WITH_GMP_DIR=$WITH_GMP_DIR"; fi ) \
+            ${{ env.WITH_GMP_DIR && format('WITH_GMP_DIR={0}', env.WITH_GMP_DIR) || '' }} \
             WITH_ALL_RUNTIME=true \
             WITH_DBG_RUNTIME=false \
             MLTON_BINARY_RELEASE_SUFFIX="${{ env.MLTON_BINARY_RELEASE_SUFFIX }}" \
@@ -177,7 +177,7 @@ jobs:
             OLD_MLTON_RUNTIME_ARGS="ram-slop 0.90" \
             MLTON_RUNTIME_ARGS="ram-slop 0.90" \
             MLTON_COMPILE_ARGS="-codegen ${{ matrix.codegen }}" \
-            $( if [[ -n "$WITH_GMP_DIR" ]]; then echo "WITH_GMP_DIR=$WITH_GMP_DIR"; fi ) \
+            ${{ env.WITH_GMP_DIR && format('WITH_GMP_DIR={0}', env.WITH_GMP_DIR) || '' }} \
             WITH_ALL_RUNTIME=true \
             WITH_DBG_RUNTIME=false \
             MLTON_BINARY_RELEASE_SUFFIX="${{ env.MLTON_BINARY_RELEASE_SUFFIX }}" \
