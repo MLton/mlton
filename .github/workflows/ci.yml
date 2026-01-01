@@ -111,7 +111,7 @@ jobs:
         run: git config --global core.autocrlf false
 
       - name: Install msys2 (windows)
-        if: ${{ startsWith(matrix.runner, 'windows') }}
+        if: ${{ runner.os == 'Windows' }}
         uses: msys2/setup-msys2@v2
         with:
           msystem: ${{ matrix.msystem }}
