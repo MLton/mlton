@@ -93,7 +93,6 @@ jobs:
       - name: Install bootstrap dependencies
         uses: ./.github/actions/install-bootstrap-dependencies
         with:
-          runner: ${{ inputs.runner }}
           install-llvm: false
 
       - name: Download and unpack source release

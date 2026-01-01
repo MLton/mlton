@@ -47,7 +47,8 @@ jobs:
           - runner: "macos-15-intel"
             cc: "clang"
             codegen: "c"
-            homebrew_clang: true
+            install-llvm: true
+            mlton-binary-release-suffix-xtra: "homebrew_clang"
           - runner: "macos-15-intel"
             cc: "clang"
             codegen: "llvm"
@@ -58,7 +59,8 @@ jobs:
           - runner: "macos-15"
             cc: "clang"
             codegen: "c"
-            homebrew_clang: true
+            install-llvm: true
+            mlton-binary-release-suffix-xtra: "homebrew_clang"
           - runner: "macos-15"
             cc: "clang"
             codegen: "llvm"
@@ -96,6 +98,9 @@ jobs:
 
     runs-on: ${{ matrix.runner }}
 
+    env:
+      MLTON_BINARY_RELEASE_SUFFIX: ".${{ matrix.runner }}${{ matrix.msystem && format('_msys2_{0}', matrix.msystem) || '' }}_${{ matrix.cc }}_${{ matrix.codegen }}${{ matrix.mlton-binary-release-suffix-xtra && format('__{0}', matrix.mlton-binary-release-suffix-xtra) || '' }}"
+
     defaults:
       run:
         shell: ${{ (startsWith(matrix.runner, 'windows') && 'msys2 {0}') || 'bash' }}
@@ -106,7 +111,7 @@ jobs:
         run: git config --global core.autocrlf false
 
       - name: Install msys2 (windows)
-        if: ${{ startsWith(matrix.runner, 'windows') }}
+        if: ${{ runner.os == 'Windows' }}
         uses: msys2/setup-msys2@v2
         with:
           msystem: ${{ matrix.msystem }}
@@ -116,14 +121,21 @@ jobs:
             git
             pactoys
 
+      - name: Check environment
+        run: |
+          echo "runner.arch: ${{ runner.arch }}"
+          echo
+          echo "runner.os: ${{ runner.os }}"
+          echo
+          echo "PATH: $PATH"
+
       - name: Checkout
         uses: actions/checkout@v6
 
       - name: Install bootstrap dependencies
         uses: ./.github/actions/install-bootstrap-dependencies
         with:
-          runner: ${{ matrix.runner }}
-          install-llvm: ${{ matrix.codegen == 'llvm' || matrix.homebrew_clang }}
+          install-llvm: ${{ matrix.codegen == 'llvm' || matrix.install-llvm }}
 
       - name: Check versions
         run: |
@@ -144,10 +156,10 @@ jobs:
             OLD_MLTON_RUNTIME_ARGS="ram-slop 0.90" \
             MLTON_RUNTIME_ARGS="ram-slop 0.90" \
             MLTON_COMPILE_ARGS="-codegen ${{ matrix.codegen }}" \
-            $( if [[ -n "$WITH_GMP_DIR" ]]; then echo "WITH_GMP_DIR=$WITH_GMP_DIR"; fi ) \
+            ${{ env.WITH_GMP_DIR && format('WITH_GMP_DIR={0}', env.WITH_GMP_DIR) || '' }} \
             WITH_ALL_RUNTIME=true \
             WITH_DBG_RUNTIME=false \
-            MLTON_BINARY_RELEASE_SUFFIX=".${{ matrix.runner }}_${{ matrix.cc }}_${{ matrix.codegen }}" \
+            MLTON_BINARY_RELEASE_SUFFIX="${{ env.MLTON_BINARY_RELEASE_SUFFIX }}" \
             all
 
       - name: Test
@@ -165,14 +177,14 @@ jobs:
             OLD_MLTON_RUNTIME_ARGS="ram-slop 0.90" \
             MLTON_RUNTIME_ARGS="ram-slop 0.90" \
             MLTON_COMPILE_ARGS="-codegen ${{ matrix.codegen }}" \
-            $( if [[ -n "$WITH_GMP_DIR" ]]; then echo "WITH_GMP_DIR=$WITH_GMP_DIR"; fi ) \
+            ${{ env.WITH_GMP_DIR && format('WITH_GMP_DIR={0}', env.WITH_GMP_DIR) || '' }} \
             WITH_ALL_RUNTIME=true \
             WITH_DBG_RUNTIME=false \
-            MLTON_BINARY_RELEASE_SUFFIX=".${{ matrix.runner }}${{ matrix.msystem && format('_msys2_{0}', matrix.msystem) || '' }}_${{ matrix.cc }}_${{ matrix.codegen }}" \
+            MLTON_BINARY_RELEASE_SUFFIX="${{ env.MLTON_BINARY_RELEASE_SUFFIX }}" \
             binary-release
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v6
         with:
-          name: mlton.${{ matrix.runner }}${{ matrix.msystem && format('_msys2_{0}', matrix.msystem) || '' }}_${{ matrix.cc }}_${{ matrix.codegen }}
+          name: mlton${{ env.MLTON_BINARY_RELEASE_SUFFIX }}
           path: ./*.tgz
