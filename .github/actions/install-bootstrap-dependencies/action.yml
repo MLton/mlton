@@ -1,15 +1,13 @@
 name: 'Install bootstrap dependencies'
 description: 'Install dependencies to bootstrap MLton'
 inputs:
-  runner:
-    required: true
   install-llvm:
     required: true
 runs:
   using: "composite"
   steps:
     - name: Install bootstrap dependencies (ubuntu (amd64))
-      if: ${{ contains(fromJSON('["ubuntu-20.04", "ubuntu-22.04", "ubuntu-24.04"]'), inputs.runner) }}
+      if: ${{ runner.os == 'Linux' && runner.arch == 'X64' }}
       shell: 'bash'
       run: |
         # Install dependencies (ubuntu (amd64))
@@ -22,7 +20,7 @@ runs:
         rm mlton-20241230-1.amd64-linux.ubuntu-20.04_glibc2.31.tgz
 
     - name: Install bootstrap dependencies (ubuntu (arm64))
-      if: ${{ contains(fromJSON('["ubuntu-22.04-arm", "ubuntu-24.04-arm"]'), inputs.runner) }}
+      if: ${{ runner.os == 'Linux' && runner.arch == 'ARM64' }}
       shell: 'bash'
       run: |
         # Install dependencies (ubuntu (arm))
@@ -35,7 +33,7 @@ runs:
         rm mlton-20241230-1.arm64-linux.ubuntu-22.04-arm_glibc2.35.tgz
 
     - name: Install bootstrap dependencies (macos (amd64))
-      if: ${{ contains(fromJSON('["macos-15-intel"]'), inputs.runner) }}
+      if: ${{ runner.os == 'macOS' && runner.arch == 'X64' }}
       shell: 'bash'
       run: |
         # Install dependencies (macos (amd64))
@@ -49,7 +47,7 @@ runs:
         rm mlton-20241230-1.amd64-darwin.macos-13_gmp-homebrew.tgz
 
     - name: Install bootstrap dependencies (macos (arm64))
-      if: ${{ contains(fromJSON('["macos-14", "macos-15", "macos-26"]'), inputs.runner) }}
+      if: ${{ runner.os == 'macOS' && runner.arch == 'ARM64' }}
       shell: 'bash'
       run: |
         # Install dependencies (macos (arm64))
@@ -62,8 +60,8 @@ runs:
         tar xzf mlton-20241230-1.arm64-darwin.macos-14_gmp-homebrew.tgz --exclude='*/share' --strip-components=1
         rm mlton-20241230-1.arm64-darwin.macos-14_gmp-homebrew.tgz
 
-    - name: Install bootstrap dependencies (windows)
-      if: ${{ contains(fromJSON('["windows-2022", "windows-2025"]'), inputs.runner) }}
+    - name: Install bootstrap dependencies (windows (amd64)))
+      if: ${{ runner.os == 'Windows' && runner.arch == 'X64' }}
       shell: 'msys2 {0}'
       run: |
         # Install dependencies (windows)

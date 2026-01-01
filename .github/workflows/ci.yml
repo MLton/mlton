@@ -120,8 +120,6 @@ jobs:
 
       - name: Check environment
         run: |
-          echo "runner: ${{ runner }}"
-          echo
           echo "runner.arch: ${{ runner.arch }}"
           echo
           echo "runner.os: ${{ runner.os }}"
@@ -134,7 +132,6 @@ jobs:
       - name: Install bootstrap dependencies
         uses: ./.github/actions/install-bootstrap-dependencies
         with:
-          runner: ${{ matrix.runner }}
           install-llvm: ${{ matrix.codegen == 'llvm' || matrix.install-llvm }}
 
       - name: Check versions
