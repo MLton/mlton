@@ -118,6 +118,16 @@ jobs:
             git
             pactoys
 
+      - name: Check environment
+        run: |
+          echo "runner: ${{ runner }}"
+          echo
+          echo "runner.arch: ${{ runner.arch }}"
+          echo
+          echo "runner.os: ${{ runner.os }}"
+          echo
+          echo "PATH: $PATH"
+
       - name: Checkout
         uses: actions/checkout@v6
 
