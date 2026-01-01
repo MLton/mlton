@@ -47,7 +47,8 @@ jobs:
           - runner: "macos-15-intel"
             cc: "clang"
             codegen: "c"
-            homebrew_clang: true
+            install-llvm: true
+            mlton-binary-release-suffix-xtra: "homebrew_clang"
           - runner: "macos-15-intel"
             cc: "clang"
             codegen: "llvm"
@@ -58,7 +59,8 @@ jobs:
           - runner: "macos-15"
             cc: "clang"
             codegen: "c"
-            homebrew_clang: true
+            install-llvm: true
+            mlton-binary-release-suffix-xtra: "homebrew_clang"
           - runner: "macos-15"
             cc: "clang"
             codegen: "llvm"
@@ -123,7 +125,7 @@ jobs:
         uses: ./.github/actions/install-bootstrap-dependencies
         with:
           runner: ${{ matrix.runner }}
-          install-llvm: ${{ matrix.codegen == 'llvm' || matrix.homebrew_clang }}
+          install-llvm: ${{ matrix.codegen == 'llvm' || matrix.install-llvm }}
 
       - name: Check versions
         run: |
@@ -147,7 +149,7 @@ jobs:
             $( if [[ -n "$WITH_GMP_DIR" ]]; then echo "WITH_GMP_DIR=$WITH_GMP_DIR"; fi ) \
             WITH_ALL_RUNTIME=true \
             WITH_DBG_RUNTIME=false \
-            MLTON_BINARY_RELEASE_SUFFIX=".${{ matrix.runner }}_${{ matrix.cc }}_${{ matrix.codegen }}" \
+            MLTON_BINARY_RELEASE_SUFFIX=".${{ matrix.runner }}_${{ matrix.cc }}_${{ matrix.codegen }}${{ matrix.mlton-binary-release-suffix-xtra && format('__{0}', matrix.mlton-binary-release-suffix-xtra) || '' }}" \
             all
 
       - name: Test
@@ -168,11 +170,11 @@ jobs:
             $( if [[ -n "$WITH_GMP_DIR" ]]; then echo "WITH_GMP_DIR=$WITH_GMP_DIR"; fi ) \
             WITH_ALL_RUNTIME=true \
             WITH_DBG_RUNTIME=false \
-            MLTON_BINARY_RELEASE_SUFFIX=".${{ matrix.runner }}${{ matrix.msystem && format('_msys2_{0}', matrix.msystem) || '' }}_${{ matrix.cc }}_${{ matrix.codegen }}" \
+            MLTON_BINARY_RELEASE_SUFFIX=".${{ matrix.runner }}${{ matrix.msystem && format('_msys2_{0}', matrix.msystem) || '' }}_${{ matrix.cc }}_${{ matrix.codegen }}${{ matrix.mlton-binary-release-suffix-xtra && format('__{0}', matrix.mlton-binary-release-suffix-xtra) || '' }}" \
             binary-release
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v6
         with:
-          name: mlton.${{ matrix.runner }}${{ matrix.msystem && format('_msys2_{0}', matrix.msystem) || '' }}_${{ matrix.cc }}_${{ matrix.codegen }}
+          name: mlton.${{ matrix.runner }}${{ matrix.msystem && format('_msys2_{0}', matrix.msystem) || '' }}_${{ matrix.cc }}_${{ matrix.codegen }}${{ matrix.mlton-binary-release-suffix-xtra && format('__{0}', matrix.mlton-binary-release-suffix-xtra) || '' }}
           path: ./*.tgz
