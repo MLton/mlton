@@ -98,6 +98,9 @@ jobs:
 
     runs-on: ${{ matrix.runner }}
 
+    env:
+      MLTON_BINARY_RELEASE_SUFFIX: ".${{ matrix.runner }}${{ matrix.msystem && format('_msys2_{0}', matrix.msystem) || '' }}_${{ matrix.cc }}_${{ matrix.codegen }}${{ matrix.mlton-binary-release-suffix-xtra && format('__{0}', matrix.mlton-binary-release-suffix-xtra) || '' }}"
+
     defaults:
       run:
         shell: ${{ (startsWith(matrix.runner, 'windows') && 'msys2 {0}') || 'bash' }}
@@ -156,7 +159,7 @@ jobs:
             $( if [[ -n "$WITH_GMP_DIR" ]]; then echo "WITH_GMP_DIR=$WITH_GMP_DIR"; fi ) \
             WITH_ALL_RUNTIME=true \
             WITH_DBG_RUNTIME=false \
-            MLTON_BINARY_RELEASE_SUFFIX=".${{ matrix.runner }}_${{ matrix.cc }}_${{ matrix.codegen }}${{ matrix.mlton-binary-release-suffix-xtra && format('__{0}', matrix.mlton-binary-release-suffix-xtra) || '' }}" \
+            MLTON_BINARY_RELEASE_SUFFIX="${{ env.MLTON_BINARY_RELEASE_SUFFIX }}" \
             all
 
       - name: Test
@@ -177,11 +180,11 @@ jobs:
             $( if [[ -n "$WITH_GMP_DIR" ]]; then echo "WITH_GMP_DIR=$WITH_GMP_DIR"; fi ) \
             WITH_ALL_RUNTIME=true \
             WITH_DBG_RUNTIME=false \
-            MLTON_BINARY_RELEASE_SUFFIX=".${{ matrix.runner }}${{ matrix.msystem && format('_msys2_{0}', matrix.msystem) || '' }}_${{ matrix.cc }}_${{ matrix.codegen }}${{ matrix.mlton-binary-release-suffix-xtra && format('__{0}', matrix.mlton-binary-release-suffix-xtra) || '' }}" \
+            MLTON_BINARY_RELEASE_SUFFIX="${{ env.MLTON_BINARY_RELEASE_SUFFIX }}" \
             binary-release
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v6
         with:
-          name: mlton.${{ matrix.runner }}${{ matrix.msystem && format('_msys2_{0}', matrix.msystem) || '' }}_${{ matrix.cc }}_${{ matrix.codegen }}${{ matrix.mlton-binary-release-suffix-xtra && format('__{0}', matrix.mlton-binary-release-suffix-xtra) || '' }}
+          name: mlton${{ env.MLTON_BINARY_RELEASE_SUFFIX }}
           path: ./*.tgz
