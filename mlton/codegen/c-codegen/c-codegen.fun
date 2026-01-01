@@ -1,4 +1,4 @@
-(* Copyright (C) 2009,2014-2017,2019-2022 Matthew Fluet.
+(* Copyright (C) 2009,2014-2017,2019-2022,2025 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1121,21 +1121,26 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                val flushFrontier = mk (gcStateFrontier, frontier)
             end
             (* StackTop += size *)
-            fun adjStackTop (size: Bytes.t) =
-               (outputStatement (Statement.PrimApp
-                                 {args = Vector.new2
-                                         (Operand.StackTop,
-                                          Operand.word
-                                          (WordX.fromBytes
-                                           (size,
-                                            WordSize.cptrdiff ()))),
-                                  dst = SOME Operand.StackTop,
-                                  prim = Prim.CPointer_add})
-                ; if amTimeProfiling
-                     then flushStackTop ()
+            local
+               fun adjStackTop prim (size: Bytes.t) =
+                  (outputStatement (Statement.PrimApp
+                                    {args = Vector.new2
+                                            (Operand.StackTop,
+                                             Operand.word
+                                             (WordX.fromBytes
+                                              (size,
+                                               WordSize.cptrdiff ()))),
+                                     dst = SOME Operand.StackTop,
+                                     prim = prim})
+                   ; if amTimeProfiling
+                        then flushStackTop ()
                      else ())
+            in
+               val incStackTop = adjStackTop Prim.CPointer_add
+               val decStackTop = adjStackTop Prim.CPointer_sub
+            end
             fun pop (fi: FrameInfo.t) =
-               adjStackTop (Bytes.~ (FrameInfo.size fi))
+               decStackTop (FrameInfo.size fi)
             fun push (return: Label.t, size: Bytes.t) =
                (outputStatement (Statement.Move
                                  {dst = Operand.stackOffset
@@ -1143,7 +1148,7 @@ fun output {program as Machine.Program.T {chunks, frameInfos, main, ...},
                                          ty = Type.label return,
                                          volatile = amTimeProfiling},
                                   src = Operand.Label return})
-                ; adjStackTop size)
+                ; incStackTop size)
             fun copyArgs (args: Operand.t vector): string list * (unit -> unit) =
                let
                   fun usesStack z =
