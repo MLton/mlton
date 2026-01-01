@@ -46,11 +46,19 @@ jobs:
             codegen: "c"
           - runner: "macos-15-intel"
             cc: "clang"
+            codegen: "c"
+            homebrew_clang: true
+          - runner: "macos-15-intel"
+            cc: "clang"
             codegen: "llvm"
 
           - runner: "macos-15"
             cc: "clang"
             codegen: "c"
+          - runner: "macos-15"
+            cc: "clang"
+            codegen: "c"
+            homebrew_clang: true
           - runner: "macos-15"
             cc: "clang"
             codegen: "llvm"
@@ -115,7 +123,7 @@ jobs:
         uses: ./.github/actions/install-bootstrap-dependencies
         with:
           runner: ${{ matrix.runner }}
-          install-llvm: ${{ matrix.codegen == 'llvm' }}
+          install-llvm: ${{ matrix.codegen == 'llvm' || matrix.homebrew_clang }}
 
       - name: Check versions
         run: |
