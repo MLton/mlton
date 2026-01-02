@@ -65,9 +65,12 @@ jobs:
 
     env:
       MLTON_VERSION: ${{ inputs.mlton-version }}
-      MLTON_BINARY_RELEASE_SUFFIX: ".${{ inputs.runner }}${{ inputs.msystem && format('_msys2_{0}', inputs.msystem) || '' }}${{ inputs.mlton-binary-release-suffix-xtra && format('_{0}', inputs.mlton-binary-release-suffix-xtra) || '' }}"
 
     steps:
+      - name: Evaluate MLTON_BINARY_RELEASE_SUFFIX
+        shell: bash
+        run: echo "MLTON_BINARY_RELEASE_SUFFIX=.${{ inputs.runner }}${{ inputs.msystem && format('_msys2_{0}', inputs.msystem) || '' }}${{ inputs.mlton-binary-release-suffix-xtra && format('_{0}', inputs.mlton-binary-release-suffix-xtra) || '' }}" >> $GITHUB_ENV
+
       - name: Configure git
         run: git config --global core.autocrlf false
         shell: bash
@@ -112,6 +115,7 @@ jobs:
             MLTON_RUNTIME_ARGS="ram-slop 0.90 ${{ inputs.mlton-runtime-args }}" \
             MLTON_COMPILE_ARGS="${{ inputs.mlton-compile-args }}" \
             ${{ env.WITH_GMP_DIR && format('WITH_GMP_DIR={0}', env.WITH_GMP_DIR) || '' }} \
+            MLTON_VERSION="${{ env.MLTON_VERSION }}" \
             MLTON_BINARY_RELEASE_SUFFIX="${{ env.MLTON_BINARY_RELEASE_SUFFIX }}" \
             binary-release
 
