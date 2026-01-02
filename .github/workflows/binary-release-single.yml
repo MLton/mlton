@@ -24,7 +24,7 @@ on:
       mlton-compile-args:
         required: false
         type: string
-      mlton-binary-release-suffix:
+      mlton-binary-release-suffix-xtra:
         required: false
         type: string
   workflow_call:
@@ -50,7 +50,7 @@ on:
       mlton-compile-args:
         required: false
         type: string
-      mlton-binary-release-suffix:
+      mlton-binary-release-suffix-xtra:
         required: false
         type: string
 
@@ -65,7 +65,7 @@ jobs:
 
     env:
       MLTON_VERSION: ${{ inputs.mlton-version }}
-      RUNNER: ${{ inputs.runner }}
+      MLTON_BINARY_RELEASE_SUFFIX: ".${{ inputs.runner }}${{ inputs.msystem && format('_msys2_{0}', inputs.msystem) || '' }}${{ inputs.mlton-binary-release-suffix-xtra && format('_{0}', inputs.mlton-binary-release-suffix-xtra) || '' }}"
 
     steps:
       - name: Configure git
@@ -73,7 +73,7 @@ jobs:
         shell: bash
 
       - name: Install msys2 (windows)
-        if: ${{ startsWith(inputs.runner, 'windows') }}
+        if: ${{ runner.os == 'Windows' }}
         uses: msys2/setup-msys2@v2
         with:
           msystem: ${{ inputs.msystem }}
@@ -111,8 +111,8 @@ jobs:
             OLD_MLTON_COMPILE_ARGS="${{ inputs.old-mlton-compile-args }}" \
             MLTON_RUNTIME_ARGS="ram-slop 0.90 ${{ inputs.mlton-runtime-args }}" \
             MLTON_COMPILE_ARGS="${{ inputs.mlton-compile-args }}" \
-            $( if [[ -n "$WITH_GMP_DIR" ]]; then echo "WITH_GMP_DIR=$WITH_GMP_DIR"; fi ) \
-            MLTON_BINARY_RELEASE_SUFFIX="${{ inputs.mlton-binary-release-suffix }}" \
+            ${{ env.WITH_GMP_DIR && format('WITH_GMP_DIR={0}', env.WITH_GMP_DIR) || '' }} \
+            MLTON_BINARY_RELEASE_SUFFIX="${{ env.MLTON_BINARY_RELEASE_SUFFIX }}" \
             binary-release
 
       - name: Upload binary release
