@@ -91,6 +91,12 @@ jobs:
           pacboy: >-
             github-cli:p
 
+      - name: Checkout
+        if: ${{ env.MLTON_BINARY_RELEASE_ARTIFACT_EXISTS != 'true' }}
+        uses: actions/checkout@v6
+        with:
+          sparse-checkout: .github
+
       - name: Download and unpack source release
         run: |
           curl --fail -s -O -L https://github.com/${{ github.repository }}/releases/download/on-${{ inputs.mlton-version }}-release/mlton-${{ inputs.mlton-version }}.src.tgz
@@ -114,17 +120,10 @@ jobs:
           export MLTON_BINARY_RELEASE_NAME=mlton-${MLTON_VERSION}-${MLTON_BINARY_RELEASE}.${MLTON_TARGET_ARCH}-${MLTON_TARGET_OS}${MLTON_BINARY_RELEASE_SUFFIX}
           echo "MLTON_BINARY_RELEASE_NAME=${MLTON_BINARY_RELEASE_NAME}" >> $GITHUB_ENV
 
-      - name: Check if artifact exists
+      - name: Check if binary release artifact exists
         run: echo MLTON_BINARY_RELEASE_ARTIFACT_EXISTS=$(gh release view --json assets -q '[.assets[] | .name | ascii_downcase | . == ("${{ env.MLTON_BINARY_RELEASE_NAME }}.tgz" | ascii_downcase)] | any' -R MLton/mlton) >> $GITHUB_ENV
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Checkout
-        if: ${{ env.MLTON_BINARY_RELEASE_ARTIFACT_EXISTS != 'true' }}
-        uses: actions/checkout@v6
-        with:
-          clean: false
-          sparse-checkout: .github
 
       - name: Install bootstrap dependencies
         if: ${{ env.MLTON_BINARY_RELEASE_ARTIFACT_EXISTS != 'true' }}
