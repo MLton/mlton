@@ -149,6 +149,6 @@ jobs:
 
       - name: Upload binary release
         if: ${{ env.MLTON_BINARY_RELEASE_ARTIFACT_EXISTS != 'true' }}
-        run: gh release upload on-${{ inputs.mlton-version }}-release mlton-${{ inputs.mlton-version }}*.tgz --clobber
+        run: gh release upload on-${{ inputs.mlton-version }}-release mlton-${{ inputs.mlton-version }}*.tgz
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
