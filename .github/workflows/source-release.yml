@@ -15,17 +15,33 @@ on:
 jobs:
   source-release:
     runs-on: ubuntu-24.04
+
+    env:
+      MLTON_VERSION: ${{ inputs.mlton-version }}
+
     steps:
+      - name: Check if source release artifact exists
+        run: echo MLTON_SOURCE_RELEASE_ARTIFACT_EXISTS=$(gh release view --json assets -q '[.assets[] | .name | ascii_downcase | . == ("mlton-${{ env.MLTON_VERSION }}.src.tgz" | ascii_downcase)] | any' -R MLton/mlton) >> $GITHUB_ENV
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Checkout
+        if: ${{ env.MLTON_SOURCE_RELEASE_ARTIFACT_EXISTS != 'true' }}
         uses: actions/checkout@v6
         with:
           ref: on-${{ inputs.mlton-version }}-release
           fetch-depth: 0
+
       - name: Install guide dependencies
+        if: ${{ env.MLTON_SOURCE_RELEASE_ARTIFACT_EXISTS != 'true' }}
         uses: ./.github/actions/install-guide-dependencies
+
       - name: Make source release
+        if: ${{ env.MLTON_SOURCE_RELEASE_ARTIFACT_EXISTS != 'true' }}
         run: make MLTON_VERSION="${{ inputs.mlton-version }}" source-release
+
       - name: Upload source release
-        run: gh release upload on-${{ inputs.mlton-version }}-release mlton-${{ inputs.mlton-version }}.src.tgz --clobber
+        if: ${{ env.MLTON_SOURCE_RELEASE_ARTIFACT_EXISTS != 'true' }}
+        run: gh release upload on-${{ inputs.mlton-version }}-release mlton-${{ inputs.mlton-version }}.src.tgz
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

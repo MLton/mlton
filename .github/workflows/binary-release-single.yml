@@ -24,7 +24,10 @@ on:
       mlton-compile-args:
         required: false
         type: string
-      mlton-binary-release-suffix:
+      mlton-binary-release:
+        required: false
+        type: string
+      mlton-binary-release-suffix-xtra:
         required: false
         type: string
   workflow_call:
@@ -50,7 +53,10 @@ on:
       mlton-compile-args:
         required: false
         type: string
-      mlton-binary-release-suffix:
+      mlton-binary-release:
+        required: false
+        type: string
+      mlton-binary-release-suffix-xtra:
         required: false
         type: string
 
@@ -65,7 +71,7 @@ jobs:
 
     env:
       MLTON_VERSION: ${{ inputs.mlton-version }}
-      RUNNER: ${{ inputs.runner }}
+      MLTON_BINARY_RELEASE: ${{ inputs.mlton-binary-release || '1' }}
 
     steps:
       - name: Configure git
@@ -73,7 +79,7 @@ jobs:
         shell: bash
 
       - name: Install msys2 (windows)
-        if: ${{ startsWith(inputs.runner, 'windows') }}
+        if: ${{ runner.os == 'Windows' }}
         uses: msys2/setup-msys2@v2
         with:
           msystem: ${{ inputs.msystem }}
@@ -86,23 +92,47 @@ jobs:
             github-cli:p
 
       - name: Checkout
+        if: ${{ env.MLTON_BINARY_RELEASE_ARTIFACT_EXISTS != 'true' }}
         uses: actions/checkout@v6
         with:
           sparse-checkout: .github
 
+      - name: Download and unpack source release
+        run: |
+          curl --fail -s -O -L https://github.com/${{ github.repository }}/releases/download/on-${{ inputs.mlton-version }}-release/mlton-${{ inputs.mlton-version }}.src.tgz
+          tar xzf mlton-${{ inputs.mlton-version }}.src.tgz --strip-components=1 || \
+          tar xzf mlton-${{ inputs.mlton-version }}.src.tgz --strip-components=1
+          rm mlton-${{ inputs.mlton-version }}.src.tgz
+
+      - name: Evaluate environment variables
+        shell: bash
+        run: |
+          export MLTON_HOST_ARCH=$(./bin/host-arch)
+          echo "MLTON_HOST_ARCH=$MLTON_HOST_ARCH" >> $GITHUB_ENV
+          export MLTON_TARGET_ARCH=${MLTON_HOST_ARCH}
+          echo "MLTON_TARGET_ARCH=$MLTON_TARGET_ARCH" >> $GITHUB_ENV
+          export MLTON_HOST_OS=$(./bin/host-os)
+          echo "MLTON_HOST_OS=$MLTON_HOST_OS" >> $GITHUB_ENV
+          export MLTON_TARGET_OS=${MLTON_HOST_OS}
+          echo "MLTON_TARGET_OS=$MLTON_TARGET_OS" >> $GITHUB_ENV
+          export MLTON_BINARY_RELEASE_SUFFIX=.${{ inputs.runner }}${{ inputs.msystem && format('_msys2_{0}', inputs.msystem) || '' }}${{ inputs.mlton-binary-release-suffix-xtra && format('_{0}', inputs.mlton-binary-release-suffix-xtra) || '' }}
+          echo "MLTON_BINARY_RELEASE_SUFFIX=$MLTON_BINARY_RELEASE_SUFFIX" >> $GITHUB_ENV
+          export MLTON_BINARY_RELEASE_NAME=mlton-${MLTON_VERSION}-${MLTON_BINARY_RELEASE}.${MLTON_TARGET_ARCH}-${MLTON_TARGET_OS}${MLTON_BINARY_RELEASE_SUFFIX}
+          echo "MLTON_BINARY_RELEASE_NAME=${MLTON_BINARY_RELEASE_NAME}" >> $GITHUB_ENV
+
+      - name: Check if binary release artifact exists
+        run: echo MLTON_BINARY_RELEASE_ARTIFACT_EXISTS=$(gh release view --json assets -q '[.assets[] | .name | ascii_downcase | . == ("${{ env.MLTON_BINARY_RELEASE_NAME }}.tgz" | ascii_downcase)] | any' -R MLton/mlton) >> $GITHUB_ENV
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Install bootstrap dependencies
+        if: ${{ env.MLTON_BINARY_RELEASE_ARTIFACT_EXISTS != 'true' }}
         uses: ./.github/actions/install-bootstrap-dependencies
         with:
           install-llvm: false
 
-      - name: Download and unpack source release
-        run: |
-          curl --fail -s -O -L https://github.com/${{ github.repository }}/releases/download/on-${{ inputs.mlton-version }}-release/mlton-${{ inputs.mlton-version }}.src.tgz
-          tar xzf mlton-${{ inputs.mlton-version }}.src.tgz --strip-components=1 || true
-          tar xzf mlton-${{ inputs.mlton-version }}.src.tgz --strip-components=1
-          rm mlton-${{ inputs.mlton-version }}.src.tgz
-
       - name: Make binary release
+        if: ${{ env.MLTON_BINARY_RELEASE_ARTIFACT_EXISTS != 'true' }}
         run: |
           # make binary-release
           PATH=$(pwd)/boot/bin:$PATH \
@@ -111,11 +141,14 @@ jobs:
             OLD_MLTON_COMPILE_ARGS="${{ inputs.old-mlton-compile-args }}" \
             MLTON_RUNTIME_ARGS="ram-slop 0.90 ${{ inputs.mlton-runtime-args }}" \
             MLTON_COMPILE_ARGS="${{ inputs.mlton-compile-args }}" \
-            $( if [[ -n "$WITH_GMP_DIR" ]]; then echo "WITH_GMP_DIR=$WITH_GMP_DIR"; fi ) \
-            MLTON_BINARY_RELEASE_SUFFIX="${{ inputs.mlton-binary-release-suffix }}" \
+            ${{ env.WITH_GMP_DIR && format('WITH_GMP_DIR={0}', env.WITH_GMP_DIR) || '' }} \
+            MLTON_VERSION="${{ env.MLTON_VERSION }}" \
+            MLTON_BINARY_RELEASE="${{ env.MLTON_BINARY_RELEASE }}" \
+            MLTON_BINARY_RELEASE_SUFFIX="${{ env.MLTON_BINARY_RELEASE_SUFFIX }}" \
             binary-release
 
       - name: Upload binary release
-        run: gh release upload on-${{ inputs.mlton-version }}-release mlton-${{ inputs.mlton-version }}*.tgz --clobber
+        if: ${{ env.MLTON_BINARY_RELEASE_ARTIFACT_EXISTS != 'true' }}
+        run: gh release upload on-${{ inputs.mlton-version }}-release mlton-${{ inputs.mlton-version }}*.tgz
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
