@@ -34,12 +34,26 @@ fun mkstemps {prefix, suffix}: string * outstream =
 
 fun mkstemp s = mkstemps {prefix = s, suffix = ""}
 
-fun tempPrefix file =
-   case MLtonPlatform.OS.host of
-      MLtonPlatform.OS.MinGW =>
-      (case MinGW.getTempPath () of
-          SOME d => d
-        | NONE => "C:\\temp\\") ^ file
-    | _ => "/tmp/" ^ file
+local
+   fun tmpdir () =
+      case OS.Process.getEnv "TMPDIR" of
+         NONE => NONE
+       | SOME d =>
+         if OS.Path.isAbsolute d andalso OS.Path.isCanonical d
+            andalso OS.FileSys.isDir d
+            then SOME d
+         else NONE
+in
+   fun tempPrefix file =
+      case tmpdir () of
+         SOME d => OS.Path.joinDirFile {dir = d, file = file}
+       | NONE =>
+         case MLtonPlatform.OS.host of
+            MLtonPlatform.OS.MinGW =>
+            (case MinGW.getTempPath () of
+                SOME d => d
+              | NONE => "C:\\temp\\") ^ file
+          | _ => "/tmp/" ^ file
+end
 
 end
