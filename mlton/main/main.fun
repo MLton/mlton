@@ -1,4 +1,4 @@
-(* Copyright (C) 2010-2011,2013-2022,2024-2025 Matthew Fluet.
+(* Copyright (C) 2010-2011,2013-2022,2024-2026 Matthew Fluet.
  * Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1632,7 +1632,7 @@ fun commandLine (_: string, args: string list): unit =
                       | Place.Generated => compileCSO (input :: csoFiles)
                       | Place.O => compileCSO (input :: csoFiles)
                       | Place.XML => compileSrc #xml
-                      | Place.SXML => compileSrc #xml
+                      | Place.SXML => compileSrc #sxml
                       | Place.SSA => compileSrc #ssa
                       | Place.SSA2 => compileSrc #ssa2
                       | _ => Error.bug "invalid start"
