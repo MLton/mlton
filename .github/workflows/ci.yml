@@ -38,30 +38,30 @@ jobs:
             cc: "clang"
             codegen: "llvm"
 
-          - runner: "macos-15-intel"
+          - runner: "macos-26-intel"
             cc: "clang"
             codegen: "amd64"
-          - runner: "macos-15-intel"
+          - runner: "macos-26-intel"
             cc: "clang"
             codegen: "c"
-          - runner: "macos-15-intel"
+          - runner: "macos-26-intel"
             cc: "clang"
             codegen: "c"
             install-llvm: true
             mlton-binary-release-suffix-xtra: "homebrew_clang"
-          - runner: "macos-15-intel"
+          - runner: "macos-26-intel"
             cc: "clang"
             codegen: "llvm"
 
-          - runner: "macos-15"
+          - runner: "macos-26"
             cc: "clang"
             codegen: "c"
-          - runner: "macos-15"
+          - runner: "macos-26"
             cc: "clang"
             codegen: "c"
             install-llvm: true
             mlton-binary-release-suffix-xtra: "homebrew_clang"
-          - runner: "macos-15"
+          - runner: "macos-26"
             cc: "clang"
             codegen: "llvm"
 
@@ -184,7 +184,7 @@ jobs:
             binary-release
 
       - name: Upload Artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
-          name: mlton${{ env.MLTON_BINARY_RELEASE_SUFFIX }}
+          archive: false
           path: ./*.tgz
