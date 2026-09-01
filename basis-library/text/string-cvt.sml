@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2026 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -59,6 +60,11 @@ structure StringCvt: STRING_CVT_EXTRA =
 
       fun takel p f s = #1 (splitl p f s)
       fun dropl p f s = #2 (splitl p f s)
+
+      fun map f reader s =
+         case reader s of
+            NONE => NONE
+          | SOME (c, s) => SOME (f c, s)
 
       type cs = int
 

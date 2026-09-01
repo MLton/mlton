@@ -1,4 +1,4 @@
-(* Copyright (C) 2013,2016-2017,2022 Matthew Fluet.
+(* Copyright (C) 2013,2016-2017,2022,2026 Matthew Fluet.
  * Copyright (C) 2004-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -126,8 +126,6 @@ in
    ../util/reader.sml
    ../text/string-cvt.sig
    ../text/string-cvt.sml
-   ../general/bool.sig
-   ../general/bool.sml
    ../integer/integer.sig
    ../integer/int.sml
    ../integer/word.sig
@@ -191,6 +189,9 @@ in
    ../text/substring-global.sml
    ../text/byte.sig
    ../text/byte.sml
+
+   ../general/bool.sig
+   ../general/bool.sml
 
    ../text/nullstring.sml
    ../util/CUtil.sig
