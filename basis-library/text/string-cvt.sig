@@ -28,6 +28,8 @@ signature STRING_CVT_EXTRA =
    sig
       include STRING_CVT
 
+      val map: (char -> char) -> (char, 'a) reader -> (char, 'a) reader
+
       val radixToInt: radix -> int
       val radixToWord: radix -> word
       val charToDigit: radix -> char -> int option
