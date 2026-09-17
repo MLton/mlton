@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2012,2015,2017,2019-2020,2024 Matthew Fluet.
+(* Copyright (C) 2009-2012,2015,2017,2019-2020,2024,2026 Matthew Fluet.
  * Copyright (C) 1999-2008 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -3765,7 +3765,7 @@ fun elaborateDec (d, {env = E, nest}) =
                                                      in
                                                         if Type.canUnify
                                                            (instance, #instance is)
-                                                           then SOME (x, SOME is)
+                                                           then SOME (x, is)
                                                            else NONE
                                                      end) of
                                                   NONE =>
@@ -3785,10 +3785,9 @@ fun elaborateDec (d, {env = E, nest}) =
                                                          args = Vector.new0 ()}
                                                      end
                                                 | SOME (y, is) =>
-                                                     (unify (instance,
-                                                             #instance (valOf is), fn _ =>
+                                                     (unify (instance, #instance is, fn _ =>
                                                              Error.bug "ElaborateCore.elabExp: Var:overload unify")
-                                                      ; {id = y, args = #args (valOf is) ()}))
+                                                      ; {id = y, args = #args is ()}))
                                            val _ =
                                               List.push (overloadChecks, (p, ignore o resolve))
                                         in
