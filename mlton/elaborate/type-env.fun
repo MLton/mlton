@@ -1,4 +1,4 @@
-(* Copyright (C) 2009-2010,2012,2017 Matthew Fluet.
+(* Copyright (C) 2009-2010,2012,2017,2026 Matthew Fluet.
  * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
@@ -1016,23 +1016,31 @@ structure Type =
       fun canUnify arg = 
          traceCanUnify
          (fn (t, t') =>
-          case (getTy t, getTy t') of
-             (Unknown _,  _) => true
-           | (_, Unknown _) => true
-           | (Con (c, ts), t') => conAnd (c, ts, t')
-           | (t', Con (c, ts)) => conAnd (c, ts, t')
-           | (Overload o1, Overload o2) => Overload.equals (o1, o2)
-           | (Record r, Record r') =>
-                let
-                   val fs = Srecord.toVector r
-                   val fs' = Srecord.toVector r'
-                in Vector.length fs = Vector.length fs'
-                   andalso Vector.forall2 (fs, fs', fn ((f, t), (f', t')) =>
-                                           Field.equals (f, f')
-                                           andalso canUnify (t, t'))
-                end
-           | (Var a, Var a') => Tyvar.equals (a, a')
-           | _ => false) arg
+          let
+             fun canUnifyEquality () =
+                case (!(equality t), !(equality t')) of
+                   (Equality.True, Equality.False) => false
+                 | (Equality.False, Equality.True) => false
+                 | _ => true
+          in
+             case (getTy t, getTy t') of
+                (Unknown _,  _) => canUnifyEquality ()
+              | (_, Unknown _) => canUnifyEquality ()
+              | (Con (c, ts), t') => conAnd (c, ts, t')
+              | (t', Con (c, ts)) => conAnd (c, ts, t')
+              | (Overload o1, Overload o2) => Overload.equals (o1, o2)
+              | (Record r, Record r') =>
+                   let
+                      val fs = Srecord.toVector r
+                      val fs' = Srecord.toVector r'
+                   in Vector.length fs = Vector.length fs'
+                      andalso Vector.forall2 (fs, fs', fn ((f, t), (f', t')) =>
+                                              Field.equals (f, f')
+                                              andalso canUnify (t, t'))
+                   end
+              | (Var a, Var a') => Tyvar.equals (a, a')
+              | _ => false
+          end) arg
       and conAnd (c, ts, t') =
          case t' of
             Con (c', ts') =>
