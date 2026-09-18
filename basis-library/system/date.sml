@@ -1,4 +1,5 @@
 (* Modified from the ML Kit 4.1.4; basislib/Date.sml
+ * by Matthew.Fluet@gmail.com on 2026-09-18
  * by mfluet@acm.org on 2017-04-07
  * by mfluet@acm.org on 2006-4-25
  * by mfluet@acm.org on 2005-8-10 based on
@@ -523,20 +524,24 @@ structure Date :> DATE =
        if year < 0 then raise Date 
        else
           let
-             val (dayoffset, offset') = 
+             val (day, offset) =
                 case offset of
-                   NONE => (0, NONE)
-                 | SOME time => 
+                   NONE => (day, NONE)
+                 | SOME time =>
                       let
                          val secs = Time.toSeconds time
-                         val secoffset = 
-                            if secs <= 82800 then ~secs else 86400 - secs
+                         val (sign, secs) =
+                            if secs < 0
+                               then (~1, ~secs)
+                            else (1, secs)
+                         val (dayoffset, secoffset) =
+                            (Int.quot (secs, 86400),
+                             Int.rem (secs, 86400))
                       in
-                         (Int.quot (secs, 86400), SOME secoffset)
+                         (day + sign * dayoffset, SOME (sign * secoffset))
                       end
-             val day' = day + dayoffset
           in
-             normalizedate year month day' hour minute second offset'
+             normalizedate year month day hour minute second offset
           end
 
     fun offset (T {offset, ...}) = 
