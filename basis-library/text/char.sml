@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2026 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -271,7 +272,8 @@ functor CharFn(Arg : CHAR_ARG)
                      if Char.>= (c, #" ") andalso Char.<= (c, #"~")
                         then
                            case c of
-                              #"\\" => escape state
+                              #"\"" => NONE
+                            | #"\\" => escape state
                             | _ => SOME (fromChar c, state)
                      else NONE
          in
