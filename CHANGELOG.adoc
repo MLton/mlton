@@ -1,8 +1,13 @@
 = CHANGELOG
 
+* 2026-09-17
+  ** Fix bug in handling of overload resolution with respect to
+  equality types.  Thanks to Byron Zhong (zbyrg) for the bug report
+  and to Yawar Raza (YawarRaza7349) for the suggested fix.
+
 * 2026-09-01
   ** Fix minor bugs with `Bool.scan` implementation.  Thanks to
-  Skyb0rg007 (Skye Soss) for the bug report.
+  Sky Soss (Skyb0rg007) for the bug report.
 
 * 2025-12-31
   ** Fix undefined behavior due to pointer addition overflow in code
