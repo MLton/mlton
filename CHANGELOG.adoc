@@ -1,6 +1,11 @@
 = CHANGELOG
 
 * 2026-09-18
+  ** Fix bug in `Date.date` that misinterpreted the `offset` argument.
+  Thanks to https://github.com/Skyb0rg007/sml-basis-tests for the
+  (implicit) bug report.
+
+* 2026-09-18
   ** Fix bug in `Char.fromCString` and `String.fromCString` that
   erroneously accepted an unescaped double quote character.
   Thanks to https://github.com/Skyb0rg007/sml-basis-tests for
