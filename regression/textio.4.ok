@@ -1,0 +1,15 @@
+openString "x"
+endOfStream = false
+inputAll = "x"
+endOfStream = true
+inputAll = ""
+endOfStream = true
+
+openString "abc"
+endOfStream = false
+input1 = "a"
+endOfStream = false
+inputAll = "bc"
+endOfStream = true
+inputAll = ""
+endOfStream = true

@@ -1,4 +1,4 @@
-(* Copyright (C) 2013,2017,2023 Matthew Fluet.
+(* Copyright (C) 2013,2017,2023,2026 Matthew Fluet.
  * Copyright (C) 2002-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -426,6 +426,7 @@ fun inputAll (ib as In {state, ...}) =
                 val f = !first
                 val l = !last
                 val inp = AS.vector (AS.slice (buf, f, SOME (l - f)))
+                val _ = first := l
                 val inps = [inp]
                 fun loop inps =
                    let
