@@ -1,6 +1,11 @@
 = CHANGELOG
 
 * 2026-09-18
+  ** Fix bug in `TextIO.inputAll` (and `BinIO.inputAll`) that failed
+  to properly set `endOfStream`.  Thanks to Skye Soss (Skyb0rg007) for
+  the bug report.
+
+* 2026-09-18
   ** Fix bug in `Date.date` that misinterpreted the `offset` argument.
   Thanks to https://github.com/Skyb0rg007/sml-basis-tests for the
   (implicit) bug report.
@@ -18,7 +23,7 @@
 
 * 2026-09-01
   ** Fix minor bugs with `Bool.scan` implementation.  Thanks to
-  Sky Soss (Skyb0rg007) for the bug report.
+  Skye Soss (Skyb0rg007) for the bug report.
 
 * 2025-12-31
   ** Fix undefined behavior due to pointer addition overflow in code
