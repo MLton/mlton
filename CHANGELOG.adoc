@@ -1,6 +1,13 @@
 = CHANGELOG
 
 * 2026-09-18
+  ** Fix bug in `TextIO.StreamIO.canInput` (and
+  `BinIO.StreamIO.canInput` and `SteamIO().canInput`) that would
+  return `SOME 0` on a stream that had been partly determined.  Thanks
+  to https://github.com/Skyb0rg007/sml-basis-tests for the (implicit)
+  bug report.
+
+* 2026-09-18
   ** Fix bug in `TextIO.inputAll` (and `BinIO.inputAll`) that failed
   to properly set `endOfStream`.  Thanks to Skye Soss (Skyb0rg007) for
   the bug report.
