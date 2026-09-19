@@ -1,0 +1,9 @@
+getInstream (openString "abcdef") = s0
+input s0 = ("abcdef", s1)
+canInput (s0, 1) = SOME 1
+canInput (s1, 1) = SOME 0
+
+getInstream (openString "abcdef") = s0
+canInput (s0, 1) = SOME 1
+input s0 = ("abcdef", s1)
+canInput (s1, 1) = SOME 0

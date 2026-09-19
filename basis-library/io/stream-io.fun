@@ -1,4 +1,4 @@
-(* Copyright (C) 2013 Matthew Fluet.
+(* Copyright (C) 2013,2026 Matthew Fluet.
  * Copyright (C) 2002-2006 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  *
@@ -680,7 +680,8 @@ functor StreamIOExtra (S: STREAM_IO_EXTRA_ARG): STREAM_IO_EXTRA =
                if pos < V.length inp
                  then SOME (Int.min (V.length inp - pos, n))
                  else case !next of
-                        End => 
+                         Link {buf as Buf {inp, ...}} => SOME (Int.min (V.length inp, n))
+                       | End =>
                           (case extendNB "canInput" is of
                              NONE => NONE
                            | SOME (Link {buf = Buf {inp, base, ...}}) =>
