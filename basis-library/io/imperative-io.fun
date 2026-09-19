@@ -375,12 +375,7 @@ fun inputN (ib as In {buf, first, last, ...}, n) =
                          let
                             val readArr = readArr ib
                             val inp = A.alloc n
-                            fun fill k =
-                               if k >= size
-                                  then ()
-                               else (A.update (inp, k, A.sub (buf, f + k))
-                                     ; fill (k + 1))
-                            val _ = fill 0
+                            val _ = AS.copy {dst = inp, di = 0, src = AS.slice (buf, f, SOME size)}
                             val _ = first := l
                             fun loop i =
                                if i = n
@@ -623,7 +618,7 @@ fun mkInbuffer' {reader, closed, bufferContents} =
                      | SOME v =>
                           if V.length v = 0
                              then (ref (Open {eos = true}), ref 0)
-                          else (V.appi (fn (i, c) => A.update (buf, i, c)) v
+                          else (A.copyVec {dst = buf, di = 0, src = v}
                                 ; (ref (Open {eos = false}), ref (V.length v)))
               in
                  (state, first, last, buf)
