@@ -1,6 +1,9 @@
 = CHANGELOG
 
 * 2026-09-29
+  ** Fix bug in `Char.scan` that would fail to consume escaped
+  formatting sequences following a non-escaped-formatting-sequence
+  escape sequence.
   ** Fix bug in `String.fromCString` that would return `SOME ""` on an
   input string whose first character could not be converted (e.g.,
   illegal escape).  Thanks to Ruud Koot (ruudkoot), via Claude, for

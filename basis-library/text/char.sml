@@ -176,7 +176,7 @@ functor CharFn(Arg : CHAR_ARG)
                   NONE => NONE
                 | SOME (c, state') =>
                      let
-                        fun yes c = SOME (fromChar c, state')
+                        fun yes c = SOME (fromChar c, skipFormatSequences reader state')
                      in
                         case c of
                            #"a" => yes #"\a"
