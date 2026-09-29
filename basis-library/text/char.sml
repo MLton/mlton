@@ -229,7 +229,7 @@ functor CharFn(Arg : CHAR_ARG)
       fun 'a scanC (reader: (Char.char, 'a) StringCvt.reader)
         : (char, 'a) StringCvt.reader =
          let
-            val rec escape =
+            val escape =
                fn state =>
                case reader state of
                   NONE => NONE
@@ -265,7 +265,7 @@ functor CharFn(Arg : CHAR_ARG)
                            (StringCvt.digitsPlus (StringCvt.OCT, 3) reader)
                            state
                      end
-            and main =
+            val main =
                fn NONE => NONE
                 | SOME (c, state) =>
                      (* yuck. isPrint is not defined yet: *)
