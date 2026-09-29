@@ -50,8 +50,9 @@ signature CHAR_EXTRA =
    sig
       include CHAR
 
-      val formatSequences: (Char.char, 'a) StringCvt.reader -> 'a -> 'a
-      val formatSequencesOpt: (Char.char, 'a) StringCvt.reader
-                              -> (unit, 'a) StringCvt.reader
+      val scanFormatSequences: (Char.char, 'a) StringCvt.reader
+                               -> (unit, 'a) StringCvt.reader
+      val skipFormatSequences: (Char.char, 'a) StringCvt.reader -> 'a -> 'a
+
       val scanC: (Char.char, 'a) StringCvt.reader -> (char, 'a) StringCvt.reader
    end

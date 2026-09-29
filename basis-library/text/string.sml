@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2026 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -68,7 +69,7 @@ functor StringFn(Arg : STRING_ARG)
             fun loop (state, cs) =
                case Char.scan reader state of
                   NONE => SOME (implode (rev cs),
-                                Char.formatSequences reader state)
+                                Char.skipFormatSequences reader state)
                 | SOME (c, state) => loop (state, c :: cs)
          in
             fn state =>
@@ -78,7 +79,7 @@ functor StringFn(Arg : STRING_ARG)
                case Char.scan reader state of
                   SOME (c, state) => loop (state, [c])
                 | NONE =>
-                  case Char.formatSequencesOpt reader state of
+                  case Char.scanFormatSequences reader state of
                      SOME ((), state) => SOME (implode [], state)
                    | NONE => NONE
          end
