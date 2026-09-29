@@ -1,5 +1,11 @@
 = CHANGELOG
 
+* 2026-09-29
+  ** Fix bug in `String.fromCString` that would return `SOME ""` on an
+  input string whose first character could not be converted (e.g.,
+  illegal escape).  Thanks to Ruud Koot (ruudkoot), via Claude, for
+  the bug report.
+
 * 2026-09-18
   ** Fix bug in `TextIO.StreamIO.canInput` (and
   `BinIO.StreamIO.canInput` and `SteamIO().canInput`) that would
