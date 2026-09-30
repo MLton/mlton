@@ -34,7 +34,10 @@ val l = ["",
          "\\  \\", "\\  \\abc", "abc\\  \\", "\\  \\abc\\  \\", "abc\\  \\def\\  \\ghi",
          "\\n", "\\nabc", "abc\\n", "\\nabc\\n", "abc\\ndef\\nghi",
          "\\q", "\\qabc", "abc\\q", "\\qabc\\q", "abc\\qdef\\qghi",
-         "\n", "\nabc", "abc\n", "\nabc\n", "abc\ndef\nghi"]
+         "\n", "\nabc", "abc\n", "\nabc\n", "abc\ndef\nghi",
+         "'", "'abc", "abc'", "'abc'", "abc'def'ghi",
+         "\"", "\"abc", "abc\"", "\"abc\"", "abc\"def\"ghi",
+         "\\\"", "\\\"abc", "abc\\\"", "\\\"abc\\\"", "abc\\\"def\\\"ghi"]
 
 fun doit (f : string -> unit) = (List.app f l; print "\n")
 
