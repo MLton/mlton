@@ -305,12 +305,7 @@ val test42 =
              ("\\x11", "\017"),
              ("\\xag", "\010"),
              ("\\xAAg", "\170"),
-             ("\\u0000", "\000"),
              ("\\x67ab", "\u67ab"),
-             ("\\u67ab", "\u67ab"),
-             ("\\uffff", "\uffff"),
-             ("\\U001067ab", "\U001067ab"),
-             ("\\U0010ffff", "\U0010ffff"),
              ("\\x0000000a", "\010"),
              ("\\x0000000a2", "\162"),
              ("\\x0000000ag", "\010"),
@@ -336,6 +331,12 @@ val test43 =
                 "\\c",
                 "\\d",
                 "\\x",
-                "\\U00110000", (* outside the range of Unicode *)
-                "\\xG"])
+                "\\xG",
+                "\\u0000", (* C99 escape, not specified by SML Basis Library *)
+                "\\u67ab", (* C99 escape, not specified by SML Basis Library *)
+                "\\uffff", (* C99 escape, not specified by SML Basis Library *)
+                "\\U001067ab", (* C99 escape, not specified by SML Basis Library *)
+                "\\U0010ffff", (* C99 escape, not specified by SML Basis Library *)
+                "\\U00110000" (* C99 escape, not specified by SML Basis Library; outside the range of Unicode *)
+               ])
     end;

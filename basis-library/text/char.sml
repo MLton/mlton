@@ -252,14 +252,16 @@ functor CharFn(Arg : CHAR_ARG)
                            Reader.mapOpt chrOpt
                            (StringCvt.digits StringCvt.HEX reader)
                            state'
-                      | #"u" =>
-                           Reader.mapOpt chrOpt
-                           (StringCvt.digitsExact (StringCvt.HEX, 4) reader)
-                           state'
-                      | #"U" =>
-                           Reader.mapOpt chrOpt
-                           (StringCvt.digitsExact (StringCvt.HEX, 8) reader)
-                           state'
+                        (* `\uxxxx` and `\Uxxxxxxxx` are C99 extensions;
+                         * not included in SML Basis Library specification of `Char.fromCString` *)
+                      (* | #"u" => *)
+                      (*      Reader.mapOpt chrOpt *)
+                      (*      (StringCvt.digitsExact (StringCvt.HEX, 4) reader) *)
+                      (*      state' *)
+                      (* | #"U" => *)
+                      (*      Reader.mapOpt chrOpt *)
+                      (*      (StringCvt.digitsExact (StringCvt.HEX, 8) reader) *)
+                      (*      state' *)
                       | _ =>
                            Reader.mapOpt chrOpt
                            (StringCvt.digitsPlus (StringCvt.OCT, 3) reader)
