@@ -341,7 +341,7 @@ val test23 =
     end;
 
 val test24 = 
-    let fun checkFromCStringFail arg = isSome (fromCString arg)
+    let fun checkFromCStringFail arg = not (isSome (fromCString arg))
     in
         tst' "test24" (fn _ => List.all checkFromCStringFail 
                ["\\",
