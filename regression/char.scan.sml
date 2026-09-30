@@ -13,10 +13,11 @@ val scan: string -> unit =
    in
       case Char.scan reader 0 of
          NONE => print "NONE\n"
-       | SOME (c, i) => print (concat [str c, " at ", Int.toString i,
+       | SOME (c, i) => print (concat ["#\"", Char.toString c, "\" at ", Int.toString i,
                                        " of ", Int.toString n, "\n"])
    end
 
 val _ =
-   List.app scan ["a\\ \\", "\\ \\a", "\\ \\a\\ \\", "\\ \\\\ \\a",
-                  "\\ \\"]
+   List.app scan ["\\ \\",
+                  "a\\ \\", "\\ \\a", "\\ \\a\\ \\", "\\ \\\\ \\a",
+                  "\\n\\ \\", "\\ \\\\n", "\\ \\\\n\\ \\", "\\ \\\\ \\\\n"]

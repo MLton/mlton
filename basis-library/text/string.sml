@@ -1,4 +1,5 @@
-(* Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
+(* Copyright (C) 2026 Matthew Fluet.
+ * Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  *    Jagannathan, and Stephen Weeks.
  * Copyright (C) 1997-2000 NEC Research Institute.
  *
@@ -62,35 +63,38 @@ functor StringFn(Arg : STRING_ARG)
       val toString = Stranslate Char.toString
       val toCString = Stranslate Char.toCString
 
-      val scan =
-         fn reader =>
+      fun mkScan scanFirstChar scanChar reader state =
+         case reader state of
+            NONE => SOME (implode [], state)
+          | SOME _ =>
+               case scanFirstChar reader state of
+                  NONE => NONE
+                | SOME (NONE, state) => SOME (implode [], state)
+                | SOME (SOME c, state) =>
+                     Option.map (fn (cs, state) => (implode (c::cs), state))
+                     (Reader.list (scanChar reader) state)
+
+      val scan = fn reader => fn state =>
          let
-            fun loop (state, cs) =
+            val scanFirstChar = fn reader => fn state =>
                case Char.scan reader state of
-                  NONE => SOME (implode (rev cs),
-                                Char.formatSequences reader state)
-                | SOME (c, state) => loop (state, c :: cs)
+                  SOME (c, state) => SOME (SOME c, state)
+                | NONE => (case Char.scanFormatSequences reader state of
+                              SOME ((), state) => SOME (NONE, state)
+                            | NONE => NONE)
          in
-            fn state =>
-            case reader state of
-               NONE => SOME (implode [], state)
-             | SOME _ =>
-               case Char.scan reader state of
-                  SOME (c, state) => loop (state, [c])
-                | NONE =>
-                  case Char.formatSequencesOpt reader state of
-                     SOME ((), state) => SOME (implode [], state)
-                   | NONE => NONE
+            mkScan scanFirstChar Char.scan reader state
          end
 
       val fromString = StringCvt.scanString scan
 
-      fun scanString scanChar reader =
-         fn state =>
-         Option.map (fn (cs, state) => (implode cs, state))
-         (Reader.list (scanChar reader) state)
+      val scanC = fn reader => fn state =>
+         mkScan
+         (fn reader => fn state => Option.map (fn (c, s) => (SOME c, s)) (Char.scanC reader state))
+         Char.scanC
+         reader state
 
-      val fromCString = StringCvt.scanString (scanString Char.scanC)
+      val fromCString = StringCvt.scanString scanC
 
       val null = str (Char.chr 0)
       fun nullTerm s = s ^ null

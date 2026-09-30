@@ -137,8 +137,8 @@ functor CharFn(Arg : CHAR_ARG)
             loop
          end
 
-      val 'a formatSequencesOpt: (Char.char, 'a) StringCvt.reader
-                                 -> (unit, 'a) StringCvt.reader =
+      val 'a scanFormatSequences: (Char.char, 'a) StringCvt.reader
+                                  -> (unit, 'a) StringCvt.reader =
          fn reader =>
          let
             fun loop state =
@@ -162,8 +162,8 @@ functor CharFn(Arg : CHAR_ARG)
             loop
          end
 
-      fun formatSequences reader state =
-         case formatSequencesOpt reader state of
+      fun skipFormatSequences reader state =
+         case scanFormatSequences reader state of
             NONE => state
           | SOME ((), state) => state
 
@@ -176,7 +176,7 @@ functor CharFn(Arg : CHAR_ARG)
                   NONE => NONE
                 | SOME (c, state') =>
                      let
-                        fun yes c = SOME (fromChar c, state')
+                        fun yes c = SOME (fromChar c, skipFormatSequences reader state')
                      in
                         case c of
                            #"a" => yes #"\a"
@@ -206,7 +206,7 @@ functor CharFn(Arg : CHAR_ARG)
             val main: (char, 'a) StringCvt.reader =
                fn state =>
                let
-                  val state = formatSequences reader state
+                  val state = skipFormatSequences reader state
                in
                   case reader state of
                      NONE => NONE
@@ -217,7 +217,7 @@ functor CharFn(Arg : CHAR_ARG)
                               case c of
                                  #"\\" => escape state
                                | #"\"" => NONE
-                               | _ => SOME (fromChar c, formatSequences reader state)
+                               | _ => SOME (fromChar c, skipFormatSequences reader state)
                         else NONE
                end
          in
@@ -229,7 +229,7 @@ functor CharFn(Arg : CHAR_ARG)
       fun 'a scanC (reader: (Char.char, 'a) StringCvt.reader)
         : (char, 'a) StringCvt.reader =
          let
-            val rec escape =
+            val escape =
                fn state =>
                case reader state of
                   NONE => NONE
@@ -252,20 +252,22 @@ functor CharFn(Arg : CHAR_ARG)
                            Reader.mapOpt chrOpt
                            (StringCvt.digits StringCvt.HEX reader)
                            state'
-                      | #"u" =>
-                           Reader.mapOpt chrOpt
-                           (StringCvt.digitsExact (StringCvt.HEX, 4) reader)
-                           state'
-                      | #"U" =>
-                           Reader.mapOpt chrOpt
-                           (StringCvt.digitsExact (StringCvt.HEX, 8) reader)
-                           state'
+                        (* `\uxxxx` and `\Uxxxxxxxx` are C99 extensions;
+                         * not included in SML Basis Library specification of `Char.fromCString` *)
+                      (* | #"u" => *)
+                      (*      Reader.mapOpt chrOpt *)
+                      (*      (StringCvt.digitsExact (StringCvt.HEX, 4) reader) *)
+                      (*      state' *)
+                      (* | #"U" => *)
+                      (*      Reader.mapOpt chrOpt *)
+                      (*      (StringCvt.digitsExact (StringCvt.HEX, 8) reader) *)
+                      (*      state' *)
                       | _ =>
                            Reader.mapOpt chrOpt
                            (StringCvt.digitsPlus (StringCvt.OCT, 3) reader)
                            state
                      end
-            and main =
+            val main =
                fn NONE => NONE
                 | SOME (c, state) =>
                      (* yuck. isPrint is not defined yet: *)
