@@ -1,4 +1,4 @@
-## Copyright (C) 2009,2011,2013,2017-2022,2024 Matthew Fluet.
+## Copyright (C) 2009,2011,2013,2017-2022,2024,2026 Matthew Fluet.
  # Copyright (C) 1999-2007 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -363,6 +363,36 @@ mlkit-mlton:
 	$(CHMOD) u+x "$(BIN)/$(MLTON).mlkit"
 	@echo 'Build of MLton (with MLKit) succeeded.'
 
+######################################################################
+
+# rune targets
+
+.PHONY: bootstrap-rune
+bootstrap-rune:
+	$(MAKE) rune-mlton
+	$(RM) "$(BIN)/$(MLTON)"
+	$(MAKE) OLD_MLTON="$(BIN)/$(MLTON).rune" all
+	$(RM) "$(LIB)/$(MLTON_OUTPUT)-rune.rbc"
+	$(RM) "$(BIN)/$(MLTON).rune"
+
+.PHONY: rune-mlton
+rune-mlton:
+	$(MAKE) dirs
+	$(MAKE) runtime
+	$(MAKE) -C "$(SRC)/mlton" rune-mlton
+	$(CP) "$(SRC)/mlton/$(MLTON_OUTPUT)-rune.rbc" "$(LIB)/"
+	$(MAKE) script
+	$(MAKE) basis-no-check
+	$(MAKE) libraries-no-check
+	$(SED) \
+		-e 's;\(doit.* "$$@"\);# \1;' \
+		-e 's;# \(doitRune "$$@"\);\1;' \
+		< "$(BIN)/$(MLTON)" \
+		> "$(BIN)/$(MLTON).rune"
+	$(CHMOD) u+x "$(BIN)/$(MLTON).rune"
+	@echo 'Build of MLton (with Rune) succeeded.'
+
+######################################################################
 ######################################################################
 
 # version target
