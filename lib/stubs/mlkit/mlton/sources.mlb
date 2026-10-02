@@ -1,4 +1,4 @@
-(* Copyright (C) 2022 Matthew Fluet.
+(* Copyright (C) 2022,2026 Matthew Fluet.
  *
  * MLton is released under a BSD-style license.
  * See the file MLton-LICENSE for details.
@@ -8,5 +8,5 @@ local
    $(SML_LIB)/basis/basis.mlb
    ../../common/mlton/process-via-fork-exec.sml
 in
-   mlton.sml
+   ../../common/mlton/mlton.sml
 end
