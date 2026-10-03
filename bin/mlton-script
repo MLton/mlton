@@ -60,11 +60,11 @@ doitMLKit () {
     fi
 }
 doitRune () {
-    RUNEVM="runevm"
+    RUNEVM="${RUNEVM=runevm}"
     if [ -x "$(command -v "$RUNEVM")" ]; then
         mlton_rune="$lib/mlton-compile-rune.rbc"
-        if [ -f "$mlton_rune" ]; then
-            exec "$RUNEVM" "$mlton_rune" "$@"
+        if [ -s "$mlton_rune" ]; then
+            exec "$RUNEVM" $RUNEVM_FLAGS "$mlton_rune" "$@"
         fi
     fi
 }
