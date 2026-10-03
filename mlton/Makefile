@@ -1,4 +1,4 @@
-## Copyright (C) 2010,2013,2016,2018-2023 Matthew Fluet.
+## Copyright (C) 2010,2013,2016,2018-2023,2026 Matthew Fluet.
  # Copyright (C) 1999-2009 Henry Cejtin, Matthew Fluet, Suresh
  #    Jagannathan, and Stephen Weeks.
  # Copyright (C) 1997-2000 NEC Research Institute.
@@ -322,4 +322,36 @@ mlton-mlkit.mlb: ../lib/stubs/mlkit/basis/sources.mlb ../lib/stubs/mlkit/mlton/s
 # 	    fi; \
 # 	done < $< > $@
 
+endif
+
+######################################################################
+
+#
+# The following rebuilds the bytecode file for the Rune compiled version of
+# MLton.
+#
+ifneq (,$(findstring rune-mlton,$(MAKECMDGOALS)))
+.PHONY: rune-mlton
+rune-mlton: $(MLTON_OUTPUT)-rune.rbc
+
+$(MLTON_OUTPUT)-rune.rbc: mlton-rune.txt $(shell [ -e mlton-rune.txt ] && $(CAT) mlton-rune.txt) $(MLTON_GEN_SOURCES)
+	$(RUNE) $(RUNE_FLAGS) --type-work=1000000000 --pass-stats -o $@ $(shell $(CAT) mlton-rune.txt)
+
+mlton-rune.txt: ../lib/stubs/rune/basis/sources.txt ../lib/stubs/rune/mlton/sources.txt $(shell $(MLBDEPS) ../lib/stubs/mlton-stubs/sources.mlb | $(GREP) 'mlb$$' | $(GREP) -v '$$(SML_LIB)') $(shell $(MLBDEPS) mlton.mlb | $(GREP) 'mlb$$' | $(GREP) -v '$$(SML_LIB)')
+	(									\
+		$(CAT) ../lib/stubs/rune/basis/sources.txt |			\
+			$(SED) 's|\(.*\)|../lib/stubs/rune/basis/\1|';		\
+		$(MLBDEPS) mlton.mlb | $(GREP) -v 'mlb$$' | $(GREP) 'mlyacc'; 	\
+		$(CAT) ../lib/stubs/rune/mlton/sources.txt |			\
+			$(SED) 's|\(.*\)|../lib/stubs/rune/mlton/\1|';		\
+		$(MLBDEPS) ../lib/stubs/mlton-stubs/sources.mlb |		\
+			$(GREP) -v 'mlb$$' |					\
+			$(GREP) 'mlton-stubs';					\
+		$(MLBDEPS) mlton.mlb |						\
+			$(GREP) -v 'mlb$$' |					\
+			$(GREP) -v 'sml/basis' |				\
+			$(GREP) -v 'targets' |					\
+			$(GREP) -v 'mlton-stubs' |				\
+			$(GREP) -v 'mlyacc';					\
+	) > $@
 endif

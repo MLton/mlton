@@ -30,3 +30,7 @@
 *-mlkit.mlb
 *-mlkit-bind*.sml
 MLB/
+
+/mlton*-compile-rune
+/mlton*-compile-rune.rbc
+/mlton-rune.txt

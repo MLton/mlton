@@ -59,6 +59,15 @@ doitMLKit () {
         exec "$mlton_mlkit" "$@"
     fi
 }
+doitRune () {
+    RUNEVM="${RUNEVM=runevm}"
+    if [ -x "$(command -v "$RUNEVM")" ]; then
+        mlton_rune="$lib/mlton-compile-rune.rbc"
+        if [ -s "$mlton_rune" ]; then
+            exec "$RUNEVM" $RUNEVM_FLAGS "$mlton_rune" "$@"
+        fi
+    fi
+}
 
 
 if [ -n "$GMP_INC_DIR" ]; then
@@ -161,6 +170,7 @@ shift
 doitSMLNJ "$@"
 doitPolyML "$@"
 doitMLKit "$@"
+doitRune "$@"
 
 echo 'Unable to run MLton.  Check that lib is set properly.' >&2
 exit 1

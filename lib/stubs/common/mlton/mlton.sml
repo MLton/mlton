@@ -1,4 +1,4 @@
-(* Copyright (C) 2022 Matthew Fluet.
+(* Copyright (C) 2026 Matthew Fluet.
  *
  * MLton is released under a HPND-style license.
  * See the file MLton-LICENSE for details.
