@@ -42,6 +42,7 @@ Darwin)
 ;;
 *FreeBSD*)
         HOST_OS='freebsd'
+		arch=`uname -p`
 ;;
 GNU)
         HOST_OS='hurd'
