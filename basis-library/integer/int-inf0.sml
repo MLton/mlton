@@ -1229,8 +1229,13 @@ structure IntInf =
          fun bigQuotRem (x, y) = (bigQuot (x, y), bigRem (x, y))
       end
 
+      (* The results of andb and xorb can need one limb more than the larger
+       * operand.  With n limbs of w bits and x = 2^(w*n) - 1,
+       * andb (~x, ~2) and xorb (x, ~1) are both ~(2^(w*n)), which has
+       * n + 1 limbs.  The result of orb never needs it, but shares the bound.
+       *)
       local
-         fun make (smallOp, bigOp) 
+         fun make (smallOp, bigOp)
                   (lhs: bigInt, rhs: bigInt) =
             if areSmall (lhs, rhs)
                then
@@ -1240,18 +1245,22 @@ structure IntInf =
                   in
                      ans
                   end
-               else bigOp (lhs, rhs, 
-                           reserve (S.max (numLimbs lhs, numLimbs rhs), 0))
+               else bigOp (lhs, rhs,
+                           reserve (S.max (numLimbs lhs, numLimbs rhs), 1))
       in
          val bigAndb = make (W.andb, Prim.andb)
          val bigOrb = make (W.orb, Prim.orb)
          val bigXorb = make (W.xorb, Prim.xorb)
       end
 
+      (* notb x = ~x - 1, so the result can need one limb more than the
+       * argument: with n limbs of w bits, notb (2^(w*n) - 1) is ~(2^(w*n)),
+       * which has n + 1 limbs.
+       *)
       fun bigNotb (arg: bigInt): bigInt =
          if isSmall arg
             then oneTagCoerce (W.notb (Prim.toWord arg))
-            else Prim.notb (arg, reserve (numLimbs arg, 0))
+            else Prim.notb (arg, reserve (numLimbs arg, 1))
 
       local
          val bitsPerLimb = MPLimb.sizeInBitsWord
